@@ -1,4 +1,5 @@
 import 'package:bosque_flutter/core/config/router.dart';
+import 'package:bosque_flutter/core/state/theme_mode_provider.dart';
 import 'package:bosque_flutter/core/theme/app_theme.dart';
 import 'package:bosque_flutter/core/utils/secure_storage.dart';
 import 'package:flutter/material.dart';
@@ -18,19 +19,21 @@ void main() async {
   ));
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends ConsumerWidget {
   final String? initialToken;
 
   const MyApp({super.key, this.initialToken});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final AppTheme appTheme = ref.watch(themeNotifierProvider);
+    // Usar el proveedor de router en lugar de crear uno nuevo cada vez
+    final router = ref.watch(routerProvider);
+
     return MaterialApp.router(
       title: 'Bosque',
-      theme: AppTheme.lightTheme,
-      darkTheme: AppTheme.darkTheme,
-      themeMode: ThemeMode.light,
-      routerConfig: AppRouter.getRouter(initialToken: initialToken),
+      theme: appTheme.getTheme(),
+      routerConfig: router, // Usar el router del proveedor que mantiene su estado
       builder: (context, child) => ResponsiveBreakpoints.builder(
         child: child!,
         breakpoints: [

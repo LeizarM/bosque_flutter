@@ -1,185 +1,55 @@
+// ignore_for_file: file_names
+
 import 'package:flutter/material.dart';
 
+const colorList = <Color>[
+  Colors.blue,
+  Colors.teal,
+  Colors.green,
+  Colors.red,
+  Colors.purple,
+  Colors.yellow,
+  Colors.orange,
+  Colors.deepPurple,
+  Colors.pink,
+];
+
 class AppTheme {
-  static ThemeData get lightTheme {
+  final int selectedColor;
+  final bool isDarkMode;
+
+  AppTheme({this.isDarkMode = false , this.selectedColor = 0})
+    : assert(
+        selectedColor >= 0,
+        'selectedColor must be greater than or equal to 0',
+      ),
+      assert(
+        selectedColor < colorList.length,
+        'selectedColor must be less or equal to ${colorList.length - 1}',
+      );
+
+  ThemeData getTheme() {
     return ThemeData(
       useMaterial3: true,
-      colorScheme: ColorScheme.fromSeed(
-        seedColor: Colors.blue.shade700,
-        primary: Colors.blue.shade700,
-        secondary: Colors.blue.shade900,
-        surface: Colors.white,
-        error: Colors.red.shade600,
-        onPrimary: Colors.white,
-        onSecondary: Colors.white,
-        onSurface: Colors.black87,
-        onError: Colors.white,
-      ),
-      scaffoldBackgroundColor: Colors.grey.shade50,
-      appBarTheme: AppBarTheme(
-        backgroundColor: Colors.blue.shade700,
-        foregroundColor: Colors.white,
-        elevation: 2,
-        titleTextStyle: const TextStyle(
-          fontSize: 20,
-          fontWeight: FontWeight.bold,
-          color: Colors.white,
-        ),
-      ),
-      textTheme: const TextTheme(
-        displayLarge: TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
-        displayMedium: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
-        displaySmall: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-        headlineMedium: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-        headlineSmall: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-        titleLarge: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-        bodyLarge: TextStyle(fontSize: 16),
-        bodyMedium: TextStyle(fontSize: 14),
-        bodySmall: TextStyle(fontSize: 12),
-        labelLarge: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
-      ),
-      elevatedButtonTheme: ElevatedButtonThemeData(
-        style: ElevatedButton.styleFrom(
-          backgroundColor: Colors.blue.shade700,
-          foregroundColor: Colors.white,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12.0),
-          ),
-          elevation: 3,
-          textStyle: const TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-          ),
-          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-        ),
-      ),
-      textButtonTheme: TextButtonThemeData(
-        style: TextButton.styleFrom(
-          foregroundColor: Colors.blue.shade700,
-          textStyle: const TextStyle(fontSize: 14),
-        ),
-      ),
-      inputDecorationTheme: InputDecorationTheme(
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12.0),
-          borderSide: BorderSide(color: Colors.grey.shade400),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12.0),
-          borderSide: BorderSide(color: Colors.grey.shade400),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12.0),
-          borderSide: BorderSide(color: Colors.blue.shade700, width: 2),
-        ),
-        filled: true,
-        fillColor: Colors.grey.shade100,
-        labelStyle: TextStyle(color: Colors.grey.shade700),
-        prefixIconColor: Colors.grey.shade700,
-        suffixIconColor: Colors.grey.shade700,
-      ),
-      cardTheme: CardTheme(
-        color: Colors.white,
-        elevation: 2,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.0)),
-        margin: const EdgeInsets.all(8.0),
-      ),
-      iconTheme: IconThemeData(color: Colors.blue.shade700, size: 24),
+      brightness: isDarkMode ? Brightness.dark : Brightness.light,
+      colorSchemeSeed: colorList[selectedColor],
+      appBarTheme: const AppBarTheme(centerTitle: false),
     );
   }
 
-  static ThemeData get darkTheme {
-    return ThemeData(
-      useMaterial3: true,
-      colorScheme: ColorScheme.fromSeed(
-        seedColor: Colors.blue.shade700,
-        brightness: Brightness.dark,
-        primary: Colors.blue.shade400,
-        secondary: Colors.blue.shade600,
-        surface: Colors.grey.shade900,
-        background: Colors.grey.shade900,
-        error: Colors.red.shade400,
-        onPrimary: Colors.white,
-        onSecondary: Colors.white,
-        onSurface: Colors.white70,
-        onBackground: Colors.white70,
-        onError: Colors.white,
-      ),
-      scaffoldBackgroundColor: Colors.grey.shade900,
-      appBarTheme: AppBarTheme(
-        backgroundColor: Colors.blue.shade800,
-        foregroundColor: Colors.white,
-        elevation: 2,
-        titleTextStyle: const TextStyle(
-          fontSize: 20,
-          fontWeight: FontWeight.bold,
-          color: Colors.white,
-        ),
-      ),
-      textTheme: const TextTheme(
-        displayLarge: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Colors.white),
-        displayMedium: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.white),
-        displaySmall: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white),
-        headlineMedium: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
-        headlineSmall: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
-        titleLarge: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
-        bodyLarge: TextStyle(fontSize: 16, color: Colors.white70),
-        bodyMedium: TextStyle(fontSize: 14, color: Colors.white70),
-        bodySmall: TextStyle(fontSize: 12, color: Colors.white60),
-        labelLarge: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.white),
-      ),
-      elevatedButtonTheme: ElevatedButtonThemeData(
-        style: ElevatedButton.styleFrom(
-          backgroundColor: Colors.blue.shade600,
-          foregroundColor: Colors.white,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12.0),
-          ),
-          elevation: 3,
-          textStyle: const TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-          ),
-          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-        ),
-      ),
-      textButtonTheme: TextButtonThemeData(
-        style: TextButton.styleFrom(
-          foregroundColor: Colors.blue.shade400,
-          textStyle: const TextStyle(fontSize: 14),
-        ),
-      ),
-      inputDecorationTheme: InputDecorationTheme(
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12.0),
-          borderSide: BorderSide(color: Colors.grey.shade600),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12.0),
-          borderSide: BorderSide(color: Colors.grey.shade600),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12.0),
-          borderSide: BorderSide(color: Colors.blue.shade400, width: 2),
-        ),
-        filled: true,
-        fillColor: Colors.grey.shade800,
-        labelStyle: TextStyle(color: Colors.grey.shade300),
-        prefixIconColor: Colors.grey.shade300,
-        suffixIconColor: Colors.grey.shade300,
-      ),
-      cardTheme: CardTheme(
-        color: Colors.grey.shade800,
-        elevation: 2,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.0)),
-        margin: const EdgeInsets.all(8.0),
-      ),
-      iconTheme: IconThemeData(color: Colors.blue.shade400, size: 24),
-      dividerTheme: DividerThemeData(
-        color: Colors.grey.shade700,
-        thickness: 1,
-      ),
-      dialogBackgroundColor: Colors.grey.shade800,
-    );
-  }
+
+  AppTheme copyWith(
+    {
+      bool? isDarkMode,
+      int? selectedColor,
+    }
+  ) => AppTheme(
+      isDarkMode: isDarkMode?? this.isDarkMode,
+      selectedColor: selectedColor?? this.selectedColor,
+  
+  );
+
+  
+
+
 }

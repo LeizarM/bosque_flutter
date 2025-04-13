@@ -1,6 +1,5 @@
 import 'package:bosque_flutter/core/state/menu_provider.dart';
 import 'package:bosque_flutter/core/state/user_provider.dart';
-import 'package:bosque_flutter/core/utils/secure_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -15,19 +14,42 @@ class AppSidebar extends ConsumerStatefulWidget {
 
 class _AppSidebarState extends ConsumerState<AppSidebar> {
   // Mapa para controlar la expansión de cada elemento con submenús
-  final Map<int, bool> _expandedItems = {};
+  Map<int, bool> _expandedItems = {};
+  bool _isInitialized = false;
 
   @override
   void initState() {
     super.initState();
-    // Cargar el menú cuando se inicia el widget
+    // Cargar el menú y el estado de expansión al iniciar
+    _initializeMenu();
+  }
+
+  Future<void> _initializeMenu() async {
+  // Carga inmediata desde caché incluso antes del primer frame
+  try {
+    final menuNotifier = ref.read(menuProvider.notifier);
+    // Primero cargar el estado de expansión
+    final savedExpandedState = await menuNotifier.loadExpandedState();
+    
+    // IMPORTANTE: Cargar menú desde caché inmediatamente
+    await menuNotifier.loadMenuFromCacheOnly();
+    
+    setState(() {
+      _expandedItems = savedExpandedState;
+      _isInitialized = true;
+    });
+    
+    // Después actualizar desde el servidor
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final user = ref.read(userProvider);
       if (user != null) {
-        ref.read(menuProvider.notifier).loadUserMenu(user.codUsuario);
+        menuNotifier.loadUserMenu(user.codUsuario);
       }
     });
+  } catch (e) {
+    debugPrint('Error inicializando menú: $e');
   }
+}
 
   @override
   Widget build(BuildContext context) {
@@ -87,6 +109,8 @@ class _AppSidebarState extends ConsumerState<AppSidebar> {
                     // Expandir/contraer el ítem si tiene hijos
                     setState(() {
                       _expandedItems[item.id] = !isExpanded;
+                      // Guardar el estado de expansión
+                      ref.read(menuProvider.notifier).saveExpandedState(_expandedItems);
                     });
                   } else {
                     // Navegar a la ruta correspondiente
@@ -119,8 +143,17 @@ class _AppSidebarState extends ConsumerState<AppSidebar> {
     
     // Construir el sidebar basado en el estado del menú
     Widget buildSidebarContent() {
-      if (menuState.status == MenuStatus.loading) {
-        return const Center(child: CircularProgressIndicator());
+      if (menuState.status == MenuStatus.loading && !_isInitialized) {
+        return const Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              CircularProgressIndicator(),
+              SizedBox(height: 16),
+              Text('Cargando menú...'),
+            ],
+          ),
+        );
       } else if (menuState.status == MenuStatus.error) {
         return Center(
           child: Padding(
@@ -144,7 +177,6 @@ class _AppSidebarState extends ConsumerState<AppSidebar> {
                 const SizedBox(height: 16),
                 ElevatedButton.icon(
                   onPressed: () {
-                    final user = ref.read(userProvider);
                     if (user != null) {
                       ref.read(menuProvider.notifier).loadUserMenu(user.codUsuario);
                     }
@@ -156,7 +188,7 @@ class _AppSidebarState extends ConsumerState<AppSidebar> {
             ),
           ),
         );
-      } else if (menuState.status == MenuStatus.loaded) {
+      } else if (menuState.status == MenuStatus.loaded || sidebarItems.isNotEmpty) {
         return ListView(
           padding: const EdgeInsets.symmetric(vertical: 8),
           children: [
@@ -234,8 +266,7 @@ class _AppSidebarState extends ConsumerState<AppSidebar> {
           // Limpiar caché del menú al cerrar sesión
           await ref.read(menuProvider.notifier).clearCache();
           // Limpiar usuario y token
-          ref.read(userProvider.notifier).clearUser();
-          await SecureStorage().deleteToken();
+          await ref.read(userProvider.notifier).clearUser();
           // Navegar al login
           context.go('/login');
           if (isSmallScreen) {
@@ -250,7 +281,7 @@ class _AppSidebarState extends ConsumerState<AppSidebar> {
       padding: const EdgeInsets.all(8),
       alignment: Alignment.center,
       child: Text(
-        'v1.0.0',
+        '${user?.versionApp}',
         style: TextStyle(
           fontSize: 12,
           color: isDarkMode ? Colors.grey.shade400 : Colors.grey.shade500,
@@ -278,8 +309,8 @@ class _AppSidebarState extends ConsumerState<AppSidebar> {
               currentAccountPicture: CircleAvatar(
                 backgroundColor: Colors.white,
                 child: Text(
-                  (user?.nombreCompleto.isNotEmpty ?? false) 
-                      ? user!.nombreCompleto.substring(0, 1).toUpperCase()
+                  (user?.nombreCompleto?.isNotEmpty ?? false) 
+                      ? user!.nombreCompleto!.substring(0, 1).toUpperCase()
                       : 'U',
                   style: TextStyle(fontSize: 24, color: primaryColor),
                 ),

@@ -1,3 +1,4 @@
+import 'package:bosque_flutter/core/state/theme_mode_provider.dart';
 import 'package:bosque_flutter/core/state/user_provider.dart';
 import 'package:bosque_flutter/data/repositories/auth_repository_impl.dart';
 import 'package:bosque_flutter/domain/repositories/auth_repository.dart';
@@ -22,45 +23,45 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   bool _obscurePassword = true;
 
   void _login() async {
-  if (_usernameController.text.isEmpty || _passwordController.text.isEmpty) {
-    setState(() {
-      _message = 'El usuario y contraseña son obligatorios';
-    });
-    return;
-  }
-  
-  setState(() {
-    _isLoading = true;
-    _message = null;
-  });
-  try {
-    // Si el repositorio devuelve directamente un LoginEntity
-    final (loginEntity, message) = await _authRepository.login(
-      _usernameController.text,
-      _passwordController.text,
-    );
-    if (mounted) {
-      if (loginEntity != null) {
-        // Guardar los datos del usuario en el provider y en almacenamiento
-        await ref.read(userProvider.notifier).setUser(loginEntity);
-        // ignore: use_build_context_synchronously
-        context.go('/dashboard');
-      } else {
-        setState(() {
-          _message = message;
-        });
-      }
+    if (_usernameController.text.isEmpty || _passwordController.text.isEmpty) {
+      setState(() {
+        _message = 'El usuario y contraseña son obligatorios';
+      });
+      return;
     }
-  } catch (e) {
+
     setState(() {
-      _message = 'Error inesperado: ${e.toString()}';
+      _isLoading = true;
+      _message = null;
     });
-  } finally {
-    setState(() {
-      _isLoading = false;
-    });
+    try {
+      // Si el repositorio devuelve directamente un LoginEntity
+      final (loginEntity, message) = await _authRepository.login(
+        _usernameController.text,
+        _passwordController.text,
+      );
+      if (mounted) {
+        if (loginEntity != null) {
+          // Guardar los datos del usuario en el provider y en almacenamiento
+          await ref.read(userProvider.notifier).setUser(loginEntity);
+          // ignore: use_build_context_synchronously
+          context.go('/dashboard');
+        } else {
+          setState(() {
+            _message = message;
+          });
+        }
+      }
+    } catch (e) {
+      setState(() {
+        _message = 'Error inesperado: ${e.toString()}';
+      });
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
   }
-}
 
   @override
   void dispose() {
@@ -73,7 +74,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   Widget build(BuildContext context) {
     final screenSize = MediaQuery.of(context).size;
     final isSmallScreen = ResponsiveBreakpoints.of(context).smallerThan(TABLET);
-    
+    final appTheme = ref.watch(themeNotifierProvider);
+
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Scaffold(
       body: Container(
         decoration: BoxDecoration(
@@ -81,8 +85,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [
-              Theme.of(context).colorScheme.primary,
-              Theme.of(context).colorScheme.secondary,
+              colorScheme.primary,
+              colorScheme.secondary,
             ],
           ),
         ),
@@ -92,8 +96,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               child: ResponsiveRowColumn(
                 rowMainAxisAlignment: MainAxisAlignment.center,
                 columnMainAxisAlignment: MainAxisAlignment.center,
-                layout: isSmallScreen 
-                    ? ResponsiveRowColumnType.COLUMN 
+                layout: isSmallScreen
+                    ? ResponsiveRowColumnType.COLUMN
                     : ResponsiveRowColumnType.ROW,
                 children: [
                   ResponsiveRowColumnItem(
@@ -106,14 +110,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           Icon(
                             Icons.forest_rounded,
                             size: isSmallScreen ? 80 : 120,
-                            color: Theme.of(context).colorScheme.onPrimary,
+                            color: colorScheme.onPrimary,
                           ),
                           const SizedBox(height: 16),
                           Text(
                             'BOSQUE',
                             style: Theme.of(context).textTheme.displaySmall?.copyWith(
-                              color: Theme.of(context).colorScheme.onPrimary,
-                            ),
+                                  color: colorScheme.onPrimary,
+                                ),
                           ),
                         ],
                       ),
@@ -128,11 +132,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       margin: const EdgeInsets.all(24.0),
                       padding: const EdgeInsets.all(24.0),
                       decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.surface,
+                        color: colorScheme.surface,
                         borderRadius: BorderRadius.circular(16.0),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withAlpha(51),
+                            color: appTheme.isDarkMode
+                                ? Colors.black.withAlpha(70)
+                                : Colors.black.withAlpha(51),
                             blurRadius: 10.0,
                             offset: const Offset(0, 5),
                           ),
@@ -145,8 +151,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           Text(
                             'Iniciar Sesión',
                             style: Theme.of(context).textTheme.displaySmall?.copyWith(
-                              color: Theme.of(context).colorScheme.secondary,
-                            ),
+                                  color: colorScheme.secondary,
+                                ),
                             textAlign: TextAlign.center,
                           ),
                           const SizedBox(height: 24.0),
@@ -163,16 +169,18 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                             decoration: InputDecoration(
                               labelText: 'Contraseña',
                               prefixIcon: const Icon(Icons.lock),
-                              suffixIcon: Icon(
-                                _obscurePassword ? Icons.visibility : Icons.visibility_off,
+                              suffixIcon: IconButton(
+                                icon: Icon(
+                                  _obscurePassword ? Icons.visibility : Icons.visibility_off,
+                                ),
+                                onPressed: () {
+                                  setState(() {
+                                    _obscurePassword = !_obscurePassword;
+                                  });
+                                },
                               ),
                             ),
                             obscureText: _obscurePassword,
-                            onTap: () {
-                              setState(() {
-                                _obscurePassword = !_obscurePassword;
-                              });
-                            },
                           ),
                           const SizedBox(height: 8.0),
                           Align(
@@ -188,12 +196,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                             Container(
                               padding: const EdgeInsets.all(8.0),
                               decoration: BoxDecoration(
-                                color: Theme.of(context).colorScheme.error,
+                                color: colorScheme.errorContainer,
                                 borderRadius: BorderRadius.circular(8.0),
                               ),
                               child: Text(
                                 _message!,
-                                style: TextStyle(color: Theme.of(context).colorScheme.error),
+                                style: TextStyle(color: colorScheme.onErrorContainer),
                                 textAlign: TextAlign.center,
                               ),
                             ),
@@ -203,7 +211,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           SizedBox(
                             height: 50,
                             child: _isLoading
-                                ? const Center(child: CircularProgressIndicator())
+                                ? Center(
+                                    child: CircularProgressIndicator(
+                                        color: colorScheme.primary))
                                 : ElevatedButton(
                                     onPressed: _login,
                                     child: const Text('INICIAR SESIÓN'),

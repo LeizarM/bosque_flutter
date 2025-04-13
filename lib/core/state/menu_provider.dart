@@ -54,21 +54,25 @@ class MenuState {
 class MenuNotifier extends StateNotifier<MenuState> {
   final MenuRepository _repository;
   
-  // Clave para guardar el menú en SharedPreferences
+  // Claves para SharedPreferences
   static const String _menuCacheKey = 'menu_cache';
   static const String _menuUserIdKey = 'menu_user_id';
+  static const String _expandedMenuItemsKey = 'expanded_menu_items';
 
   MenuNotifier(this._repository) : super(MenuState.initial());
 
   // Cargar menú para un usuario
   Future<void> loadUserMenu(int userId) async {
     try {
-      state = state.copyWith(status: MenuStatus.loading);
+      // Solo mostrar loading si no hay datos previos cargados
+      if (state.menuItems.isEmpty) {
+        state = state.copyWith(status: MenuStatus.loading);
+      }
       
       // Intentar cargar desde caché primero
       final cachedMenu = await _loadMenuFromCache(userId);
       
-      if (cachedMenu != null) {
+      if (cachedMenu != null && cachedMenu.isNotEmpty) {
         state = state.copyWith(
           status: MenuStatus.loaded,
           menuItems: cachedMenu,
@@ -78,21 +82,40 @@ class MenuNotifier extends StateNotifier<MenuState> {
         _refreshMenuFromServer(userId);
       } else {
         // Si no hay caché, cargar directamente desde el servidor
-        final menuEntities = await _repository.getMenuItems(userId);
-        
-        // Guardar en caché
-        await _saveMenuToCache(userId, menuEntities);
-        
-        state = state.copyWith(
-          status: MenuStatus.loaded,
-          menuItems: menuEntities,
-        );
+        await _fetchAndSaveMenu(userId);
       }
     } catch (e) {
+      debugPrint('❌ Error cargando menú: $e');
       state = state.copyWith(
         status: MenuStatus.error,
         errorMessage: e.toString(),
       );
+    }
+  }
+  
+  // Método para obtener y guardar el menú desde el servidor
+  Future<void> _fetchAndSaveMenu(int userId) async {
+    try {
+      debugPrint('🔄 Solicitando menú al servidor para usuario $userId');
+      final menuEntities = await _repository.getMenuItems(userId);
+      
+      if (menuEntities.isNotEmpty) {
+        debugPrint('✅ Menú obtenido con éxito: ${menuEntities.length} elementos');
+        
+        // Guardar en caché
+        await _saveMenuToCache(userId, menuEntities);
+        
+        // Actualizar estado
+        state = state.copyWith(
+          status: MenuStatus.loaded,
+          menuItems: menuEntities,
+        );
+      } else {
+        throw Exception('El menú obtenido está vacío');
+      }
+    } catch (e) {
+      debugPrint('❌ Error obteniendo menú del servidor: $e');
+      throw e;
     }
   }
   
@@ -101,23 +124,61 @@ class MenuNotifier extends StateNotifier<MenuState> {
     try {
       final menuEntities = await _repository.getMenuItems(userId);
       
-      // Guardar en caché
-      await _saveMenuToCache(userId, menuEntities);
-      
-      // Actualizar estado solo si el userId no ha cambiado
-      final prefs = await SharedPreferences.getInstance();
-      final cachedUserId = prefs.getInt(_menuUserIdKey);
-      
-      if (cachedUserId == userId) {
-        state = state.copyWith(
-          status: MenuStatus.loaded,
-          menuItems: menuEntities,
-        );
+      // Guardar en caché solo si hay datos
+      if (menuEntities.isNotEmpty) {
+        await _saveMenuToCache(userId, menuEntities);
+        
+        // Actualizar estado solo si el userId no ha cambiado
+        final prefs = await SharedPreferences.getInstance();
+        final cachedUserId = prefs.getInt(_menuUserIdKey);
+        
+        if (cachedUserId == userId) {
+          state = state.copyWith(
+            status: MenuStatus.loaded,
+            menuItems: menuEntities,
+          );
+        }
       }
     } catch (e) {
       // No actualizar el estado en caso de error de actualización en segundo plano
-      debugPrint('Error actualizando menú en segundo plano: $e');
+      debugPrint('⚠️ Error actualizando menú en segundo plano: $e');
     }
+  }
+  
+  // Guardar/cargar el estado de los elementos expandidos
+  Future<void> saveExpandedState(Map<int, bool> expandedItems) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final expandedItemsJson = jsonEncode(expandedItems);
+      await prefs.setString(_expandedMenuItemsKey, expandedItemsJson);
+      debugPrint('✅ Estado de expansión guardado: ${expandedItems.length} items');
+    } catch (e) {
+      debugPrint('❌ Error guardando estado de expansión: $e');
+    }
+  }
+  
+  Future<Map<int, bool>> loadExpandedState() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final expandedItemsJson = prefs.getString(_expandedMenuItemsKey);
+      
+      if (expandedItemsJson != null) {
+        final Map<String, dynamic> decoded = jsonDecode(expandedItemsJson);
+        // Convertir las claves de String a int
+        final Map<int, bool> result = {};
+        decoded.forEach((key, value) {
+          if (value is bool) {
+            result[int.parse(key)] = value;
+          }
+        });
+        debugPrint('✅ Estado de expansión cargado: ${result.length} items');
+        return result;
+      }
+    } catch (e) {
+      debugPrint('⚠️ Error cargando estado de expansión: $e');
+    }
+    
+    return {};
   }
   
   // Método para guardar menú en caché
@@ -133,8 +194,9 @@ class MenuNotifier extends StateNotifier<MenuState> {
       
       // Guardar el ID del usuario
       await prefs.setInt(_menuUserIdKey, userId);
+      debugPrint('✅ Menú guardado en caché para usuario $userId');
     } catch (e) {
-      debugPrint('Error guardando menú en caché: $e');
+      debugPrint('❌ Error guardando menú en caché: $e');
     }
   }
   
@@ -146,22 +208,49 @@ class MenuNotifier extends StateNotifier<MenuState> {
       // Verificar si existe un menú en caché y si pertenece al usuario actual
       final cachedUserId = prefs.getInt(_menuUserIdKey);
       if (cachedUserId != userId) {
+        debugPrint('⚠️ No hay caché para el usuario $userId (caché encontrado: $cachedUserId)');
         return null;
       }
       
       final menuJsonString = prefs.getString(_menuCacheKey);
       if (menuJsonString == null) {
+        debugPrint('⚠️ No hay caché de menú disponible');
         return null;
       }
       
       // Deserializar el menú
       final menuJson = jsonDecode(menuJsonString) as List<dynamic>;
-      return _deserializeMenuItems(menuJson);
+      final result = _deserializeMenuItems(menuJson);
+      debugPrint('✅ Menú cargado de caché: ${result.length} elementos');
+      return result;
     } catch (e) {
-      debugPrint('Error cargando menú desde caché: $e');
+      debugPrint('⚠️ Error cargando menú desde caché: $e');
       return null;
     }
   }
+
+  // Añadir este método en la clase MenuNotifier
+Future<void> loadMenuFromCacheOnly() async {
+  try {
+    final prefs = await SharedPreferences.getInstance();
+    final menuJsonString = prefs.getString(_menuCacheKey);
+    
+    if (menuJsonString != null) {
+      final menuJson = jsonDecode(menuJsonString) as List<dynamic>;
+      final cachedMenu = _deserializeMenuItems(menuJson);
+      
+      if (cachedMenu.isNotEmpty) {
+        state = state.copyWith(
+          status: MenuStatus.loaded,
+          menuItems: cachedMenu,
+        );
+        debugPrint('✅ Menú cargado de caché sin userId: ${cachedMenu.length} elementos');
+      }
+    }
+  } catch (e) {
+    debugPrint('⚠️ Error cargando menú desde caché sin userId: $e');
+  }
+}
   
   // Método auxiliar para serializar lista de MenuItemEntity
   List<Map<String, dynamic>> _serializeMenuItems(List<MenuItemEntity> items) {
@@ -250,9 +339,11 @@ class MenuNotifier extends StateNotifier<MenuState> {
       final prefs = await SharedPreferences.getInstance();
       await prefs.remove(_menuCacheKey);
       await prefs.remove(_menuUserIdKey);
+      // NO eliminamos _expandedMenuItemsKey para mantener el estado de expansión entre sesiones
       state = MenuState.initial();
+      debugPrint('✅ Caché de menú limpiada');
     } catch (e) {
-      debugPrint('Error limpiando caché del menú: $e');
+      debugPrint('❌ Error limpiando caché del menú: $e');
     }
   }
 }
@@ -353,6 +444,22 @@ final sidebarMenuProvider = Provider<List<SidebarMenuItem>>((ref) {
     return Icons.folder;
   }
 
+  // Transformar ruta del formato antiguo al nuevo formato de dashboard
+  String transformRoute(String originalRoute) {
+    // Si la ruta comienza con tven_ventas/VentasView, transformarla al nuevo formato
+    if (originalRoute.startsWith('/tven_ventas/VentasView')) {
+      return '/dashboard/ventas';
+    } 
+    
+    // Otras transformaciones de rutas específicas pueden agregarse aquí
+    // Por ejemplo:
+    // if (originalRoute.startsWith('/algunos_modulos/OtraVista')) {
+    //   return '/dashboard/otra-ruta';
+    // }
+    
+    return originalRoute;
+  }
+
   // Transformar MenuItemEntity a SidebarMenuItem
   List<SidebarMenuItem> transformMenu(List<MenuItemEntity> menuItems) {
     return menuItems.map((item) {
@@ -364,6 +471,9 @@ final sidebarMenuProvider = Provider<List<SidebarMenuItem>>((ref) {
       } else if (item.routerLink != null && item.routerLink!.isNotEmpty) {
         route = '/${item.routerLink}';
       }
+      
+      // Transformar la ruta al nuevo formato si es necesario
+      route = transformRoute(route);
       
       return SidebarMenuItem(
         id: item.codVista,
