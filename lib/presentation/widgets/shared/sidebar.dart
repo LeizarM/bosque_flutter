@@ -12,11 +12,13 @@ class AppSidebar extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final user = ref.watch(userProvider);
     final isSmallScreen = ResponsiveBreakpoints.of(context).smallerThan(TABLET);
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
     
     // Colores temáticos para el sidebar
     final primaryColor = Theme.of(context).colorScheme.primary;
     final surfaceColor = Theme.of(context).colorScheme.surface;
-    final onPrimaryColor = Theme.of(context).colorScheme.onPrimary;
+    final onSurfaceColor = Theme.of(context).colorScheme.onSurface;
+    final errorColor = Theme.of(context).colorScheme.error;
 
     // Lista de opciones del menú (puede ser dinámica según el rol del usuario)
     final menuItems = _buildMenuItems(user?.tipoUsuario ?? '');
@@ -27,7 +29,7 @@ class AppSidebar extends ConsumerWidget {
       return Padding(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
         child: Material(
-          color: isActive ? primaryColor.withOpacity(0.1) : Colors.transparent,
+          color: isActive ? primaryColor.withOpacity(0.15) : Colors.transparent,
           borderRadius: BorderRadius.circular(10),
           child: ListTile(
             shape: RoundedRectangleBorder(
@@ -35,13 +37,13 @@ class AppSidebar extends ConsumerWidget {
             ),
             leading: Icon(
               item['icon'] as IconData,
-              color: isActive ? primaryColor : Colors.grey.shade600,
+              color: isActive ? primaryColor : isDarkMode ? Colors.grey.shade400 : Colors.grey.shade600,
             ),
             title: Text(
               item['title'] as String,
               style: TextStyle(
                 fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
-                color: isActive ? primaryColor : Colors.grey.shade800,
+                color: isActive ? primaryColor : onSurfaceColor,
               ),
             ),
             onTap: () {
@@ -62,6 +64,7 @@ class AppSidebar extends ConsumerWidget {
     return isSmallScreen
         ? Drawer(
             elevation: 2,
+            backgroundColor: surfaceColor,
             shape: const RoundedRectangleBorder(
               borderRadius: BorderRadius.only(
                 topRight: Radius.circular(20), 
@@ -91,14 +94,14 @@ class AppSidebar extends ConsumerWidget {
                           ),
                           leading: Icon(
                             Icons.logout,
-                            color: Colors.red.shade400,
+                            color: errorColor,
                           ),
                           title: Text(
                             'Cerrar Sesión',
-                            style: TextStyle(color: Colors.red.shade400),
+                            style: TextStyle(color: errorColor),
                           ),
                           onTap: () {
-                            ref.read(userProvider.notifier).state = null;
+                            ref.read(userProvider.notifier).clearUser();
                             SecureStorage().deleteToken();
                             context.go('/login');
                             if (isSmallScreen) {
@@ -118,7 +121,7 @@ class AppSidebar extends ConsumerWidget {
                     'v1.0.0',
                     style: TextStyle(
                       fontSize: 12,
-                      color: Colors.grey.shade500,
+                      color: isDarkMode ? Colors.grey.shade400 : Colors.grey.shade500,
                     ),
                   ),
                 ),
@@ -128,10 +131,10 @@ class AppSidebar extends ConsumerWidget {
         : Container(
             width: 280,
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: surfaceColor,
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
+                  color: Colors.black38,
                   blurRadius: 10,
                   offset: const Offset(0, 0),
                 )
@@ -157,7 +160,7 @@ class AppSidebar extends ConsumerWidget {
                     ],
                   ),
                 ),
-                const Divider(height: 1),
+                Divider(height: 1, color: isDarkMode ? Colors.grey.shade700 : Colors.grey.shade300),
                 // Botón de cerrar sesión
                 Padding(
                   padding: const EdgeInsets.all(8.0),
@@ -167,17 +170,17 @@ class AppSidebar extends ConsumerWidget {
                     ),
                     leading: Icon(
                       Icons.logout,
-                      color: Colors.red.shade400,
+                      color: errorColor,
                     ),
                     title: Text(
                       'Cerrar Sesión',
                       style: TextStyle(
-                        color: Colors.red.shade400,
+                        color: errorColor,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
                     onTap: () {
-                      ref.read(userProvider.notifier).state = null;
+                      ref.read(userProvider.notifier).clearUser();
                       SecureStorage().deleteToken();
                       context.go('/login');
                     },
@@ -191,7 +194,7 @@ class AppSidebar extends ConsumerWidget {
                     'v1.0.0',
                     style: TextStyle(
                       fontSize: 12,
-                      color: Colors.grey.shade500,
+                      color: isDarkMode ? Colors.grey.shade400 : Colors.grey.shade500,
                     ),
                   ),
                 ),

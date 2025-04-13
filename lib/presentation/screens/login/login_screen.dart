@@ -43,10 +43,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       if (loginEntity != null) {
         // Guardar los datos del usuario en el provider y en almacenamiento
         await ref.read(userProvider.notifier).setUser(loginEntity);
+        // ignore: use_build_context_synchronously
         context.go('/dashboard');
       } else {
         setState(() {
-          _message = message ?? 'Credenciales inválidas';
+          _message = message;
         });
       }
     }
@@ -187,7 +188,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                             Container(
                               padding: const EdgeInsets.all(8.0),
                               decoration: BoxDecoration(
-                                color: Theme.of(context).colorScheme.error.withOpacity(0.1),
+                                color: Theme.of(context).colorScheme.error,
                                 borderRadius: BorderRadius.circular(8.0),
                               ),
                               child: Text(
