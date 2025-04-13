@@ -18,6 +18,7 @@ class AppRouter {
           path: '/dashboard',
           builder: (context, state) => const DashboardScreen(),
         ),
+        // Ruta dinámica para manejar cualquier routerLink del menú  
       ],
       redirect: (BuildContext context, GoRouterState state) async {
         // Usar Riverpod para verificar si hay un usuario logueado
