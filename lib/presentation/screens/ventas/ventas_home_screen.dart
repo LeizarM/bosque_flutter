@@ -1,5 +1,7 @@
+import 'package:bosque_flutter/presentation/screens/ventas/disponibilidad_detallada_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:responsive_framework/responsive_framework.dart';
 import 'package:bosque_flutter/core/state/articulo_ciudad_provider.dart';
 import 'package:bosque_flutter/core/state/user_provider.dart';
@@ -48,7 +50,7 @@ class _VentasHomeScreenState extends ConsumerState<VentasHomeScreen> {
                   Condition.smallerThan(name: TABLET, value: 12.0),
                   Condition.largerThan(name: DESKTOP, value: 24.0),
                 ],
-              ).value!),
+              ).value),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -72,7 +74,7 @@ class _VentasHomeScreenState extends ConsumerState<VentasHomeScreen> {
                     conditionalValues: [
                       Condition.largerThan(name: DESKTOP, value: 12.0),
                     ],
-                  ).value!),
+                  ).value),
                   Text(
                     'Catálogo de productos disponibles',
                     style: Theme.of(context).textTheme.bodyLarge?.copyWith(
@@ -452,11 +454,11 @@ class _VentasArticulosViewState extends ConsumerState<VentasArticulosView> {
 
   Widget _buildArticulosList(List<ArticulosxCiudadEntity> articulos) {
     // Filtrar artículos según la búsqueda y otros filtros
-    List<ArticulosxCiudadEntity> displayedArticulos = articulos;
+    List<ArticulosxCiudadEntity> filteredArticulos = articulos;
     
     // Filtrar por búsqueda
     if (_searchQuery != null && _searchQuery!.isNotEmpty) {
-      displayedArticulos = displayedArticulos
+      filteredArticulos = filteredArticulos
           .where((articulo) => 
               (articulo.datoArt.toLowerCase().contains(_searchQuery!)) ||
               (articulo.codArticulo.toLowerCase().contains(_searchQuery!)))
@@ -465,35 +467,13 @@ class _VentasArticulosViewState extends ConsumerState<VentasArticulosView> {
     
     // Filtrar por familia (si hay alguna seleccionada)
     if (_selectedFamilia != null) {
-      displayedArticulos = displayedArticulos
+      filteredArticulos = filteredArticulos
           .where((articulo) => articulo.codigoFamilia == _selectedFamilia)
           .toList();
     }
     
-    // Ordenar los resultados
-    displayedArticulos.sort((a, b) {
-      if (_sortBy == 'datoArt') {
-        final aValue = a.datoArt ?? '';
-        final bValue = b.datoArt ?? '';
-        return _sortAscending ? aValue.compareTo(bValue) : bValue.compareTo(aValue);
-      } else if (_sortBy == 'codArticulo') {
-        final aValue = a.codArticulo ?? '';
-        final bValue = b.codArticulo ?? '';
-        return _sortAscending ? aValue.compareTo(bValue) : bValue.compareTo(aValue);
-      } else if (_sortBy == 'precio') {
-        final aValue = a.precio ?? 0;
-        final bValue = b.precio ?? 0;
-        return _sortAscending ? aValue.compareTo(bValue) : bValue.compareTo(aValue);
-      } else if (_sortBy == 'disponible') {
-        final aValue = a.disponible ?? 0;
-        final bValue = b.disponible ?? 0;
-        return _sortAscending ? aValue.compareTo(bValue) : bValue.compareTo(aValue);
-      }
-      return 0;
-    });
-    
-    // Si no hay resultados
-    if (displayedArticulos.isEmpty) {
+    // Si no hay resultados después de filtrar
+    if (filteredArticulos.isEmpty) {
       return Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -523,13 +503,55 @@ class _VentasArticulosViewState extends ConsumerState<VentasArticulosView> {
       );
     }
 
-    // Solamente el contador de artículos (sin el dropdown de familias)
+    // Agrupar artículos por codArticulo
+    Map<String, List<ArticulosxCiudadEntity>> articulosAgrupados = {};
+    
+    for (var articulo in filteredArticulos) {
+      if (!articulosAgrupados.containsKey(articulo.codArticulo)) {
+        articulosAgrupados[articulo.codArticulo] = [];
+      }
+      articulosAgrupados[articulo.codArticulo]!.add(articulo);
+    }
+    
+    // Lista de códigos de artículos (llaves) ordenados según criterio
+    List<String> codigosOrdenados = articulosAgrupados.keys.toList();
+    
+    // Ordenamos la lista de códigos según criterio de ordenamiento
+    codigosOrdenados.sort((a, b) {
+      if (_sortBy == 'datoArt') {
+        // Ordenar por descripción usando el primer artículo de cada grupo
+        final aDesc = articulosAgrupados[a]!.first.datoArt;
+        final bDesc = articulosAgrupados[b]!.first.datoArt;
+        return _sortAscending ? aDesc.compareTo(bDesc) : bDesc.compareTo(aDesc);
+      } else if (_sortBy == 'codArticulo') {
+        return _sortAscending ? a.compareTo(b) : b.compareTo(a);
+      } else if (_sortBy == 'precio') {
+        // Para precio, usamos el precio mínimo de cada grupo
+        final aPrecioMin = articulosAgrupados[a]!
+            .map((e) => e.precio )
+            .reduce((value, element) => value < element ? value : element);
+        final bPrecioMin = articulosAgrupados[b]!
+            .map((e) => e.precio)
+            .reduce((value, element) => value < element ? value : element);
+        return _sortAscending ? aPrecioMin.compareTo(bPrecioMin) : bPrecioMin.compareTo(aPrecioMin);
+      } else if (_sortBy == 'disponible') {
+        // Para disponibilidad, sumamos el total disponible de cada grupo
+        final aDisponible = articulosAgrupados[a]!
+            .fold<int>(0, (sum, item) => sum + (item.disponible ));
+        final bDisponible = articulosAgrupados[b]!
+            .fold<int>(0, (sum, item) => sum + (item.disponible));
+        return _sortAscending ? aDisponible.compareTo(bDisponible) : bDisponible.compareTo(aDisponible);
+      }
+      return 0;
+    });
+
+    // Contador de artículos
     final infoRow = Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: Text(
-        'Mostrando ${displayedArticulos.length} de ${articulos.length} artículos',
+        'Mostrando ${codigosOrdenados.length} artículos con ${filteredArticulos.length} variantes',
         style: TextStyle(
-          color: Theme.of(context).colorScheme.primary,
+          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
           fontWeight: FontWeight.w500,
         ),
       ),
@@ -537,683 +559,320 @@ class _VentasArticulosViewState extends ConsumerState<VentasArticulosView> {
     
     // Determinar tipo de dispositivo para el layout
     final screenWidth = MediaQuery.of(context).size.width;
-    final isIpadPro = (screenWidth >= 1000 && screenWidth <= 1366);
-    final isDesktop = ResponsiveBreakpoints.of(context).largerOrEqualTo(DESKTOP);
-    final isTablet = ResponsiveBreakpoints.of(context).between(TABLET, DESKTOP) || 
-                     (screenWidth > 750 && screenWidth < 1200);
-    final isMobile = !isDesktop && !isTablet;
+    final isDesktop = ResponsiveBreakpoints.of(context).largerOrEqualTo(DESKTOP) || screenWidth > 1200;
     
-    // Mostrar lista de artículos - usar GridView para desktop/tablet y ListView para móvil
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Solo mostrar el contador de artículos
+        // Contador de artículos
         infoRow,
         
-        // Lista de artículos
+        // Lista de artículos agrupados - diferente diseño según dispositivo
         Expanded(
-          child: isDesktop || isTablet
-            ? GridView.builder(
-                padding: const EdgeInsets.only(top: 8),
-                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                  // Configuración específica para iPad Pro (1024x1366)
-                  crossAxisCount: isIpadPro ? 3 : 
-                                  (screenWidth > 1100 && screenWidth < 1200 ? 3 : 
-                                  isDesktop ? 3 : 
-                                  screenWidth > 700 ? 2 : 1),
-                  childAspectRatio: isIpadPro ? 1.8 : 
-                                  (screenWidth > 1100 && screenWidth < 1200 ? 2.0 :
-                                  isDesktop ? 2.2 : 
-                                  isTablet ? 2.0 : 1.5),
-                  mainAxisSpacing: isIpadPro ? 8 : 16,
-                  crossAxisSpacing: isIpadPro ? 8 : 16,
-                ),
-                itemCount: displayedArticulos.length,
-                itemBuilder: (context, index) {
-                  return _buildArticuloCard(displayedArticulos[index]);
-                },
-              )
-            : ListView.builder(
-                padding: const EdgeInsets.only(top: 8),
-                itemCount: displayedArticulos.length,
-                itemBuilder: (context, index) {
-                  return _buildArticuloListItem(displayedArticulos[index]);
-                },
-              ),
+          child: isDesktop 
+              ? _buildDesktopGrid(codigosOrdenados, articulosAgrupados)
+              : _buildMobileTabletList(codigosOrdenados, articulosAgrupados),
         ),
       ],
     );
   }
-
-  Widget _buildArticuloCard(ArticulosxCiudadEntity articulo) {
-    // Calcular dimensiones de pantalla para adaptar el diseño
-    final screenWidth = MediaQuery.of(context).size.width;
-    final screenHeight = MediaQuery.of(context).size.height;
-    final isLargeDisplay = screenWidth > 1500 && screenHeight > 1200;
-    
-    // Determinar el color de disponibilidad según la cantidad
-    Color disponibilidadColor;
-    if (articulo.disponible > 100) {
-      disponibilidadColor = Theme.of(context).colorScheme.primary; 
-    } else if (articulo.disponible > 20) {
-      disponibilidadColor = Theme.of(context).colorScheme.tertiary; 
-    } else {
-      disponibilidadColor = Theme.of(context).colorScheme.error; 
-    }
-    
-    // Diseño optimizado específicamente para pantallas grandes (1586x1716)
-    return Card(
-      margin: EdgeInsets.symmetric(
-        vertical: isLargeDisplay ? 6 : 4,
-        horizontal: isLargeDisplay ? 6 : 4
+  
+  // Vista en grid para escritorio
+  Widget _buildDesktopGrid(
+    List<String> codigosOrdenados, 
+    Map<String, List<ArticulosxCiudadEntity>> articulosAgrupados
+  ) {
+    return GridView.builder(
+      padding: const EdgeInsets.only(top: 8),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 2,  // Dos columnas en desktop
+        childAspectRatio: 2.0,  // Proporción de las tarjetas
+        crossAxisSpacing: 16,
+        mainAxisSpacing: 16,
       ),
-      elevation: 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(0),
-        side: BorderSide(
-          color: Theme.of(context).colorScheme.outlineVariant,
-          width: 1
-        ),
-      ),
-      color: Theme.of(context).colorScheme.surface,
-      child: InkWell(
-        onTap: () => _showArticuloDetails(context, articulo),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Banda de disponibilidad en la parte superior (verde, amarilla o roja)
-            Container(
-              width: double.infinity,
-              color: disponibilidadColor,
-              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
-              child: Text(
-                'DISPONIBILIDAD: ${articulo.disponible} ${articulo.unidadMedida}',
-                style: TextStyle(
-                  fontSize: 11,
-                  color: Theme.of(context).colorScheme.onPrimary,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
-            
-            // Condición de precio
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
-              child: Text(
-                'CONDICIÓN: ${articulo.condicionPrecio}',
-                style: TextStyle(
-                  fontSize: 11,
-                  color: Theme.of(context).colorScheme.onSurface,
-                ),
-              ),
-            ),
-            
-            // Código y descripción del artículo
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
-              child: RichText(
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                text: TextSpan(
-                  style: TextStyle(
-                    fontSize: 11,
-                    color: Theme.of(context).colorScheme.onSurface
-                  ),
-                  children: [
-                    TextSpan(
-                      text: '${articulo.codArticulo} ',
-                      style: const TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                    TextSpan(
-                      text: articulo.datoArt?.toUpperCase() ?? '',
-                      style: const TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            
-            const Spacer(),
-            
-            // Banda de precio al final
-            Container(
-              width: double.infinity,
-              alignment: Alignment.centerRight,
-              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
-              child: Text(
-                '${articulo.moneda ?? 'BS'} ${articulo.precio?.toStringAsFixed(2) ?? '0.00'}',
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold,
-                  color: Theme.of(context).colorScheme.primary,
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
+      itemCount: codigosOrdenados.length,
+      itemBuilder: (context, index) {
+        final codigoArticulo = codigosOrdenados[index];
+        final variantes = articulosAgrupados[codigoArticulo]!;
+        
+        // Para cada variante, organizamos por base de datos y lista de precio
+        Map<String?, Map<int?, ArticulosxCiudadEntity>> variantesPorDbYLista = {};
+        
+        for (var variante in variantes) {
+          if (!variantesPorDbYLista.containsKey(variante.db)) {
+            variantesPorDbYLista[variante.db] = {};
+          }
+          variantesPorDbYLista[variante.db]![variante.listaPrecio] = variante;
+        }
+        
+        return _buildArticuloCard(
+          variantes.first,
+          variantesPorDbYLista,
+          true
+        );
+      },
+    );
+  }
+  
+  // Vista en lista para móvil/tablet
+  Widget _buildMobileTabletList(
+    List<String> codigosOrdenados, 
+    Map<String, List<ArticulosxCiudadEntity>> articulosAgrupados
+  ) {
+    return ListView.builder(
+      padding: const EdgeInsets.only(top: 8),
+      itemCount: codigosOrdenados.length,
+      itemBuilder: (context, index) {
+        final codigoArticulo = codigosOrdenados[index];
+        final variantes = articulosAgrupados[codigoArticulo]!;
+        
+        // Para cada variante, organizamos por base de datos y lista de precio
+        Map<String?, Map<int?, ArticulosxCiudadEntity>> variantesPorDbYLista = {};
+        
+        for (var variante in variantes) {
+          if (!variantesPorDbYLista.containsKey(variante.db)) {
+            variantesPorDbYLista[variante.db] = {};
+          }
+          variantesPorDbYLista[variante.db]![variante.listaPrecio] = variante;
+        }
+        
+        return _buildArticuloMobileItem(
+          variantes.first,
+          variantesPorDbYLista
+        );
+      },
     );
   }
 
-  Widget _buildArticuloListItem(ArticulosxCiudadEntity articulo) {
-    final String precioFormateado = articulo.moneda != null 
-      ? '${articulo.moneda} ${articulo.precio?.toStringAsFixed(2)}' 
-      : 'BS ${articulo.precio?.toStringAsFixed(2)}';
-      
-    // Color para la barra lateral según disponibilidad
+  // Vista de tarjeta para dispositivos desktop - muestra precios agrupados en una tarjeta
+  Widget _buildArticuloCard(
+    ArticulosxCiudadEntity articuloPrincipal,
+    Map<String?, Map<int?, ArticulosxCiudadEntity>> variantesPorDbYLista,
+    bool isDesktop
+  ) {
+    // Determinar la disponibilidad total combinando todas las variantes
+    int disponibilidadTotal = 0;
+    variantesPorDbYLista.forEach((db, variantes) {
+      variantes.forEach((listaPrecio, articulo) {
+        disponibilidadTotal += articulo.disponible;
+      });
+    });
+    
+    // Color para la barra de disponibilidad
     Color disponibilidadColor;
-    if (articulo.disponible > 10) {
+    if (disponibilidadTotal > 100) {
       disponibilidadColor = Theme.of(context).colorScheme.primary;
-    } else if (articulo.disponible > 0) {
+    } else if (disponibilidadTotal > 20) {
       disponibilidadColor = Theme.of(context).colorScheme.tertiary;
     } else {
       disponibilidadColor = Theme.of(context).colorScheme.error;
     }
-      
-    // Diseño específico para dispositivos móviles como en la captura
-    return Container(
-      margin: const EdgeInsets.symmetric(vertical: 4),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
-        borderRadius: BorderRadius.circular(4),
-        boxShadow: [
-          BoxShadow(
-            color: Theme.of(context).colorScheme.shadow.withOpacity(0.05),
-            blurRadius: 2,
-            offset: const Offset(0, 1),
-          ),
-        ],
+
+    return Card(
+      elevation: 1,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(8),
+        side: BorderSide(
+          color: Theme.of(context).colorScheme.outlineVariant,
+          width: 1,
+        ),
       ),
-      child: IntrinsicHeight( // Asegura que la altura sea suficiente para todo el contenido
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.stretch, // Estira los widgets verticalmente
-          children: [
-            // Barra lateral de disponibilidad
-            Container(
-              width: 6,
-              color: disponibilidadColor,
-            ),
-            
-            // Contenido principal
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Nombre del artículo
-                    Text(
-                      articulo.datoArt?.toUpperCase() ?? 'SIN DESCRIPCIÓN',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 14,
-                        color: Theme.of(context).colorScheme.onSurface,
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
+      clipBehavior: Clip.antiAlias,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Cabecera de la tarjeta
+          Container(
+            color: disponibilidadColor,
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                // Código del artículo
+                Expanded(
+                  child: Text(
+                    articuloPrincipal.codArticulo,
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.onPrimary,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 14,
                     ),
-                    const SizedBox(height: 4),
-                    
-                    // Código del artículo
-                    Text(
-                      'Código: ${articulo.codArticulo}',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                    
-                    // Disponibilidad con icono
-                    Row(
-                      mainAxisSize: MainAxisSize.min, // Evita overflow
-                      children: [
-                        Icon(
-                          Icons.check_circle,
-                          size: 14,
-                          color: disponibilidadColor,
-                        ),
-                        const SizedBox(width: 4),
-                        Flexible(
-                          child: Text(
-                            'Disponible: ${articulo.disponible} ${articulo.unidadMedida}',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: disponibilidadColor,
-                              fontWeight: FontWeight.w500,
-                            ),
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                      ],
-                    ),
-                    
-                    // Condición
-                    Text(
-                      'Condición: ${articulo.condicionPrecio ?? ""}',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Theme.of(context).colorScheme.onSurface.withOpacity(0.8),
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ],
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ),
-              ),
+                
+                // Disponibilidad
+                Text(
+                  'Disp: $disponibilidadTotal ${articuloPrincipal.unidadMedida ?? ''}',
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onPrimary,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                  ),
+                ),
+              ],
             ),
-            
-            // Precio y botón de carrito
-            Padding(
-              padding: const EdgeInsets.all(8.0),
+          ),
+          
+          // Contenido principal de la tarjeta
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               child: Column(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                crossAxisAlignment: CrossAxisAlignment.end,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Precio
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      Text(
-                        precioFormateado,
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 15,
-                          color: Theme.of(context).colorScheme.primary,
-                        ),
-                      ),
-                      Text(
-                        'Lista: ${articulo.listaPrecio}',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Theme.of(context).colorScheme.onSurfaceVariant,
-                        ),
-                      ),
-                    ],
+                  // Descripción del artículo
+                  Text(
+                    articuloPrincipal.datoArt.toUpperCase(),
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 14,
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
                   ),
                   
                   const SizedBox(height: 8),
                   
-                  // Botón de carrito
-                  IconButton(
-                    icon: Icon(
-                      Icons.shopping_cart_outlined, 
-                      color: Theme.of(context).colorScheme.primary,
-                    ),
-                    constraints: const BoxConstraints(),
-                    padding: EdgeInsets.zero,
-                    iconSize: 24,
-                    onPressed: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text('${articulo.datoArt} agregado a la venta'),
-                          duration: const Duration(seconds: 2),
-                        ),
-                      );
-                    },
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  // Método para mostrar detalles de artículos (mencionado en el código anterior)
-  void _showArticuloDetails(BuildContext context, ArticulosxCiudadEntity articulo) {
-    final isTablet = ResponsiveBreakpoints.of(context).largerOrEqualTo(TABLET);
-    final isDesktop = ResponsiveBreakpoints.of(context).largerOrEqualTo(DESKTOP);
-    final screenWidth = MediaQuery.of(context).size.width;
-    final isTabletSpecificSize = screenWidth > 1000 && screenWidth < 1200;
-    
-    // Usar Dialog para tablets y desktop
-    if (isTablet || isDesktop) {
-      showDialog(
-        context: context,
-        builder: (context) {
-          // Calcular el ancho según el tipo de dispositivo
-          final dialogWidth = isDesktop ? 700.0 : (isTabletSpecificSize ? 600.0 : 550.0);
-          
-          return Dialog(
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-            ),
-            insetPadding: EdgeInsets.symmetric(
-              horizontal: (MediaQuery.of(context).size.width - dialogWidth) / 2,
-              vertical: 24.0,
-            ),
-            child: Container(
-              padding: const EdgeInsets.all(24.0),
-              width: dialogWidth,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text(
-                        'Detalles del Artículo',
-                        style: TextStyle(
-                          fontSize: 22,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      IconButton(
-                        onPressed: () => Navigator.pop(context),
-                        icon: const Icon(Icons.close),
-                        tooltip: 'Cerrar',
-                      ),
-                    ],
-                  ),
-                  const Divider(),
-                  const SizedBox(height: 16),
-                  
-                  Flexible(
+                  // Tabla de precios
+                  Expanded(
                     child: SingleChildScrollView(
                       child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisSize: MainAxisSize.min,
                         children: [
-                          // Encabezado con el nombre del producto destacado
-                          Container(
-                            padding: const EdgeInsets.all(16),
-                            decoration: BoxDecoration(
-                              color: Theme.of(context).colorScheme.primaryContainer.withOpacity(0.3),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            width: double.infinity,
-                            child: Column(
+                          ...variantesPorDbYLista.entries.take(2).map((dbEntry) {
+                            final db = dbEntry.key ?? '';
+                            final variantes = dbEntry.value;
+                            
+                            // Tomar solo las 3 primeras listas de precio para mostrar
+                            final listasPrecio = variantes.keys.toList()
+                              ..sort();
+                            if (listasPrecio.length > 3) {
+                              listasPrecio.removeRange(3, listasPrecio.length);
+                            }
+                            
+                            return Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Row(
-                                  children: [
-                                    Container(
-                                      padding: const EdgeInsets.all(12),
-                                      decoration: BoxDecoration(
-                                        color: Theme.of(context).colorScheme.primaryContainer,
-                                        shape: BoxShape.circle,
-                                      ),
-                                      child: Icon(
-                                        Icons.science_outlined,
-                                        color: Theme.of(context).colorScheme.onPrimaryContainer,
-                                        size: 24,
-                                      ),
+                                // Base de datos
+                                Container(
+                                  padding: const EdgeInsets.symmetric(vertical: 4),
+                                  child: Text(
+                                    'Base: $db',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 13,
+                                      color: Theme.of(context).colorScheme.secondary,
                                     ),
-                                    const SizedBox(width: 16),
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: [
-                                          Text(
-                                            articulo.datoArt ?? 'Sin descripción',
+                                  ),
+                                ),
+                                
+                                // Precios por lista
+                                ...listasPrecio.map((listaPrecio) {
+                                  final articulo = variantes[listaPrecio]!;
+                                  return Padding(
+                                    padding: const EdgeInsets.only(left: 8, bottom: 4),
+                                    child: Row(
+                                      children: [
+                                        // Condición
+                                        Expanded(
+                                          flex: 3,
+                                          child: Text(
+                                            articulo.condicionPrecio ,
                                             style: const TextStyle(
-                                              fontSize: 18,
-                                              fontWeight: FontWeight.bold,
+                                              fontSize: 12,
                                             ),
+                                            overflow: TextOverflow.ellipsis,
                                           ),
-                                          const SizedBox(height: 4),
-                                          Text(
-                                            'Código: ${articulo.codArticulo}',
-                                            style: const TextStyle(color: Colors.grey),
+                                        ),
+                                        
+                                        // Precio
+                                        Text(
+                                          '${articulo.moneda ?? 'BS'} ${articulo.precio.toStringAsFixed(2)}',
+                                          style: TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 13,
+                                            color: Theme.of(context).colorScheme.primary,
                                           ),
-                                        ],
-                                      ),
+                                        ),
+                                      ],
                                     ),
-                                  ],
-                                ),
+                                  );
+                                }).toList(),
+                                
+                                // Si hay más bases de datos y no es la última, mostrar separador
+                                if (variantesPorDbYLista.entries.length > 1 &&
+                                    variantesPorDbYLista.entries.first.key != db)
+                                  const Divider(height: 16),
                               ],
+                            );
+                          }).toList(),
+                          
+                          // Mensaje si hay más variantes
+                          if (variantesPorDbYLista.entries.length > 2)
+                            Padding(
+                              padding: const EdgeInsets.only(top: 4),
+                              child: Text(
+                                '+ ${variantesPorDbYLista.entries.length - 2} bases más',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Theme.of(context).colorScheme.secondary,
+                                ),
+                              ),
                             ),
-                          ),
-                          
-                          const SizedBox(height: 24),
-                          
-                          // Datos principales en grid responsiva
-                          Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              // Columna 1
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    _buildDetailItemCard(
-                                      'Disponibilidad',
-                                      '${articulo.disponible ?? 0} ${articulo.unidadMedida ?? ""}',
-                                      Icons.inventory_2_outlined,
-                                      isQuantity: true,
-                                      isLow: articulo.disponible != null && articulo.disponible! < 5,
-                                    ),
-                                    const SizedBox(height: 16),
-                                    if (articulo.condicionPrecio != null && articulo.condicionPrecio!.isNotEmpty)
-                                      _buildDetailItemCard(
-                                        'Condición',
-                                        articulo.condicionPrecio!,
-                                        Icons.description_outlined,
-                                      ),
-                                  ],
-                                ),
-                              ),
-                              
-                              const SizedBox(width: 16),
-                              
-                              // Columna 2
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    _buildDetailItemCard(
-                                      'Precio',
-                                      '${articulo.moneda ?? 'BS'} ${articulo.precio?.toStringAsFixed(2) ?? '0.00'}',
-                                      Icons.attach_money,
-                                      isPrice: true,
-                                    ),
-                                    const SizedBox(height: 16),
-                                    if (articulo.listaPrecio != null)
-                                      _buildDetailItemCard(
-                                        'Lista de Precio',
-                                        articulo.listaPrecio.toString(),
-                                        Icons.list_alt_outlined,
-                                      ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
                         ],
                       ),
                     ),
                   ),
-                  
-                  const SizedBox(height: 24),
-                  
-                  // Botones de acción
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      OutlinedButton.icon(
-                        onPressed: () {
-                          Navigator.pop(context);
-                        },
-                        icon: const Icon(Icons.close),
-                        label: const Text('Cerrar'),
-                        style: OutlinedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      ElevatedButton.icon(
-                        onPressed: () {
-                          Navigator.pop(context);
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text('${articulo.datoArt} agregado a la venta'),
-                              duration: const Duration(seconds: 2),
-                            ),
-                          );
-                        },
-                        icon: const Icon(Icons.add_shopping_cart),
-                        label: const Text('Agregar a venta'),
-                        style: ElevatedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-                        ),
-                      ),
-                    ],
-                  ),
                 ],
               ),
-            ),
-          );
-        },
-      );
-    } else {
-      // Mantener el BottomSheet para móvil
-      showModalBottomSheet(
-        context: context,
-        isScrollControlled: true,
-        shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-        ),
-        builder: (context) {
-          return Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 24.0),
-            height: MediaQuery.of(context).size.height * 0.6,
-            child: SingleChildScrollView(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Center(
-                    child: Container(
-                      width: 40,
-                      height: 5,
-                      margin: const EdgeInsets.only(bottom: 20),
-                      decoration: BoxDecoration(
-                        color: Colors.grey[300],
-                        borderRadius: BorderRadius.circular(2.5),
-                      ),
-                    ),
-                  ),
-                  const Text(
-                    'Detalles del Artículo',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  
-                  // Info del artículo
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      _buildDetailItem('Código:', articulo.codArticulo ?? ''),
-                      _buildDetailItem('Descripción:', articulo.datoArt ?? ''),
-                      _buildDetailItem('Disponible:', '${articulo.disponible ?? 0} ${articulo.unidadMedida ?? ""}', 
-                         isSpecial: articulo.disponible != null && articulo.disponible! < 5),
-                      _buildDetailItem('Precio:', '${articulo.moneda ?? 'BS'} ${articulo.precio?.toStringAsFixed(2) ?? '0.00'}', isPrice: true),
-                      if (articulo.condicionPrecio != null && articulo.condicionPrecio!.isNotEmpty)
-                        _buildDetailItem('Condición:', articulo.condicionPrecio!),
-                      if (articulo.listaPrecio != null)
-                        _buildDetailItem('Lista de Precio:', articulo.listaPrecio.toString()),
-                    ],
-                  ),
-                  
-                  const SizedBox(height: 24),
-                  
-                  // Acciones
-                  Column(
-                    children: [
-                      SizedBox(
-                        width: double.infinity,
-                        child: ElevatedButton.icon(
-                          onPressed: () {
-                            Navigator.pop(context);
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text('${articulo.datoArt} agregado a la venta'),
-                                duration: const Duration(seconds: 2),
-                              ),
-                            );
-                          },
-                          icon: const Icon(Icons.add_shopping_cart),
-                          label: const Text('Agregar a venta'),
-                          style: ElevatedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 20),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      SizedBox(
-                        width: double.infinity,
-                        child: OutlinedButton.icon(
-                          onPressed: () {
-                            Navigator.pop(context);
-                          },
-                          icon: const Icon(Icons.close),
-                          label: const Text('Cerrar'),
-                          style: OutlinedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 20),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          );
-        },
-      );
-    }
-  }
-  
-  // Método para crear elementos de detalle estilo tarjeta (mencionado en el código anterior)
-  Widget _buildDetailItemCard(String label, String value, IconData icon, {bool isPrice = false, bool isQuantity = false, bool isLow = false}) {
-    final color = isPrice ? Colors.green.shade700 : 
-                (isQuantity && isLow ? Colors.orange.shade700 : null);
-    
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.grey.shade50,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.grey.shade200),
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: (color ?? Colors.blue.shade700).withOpacity(0.1),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Icon(
-              icon,
-              color: color ?? Colors.blue.shade700,
-              size: 20,
             ),
           ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+          
+          // Footer con botones de acción
+          Container(
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.surface,
+              border: Border(
+                top: BorderSide(
+                  color: Theme.of(context).colorScheme.outlineVariant,
+                ),
+              ),
+            ),
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.end,
               children: [
-                Text(
-                  label,
-                  style: TextStyle(
-                    color: Colors.grey.shade600,
-                    fontSize: 12,
+                TextButton.icon(
+                  onPressed: () => _showArticuloDetails(context, articuloPrincipal),
+                  icon: Icon(
+                    Icons.info_outline,
+                    size: 18,
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
+                  label: Text(
+                    'Detalles',
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+                  ),
+                  style: TextButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 0),
+                    minimumSize: const Size(0, 36),
                   ),
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  value,
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                    color: color,
+                const SizedBox(width: 8),
+                ElevatedButton.icon(
+                  onPressed: () => _verDisponibilidadDetallada(context, articuloPrincipal),
+                  icon: const Icon(Icons.inventory_2, size: 18),
+                  label: const Text(
+                    'Disponibilidad',
+                    style: TextStyle(fontSize: 13),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 0),
+                    minimumSize: const Size(0, 36),
                   ),
                 ),
               ],
@@ -1223,38 +882,573 @@ class _VentasArticulosViewState extends ConsumerState<VentasArticulosView> {
       ),
     );
   }
-  
-  // Método para elementos de detalle en formato móvil
-  Widget _buildDetailItem(String label, String value, {bool isPrice = false, bool isSpecial = false}) {
-    final textStyle = isPrice 
-        ? const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.green) 
-        : (isSpecial 
-            ? TextStyle(fontWeight: FontWeight.bold, color: Colors.orange[700]) 
-            : null);
-            
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12.0),
-      child: Row(
+
+  // Vista de lista para móviles y tablets
+  Widget _buildArticuloMobileItem(
+    ArticulosxCiudadEntity articuloPrincipal,
+    Map<String?, Map<int?, ArticulosxCiudadEntity>> variantesPorDbYLista
+  ) {
+    // Calcular disponibilidad total
+    int disponibilidadTotal = 0;
+    // Obtener el precio mínimo para mostrar destacado
+    double precioMinimo = double.infinity;
+    String? monedaPrecioMinimo;
+    
+    // Calcular valores combinados de todas las variantes
+    variantesPorDbYLista.forEach((db, variantes) {
+      variantes.forEach((listaPrecio, articulo) {
+        disponibilidadTotal += articulo.disponible;
+        if ((articulo.precio) < precioMinimo) {
+          precioMinimo = articulo.precio;
+          monedaPrecioMinimo = articulo.moneda;
+        }
+      });
+    });
+    
+    // Color para la disponibilidad
+    Color disponibilidadColor;
+    if (disponibilidadTotal > 100) {
+      disponibilidadColor = Theme.of(context).colorScheme.primary;
+    } else if (disponibilidadTotal > 20) {
+      disponibilidadColor = Theme.of(context).colorScheme.tertiary;
+    } else {
+      disponibilidadColor = Theme.of(context).colorScheme.error;
+    }
+    
+    // Preparar texto de precio formateado
+    final precioFormateado = precioMinimo != double.infinity 
+      ? '${monedaPrecioMinimo ?? 'BS'} ${precioMinimo.toStringAsFixed(2)}'
+      : 'Consultar';
+    
+    // Contar cuántas variantes hay en total
+    int totalVariantes = 0;
+    variantesPorDbYLista.forEach((db, variantes) {
+      totalVariantes += variantes.length;
+    });
+    
+    // Crear un mapa de las bases de datos disponibles para este artículo
+    List<String?> basesDatos = variantesPorDbYLista.keys.toList();
+
+    return Card(
+      elevation: 0,
+      margin: const EdgeInsets.only(bottom: 12),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(8),
+        side: BorderSide(
+          color: Theme.of(context).colorScheme.outlineVariant,
+          width: 1,
+        ),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          SizedBox(
-            width: 120,
-            child: Text(
-              label,
-              style: const TextStyle(
-                fontWeight: FontWeight.w500,
-                color: Colors.grey,
-              ),
+          // Encabezado con código y disponibilidad
+          Container(
+            color: disponibilidadColor,
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Artículo: ${articuloPrincipal.codArticulo}',
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onPrimary,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 13,
+                  ),
+                ),
+                Text(
+                  'Disponible: $disponibilidadTotal ${articuloPrincipal.unidadMedida ?? ''}',
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onPrimary,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 13,
+                  ),
+                ),
+              ],
             ),
           ),
-          Expanded(
-            child: Text(
-              value,
-              style: textStyle,
+
+          // Descripción del producto
+          Padding(
+            padding: const EdgeInsets.all(12.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Descripción y precio mínimo
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            articuloPrincipal.datoArt.toUpperCase(),
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 14,
+                            ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          
+                          // Bases de datos disponibles
+                          const SizedBox(height: 4),
+                          if (basesDatos.isNotEmpty)
+                            Wrap(
+                              spacing: 8,
+                              children: basesDatos.map((db) {
+                                return Chip(
+                                  label: Text(
+                                    '$db',
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      color: Theme.of(context).colorScheme.onSurface,
+                                    ),
+                                  ),
+                                  materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                  visualDensity: VisualDensity.compact,
+                                  padding: EdgeInsets.zero,
+                                  labelPadding: const EdgeInsets.symmetric(horizontal: 8),
+                                );
+                              }).toList(),
+                            ),
+                        ],
+                      ),
+                    ),
+                    
+                    // Precio mínimo y botón de compra
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Text(
+                          'Desde:',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Theme.of(context).colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                        Text(
+                          precioFormateado,
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                            color: Theme.of(context).colorScheme.primary,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+                
+                // Contador de variantes
+                const SizedBox(height: 8),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      '$totalVariantes ${totalVariantes == 1 ? 'variante' : 'variantes'} de precio',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                    
+                    // Botones de acción
+                    Row(
+                      children: [
+                        // Botón ver detalles
+                        TextButton.icon(
+                          onPressed: () => _showArticuloDetails(context, articuloPrincipal),
+                          icon: Icon(
+                            Icons.visibility_outlined,
+                            size: 18,
+                            color: Theme.of(context).colorScheme.primary,
+                          ),
+                          label: const Text(
+                            'Ver',
+                            style: TextStyle(fontSize: 13),
+                          ),
+                          style: TextButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 0),
+                            minimumSize: const Size(0, 36),
+                          ),
+                        ),
+                        
+                        // Botón expandir para ver variantes
+                        IconButton(
+                          onPressed: () {
+                            _mostrarVariantesPrecio(context, articuloPrincipal, variantesPorDbYLista);
+                          },
+                          icon: const Icon(Icons.expand_more, size: 20),
+                          tooltip: 'Ver variantes de precio',
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ],
             ),
           ),
         ],
       ),
     );
+  }
+
+  // Método para mostrar las variantes de precio en un bottom sheet (para móvil/tablet)
+  void _mostrarVariantesPrecio(
+    BuildContext context, 
+    ArticulosxCiudadEntity articuloPrincipal,
+    Map<String?, Map<int?, ArticulosxCiudadEntity>> variantesPorDbYLista
+  ) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (context) {
+        return DraggableScrollableSheet(
+          initialChildSize: 0.6,
+          minChildSize: 0.3,
+          maxChildSize: 0.9,
+          expand: false,
+          builder: (context, scrollController) {
+            return Container(
+              padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Encabezado
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Precios por Lista',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Theme.of(context).colorScheme.primary,
+                        ),
+                      ),
+                      IconButton(
+                        onPressed: () => Navigator.pop(context),
+                        icon: const Icon(Icons.close),
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(),
+                      ),
+                    ],
+                  ),
+                  
+                  // Información del artículo
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Código
+                        Text(
+                          'Código: ${articuloPrincipal.codArticulo}',
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w500,
+                            fontSize: 14,
+                          ),
+                        ),
+                        
+                        // Descripción
+                        Text(
+                          articuloPrincipal.datoArt.toUpperCase(),
+                          style: const TextStyle(
+                            fontSize: 14,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  
+                  const Divider(),
+                  
+                  // Lista de variantes por DB y lista de precio
+                  Expanded(
+                    child: ListView(
+                      controller: scrollController,
+                      children: [
+                        ...variantesPorDbYLista.entries.map((dbEntry) {
+                          final db = dbEntry.key ?? '';
+                          final variantes = dbEntry.value;
+                          final listasPrecio = variantes.keys.toList()
+                            ..sort((a, b) => (a ?? 0).compareTo(b ?? 0));
+                          
+                          return Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              // Encabezado de la base de datos
+                              Container(
+                                margin: const EdgeInsets.symmetric(vertical: 8),
+                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                decoration: BoxDecoration(
+                                  color: Theme.of(context).colorScheme.primaryContainer,
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                                child: Text(
+                                  'BASE DE DATOS: $db',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    color: Theme.of(context).colorScheme.onPrimaryContainer,
+                                  ),
+                                ),
+                              ),
+                              
+                              // Tabla de precios por lista
+                              ...listasPrecio.map((listaPrecio) {
+                                final articulo = variantes[listaPrecio]!;
+                                return Card(
+                                  margin: const EdgeInsets.only(bottom: 8),
+                                  elevation: 0,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(4),
+                                    side: BorderSide(
+                                      color: Theme.of(context).colorScheme.outlineVariant,
+                                      width: 1,
+                                    ),
+                                  ),
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(12),
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        // Lista de precio
+                                        Row(
+                                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                          children: [
+                                            Text(
+                                              'Lista de Precio: ${articulo.listaPrecio}',
+                                              style: TextStyle(
+                                                fontWeight: FontWeight.bold,
+                                                color: Theme.of(context).colorScheme.secondary,
+                                              ),
+                                            ),
+                                            Text(
+                                              'Disponible: ${articulo.disponible} ${articulo.unidadMedida}',
+                                              style: const TextStyle(
+                                                fontWeight: FontWeight.w500,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                        
+                                        // Condición de precio
+                                        if (articulo.condicionPrecio != null)
+                                          Padding(
+                                            padding: const EdgeInsets.symmetric(vertical: 6),
+                                            child: Text(
+                                              'Condición: ${articulo.condicionPrecio}',
+                                              style: const TextStyle(fontSize: 14),
+                                            ),
+                                          ),
+                                        
+                                        // Precio (sin el botón de disponibilidad)
+                                        Text(
+                                          '${articulo.moneda ?? "BS"} ${articulo.precio.toStringAsFixed(2)}',
+                                          style: TextStyle(
+                                            fontSize: 18,
+                                            fontWeight: FontWeight.bold,
+                                            color: Theme.of(context).colorScheme.primary,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                );
+                              }).toList(),
+                              
+                              // Separador entre bases de datos
+                              if (dbEntry.key != variantesPorDbYLista.entries.last.key)
+                                const Divider(height: 24),
+                            ],
+                          );
+                        }).toList(),
+                        
+                        // Botón de disponibilidad único al final
+                        Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          child: SizedBox(
+                            width: double.infinity,
+                            child: ElevatedButton.icon(
+                              onPressed: () => _verDisponibilidadDetallada(context, variantesPorDbYLista.entries.first.value.values.first),
+                              icon: const Icon(Icons.inventory_2),
+                              label: const Text('Ver Disponibilidad'),
+                              style: ElevatedButton.styleFrom(
+                                padding: const EdgeInsets.symmetric(vertical: 12),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  // Método para mostrar detalles completos del artículo
+  void _showArticuloDetails(BuildContext context, ArticulosxCiudadEntity articulo) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Container(
+            width: double.infinity,
+            constraints: const BoxConstraints(maxWidth: 600),
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Título del diálogo
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Detalles del Artículo',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.close),
+                      onPressed: () => Navigator.pop(context),
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
+                    ),
+                  ],
+                ),
+                
+                const SizedBox(height: 16),
+                
+                // Datos básicos del artículo
+                _buildDetailRow('Código:', articulo.codArticulo ?? ''),
+                _buildDetailRow('Descripción:', articulo.datoArt ?? ''),
+                _buildDetailRow('Unidad:', articulo.unidadMedida ?? ''),
+                _buildDetailRow('Disponible:', '${articulo.disponible ?? 0}'),
+                _buildDetailRow('Lista de Precio:', '${articulo.listaPrecio ?? ''}'),
+                _buildDetailRow('Precio:', '${articulo.moneda ?? 'BS'} ${articulo.precio?.toStringAsFixed(2) ?? '0.00'}'),
+                
+                // Datos adicionales si existen
+                if (articulo.db != null)
+                  _buildDetailRow('Base de Datos:', articulo.db ?? ''),
+                if (articulo.condicionPrecio != null)
+                  _buildDetailRow('Condición:', articulo.condicionPrecio ?? ''),
+                
+                const SizedBox(height: 20),
+                
+                // Botones de acción
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: const Text('Cerrar'),
+                    ),
+                    const SizedBox(width: 8),
+                    ElevatedButton(
+                      onPressed: () {
+                        // Show confirmation dialog before adding to cart
+                        showDialog(
+                          context: context,
+                          builder: (BuildContext context) {
+                            return AlertDialog(
+                              title: Text('Confirmar acción'),
+                              content: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text('¿Desea agregar este artículo al carrito?'),
+                                  const SizedBox(height: 8),
+                                  Text('Artículo: ${articulo.datoArt}', style: TextStyle(fontWeight: FontWeight.bold)),
+                                  Text('Código: ${articulo.codArticulo}'),
+                                  if (articulo.precio != null)
+                                    Text('Precio: ${articulo.moneda ?? 'BS'} ${articulo.precio?.toStringAsFixed(2)}'),
+                                ],
+                              ),
+                              actions: [
+                                TextButton(
+                                  onPressed: () => Navigator.pop(context), // Cancel
+                                  child: const Text('Cancelar'),
+                                ),
+                                ElevatedButton(
+                                  onPressed: () {
+                                    // Close confirmation dialog
+                                    Navigator.pop(context);
+                                    // Close details dialog
+                                    Navigator.pop(context);
+                                    // Show confirmation message
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text('${articulo.datoArt} agregado al carrito'),
+                                        duration: const Duration(seconds: 2),
+                                      ),
+                                    );
+                                  },
+                                  child: const Text('Confirmar'),
+                                ),
+                              ],
+                            );
+                          },
+                        );
+                      },
+                      child: const Text('Agregar al Carrito'),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+  
+  // Widget auxiliar para construir filas de detalles
+  Widget _buildDetailRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 100,
+            child: Text(
+              label,
+              style: const TextStyle(
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+          Expanded(
+            child: Text(value),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Método para ver la disponibilidad detallada de un artículo
+  void _verDisponibilidadDetallada(BuildContext context, ArticulosxCiudadEntity articulo) {
+    // Usar el router para navegar a la pantalla de disponibilidad detallada
+    context.go('/dashboard/disponibilidad/${articulo.codArticulo}', extra: articulo);
   }
 }

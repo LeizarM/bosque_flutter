@@ -1,107 +1,39 @@
+import 'dart:async';
+
+import 'package:bosque_flutter/core/network/dio_client.dart';
 import 'package:bosque_flutter/core/state/user_provider.dart';
 import 'package:bosque_flutter/core/utils/secure_storage.dart';
+import 'package:bosque_flutter/domain/entities/articulos_ciudad_entity.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:bosque_flutter/presentation/screens/screens.dart';
 
+// Controlador global para forzar redirecciones
+final GlobalKey<NavigatorState> _rootNavigatorKey = GlobalKey<NavigatorState>();
+
+// Proveedor para detectar si la sesión está activa
+final authStateProvider = StateProvider<bool>((ref) => false);
+
+// Referencia global para el router
+GoRouter? _router;
+
 // Proveedor para el router que se crea una sola vez
 final routerProvider = Provider<GoRouter>((ref) {
   final shellNavigatorKey = GlobalKey<NavigatorState>();
   
-  return GoRouter(
-    initialLocation: '/dashboard',
-    debugLogDiagnostics: true, // Habilitar logs de diagnóstico para depuración
-    routes: [
-      GoRoute(
-        path: '/login',
-        name: 'login',
-        builder: (context, state) => const LoginScreen(),
-      ),
-      // Shell route for dashboard
-      ShellRoute(
-        navigatorKey: shellNavigatorKey,
-        builder: (context, state, child) {
-          return DashboardScreen(child: child);
-        },
-        routes: [
-          // Dashboard home
-          GoRoute(
-            path: '/dashboard',
-            name: 'dashboard',
-            builder: (context, state) => const DashboardHomeContent(),
-          ),
-          // Ventas module
-          GoRoute(
-            path: '/dashboard/ventas',
-            name: 'ventas',
-            builder: (context, state) => const VentasHomeScreen(),
-          ),
-          // Add more module routes here as needed
-        ],
-      ),
-      
-      // En caso de que vengan sin el parámetro
-      GoRoute(
-        path: '/tven_ventas',
-        redirect: (context, state) => '/dashboard/ventas',
-      ),
-    ],
-    errorBuilder: (context, state) => Scaffold(
-      appBar: AppBar(
-        title: const Text('Página no encontrada'),
-      ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.error_outline, size: 48.0, color: Colors.red),
-            const SizedBox(height: 16.0),
-            Text('No se encontró la página: ${state.uri}', 
-                 style: const TextStyle(fontSize: 18.0)),
-            const SizedBox(height: 24.0),
-            ElevatedButton(
-              onPressed: () => context.go('/dashboard'),
-              child: const Text('Volver al dashboard'),
-            ),
-          ],
-        ),
-      ),
-    ),
-    redirect: (BuildContext context, GoRouterState state) async {
-      // Usar Riverpod para verificar si hay un usuario logueado
-      final user = ref.read(userProvider);
-      final token = await SecureStorage().getToken();
-      final isLoggedIn = user != null || token != null;
-
-      final isOnLoginPage = state.uri.toString() == '/login';
-
-      // Si no está logueado y no está en login, redirigir a login
-      if (!isLoggedIn && !isOnLoginPage) {
-        return '/login';
-      } 
-      
-      // Si está logueado y está en login, redirigir a dashboard
-      if (isLoggedIn && isOnLoginPage) {
-        return '/dashboard';
-      }
-      
-      // En otros casos, mantener la ruta actual
-      return null;
-    },
-  );
-});
-
-// Mantenemos la clase AppRouter para compatibilidad con código existente
-class AppRouter {
-  // Este método ahora es solo por compatibilidad
-  static GoRouter getRouter({String? initialToken}) {
-    // Create the shell branch
-    final shellNavigatorKey = GlobalKey<NavigatorState>();
-    
-    return GoRouter(
-      initialLocation: initialToken != null ? '/dashboard' : '/login',
+  // Observar el estado de autenticación sin leer directamente durante redirecciones
+  ref.listen(authStateProvider, (_, __) {
+    // Solo escuchar cambios, no hacer nada aquí
+  });
+  
+  // Crear el router si no existe
+  if (_router == null) {
+    _router = GoRouter(
+      navigatorKey: _rootNavigatorKey,
+      initialLocation: '/dashboard',
       debugLogDiagnostics: true, // Habilitar logs de diagnóstico para depuración
+      refreshListenable: GoRouterRefreshStream(ref.read(authStateProvider.notifier).stream),
       routes: [
         GoRoute(
           path: '/login',
@@ -126,6 +58,56 @@ class AppRouter {
               path: '/dashboard/ventas',
               name: 'ventas',
               builder: (context, state) => const VentasHomeScreen(),
+            ),
+            // Disponibilidad detallada
+            GoRoute(
+              path: '/dashboard/disponibilidad/:codArticulo',
+              name: 'disponibilidad',
+              redirect: (context, state) {
+                // Si no hay extra, significa que se recargó la página
+                // o se accedió directamente por URL
+                if (state.extra == null) {
+                  // Redireccionar a ventas porque necesitamos el objeto completo
+                  return '/dashboard/ventas';
+                }
+                return null; // No redireccionar si tenemos el objeto
+              },
+              builder: (context, state) {
+                try {
+                  // Intentar obtener el artículo con manejo de errores
+                  final articulo = state.extra as ArticulosxCiudadEntity;
+                  return DisponibilidadDetalladaScreen(articulo: articulo);
+                } catch (e) {
+                  // Si hay error, mostrar pantalla de error y volver a ventas
+                  return Scaffold(
+                    appBar: AppBar(
+                      title: const Text('Error'),
+                      leading: BackButton(
+                        onPressed: () => context.go('/dashboard/ventas'),
+                      ),
+                    ),
+                    body: Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(Icons.error_outline, size: 64, color: Colors.red),
+                          const SizedBox(height: 16),
+                          const Text(
+                            'No se pudo cargar la información del artículo',
+                            style: TextStyle(fontSize: 18),
+                            textAlign: TextAlign.center,
+                          ),
+                          const SizedBox(height: 24),
+                          ElevatedButton(
+                            onPressed: () => context.go('/dashboard/ventas'),
+                            child: const Text('Volver a Ventas'),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                }
+              },
             ),
             // Add more module routes here as needed
           ],
@@ -159,11 +141,281 @@ class AppRouter {
         ),
       ),
       redirect: (BuildContext context, GoRouterState state) async {
-        // Usar Riverpod para verificar si hay un usuario logueado
+        // Verificar si el token ha expirado
+        final secureStorage = SecureStorage();
+        final isTokenExpired = await secureStorage.isTokenExpired();
+        
+        // Si el token expiró, limpiar datos y redirigir al login
+        if (isTokenExpired) {
+          debugPrint('🔑 Token expirado detectado en redirect');
+          // Limpiar datos de sesión
+          await secureStorage.clearSession();
+          
+          // Use a ProviderContainer to avoid Riverpod dependency issues during navigation
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            final container = ProviderContainer();
+            try {
+              container.read(userProvider.notifier).clearUser();
+              container.read(authStateProvider.notifier).state = false;
+            } finally {
+              container.dispose();
+            }
+          });
+          
+          // Solo redirigir si no estamos ya en el login
+          if (state.uri.toString() != '/login') {
+            return '/login';
+          }
+        }
+        
+        // Usar un container aislado para acceder al estado de Riverpod
+        // de esta manera evitamos conflictos de dependencias
         final container = ProviderContainer();
-        final user = container.read(userProvider);
-        final token = await SecureStorage().getToken();
-        final isLoggedIn = user != null || token != null;
+        bool isLoggedIn;
+        
+        try {
+          final user = container.read(userProvider);
+          final token = await secureStorage.getToken();
+          isLoggedIn = (user != null || token != null) && !isTokenExpired;
+          
+          // Actualizar el estado de auth en el siguiente frame para evitar errores
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            try {
+              ref.read(authStateProvider.notifier).state = isLoggedIn;
+            } catch (e) {
+              debugPrint('Error updating auth state: $e');
+            }
+          });
+        } finally {
+          container.dispose();
+        }
+
+        final isOnLoginPage = state.uri.toString() == '/login';
+
+        // Si no está logueado y no está en login, redirigir a login
+        if (!isLoggedIn && !isOnLoginPage) {
+          return '/login';
+        } 
+        
+        // Si está logueado y está en login, redirigir a dashboard
+        if (isLoggedIn && isOnLoginPage) {
+          return '/dashboard';
+        }
+        
+        // En otros casos, mantener la ruta actual
+        return null;
+      },
+    );
+    
+    // Configurar el callback de error de autenticación para redireccionar
+    // Usando una referencia al router
+    DioClient.setAuthErrorCallback(() {
+      // Usar un container aislado para evitar conflictos de dependencias
+      final container = ProviderContainer();
+      try {
+        container.read(authStateProvider.notifier).state = false;
+      } finally {
+        container.dispose();
+      }
+      
+      // Usar el router para navegar
+      _router?.go('/login');
+    });
+    
+    // Inicializar el estado de autenticación
+    _initAuthState(ref);
+  }
+  
+  return _router!;
+});
+
+// Función para inicializar el estado de autenticación
+void _initAuthState(Ref ref) async {
+  final secureStorage = SecureStorage();
+  final isTokenExpired = await secureStorage.isTokenExpired();
+  
+  if (!isTokenExpired) {
+    // Solo marcar como autenticado si el token es válido
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(authStateProvider.notifier).state = true;
+    });
+  } else {
+    // Limpiar la sesión si el token expiró
+    await secureStorage.clearSession();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(userProvider.notifier).clearUser();
+    });
+  }
+}
+
+// Clase para notificar cambios de estado de autenticación al router
+class GoRouterRefreshStream extends ChangeNotifier {
+  GoRouterRefreshStream(Stream<bool> stream) {
+    notifyListeners();
+    _subscription = stream.listen(
+      (dynamic _) => notifyListeners(),
+    );
+  }
+
+  late final StreamSubscription<dynamic> _subscription;
+
+  @override
+  void dispose() {
+    _subscription.cancel();
+    super.dispose();
+  }
+}
+
+// Mantenemos la clase AppRouter para compatibilidad con código existente
+class AppRouter {
+  // Este método ahora es solo por compatibilidad
+  static GoRouter getRouter({String? initialToken}) {
+    // Create the shell branch
+    final shellNavigatorKey = GlobalKey<NavigatorState>();
+    
+    // Si ya tenemos un router global, usarlo
+    if (_router != null) {
+      return _router!;
+    }
+    
+    final router = GoRouter(
+      initialLocation: initialToken != null ? '/dashboard' : '/login',
+      debugLogDiagnostics: true, // Habilitar logs de diagnóstico para depuración
+      routes: [
+        GoRoute(
+          path: '/login',
+          name: 'login',
+          builder: (context, state) => const LoginScreen(),
+        ),
+        // Shell route for dashboard
+        ShellRoute(
+          navigatorKey: shellNavigatorKey,
+          builder: (context, state, child) {
+            return DashboardScreen(child: child);
+          },
+          routes: [
+            // Dashboard home
+            GoRoute(
+              path: '/dashboard',
+              name: 'dashboard',
+              builder: (context, state) => const DashboardHomeContent(),
+            ),
+            // Ventas module
+            GoRoute(
+              path: '/dashboard/ventas',
+              name: 'ventas',
+              builder: (context, state) => const VentasHomeScreen(),
+            ),
+            // Disponibilidad detallada
+            GoRoute(
+              path: '/dashboard/disponibilidad/:codArticulo',
+              name: 'disponibilidad',
+              redirect: (context, state) {
+                // Si no hay extra, significa que se recargó la página
+                // o se accedió directamente por URL
+                if (state.extra == null) {
+                  // Redireccionar a ventas porque necesitamos el objeto completo
+                  return '/dashboard/ventas';
+                }
+                return null; // No redireccionar si tenemos el objeto
+              },
+              builder: (context, state) {
+                try {
+                  // Intentar obtener el artículo con manejo de errores
+                  final articulo = state.extra as ArticulosxCiudadEntity;
+                  return DisponibilidadDetalladaScreen(articulo: articulo);
+                } catch (e) {
+                  // Si hay error, mostrar pantalla de error y volver a ventas
+                  return Scaffold(
+                    appBar: AppBar(
+                      title: const Text('Error'),
+                      leading: BackButton(
+                        onPressed: () => context.go('/dashboard/ventas'),
+                      ),
+                    ),
+                    body: Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(Icons.error_outline, size: 64, color: Colors.red),
+                          const SizedBox(height: 16),
+                          const Text(
+                            'No se pudo cargar la información del artículo',
+                            style: TextStyle(fontSize: 18),
+                            textAlign: TextAlign.center,
+                          ),
+                          const SizedBox(height: 24),
+                          ElevatedButton(
+                            onPressed: () => context.go('/dashboard/ventas'),
+                            child: const Text('Volver a Ventas'),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                }
+              },
+            ),
+            // Add more module routes here as needed
+          ],
+        ),
+        
+        // En caso de que vengan sin el parámetro
+        GoRoute(
+          path: '/tven_ventas',
+          redirect: (context, state) => '/dashboard/ventas',
+        ),
+      ],
+      errorBuilder: (context, state) => Scaffold(
+        appBar: AppBar(
+          title: const Text('Página no encontrada'),
+        ),
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.error_outline, size: 48.0, color: Colors.red),
+              const SizedBox(height: 16.0),
+              Text('No se encontró la página: ${state.uri}', 
+                   style: const TextStyle(fontSize: 18.0)),
+              const SizedBox(height: 24.0),
+              ElevatedButton(
+                onPressed: () => context.go('/dashboard'),
+                child: const Text('Volver al dashboard'),
+              ),
+            ],
+          ),
+        ),
+      ),
+      redirect: (BuildContext context, GoRouterState state) async {
+        // Verificar si el token está expirado
+        final secureStorage = SecureStorage();
+        final isTokenExpired = await secureStorage.isTokenExpired();
+        
+        // Si el token expiró, limpiar datos y redirigir al login
+        if (isTokenExpired) {
+          debugPrint('🔑 Token expirado detectado en AppRouter.getRouter');
+          // Limpiar datos de sesión
+          await secureStorage.clearSession();
+          
+          // Solo redirigir si no estamos ya en el login
+          if (state.uri.toString() != '/login') {
+            return '/login';
+          }
+        }
+        
+        // Usar Riverpod para verificar si hay un usuario logueado
+        // Con un container propio para evitar dependencias
+        final container = ProviderContainer();
+        bool isLoggedIn;
+        
+        try {
+          final user = container.read(userProvider);
+          final token = await SecureStorage().getToken();
+          isLoggedIn = (user != null || token != null) && !isTokenExpired;
+        } finally {
+          container.dispose();
+        }
 
         final isOnLoginPage = state.uri.toString() == '/login';
 
@@ -175,5 +427,10 @@ class AppRouter {
         return null; // No redirigir si la ruta es correcta
       },
     );
+    
+    // Guardar referencia global
+    _router = router;
+    
+    return router;
   }
 }

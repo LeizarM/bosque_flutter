@@ -115,7 +115,7 @@ class MenuNotifier extends StateNotifier<MenuState> {
       }
     } catch (e) {
       debugPrint('❌ Error obteniendo menú del servidor: $e');
-      throw e;
+      rethrow;
     }
   }
   
