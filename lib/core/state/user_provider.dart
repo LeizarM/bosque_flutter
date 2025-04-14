@@ -42,6 +42,60 @@ class UserStateNotifier extends StateNotifier<LoginEntity?> {
     await storage.deleteUserData();
     await storage.deleteToken();
   }
+
+  int getCodCiudad()  {
+    // Obtener el código de la ciudad del usuario desde el estado
+    if (state != null) {
+      return state!.codCiudad;
+    } else {
+      throw Exception('No user data available');
+    }
+  }
+
+  String getToken() {
+    // Obtener el token del usuario desde el estado
+    if (state != null) {
+      return state!.token;
+    } else {
+      throw Exception('No user data available');
+    }
+  }
+
+  int getCodUsuario() {
+    // Obtener el código del usuario desde el estado
+    if (state != null) {
+      return state!.codUsuario;
+    } else {
+      throw Exception('No user data available');
+    }
+  }
+
+  int getCodEmpleado() {
+    // Obtener el código del empleado desde el estado
+    if (state != null) {
+      return state!.codEmpleado;
+    } else {
+      throw Exception('No user data available');
+    }
+  }
+
+  int getCodSucursal() {
+    // Obtener el código de la sucursal desde el estado
+    if (state != null) {
+      return state!.codSucursal;
+    } else {
+      throw Exception('No user data available');
+    }
+  }
+
+  String getTipoUsuario() {
+    // Obtener el tipo de usuario desde el estado
+    if (state != null) {
+      return state!.tipoUsuario;
+    } else {
+      throw Exception('No user data available');
+    }
+  }
 }
 
 // Definimos el provider usando StateNotifierProvider
