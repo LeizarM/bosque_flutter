@@ -1,4 +1,3 @@
-import 'package:bosque_flutter/presentation/screens/ventas/disponibilidad_detallada_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -15,17 +14,17 @@ class VentasHomeScreen extends ConsumerStatefulWidget {
 }
 
 class _VentasHomeScreenState extends ConsumerState<VentasHomeScreen> {
- 
   int _codCiudad = 0; // Inicializamos con un valor por defecto
-  
+
   @override
   void initState() {
     super.initState();
-    _codCiudad =  ref.read(userProvider.notifier).getCodCiudad();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      setState(() {
+        _codCiudad = ref.read(userProvider.notifier).getCodCiudad();
+      });
+    });
   }
-  
-  
-
 
   @override
   Widget build(BuildContext context) {
@@ -43,14 +42,16 @@ class _VentasHomeScreenState extends ConsumerState<VentasHomeScreen> {
           children: [
             // Encabezado del módulo de ventas
             Padding(
-              padding: EdgeInsets.all(ResponsiveValue<double>(
-                context,
-                defaultValue: 16.0,
-                conditionalValues: [
-                  Condition.smallerThan(name: TABLET, value: 12.0),
-                  Condition.largerThan(name: DESKTOP, value: 24.0),
-                ],
-              ).value),
+              padding: EdgeInsets.all(
+                ResponsiveValue<double>(
+                  context,
+                  defaultValue: 16.0,
+                  conditionalValues: [
+                    Condition.smallerThan(name: TABLET, value: 12.0),
+                    Condition.largerThan(name: DESKTOP, value: 24.0),
+                  ],
+                ).value,
+              ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -58,44 +59,47 @@ class _VentasHomeScreenState extends ConsumerState<VentasHomeScreen> {
                     'Lista de Artículos',
                     style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                       fontWeight: FontWeight.bold,
-                      fontSize: ResponsiveValue<double>(
-                        context,
-                        defaultValue: 24.0,
-                        conditionalValues: [
-                          Condition.smallerThan(name: TABLET, value: 20.0),
-                          Condition.largerThan(name: DESKTOP, value: 28.0),
-                        ],
-                      ).value,
+                      fontSize:
+                          ResponsiveValue<double>(
+                            context,
+                            defaultValue: 24.0,
+                            conditionalValues: [
+                              Condition.smallerThan(name: TABLET, value: 20.0),
+                              Condition.largerThan(name: DESKTOP, value: 28.0),
+                            ],
+                          ).value,
                     ),
                   ),
-                  SizedBox(height: ResponsiveValue<double>(
-                    context,
-                    defaultValue: 8.0,
-                    conditionalValues: [
-                      Condition.largerThan(name: DESKTOP, value: 12.0),
-                    ],
-                  ).value),
+                  SizedBox(
+                    height:
+                        ResponsiveValue<double>(
+                          context,
+                          defaultValue: 8.0,
+                          conditionalValues: [
+                            Condition.largerThan(name: DESKTOP, value: 12.0),
+                          ],
+                        ).value,
+                  ),
                   Text(
                     'Catálogo de productos disponibles',
                     style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                       color: Colors.grey[600],
-                      fontSize: ResponsiveValue<double>(
-                        context,
-                        defaultValue: 14.0,
-                        conditionalValues: [
-                          Condition.largerThan(name: DESKTOP, value: 16.0),
-                        ],
-                      ).value,
+                      fontSize:
+                          ResponsiveValue<double>(
+                            context,
+                            defaultValue: 14.0,
+                            conditionalValues: [
+                              Condition.largerThan(name: DESKTOP, value: 16.0),
+                            ],
+                          ).value,
                     ),
                   ),
                 ],
               ),
             ),
-            
+
             // Contenido principal: Lista de artículos
-            Expanded(
-              child: VentasArticulosView(codCiudad: _codCiudad),
-            ),
+            Expanded(child: VentasArticulosView(codCiudad: _codCiudad)),
           ],
         ),
       ),
@@ -105,11 +109,12 @@ class _VentasHomeScreenState extends ConsumerState<VentasHomeScreen> {
 
 class VentasArticulosView extends ConsumerStatefulWidget {
   final int codCiudad;
-  
+
   const VentasArticulosView({super.key, required this.codCiudad});
 
   @override
-  ConsumerState<VentasArticulosView> createState() => _VentasArticulosViewState();
+  ConsumerState<VentasArticulosView> createState() =>
+      _VentasArticulosViewState();
 }
 
 class _VentasArticulosViewState extends ConsumerState<VentasArticulosView> {
@@ -117,61 +122,73 @@ class _VentasArticulosViewState extends ConsumerState<VentasArticulosView> {
   String _sortBy = 'datoArt'; // Ordenar por descripción inicialmente
   bool _sortAscending = true;
   int? _selectedFamilia;
-// Estado de carga explícito
-  List<ArticulosxCiudadEntity> _articulosCache = []; // Cache local para datos de ejemplo
-  
+  // Estado de carga explícito
+  List<ArticulosxCiudadEntity> _articulosCache =
+      []; // Cache local para datos de ejemplo
+
   @override
   void initState() {
     super.initState();
-    
-    
+
     // Forzar una recarga inmediata al iniciar
     WidgetsBinding.instance.addPostFrameCallback((_) {
       // Incrementar el contador para forzar una actualización
       ref.read(articulosCiudadRefreshProvider.notifier).state++;
     });
   }
-  
-  
-  
+
   @override
   Widget build(BuildContext context) {
     // Intentar obtener datos reales, pero usar el cache si falla
-    final articulosAsyncValue = ref.watch(articulosCiudadProvider(widget.codCiudad));
-    
+    final articulosAsyncValue = ref.watch(
+      articulosCiudadProvider(widget.codCiudad),
+    );
+
     // Calcular dimensiones de pantalla y determinar tipo de dispositivo
     final screenWidth = MediaQuery.of(context).size.width;
     final screenHeight = MediaQuery.of(context).size.height;
-    
+
     // Detección específica para pantalla grande (1586x1716)
     final isLargeDisplay = screenWidth > 1500 && screenHeight > 1200;
-    final isIpadPro = (screenWidth >= 1000 && screenWidth <= 1366) && 
-                     (screenHeight >= 900 && screenHeight <= 1366);
-    
+    final isIpadPro =
+        (screenWidth >= 1000 && screenWidth <= 1366) &&
+        (screenHeight >= 900 && screenHeight <= 1366);
+
     // Ajuste específico para diferentes dispositivos
-    final isDesktop = ResponsiveBreakpoints.of(context).largerOrEqualTo(DESKTOP) || isLargeDisplay;
-    final isTablet = ResponsiveBreakpoints.of(context).between(TABLET, DESKTOP) || 
-                     (screenWidth > 750 && screenWidth < 1200);
+    final isDesktop =
+        ResponsiveBreakpoints.of(context).largerOrEqualTo(DESKTOP) ||
+        isLargeDisplay;
+    final isTablet =
+        ResponsiveBreakpoints.of(context).between(TABLET, DESKTOP) ||
+        (screenWidth > 750 && screenWidth < 1200);
     final isMobile = !isDesktop && !isTablet;
-    
+
     // Padding optimizado según tipo de dispositivo
-    final horizontalPadding = isLargeDisplay ? 24.0 :
-                             (isIpadPro ? 16.0 : 
-                             (isDesktop ? 32.0 : (isTablet ? 20.0 : 16.0)));
-    final verticalPadding = isLargeDisplay ? 16.0 : 
-                           (isIpadPro ? 8.0 : 
-                           (isDesktop ? 24.0 : (isTablet ? 16.0 : 12.0)));
-    
+    final horizontalPadding =
+        isLargeDisplay
+            ? 24.0
+            : (isIpadPro
+                ? 16.0
+                : (isDesktop ? 32.0 : (isTablet ? 20.0 : 16.0)));
+    final verticalPadding =
+        isLargeDisplay
+            ? 16.0
+            : (isIpadPro ? 8.0 : (isDesktop ? 24.0 : (isTablet ? 16.0 : 12.0)));
+
     return Padding(
-      padding: EdgeInsets.symmetric(horizontal: horizontalPadding, vertical: verticalPadding),
+      padding: EdgeInsets.symmetric(
+        horizontal: horizontalPadding,
+        vertical: verticalPadding,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Fila de búsqueda y filtros
           ResponsiveRowColumn(
-            layout: isDesktop || isTablet 
-                ? ResponsiveRowColumnType.ROW 
-                : ResponsiveRowColumnType.COLUMN,
+            layout:
+                isDesktop || isTablet
+                    ? ResponsiveRowColumnType.ROW
+                    : ResponsiveRowColumnType.COLUMN,
             rowCrossAxisAlignment: CrossAxisAlignment.center,
             rowSpacing: 16,
             columnSpacing: 12,
@@ -186,14 +203,19 @@ class _VentasArticulosViewState extends ConsumerState<VentasArticulosView> {
                     suffixIcon: IconButton(
                       icon: const Icon(Icons.refresh),
                       onPressed: () {
-                        ref.read(articulosCiudadRefreshProvider.notifier).state++;
+                        ref
+                            .read(articulosCiudadRefreshProvider.notifier)
+                            .state++;
                       },
                       tooltip: 'Actualizar',
                     ),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(8),
                     ),
-                    contentPadding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                    contentPadding: const EdgeInsets.symmetric(
+                      vertical: 12,
+                      horizontal: 16,
+                    ),
                   ),
                   onChanged: (value) {
                     setState(() {
@@ -202,7 +224,7 @@ class _VentasArticulosViewState extends ConsumerState<VentasArticulosView> {
                   },
                 ),
               ),
-              
+
               if (isDesktop || isTablet)
                 // Filtro de ordenamiento
                 ResponsiveRowColumnItem(
@@ -213,17 +235,32 @@ class _VentasArticulosViewState extends ConsumerState<VentasArticulosView> {
                         child: DropdownButtonFormField<String>(
                           decoration: InputDecoration(
                             labelText: 'Ordenar por',
-                            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 8,
+                            ),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(8),
                             ),
                           ),
                           value: _sortBy,
                           items: const [
-                            DropdownMenuItem(value: 'datoArt', child: Text('Descripción')),
-                            DropdownMenuItem(value: 'codArticulo', child: Text('Código')),
-                            DropdownMenuItem(value: 'precio', child: Text('Precio')),
-                            DropdownMenuItem(value: 'disponible', child: Text('Disponibilidad')),
+                            DropdownMenuItem(
+                              value: 'datoArt',
+                              child: Text('Descripción'),
+                            ),
+                            DropdownMenuItem(
+                              value: 'codArticulo',
+                              child: Text('Código'),
+                            ),
+                            DropdownMenuItem(
+                              value: 'precio',
+                              child: Text('Precio'),
+                            ),
+                            DropdownMenuItem(
+                              value: 'disponible',
+                              child: Text('Disponibilidad'),
+                            ),
                           ],
                           onChanged: (value) {
                             if (value != null) {
@@ -237,7 +274,9 @@ class _VentasArticulosViewState extends ConsumerState<VentasArticulosView> {
                       const SizedBox(width: 8),
                       IconButton(
                         icon: Icon(
-                          _sortAscending ? Icons.arrow_upward : Icons.arrow_downward,
+                          _sortAscending
+                              ? Icons.arrow_upward
+                              : Icons.arrow_downward,
                           color: Theme.of(context).colorScheme.primary,
                         ),
                         onPressed: () {
@@ -252,7 +291,7 @@ class _VentasArticulosViewState extends ConsumerState<VentasArticulosView> {
                 ),
             ],
           ),
-          
+
           // Filtros adicionales para móvil
           if (isMobile)
             Padding(
@@ -263,17 +302,32 @@ class _VentasArticulosViewState extends ConsumerState<VentasArticulosView> {
                     child: DropdownButtonFormField<String>(
                       decoration: InputDecoration(
                         labelText: 'Ordenar por',
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 8,
+                        ),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8),
                         ),
                       ),
                       value: _sortBy,
                       items: const [
-                        DropdownMenuItem(value: 'datoArt', child: Text('Descripción')),
-                        DropdownMenuItem(value: 'codArticulo', child: Text('Código')),
-                        DropdownMenuItem(value: 'precio', child: Text('Precio')),
-                        DropdownMenuItem(value: 'disponible', child: Text('Disponibilidad')),
+                        DropdownMenuItem(
+                          value: 'datoArt',
+                          child: Text('Descripción'),
+                        ),
+                        DropdownMenuItem(
+                          value: 'codArticulo',
+                          child: Text('Código'),
+                        ),
+                        DropdownMenuItem(
+                          value: 'precio',
+                          child: Text('Precio'),
+                        ),
+                        DropdownMenuItem(
+                          value: 'disponible',
+                          child: Text('Disponibilidad'),
+                        ),
                       ],
                       onChanged: (value) {
                         if (value != null) {
@@ -287,7 +341,9 @@ class _VentasArticulosViewState extends ConsumerState<VentasArticulosView> {
                   const SizedBox(width: 8),
                   IconButton(
                     icon: Icon(
-                      _sortAscending ? Icons.arrow_upward : Icons.arrow_downward,
+                      _sortAscending
+                          ? Icons.arrow_upward
+                          : Icons.arrow_downward,
                       color: Theme.of(context).colorScheme.primary,
                     ),
                     onPressed: () {
@@ -300,25 +356,29 @@ class _VentasArticulosViewState extends ConsumerState<VentasArticulosView> {
                 ],
               ),
             ),
-          
-          SizedBox(height: ResponsiveValue<double>(
-            context,
-            defaultValue: 16.0,
-            conditionalValues: [
-              Condition.smallerThan(name: TABLET, value: 12.0),
-              Condition.largerThan(name: DESKTOP, value: 20.0),
-            ],
-          ).value),
-          
+
+          SizedBox(
+            height:
+                ResponsiveValue<double>(
+                  context,
+                  defaultValue: 16.0,
+                  conditionalValues: [
+                    Condition.smallerThan(name: TABLET, value: 12.0),
+                    Condition.largerThan(name: DESKTOP, value: 20.0),
+                  ],
+                ).value,
+          ),
+
           // Mostrar datos según el estado del provider
           Expanded(
             child: Builder(
               builder: (context) {
                 // Si tenemos datos de ejemplo y estamos cargando los reales, mostrar los de ejemplo
-                if (articulosAsyncValue is AsyncLoading && _articulosCache.isNotEmpty) {
+                if (articulosAsyncValue is AsyncLoading &&
+                    _articulosCache.isNotEmpty) {
                   return _buildArticulosList(_articulosCache);
                 }
-                
+
                 return articulosAsyncValue.when(
                   // Mientras carga los datos
                   loading: () {
@@ -326,14 +386,12 @@ class _VentasArticulosViewState extends ConsumerState<VentasArticulosView> {
                       // Si ya tenemos datos en caché, mostrarlos durante la carga
                       return _buildArticulosList(_articulosCache);
                     }
-                    return const Center(
-                      child: CircularProgressIndicator(),
-                    );
+                    return const Center(child: CircularProgressIndicator());
                   },
                   // Si ocurre un error
                   error: (error, stack) {
                     debugPrint('Error cargando artículos: $error');
-                    
+
                     if (_articulosCache.isNotEmpty) {
                       // Si hay error pero tenemos datos en caché, mostrar los datos de caché
                       return Column(
@@ -348,17 +406,27 @@ class _VentasArticulosViewState extends ConsumerState<VentasArticulosView> {
                             ),
                             child: Row(
                               children: [
-                                const Icon(Icons.warning_amber_rounded, color: Colors.red),
+                                const Icon(
+                                  Icons.warning_amber_rounded,
+                                  color: Colors.red,
+                                ),
                                 const SizedBox(width: 8),
                                 Expanded(
                                   child: Text(
                                     'Error de conexión: mostrando datos guardados',
-                                    style: TextStyle(color: Colors.red.shade700),
+                                    style: TextStyle(
+                                      color: Colors.red.shade700,
+                                    ),
                                   ),
                                 ),
                                 TextButton(
                                   onPressed: () {
-                                    ref.read(articulosCiudadRefreshProvider.notifier).state++;
+                                    ref
+                                        .read(
+                                          articulosCiudadRefreshProvider
+                                              .notifier,
+                                        )
+                                        .state++;
                                   },
                                   child: const Text('Reintentar'),
                                 ),
@@ -369,16 +437,21 @@ class _VentasArticulosViewState extends ConsumerState<VentasArticulosView> {
                         ],
                       );
                     }
-                    
+
                     return Center(
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          const Icon(Icons.error_outline, color: Colors.red, size: 48),
+                          const Icon(
+                            Icons.error_outline,
+                            color: Colors.red,
+                            size: 48,
+                          ),
                           const SizedBox(height: 16),
                           Text(
                             'Error al cargar artículos',
-                            style: Theme.of(context).textTheme.titleMedium?.copyWith(color: Colors.red),
+                            style: Theme.of(context).textTheme.titleMedium
+                                ?.copyWith(color: Colors.red),
                           ),
                           const SizedBox(height: 8),
                           Text(
@@ -390,10 +463,11 @@ class _VentasArticulosViewState extends ConsumerState<VentasArticulosView> {
                           ElevatedButton.icon(
                             onPressed: () {
                               // Forzar recarga y actualizar datos locales
-                              setState(() {
-                              });
-                             
-                              ref.read(articulosCiudadRefreshProvider.notifier).state++;
+                              setState(() {});
+
+                              ref
+                                  .read(articulosCiudadRefreshProvider.notifier)
+                                  .state++;
                             },
                             icon: const Icon(Icons.refresh),
                             label: const Text('Reintentar'),
@@ -409,13 +483,19 @@ class _VentasArticulosViewState extends ConsumerState<VentasArticulosView> {
                       if (_articulosCache.isNotEmpty) {
                         return _buildArticulosList(_articulosCache);
                       }
-                      
+
                       // No hay datos reales ni caché
                       return Center(
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Icon(Icons.search_off, size: 64, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.4)),
+                            Icon(
+                              Icons.search_off,
+                              size: 64,
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.onSurface.withOpacity(0.4),
+                            ),
                             const SizedBox(height: 16),
                             Text(
                               'No se encontraron artículos',
@@ -428,19 +508,21 @@ class _VentasArticulosViewState extends ConsumerState<VentasArticulosView> {
                             Text(
                               'Intenta con otros criterios de búsqueda',
                               style: TextStyle(
-                                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.onSurface.withOpacity(0.7),
                               ),
                             ),
                           ],
                         ),
                       );
                     }
-                    
+
                     // Actualizar nuestra caché con los datos reales
                     if (articulos.isNotEmpty && mounted) {
                       _articulosCache = List.from(articulos);
                     }
-                    
+
                     return _buildArticulosList(articulos);
                   },
                 );
@@ -455,23 +537,29 @@ class _VentasArticulosViewState extends ConsumerState<VentasArticulosView> {
   Widget _buildArticulosList(List<ArticulosxCiudadEntity> articulos) {
     // Filtrar artículos según la búsqueda y otros filtros
     List<ArticulosxCiudadEntity> filteredArticulos = articulos;
-    
+
     // Filtrar por búsqueda
     if (_searchQuery != null && _searchQuery!.isNotEmpty) {
-      filteredArticulos = filteredArticulos
-          .where((articulo) => 
-              (articulo.datoArt.toLowerCase().contains(_searchQuery!)) ||
-              (articulo.codArticulo.toLowerCase().contains(_searchQuery!)))
-          .toList();
+      filteredArticulos =
+          filteredArticulos
+              .where(
+                (articulo) =>
+                    (articulo.datoArt.toLowerCase().contains(_searchQuery!)) ||
+                    (articulo.codArticulo.toLowerCase().contains(
+                      _searchQuery!,
+                    )),
+              )
+              .toList();
     }
-    
+
     // Filtrar por familia (si hay alguna seleccionada)
     if (_selectedFamilia != null) {
-      filteredArticulos = filteredArticulos
-          .where((articulo) => articulo.codigoFamilia == _selectedFamilia)
-          .toList();
+      filteredArticulos =
+          filteredArticulos
+              .where((articulo) => articulo.codigoFamilia == _selectedFamilia)
+              .toList();
     }
-    
+
     // Si no hay resultados después de filtrar
     if (filteredArticulos.isEmpty) {
       return Center(
@@ -479,9 +567,9 @@ class _VentasArticulosViewState extends ConsumerState<VentasArticulosView> {
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(
-              Icons.search_off, 
-              size: 64, 
-              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.4)
+              Icons.search_off,
+              size: 64,
+              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.4),
             ),
             const SizedBox(height: 16),
             Text(
@@ -505,17 +593,17 @@ class _VentasArticulosViewState extends ConsumerState<VentasArticulosView> {
 
     // Agrupar artículos por codArticulo
     Map<String, List<ArticulosxCiudadEntity>> articulosAgrupados = {};
-    
+
     for (var articulo in filteredArticulos) {
       if (!articulosAgrupados.containsKey(articulo.codArticulo)) {
         articulosAgrupados[articulo.codArticulo] = [];
       }
       articulosAgrupados[articulo.codArticulo]!.add(articulo);
     }
-    
+
     // Lista de códigos de artículos (llaves) ordenados según criterio
     List<String> codigosOrdenados = articulosAgrupados.keys.toList();
-    
+
     // Ordenamos la lista de códigos según criterio de ordenamiento
     codigosOrdenados.sort((a, b) {
       if (_sortBy == 'datoArt') {
@@ -528,19 +616,27 @@ class _VentasArticulosViewState extends ConsumerState<VentasArticulosView> {
       } else if (_sortBy == 'precio') {
         // Para precio, usamos el precio mínimo de cada grupo
         final aPrecioMin = articulosAgrupados[a]!
-            .map((e) => e.precio )
+            .map((e) => e.precio)
             .reduce((value, element) => value < element ? value : element);
         final bPrecioMin = articulosAgrupados[b]!
             .map((e) => e.precio)
             .reduce((value, element) => value < element ? value : element);
-        return _sortAscending ? aPrecioMin.compareTo(bPrecioMin) : bPrecioMin.compareTo(aPrecioMin);
+        return _sortAscending
+            ? aPrecioMin.compareTo(bPrecioMin)
+            : bPrecioMin.compareTo(aPrecioMin);
       } else if (_sortBy == 'disponible') {
         // Para disponibilidad, sumamos el total disponible de cada grupo
-        final aDisponible = articulosAgrupados[a]!
-            .fold<int>(0, (sum, item) => sum + (item.disponible ));
-        final bDisponible = articulosAgrupados[b]!
-            .fold<int>(0, (sum, item) => sum + (item.disponible));
-        return _sortAscending ? aDisponible.compareTo(bDisponible) : bDisponible.compareTo(aDisponible);
+        final aDisponible = articulosAgrupados[a]!.fold<int>(
+          0,
+          (sum, item) => sum + (item.disponible),
+        );
+        final bDisponible = articulosAgrupados[b]!.fold<int>(
+          0,
+          (sum, item) => sum + (item.disponible),
+        );
+        return _sortAscending
+            ? aDisponible.compareTo(bDisponible)
+            : bDisponible.compareTo(aDisponible);
       }
       return 0;
     });
@@ -556,37 +652,43 @@ class _VentasArticulosViewState extends ConsumerState<VentasArticulosView> {
         ),
       ),
     );
-    
+
     // Determinar tipo de dispositivo para el layout
     final screenWidth = MediaQuery.of(context).size.width;
-    final isDesktop = ResponsiveBreakpoints.of(context).largerOrEqualTo(DESKTOP) || screenWidth > 1200;
-    
+    final isDesktop =
+        ResponsiveBreakpoints.of(context).largerOrEqualTo(DESKTOP) ||
+        screenWidth > 1200;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         // Contador de artículos
         infoRow,
-        
+
         // Lista de artículos agrupados - diferente diseño según dispositivo
         Expanded(
-          child: isDesktop 
-              ? _buildDesktopGrid(codigosOrdenados, articulosAgrupados)
-              : _buildMobileTabletList(codigosOrdenados, articulosAgrupados),
+          child:
+              isDesktop
+                  ? _buildDesktopGrid(codigosOrdenados, articulosAgrupados)
+                  : _buildMobileTabletList(
+                    codigosOrdenados,
+                    articulosAgrupados,
+                  ),
         ),
       ],
     );
   }
-  
+
   // Vista en grid para escritorio
   Widget _buildDesktopGrid(
-    List<String> codigosOrdenados, 
-    Map<String, List<ArticulosxCiudadEntity>> articulosAgrupados
+    List<String> codigosOrdenados,
+    Map<String, List<ArticulosxCiudadEntity>> articulosAgrupados,
   ) {
     return GridView.builder(
       padding: const EdgeInsets.only(top: 8),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,  // Dos columnas en desktop
-        childAspectRatio: 2.0,  // Proporción de las tarjetas
+        crossAxisCount: 2, // Dos columnas en desktop
+        childAspectRatio: 2.0, // Proporción de las tarjetas
         crossAxisSpacing: 16,
         mainAxisSpacing: 16,
       ),
@@ -594,30 +696,27 @@ class _VentasArticulosViewState extends ConsumerState<VentasArticulosView> {
       itemBuilder: (context, index) {
         final codigoArticulo = codigosOrdenados[index];
         final variantes = articulosAgrupados[codigoArticulo]!;
-        
+
         // Para cada variante, organizamos por base de datos y lista de precio
-        Map<String?, Map<int?, ArticulosxCiudadEntity>> variantesPorDbYLista = {};
-        
+        Map<String?, Map<int?, ArticulosxCiudadEntity>> variantesPorDbYLista =
+            {};
+
         for (var variante in variantes) {
           if (!variantesPorDbYLista.containsKey(variante.db)) {
             variantesPorDbYLista[variante.db] = {};
           }
           variantesPorDbYLista[variante.db]![variante.listaPrecio] = variante;
         }
-        
-        return _buildArticuloCard(
-          variantes.first,
-          variantesPorDbYLista,
-          true
-        );
+
+        return _buildArticuloCard(variantes.first, variantesPorDbYLista, true);
       },
     );
   }
-  
+
   // Vista en lista para móvil/tablet
   Widget _buildMobileTabletList(
-    List<String> codigosOrdenados, 
-    Map<String, List<ArticulosxCiudadEntity>> articulosAgrupados
+    List<String> codigosOrdenados,
+    Map<String, List<ArticulosxCiudadEntity>> articulosAgrupados,
   ) {
     return ListView.builder(
       padding: const EdgeInsets.only(top: 8),
@@ -625,21 +724,19 @@ class _VentasArticulosViewState extends ConsumerState<VentasArticulosView> {
       itemBuilder: (context, index) {
         final codigoArticulo = codigosOrdenados[index];
         final variantes = articulosAgrupados[codigoArticulo]!;
-        
+
         // Para cada variante, organizamos por base de datos y lista de precio
-        Map<String?, Map<int?, ArticulosxCiudadEntity>> variantesPorDbYLista = {};
-        
+        Map<String?, Map<int?, ArticulosxCiudadEntity>> variantesPorDbYLista =
+            {};
+
         for (var variante in variantes) {
           if (!variantesPorDbYLista.containsKey(variante.db)) {
             variantesPorDbYLista[variante.db] = {};
           }
           variantesPorDbYLista[variante.db]![variante.listaPrecio] = variante;
         }
-        
-        return _buildArticuloMobileItem(
-          variantes.first,
-          variantesPorDbYLista
-        );
+
+        return _buildArticuloMobileItem(variantes.first, variantesPorDbYLista);
       },
     );
   }
@@ -648,7 +745,7 @@ class _VentasArticulosViewState extends ConsumerState<VentasArticulosView> {
   Widget _buildArticuloCard(
     ArticulosxCiudadEntity articuloPrincipal,
     Map<String?, Map<int?, ArticulosxCiudadEntity>> variantesPorDbYLista,
-    bool isDesktop
+    bool isDesktop,
   ) {
     // Determinar la disponibilidad total combinando todas las variantes
     int disponibilidadTotal = 0;
@@ -657,7 +754,7 @@ class _VentasArticulosViewState extends ConsumerState<VentasArticulosView> {
         disponibilidadTotal += articulo.disponible;
       });
     });
-    
+
     // Color para la barra de disponibilidad
     Color disponibilidadColor;
     if (disponibilidadTotal > 100) {
@@ -701,7 +798,7 @@ class _VentasArticulosViewState extends ConsumerState<VentasArticulosView> {
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
-                
+
                 // Disponibilidad
                 Text(
                   'Disp: $disponibilidadTotal ${articuloPrincipal.unidadMedida ?? ''}',
@@ -714,7 +811,7 @@ class _VentasArticulosViewState extends ConsumerState<VentasArticulosView> {
               ],
             ),
           ),
-          
+
           // Contenido principal de la tarjeta
           Expanded(
             child: Padding(
@@ -732,94 +829,88 @@ class _VentasArticulosViewState extends ConsumerState<VentasArticulosView> {
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                   ),
-                  
+
                   const SizedBox(height: 8),
-                  
+
                   // Tabla de precios
                   Expanded(
                     child: SingleChildScrollView(
                       child: Column(
                         children: [
-                          ...variantesPorDbYLista.entries.take(2).map((dbEntry) {
+                          ...variantesPorDbYLista.entries.map((dbEntry) {
                             final db = dbEntry.key ?? '';
                             final variantes = dbEntry.value;
-                            
-                            // Tomar solo las 3 primeras listas de precio para mostrar
-                            final listasPrecio = variantes.keys.toList()
-                              ..sort();
-                            if (listasPrecio.length > 3) {
-                              listasPrecio.removeRange(3, listasPrecio.length);
-                            }
-                            
+
+                            // Ordenar todas las listas de precio para mostrarlas
+                            final listasPrecio =
+                                variantes.keys.toList()..sort();
+
                             return Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 // Base de datos
                                 Container(
-                                  padding: const EdgeInsets.symmetric(vertical: 4),
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 4,
+                                  ),
                                   child: Text(
                                     'Base: $db',
                                     style: TextStyle(
                                       fontWeight: FontWeight.bold,
                                       fontSize: 13,
-                                      color: Theme.of(context).colorScheme.secondary,
+                                      color:
+                                          Theme.of(
+                                            context,
+                                          ).colorScheme.secondary,
                                     ),
                                   ),
                                 ),
-                                
-                                // Precios por lista
+
+                                // Precios por lista - mostrar TODAS sin limitación
                                 ...listasPrecio.map((listaPrecio) {
                                   final articulo = variantes[listaPrecio]!;
                                   return Padding(
-                                    padding: const EdgeInsets.only(left: 8, bottom: 4),
+                                    padding: const EdgeInsets.only(
+                                      left: 8,
+                                      bottom: 4,
+                                    ),
                                     child: Row(
                                       children: [
                                         // Condición
                                         Expanded(
                                           flex: 3,
                                           child: Text(
-                                            articulo.condicionPrecio ,
+                                            articulo.condicionPrecio,
                                             style: const TextStyle(
                                               fontSize: 12,
                                             ),
                                             overflow: TextOverflow.ellipsis,
                                           ),
                                         ),
-                                        
+
                                         // Precio
                                         Text(
                                           '${articulo.moneda ?? 'BS'} ${articulo.precio.toStringAsFixed(2)}',
                                           style: TextStyle(
                                             fontWeight: FontWeight.bold,
                                             fontSize: 13,
-                                            color: Theme.of(context).colorScheme.primary,
+                                            color:
+                                                Theme.of(
+                                                  context,
+                                                ).colorScheme.primary,
                                           ),
                                         ),
                                       ],
                                     ),
                                   );
                                 }).toList(),
-                                
-                                // Si hay más bases de datos y no es la última, mostrar separador
-                                if (variantesPorDbYLista.entries.length > 1 &&
-                                    variantesPorDbYLista.entries.first.key != db)
+
+                                // Separador entre bases de datos
+                                if (db != variantesPorDbYLista.keys.last)
                                   const Divider(height: 16),
                               ],
                             );
                           }).toList(),
-                          
-                          // Mensaje si hay más variantes
-                          if (variantesPorDbYLista.entries.length > 2)
-                            Padding(
-                              padding: const EdgeInsets.only(top: 4),
-                              child: Text(
-                                '+ ${variantesPorDbYLista.entries.length - 2} bases más',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: Theme.of(context).colorScheme.secondary,
-                                ),
-                              ),
-                            ),
                         ],
                       ),
                     ),
@@ -828,7 +919,7 @@ class _VentasArticulosViewState extends ConsumerState<VentasArticulosView> {
               ),
             ),
           ),
-          
+
           // Footer con botones de acción
           Container(
             decoration: BoxDecoration(
@@ -844,7 +935,8 @@ class _VentasArticulosViewState extends ConsumerState<VentasArticulosView> {
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
                 TextButton.icon(
-                  onPressed: () => _showArticuloDetails(context, articuloPrincipal),
+                  onPressed:
+                      () => _showArticuloDetails(context, articuloPrincipal),
                   icon: Icon(
                     Icons.info_outline,
                     size: 18,
@@ -858,20 +950,30 @@ class _VentasArticulosViewState extends ConsumerState<VentasArticulosView> {
                     ),
                   ),
                   style: TextButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 0),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 0,
+                    ),
                     minimumSize: const Size(0, 36),
                   ),
                 ),
                 const SizedBox(width: 8),
                 ElevatedButton.icon(
-                  onPressed: () => _verDisponibilidadDetallada(context, articuloPrincipal),
+                  onPressed:
+                      () => _verDisponibilidadDetallada(
+                        context,
+                        articuloPrincipal,
+                      ),
                   icon: const Icon(Icons.inventory_2, size: 18),
                   label: const Text(
                     'Disponibilidad',
                     style: TextStyle(fontSize: 13),
                   ),
                   style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 0),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 0,
+                    ),
                     minimumSize: const Size(0, 36),
                   ),
                 ),
@@ -886,14 +988,14 @@ class _VentasArticulosViewState extends ConsumerState<VentasArticulosView> {
   // Vista de lista para móviles y tablets
   Widget _buildArticuloMobileItem(
     ArticulosxCiudadEntity articuloPrincipal,
-    Map<String?, Map<int?, ArticulosxCiudadEntity>> variantesPorDbYLista
+    Map<String?, Map<int?, ArticulosxCiudadEntity>> variantesPorDbYLista,
   ) {
     // Calcular disponibilidad total
     int disponibilidadTotal = 0;
     // Obtener el precio mínimo para mostrar destacado
     double precioMinimo = double.infinity;
     String? monedaPrecioMinimo;
-    
+
     // Calcular valores combinados de todas las variantes
     variantesPorDbYLista.forEach((db, variantes) {
       variantes.forEach((listaPrecio, articulo) {
@@ -904,7 +1006,7 @@ class _VentasArticulosViewState extends ConsumerState<VentasArticulosView> {
         }
       });
     });
-    
+
     // Color para la disponibilidad
     Color disponibilidadColor;
     if (disponibilidadTotal > 100) {
@@ -914,18 +1016,19 @@ class _VentasArticulosViewState extends ConsumerState<VentasArticulosView> {
     } else {
       disponibilidadColor = Theme.of(context).colorScheme.error;
     }
-    
+
     // Preparar texto de precio formateado
-    final precioFormateado = precioMinimo != double.infinity 
-      ? '${monedaPrecioMinimo ?? 'BS'} ${precioMinimo.toStringAsFixed(2)}'
-      : 'Consultar';
-    
+    final precioFormateado =
+        precioMinimo != double.infinity
+            ? '${monedaPrecioMinimo ?? 'BS'} ${precioMinimo.toStringAsFixed(2)}'
+            : 'Consultar';
+
     // Contar cuántas variantes hay en total
     int totalVariantes = 0;
     variantesPorDbYLista.forEach((db, variantes) {
       totalVariantes += variantes.length;
     });
-    
+
     // Crear un mapa de las bases de datos disponibles para este artículo
     List<String?> basesDatos = variantesPorDbYLista.keys.toList();
 
@@ -994,32 +1097,39 @@ class _VentasArticulosViewState extends ConsumerState<VentasArticulosView> {
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
                           ),
-                          
+
                           // Bases de datos disponibles
                           const SizedBox(height: 4),
                           if (basesDatos.isNotEmpty)
                             Wrap(
                               spacing: 8,
-                              children: basesDatos.map((db) {
-                                return Chip(
-                                  label: Text(
-                                    '$db',
-                                    style: TextStyle(
-                                      fontSize: 11,
-                                      color: Theme.of(context).colorScheme.onSurface,
-                                    ),
-                                  ),
-                                  materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                                  visualDensity: VisualDensity.compact,
-                                  padding: EdgeInsets.zero,
-                                  labelPadding: const EdgeInsets.symmetric(horizontal: 8),
-                                );
-                              }).toList(),
+                              children:
+                                  basesDatos.map((db) {
+                                    return Chip(
+                                      label: Text(
+                                        '$db',
+                                        style: TextStyle(
+                                          fontSize: 11,
+                                          color:
+                                              Theme.of(
+                                                context,
+                                              ).colorScheme.onSurface,
+                                        ),
+                                      ),
+                                      materialTapTargetSize:
+                                          MaterialTapTargetSize.shrinkWrap,
+                                      visualDensity: VisualDensity.compact,
+                                      padding: EdgeInsets.zero,
+                                      labelPadding: const EdgeInsets.symmetric(
+                                        horizontal: 8,
+                                      ),
+                                    );
+                                  }).toList(),
                             ),
                         ],
                       ),
                     ),
-                    
+
                     // Precio mínimo y botón de compra
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.end,
@@ -1028,7 +1138,8 @@ class _VentasArticulosViewState extends ConsumerState<VentasArticulosView> {
                           'Desde:',
                           style: TextStyle(
                             fontSize: 12,
-                            color: Theme.of(context).colorScheme.onSurfaceVariant,
+                            color:
+                                Theme.of(context).colorScheme.onSurfaceVariant,
                           ),
                         ),
                         Text(
@@ -1043,7 +1154,7 @@ class _VentasArticulosViewState extends ConsumerState<VentasArticulosView> {
                     ),
                   ],
                 ),
-                
+
                 // Contador de variantes
                 const SizedBox(height: 8),
                 Row(
@@ -1056,13 +1167,17 @@ class _VentasArticulosViewState extends ConsumerState<VentasArticulosView> {
                         color: Theme.of(context).colorScheme.onSurfaceVariant,
                       ),
                     ),
-                    
+
                     // Botones de acción
                     Row(
                       children: [
                         // Botón ver detalles
                         TextButton.icon(
-                          onPressed: () => _showArticuloDetails(context, articuloPrincipal),
+                          onPressed:
+                              () => _showArticuloDetails(
+                                context,
+                                articuloPrincipal,
+                              ),
                           icon: Icon(
                             Icons.visibility_outlined,
                             size: 18,
@@ -1073,15 +1188,22 @@ class _VentasArticulosViewState extends ConsumerState<VentasArticulosView> {
                             style: TextStyle(fontSize: 13),
                           ),
                           style: TextButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 0),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 0,
+                            ),
                             minimumSize: const Size(0, 36),
                           ),
                         ),
-                        
+
                         // Botón expandir para ver variantes
                         IconButton(
                           onPressed: () {
-                            _mostrarVariantesPrecio(context, articuloPrincipal, variantesPorDbYLista);
+                            _mostrarVariantesPrecio(
+                              context,
+                              articuloPrincipal,
+                              variantesPorDbYLista,
+                            );
                           },
                           icon: const Icon(Icons.expand_more, size: 20),
                           tooltip: 'Ver variantes de precio',
@@ -1100,9 +1222,9 @@ class _VentasArticulosViewState extends ConsumerState<VentasArticulosView> {
 
   // Método para mostrar las variantes de precio en un bottom sheet (para móvil/tablet)
   void _mostrarVariantesPrecio(
-    BuildContext context, 
+    BuildContext context,
     ArticulosxCiudadEntity articuloPrincipal,
-    Map<String?, Map<int?, ArticulosxCiudadEntity>> variantesPorDbYLista
+    Map<String?, Map<int?, ArticulosxCiudadEntity>> variantesPorDbYLista,
   ) {
     showModalBottomSheet(
       context: context,
@@ -1142,7 +1264,7 @@ class _VentasArticulosViewState extends ConsumerState<VentasArticulosView> {
                       ),
                     ],
                   ),
-                  
+
                   // Información del artículo
                   Padding(
                     padding: const EdgeInsets.symmetric(vertical: 8),
@@ -1157,20 +1279,18 @@ class _VentasArticulosViewState extends ConsumerState<VentasArticulosView> {
                             fontSize: 14,
                           ),
                         ),
-                        
+
                         // Descripción
                         Text(
                           articuloPrincipal.datoArt.toUpperCase(),
-                          style: const TextStyle(
-                            fontSize: 14,
-                          ),
+                          style: const TextStyle(fontSize: 14),
                         ),
                       ],
                     ),
                   ),
-                  
+
                   const Divider(),
-                  
+
                   // Lista de variantes por DB y lista de precio
                   Expanded(
                     child: ListView(
@@ -1179,29 +1299,39 @@ class _VentasArticulosViewState extends ConsumerState<VentasArticulosView> {
                         ...variantesPorDbYLista.entries.map((dbEntry) {
                           final db = dbEntry.key ?? '';
                           final variantes = dbEntry.value;
-                          final listasPrecio = variantes.keys.toList()
-                            ..sort((a, b) => (a ?? 0).compareTo(b ?? 0));
-                          
+                          final listasPrecio =
+                              variantes.keys.toList()
+                                ..sort((a, b) => (a ?? 0).compareTo(b ?? 0));
+
                           return Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               // Encabezado de la base de datos
                               Container(
                                 margin: const EdgeInsets.symmetric(vertical: 8),
-                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 6,
+                                ),
                                 decoration: BoxDecoration(
-                                  color: Theme.of(context).colorScheme.primaryContainer,
+                                  color:
+                                      Theme.of(
+                                        context,
+                                      ).colorScheme.primaryContainer,
                                   borderRadius: BorderRadius.circular(4),
                                 ),
                                 child: Text(
                                   'BASE DE DATOS: $db',
                                   style: TextStyle(
                                     fontWeight: FontWeight.bold,
-                                    color: Theme.of(context).colorScheme.onPrimaryContainer,
+                                    color:
+                                        Theme.of(
+                                          context,
+                                        ).colorScheme.onPrimaryContainer,
                                   ),
                                 ),
                               ),
-                              
+
                               // Tabla de precios por lista
                               ...listasPrecio.map((listaPrecio) {
                                 final articulo = variantes[listaPrecio]!;
@@ -1211,24 +1341,32 @@ class _VentasArticulosViewState extends ConsumerState<VentasArticulosView> {
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(4),
                                     side: BorderSide(
-                                      color: Theme.of(context).colorScheme.outlineVariant,
+                                      color:
+                                          Theme.of(
+                                            context,
+                                          ).colorScheme.outlineVariant,
                                       width: 1,
                                     ),
                                   ),
                                   child: Padding(
                                     padding: const EdgeInsets.all(12),
                                     child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
                                       children: [
                                         // Lista de precio
                                         Row(
-                                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.spaceBetween,
                                           children: [
                                             Text(
                                               'Lista de Precio: ${articulo.listaPrecio}',
                                               style: TextStyle(
                                                 fontWeight: FontWeight.bold,
-                                                color: Theme.of(context).colorScheme.secondary,
+                                                color:
+                                                    Theme.of(
+                                                      context,
+                                                    ).colorScheme.secondary,
                                               ),
                                             ),
                                             Text(
@@ -1239,24 +1377,31 @@ class _VentasArticulosViewState extends ConsumerState<VentasArticulosView> {
                                             ),
                                           ],
                                         ),
-                                        
+
                                         // Condición de precio
                                         if (articulo.condicionPrecio != null)
                                           Padding(
-                                            padding: const EdgeInsets.symmetric(vertical: 6),
+                                            padding: const EdgeInsets.symmetric(
+                                              vertical: 6,
+                                            ),
                                             child: Text(
                                               'Condición: ${articulo.condicionPrecio}',
-                                              style: const TextStyle(fontSize: 14),
+                                              style: const TextStyle(
+                                                fontSize: 14,
+                                              ),
                                             ),
                                           ),
-                                        
+
                                         // Precio (sin el botón de disponibilidad)
                                         Text(
                                           '${articulo.moneda ?? "BS"} ${articulo.precio.toStringAsFixed(2)}',
                                           style: TextStyle(
                                             fontSize: 18,
                                             fontWeight: FontWeight.bold,
-                                            color: Theme.of(context).colorScheme.primary,
+                                            color:
+                                                Theme.of(
+                                                  context,
+                                                ).colorScheme.primary,
                                           ),
                                         ),
                                       ],
@@ -1264,25 +1409,37 @@ class _VentasArticulosViewState extends ConsumerState<VentasArticulosView> {
                                   ),
                                 );
                               }).toList(),
-                              
+
                               // Separador entre bases de datos
-                              if (dbEntry.key != variantesPorDbYLista.entries.last.key)
+                              if (dbEntry.key !=
+                                  variantesPorDbYLista.entries.last.key)
                                 const Divider(height: 24),
                             ],
                           );
                         }).toList(),
-                        
+
                         // Botón de disponibilidad único al final
                         Padding(
                           padding: const EdgeInsets.symmetric(vertical: 16),
                           child: SizedBox(
                             width: double.infinity,
                             child: ElevatedButton.icon(
-                              onPressed: () => _verDisponibilidadDetallada(context, variantesPorDbYLista.entries.first.value.values.first),
+                              onPressed:
+                                  () => _verDisponibilidadDetallada(
+                                    context,
+                                    variantesPorDbYLista
+                                        .entries
+                                        .first
+                                        .value
+                                        .values
+                                        .first,
+                                  ),
                               icon: const Icon(Icons.inventory_2),
                               label: const Text('Ver Disponibilidad'),
                               style: ElevatedButton.styleFrom(
-                                padding: const EdgeInsets.symmetric(vertical: 12),
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 12,
+                                ),
                               ),
                             ),
                           ),
@@ -1300,7 +1457,10 @@ class _VentasArticulosViewState extends ConsumerState<VentasArticulosView> {
   }
 
   // Método para mostrar detalles completos del artículo
-  void _showArticuloDetails(BuildContext context, ArticulosxCiudadEntity articulo) {
+  void _showArticuloDetails(
+    BuildContext context,
+    ArticulosxCiudadEntity articulo,
+  ) {
     showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -1336,25 +1496,31 @@ class _VentasArticulosViewState extends ConsumerState<VentasArticulosView> {
                     ),
                   ],
                 ),
-                
+
                 const SizedBox(height: 16),
-                
+
                 // Datos básicos del artículo
                 _buildDetailRow('Código:', articulo.codArticulo ?? ''),
                 _buildDetailRow('Descripción:', articulo.datoArt ?? ''),
                 _buildDetailRow('Unidad:', articulo.unidadMedida ?? ''),
                 _buildDetailRow('Disponible:', '${articulo.disponible ?? 0}'),
-                _buildDetailRow('Lista de Precio:', '${articulo.listaPrecio ?? ''}'),
-                _buildDetailRow('Precio:', '${articulo.moneda ?? 'BS'} ${articulo.precio?.toStringAsFixed(2) ?? '0.00'}'),
-                
+                _buildDetailRow(
+                  'Lista de Precio:',
+                  '${articulo.listaPrecio ?? ''}',
+                ),
+                _buildDetailRow(
+                  'Precio:',
+                  '${articulo.moneda ?? 'BS'} ${articulo.precio?.toStringAsFixed(2) ?? '0.00'}',
+                ),
+
                 // Datos adicionales si existen
                 if (articulo.db != null)
                   _buildDetailRow('Base de Datos:', articulo.db ?? ''),
                 if (articulo.condicionPrecio != null)
                   _buildDetailRow('Condición:', articulo.condicionPrecio ?? ''),
-                
+
                 const SizedBox(height: 20),
-                
+
                 // Botones de acción
                 Row(
                   mainAxisAlignment: MainAxisAlignment.end,
@@ -1376,17 +1542,27 @@ class _VentasArticulosViewState extends ConsumerState<VentasArticulosView> {
                                 mainAxisSize: MainAxisSize.min,
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text('¿Desea agregar este artículo al carrito?'),
+                                  Text(
+                                    '¿Desea agregar este artículo al carrito?',
+                                  ),
                                   const SizedBox(height: 8),
-                                  Text('Artículo: ${articulo.datoArt}', style: TextStyle(fontWeight: FontWeight.bold)),
+                                  Text(
+                                    'Artículo: ${articulo.datoArt}',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
                                   Text('Código: ${articulo.codArticulo}'),
                                   if (articulo.precio != null)
-                                    Text('Precio: ${articulo.moneda ?? 'BS'} ${articulo.precio?.toStringAsFixed(2)}'),
+                                    Text(
+                                      'Precio: ${articulo.moneda ?? 'BS'} ${articulo.precio?.toStringAsFixed(2)}',
+                                    ),
                                 ],
                               ),
                               actions: [
                                 TextButton(
-                                  onPressed: () => Navigator.pop(context), // Cancel
+                                  onPressed:
+                                      () => Navigator.pop(context), // Cancel
                                   child: const Text('Cancelar'),
                                 ),
                                 ElevatedButton(
@@ -1398,7 +1574,9 @@ class _VentasArticulosViewState extends ConsumerState<VentasArticulosView> {
                                     // Show confirmation message
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       SnackBar(
-                                        content: Text('${articulo.datoArt} agregado al carrito'),
+                                        content: Text(
+                                          '${articulo.datoArt} agregado al carrito',
+                                        ),
                                         duration: const Duration(seconds: 2),
                                       ),
                                     );
@@ -1421,7 +1599,7 @@ class _VentasArticulosViewState extends ConsumerState<VentasArticulosView> {
       },
     );
   }
-  
+
   // Widget auxiliar para construir filas de detalles
   Widget _buildDetailRow(String label, String value) {
     return Padding(
@@ -1433,22 +1611,24 @@ class _VentasArticulosViewState extends ConsumerState<VentasArticulosView> {
             width: 100,
             child: Text(
               label,
-              style: const TextStyle(
-                fontWeight: FontWeight.bold,
-              ),
+              style: const TextStyle(fontWeight: FontWeight.bold),
             ),
           ),
-          Expanded(
-            child: Text(value),
-          ),
+          Expanded(child: Text(value)),
         ],
       ),
     );
   }
 
   // Método para ver la disponibilidad detallada de un artículo
-  void _verDisponibilidadDetallada(BuildContext context, ArticulosxCiudadEntity articulo) {
+  void _verDisponibilidadDetallada(
+    BuildContext context,
+    ArticulosxCiudadEntity articulo,
+  ) {
     // Usar el router para navegar a la pantalla de disponibilidad detallada
-    context.go('/dashboard/disponibilidad/${articulo.codArticulo}', extra: articulo);
+    context.go(
+      '/dashboard/disponibilidad/${articulo.codArticulo}',
+      extra: articulo,
+    );
   }
 }
