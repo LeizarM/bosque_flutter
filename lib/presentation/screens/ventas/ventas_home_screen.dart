@@ -1,6 +1,8 @@
+import 'package:bosque_flutter/core/state/articulo_almacen_provider.dart';
+import 'package:bosque_flutter/domain/entities/articulos_almacen_entity.dart';
+import 'package:bosque_flutter/presentation/screens/ventas/article_stock_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:responsive_framework/responsive_framework.dart';
 import 'package:bosque_flutter/core/state/articulo_ciudad_provider.dart';
 import 'package:bosque_flutter/core/state/user_provider.dart';
@@ -1051,7 +1053,7 @@ class _VentasArticulosViewState extends ConsumerState<VentasArticulosView> {
             color: disponibilidadColor,
             width: double.infinity,
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            child: Row(
+            child: Column(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
@@ -1504,10 +1506,7 @@ class _VentasArticulosViewState extends ConsumerState<VentasArticulosView> {
                 _buildDetailRow('Descripción:', articulo.datoArt ?? ''),
                 _buildDetailRow('Unidad:', articulo.unidadMedida ?? ''),
                 _buildDetailRow('Disponible:', '${articulo.disponible ?? 0}'),
-                _buildDetailRow(
-                  'Lista de Precio:',
-                  '${articulo.listaPrecio}',
-                ),
+                _buildDetailRow('Lista de Precio:', '${articulo.listaPrecio}'),
                 _buildDetailRow(
                   'Precio:',
                   '${articulo.moneda ?? 'BS'} ${articulo.precio?.toStringAsFixed(2) ?? '0.00'}',
@@ -1625,10 +1624,416 @@ class _VentasArticulosViewState extends ConsumerState<VentasArticulosView> {
     BuildContext context,
     ArticulosxCiudadEntity articulo,
   ) {
-    // Usar el router para navegar a la pantalla de disponibilidad detallada
-    context.go(
-      '/dashboard/disponibilidad/${articulo.codArticulo}',
-      extra: articulo,
+    // Mostrar BottomSheet con la información
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (context) {
+        return DraggableScrollableSheet(
+          initialChildSize: 0.7,
+          minChildSize: 0.4,
+          maxChildSize: 0.9,
+          expand: false,
+          builder: (context, scrollController) {
+            return Consumer(
+              builder: (context, ref, child) {
+                final articleStockAsyncValue = ref.watch(
+                  articuloAlmacenProvider((
+                    articulo.codArticulo,
+                    widget.codCiudad,
+                  )),
+                );
+                return Container(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Encabezado con información del artículo
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Expanded(
+                            child: Text(
+                              'Disponibilidad por Almacén',
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: Theme.of(context).colorScheme.primary,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          IconButton(
+                            onPressed: () => Navigator.pop(context),
+                            icon: const Icon(Icons.close),
+                            padding: EdgeInsets.zero,
+                            constraints: const BoxConstraints(),
+                          ),
+                        ],
+                      ),
+
+                      // Información del artículo
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 8),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              articulo.codArticulo,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 14,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              articulo.datoArt,
+                              style: const TextStyle(fontSize: 14),
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      const Divider(),
+
+                      // Contenido principal - Lista de almacenes
+                      Expanded(
+                        child: articleStockAsyncValue.when(
+                          data: (articles) {
+                            if (articles.isEmpty) {
+                              return Center(
+                                child: Text(
+                                  'No hay stock disponible para este artículo',
+                                  style: TextStyle(
+                                    color: Theme.of(context).colorScheme.error,
+                                  ),
+                                ),
+                              );
+                            }
+                            
+                            // Calcular el total general de disponibilidad
+                            int totalGeneral = 0;
+                            for (var article in articles) {
+                              totalGeneral += article.disponible;
+                            }
+                            
+                            return Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                // Mostrar total general
+                                Container(
+                                  width: double.infinity,
+                                  margin: const EdgeInsets.only(bottom: 16),
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 10,
+                                    horizontal: 16,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: Theme.of(context).colorScheme.primary,
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: Text(
+                                    'DISPONIBILIDAD TOTAL: $totalGeneral',
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                      color: Theme.of(context).colorScheme.onPrimary,
+                                    ),
+                                  ),
+                                ),
+                                
+                                // Lista de inventario por base de datos y ciudad
+                                Expanded(
+                                  child: _buildStockContent(
+                                    context,
+                                    articles,
+                                    scrollController,
+                                  ),
+                                ),
+                              ],
+                            );
+                          },
+                          loading: () => const Center(
+                            child: CircularProgressIndicator(),
+                          ),
+                          error: (error, stackTrace) => Center(
+                            child: Text(
+                              'Error al cargar datos: ${error.toString()}',
+                              style: TextStyle(
+                                color: Theme.of(context).colorScheme.error,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            );
+          },
+        );
+      },
+    );
+  }
+
+  // Método para construir el contenido del stock usando componentes
+  Widget _buildStockContent(
+    BuildContext context,
+    List<ArticulosxAlmacenEntity> articles,
+    ScrollController scrollController,
+  ) {
+    // First, group the articles by database (db)
+    final articlesByDb = <String, List<ArticulosxAlmacenEntity>>{};
+    for (final article in articles) {
+      final db = article.db ?? 'Sin Base';
+      if (!articlesByDb.containsKey(db)) {
+        articlesByDb[db] = [];
+      }
+      articlesByDb[db]!.add(article);
+    }
+
+    return ListView(
+      controller: scrollController,
+      children: [
+        // Build sections for each database
+        ...articlesByDb.entries.map((dbEntry) {
+          final dbName = dbEntry.key;
+          final dbArticles = dbEntry.value;
+
+          // Group by city within this database
+          final articlesByCity = <String, List<ArticulosxAlmacenEntity>>{};
+          for (final article in dbArticles) {
+            final city = article.ciudad ?? 'Sin Ciudad';
+            if (!articlesByCity.containsKey(city)) {
+              articlesByCity[city] = [];
+            }
+            articlesByCity[city]!.add(article);
+          }
+
+          return DatabaseSection(
+            dbName: dbName,
+            articlesByCity: articlesByCity,
+          );
+        }).toList(),
+      ],
+    );
+  }
+}
+
+// Widget para mostrar una sección de base de datos con sus ciudades
+class DatabaseSection extends StatelessWidget {
+  final String dbName;
+  final Map<String, List<ArticulosxAlmacenEntity>> articlesByCity;
+
+  const DatabaseSection({
+    Key? key,
+    required this.dbName,
+    required this.articlesByCity,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    // Calcular total por base de datos
+    int totalDisponibleDb = 0;
+    articlesByCity.forEach((_, articles) {
+      for (var article in articles) {
+        totalDisponibleDb += article.disponible;
+      }
+    });
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Encabezado de base de datos
+        Container(
+          margin: const EdgeInsets.only(bottom: 12),
+          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.primaryContainer,
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'BASE: $dbName',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                  color: Theme.of(context).colorScheme.onPrimaryContainer,
+                ),
+              ),
+              Text(
+                'Total: $totalDisponibleDb',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                  color: Theme.of(context).colorScheme.onPrimaryContainer,
+                ),
+              ),
+            ],
+          ),
+        ),
+
+        // Secciones de ciudades
+        ...articlesByCity.entries.map((cityEntry) {
+          return CitySection(
+            cityName: cityEntry.key,
+            articles: cityEntry.value,
+          );
+        }).toList(),
+
+        const SizedBox(height: 20),
+      ],
+    );
+  }
+}
+
+// Widget para mostrar una sección de ciudad con sus almacenes
+class CitySection extends StatelessWidget {
+  final String cityName;
+  final List<ArticulosxAlmacenEntity> articles;
+
+  const CitySection({
+    Key? key,
+    required this.cityName,
+    required this.articles,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    // Calcular total por ciudad
+    int totalDisponibleCity = 0;
+    for (var article in articles) {
+      totalDisponibleCity += article.disponible;
+    }
+
+    return Padding(
+      padding: const EdgeInsets.only(left: 8.0, bottom: 16.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Encabezado de ciudad
+          Container(
+            margin: const EdgeInsets.only(bottom: 8),
+            padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 10),
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.secondaryContainer,
+              borderRadius: BorderRadius.circular(6),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.location_city, size: 16),
+                const SizedBox(width: 6),
+                Text(
+                  cityName,
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: Theme.of(context).colorScheme.onSecondaryContainer,
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Text(
+                  'Total: $totalDisponibleCity',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: Theme.of(context).colorScheme.onSecondaryContainer,
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          // Lista de almacenes
+          ...articles.map((article) {
+            return WarehouseItem(article: article);
+          }).toList(),
+        ],
+      ),
+    );
+  }
+}
+
+// Widget para mostrar un ítem de almacén
+class WarehouseItem extends StatelessWidget {
+  final ArticulosxAlmacenEntity article;
+
+  const WarehouseItem({
+    Key? key,
+    required this.article,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      elevation: 0,
+      margin: const EdgeInsets.only(bottom: 8, left: 8),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(6),
+        side: BorderSide(
+          color: Theme.of(context).colorScheme.outlineVariant,
+          width: 1,
+        ),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: Padding(
+        padding: const EdgeInsets.all(10.0),
+        child: Row(
+          children: [
+            // Icono de almacén
+            Icon(
+              Icons.warehouse,
+              size: 20,
+              color: Theme.of(context).colorScheme.tertiary,
+            ),
+            const SizedBox(width: 12),
+            
+            // Información del almacén
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    article.whsName ?? 'Almacén',
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  Text(
+                    'Código: ${article.whsCode}',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            
+            // Disponibilidad
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.surfaceVariant,
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Text(
+                'Disponible: ${article.disponible}',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

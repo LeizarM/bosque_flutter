@@ -72,42 +72,7 @@ final routerProvider = Provider<GoRouter>((ref) {
                 }
                 return null; // No redireccionar si tenemos el objeto
               },
-              builder: (context, state) {
-                try {
-                  // Intentar obtener el artículo con manejo de errores
-                  final articulo = state.extra as ArticulosxCiudadEntity;
-                  return DisponibilidadDetalladaScreen(articulo: articulo);
-                } catch (e) {
-                  // Si hay error, mostrar pantalla de error y volver a ventas
-                  return Scaffold(
-                    appBar: AppBar(
-                      title: const Text('Error'),
-                      leading: BackButton(
-                        onPressed: () => context.go('/dashboard/ventas'),
-                      ),
-                    ),
-                    body: Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Icon(Icons.error_outline, size: 64, color: Colors.red),
-                          const SizedBox(height: 16),
-                          const Text(
-                            'No se pudo cargar la información del artículo',
-                            style: TextStyle(fontSize: 18),
-                            textAlign: TextAlign.center,
-                          ),
-                          const SizedBox(height: 24),
-                          ElevatedButton(
-                            onPressed: () => context.go('/dashboard/ventas'),
-                            child: const Text('Volver a Ventas'),
-                          ),
-                        ],
-                      ),
-                    ),
-                  );
-                }
-              },
+              
             ),
             // Add more module routes here as needed
           ],
@@ -319,42 +284,7 @@ class AppRouter {
                 }
                 return null; // No redireccionar si tenemos el objeto
               },
-              builder: (context, state) {
-                try {
-                  // Intentar obtener el artículo con manejo de errores
-                  final articulo = state.extra as ArticulosxCiudadEntity;
-                  return DisponibilidadDetalladaScreen(articulo: articulo);
-                } catch (e) {
-                  // Si hay error, mostrar pantalla de error y volver a ventas
-                  return Scaffold(
-                    appBar: AppBar(
-                      title: const Text('Error'),
-                      leading: BackButton(
-                        onPressed: () => context.go('/dashboard/ventas'),
-                      ),
-                    ),
-                    body: Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Icon(Icons.error_outline, size: 64, color: Colors.red),
-                          const SizedBox(height: 16),
-                          const Text(
-                            'No se pudo cargar la información del artículo',
-                            style: TextStyle(fontSize: 18),
-                            textAlign: TextAlign.center,
-                          ),
-                          const SizedBox(height: 24),
-                          ElevatedButton(
-                            onPressed: () => context.go('/dashboard/ventas'),
-                            child: const Text('Volver a Ventas'),
-                          ),
-                        ],
-                      ),
-                    ),
-                  );
-                }
-              },
+              
             ),
             // Add more module routes here as needed
           ],

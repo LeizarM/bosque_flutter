@@ -3,6 +3,7 @@ class AppConstants {
   static const String loginEndpoint = '/auth/login';
   static const String menuEndpoint = '/view/vistaDinamica';
   static const String articulosEndpoint = '/paginaXApp/articulosX';
+  static const String articulosAlmacenEndpoint = '/paginaXApp/articulosXAlmacen';
   
 
 
