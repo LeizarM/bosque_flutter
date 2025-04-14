@@ -1506,7 +1506,7 @@ class _VentasArticulosViewState extends ConsumerState<VentasArticulosView> {
                 _buildDetailRow('Disponible:', '${articulo.disponible ?? 0}'),
                 _buildDetailRow(
                   'Lista de Precio:',
-                  '${articulo.listaPrecio ?? ''}',
+                  '${articulo.listaPrecio}',
                 ),
                 _buildDetailRow(
                   'Precio:',
