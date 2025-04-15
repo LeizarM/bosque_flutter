@@ -1,6 +1,5 @@
 import 'package:bosque_flutter/core/state/articulo_almacen_provider.dart';
 import 'package:bosque_flutter/domain/entities/articulos_almacen_entity.dart';
-import 'package:bosque_flutter/presentation/screens/ventas/article_stock_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:responsive_framework/responsive_framework.dart';
@@ -686,11 +685,27 @@ class _VentasArticulosViewState extends ConsumerState<VentasArticulosView> {
     List<String> codigosOrdenados,
     Map<String, List<ArticulosxCiudadEntity>> articulosAgrupados,
   ) {
+    // Obtenemos el ancho de la pantalla para determinar el número de columnas
+    final screenWidth = MediaQuery.of(context).size.width;
+    
+    // Definimos el número de columnas basado en el ancho de la pantalla
+    int crossAxisCount = 3; // Por defecto 3 columnas para escritorio
+    double childAspectRatio = 1.8; // Proporción reducida para aumentar el alto de las tarjetas
+    
+    // Ajustes para pantallas muy grandes o pequeñas
+    if (screenWidth > 1800) {
+      crossAxisCount = 4; // 4 columnas para pantallas muy anchas
+      childAspectRatio = 2.0;
+    } else if (screenWidth < 1200) {
+      crossAxisCount = 2; // 2 columnas para escritorio más pequeño
+      childAspectRatio = 1.6;
+    }
+
     return GridView.builder(
       padding: const EdgeInsets.only(top: 8),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2, // Dos columnas en desktop
-        childAspectRatio: 2.0, // Proporción de las tarjetas
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: crossAxisCount, // Número de columnas según ancho
+        childAspectRatio: childAspectRatio, // Proporción reducida para hacer las tarjetas más altas
         crossAxisSpacing: 16,
         mainAxisSpacing: 16,
       ),
@@ -700,8 +715,7 @@ class _VentasArticulosViewState extends ConsumerState<VentasArticulosView> {
         final variantes = articulosAgrupados[codigoArticulo]!;
 
         // Para cada variante, organizamos por base de datos y lista de precio
-        Map<String?, Map<int?, ArticulosxCiudadEntity>> variantesPorDbYLista =
-            {};
+        Map<String?, Map<int?, ArticulosxCiudadEntity>> variantesPorDbYLista = {};
 
         for (var variante in variantes) {
           if (!variantesPorDbYLista.containsKey(variante.db)) {
@@ -749,13 +763,8 @@ class _VentasArticulosViewState extends ConsumerState<VentasArticulosView> {
     Map<String?, Map<int?, ArticulosxCiudadEntity>> variantesPorDbYLista,
     bool isDesktop,
   ) {
-    // Determinar la disponibilidad total combinando todas las variantes
-    int disponibilidadTotal = 0;
-    variantesPorDbYLista.forEach((db, variantes) {
-      variantes.forEach((listaPrecio, articulo) {
-        disponibilidadTotal += articulo.disponible;
-      });
-    });
+    // No es necesario calcular la disponibilidad total, ya viene del backend
+    int disponibilidadTotal = articuloPrincipal.disponible;
 
     // Color para la barra de disponibilidad
     Color disponibilidadColor;
@@ -856,7 +865,7 @@ class _VentasArticulosViewState extends ConsumerState<VentasArticulosView> {
                                     vertical: 4,
                                   ),
                                   child: Text(
-                                    'Base: $db',
+                                    'Base de Datos: $db',
                                     style: TextStyle(
                                       fontWeight: FontWeight.bold,
                                       fontSize: 13,
@@ -878,6 +887,18 @@ class _VentasArticulosViewState extends ConsumerState<VentasArticulosView> {
                                     ),
                                     child: Row(
                                       children: [
+                                        
+                                        // Lista de precios
+                                        // Código de la variante
+                                        Text(
+                                          'Lista ${articulo.listaPrecio}: ',
+                                          style: const TextStyle(
+                                            fontSize: 13,
+                                          ),
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+
+                                        
                                         // Condición
                                         Expanded(
                                           flex: 3,
@@ -936,39 +957,16 @@ class _VentasArticulosViewState extends ConsumerState<VentasArticulosView> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
-                TextButton.icon(
-                  onPressed:
-                      () => _showArticuloDetails(context, articuloPrincipal),
-                  icon: Icon(
-                    Icons.info_outline,
-                    size: 18,
-                    color: Theme.of(context).colorScheme.primary,
-                  ),
-                  label: Text(
-                    'Detalles',
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: Theme.of(context).colorScheme.primary,
-                    ),
-                  ),
-                  style: TextButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 0,
-                    ),
-                    minimumSize: const Size(0, 36),
-                  ),
-                ),
-                const SizedBox(width: 8),
                 ElevatedButton.icon(
                   onPressed:
-                      () => _verDisponibilidadDetallada(
+                      () => _mostrarVariantesPrecio(
                         context,
                         articuloPrincipal,
+                        variantesPorDbYLista,
                       ),
                   icon: const Icon(Icons.inventory_2, size: 18),
                   label: const Text(
-                    'Disponibilidad',
+                    'Ver Detalles',
                     style: TextStyle(fontSize: 13),
                   ),
                   style: ElevatedButton.styleFrom(
@@ -992,16 +990,16 @@ class _VentasArticulosViewState extends ConsumerState<VentasArticulosView> {
     ArticulosxCiudadEntity articuloPrincipal,
     Map<String?, Map<int?, ArticulosxCiudadEntity>> variantesPorDbYLista,
   ) {
-    // Calcular disponibilidad total
-    int disponibilidadTotal = 0;
+    // No es necesario calcular la disponibilidad total, ya viene del backend
+    int disponibilidadTotal = articuloPrincipal.disponible;
+    
     // Obtener el precio mínimo para mostrar destacado
     double precioMinimo = double.infinity;
     String? monedaPrecioMinimo;
 
-    // Calcular valores combinados de todas las variantes
+    // Encontrar precio mínimo entre todas las variantes
     variantesPorDbYLista.forEach((db, variantes) {
       variantes.forEach((listaPrecio, articulo) {
-        disponibilidadTotal += articulo.disponible;
         if ((articulo.precio) < precioMinimo) {
           precioMinimo = articulo.precio;
           monedaPrecioMinimo = articulo.moneda;
@@ -1173,31 +1171,6 @@ class _VentasArticulosViewState extends ConsumerState<VentasArticulosView> {
                     // Botones de acción
                     Row(
                       children: [
-                        // Botón ver detalles
-                        TextButton.icon(
-                          onPressed:
-                              () => _showArticuloDetails(
-                                context,
-                                articuloPrincipal,
-                              ),
-                          icon: Icon(
-                            Icons.visibility_outlined,
-                            size: 18,
-                            color: Theme.of(context).colorScheme.primary,
-                          ),
-                          label: const Text(
-                            'Ver',
-                            style: TextStyle(fontSize: 13),
-                          ),
-                          style: TextButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 0,
-                            ),
-                            minimumSize: const Size(0, 36),
-                          ),
-                        ),
-
                         // Botón expandir para ver variantes
                         IconButton(
                           onPressed: () {
@@ -1223,6 +1196,7 @@ class _VentasArticulosViewState extends ConsumerState<VentasArticulosView> {
   }
 
   // Método para mostrar las variantes de precio en un bottom sheet (para móvil/tablet)
+  // Incluye también la disponibilidad por almacén
   void _mostrarVariantesPrecio(
     BuildContext context,
     ArticulosxCiudadEntity articuloPrincipal,
@@ -1236,7 +1210,7 @@ class _VentasArticulosViewState extends ConsumerState<VentasArticulosView> {
       ),
       builder: (context) {
         return DraggableScrollableSheet(
-          initialChildSize: 0.6,
+          initialChildSize: 0.7,
           minChildSize: 0.3,
           maxChildSize: 0.9,
           expand: false,
@@ -1251,7 +1225,7 @@ class _VentasArticulosViewState extends ConsumerState<VentasArticulosView> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        'Precios por Lista',
+                        'Precios y Disponibilidad',
                         style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
@@ -1293,160 +1267,42 @@ class _VentasArticulosViewState extends ConsumerState<VentasArticulosView> {
 
                   const Divider(),
 
-                  // Lista de variantes por DB y lista de precio
+                  // Secciones de Tabs para precios y disponibilidad
                   Expanded(
-                    child: ListView(
-                      controller: scrollController,
-                      children: [
-                        ...variantesPorDbYLista.entries.map((dbEntry) {
-                          final db = dbEntry.key ?? '';
-                          final variantes = dbEntry.value;
-                          final listasPrecio =
-                              variantes.keys.toList()
-                                ..sort((a, b) => (a ?? 0).compareTo(b ?? 0));
-
-                          return Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              // Encabezado de la base de datos
-                              Container(
-                                margin: const EdgeInsets.symmetric(vertical: 8),
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 12,
-                                  vertical: 6,
-                                ),
-                                decoration: BoxDecoration(
-                                  color:
-                                      Theme.of(
-                                        context,
-                                      ).colorScheme.primaryContainer,
-                                  borderRadius: BorderRadius.circular(4),
-                                ),
-                                child: Text(
-                                  'BASE DE DATOS: $db',
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    color:
-                                        Theme.of(
-                                          context,
-                                        ).colorScheme.onPrimaryContainer,
-                                  ),
-                                ),
+                    child: DefaultTabController(
+                      length: 2,
+                      child: Column(
+                        children: [
+                          // Tabs de navegación
+                          TabBar(
+                            tabs: const [
+                              Tab(
+                                icon: Icon(Icons.price_change),
+                                text: 'Precios',
                               ),
-
-                              // Tabla de precios por lista
-                              ...listasPrecio.map((listaPrecio) {
-                                final articulo = variantes[listaPrecio]!;
-                                return Card(
-                                  margin: const EdgeInsets.only(bottom: 8),
-                                  elevation: 0,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(4),
-                                    side: BorderSide(
-                                      color:
-                                          Theme.of(
-                                            context,
-                                          ).colorScheme.outlineVariant,
-                                      width: 1,
-                                    ),
-                                  ),
-                                  child: Padding(
-                                    padding: const EdgeInsets.all(12),
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        // Lista de precio
-                                        Row(
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.spaceBetween,
-                                          children: [
-                                            Text(
-                                              'Lista de Precio: ${articulo.listaPrecio}',
-                                              style: TextStyle(
-                                                fontWeight: FontWeight.bold,
-                                                color:
-                                                    Theme.of(
-                                                      context,
-                                                    ).colorScheme.secondary,
-                                              ),
-                                            ),
-                                            Text(
-                                              'Disponible: ${articulo.disponible} ${articulo.unidadMedida}',
-                                              style: const TextStyle(
-                                                fontWeight: FontWeight.w500,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-
-                                        // Condición de precio
-                                        if (articulo.condicionPrecio != null)
-                                          Padding(
-                                            padding: const EdgeInsets.symmetric(
-                                              vertical: 6,
-                                            ),
-                                            child: Text(
-                                              'Condición: ${articulo.condicionPrecio}',
-                                              style: const TextStyle(
-                                                fontSize: 14,
-                                              ),
-                                            ),
-                                          ),
-
-                                        // Precio (sin el botón de disponibilidad)
-                                        Text(
-                                          '${articulo.moneda ?? "BS"} ${articulo.precio.toStringAsFixed(2)}',
-                                          style: TextStyle(
-                                            fontSize: 18,
-                                            fontWeight: FontWeight.bold,
-                                            color:
-                                                Theme.of(
-                                                  context,
-                                                ).colorScheme.primary,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                );
-                              }).toList(),
-
-                              // Separador entre bases de datos
-                              if (dbEntry.key !=
-                                  variantesPorDbYLista.entries.last.key)
-                                const Divider(height: 24),
+                              Tab(
+                                icon: Icon(Icons.inventory_2),
+                                text: 'Disponibilidad',
+                              ),
                             ],
-                          );
-                        }).toList(),
-
-                        // Botón de disponibilidad único al final
-                        Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          child: SizedBox(
-                            width: double.infinity,
-                            child: ElevatedButton.icon(
-                              onPressed:
-                                  () => _verDisponibilidadDetallada(
-                                    context,
-                                    variantesPorDbYLista
-                                        .entries
-                                        .first
-                                        .value
-                                        .values
-                                        .first,
-                                  ),
-                              icon: const Icon(Icons.inventory_2),
-                              label: const Text('Ver Disponibilidad'),
-                              style: ElevatedButton.styleFrom(
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: 12,
-                                ),
-                              ),
+                            indicatorColor: Theme.of(context).colorScheme.primary,
+                            labelColor: Theme.of(context).colorScheme.primary,
+                          ),
+                          
+                          // Contenido de los tabs
+                          Expanded(
+                            child: TabBarView(
+                              children: [
+                                // TAB 1: PRECIOS
+                                _buildPreciosTab(context, variantesPorDbYLista, scrollController),
+                                
+                                // TAB 2: DISPONIBILIDAD
+                                _buildDisponibilidadTab(context, articuloPrincipal, scrollController),
+                              ],
                             ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
                 ],
@@ -1458,324 +1314,196 @@ class _VentasArticulosViewState extends ConsumerState<VentasArticulosView> {
     );
   }
 
-  // Método para mostrar detalles completos del artículo
-  void _showArticuloDetails(
+  // Widget para construir el tab de precios
+  Widget _buildPreciosTab(
     BuildContext context,
-    ArticulosxCiudadEntity articulo,
+    Map<String?, Map<int?, ArticulosxCiudadEntity>> variantesPorDbYLista,
+    ScrollController scrollController,
   ) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return Dialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
-          child: Container(
-            width: double.infinity,
-            constraints: const BoxConstraints(maxWidth: 600),
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Título del diálogo
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      'Detalles del Artículo',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: Theme.of(context).colorScheme.primary,
-                      ),
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.close),
-                      onPressed: () => Navigator.pop(context),
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(),
-                    ),
-                  ],
+    return ListView(
+      controller: scrollController,
+      children: [
+        ...variantesPorDbYLista.entries.map((dbEntry) {
+          final db = dbEntry.key ?? '';
+          final variantes = dbEntry.value;
+          final listasPrecio =
+              variantes.keys.toList()..sort((a, b) => (a ?? 0).compareTo(b ?? 0));
+
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Encabezado de la base de datos
+              Container(
+                margin: const EdgeInsets.symmetric(vertical: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
                 ),
-
-                const SizedBox(height: 16),
-
-                // Datos básicos del artículo
-                _buildDetailRow('Código:', articulo.codArticulo ?? ''),
-                _buildDetailRow('Descripción:', articulo.datoArt ?? ''),
-                _buildDetailRow('Unidad:', articulo.unidadMedida ?? ''),
-                _buildDetailRow('Disponible:', '${articulo.disponible ?? 0}'),
-                _buildDetailRow('Lista de Precio:', '${articulo.listaPrecio}'),
-                _buildDetailRow(
-                  'Precio:',
-                  '${articulo.moneda ?? 'BS'} ${articulo.precio?.toStringAsFixed(2) ?? '0.00'}',
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.primaryContainer,
+                  borderRadius: BorderRadius.circular(4),
                 ),
-
-                // Datos adicionales si existen
-                if (articulo.db != null)
-                  _buildDetailRow('Base de Datos:', articulo.db ?? ''),
-                if (articulo.condicionPrecio != null)
-                  _buildDetailRow('Condición:', articulo.condicionPrecio ?? ''),
-
-                const SizedBox(height: 20),
-
-                // Botones de acción
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    TextButton(
-                      onPressed: () => Navigator.pop(context),
-                      child: const Text('Cerrar'),
-                    ),
-                    const SizedBox(width: 8),
-                    ElevatedButton(
-                      onPressed: () {
-                        // Show confirmation dialog before adding to cart
-                        showDialog(
-                          context: context,
-                          builder: (BuildContext context) {
-                            return AlertDialog(
-                              title: Text('Confirmar acción'),
-                              content: Column(
-                                mainAxisSize: MainAxisSize.min,
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    '¿Desea agregar este artículo al carrito?',
-                                  ),
-                                  const SizedBox(height: 8),
-                                  Text(
-                                    'Artículo: ${articulo.datoArt}',
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                  Text('Código: ${articulo.codArticulo}'),
-                                  if (articulo.precio != null)
-                                    Text(
-                                      'Precio: ${articulo.moneda ?? 'BS'} ${articulo.precio?.toStringAsFixed(2)}',
-                                    ),
-                                ],
-                              ),
-                              actions: [
-                                TextButton(
-                                  onPressed:
-                                      () => Navigator.pop(context), // Cancel
-                                  child: const Text('Cancelar'),
-                                ),
-                                ElevatedButton(
-                                  onPressed: () {
-                                    // Close confirmation dialog
-                                    Navigator.pop(context);
-                                    // Close details dialog
-                                    Navigator.pop(context);
-                                    // Show confirmation message
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(
-                                        content: Text(
-                                          '${articulo.datoArt} agregado al carrito',
-                                        ),
-                                        duration: const Duration(seconds: 2),
-                                      ),
-                                    );
-                                  },
-                                  child: const Text('Confirmar'),
-                                ),
-                              ],
-                            );
-                          },
-                        );
-                      },
-                      child: const Text('Agregar al Carrito'),
-                    ),
-                  ],
+                child: Text(
+                  'BASE DE DATOS: $db',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: Theme.of(context).colorScheme.onPrimaryContainer,
+                  ),
                 ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
+              ),
 
-  // Widget auxiliar para construir filas de detalles
-  Widget _buildDetailRow(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(
-            width: 100,
-            child: Text(
-              label,
-              style: const TextStyle(fontWeight: FontWeight.bold),
-            ),
-          ),
-          Expanded(child: Text(value)),
-        ],
-      ),
-    );
-  }
-
-  // Método para ver la disponibilidad detallada de un artículo
-  void _verDisponibilidadDetallada(
-    BuildContext context,
-    ArticulosxCiudadEntity articulo,
-  ) {
-    // Mostrar BottomSheet con la información
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-      ),
-      builder: (context) {
-        return DraggableScrollableSheet(
-          initialChildSize: 0.7,
-          minChildSize: 0.4,
-          maxChildSize: 0.9,
-          expand: false,
-          builder: (context, scrollController) {
-            return Consumer(
-              builder: (context, ref, child) {
-                final articleStockAsyncValue = ref.watch(
-                  articuloAlmacenProvider((
-                    articulo.codArticulo,
-                    widget.codCiudad,
-                  )),
-                );
-                return Container(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Encabezado con información del artículo
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Expanded(
-                            child: Text(
-                              'Disponibilidad por Almacén',
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                                color: Theme.of(context).colorScheme.primary,
-                              ),
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                          IconButton(
-                            onPressed: () => Navigator.pop(context),
-                            icon: const Icon(Icons.close),
-                            padding: EdgeInsets.zero,
-                            constraints: const BoxConstraints(),
-                          ),
-                        ],
-                      ),
-
-                      // Información del artículo
-                      Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 8),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+              // Tabla de precios por lista
+              ...listasPrecio.map((listaPrecio) {
+                final articulo = variantes[listaPrecio]!;
+                return Card(
+                  margin: const EdgeInsets.only(bottom: 8),
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(4),
+                    side: BorderSide(
+                      color: Theme.of(context).colorScheme.outlineVariant,
+                      width: 1,
+                    ),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(12),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Lista de precio
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             Text(
-                              articulo.codArticulo,
-                              style: const TextStyle(
+                              'Lista de Precio: ${articulo.listaPrecio}',
+                              style: TextStyle(
                                 fontWeight: FontWeight.bold,
+                                color: Theme.of(context).colorScheme.secondary,
+                              ),
+                            ),
+                            
+                          ],
+                        ),
+
+                        // Condición de precio
+                        if (articulo.condicionPrecio != null)
+                          Padding(
+                            padding: const EdgeInsets.symmetric(
+                              vertical: 6,
+                            ),
+                            child: Text(
+                              'Condición: ${articulo.condicionPrecio}',
+                              style: const TextStyle(
                                 fontSize: 14,
                               ),
                             ),
-                            const SizedBox(height: 4),
-                            Text(
-                              articulo.datoArt,
-                              style: const TextStyle(fontSize: 14),
-                            ),
-                          ],
-                        ),
-                      ),
-
-                      const Divider(),
-
-                      // Contenido principal - Lista de almacenes
-                      Expanded(
-                        child: articleStockAsyncValue.when(
-                          data: (articles) {
-                            if (articles.isEmpty) {
-                              return Center(
-                                child: Text(
-                                  'No hay stock disponible para este artículo',
-                                  style: TextStyle(
-                                    color: Theme.of(context).colorScheme.error,
-                                  ),
-                                ),
-                              );
-                            }
-                            
-                            // Calcular el total general de disponibilidad
-                            int totalGeneral = 0;
-                            for (var article in articles) {
-                              totalGeneral += article.disponible;
-                            }
-                            
-                            return Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                // Mostrar total general
-                                Container(
-                                  width: double.infinity,
-                                  margin: const EdgeInsets.only(bottom: 16),
-                                  padding: const EdgeInsets.symmetric(
-                                    vertical: 10,
-                                    horizontal: 16,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: Theme.of(context).colorScheme.primary,
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  child: Text(
-                                    'DISPONIBILIDAD TOTAL: $totalGeneral',
-                                    textAlign: TextAlign.center,
-                                    style: TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.bold,
-                                      color: Theme.of(context).colorScheme.onPrimary,
-                                    ),
-                                  ),
-                                ),
-                                
-                                // Lista de inventario por base de datos y ciudad
-                                Expanded(
-                                  child: _buildStockContent(
-                                    context,
-                                    articles,
-                                    scrollController,
-                                  ),
-                                ),
-                              ],
-                            );
-                          },
-                          loading: () => const Center(
-                            child: CircularProgressIndicator(),
                           ),
-                          error: (error, stackTrace) => Center(
-                            child: Text(
-                              'Error al cargar datos: ${error.toString()}',
-                              style: TextStyle(
-                                color: Theme.of(context).colorScheme.error,
-                              ),
-                            ),
+
+                        // Precio
+                        Text(
+                          '${articulo.moneda ?? "BS"} ${articulo.precio.toStringAsFixed(2)}',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Theme.of(context).colorScheme.primary,
                           ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 );
-              },
+              }).toList(),
+
+              // Separador entre bases de datos
+              if (dbEntry.key != variantesPorDbYLista.entries.last.key)
+                const Divider(height: 24),
+            ],
+          );
+        }).toList(),
+      ],
+    );
+  }
+
+  // Widget para construir el tab de disponibilidad
+  Widget _buildDisponibilidadTab(
+    BuildContext context,
+    ArticulosxCiudadEntity articulo,
+    ScrollController scrollController,
+  ) {
+    return Consumer(
+      builder: (context, ref, child) {
+        final articleStockAsyncValue = ref.watch(
+          articuloAlmacenProvider((
+            articulo.codArticulo,
+            widget.codCiudad,
+          )),
+        );
+        
+        return articleStockAsyncValue.when(
+          data: (articles) {
+            if (articles.isEmpty) {
+              return Center(
+                child: Text(
+                  'No hay stock disponible para este artículo',
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.error,
+                  ),
+                ),
+              );
+            }
+            
+            // No necesitamos calcular la disponibilidad total, ya viene del backend
+            // Usamos directamente el valor de disponibilidad del artículo principal
+            int totalGeneral = articulo.disponible;
+            
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Mostrar total general
+                Container(
+                  width: double.infinity,
+                  margin: const EdgeInsets.only(bottom: 16, top: 8),
+                  padding: const EdgeInsets.symmetric(
+                    vertical: 10,
+                    horizontal: 16,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.primary,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    'DISPONIBILIDAD TOTAL: $totalGeneral',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Theme.of(context).colorScheme.onPrimary,
+                    ),
+                  ),
+                ),
+                
+                // Lista de inventario por base de datos y ciudad
+                Expanded(
+                  child: _buildStockContent(
+                    context,
+                    articles,
+                    scrollController,
+                  ),
+                ),
+              ],
             );
           },
+          loading: () => const Center(
+            child: CircularProgressIndicator(),
+          ),
+          error: (error, stackTrace) => Center(
+            child: Text(
+              'Error al cargar datos: ${error.toString()}',
+              style: TextStyle(
+                color: Theme.of(context).colorScheme.error,
+              ),
+            ),
+          ),
         );
       },
     );
@@ -1861,7 +1589,7 @@ class DatabaseSection extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                'BASE: $dbName',
+                'BASE DE DATOS: $dbName',
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
                   fontSize: 16,

@@ -180,10 +180,10 @@ class CitySection extends StatelessWidget {
   final List<ArticulosxAlmacenEntity> articles;
 
   const CitySection({
-    Key? key,
+    super.key,
     required this.cityName,
     required this.articles,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
