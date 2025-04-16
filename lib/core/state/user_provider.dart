@@ -43,57 +43,78 @@ class UserStateNotifier extends StateNotifier<LoginEntity?> {
     await storage.deleteToken();
   }
 
-  int getCodCiudad()  {
+  Future<int> getCodCiudad()  async {
     // Obtener el código de la ciudad del usuario desde el estado
     if (state != null) {
       return state!.codCiudad;
     } else {
-      throw Exception('No user data available');
+      final storage = SecureStorage();
+      final userDataJson = await storage.getUserData();
+     
+      return jsonDecode(userDataJson!)['codCiudad'] ?? 0;
     }
   }
 
-  String getToken() {
+  Future<String> getToken() async {
     // Obtener el token del usuario desde el estado
     if (state != null) {
       return state!.token;
     } else {
-      throw Exception('No user data available');
+
+      final storage = SecureStorage();
+      final userDataJson = await storage.getUserData();
+     
+      return jsonDecode(userDataJson!)['token'] ?? 0;
     }
   }
 
-  int getCodUsuario() {
+  Future<int> getCodUsuario() async {
     // Obtener el código del usuario desde el estado
     if (state != null) {
       return state!.codUsuario;
     } else {
-      throw Exception('No user data available');
+
+      final storage = SecureStorage();
+      final userDataJson = await storage.getUserData();
+     
+      return jsonDecode(userDataJson!)['codUsuario'] ?? 0;  
     }
   }
 
-  int getCodEmpleado() {
+  Future<int> getCodEmpleado() async {
     // Obtener el código del empleado desde el estado
     if (state != null) {
       return state!.codEmpleado;
     } else {
-      throw Exception('No user data available');
+      final storage = SecureStorage();
+      final userDataJson = await storage.getUserData();
+      
+      return jsonDecode(userDataJson!)['codEmpleado'] ?? 0;
+      
     }
   }
 
-  int getCodSucursal() {
+  Future<int> getCodSucursal() async {
     // Obtener el código de la sucursal desde el estado
     if (state != null) {
       return state!.codSucursal;
     } else {
-      throw Exception('No user data available');
+      final storage = SecureStorage();
+      final userDataJson = await storage.getUserData();
+     
+      return jsonDecode(userDataJson!)['codSucursal'] ?? 0;
     }
   }
 
-  String getTipoUsuario() {
+  Future<String> getTipoUsuario() async {
     // Obtener el tipo de usuario desde el estado
     if (state != null) {
       return state!.tipoUsuario;
     } else {
-      throw Exception('No user data available');
+      final storage = SecureStorage();
+      final userDataJson = await storage.getUserData();
+     
+      return jsonDecode(userDataJson!)['tipoUsuario'] ?? 0;
     }
   }
 }

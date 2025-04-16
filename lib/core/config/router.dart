@@ -59,22 +59,21 @@ final routerProvider = Provider<GoRouter>((ref) {
               name: 'ventas',
               builder: (context, state) => const VentasHomeScreen(),
             ),
-            // Disponibilidad detallada
+            // Entregas 
             GoRoute(
-              path: '/dashboard/disponibilidad/:codArticulo',
-              name: 'disponibilidad',
-              redirect: (context, state) {
-                // Si no hay extra, significa que se recargó la página
-                // o se accedió directamente por URL
-                if (state.extra == null) {
-                  // Redireccionar a ventas porque necesitamos el objeto completo
-                  return '/dashboard/ventas';
-                }
-                return null; // No redireccionar si tenemos el objeto
-              },
-              
+              path: '/dashboard/Revision',
+              name: 'revision',  // Cambié el nombre para que coincida mejor con la ruta
+              builder: (context, state) => const EntregasHomeScreen(),
             ),
-            // Add more module routes here as needed
+            // Nueva ruta para trch_choferEntrega/Revision bajo dashboard
+            GoRoute(
+              path: '/dashboard/trch_choferEntrega/Revision',
+              name: 'trch_chofer_revision',
+              builder: (context, state) => const EntregasHomeScreen(),
+            ),
+            // Artículos
+            
+            // Productos
           ],
         ),
         
@@ -83,6 +82,15 @@ final routerProvider = Provider<GoRouter>((ref) {
           path: '/tven_ventas',
           redirect: (context, state) => '/dashboard/ventas',
         ),
+        GoRoute(
+          path: '/trch_choferEntrega',
+          redirect: (context, state) => '/dashboard/trch_choferEntrega/Revision',
+        ),
+        GoRoute(
+          path: '/trch_choferEntrega/Revision',
+          redirect: (context, state) => '/dashboard/trch_choferEntrega/Revision',
+        ),
+        
       ],
       errorBuilder: (context, state) => Scaffold(
         appBar: AppBar(

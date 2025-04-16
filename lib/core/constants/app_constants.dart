@@ -4,6 +4,9 @@ class AppConstants {
   static const String menuEndpoint = '/view/vistaDinamica';
   static const String articulosEndpoint = '/paginaXApp/articulosX';
   static const String articulosAlmacenEndpoint = '/paginaXApp/articulosXAlmacen';
+  static const String entregasEndpoint = '/entregas/chofer-entrega';
+  static const String marcarEntregaCompletada = '/entregas/registro-entrega-chofer';
+  static const String inicioEntregaYFinEndpoint = '/entregas/registro-inicio-fin-entrega';
   
 
 

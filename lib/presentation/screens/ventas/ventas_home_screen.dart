@@ -20,8 +20,8 @@ class _VentasHomeScreenState extends ConsumerState<VentasHomeScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      setState(() {
-        _codCiudad = ref.read(userProvider.notifier).getCodCiudad();
+      setState(() async {
+        _codCiudad = await ref.read(userProvider.notifier).getCodCiudad();
       });
     });
   }

@@ -114,6 +114,7 @@ class ResponsiveUtilsBosque {
     if (isDesktop(context) && desktop != null) return desktop;
     return defaultValue;
   }
+  
 }
 
 /// Clase para almacenar las dimensiones del grid
