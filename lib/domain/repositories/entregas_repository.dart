@@ -22,4 +22,31 @@ abstract class EntregasRepository {
     required int codCiudadChofer,
     String? observaciones,
   });
+  
+  // Método para obtener dirección a partir de coordenadas usando un servicio externo
+  Future<String> obtenerDireccionDesdeAPI(double latitud, double longitud);
+
+  //Metodo para registrar el inicio o fin de una ruta
+  Future<bool> registrarRuta( {
+    required int docEntry,
+    required int docNum,
+    required int factura,
+    required String cardName,
+    required String cardCode,
+    required String addressEntregaFac,
+    required String addressEntregaMat,
+    required int codEmpleado,
+    required String valido,
+    required String db,
+    required String direccionEntrega,
+    required int fueEntregado,
+    required DateTime fechaEntrega,
+    required double latitud,
+    required double longitud,
+    required String  obs,
+    required int audUsuario
+    
+
+  }
+  );
 }

@@ -14,9 +14,9 @@ class ArticulosxAlmacenModel {
     final String codArticulo;
     final String datoArt;
     final int listaPrecio;
-    final int precio;
+    final double precio;
     final dynamic moneda;
-    final int gramaje;
+    final double gramaje;
     final int codigoFamilia;
     final int disponible;
     final dynamic unidadMedida;
@@ -29,7 +29,7 @@ class ArticulosxAlmacenModel {
     final String whsName;
     final dynamic condicionPrecio;
     final String ciudad;
-    final int utm;
+    final double utm;
 
     ArticulosxAlmacenModel({
         required this.codArticulo,

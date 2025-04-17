@@ -6,6 +6,7 @@ import 'package:bosque_flutter/core/utils/responsive_utils_bosque.dart';
 import 'package:bosque_flutter/domain/entities/entregas_entity.dart';
 import 'package:bosque_flutter/presentation/widgets/entregas/observaciones_dialog.dart';
 import 'package:bosque_flutter/presentation/widgets/entregas/entrega_item.dart';
+import 'package:geolocator/geolocator.dart';
 
 class EntregasHomeScreen extends ConsumerStatefulWidget {
   const EntregasHomeScreen({Key? key}) : super(key: key);
@@ -18,6 +19,7 @@ class _EntregasHomeScreenState extends ConsumerState<EntregasHomeScreen> {
   bool _isLocationEnabled = false;
   int _codEmpleado = 0;
   bool _isInitializing = true;
+  bool _isProcesingAction = false; // Nueva variable para controlar el estado de procesamiento
   
   @override
   void initState() {
@@ -52,6 +54,70 @@ class _EntregasHomeScreenState extends ConsumerState<EntregasHomeScreen> {
     return await ref.read(entregasNotifierProvider.notifier).verificarServiciosLocalizacion();
   }
 
+  // Solicitar explícitamente los permisos de ubicación
+  Future<bool> _solicitarPermisosUbicacion() async {
+    try {
+      // Verificar si los servicios de ubicación están habilitados
+      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) {
+        // Abre la configuración del sistema si los servicios están desactivados
+        await Geolocator.openLocationSettings();
+        // Verificamos nuevamente después de regresar de la configuración
+        serviceEnabled = await Geolocator.isLocationServiceEnabled();
+        if (!serviceEnabled) {
+          return false;
+        }
+      }
+
+      // Verificar permisos actuales
+      LocationPermission permission = await Geolocator.checkPermission();
+      
+      // Solicitar permiso si está denegado
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+        if (permission == LocationPermission.denied) {
+          return false;
+        }
+      }
+      
+      // Si los permisos están denegados permanentemente, sugerir abrir la configuración
+      if (permission == LocationPermission.deniedForever) {
+        // Mostrar diálogo para ir a configuración
+        final irAConfiguracion = await showDialog<bool>(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('Permisos de ubicación necesarios'),
+            content: const Text('Los permisos de ubicación son necesarios para marcar entregas. Por favor, habilítalos en la configuración de la aplicación.'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text('Cancelar'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(context, true),
+                child: const Text('Ir a Configuración'),
+              ),
+            ],
+          ),
+        );
+        
+        if (irAConfiguracion == true) {
+          await Geolocator.openAppSettings();
+          // Verificamos nuevamente después de regresar de la configuración
+          permission = await Geolocator.checkPermission();
+          return permission == LocationPermission.always || 
+                 permission == LocationPermission.whileInUse;
+        }
+        return false;
+      }
+
+      return true;
+    } catch (e) {
+      print('Error al solicitar permisos de ubicación: ${e.toString()}');
+      return false;
+    }
+  }
+
   // Cargar entregas del empleado
   Future<void> _cargarEntregas(int codEmpleado) async {
     await ref.read(entregasNotifierProvider.notifier).cargarEntregas(codEmpleado);
@@ -64,14 +130,36 @@ class _EntregasHomeScreenState extends ConsumerState<EntregasHomeScreen> {
       return;
     }
 
-    await ref.read(entregasNotifierProvider.notifier).iniciarRuta();
+    setState(() {
+      _isProcesingAction = true; // Mostrar indicador de carga
+    });
     
-    // Recargar los permisos de ubicación
-    final locationEnabled = await _checkLocationPermission();
-    if (mounted) {
-      setState(() {
-        _isLocationEnabled = locationEnabled;
-      });
+    try {
+      await ref.read(entregasNotifierProvider.notifier).iniciarRuta();
+      
+      // Mostrar mensaje de éxito
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('Ruta iniciada correctamente'),
+            backgroundColor: Theme.of(context).colorScheme.primary,
+          ),
+        );
+      }
+    } catch (e) {
+      // Mostrar mensaje de error
+      if (mounted) {
+        _mostrarMensajeError('Error al iniciar ruta: ${e.toString()}');
+      }
+    } finally {
+      // Recargar los permisos de ubicación y restablecer estado de carga
+      final locationEnabled = await _checkLocationPermission();
+      if (mounted) {
+        setState(() {
+          _isLocationEnabled = locationEnabled;
+          _isProcesingAction = false;
+        });
+      }
     }
   }
 
@@ -82,14 +170,36 @@ class _EntregasHomeScreenState extends ConsumerState<EntregasHomeScreen> {
       return;
     }
 
-    await ref.read(entregasNotifierProvider.notifier).finalizarRuta();
+    setState(() {
+      _isProcesingAction = true; // Mostrar indicador de carga
+    });
     
-    // Recargar los permisos de ubicación
-    final locationEnabled = await _checkLocationPermission();
-    if (mounted) {
-      setState(() {
-        _isLocationEnabled = locationEnabled;
-      });
+    try {
+      await ref.read(entregasNotifierProvider.notifier).finalizarRuta();
+      
+      // Mostrar mensaje de éxito
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('Ruta finalizada correctamente'),
+            backgroundColor: Theme.of(context).colorScheme.primary,
+          ),
+        );
+      }
+    } catch (e) {
+      // Mostrar mensaje de error
+      if (mounted) {
+        _mostrarMensajeError('Error al finalizar ruta: ${e.toString()}');
+      }
+    } finally {
+      // Recargar los permisos de ubicación y restablecer estado de carga
+      final locationEnabled = await _checkLocationPermission();
+      if (mounted) {
+        setState(() {
+          _isLocationEnabled = locationEnabled;
+          _isProcesingAction = false;
+        });
+      }
     }
   }
 
@@ -126,6 +236,10 @@ class _EntregasHomeScreenState extends ConsumerState<EntregasHomeScreen> {
     );
 
     if (resultado != null && resultado['observaciones'] != null) {
+      setState(() {
+        _isProcesingAction = true; // Mostrar indicador de carga
+      });
+      
       try {
         await ref.read(entregasNotifierProvider.notifier).marcarEntregaCompletada(
           entrega.idEntrega,
@@ -146,6 +260,12 @@ class _EntregasHomeScreenState extends ConsumerState<EntregasHomeScreen> {
         // Mostrar mensaje de error
         if (mounted) {
           _mostrarMensajeError('Error al marcar la entrega: ${e.toString()}');
+        }
+      } finally {
+        if (mounted) {
+          setState(() {
+            _isProcesingAction = false; // Ocultar indicador de carga
+          });
         }
       }
     }
@@ -191,224 +311,266 @@ class _EntregasHomeScreenState extends ConsumerState<EntregasHomeScreen> {
             ),
         ],
       ),
-      body: Column(
+      body: Stack(
         children: [
-          // Barra de estado de la ruta
-          Container(
-            color: state.rutaIniciada 
-                ? colorScheme.primaryContainer
-                : colorScheme.surfaceTint.withAlpha(20),
-            padding: const EdgeInsets.all(16),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+          Column(
+            children: [
+              // Barra de estado de la ruta
+              Container(
+                color: state.rutaIniciada 
+                    ? colorScheme.primaryContainer
+                    : colorScheme.surfaceTint.withAlpha(20),
+                padding: const EdgeInsets.all(16),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            state.rutaIniciada
+                                ? 'Ruta iniciada'
+                                : 'Ruta no iniciada',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                              color: state.rutaIniciada 
+                                  ? colorScheme.primary
+                                  : colorScheme.onSurface,
+                            ),
+                          ),
+                          if (state.fechaInicio != null)
+                            Text(
+                              'Iniciada: ${state.fechaInicio!.day.toString().padLeft(2, '0')}/${state.fechaInicio!.month.toString().padLeft(2, '0')}/${state.fechaInicio!.year} ${state.fechaInicio!.hour.toString().padLeft(2, '0')}:${state.fechaInicio!.minute.toString().padLeft(2, '0')}',
+                              style: TextStyle(
+                                color: state.rutaIniciada 
+                                    ? colorScheme.primary
+                                    : colorScheme.onSurface,
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                    if (state.sincronizacionEnProceso || _isProcesingAction)
+                      SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: colorScheme.primary,
+                        ),
+                      )
+                    else if (!state.rutaIniciada)
+                      ElevatedButton(
+                        onPressed: state.entregas.isEmpty || !_isLocationEnabled
+                            ? null
+                            : _iniciarRuta,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: colorScheme.primary,
+                          disabledBackgroundColor: colorScheme.surfaceTint.withAlpha(20),
+                          foregroundColor: colorScheme.onPrimary,
+                          disabledForegroundColor: colorScheme.onSurface.withAlpha(150),
+                        ),
+                        child: const Text('Iniciar entregas'),
+                      )
+                    else
+                      ElevatedButton(
+                        onPressed: !_isLocationEnabled ? null : _finalizarRuta,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: colorScheme.error,
+                          disabledBackgroundColor: colorScheme.surfaceTint.withAlpha(20),
+                          foregroundColor: colorScheme.onError,
+                          disabledForegroundColor: colorScheme.onSurface.withAlpha(150),
+                        ),
+                        child: const Text('Finalizar entregas'),
+                      ),
+                  ],
+                ),
+              ),
+              
+              // Mensaje de información sobre entregas
+              if (state.entregas.isEmpty && !state.isLoading)
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  width: double.infinity,
+                  color: colorScheme.tertiaryContainer,
+                  child: Text(
+                    'No hay entregas pendientes para el día de hoy',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: colorScheme.onTertiaryContainer,
+                    ),
+                  ),
+                ),
+                
+              // Contador de entregas
+              if (state.entregas.isNotEmpty)
+                Container(
+                  color: colorScheme.secondaryContainer,
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        state.rutaIniciada
-                            ? 'Ruta iniciada'
-                            : 'Ruta no iniciada',
+                        'Total de facturas: ${listaEntregasAgrupadas.length}',
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
-                          fontSize: 16,
-                          color: state.rutaIniciada 
-                              ? colorScheme.primary
-                              : colorScheme.onSurface,
+                          color: colorScheme.onSecondaryContainer,
                         ),
                       ),
-                      if (state.fechaInicio != null)
-                        Text(
-                          'Iniciada: ${state.fechaInicio!.day.toString().padLeft(2, '0')}/${state.fechaInicio!.month.toString().padLeft(2, '0')}/${state.fechaInicio!.year} ${state.fechaInicio!.hour.toString().padLeft(2, '0')}:${state.fechaInicio!.minute.toString().padLeft(2, '0')}',
-                          style: TextStyle(
-                            color: state.rutaIniciada 
-                                ? colorScheme.primary
-                                : colorScheme.onSurface,
-                          ),
+                      Text(
+                        'Productos: ${state.entregas.length}',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: colorScheme.primary,
                         ),
+                      ),
                     ],
                   ),
                 ),
-                if (state.sincronizacionEnProceso)
-                  SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: colorScheme.primary,
-                    ),
-                  )
-                else if (!state.rutaIniciada)
-                  ElevatedButton(
-                    onPressed: state.entregas.isEmpty || !_isLocationEnabled
-                        ? null
-                        : _iniciarRuta,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: colorScheme.primary,
-                      disabledBackgroundColor: colorScheme.surfaceTint.withAlpha(20),
-                      foregroundColor: colorScheme.onPrimary,
-                      disabledForegroundColor: colorScheme.onSurface.withAlpha(150),
-                    ),
-                    child: const Text('Iniciar entregas'),
-                  )
-                else
-                  ElevatedButton(
-                    onPressed: !_isLocationEnabled ? null : _finalizarRuta,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: colorScheme.error,
-                      disabledBackgroundColor: colorScheme.surfaceTint.withAlpha(20),
-                      foregroundColor: colorScheme.onError,
-                      disabledForegroundColor: colorScheme.onSurface.withAlpha(150),
-                    ),
-                    child: const Text('Finalizar entregas'),
-                  ),
-              ],
-            ),
-          ),
-          
-          // Mensaje de información sobre entregas
-          if (state.entregas.isEmpty && !state.isLoading)
-            Container(
-              padding: const EdgeInsets.all(16),
-              width: double.infinity,
-              color: colorScheme.tertiaryContainer,
-              child: Text(
-                'No hay entregas pendientes para el día de hoy',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  color: colorScheme.onTertiaryContainer,
-                ),
-              ),
-            ),
-            
-          // Contador de entregas
-          if (state.entregas.isNotEmpty)
-            Container(
-              color: colorScheme.secondaryContainer,
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    'Total de facturas: ${listaEntregasAgrupadas.length}',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: colorScheme.onSecondaryContainer,
-                    ),
-                  ),
-                  Text(
-                    'Productos: ${state.entregas.length}',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: colorScheme.primary,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          
-          // Contenido principal - Cambia entre vista de tabla y vista de tarjetas según resolución
-          Expanded(
-            child: state.isLoading
-                ? Center(child: CircularProgressIndicator(color: colorScheme.primary))
-                : state.error != null
-                    ? Center(
-                        child: Padding(
-                          padding: const EdgeInsets.all(16.0),
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(
-                                Icons.error_outline,
-                                color: colorScheme.error,
-                                size: 48,
+              
+              // Contenido principal - Cambia entre vista de tabla y vista de tarjetas según resolución
+              Expanded(
+                child: state.isLoading
+                    ? Center(child: CircularProgressIndicator(color: colorScheme.primary))
+                    : state.error != null
+                        ? Center(
+                            child: Padding(
+                              padding: const EdgeInsets.all(16.0),
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    Icons.error_outline,
+                                    color: colorScheme.error,
+                                    size: 48,
+                                  ),
+                                  const SizedBox(height: 16),
+                                  Text(
+                                    'Error: ${state.error}',
+                                    style: TextStyle(color: colorScheme.error),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                  const SizedBox(height: 16),
+                                  ElevatedButton(
+                                    onPressed: () => _cargarEntregas(_codEmpleado),
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: colorScheme.primary,
+                                    ),
+                                    child: const Text('Reintentar'),
+                                  ),
+                                ],
                               ),
-                              const SizedBox(height: 16),
-                              Text(
-                                'Error: ${state.error}',
-                                style: TextStyle(color: colorScheme.error),
-                                textAlign: TextAlign.center,
-                              ),
-                              const SizedBox(height: 16),
-                              ElevatedButton(
-                                onPressed: () => _cargarEntregas(_codEmpleado),
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: colorScheme.primary,
-                                ),
-                                child: const Text('Reintentar'),
-                              ),
-                            ],
-                          ),
-                        ),
-                      )
-                    : state.entregas.isEmpty
-                        ? const Center(
-                            child: Text('No hay entregas pendientes'),
+                            ),
                           )
-                        :  ListView.builder(
-                                itemCount: listaEntregasAgrupadas.length,
-                                itemBuilder: (context, index) {
-                                  final entregas = listaEntregasAgrupadas[index].value;
-                                  
-                                  // Tomamos la primera entrega del grupo para los datos principales
-                                  final entregaPrimaria = entregas.first;
-                                  
-                                  // La entrega se considera completada si todos los productos están entregados
-                                  final todosEntregados = entregas.every((e) => e.fueEntregado == 1);
-                                  final algunoEntregado = entregas.any((e) => e.fueEntregado == 1);
-                                  
-                                  return EntregaItem(
-                                    entrega: entregaPrimaria,
-                                    productosAdicionalesEntrega: entregas,
-                                    rutaIniciada: state.rutaIniciada,
-                                    onTap: () => _mostrarDialogoDireccion(entregaPrimaria),
-                                    disabled: !state.rutaIniciada || todosEntregados,
-                                    todosEntregados: todosEntregados,
-                                    algunoEntregado: algunoEntregado,
-                                  );
-                                },
-                              ),
+                        : state.entregas.isEmpty
+                            ? const Center(
+                                child: Text('No hay entregas pendientes'),
+                              )
+                            :  ListView.builder(
+                                    itemCount: listaEntregasAgrupadas.length,
+                                    itemBuilder: (context, index) {
+                                      final entregas = listaEntregasAgrupadas[index].value;
+                                      
+                                      // Tomamos la primera entrega del grupo para los datos principales
+                                      final entregaPrimaria = entregas.first;
+                                      
+                                      // La entrega se considera completada si todos los productos están entregados
+                                      final todosEntregados = entregas.every((e) => e.fueEntregado == 1);
+                                      final algunoEntregado = entregas.any((e) => e.fueEntregado == 1);
+                                      
+                                      return EntregaItem(
+                                        entrega: entregaPrimaria,
+                                        productosAdicionalesEntrega: entregas,
+                                        rutaIniciada: state.rutaIniciada,
+                                        onTap: () => _mostrarDialogoDireccion(entregaPrimaria),
+                                        disabled: !state.rutaIniciada || todosEntregados,
+                                        todosEntregados: todosEntregados,
+                                        algunoEntregado: algunoEntregado,
+                                      );
+                                    },
+                                  ),
+              ),
+              
+              // Alerta para ubicación
+              if (!_isLocationEnabled)
+                Container(
+                  color: colorScheme.errorContainer,
+                  padding: const EdgeInsets.all(16),
+                  width: double.infinity,
+                  child: Column(
+                    children: [
+                      Text(
+                        '⚠️ La ubicación está desactivada',
+                        style: TextStyle(
+                          color: colorScheme.onErrorContainer,
+                          fontWeight: FontWeight.bold,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Active la ubicación para utilizar esta funcionalidad',
+                        style: TextStyle(color: colorScheme.onErrorContainer),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 8),
+                      ElevatedButton(
+                        onPressed: () async {
+                          final enabled = await _solicitarPermisosUbicacion();
+                          if (mounted) {
+                            setState(() {
+                              _isLocationEnabled = enabled;
+                            });
+                          }
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: colorScheme.error,
+                        ),
+                        child: const Text('Verificar permisos'),
+                      ),
+                    ],
+                  ),
+                ),
+            ],
           ),
           
-          // Alerta para ubicación
-          if (!_isLocationEnabled)
+          // Overlay de carga cuando se está procesando una acción
+          if (_isProcesingAction)
             Container(
-              color: colorScheme.errorContainer,
-              padding: const EdgeInsets.all(16),
-              width: double.infinity,
-              child: Column(
-                children: [
-                  Text(
-                    '⚠️ La ubicación está desactivada',
-                    style: TextStyle(
-                      color: colorScheme.onErrorContainer,
-                      fontWeight: FontWeight.bold,
-                    ),
-                    textAlign: TextAlign.center,
+              color: Colors.black.withOpacity(0.3),
+              child: Center(
+                child: Container(
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.surface,
+                    borderRadius: BorderRadius.circular(8),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.2),
+                        blurRadius: 10,
+                        offset: const Offset(0, 5),
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 4),
-                  Text(
-                    'Active la ubicación para utilizar esta funcionalidad',
-                    style: TextStyle(color: colorScheme.onErrorContainer),
-                    textAlign: TextAlign.center,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      CircularProgressIndicator(
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        'Procesando...',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: Theme.of(context).colorScheme.onSurface,
+                        ),
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 8),
-                  ElevatedButton(
-                    onPressed: () async {
-                      final enabled = await _checkLocationPermission();
-                      if (mounted) {
-                        setState(() {
-                          _isLocationEnabled = enabled;
-                        });
-                      }
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: colorScheme.error,
-                    ),
-                    child: const Text('Verificar permisos'),
-                  ),
-                ],
+                ),
               ),
             ),
         ],

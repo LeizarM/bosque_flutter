@@ -1,5 +1,3 @@
-import 'package:bosque_flutter/data/models/entregas_model.dart';
-
 class EntregaEntity {
     final int idEntrega;
     final int docEntry;
@@ -20,7 +18,7 @@ class EntregaEntity {
     final int openQty;
     final String db;
     final String valido;
-    final int peso;
+    final double peso;
     final dynamic cochePlaca;
     final dynamic prioridad;
     final String tipo;
@@ -123,7 +121,7 @@ class EntregaEntity {
         int? openQty,
         String? db,
         String? valido,
-        int? peso,
+        double? peso,
         dynamic cochePlaca,
         dynamic prioridad,
         String? tipo,

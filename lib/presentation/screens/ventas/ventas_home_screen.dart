@@ -20,11 +20,15 @@ class _VentasHomeScreenState extends ConsumerState<VentasHomeScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      setState(() async {
-        _codCiudad = await ref.read(userProvider.notifier).getCodCiudad();
-      });
+      _inicializarPantalla();
     });
   }
+
+  void _inicializarPantalla() async {
+
+    _codCiudad = await ref.read(userProvider.notifier).getCodCiudad();
+  }
+  
 
   @override
   Widget build(BuildContext context) {

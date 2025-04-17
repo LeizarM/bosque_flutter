@@ -30,7 +30,7 @@ class EntregaModel {
     final int openQty;
     final String db;
     final String valido;
-    final int peso;
+    final double peso;
     final dynamic cochePlaca;
     final dynamic prioridad;
     final String tipo;

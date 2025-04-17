@@ -2,9 +2,9 @@ class ArticulosxAlmacenEntity {
     final String codArticulo;
     final String datoArt;
     final int listaPrecio;
-    final int precio;
+    final double precio;
     final dynamic moneda;
-    final int gramaje;
+    final double gramaje;
     final int codigoFamilia;
     final int disponible;
     final dynamic unidadMedida;
@@ -17,7 +17,7 @@ class ArticulosxAlmacenEntity {
     final String whsName;
     final dynamic condicionPrecio;
     final String ciudad;
-    final int utm;
+    final double utm;
 
     ArticulosxAlmacenEntity({
         required this.codArticulo,

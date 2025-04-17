@@ -1,6 +1,7 @@
+import 'package:dio/dio.dart';
+import 'package:flutter/material.dart';
 import 'package:bosque_flutter/core/constants/app_constants.dart';
 import 'package:bosque_flutter/data/models/entregas_model.dart';
-import 'package:dio/dio.dart';
 import 'package:bosque_flutter/core/network/dio_client.dart';
 import 'package:bosque_flutter/domain/entities/entregas_entity.dart';
 import 'package:bosque_flutter/domain/repositories/entregas_repository.dart';
@@ -76,10 +77,10 @@ class EntregasImpl implements EntregasRepository {
       return response.statusCode == 200;
     } on DioException catch (e) {
       // Manejar errores de red o del servidor
-      print('Error al sincronizar entregas: ${e.message}');
+      debugPrint('Error al sincronizar entregas: ${e.message}');
       return false;
     } catch (e) {
-      print('Error desconocido: ${e.toString()}');
+      debugPrint('Error desconocido: ${e.toString()}');
       return false;
     }
   }
@@ -92,14 +93,11 @@ class EntregasImpl implements EntregasRepository {
       final response = await _dio.post(
         AppConstants.inicioEntregaYFinEndpoint,
         data:
-            entregaModel.toJson(), // Asegúrate de que EntregaEntity tenga un método toJson()
+            entregaModel
+                .toJson(), // Asegúrate de que EntregaEntity tenga un método toJson()
       );
 
-      if(response.statusCode == 201) {
-        
-      }
-
-
+      if (response.statusCode == 201) {}
     } on DioException catch (e) {
       // Manejar errores de red o del servidor
       String errorMessage = 'Error de conexión: ${e.message}';
@@ -114,7 +112,8 @@ class EntregasImpl implements EntregasRepository {
   }
 
   @override
-  Future<bool> marcarDocumentoEntregado(int docNum, {
+  Future<bool> marcarDocumentoEntregado(
+    int docNum, {
     required int docEntry,
     required String db,
     required double latitud,
@@ -128,8 +127,11 @@ class EntregasImpl implements EntregasRepository {
   }) async {
     try {
       // Formatear la fecha al formato esperado por el backend: "yyyy-MM-dd HH:mm:ss"
-      final fechaFormateada = fechaEntrega.toIso8601String().substring(0, 19).replaceAll('T', ' ');
-      
+      final fechaFormateada = fechaEntrega
+          .toIso8601String()
+          .substring(0, 19)
+          .replaceAll('T', ' ');
+
       // Crear el objeto con los datos para enviar al servidor
       final data = {
         'docNum': docNum,
@@ -137,79 +139,89 @@ class EntregasImpl implements EntregasRepository {
         'db': db,
         'latitud': latitud,
         'longitud': longitud,
-        'direccionEntrega': direccionEntrega, // Enviando la dirección obtenida por geocodificación
-        'fechaEntrega': fechaFormateada, // Formato correcto: "yyyy-MM-dd HH:mm:ss"
+        'direccionEntrega':
+            direccionEntrega, // Enviando la dirección obtenida por geocodificación
+        'fechaEntrega':
+            fechaFormateada, // Formato correcto: "yyyy-MM-dd HH:mm:ss"
         'fueEntregado': 1,
         'obs': observaciones ?? '',
         'audUsuario': audUsuario,
         'codSucursalChofer': codSucursalChofer,
         'codCiudadChofer': codCiudadChofer,
       };
-      
-      // Mostrar en consola los datos que se están enviando
-      print('=============================================');
-      print('DATOS DE ENTREGA ENVIADOS AL BACKEND:');
-      print('Documento: $docNum');
-      print('Doc Entry: $docEntry');
-      print('DB: $db');
-      print('Latitud: $latitud');
-      print('Longitud: $longitud');
-      print('Dirección: $direccionEntrega'); // Mostrar la dirección en los logs
-      print('Fecha Entrega (formateada): $fechaFormateada');
-      print('Observaciones: ${observaciones ?? "Sin observaciones"}');
-      print('Usuario: $audUsuario');
-      print('Suc Chofer: $codSucursalChofer');
-      print('Ciudad Chofer: $codCiudadChofer');
-      print('=============================================');
-      
-      // Usar el endpoint correcto definido en las constantes
-      
-   
+
       // Endpoint para marcar todo el documento como entregado
       try {
         final response = await _dio.post(
           AppConstants.marcarEntregaCompletada,
           data: data,
-          
         );
-        
-        // Mostrar respuesta del servidor
-        print('RESPUESTA DEL SERVIDOR: ${response.statusCode}');
-        print('DATOS: ${response.data}');
-        print('=============================================');
-        
+
         return response.statusCode == 200 || response.statusCode == 201;
       } on DioException catch (e) {
-        print('ERROR DE DIO: ${e.type}');
-        print('MENSAJE: ${e.message}');
         if (e.response != null) {
-          print('CÓDIGO DE ESTADO: ${e.response?.statusCode}');
-          print('DATOS DE RESPUESTA: ${e.response?.data}');
+          debugPrint('CÓDIGO DE ESTADO: ${e.response?.statusCode}');
+          debugPrint('DATOS DE RESPUESTA: ${e.response?.data}');
         }
         if (e.error != null) {
-          print('ERROR DETALLADO: ${e.error}');
+          debugPrint('ERROR DETALLADO: ${e.error}');
         }
-        
+
         // Intentamos guardar localmente para sincronizar después
-        _guardarEntregaLocalPendiente(docNum, docEntry, db, latitud, longitud, fechaEntrega, 
-            audUsuario, codSucursalChofer, codCiudadChofer, observaciones, direccionEntrega);
-        
+        _guardarEntregaLocalPendiente(
+          docNum,
+          docEntry,
+          db,
+          latitud,
+          longitud,
+          fechaEntrega,
+          audUsuario,
+          codSucursalChofer,
+          codCiudadChofer,
+          observaciones,
+          direccionEntrega,
+        );
+
         return false;
       }
     } catch (e) {
-      print('Error desconocido al marcar documento: ${e.toString()}');
+      debugPrint('Error desconocido al marcar documento: ${e.toString()}');
       // Intentamos guardar localmente para sincronizar después
-      _guardarEntregaLocalPendiente(docNum, docEntry, db, latitud, longitud, fechaEntrega, 
-          audUsuario, codSucursalChofer, codCiudadChofer, observaciones, direccionEntrega);
+      _guardarEntregaLocalPendiente(
+        docNum,
+        docEntry,
+        db,
+        latitud,
+        longitud,
+        fechaEntrega,
+        audUsuario,
+        codSucursalChofer,
+        codCiudadChofer,
+        observaciones,
+        direccionEntrega,
+      );
       return false;
     }
   }
-  
+
   // Método auxiliar para guardar entregas localmente cuando hay problemas de red
-  void _guardarEntregaLocalPendiente(int docNum, int docEntry, String db, double latitud, double longitud, 
-      DateTime fechaEntrega, int audUsuario, int codSucursalChofer, int codCiudadChofer, String? observaciones, String direccionEntrega) {
+  void _guardarEntregaLocalPendiente(
+    int docNum,
+    int docEntry,
+    String db,
+    double latitud,
+    double longitud,
+    DateTime fechaEntrega,
+    int audUsuario,
+    int codSucursalChofer,
+    int codCiudadChofer,
+    String? observaciones,
+    String direccionEntrega,
+  ) {
     try {
-      print('Guardando entrega localmente para sincronización posterior...');
+      debugPrint(
+        'Guardando entrega localmente para sincronización posterior...',
+      );
       // Aquí podrías implementar la lógica para guardar en SharedPreferences o SQLite
       // Incluimos la dirección en los datos guardados localmente
       final datosLocales = {
@@ -226,9 +238,179 @@ class EntregasImpl implements EntregasRepository {
         'codSucursalChofer': codSucursalChofer,
         'codCiudadChofer': codCiudadChofer,
       };
-      print('Datos guardados localmente: $datosLocales');
+      debugPrint('Datos guardados localmente: $datosLocales');
     } catch (e) {
-      print('Error al guardar entrega localmente: ${e.toString()}');
+      debugPrint('Error al guardar entrega localmente: ${e.toString()}');
     }
+  }
+
+  // Obtener dirección a partir de coordenadas geográficas usando un servicio externo (Nominatim OpenStreetMap)
+  @override
+  Future<String> obtenerDireccionDesdeAPI(
+    double latitud,
+    double longitud,
+  ) async {
+    try {
+      final Dio dioGeocoding = Dio(
+        BaseOptions(
+          connectTimeout: const Duration(seconds: 10),
+          receiveTimeout: const Duration(seconds: 10),
+          headers: {
+            'User-Agent':
+                AppConstants.nominatimUserAgent, // Usando la constante definida
+          },
+        ),
+      );
+
+      debugPrint(
+        'Obteniendo dirección para coordenadas: ${latitud.toStringAsFixed(6)}, ${longitud.toStringAsFixed(6)}',
+      );
+
+      final response = await dioGeocoding.get(
+        '${AppConstants.nominatimBaseUrl}${AppConstants.nominatimReverseEndpoint}', // Usando constantes
+        queryParameters: {
+          'lat': latitud,
+          'lon': longitud,
+          'format': 'json',
+          'addressdetails': 1,
+          'accept-language': 'es',
+          'zoom': 18, // Mayor nivel de detalle
+        },
+      );
+
+      if (response.statusCode == 200 && response.data != null) {
+        // Construimos una dirección más detallada usando los campos disponibles
+        final data = response.data;
+        final addressComponents = data['address'] as Map<String, dynamic>?;
+
+        if (addressComponents != null) {
+          // Lista de componentes de dirección en orden de importancia
+          final components = [
+            addressComponents['road'], // Calle
+            addressComponents['house_number'], // Número
+            addressComponents['suburb'], // Barrio/Zona
+            addressComponents['city'] ??
+                addressComponents['town'] ??
+                addressComponents['village'], // Ciudad
+            addressComponents['state'], // Estado/Departamento
+            addressComponents['country'], // País
+          ];
+
+          // Filtrar valores nulos y vacíos
+          final filteredComponents =
+              components
+                  .where(
+                    (component) =>
+                        component != null && component.toString().isNotEmpty,
+                  )
+                  .toList();
+
+          // Crear dirección formateada
+          final direccionDetallada = filteredComponents.join(', ');
+
+          debugPrint('DIRECCIÓN OBTENIDA DE API: $direccionDetallada');
+
+          return direccionDetallada.isNotEmpty
+              ? direccionDetallada
+              : data['display_name'] ??
+                  'Ubicación marcada en ${latitud.toStringAsFixed(6)}, ${longitud.toStringAsFixed(6)}';
+        }
+
+        // Si no hay address details, usar display_name (dirección completa formateada)
+        final direccion = data['display_name'] as String? ?? '';
+
+        debugPrint('DIRECCIÓN OBTENIDA DE API (display_name): $direccion');
+
+        return direccion.isNotEmpty
+            ? direccion
+            : 'Ubicación marcada en ${latitud.toStringAsFixed(6)}, ${longitud.toStringAsFixed(6)}';
+      }
+
+      return 'Ubicación marcada en ${latitud.toStringAsFixed(6)}, ${longitud.toStringAsFixed(6)}';
+    } catch (e) {
+      debugPrint('Error al obtener dirección desde API: ${e.toString()}');
+      return 'Ubicación marcada en ${latitud.toStringAsFixed(6)}, ${longitud.toStringAsFixed(6)}';
+    }
+  }
+
+  @override
+  Future<bool> registrarRuta({
+    required int docEntry,
+    required int docNum,
+    required int factura,
+    required String cardName,
+    required String cardCode,
+    required String addressEntregaFac,
+    required String addressEntregaMat,
+    required int codEmpleado,
+    required String valido,
+    required String db,
+    required String direccionEntrega,
+    required int fueEntregado,
+    required DateTime fechaEntrega,
+    required double latitud,
+    required double longitud,
+    required String obs,
+    required int audUsuario,
+  }) async {
+    
+    try {
+      // Formatear la fecha al formato esperado por el backend: "yyyy-MM-dd HH:mm:ss"
+      final fechaFormateada = fechaEntrega
+          .toIso8601String()
+          .substring(0, 19)
+          .replaceAll('T', ' ');
+
+      // Crear el objeto con los datos para enviar al servidor
+      final data = {
+        'docEntry': docEntry,
+        'docNum': docNum,
+        'factura': factura,
+        'cardName': cardName,
+        'cardCode': cardCode,
+        'addressEntregaFac': addressEntregaFac,
+        'addressEntregaMat': addressEntregaMat,
+        'codEmpleado': codEmpleado,
+        'valido': valido,
+        'db': db,
+        'direccionEntrega': direccionEntrega,
+        'fueEntregado': fueEntregado,
+        'fechaEntrega': fechaFormateada,
+        'latitud': latitud,
+        'longitud': longitud,
+        'obs': obs,
+        'audUsuario': audUsuario,
+      };
+
+      // Endpoint para marcar todo el documento como entregado
+      try {
+        final response = await _dio.post(
+          AppConstants.inicioEntregaYFinEndpoint,
+          data: data,
+        );
+
+        return response.statusCode == 200 || response.statusCode == 201;
+      } on DioException catch (e) {
+        if (e.response != null) {
+          debugPrint('CÓDIGO DE ESTADO: ${e.response?.statusCode}');
+          debugPrint('DATOS DE RESPUESTA: ${e.response?.data}');
+        }
+        if (e.error != null) {
+          debugPrint('ERROR DETALLADO: ${e.error}');
+        }
+
+        
+
+        return false;
+      }
+    } catch (e) {
+      debugPrint('Error desconocido al marcar documento: ${e.toString()}');
+      // Intentamos guardar localmente para sincronizar después
+      
+      
+      return false;
+    }
+
+
   }
 }

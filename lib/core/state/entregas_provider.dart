@@ -110,8 +110,39 @@ class EntregasNotifier extends StateNotifier<EntregasState> {
       // Obtener posición actual
       final posicion = await _obtenerPosicionActual();
       
-      // Guardar estado en SharedPreferences
+      // Obtener dirección a partir de las coordenadas
+      String direccion = await _repository.obtenerDireccionDesdeAPI(
+        posicion.latitude, 
+        posicion.longitude
+      );
+      
+      // Obtener datos del usuario
+      final codUsuario = await _userNotifier.getCodUsuario();
+      final codEmpleado = await _userNotifier.getCodEmpleado();
+      
+      // Registrar inicio de ruta en el sistema
       final ahora = DateTime.now();
+      await _repository.registrarRuta(
+        docEntry: -1,
+        docNum: 0,
+        factura: 0,
+        cardName: "Inicio de Entrega",
+        cardCode: " ",
+        addressEntregaFac: "",
+        addressEntregaMat: "",
+        codEmpleado: codEmpleado,
+        valido: 'V',
+        db: 'ALL',
+        direccionEntrega: direccion,
+        fueEntregado: 1,
+        fechaEntrega: ahora,
+        latitud: posicion.latitude,
+        longitud: posicion.longitude,
+        obs: "Iniciando Entregas",
+        audUsuario: codUsuario,
+      );
+      
+      // Guardar estado en SharedPreferences
       await _prefs.setBool('ruta_iniciada', true);
       await _prefs.setString('fecha_inicio', ahora.toIso8601String());
       
@@ -136,21 +167,57 @@ class EntregasNotifier extends StateNotifier<EntregasState> {
       final posicion = await _obtenerPosicionActual();
       final ahora = DateTime.now();
       
-      // Intentar sincronizar las entregas completadas
-      state = state.copyWith(sincronizacionEnProceso: true);
-      final sincronizacionExitosa = await _repository.sincronizarEntregasCompletadas(state.entregas);
+      // Obtener dirección a partir de las coordenadas
+      String direccion = await _repository.obtenerDireccionDesdeAPI(
+        posicion.latitude, 
+        posicion.longitude
+      );
+      
+      // Obtener datos del usuario
+      final codUsuario = await _userNotifier.getCodUsuario();
+      final codEmpleado = await _userNotifier.getCodEmpleado();
+      
+      // Registrar fin de ruta en el sistema
+      bool registroExitoso = await _repository.registrarRuta(
+        docEntry: 0,
+        docNum: 0,
+        factura: 0,
+        cardName: "Fin Entregas",
+        cardCode: " ",
+        addressEntregaFac: "",
+        addressEntregaMat: "",
+        codEmpleado: codEmpleado,
+        valido: 'V',
+        db: 'ALL',
+        direccionEntrega: direccion,
+        fueEntregado: 1,
+        fechaEntrega: ahora,
+        latitud: posicion.latitude,
+        longitud: posicion.longitude,
+        obs: "Finalizando Entregas",
+        audUsuario: codUsuario,
+      );
+      
+      // NO intentamos sincronizar aquí - esto está causando el error
+      // Simplemente finalizamos la ruta sin intentar sincronizar
       
       // Guardar estado en SharedPreferences
       await _prefs.setBool('ruta_iniciada', false);
       await _prefs.setString('fecha_fin', ahora.toIso8601String());
       
-      // Actualizar estado
+      // Cargar nuevamente las entregas para refrescar el estado
+      final entregas = await _repository.getEntregas(codEmpleado);
+      
+      // Actualizar estado - simplemente finalizamos la ruta sin preocuparnos por la sincronización
       state = state.copyWith(
         rutaIniciada: false,
         fechaFin: ahora,
         posicionFinal: posicion,
         sincronizacionEnProceso: false,
-        error: sincronizacionExitosa ? null : 'Las entregas se guardaron localmente, pero hubo un error al sincronizar con el servidor',
+        entregas: entregas,
+        error: !registroExitoso 
+              ? 'Hubo un problema al registrar el fin de entregas'
+              : null,
       );
     } catch (e) {
       state = state.copyWith(
@@ -173,8 +240,11 @@ class EntregasNotifier extends StateNotifier<EntregasState> {
       // Obtener posición actual
       final posicion = await _obtenerPosicionActual();
       
-      // Obtener dirección automáticamente a partir de las coordenadas
-      final direccionGeo = await _obtenerDireccionDesdeUbicacion(posicion);
+      // Obtener dirección automáticamente a partir de las coordenadas usando la API
+      final direccionGeo = await _repository.obtenerDireccionDesdeAPI(
+        posicion.latitude, 
+        posicion.longitude
+      );
       
       // Encontrar la entrega que se quiere marcar
       final entrega = state.entregas.firstWhere(
@@ -185,7 +255,7 @@ class EntregasNotifier extends StateNotifier<EntregasState> {
       // Obtenemos el docNum para marcar todo el documento como entregado
       final docNum = entrega.docNum;
       final docEntry = entrega.docEntry;
-      final db = entrega.db ?? "ERPB_PROD";  // Valor por defecto si es null
+      final db = entrega.db ?? "BD no disponible";  // Valor por defecto si es null
       
       // Obtener datos del usuario usando el userNotifier inyectado
       final codUsuario = await _userNotifier.getCodUsuario();
@@ -206,7 +276,7 @@ class EntregasNotifier extends StateNotifier<EntregasState> {
       print('Marcando entrega con ID: $idEntrega');
       print('DocNum: $docNum, DocEntry: $docEntry');
       print('Posición: ${posicion.latitude}, ${posicion.longitude}');
-      print('Dirección geocodificada: $direccionGeo');
+      print('Dirección obtenida de API: $direccionGeo');
       
       try {
         // Llamar al método que marca todo el documento de una vez
@@ -216,7 +286,7 @@ class EntregasNotifier extends StateNotifier<EntregasState> {
           db: db,
           latitud: posicion.latitude,
           longitud: posicion.longitude,
-          direccionEntrega: direccionGeo, // Usamos la dirección obtenida por geocodificación
+          direccionEntrega: direccionGeo, // Usamos la dirección obtenida de la API
           fechaEntrega: ahora,
           audUsuario: codUsuario,
           codSucursalChofer: codSucursal,
@@ -233,7 +303,7 @@ class EntregasNotifier extends StateNotifier<EntregasState> {
                 fueEntregado: 1, // Marcar como entregado
                 latitud: posicion.latitude,
                 longitud: posicion.longitude,
-                direccionEntrega: direccionGeo, // Actualizamos la dirección local con la geolocalizada
+                direccionEntrega: direccionGeo, // Actualizamos la dirección local con la obtenida de la API
                 fechaEntrega: ahora,
                 obs: observaciones,
               );
@@ -308,49 +378,6 @@ class EntregasNotifier extends StateNotifier<EntregasState> {
     return await Geolocator.getCurrentPosition();
   }
 
-  // Obtener dirección a partir de coordenadas geográficas
-  Future<String> _obtenerDireccionDesdeUbicacion(Position posicion) async {
-    try {
-      print('Obteniendo dirección para coordenadas: ${posicion.latitude}, ${posicion.longitude}');
-      final placemarks = await placemarkFromCoordinates(
-        posicion.latitude, 
-        posicion.longitude,
-         
-      );
-      
-      if (placemarks.isNotEmpty) {
-        final place = placemarks.first;
-        
-        // Protegerse contra valores nulos usando ?? para proporcionar valores por defecto
-        final components = [
-          place.street ?? '',
-          place.subLocality ?? '',
-          place.locality ?? '',
-          place.administrativeArea ?? '',
-          place.country ?? '',
-          place.postalCode ?? '',
-        ];
-        
-        // Filtrar componentes vacíos
-        final filteredComponents = components.where((component) => component.isNotEmpty).toList();
-        
-        // Crear dirección combinada
-        final direccion = filteredComponents.join(', ');
-        
-        print('DIRECCIÓN OBTENIDA: $direccion');
-        
-        // Si después de todo el procesamiento, la dirección sigue vacía, usar una predeterminada
-        return direccion.isNotEmpty ? direccion : 'Ubicación actual (sin dirección disponible)';
-      }
-      
-      print('No se pudieron obtener placemarks para las coordenadas');
-      return 'Ubicación actual (sin dirección disponible)';
-    } catch (e) {
-      print('Error al obtener dirección: ${e.toString()}');
-      // Siempre devolver una dirección predeterminada en lugar de propagar el error
-      return 'Ubicación marcada en ${posicion.latitude.toStringAsFixed(6)}, ${posicion.longitude.toStringAsFixed(6)}';
-    }
-  }
 }
 
 // Proveedor para el repositorio de entregas
