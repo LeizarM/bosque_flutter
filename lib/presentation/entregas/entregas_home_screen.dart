@@ -456,7 +456,7 @@ class _EntregasHomeScreenState extends ConsumerState<EntregasHomeScreen> {
                                   ElevatedButton(
                                     onPressed: () => _cargarEntregas(_codEmpleado),
                                     style: ElevatedButton.styleFrom(
-                                      backgroundColor: colorScheme.primary,
+                                      backgroundColor: colorScheme.surfaceBright,
                                     ),
                                     child: const Text('Reintentar'),
                                   ),
@@ -526,7 +526,7 @@ class _EntregasHomeScreenState extends ConsumerState<EntregasHomeScreen> {
                           }
                         },
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: colorScheme.error,
+                          backgroundColor: colorScheme.surfaceBright,
                         ),
                         child: const Text('Verificar permisos'),
                       ),
