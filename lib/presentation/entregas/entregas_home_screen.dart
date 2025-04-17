@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:bosque_flutter/core/state/entregas_provider.dart';
-import 'package:bosque_flutter/core/state/user_provider.dart';
 import 'package:bosque_flutter/core/utils/responsive_utils_bosque.dart';
 import 'package:bosque_flutter/domain/entities/entregas_entity.dart';
 import 'package:bosque_flutter/presentation/widgets/entregas/observaciones_dialog.dart';
-import 'package:bosque_flutter/presentation/widgets/entregas/entrega_item.dart';
-import 'package:geolocator/geolocator.dart';
+import 'package:bosque_flutter/presentation/entregas/controllers/entregas_controller.dart';
+import 'package:bosque_flutter/presentation/widgets/entregas/entregas_location_banner.dart';
+import 'package:bosque_flutter/presentation/widgets/entregas/entregas_route_status_bar.dart';
+import 'package:bosque_flutter/presentation/widgets/entregas/entregas_filter_utils.dart';
+import 'package:bosque_flutter/presentation/widgets/entregas/entregas_responsive_views.dart';
 
 class EntregasHomeScreen extends ConsumerStatefulWidget {
   const EntregasHomeScreen({Key? key}) : super(key: key);
@@ -19,27 +21,27 @@ class _EntregasHomeScreenState extends ConsumerState<EntregasHomeScreen> {
   bool _isLocationEnabled = false;
   int _codEmpleado = 0;
   bool _isInitializing = true;
-  bool _isProcesingAction = false; // Nueva variable para controlar el estado de procesamiento
-  
+  bool _isProcesingAction = false;
+  late EntregasController _controller;
+
+  // Controladores para búsqueda y ordenamiento
+  String _searchText = '';
+  int? _sortColumnIndex;
+  bool _sortAscending = true;
+
   @override
   void initState() {
     super.initState();
+    _controller = EntregasController(ref, context);
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       await _inicializarPantalla();
     });
   }
-  
+
   Future<void> _inicializarPantalla() async {
-    // Verificar permisos de ubicación
-    final locationEnabled = await _checkLocationPermission();
-    
-    // Obtener código de empleado
-    final codEmpleado = await ref.read(userProvider.notifier).getCodEmpleado();
-    
-    // Cargar las entregas desde el servidor
-    await _cargarEntregas(codEmpleado);
-    
-    // Actualizar el estado local del widget
+    final locationEnabled = await _controller.checkLocationPermission();
+    final codEmpleado = await _controller.getCodEmpleado();
+    await _controller.cargarEntregas(codEmpleado);
     if (mounted) {
       setState(() {
         _isLocationEnabled = locationEnabled;
@@ -49,111 +51,25 @@ class _EntregasHomeScreenState extends ConsumerState<EntregasHomeScreen> {
     }
   }
 
-  // Verificar permisos de ubicación
-  Future<bool> _checkLocationPermission() async {
-    return await ref.read(entregasNotifierProvider.notifier).verificarServiciosLocalizacion();
-  }
-
-  // Solicitar explícitamente los permisos de ubicación
-  Future<bool> _solicitarPermisosUbicacion() async {
-    try {
-      // Verificar si los servicios de ubicación están habilitados
-      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
-      if (!serviceEnabled) {
-        // Abre la configuración del sistema si los servicios están desactivados
-        await Geolocator.openLocationSettings();
-        // Verificamos nuevamente después de regresar de la configuración
-        serviceEnabled = await Geolocator.isLocationServiceEnabled();
-        if (!serviceEnabled) {
-          return false;
-        }
-      }
-
-      // Verificar permisos actuales
-      LocationPermission permission = await Geolocator.checkPermission();
-      
-      // Solicitar permiso si está denegado
-      if (permission == LocationPermission.denied) {
-        permission = await Geolocator.requestPermission();
-        if (permission == LocationPermission.denied) {
-          return false;
-        }
-      }
-      
-      // Si los permisos están denegados permanentemente, sugerir abrir la configuración
-      if (permission == LocationPermission.deniedForever) {
-        // Mostrar diálogo para ir a configuración
-        final irAConfiguracion = await showDialog<bool>(
-          context: context,
-          builder: (context) => AlertDialog(
-            title: const Text('Permisos de ubicación necesarios'),
-            content: const Text('Los permisos de ubicación son necesarios para marcar entregas. Por favor, habilítalos en la configuración de la aplicación.'),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context, false),
-                child: const Text('Cancelar'),
-              ),
-              TextButton(
-                onPressed: () => Navigator.pop(context, true),
-                child: const Text('Ir a Configuración'),
-              ),
-            ],
-          ),
-        );
-        
-        if (irAConfiguracion == true) {
-          await Geolocator.openAppSettings();
-          // Verificamos nuevamente después de regresar de la configuración
-          permission = await Geolocator.checkPermission();
-          return permission == LocationPermission.always || 
-                 permission == LocationPermission.whileInUse;
-        }
-        return false;
-      }
-
-      return true;
-    } catch (e) {
-      print('Error al solicitar permisos de ubicación: ${e.toString()}');
-      return false;
-    }
-  }
-
-  // Cargar entregas del empleado
-  Future<void> _cargarEntregas(int codEmpleado) async {
-    await ref.read(entregasNotifierProvider.notifier).cargarEntregas(codEmpleado);
-  }
-
-  // Iniciar la ruta de entregas
   Future<void> _iniciarRuta() async {
     if (!_isLocationEnabled) {
-      _mostrarMensajeError('Debe activar los servicios de ubicación para iniciar entregas');
+      _controller.mostrarMensajeError('Debe activar los servicios de ubicación para iniciar entregas');
       return;
     }
-
     setState(() {
-      _isProcesingAction = true; // Mostrar indicador de carga
+      _isProcesingAction = true;
     });
-    
     try {
-      await ref.read(entregasNotifierProvider.notifier).iniciarRuta();
-      
-      // Mostrar mensaje de éxito
+      await _controller.iniciarRuta();
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('Ruta iniciada correctamente'),
-            backgroundColor: Theme.of(context).colorScheme.primary,
-          ),
-        );
+        _controller.mostrarMensajeExito('Ruta iniciada correctamente');
       }
     } catch (e) {
-      // Mostrar mensaje de error
       if (mounted) {
-        _mostrarMensajeError('Error al iniciar ruta: ${e.toString()}');
+        _controller.mostrarMensajeError('Error al iniciar ruta: ${e.toString()}');
       }
     } finally {
-      // Recargar los permisos de ubicación y restablecer estado de carga
-      final locationEnabled = await _checkLocationPermission();
+      final locationEnabled = await _controller.checkLocationPermission();
       if (mounted) {
         setState(() {
           _isLocationEnabled = locationEnabled;
@@ -163,37 +79,25 @@ class _EntregasHomeScreenState extends ConsumerState<EntregasHomeScreen> {
     }
   }
 
-  // Finalizar la ruta de entregas
   Future<void> _finalizarRuta() async {
     if (!_isLocationEnabled) {
-      _mostrarMensajeError('Debe activar los servicios de ubicación para finalizar entregas');
+      _controller.mostrarMensajeError('Debe activar los servicios de ubicación para finalizar entregas');
       return;
     }
-
     setState(() {
-      _isProcesingAction = true; // Mostrar indicador de carga
+      _isProcesingAction = true;
     });
-    
     try {
-      await ref.read(entregasNotifierProvider.notifier).finalizarRuta();
-      
-      // Mostrar mensaje de éxito
+      await _controller.finalizarRuta();
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('Ruta finalizada correctamente'),
-            backgroundColor: Theme.of(context).colorScheme.primary,
-          ),
-        );
+        _controller.mostrarMensajeExito('Ruta finalizada correctamente');
       }
     } catch (e) {
-      // Mostrar mensaje de error
       if (mounted) {
-        _mostrarMensajeError('Error al finalizar ruta: ${e.toString()}');
+        _controller.mostrarMensajeError('Error al finalizar ruta: ${e.toString()}');
       }
     } finally {
-      // Recargar los permisos de ubicación y restablecer estado de carga
-      final locationEnabled = await _checkLocationPermission();
+      final locationEnabled = await _controller.checkLocationPermission();
       if (mounted) {
         setState(() {
           _isLocationEnabled = locationEnabled;
@@ -203,71 +107,52 @@ class _EntregasHomeScreenState extends ConsumerState<EntregasHomeScreen> {
     }
   }
 
-  // Mostrar mensaje de error
-  void _mostrarMensajeError(String mensaje) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(mensaje),
-        backgroundColor: Theme.of(context).colorScheme.error,
-      ),
-    );
-  }
-
-  // Mostrar diálogo para capturar observaciones y confirmar entrega
   Future<void> _mostrarDialogoDireccion(EntregaEntity entrega) async {
     if (!_isLocationEnabled) {
-      _mostrarMensajeError('Debe activar los servicios de ubicación para marcar entregas');
+      _controller.mostrarMensajeError('Debe activar los servicios de ubicación para marcar entregas');
       return;
     }
-    
-    // Verificar si la ruta está iniciada
     final state = ref.read(entregasNotifierProvider);
     if (!state.rutaIniciada) {
-      _mostrarMensajeError('Debe iniciar la ruta antes de marcar entregas');
+      _controller.mostrarMensajeError('Debe iniciar la ruta antes de marcar entregas');
       return;
     }
-
     final resultado = await showDialog<Map<String, String>>(
       context: context,
-      barrierDismissible: false, // Usuario debe tomar una acción
+      barrierDismissible: false,
       builder: (context) => ObservacionesDialog(
         direccion: entrega.direccionEntrega ?? entrega.addressEntregaMat,
       ),
     );
-
     if (resultado != null && resultado['observaciones'] != null) {
       setState(() {
-        _isProcesingAction = true; // Mostrar indicador de carga
+        _isProcesingAction = true;
       });
-      
       try {
-        await ref.read(entregasNotifierProvider.notifier).marcarEntregaCompletada(
-          entrega.idEntrega,
-          "", // Campo vacío ya que la dirección se obtendrá automáticamente
-          observaciones: resultado['observaciones'],
-        );
-        
-        // Mostrar mensaje de éxito
+        await _controller.marcarEntregaCompletada(entrega, resultado['observaciones']);
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: const Text('Entrega marcada correctamente'),
-              backgroundColor: Theme.of(context).colorScheme.primary,
-            ),
-          );
+          _controller.mostrarMensajeExito('Entrega marcada correctamente');
         }
       } catch (e) {
-        // Mostrar mensaje de error
         if (mounted) {
-          _mostrarMensajeError('Error al marcar la entrega: ${e.toString()}');
+          _controller.mostrarMensajeError('Error al marcar la entrega: ${e.toString()}');
         }
       } finally {
         if (mounted) {
           setState(() {
-            _isProcesingAction = false; // Ocultar indicador de carga
+            _isProcesingAction = false;
           });
         }
       }
+    }
+  }
+  
+  Future<void> _verificarPermisos() async {
+    final enabled = await _controller.solicitarPermisosUbicacion();
+    if (mounted) {
+      setState(() {
+        _isLocationEnabled = enabled;
+      });
     }
   }
 
@@ -276,8 +161,10 @@ class _EntregasHomeScreenState extends ConsumerState<EntregasHomeScreen> {
     final state = ref.watch(entregasNotifierProvider);
     final colorScheme = Theme.of(context).colorScheme;
     final isDesktop = ResponsiveUtilsBosque.isDesktop(context);
-    
-    // Mostrar pantalla de carga mientras se inicializa
+    final isTablet = ResponsiveUtilsBosque.isTablet(context);
+    final horizontalPadding = ResponsiveUtilsBosque.getHorizontalPadding(context);
+    final verticalPadding = ResponsiveUtilsBosque.getVerticalPadding(context);
+
     if (_isInitializing) {
       return const Scaffold(
         body: Center(
@@ -285,29 +172,27 @@ class _EntregasHomeScreenState extends ConsumerState<EntregasHomeScreen> {
         ),
       );
     }
-    
-    // Agrupar entregas por número de documento
-    final Map<int, List<EntregaEntity>> entregasAgrupadas = {};
-    for (final entrega in state.entregas) {
-      if (entregasAgrupadas.containsKey(entrega.docNum)) {
-        entregasAgrupadas[entrega.docNum]!.add(entrega);
-      } else {
-        entregasAgrupadas[entrega.docNum] = [entrega];
-      }
-    }
-    
-    // Convertir a lista para la vista
+
+    final entregasAgrupadas = EntregasFilterUtils.agruparEntregas(state.entregas);
     final listaEntregasAgrupadas = entregasAgrupadas.entries.toList();
-    
+    final filteredEntregas = EntregasFilterUtils.getFilteredAndSortedEntregas(
+      listaEntregasAgrupadas,
+      _searchText,
+      _sortColumnIndex,
+      _sortAscending
+    );
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Entregas'),
+        title: Text(
+          'Entregas',
+          style: ResponsiveUtilsBosque.getTitleStyle(context),
+        ),
         actions: [
-          // Botón de recarga solo si no hay una ruta en progreso
           if (!state.rutaIniciada)
             IconButton(
               icon: const Icon(Icons.refresh),
-              onPressed: () => _cargarEntregas(_codEmpleado),
+              onPressed: () => _controller.cargarEntregas(_codEmpleado),
             ),
         ],
       ),
@@ -316,82 +201,22 @@ class _EntregasHomeScreenState extends ConsumerState<EntregasHomeScreen> {
           Column(
             children: [
               // Barra de estado de la ruta
-              Container(
-                color: state.rutaIniciada 
-                    ? colorScheme.primaryContainer
-                    : colorScheme.surfaceTint.withAlpha(20),
-                padding: const EdgeInsets.all(16),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            state.rutaIniciada
-                                ? 'Ruta iniciada'
-                                : 'Ruta no iniciada',
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 16,
-                              color: state.rutaIniciada 
-                                  ? colorScheme.primary
-                                  : colorScheme.onSurface,
-                            ),
-                          ),
-                          if (state.fechaInicio != null)
-                            Text(
-                              'Iniciada: ${state.fechaInicio!.day.toString().padLeft(2, '0')}/${state.fechaInicio!.month.toString().padLeft(2, '0')}/${state.fechaInicio!.year} ${state.fechaInicio!.hour.toString().padLeft(2, '0')}:${state.fechaInicio!.minute.toString().padLeft(2, '0')}',
-                              style: TextStyle(
-                                color: state.rutaIniciada 
-                                    ? colorScheme.primary
-                                    : colorScheme.onSurface,
-                              ),
-                            ),
-                        ],
-                      ),
-                    ),
-                    if (state.sincronizacionEnProceso || _isProcesingAction)
-                      SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: colorScheme.primary,
-                        ),
-                      )
-                    else if (!state.rutaIniciada)
-                      ElevatedButton(
-                        onPressed: state.entregas.isEmpty || !_isLocationEnabled
-                            ? null
-                            : _iniciarRuta,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: colorScheme.primary,
-                          disabledBackgroundColor: colorScheme.surfaceTint.withAlpha(20),
-                          foregroundColor: colorScheme.onPrimary,
-                          disabledForegroundColor: colorScheme.onSurface.withAlpha(150),
-                        ),
-                        child: const Text('Iniciar entregas'),
-                      )
-                    else
-                      ElevatedButton(
-                        onPressed: !_isLocationEnabled ? null : _finalizarRuta,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: colorScheme.error,
-                          disabledBackgroundColor: colorScheme.surfaceTint.withAlpha(20),
-                          foregroundColor: colorScheme.onError,
-                          disabledForegroundColor: colorScheme.onSurface.withAlpha(150),
-                        ),
-                        child: const Text('Finalizar entregas'),
-                      ),
-                  ],
-                ),
+              EntregasRouteStatusBar(
+                rutaIniciada: state.rutaIniciada,
+                fechaInicio: state.fechaInicio,
+                isLocationEnabled: _isLocationEnabled,
+                isProcessing: state.sincronizacionEnProceso || _isProcesingAction,
+                entregasVacias: state.entregas.isEmpty,
+                onIniciarRuta: _iniciarRuta,
+                onFinalizarRuta: _finalizarRuta,
               ),
-              
-              // Mensaje de información sobre entregas
+
               if (state.entregas.isEmpty && !state.isLoading)
                 Container(
-                  padding: const EdgeInsets.all(16),
+                  padding: EdgeInsets.symmetric(
+                    horizontal: horizontalPadding,
+                    vertical: verticalPadding,
+                  ),
                   width: double.infinity,
                   color: colorScheme.tertiaryContainer,
                   child: Text(
@@ -403,17 +228,19 @@ class _EntregasHomeScreenState extends ConsumerState<EntregasHomeScreen> {
                     ),
                   ),
                 ),
-                
-              // Contador de entregas
+
               if (state.entregas.isNotEmpty)
                 Container(
                   color: colorScheme.secondaryContainer,
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  padding: EdgeInsets.symmetric(
+                    horizontal: horizontalPadding,
+                    vertical: verticalPadding / 2,
+                  ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        'Total de facturas: ${listaEntregasAgrupadas.length}',
+                        'Total de facturas: ${filteredEntregas.length}',
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
                           color: colorScheme.onSecondaryContainer,
@@ -429,15 +256,29 @@ class _EntregasHomeScreenState extends ConsumerState<EntregasHomeScreen> {
                     ],
                   ),
                 ),
-              
-              // Contenido principal - Cambia entre vista de tabla y vista de tarjetas según resolución
+
+              // Barra de búsqueda solo en desktop
+              if (isDesktop)
+                Padding(
+                  padding: EdgeInsets.symmetric(horizontal: horizontalPadding, vertical: 8),
+                  child: TextField(
+                    decoration: InputDecoration(
+                      hintText: 'Buscar por cliente, factura o dirección...',
+                      prefixIcon: const Icon(Icons.search),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                    ),
+                    onChanged: (value) => setState(() => _searchText = value),
+                  ),
+                ),
+
+              // Contenido principal responsivo
               Expanded(
                 child: state.isLoading
                     ? Center(child: CircularProgressIndicator(color: colorScheme.primary))
                     : state.error != null
                         ? Center(
                             child: Padding(
-                              padding: const EdgeInsets.all(16.0),
+                              padding: EdgeInsets.all(horizontalPadding),
                               child: Column(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
@@ -454,7 +295,7 @@ class _EntregasHomeScreenState extends ConsumerState<EntregasHomeScreen> {
                                   ),
                                   const SizedBox(height: 16),
                                   ElevatedButton(
-                                    onPressed: () => _cargarEntregas(_codEmpleado),
+                                    onPressed: () => _controller.cargarEntregas(_codEmpleado),
                                     style: ElevatedButton.styleFrom(
                                       backgroundColor: colorScheme.surfaceBright,
                                     ),
@@ -468,75 +309,41 @@ class _EntregasHomeScreenState extends ConsumerState<EntregasHomeScreen> {
                             ? const Center(
                                 child: Text('No hay entregas pendientes'),
                               )
-                            :  ListView.builder(
-                                    itemCount: listaEntregasAgrupadas.length,
-                                    itemBuilder: (context, index) {
-                                      final entregas = listaEntregasAgrupadas[index].value;
-                                      
-                                      // Tomamos la primera entrega del grupo para los datos principales
-                                      final entregaPrimaria = entregas.first;
-                                      
-                                      // La entrega se considera completada si todos los productos están entregados
-                                      final todosEntregados = entregas.every((e) => e.fueEntregado == 1);
-                                      final algunoEntregado = entregas.any((e) => e.fueEntregado == 1);
-                                      
-                                      return EntregaItem(
-                                        entrega: entregaPrimaria,
-                                        productosAdicionalesEntrega: entregas,
-                                        rutaIniciada: state.rutaIniciada,
-                                        onTap: () => _mostrarDialogoDireccion(entregaPrimaria),
-                                        disabled: !state.rutaIniciada || todosEntregados,
-                                        todosEntregados: todosEntregados,
-                                        algunoEntregado: algunoEntregado,
-                                      );
+                            : isDesktop
+                                ? EntregasDesktopView(
+                                    filteredEntregas: filteredEntregas,
+                                    rutaIniciada: state.rutaIniciada,
+                                    onMarcarEntrega: _mostrarDialogoDireccion,
+                                    sortColumnIndex: _sortColumnIndex,
+                                    sortAscending: _sortAscending,
+                                    onSort: (columnIndex, ascending) {
+                                      setState(() {
+                                        _sortColumnIndex = columnIndex;
+                                        _sortAscending = ascending;
+                                      });
                                     },
-                                  ),
+                                  )
+                                : isTablet
+                                    ? EntregasTabletView(
+                                        entregasAgrupadas: filteredEntregas,
+                                        rutaIniciada: state.rutaIniciada,
+                                        onMarcarEntrega: _mostrarDialogoDireccion,
+                                      )
+                                    : EntregasMobileView(
+                                        entregasAgrupadas: filteredEntregas,
+                                        rutaIniciada: state.rutaIniciada,
+                                        onMarcarEntrega: _mostrarDialogoDireccion,
+                                      ),
               ),
-              
-              // Alerta para ubicación
-              if (!_isLocationEnabled)
-                Container(
-                  color: colorScheme.errorContainer,
-                  padding: const EdgeInsets.all(16),
-                  width: double.infinity,
-                  child: Column(
-                    children: [
-                      Text(
-                        '⚠️ La ubicación está desactivada',
-                        style: TextStyle(
-                          color: colorScheme.onErrorContainer,
-                          fontWeight: FontWeight.bold,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'Active la ubicación para utilizar esta funcionalidad',
-                        style: TextStyle(color: colorScheme.onErrorContainer),
-                        textAlign: TextAlign.center,
-                      ),
-                      const SizedBox(height: 8),
-                      ElevatedButton(
-                        onPressed: () async {
-                          final enabled = await _solicitarPermisosUbicacion();
-                          if (mounted) {
-                            setState(() {
-                              _isLocationEnabled = enabled;
-                            });
-                          }
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: colorScheme.surfaceBright,
-                        ),
-                        child: const Text('Verificar permisos'),
-                      ),
-                    ],
-                  ),
-                ),
+
+              // Banner de ubicación
+              EntregasLocationBanner(
+                isLocationEnabled: _isLocationEnabled,
+                onVerifyPermissions: _verificarPermisos,
+              ),
             ],
           ),
-          
-          // Overlay de carga cuando se está procesando una acción
+
           if (_isProcesingAction)
             Container(
               color: Colors.black.withOpacity(0.3),
