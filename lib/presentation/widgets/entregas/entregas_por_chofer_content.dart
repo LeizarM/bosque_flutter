@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:pluto_grid/pluto_grid.dart';
 import 'package:intl/intl.dart';
+import 'package:url_launcher/url_launcher.dart';
+
 import 'package:bosque_flutter/core/state/chofer_provider.dart';
 import 'package:bosque_flutter/core/state/entregas_provider.dart';
 import 'package:bosque_flutter/domain/entities/chofer_entity.dart';
@@ -11,30 +14,27 @@ class EntregasPorChoferContent extends ConsumerStatefulWidget {
   const EntregasPorChoferContent({Key? key}) : super(key: key);
 
   @override
-  ConsumerState<EntregasPorChoferContent> createState() => _EntregasPorChoferContentState();
+  ConsumerState<EntregasPorChoferContent> createState() =>
+      _EntregasPorChoferContentState();
 }
 
-class _EntregasPorChoferContentState extends ConsumerState<EntregasPorChoferContent> {
+class _EntregasPorChoferContentState
+    extends ConsumerState<EntregasPorChoferContent> {
   DateTime selectedDate = DateTime.now();
   int? selectedChoferId;
   bool isLoading = false;
   bool isInitialState = true;
 
-  // Controlador para el campo de texto de fecha
   final TextEditingController _dateController = TextEditingController();
-  
-  // Índice de la fila seleccionada para ver en mapa
   int? _selectedRowIndex;
 
-  // State variables for pagination
   int _currentPage = 1;
-  int _itemsPerPage = 10; // Can be changed based on user preference
+  int _itemsPerPage = 10;
 
   @override
   void initState() {
     super.initState();
     _dateController.text = DateFormat('dd/MM/yyyy').format(selectedDate);
-    // Cargar la lista de choferes al iniciar
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(choferesProvider.notifier).loadChoferes();
     });
@@ -46,23 +46,6 @@ class _EntregasPorChoferContentState extends ConsumerState<EntregasPorChoferCont
     super.dispose();
   }
 
-  // Mostrar selector de fecha
-  Future<void> _selectDate(BuildContext context) async {
-    final DateTime? picked = await showDatePicker(
-      context: context,
-      initialDate: selectedDate,
-      firstDate: DateTime(2020),
-      lastDate: DateTime(2030),
-    );
-    if (picked != null && picked != selectedDate) {
-      setState(() {
-        selectedDate = picked;
-        _dateController.text = DateFormat('dd/MM/yyyy').format(selectedDate);
-      });
-    }
-  }
-
-  // Realizar la búsqueda
   void _buscarEntregas() {
     if (selectedChoferId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -74,39 +57,34 @@ class _EntregasPorChoferContentState extends ConsumerState<EntregasPorChoferCont
     setState(() {
       isLoading = true;
       isInitialState = false;
-      _selectedRowIndex = null; // Resetear la selección cuando buscamos nuevos datos
+      _selectedRowIndex = null;
     });
 
-    // Cargar el historial de ruta para el chofer seleccionado en la fecha seleccionada
-    ref.read(entregasNotifierProvider.notifier).loadHistorialRuta(
-      selectedDate,
-      selectedChoferId!,
-    ).then((_) {
-      setState(() {
-        isLoading = false;
-      });
-    }).catchError((error) {
-      setState(() {
-        isLoading = false;
-      });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error al cargar los datos: ${error.toString()}')),
-      );
-    });
+    ref
+        .read(entregasNotifierProvider.notifier)
+        .loadHistorialRuta(selectedDate, selectedChoferId!)
+        .then((_) {
+          setState(() {
+            isLoading = false;
+          });
+        })
+        .catchError((error) {
+          setState(() {
+            isLoading = false;
+          });
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Error al cargar los datos: ${error.toString()}'),
+            ),
+          );
+        });
   }
 
-  // Formatear fecha desde string o DateTime
   String _formatDate(dynamic fecha) {
     if (fecha == null) return '-';
-    
     try {
       if (fecha is String) {
-        // Verificar el formato de la fecha
-        if (fecha.contains('/')) {
-          // Ya viene formateada como dd/MM/yyyy HH:mm:ss
-          return fecha;
-        }
-        // Convertir de ISO a DateTime y luego formatear
+        if (fecha.contains('/')) return fecha;
         return DateFormat('dd/MM/yyyy HH:mm').format(DateTime.parse(fecha));
       } else if (fecha is DateTime) {
         return DateFormat('dd/MM/yyyy HH:mm').format(fecha);
@@ -117,46 +95,23 @@ class _EntregasPorChoferContentState extends ConsumerState<EntregasPorChoferCont
     return '-';
   }
 
-  // Obtener color según el tipo de registro
-  Color _getTipoColor(EntregaEntity entrega) {
-    final tipo = entrega.tipo?.toLowerCase() ?? '';
-    final cardName = entrega.cardName?.toLowerCase() ?? '';
-    
-    if (cardName.contains('inicio')) {
+  Color _getRowBackgroundColor(EntregaEntity entrega) {
+    if (entrega.prioridad == 'Alta') {
+      return Colors.orange.shade100;
+    } else if (entrega.docEntry == -1) {
+      return Colors.blue.shade100;
+    } else if (entrega.docEntry == 0) {
       return Colors.green.shade100;
-    } else if (cardName.contains('fin')) {
+    } else if (entrega.flag == -1) {
       return Colors.red.shade100;
-    } else if (tipo.contains('factura')) {
-      return Colors.blue.shade50;
     }
-    
     return Colors.transparent;
   }
 
-  // Get background color based on priority, docEntry and flag values
-  Color _getRowBackgroundColor(EntregaEntity entrega) {
-    if (entrega.prioridad == 'Alta') {
-      return Colors.orange.shade100; // BG for high priority
-    } else if (entrega.docEntry == -1) {
-      return Colors.blue.shade100; // BG for inicio de entregas
-    } else if (entrega.docEntry == 0) {
-      return Colors.green.shade100; // BG for fin de entregas
-    } else if (entrega.flag == -1) {
-      return Colors.red.shade100; // BG for flagged items
-    }
-    return Colors.transparent; // Default background
-  }
-
-  // Method to get current page data
   List<EntregaEntity> _getPaginatedData(List<EntregaEntity> allData) {
     final startIndex = (_currentPage - 1) * _itemsPerPage;
-    final endIndex = startIndex + _itemsPerPage > allData.length 
-                    ? allData.length 
-                    : startIndex + _itemsPerPage;
-    
-    if (startIndex >= allData.length) {
-      return [];
-    }
+    final endIndex = (startIndex + _itemsPerPage).clamp(0, allData.length);
+    if (startIndex >= allData.length) return [];
     return allData.sublist(startIndex, endIndex);
   }
 
@@ -167,57 +122,44 @@ class _EntregasPorChoferContentState extends ConsumerState<EntregasPorChoferCont
     final choferes = choferesState.choferes;
     final isLoadingChoferes = choferesState.status == ChoferesStatus.loading;
     final historialRuta = entregasState.historialRuta;
-    
-    // Detectar si estamos en móvil, tablet o desktop
+
     final isMobile = ResponsiveUtilsBosque.isMobile(context);
-    final isTablet = ResponsiveUtilsBosque.isTablet(context);
-    
-    // Aplicar paddings responsivos
-    final horizontalPadding = ResponsiveUtilsBosque.getHorizontalPadding(context);
-    final verticalPadding = ResponsiveUtilsBosque.getVerticalPadding(context);
 
     return Padding(
       padding: EdgeInsets.symmetric(
-        horizontal: horizontalPadding,
-        vertical: verticalPadding
+        horizontal: ResponsiveUtilsBosque.getHorizontalPadding(context),
+        vertical: ResponsiveUtilsBosque.getVerticalPadding(context),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Filtros superiores - Responsive layout
           if (isMobile)
             _buildMobileFilters(isLoadingChoferes, choferes)
           else
             _buildDesktopFilters(isLoadingChoferes, choferes),
-
-          SizedBox(height: ResponsiveUtilsBosque.getResponsiveValue(
-            context: context,
-            defaultValue: 24.0,
-            mobile: 16.0,
-            tablet: 20.0,
-          )),
-
-          // Contenido principal (Tabla y Mapa) - Responsive layout
+          SizedBox(height: 20),
           Expanded(
-            child: isLoading
-                ? const Center(child: CircularProgressIndicator())
-                : isInitialState
+            child:
+                isLoading
+                    ? const Center(child: CircularProgressIndicator())
+                    : isInitialState
                     ? _buildInitialStateMessage()
                     : isMobile
-                        ? _buildMobileContent(historialRuta)
-                        : _buildTabletDesktopContent(historialRuta, isMobile, isTablet),
+                    ? _buildMobileTable(historialRuta)
+                    : _buildPlutoGridTable(historialRuta),
           ),
         ],
       ),
     );
   }
 
-  // Filtros para móvil (layout vertical)
-  Widget _buildMobileFilters(bool isLoadingChoferes, List<ChoferEntity> choferes) {
+  Widget _buildMobileFilters(
+    bool isLoadingChoferes,
+    List<ChoferEntity> choferes,
+  ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        // Selector de fecha
         TextField(
           controller: _dateController,
           readOnly: true,
@@ -226,13 +168,26 @@ class _EntregasPorChoferContentState extends ConsumerState<EntregasPorChoferCont
             border: const OutlineInputBorder(),
             suffixIcon: IconButton(
               icon: const Icon(Icons.calendar_today),
-              onPressed: () => _selectDate(context),
+              onPressed: () async {
+                final DateTime? picked = await showDatePicker(
+                  context: context,
+                  initialDate: selectedDate,
+                  firstDate: DateTime(2020),
+                  lastDate: DateTime(2030),
+                );
+                if (picked != null && picked != selectedDate) {
+                  setState(() {
+                    selectedDate = picked;
+                    _dateController.text = DateFormat(
+                      'dd/MM/yyyy',
+                    ).format(selectedDate);
+                  });
+                }
+              },
             ),
           ),
         ),
         const SizedBox(height: 16),
-
-        // Dropdown de choferes
         DropdownButtonFormField<int>(
           value: selectedChoferId,
           decoration: const InputDecoration(
@@ -242,14 +197,20 @@ class _EntregasPorChoferContentState extends ConsumerState<EntregasPorChoferCont
           icon: const Icon(Icons.arrow_drop_down),
           isExpanded: true,
           hint: const Text('Seleccione un chofer'),
-          items: isLoadingChoferes
-              ? [const DropdownMenuItem<int>(value: null, child: Text('Cargando...'))]
-              : choferes.map((ChoferEntity chofer) {
-                  return DropdownMenuItem<int>(
-                    value: chofer.codEmpleado,
-                    child: Text('${chofer.nombreCompleto} - ${chofer.cargo}'),
-                  );
-                }).toList(),
+          items:
+              isLoadingChoferes
+                  ? [
+                    const DropdownMenuItem<int>(
+                      value: null,
+                      child: Text('Cargando...'),
+                    ),
+                  ]
+                  : choferes.map((ChoferEntity chofer) {
+                    return DropdownMenuItem<int>(
+                      value: chofer.codEmpleado,
+                      child: Text('${chofer.nombreCompleto} - ${chofer.cargo}'),
+                    );
+                  }).toList(),
           onChanged: (int? value) {
             setState(() {
               selectedChoferId = value;
@@ -257,8 +218,6 @@ class _EntregasPorChoferContentState extends ConsumerState<EntregasPorChoferCont
           },
         ),
         const SizedBox(height: 16),
-
-        // Botón de búsqueda
         ElevatedButton(
           onPressed: _buscarEntregas,
           style: ElevatedButton.styleFrom(
@@ -270,11 +229,12 @@ class _EntregasPorChoferContentState extends ConsumerState<EntregasPorChoferCont
     );
   }
 
-  // Filtros para tablet/desktop (layout horizontal)
-  Widget _buildDesktopFilters(bool isLoadingChoferes, List<ChoferEntity> choferes) {
+  Widget _buildDesktopFilters(
+    bool isLoadingChoferes,
+    List<ChoferEntity> choferes,
+  ) {
     return Row(
       children: [
-        // Selector de fecha
         Expanded(
           child: TextField(
             controller: _dateController,
@@ -284,14 +244,27 @@ class _EntregasPorChoferContentState extends ConsumerState<EntregasPorChoferCont
               border: const OutlineInputBorder(),
               suffixIcon: IconButton(
                 icon: const Icon(Icons.calendar_today),
-                onPressed: () => _selectDate(context),
+                onPressed: () async {
+                  final DateTime? picked = await showDatePicker(
+                    context: context,
+                    initialDate: selectedDate,
+                    firstDate: DateTime(2020),
+                    lastDate: DateTime(2030),
+                  );
+                  if (picked != null && picked != selectedDate) {
+                    setState(() {
+                      selectedDate = picked;
+                      _dateController.text = DateFormat(
+                        'dd/MM/yyyy',
+                      ).format(selectedDate);
+                    });
+                  }
+                },
               ),
             ),
           ),
         ),
         const SizedBox(width: 16),
-
-        // Dropdown de choferes
         Expanded(
           flex: 2,
           child: DropdownButtonFormField<int>(
@@ -303,14 +276,22 @@ class _EntregasPorChoferContentState extends ConsumerState<EntregasPorChoferCont
             icon: const Icon(Icons.arrow_drop_down),
             isExpanded: true,
             hint: const Text('Seleccione un chofer'),
-            items: isLoadingChoferes
-                ? [const DropdownMenuItem<int>(value: null, child: Text('Cargando...'))]
-                : choferes.map((ChoferEntity chofer) {
-                    return DropdownMenuItem<int>(
-                      value: chofer.codEmpleado,
-                      child: Text('${chofer.nombreCompleto} - ${chofer.cargo}'),
-                    );
-                  }).toList(),
+            items:
+                isLoadingChoferes
+                    ? [
+                      const DropdownMenuItem<int>(
+                        value: null,
+                        child: Text('Cargando...'),
+                      ),
+                    ]
+                    : choferes.map((ChoferEntity chofer) {
+                      return DropdownMenuItem<int>(
+                        value: chofer.codEmpleado,
+                        child: Text(
+                          '${chofer.nombreCompleto} - ${chofer.cargo}',
+                        ),
+                      );
+                    }).toList(),
             onChanged: (int? value) {
               setState(() {
                 selectedChoferId = value;
@@ -318,27 +299,11 @@ class _EntregasPorChoferContentState extends ConsumerState<EntregasPorChoferCont
             },
           ),
         ),
-
         const SizedBox(width: 16),
-
-        // Botón de búsqueda
         ElevatedButton(
           onPressed: _buscarEntregas,
           style: ElevatedButton.styleFrom(
-            padding: EdgeInsets.symmetric(
-              horizontal: ResponsiveUtilsBosque.getResponsiveValue(
-                context: context,
-                defaultValue: 50.0,
-                tablet: 40.0,
-                desktop: 50.0,
-              ),
-              vertical: ResponsiveUtilsBosque.getResponsiveValue(
-                context: context,
-                defaultValue: 20.0,
-                tablet: 18.0,
-                desktop: 20.0,
-              ),
-            ),
+            padding: const EdgeInsets.symmetric(horizontal: 50, vertical: 20),
           ),
           child: const Text('Buscar'),
         ),
@@ -346,7 +311,6 @@ class _EntregasPorChoferContentState extends ConsumerState<EntregasPorChoferCont
     );
   }
 
-  // Estado inicial (mensaje de selección)
   Widget _buildInitialStateMessage() {
     return const Center(
       child: Column(
@@ -364,503 +328,532 @@ class _EntregasPorChoferContentState extends ConsumerState<EntregasPorChoferCont
     );
   }
 
-  // Layout para móviles (tabs para tabla y mapa)
-  Widget _buildMobileContent(List<EntregaEntity> historialRuta) {
-    return DefaultTabController(
-      length: 2,
-      child: Column(
-        children: [
-          const TabBar(
-            tabs: [
-              Tab(text: 'TABLA', icon: Icon(Icons.list_alt)),
-              Tab(text: 'MAPA', icon: Icon(Icons.map)),
-            ],
-          ),
-          Expanded(
-            child: TabBarView(
-              children: [
-                _buildTablaEntregas(historialRuta),
-                _buildMapa(historialRuta),
-              ],
+  Widget _buildPlutoGridTable(List<EntregaEntity> historialRuta) {
+    final List<PlutoColumn> columns = <PlutoColumn>[
+      PlutoColumn(
+        title: 'Tipo',
+        field: 'tipo',
+        type: PlutoColumnType.text(),
+        width: 80,
+        enableRowChecked: false,
+        enableContextMenu: false,
+        enableDropToResize: false,
+        enableColumnDrag: false,
+        enableSorting: true,
+      ),
+      PlutoColumn(
+        title: 'Factura',
+        field: 'factura',
+        type: PlutoColumnType.text(),
+        width: 100,
+        enableContextMenu: false,
+        enableDropToResize: false,
+        enableColumnDrag: false,
+      ),
+      PlutoColumn(
+        title: 'Cliente',
+        field: 'cliente',
+        type: PlutoColumnType.text(),
+        width: 170,
+        enableContextMenu: false,
+        enableDropToResize: false,
+        enableColumnDrag: false,
+      ),
+      PlutoColumn(
+        title: 'Fecha Nota',
+        field: 'fechaNota',
+        type: PlutoColumnType.text(),
+        width: 120,
+        enableContextMenu: false,
+        enableDropToResize: false,
+        enableColumnDrag: false,
+      ),
+      PlutoColumn(
+        title: 'Fecha Entrega',
+        field: 'fechaEntrega',
+        type: PlutoColumnType.text(),
+        width: 120,
+        enableContextMenu: false,
+        enableDropToResize: false,
+        enableColumnDrag: false,
+      ),
+      PlutoColumn(
+        title: 'Dif. Min.',
+        field: 'diferenciaMinutos',
+        type: PlutoColumnType.text(),
+        width: 80,
+        textAlign: PlutoColumnTextAlign.right,
+        enableContextMenu: false,
+        enableDropToResize: false,
+        enableColumnDrag: false,
+      ),
+      PlutoColumn(
+        title: 'Dirección',
+        field: 'direccion',
+        type: PlutoColumnType.text(),
+        width: 200,
+        enableContextMenu: false,
+        enableDropToResize: false,
+        enableColumnDrag: false,
+      ),
+      PlutoColumn(
+        title: 'Vendedor',
+        field: 'vendedor',
+        type: PlutoColumnType.text(),
+        width: 120,
+        enableContextMenu: false,
+        enableDropToResize: false,
+        enableColumnDrag: false,
+      ),
+      PlutoColumn(
+        title: 'Chofer',
+        field: 'chofer',
+        type: PlutoColumnType.text(),
+        width: 120,
+        enableContextMenu: false,
+        enableDropToResize: false,
+        enableColumnDrag: false,
+      ),
+      PlutoColumn(
+        title: 'Coche',
+        field: 'coche',
+        type: PlutoColumnType.text(),
+        width: 100,
+        enableContextMenu: false,
+        enableDropToResize: false,
+        enableColumnDrag: false,
+      ),
+      PlutoColumn(
+        title: 'Peso (KG)',
+        field: 'peso',
+        type: PlutoColumnType.text(),
+        width: 80,
+        textAlign: PlutoColumnTextAlign.right,
+        enableContextMenu: false,
+        enableDropToResize: false,
+        enableColumnDrag: false,
+      ),
+      PlutoColumn(
+        title: 'Observaciones',
+        field: 'observaciones',
+        type: PlutoColumnType.text(),
+        width: 150,
+        enableContextMenu: false,
+        enableDropToResize: false,
+        enableColumnDrag: false,
+      ),
+      PlutoColumn(
+        title: 'Acciones',
+        field: 'acciones',
+        type: PlutoColumnType.text(),
+        width: 90,
+        enableContextMenu: false,
+        enableDropToResize: false,
+        enableColumnDrag: false,
+        renderer: (rendererContext) {
+          return Center(
+            child: IconButton(
+              icon: const Icon(
+                Icons.remove_red_eye,
+                color: Colors.blue,
+                size: 20,
+              ),
+              onPressed: () {
+                final entregaIdx = historialRuta.indexWhere(
+                  (e) =>
+                      e.idEntrega.toString() ==
+                      rendererContext.row.cells['id']?.value,
+                );
+
+                if (entregaIdx >= 0) {
+                  _onVerEntrega(historialRuta[entregaIdx]);
+                }
+              },
+              tooltip: 'Ver detalles',
             ),
+          );
+        },
+      ),
+    ];
+
+    final rows =
+        historialRuta.asMap().entries.map((entry) {
+          final entrega = entry.value;
+          return PlutoRow(
+            cells: {
+              'id': PlutoCell(value: entrega.idEntrega.toString()),
+              'tipo': PlutoCell(
+                value:
+                    entrega.tipo ??
+                    (entrega.cardName != null &&
+                            entrega.cardName!.contains("Inicio")
+                        ? "Inicio"
+                        : entrega.cardName != null &&
+                            entrega.cardName!.contains("Fin")
+                        ? "Fin"
+                        : "-"),
+              ),
+              'factura': PlutoCell(
+                value: entrega.factura > 0 ? entrega.factura.toString() : '-',
+              ),
+              'cliente': PlutoCell(value: entrega.cardName ?? '-'),
+              'fechaNota': PlutoCell(value: _formatDate(entrega.fechaNota)),
+              'fechaEntrega': PlutoCell(
+                value: _formatDate(entrega.fechaEntrega),
+              ),
+              'diferenciaMinutos': PlutoCell(
+                value: entrega.diferenciaMinutos?.toString() ?? '0',
+              ),
+              'direccion': PlutoCell(
+                value:
+                    entrega.direccionEntrega ??
+                    entrega.addressEntregaFac ??
+                    '-',
+              ),
+              'vendedor': PlutoCell(value: entrega.vendedor ?? '-'),
+              'chofer': PlutoCell(value: entrega.nombreCompleto ?? '-'),
+              'coche': PlutoCell(value: entrega.cochePlaca ?? '-'),
+              'peso': PlutoCell(
+                value: entrega.peso > 0 ? entrega.peso.toStringAsFixed(2) : '-',
+              ),
+              'observaciones': PlutoCell(value: entrega.obs ?? '-'),
+              'acciones': PlutoCell(value: ''),
+            },
+          );
+        }).toList();
+
+    return Column(
+      children: [
+        _createGridHeader(historialRuta.length),
+        Expanded(
+          child: PlutoGrid(
+            columns: columns,
+            rows: rows,
+            rowColorCallback: (PlutoRowColorContext ctx) {
+              final idEntrega =
+                  int.tryParse(ctx.row.cells['id']?.value ?? '0') ?? 0;
+              final entregaIdx = historialRuta.indexWhere(
+                (e) => e.idEntrega == idEntrega,
+              );
+              if (entregaIdx >= 0) {
+                final entrega = historialRuta[entregaIdx];
+                return _getRowBackgroundColor(entrega);
+              }
+              return Colors.transparent;
+            },
+            configuration: PlutoGridConfiguration(
+              columnSize: const PlutoGridColumnSizeConfig(
+                autoSizeMode: PlutoAutoSizeMode.scale,
+              ),
+              style: PlutoGridStyleConfig(
+                cellTextStyle: const TextStyle(fontSize: 12),
+                columnTextStyle: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 12,
+                ),
+                gridBackgroundColor: Colors.white,
+                gridBorderColor: Colors.grey.shade300,
+                gridBorderRadius: BorderRadius.circular(8),
+                activatedBorderColor: Theme.of(context).colorScheme.primary,
+                borderColor: Colors.grey.shade300,
+                iconColor: Theme.of(context).colorScheme.primary,
+                iconSize: 18,
+                rowHeight: 46,
+              ),
+            ),
+            onLoaded: (PlutoGridOnLoadedEvent event) {
+              event.stateManager.setSelectingMode(PlutoGridSelectingMode.row);
+              event.stateManager.setShowColumnFilter(false);
+            },
+            onSelected: (PlutoGridOnSelectedEvent event) {
+              if (event.row != null) {
+                final idEntrega =
+                    int.tryParse(event.row!.cells['id']?.value ?? '0') ?? 0;
+                final entregaIdx = historialRuta.indexWhere(
+                  (e) => e.idEntrega == idEntrega,
+                );
+                if (entregaIdx >= 0) {
+                  setState(() {
+                    _selectedRowIndex = entregaIdx;
+                  });
+                }
+              }
+            },
+          ),
+        ),
+        _createGridFooter(historialRuta),
+      ],
+    );
+  }
+
+  Widget _createGridHeader(int totalRegistros) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Row(
+        children: [
+          Text(
+            'Total de registros: $totalRegistros',
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+          ),
+          const Spacer(),
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            tooltip: 'Actualizar datos',
+            onPressed: selectedChoferId != null ? _buscarEntregas : null,
           ),
         ],
       ),
     );
   }
 
-  // Layout para tablet y desktop (tabla y mapa lado a lado)
-  Widget _buildTabletDesktopContent(List<EntregaEntity> historialRuta, bool isMobile, bool isTablet) {
-    // Determinar proporciones basadas en dispositivo
-    final tableFlex = isTablet ? 3 : 2;
-    final mapFlex = isTablet ? 2 : 1;
-    
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // Tabla de resultados (lado izquierdo) - Wrapped in Expanded with constraints
-        Expanded(
-          flex: tableFlex,
-          child: LayoutBuilder(
-            builder: (context, constraints) {
-              return SizedBox(
-                width: constraints.maxWidth,
-                child: _buildTablaEntregas(historialRuta),
-              );
+  Widget _createGridFooter(List<EntregaEntity> historialRuta) {
+    final totalPages = (historialRuta.length / _itemsPerPage).ceil();
+    final paginatedData = _getPaginatedData(historialRuta);
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      color: Colors.grey.shade50,
+      child: Row(
+        children: [
+          Text(
+            'Mostrando ${paginatedData.length} de ${historialRuta.length} registros',
+          ),
+          const Spacer(),
+          IconButton(
+            icon: const Icon(Icons.first_page),
+            onPressed:
+                _currentPage > 1
+                    ? () => setState(() {
+                      _currentPage = 1;
+                      _selectedRowIndex = null;
+                    })
+                    : null,
+            tooltip: 'Primera página',
+          ),
+          IconButton(
+            icon: const Icon(Icons.chevron_left),
+            onPressed:
+                _currentPage > 1
+                    ? () => setState(() {
+                      _currentPage--;
+                      _selectedRowIndex = null;
+                    })
+                    : null,
+            tooltip: 'Página anterior',
+          ),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Text(
+              'Página $_currentPage de $totalPages',
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
+          ),
+          IconButton(
+            icon: const Icon(Icons.chevron_right),
+            onPressed:
+                _currentPage < totalPages
+                    ? () => setState(() {
+                      _currentPage++;
+                      _selectedRowIndex = null;
+                    })
+                    : null,
+            tooltip: 'Página siguiente',
+          ),
+          IconButton(
+            icon: const Icon(Icons.last_page),
+            onPressed:
+                _currentPage < totalPages
+                    ? () => setState(() {
+                      _currentPage = totalPages;
+                      _selectedRowIndex = null;
+                    })
+                    : null,
+            tooltip: 'Última página',
+          ),
+          const SizedBox(width: 16),
+          DropdownButton<int>(
+            value: _itemsPerPage,
+            items:
+                [10, 25, 50, 100].map((int value) {
+                  return DropdownMenuItem<int>(
+                    value: value,
+                    child: Text('$value por página'),
+                  );
+                }).toList(),
+            onChanged: (int? newValue) {
+              if (newValue != null) {
+                setState(() {
+                  _itemsPerPage = newValue;
+                  _currentPage = 1;
+                  _selectedRowIndex = null;
+                });
+              }
             },
           ),
-        ),
-
-        SizedBox(width: ResponsiveUtilsBosque.getHorizontalPadding(context) / 2),
-
-        // Mapa (lado derecho)
-        Expanded(
-          flex: mapFlex,
-          child: _buildMapa(historialRuta),
-        ),
-      ],
-    );
-  }
-
-  // Widget de tabla de entregas
-  Widget _buildTablaEntregas(List<EntregaEntity> historialRuta) {
-  final paginatedData = _getPaginatedData(historialRuta);
-  final totalPages = (historialRuta.length / _itemsPerPage).ceil();
-
-  return Card(
-    elevation: 4,
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        // Encabezado con scroll horizontal
-        SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: Row(
-            children: const [
-              _TableHeader(text: 'Tipo', width: 80),
-              _TableHeader(text: 'Factura', width: 100),
-              _TableHeader(text: 'Cliente', width: 150),
-              _TableHeader(text: 'Fecha Nota', width: 120),
-              _TableHeader(text: 'Fecha Entrega', width: 120),
-              _TableHeader(text: 'Dif. Min.', width: 80),
-              _TableHeader(text: 'Dirección', width: 200),
-              _TableHeader(text: 'Vendedor', width: 120),
-              _TableHeader(text: 'Chofer', width: 120),
-              _TableHeader(text: 'Coche', width: 100),
-              _TableHeader(text: 'Peso (KG)', width: 100),
-              _TableHeader(text: 'Observaciones', width: 150),
-              _TableHeader(text: 'Acciones', width: 120),
-            ],
-          ),
-        ),
-        // Contenido de la tabla con scroll en ambas direcciones
-        Expanded(
-          child: SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: IntrinsicWidth(
-              child: SingleChildScrollView(
-                scrollDirection: Axis.vertical,
-                child: paginatedData.isEmpty
-                    ? Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const Icon(Icons.info_outline, size: 40, color: Colors.grey),
-                            const SizedBox(height: 8),
-                            Text(
-                              'No hay datos disponibles',
-                              style: TextStyle(color: Colors.grey[600]),
-                            )
-                          ],
-                        ),
-                      )
-                    : Column(
-                        children: [
-                          for (int i = 0; i < paginatedData.length; i++)
-                            _buildRowItem(
-                              paginatedData[i],
-                              i + ((_currentPage - 1) * _itemsPerPage),
-                            ),
-                        ],
-                      ),
-              ),
-            ),
-          ),
-        ),
-        // Paginador
-        if (historialRuta.isNotEmpty)
-          Container(
-            padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-            decoration: BoxDecoration(
-              color: Colors.grey[100],
-              border: Border(
-                top: BorderSide(
-                  color: Colors.grey[300]!,
-                  width: 1,
-                ),
-              ),
-            ),
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text('Mostrando ${paginatedData.length} de ${historialRuta.length} registros'),
-                  const SizedBox(width: 16),
-                  Row(
-                    children: [
-                      IconButton(
-                        icon: const Icon(Icons.first_page),
-                        onPressed: _currentPage > 1
-                            ? () => setState(() {
-                                  _currentPage = 1;
-                                  _selectedRowIndex = null;
-                                })
-                            : null,
-                        tooltip: 'Primera página',
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.chevron_left),
-                        onPressed: _currentPage > 1
-                            ? () => setState(() {
-                                  _currentPage--;
-                                  _selectedRowIndex = null;
-                                })
-                            : null,
-                        tooltip: 'Página anterior',
-                      ),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        child: Text(
-                          'Página $_currentPage de $totalPages',
-                          style: const TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.chevron_right),
-                        onPressed: _currentPage < totalPages
-                            ? () => setState(() {
-                                  _currentPage++;
-                                  _selectedRowIndex = null;
-                                })
-                            : null,
-                        tooltip: 'Página siguiente',
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.last_page),
-                        onPressed: _currentPage < totalPages
-                            ? () => setState(() {
-                                  _currentPage = totalPages;
-                                  _selectedRowIndex = null;
-                                })
-                            : null,
-                        tooltip: 'Última página',
-                      ),
-                      const SizedBox(width: 16),
-                      DropdownButton<int>(
-                        value: _itemsPerPage,
-                        items: [10, 25, 50, 100].map((int value) {
-                          return DropdownMenuItem<int>(
-                            value: value,
-                            child: Text('$value por página'),
-                          );
-                        }).toList(),
-                        onChanged: (int? newValue) {
-                          if (newValue != null) {
-                            setState(() {
-                              _itemsPerPage = newValue;
-                              _currentPage = 1;
-                              _selectedRowIndex = null;
-                            });
-                          }
-                        },
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ),
-      ],
-    ),
-  );
-}
-
-  // Construir una fila de datos
-  Widget _buildRowItem(EntregaEntity entrega, int index) {
-    final isSelected = _selectedRowIndex == index;
-    
-    // Apply the background colors according to the criteria
-    final bgColor = entrega.prioridad == 'Alta' 
-        ? Colors.orange.shade100 
-        : entrega.docEntry == -1 
-            ? Colors.blue.shade100 
-            : entrega.docEntry == 0 
-                ? Colors.green.shade100 
-                : entrega.flag == -1 
-                    ? Colors.red.shade100 
-                    : Colors.transparent;
-    
-    return Container(
-      height: 48, // Fixed height as specified in the h-3rem class (approximately 48px)
-      color: isSelected ? Colors.grey.shade300 : bgColor,
-      child: InkWell(
-        onTap: () {
-          setState(() {
-            _selectedRowIndex = index;
-          });
-        },
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
-          child: Row(
-            children: [
-              // Tipo
-              SizedBox(
-                width: 80,
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 8),
-                  child: Text(
-                    entrega.tipo ?? 
-                    (entrega.cardName.contains("Inicio") 
-                      ? "Inicio" 
-                      : entrega.cardName.contains("Fin") 
-                        ? "Fin" 
-                        : "-"),
-                    style: const TextStyle(fontSize: 12),
-                  ),
-                ),
-              ),
-
-              // Factura
-              SizedBox(
-                width: 100,
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 8),
-                  child: Text(
-                    entrega.factura > 0 
-                      ? entrega.factura.toString() 
-                      : '-',
-                    style: const TextStyle(fontSize: 12),
-                  ),
-                ),
-              ),
-
-              // Cliente
-              SizedBox(
-                width: 150,
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 8),
-                  child: Tooltip(
-                    message: entrega.cardName ?? '-',
-                    child: Text(
-                      entrega.cardName ?? '-',
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(fontSize: 12),
-                    ),
-                  ),
-                ),
-              ),
-
-              // Fecha Nota
-              SizedBox(
-                width: 120,
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 8),
-                  child: Text(
-                    _formatDate(entrega.fechaNota),
-                    style: const TextStyle(fontSize: 12),
-                  ),
-                ),
-              ),
-
-              // Fecha Entrega
-              SizedBox(
-                width: 120,
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 8),
-                  child: Text(
-                    _formatDate(entrega.fechaEntrega),
-                    style: const TextStyle(fontSize: 12),
-                  ),
-                ),
-              ),
-
-              // Dif. Min
-              SizedBox(
-                width: 80,
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 8),
-                  child: Text(
-                    entrega.diferenciaMinutos?.toString() ?? '0',
-                    style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
-                    textAlign: TextAlign.center,
-                  ),
-                ),
-              ),
-
-              // Dirección
-              SizedBox(
-                width: 200,
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 8),
-                  child: Tooltip(
-                    message: entrega.direccionEntrega ?? entrega.addressEntregaFac ?? '-',
-                    child: Text(
-                      entrega.direccionEntrega ?? entrega.addressEntregaFac ?? '-',
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(fontSize: 12),
-                    ),
-                  ),
-                ),
-              ),
-
-              // Vendedor
-              SizedBox(
-                width: 120,
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 8),
-                  child: Text(
-                    entrega.vendedor ?? '-',
-                    style: const TextStyle(fontSize: 12),
-                  ),
-                ),
-              ),
-
-              // Chofer
-              SizedBox(
-                width: 120,
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 8),
-                  child: Text(
-                    entrega.nombreCompleto ?? '-',
-                    style: const TextStyle(fontSize: 12),
-                  ),
-                ),
-              ),
-
-              // Coche
-              SizedBox(
-                width: 100,
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 8),
-                  child: Text(
-                    entrega.cochePlaca ?? '-',
-                    style: const TextStyle(fontSize: 12),
-                  ),
-                ),
-              ),
-
-              // Peso
-              SizedBox(
-                width: 100,
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 8),
-                  child: Text(
-                    entrega.peso > 0 
-                      ? entrega.peso.toStringAsFixed(2) 
-                      : '-',
-                    style: const TextStyle(fontSize: 12),
-                    textAlign: TextAlign.right,
-                  ),
-                ),
-              ),
-
-              // Observaciones
-              SizedBox(
-                width: 150,
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 8),
-                  child: Tooltip(
-                    message: entrega.obs ?? '-',
-                    child: Text(
-                      entrega.obs ?? '-',
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(fontSize: 12),
-                    ),
-                  ),
-                ),
-              ),
-
-              // Acciones
-              SizedBox(
-                width: 120,
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 8),
-                  child: ElevatedButton(
-                    onPressed: entrega.flag == -1 ? null : () => _onVerEntrega(entrega),
-                    style: ElevatedButton.styleFrom(
-                      padding: EdgeInsets.zero,
-                      shape: const CircleBorder(),
-                      minimumSize: const Size(32, 32),
-                      backgroundColor: Colors.transparent,
-                      elevation: 0,
-                    ),
-                    child: const Icon(
-                      Icons.remove_red_eye,
-                      color: Colors.blue,
-                      size: 18,
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
+        ],
       ),
     );
   }
 
   void _onVerEntrega(EntregaEntity entrega) {
-    if (entrega.latitud != 0 && entrega.longitud != 0) {
-      // Show the selected entrega on map
-      setState(() {
-        final index = ref.read(entregasNotifierProvider).historialRuta.indexOf(entrega);
-        if (index != -1) {
-          _selectedRowIndex = index;
-        }
-      });
-    } else {
-      // Show details in a dialog if no coordinates available
-      showDialog(
-        context: context,
-        builder: (context) => AlertDialog(
-          title: Text('Detalles de ${entrega.tipo ?? "Entrega"}'),
-          content: SingleChildScrollView(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                if (entrega.cardName != null && entrega.cardName!.isNotEmpty)
-                  _buildDetailItem('Cliente', entrega.cardName!),
-                if (entrega.factura > 0)
-                  _buildDetailItem('Factura', '${entrega.factura}'),
-                if (entrega.fechaNota != null)
-                  _buildDetailItem('Fecha Nota', _formatDate(entrega.fechaNota)),
-                if (entrega.fechaEntrega != null)
-                  _buildDetailItem('Fecha Entrega', _formatDate(entrega.fechaEntrega)),
-                if ((entrega.direccionEntrega != null && entrega.direccionEntrega!.isNotEmpty) ||
-                    (entrega.addressEntregaFac != null && entrega.addressEntregaFac!.isNotEmpty))
-                  _buildDetailItem('Dirección', 
-                      entrega.direccionEntrega != null && entrega.direccionEntrega!.isNotEmpty
+    // Verificar si tiene coordenadas válidas para mostrar en el mapa
+    final bool tieneUbicacion = entrega.latitud != 0 && entrega.longitud != 0;
+
+    showDialog(
+      context: context,
+      builder:
+          (context) => AlertDialog(
+            title: Text('Detalles de ${entrega.tipo ?? "Entrega"}'),
+            content: SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (entrega.cardName != null && entrega.cardName!.isNotEmpty)
+                    _buildDetailItem('Cliente', entrega.cardName!),
+                  if (entrega.factura > 0)
+                    _buildDetailItem('Factura', '${entrega.factura}'),
+                  if (entrega.fechaNota != null)
+                    _buildDetailItem(
+                      'Fecha Nota',
+                      _formatDate(entrega.fechaNota),
+                    ),
+                  if (entrega.fechaEntrega != null)
+                    _buildDetailItem(
+                      'Fecha Entrega',
+                      _formatDate(entrega.fechaEntrega),
+                    ),
+                  if ((entrega.direccionEntrega != null &&
+                          entrega.direccionEntrega!.isNotEmpty) ||
+                      (entrega.addressEntregaFac != null &&
+                          entrega.addressEntregaFac!.isNotEmpty))
+                    _buildDetailItem(
+                      'Dirección',
+                      entrega.direccionEntrega != null &&
+                              entrega.direccionEntrega!.isNotEmpty
                           ? entrega.direccionEntrega!
-                          : entrega.addressEntregaFac!),
-                if (entrega.obs != null && entrega.obs!.isNotEmpty)
-                  _buildDetailItem('Observaciones', entrega.obs!),
-                if (entrega.vendedor != null && entrega.vendedor!.isNotEmpty)
-                  _buildDetailItem('Vendedor', entrega.vendedor!),
-                if (entrega.peso > 0)
-                  _buildDetailItem('Peso', '${entrega.peso.toStringAsFixed(2)} kg'),
-              ],
+                          : entrega.addressEntregaFac!,
+                    ),
+                  if (entrega.obs != null && entrega.obs!.isNotEmpty)
+                    _buildDetailItem('Observaciones', entrega.obs!),
+                  if (entrega.vendedor != null && entrega.vendedor!.isNotEmpty)
+                    _buildDetailItem('Vendedor', entrega.vendedor!),
+                  if (entrega.peso > 0)
+                    _buildDetailItem(
+                      'Peso',
+                      '${entrega.peso.toStringAsFixed(2)} kg',
+                    ),
+
+                  // Mostrar información de ubicación si está disponible
+                  if (tieneUbicacion) ...[
+                    const Divider(height: 24),
+                    const Text(
+                      'Ubicación de entrega',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Latitud: ${entrega.latitud.toStringAsFixed(6)}\nLongitud: ${entrega.longitud.toStringAsFixed(6)}',
+                      style: const TextStyle(fontSize: 14),
+                    ),
+                    const SizedBox(height: 8),
+                    Container(
+                      height: 200,
+                      width: double.infinity,
+                      decoration: BoxDecoration(
+                        border: Border.all(color: Colors.grey.shade300),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: _buildMapPreview(entrega),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            actions: [
+              if (tieneUbicacion)
+                TextButton(
+                  onPressed: () => _abrirMapaExterno(entrega),
+                  child: const Text('Ver en Google Maps'),
+                ),
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('Cerrar'),
+              ),
+            ],
+          ),
+    );
+  }
+
+  // Widget para mostrar un preview del mapa
+  Widget _buildMapPreview(EntregaEntity entrega) {
+    // Aquí utilizarías un widget de mapa como google_maps_flutter
+    // Por ahora, mostraremos una representación visual simple
+    return Stack(
+      children: [
+        // Fondo gris claro para representar el mapa
+        Container(color: Colors.grey.shade200),
+        // Marcador central
+        Center(
+          child: Icon(
+            Icons.location_on,
+            color: Theme.of(context).colorScheme.primary,
+            size: 40,
+          ),
+        ),
+        // Información de la ubicación
+        Positioned(
+          bottom: 10,
+          left: 0,
+          right: 0,
+          child: Container(
+            alignment: Alignment.center,
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            color: Colors.white.withOpacity(0.8),
+            child: Text(
+              entrega.direccionEntrega ??
+                  entrega.addressEntregaFac ??
+                  'Ubicación de entrega',
+              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+              textAlign: TextAlign.center,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
             ),
           ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Cerrar'),
-            ),
-          ],
         ),
-      );
+      ],
+    );
+  }
+
+  // Método para abrir la ubicación en Google Maps
+  void _abrirMapaExterno(EntregaEntity entrega) async {
+    final Uri uri = Uri.parse(
+      'https://www.google.com/maps/search/?api=1&query=${entrega.latitud},${entrega.longitud}',
+    );
+    try {
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+      } else {
+        debugPrint('No se pudo abrir el mapa: $uri');
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('No se pudo abrir el mapa')),
+          );
+        }
+      }
+    } catch (e) {
+      debugPrint('Error al abrir el mapa: $e');
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error al abrir el mapa: ${e.toString()}')),
+        );
+      }
     }
   }
 
@@ -872,165 +865,44 @@ class _EntregasPorChoferContentState extends ConsumerState<EntregasPorChoferCont
         children: [
           Text(
             label,
-            style: const TextStyle(
-              fontWeight: FontWeight.bold,
-              fontSize: 14,
-            ),
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
           ),
           const SizedBox(height: 2),
-          Text(
-            value,
-            style: const TextStyle(fontSize: 14),
-          ),
+          Text(value, style: const TextStyle(fontSize: 14)),
           const Divider(),
         ],
       ),
     );
   }
 
-  // Widget de mapa
-  Widget _buildMapa(List<EntregaEntity> historialRuta) {
-    // Verificar si hay entregas con coordenadas válidas para mostrar en el mapa o una fila seleccionada
-    final hasSelectedPoint = _selectedRowIndex != null && 
-                            _selectedRowIndex! < historialRuta.length &&
-                            historialRuta[_selectedRowIndex!].latitud != 0 && 
-                            historialRuta[_selectedRowIndex!].longitud != 0;
-                            
-    final hasValidLocations = historialRuta.any(
-      (entrega) => entrega.latitud != 0 && entrega.longitud != 0
-    );
-    
-    // Obtener la entrega seleccionada si hay una
-    final selectedEntrega = hasSelectedPoint ? historialRuta[_selectedRowIndex!] : null;
-    
-    return Card(
-      elevation: 4,
-      child: Stack(
-        children: [
-          // Aquí se implementaría el mapa real con las coordenadas de las entregas
-          Container(
-            height: double.infinity,
-            child: hasValidLocations
-                ? Center(
-                    // Placeholder para el mapa real
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Icon(Icons.map, size: 80, color: Colors.blue),
-                        const SizedBox(height: 8),
-                        Text(
-                          selectedEntrega != null 
-                            ? 'Ubicación: ${selectedEntrega.direccionEntrega}'
-                            : 'Mapa con ${historialRuta.length} puntos de entrega',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(color: Colors.grey[600]),
-                        ),
-                        if (selectedEntrega != null) ...[
-                          const SizedBox(height: 12),
-                          Text(
-                            'Lat: ${selectedEntrega.latitud.toStringAsFixed(6)}, Long: ${selectedEntrega.longitud.toStringAsFixed(6)}',
-                            style: TextStyle(color: Colors.grey[600], fontSize: 12),
-                          ),
-                        ]
-                      ],
-                    ),
-                  )
-                : Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Icon(Icons.map, size: 80, color: Colors.grey),
-                        const SizedBox(height: 8),
-                        Text(
-                          'No hay ubicaciones disponibles',
-                          style: TextStyle(color: Colors.grey[600]),
-                        ),
-                        const SizedBox(height: 20),
-                        Text(
-                          'Seleccione una entrega con ubicación para ver en el mapa',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(color: Colors.grey[500], fontSize: 14),
-                        )
-                      ],
-                    ),
-                  ),
-          ),
-          
-          // Si hay ubicaciones, mostrar una leyenda
-          if (hasValidLocations)
-            Positioned(
-              top: 10,
-              right: 10,
-              child: Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.8),
-                  borderRadius: BorderRadius.circular(8),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.1),
-                      blurRadius: 4,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
+  Widget _buildMobileTable(List<EntregaEntity> historialRuta) {
+    return ListView.builder(
+      itemCount: historialRuta.length,
+      itemBuilder: (context, index) {
+        final entrega = historialRuta[index];
+        return Card(
+          margin: const EdgeInsets.symmetric(vertical: 8),
+          child: ListTile(
+            title: Text(entrega.cardName ?? '-'),
+            subtitle: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Factura: ${entrega.factura > 0 ? entrega.factura.toString() : '-'}',
                 ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text('Leyenda:', style: TextStyle(fontWeight: FontWeight.bold)),
-                    const SizedBox(height: 8),
-                    _buildLeyendaItem(Colors.green.shade100, 'Inicio de Ruta'),
-                    _buildLeyendaItem(Colors.blue.shade100, 'Punto de Entrega'),
-                    _buildLeyendaItem(Colors.red.shade100, 'Fin de Ruta'),
-                  ],
+                Text('Fecha Entrega: ${_formatDate(entrega.fechaEntrega)}'),
+                Text(
+                  'Dirección: ${entrega.direccionEntrega ?? entrega.addressEntregaFac ?? '-'}',
                 ),
-              ),
+              ],
             ),
-        ],
-      ),
-    );
-  }
-  
-  // Elemento de leyenda para el mapa
-  Widget _buildLeyendaItem(Color color, String text) {
-    return Row(
-      children: [
-        Container(
-          width: 12,
-          height: 12,
-          decoration: BoxDecoration(
-            color: color,
-            borderRadius: BorderRadius.circular(3),
+            trailing: IconButton(
+              icon: const Icon(Icons.remove_red_eye, color: Colors.blue),
+              onPressed: () => _onVerEntrega(entrega),
+            ),
           ),
-        ),
-        const SizedBox(width: 4),
-        Text(text, style: const TextStyle(fontSize: 12)),
-      ],
-    );
-  }
-}
-
-// Widget auxiliar para los encabezados de la tabla
-class _TableHeader extends StatelessWidget {
-  final String text;
-  final double width;
-  
-  const _TableHeader({
-    Key? key, 
-    required this.text, 
-    required this.width,
-  }) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: width,
-      padding: const EdgeInsets.symmetric(horizontal: 8),
-      child: Text(
-        text,
-        style: const TextStyle(fontWeight: FontWeight.bold),
-        overflow: TextOverflow.ellipsis,
-      ),
+        );
+      },
     );
   }
 }
