@@ -414,11 +414,10 @@ class EntregasImpl implements EntregasRepository {
     DateTime fecha,
     int codEmpleado,
   ) async {
-
     // Formatear la fecha al formato esperado por el backend: "yyyy-MM-dd"
     final fechaFormateada = "${fecha.year}-${fecha.month.toString().padLeft(2, '0')}-${fecha.day.toString().padLeft(2, '0')}";
-
     
+    debugPrint('Consultando historial de ruta para fecha $fechaFormateada y chofer $codEmpleado');
 
     try {
       final response = await _dio.post(
@@ -429,15 +428,32 @@ class EntregasImpl implements EntregasRepository {
         },
       );
 
-      if (response.statusCode == 200 && response.data != null) {
-        final items =
-            (response.data as List<dynamic>)
-                .map((json) => EntregaModel.fromJson(json))
-                .toList();
+      if (response.statusCode == 200) {
         
-        Logger().i(items.map((model) => model.toJson()).toList());
-        return items.map((model) => model.toEntity()).toList();
+        final List<dynamic> jsonList = response.data as List<dynamic>;
+        
+        try {
+          final items = jsonList.map((json) {
+            try {
+              return EntregaModel.fromJson(json);
+            } catch (e) {
+              debugPrint('⚠️ Error al parsear elemento: ${e.toString()}');
+              debugPrint('⚠️ Elemento con error: ${json.toString()}');
+              return null;
+            }
+          })
+          .where((model) => model != null)
+          .cast<EntregaModel>()
+          .toList();
+          
+          debugPrint('✅ Modelos procesados correctamente: ${items.length}');
+          return items.map((model) => model.toEntity()).toList();
+        } catch (e) {
+          debugPrint('❌ Error al procesar los datos: ${e.toString()}');
+          throw Exception('Error al procesar datos de historial: ${e.toString()}');
+        }
       } else {
+        debugPrint('❌ Error al obtener el historial: Código ${response.statusCode}');
         throw Exception('Error al obtener el historial de ruta por chofer');
       }
     } on DioException catch (e) {
@@ -447,8 +463,10 @@ class EntregasImpl implements EntregasRepository {
         errorMessage =
             'Error del servidor: ${e.response!.statusCode} - ${e.response!.data.toString()}';
       }
+      debugPrint('❌ DioException: $errorMessage');
       throw Exception(errorMessage);
     } catch (e) {
+      debugPrint('❌ Error desconocido: ${e.toString()}');
       throw Exception('Error desconocido: ${e.toString()}');
     }
   }

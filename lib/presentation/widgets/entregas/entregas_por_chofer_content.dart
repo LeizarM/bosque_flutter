@@ -26,6 +26,10 @@ class _EntregasPorChoferContentState extends ConsumerState<EntregasPorChoferCont
   // Índice de la fila seleccionada para ver en mapa
   int? _selectedRowIndex;
 
+  // State variables for pagination
+  int _currentPage = 1;
+  int _itemsPerPage = 10; // Can be changed based on user preference
+
   @override
   void initState() {
     super.initState();
@@ -127,6 +131,33 @@ class _EntregasPorChoferContentState extends ConsumerState<EntregasPorChoferCont
     }
     
     return Colors.transparent;
+  }
+
+  // Get background color based on priority, docEntry and flag values
+  Color _getRowBackgroundColor(EntregaEntity entrega) {
+    if (entrega.prioridad == 'Alta') {
+      return Colors.orange.shade100; // BG for high priority
+    } else if (entrega.docEntry == -1) {
+      return Colors.blue.shade100; // BG for inicio de entregas
+    } else if (entrega.docEntry == 0) {
+      return Colors.green.shade100; // BG for fin de entregas
+    } else if (entrega.flag == -1) {
+      return Colors.red.shade100; // BG for flagged items
+    }
+    return Colors.transparent; // Default background
+  }
+
+  // Method to get current page data
+  List<EntregaEntity> _getPaginatedData(List<EntregaEntity> allData) {
+    final startIndex = (_currentPage - 1) * _itemsPerPage;
+    final endIndex = startIndex + _itemsPerPage > allData.length 
+                    ? allData.length 
+                    : startIndex + _itemsPerPage;
+    
+    if (startIndex >= allData.length) {
+      return [];
+    }
+    return allData.sublist(startIndex, endIndex);
   }
 
   @override
@@ -367,10 +398,17 @@ class _EntregasPorChoferContentState extends ConsumerState<EntregasPorChoferCont
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Tabla de resultados (lado izquierdo)
+        // Tabla de resultados (lado izquierdo) - Wrapped in Expanded with constraints
         Expanded(
           flex: tableFlex,
-          child: _buildTablaEntregas(historialRuta),
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              return SizedBox(
+                width: constraints.maxWidth,
+                child: _buildTablaEntregas(historialRuta),
+              );
+            },
+          ),
         ),
 
         SizedBox(width: ResponsiveUtilsBosque.getHorizontalPadding(context) / 2),
@@ -386,17 +424,21 @@ class _EntregasPorChoferContentState extends ConsumerState<EntregasPorChoferCont
 
   // Widget de tabla de entregas
   Widget _buildTablaEntregas(List<EntregaEntity> historialRuta) {
+    // Get paginated data
+    final paginatedData = _getPaginatedData(historialRuta);
+    final totalPages = (historialRuta.length / _itemsPerPage).ceil();
+    
     return Card(
       elevation: 4,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Encabezados de tabla con las columnas solicitadas
-          Container(
-            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
-            color: Colors.grey[200],
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
+          // Encabezado con scroll horizontal
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Container(
+              padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+              color: Colors.grey[200],
               child: Row(
                 children: const [
                   _TableHeader(text: 'Tipo', width: 80),
@@ -417,7 +459,7 @@ class _EntregasPorChoferContentState extends ConsumerState<EntregasPorChoferCont
             ),
           ),
 
-          // Contenido de la tabla
+          // Contenido de la tabla con scroll en ambas direcciones
           Expanded(
             child: historialRuta.isEmpty 
               ? Center(
@@ -435,17 +477,126 @@ class _EntregasPorChoferContentState extends ConsumerState<EntregasPorChoferCont
                 )
               : SingleChildScrollView(
                   scrollDirection: Axis.horizontal,
-                  child: SingleChildScrollView(
-                    child: Column(
-                      children: [
-                        // Lista de filas
-                        for (int i = 0; i < historialRuta.length; i++)
-                          _buildRowItem(historialRuta[i], i),
-                      ],
+                  child: SizedBox(
+                    // Set minimum width to ensure horizontal scroll works
+                    width: 1540, // Sum of all column widths + padding
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.vertical,
+                      child: Column(
+                        children: [
+                          // Lista de filas
+                          for (int i = 0; i < paginatedData.length; i++)
+                            _buildRowItem(paginatedData[i], i + ((_currentPage - 1) * _itemsPerPage)),
+                        ],
+                      ),
                     ),
                   ),
                 ),
           ),
+          
+          // Paginador
+          if (historialRuta.isNotEmpty)
+            Container(
+              padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+              decoration: BoxDecoration(
+                color: Colors.grey[100],
+                border: Border(
+                  top: BorderSide(
+                    color: Colors.grey[300]!,
+                    width: 1,
+                  ),
+                ),
+              ),
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text('Mostrando ${paginatedData.length} de ${historialRuta.length} registros'),
+                    
+                    const SizedBox(width: 16),
+                    
+                    Row(
+                      children: [
+                        IconButton(
+                          icon: const Icon(Icons.first_page),
+                          onPressed: _currentPage > 1 
+                              ? () => setState(() {
+                                  _currentPage = 1;
+                                  _selectedRowIndex = null;
+                                }) 
+                              : null,
+                          tooltip: 'Primera página',
+                        ),
+                        
+                        IconButton(
+                          icon: const Icon(Icons.chevron_left),
+                          onPressed: _currentPage > 1 
+                              ? () => setState(() {
+                                  _currentPage--;
+                                  _selectedRowIndex = null;
+                                }) 
+                              : null,
+                          tooltip: 'Página anterior',
+                        ),
+                        
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          child: Text(
+                            'Página $_currentPage de $totalPages',
+                            style: const TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                        
+                        IconButton(
+                          icon: const Icon(Icons.chevron_right),
+                          onPressed: _currentPage < totalPages 
+                              ? () => setState(() {
+                                  _currentPage++;
+                                  _selectedRowIndex = null;
+                                }) 
+                              : null,
+                          tooltip: 'Página siguiente',
+                        ),
+                        
+                        IconButton(
+                          icon: const Icon(Icons.last_page),
+                          onPressed: _currentPage < totalPages 
+                              ? () => setState(() {
+                                  _currentPage = totalPages;
+                                  _selectedRowIndex = null;
+                                }) 
+                              : null,
+                          tooltip: 'Última página',
+                        ),
+                        
+                        const SizedBox(width: 16),
+                        
+                        // Items per page selector
+                        DropdownButton<int>(
+                          value: _itemsPerPage,
+                          items: [10, 25, 50, 100].map((int value) {
+                            return DropdownMenuItem<int>(
+                              value: value,
+                              child: Text('$value por página'),
+                            );
+                          }).toList(),
+                          onChanged: (int? newValue) {
+                            if (newValue != null) {
+                              setState(() {
+                                _itemsPerPage = newValue;
+                                _currentPage = 1; // Reset to first page
+                                _selectedRowIndex = null;
+                              });
+                            }
+                          },
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
         ],
       ),
     );
@@ -453,11 +604,22 @@ class _EntregasPorChoferContentState extends ConsumerState<EntregasPorChoferCont
 
   // Construir una fila de datos
   Widget _buildRowItem(EntregaEntity entrega, int index) {
-    final rowColor = _getTipoColor(entrega);
     final isSelected = _selectedRowIndex == index;
     
+    // Apply the background colors according to the criteria
+    final bgColor = entrega.prioridad == 'Alta' 
+        ? Colors.orange.shade100 
+        : entrega.docEntry == -1 
+            ? Colors.blue.shade100 
+            : entrega.docEntry == 0 
+                ? Colors.green.shade100 
+                : entrega.flag == -1 
+                    ? Colors.red.shade100 
+                    : Colors.transparent;
+    
     return Container(
-      color: isSelected ? Colors.grey.shade300 : rowColor,
+      height: 48, // Fixed height as specified in the h-3rem class (approximately 48px)
+      color: isSelected ? Colors.grey.shade300 : bgColor,
       child: InkWell(
         onTap: () {
           setState(() {
@@ -479,7 +641,8 @@ class _EntregasPorChoferContentState extends ConsumerState<EntregasPorChoferCont
                       ? "Inicio" 
                       : entrega.cardName.contains("Fin") 
                         ? "Fin" 
-                        : "-")
+                        : "-"),
+                    style: const TextStyle(fontSize: 12),
                   ),
                 ),
               ),
@@ -492,7 +655,8 @@ class _EntregasPorChoferContentState extends ConsumerState<EntregasPorChoferCont
                   child: Text(
                     entrega.factura > 0 
                       ? entrega.factura.toString() 
-                      : '-'
+                      : '-',
+                    style: const TextStyle(fontSize: 12),
                   ),
                 ),
               ),
@@ -507,6 +671,7 @@ class _EntregasPorChoferContentState extends ConsumerState<EntregasPorChoferCont
                     child: Text(
                       entrega.cardName ?? '-',
                       overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(fontSize: 12),
                     ),
                   ),
                 ),
@@ -517,7 +682,10 @@ class _EntregasPorChoferContentState extends ConsumerState<EntregasPorChoferCont
                 width: 120,
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 8),
-                  child: Text(_formatDate(entrega.fechaNota)),
+                  child: Text(
+                    _formatDate(entrega.fechaNota),
+                    style: const TextStyle(fontSize: 12),
+                  ),
                 ),
               ),
 
@@ -526,7 +694,10 @@ class _EntregasPorChoferContentState extends ConsumerState<EntregasPorChoferCont
                 width: 120,
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 8),
-                  child: Text(_formatDate(entrega.fechaEntrega)),
+                  child: Text(
+                    _formatDate(entrega.fechaEntrega),
+                    style: const TextStyle(fontSize: 12),
+                  ),
                 ),
               ),
 
@@ -535,7 +706,11 @@ class _EntregasPorChoferContentState extends ConsumerState<EntregasPorChoferCont
                 width: 80,
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 8),
-                  child: Text(entrega.diferenciaMinutos?.toString() ?? '0'),
+                  child: Text(
+                    entrega.diferenciaMinutos?.toString() ?? '0',
+                    style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
+                    textAlign: TextAlign.center,
+                  ),
                 ),
               ),
 
@@ -549,6 +724,7 @@ class _EntregasPorChoferContentState extends ConsumerState<EntregasPorChoferCont
                     child: Text(
                       entrega.direccionEntrega ?? entrega.addressEntregaFac ?? '-',
                       overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(fontSize: 12),
                     ),
                   ),
                 ),
@@ -559,7 +735,10 @@ class _EntregasPorChoferContentState extends ConsumerState<EntregasPorChoferCont
                 width: 120,
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 8),
-                  child: Text(entrega.vendedor ?? '-'),
+                  child: Text(
+                    entrega.vendedor ?? '-',
+                    style: const TextStyle(fontSize: 12),
+                  ),
                 ),
               ),
 
@@ -568,7 +747,10 @@ class _EntregasPorChoferContentState extends ConsumerState<EntregasPorChoferCont
                 width: 120,
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 8),
-                  child: Text(entrega.nombreCompleto ?? '-'),
+                  child: Text(
+                    entrega.nombreCompleto ?? '-',
+                    style: const TextStyle(fontSize: 12),
+                  ),
                 ),
               ),
 
@@ -577,7 +759,10 @@ class _EntregasPorChoferContentState extends ConsumerState<EntregasPorChoferCont
                 width: 100,
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 8),
-                  child: Text(entrega.cochePlaca ?? '-'),
+                  child: Text(
+                    entrega.cochePlaca ?? '-',
+                    style: const TextStyle(fontSize: 12),
+                  ),
                 ),
               ),
 
@@ -589,7 +774,9 @@ class _EntregasPorChoferContentState extends ConsumerState<EntregasPorChoferCont
                   child: Text(
                     entrega.peso > 0 
                       ? entrega.peso.toStringAsFixed(2) 
-                      : '-'
+                      : '-',
+                    style: const TextStyle(fontSize: 12),
+                    textAlign: TextAlign.right,
                   ),
                 ),
               ),
@@ -604,6 +791,7 @@ class _EntregasPorChoferContentState extends ConsumerState<EntregasPorChoferCont
                     child: Text(
                       entrega.obs ?? '-',
                       overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(fontSize: 12),
                     ),
                   ),
                 ),
@@ -614,21 +802,104 @@ class _EntregasPorChoferContentState extends ConsumerState<EntregasPorChoferCont
                 width: 120,
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 8),
-                  child: entrega.latitud != 0 && entrega.longitud != 0
-                    ? IconButton(
-                        icon: const Icon(Icons.location_on, color: Colors.blue),
-                        onPressed: () {
-                          setState(() {
-                            _selectedRowIndex = index;
-                          });
-                        },
-                      )
-                    : const SizedBox()
+                  child: ElevatedButton(
+                    onPressed: entrega.flag == -1 ? null : () => _onVerEntrega(entrega),
+                    style: ElevatedButton.styleFrom(
+                      padding: EdgeInsets.zero,
+                      shape: const CircleBorder(),
+                      minimumSize: const Size(32, 32),
+                      backgroundColor: Colors.transparent,
+                      elevation: 0,
+                    ),
+                    child: const Icon(
+                      Icons.remove_red_eye,
+                      color: Colors.blue,
+                      size: 18,
+                    ),
+                  ),
                 ),
               ),
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  void _onVerEntrega(EntregaEntity entrega) {
+    if (entrega.latitud != 0 && entrega.longitud != 0) {
+      // Show the selected entrega on map
+      setState(() {
+        final index = ref.read(entregasNotifierProvider).historialRuta.indexOf(entrega);
+        if (index != -1) {
+          _selectedRowIndex = index;
+        }
+      });
+    } else {
+      // Show details in a dialog if no coordinates available
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: Text('Detalles de ${entrega.tipo ?? "Entrega"}'),
+          content: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (entrega.cardName != null && entrega.cardName!.isNotEmpty)
+                  _buildDetailItem('Cliente', entrega.cardName!),
+                if (entrega.factura > 0)
+                  _buildDetailItem('Factura', '${entrega.factura}'),
+                if (entrega.fechaNota != null)
+                  _buildDetailItem('Fecha Nota', _formatDate(entrega.fechaNota)),
+                if (entrega.fechaEntrega != null)
+                  _buildDetailItem('Fecha Entrega', _formatDate(entrega.fechaEntrega)),
+                if ((entrega.direccionEntrega != null && entrega.direccionEntrega!.isNotEmpty) ||
+                    (entrega.addressEntregaFac != null && entrega.addressEntregaFac!.isNotEmpty))
+                  _buildDetailItem('Dirección', 
+                      entrega.direccionEntrega != null && entrega.direccionEntrega!.isNotEmpty
+                          ? entrega.direccionEntrega!
+                          : entrega.addressEntregaFac!),
+                if (entrega.obs != null && entrega.obs!.isNotEmpty)
+                  _buildDetailItem('Observaciones', entrega.obs!),
+                if (entrega.vendedor != null && entrega.vendedor!.isNotEmpty)
+                  _buildDetailItem('Vendedor', entrega.vendedor!),
+                if (entrega.peso > 0)
+                  _buildDetailItem('Peso', '${entrega.peso.toStringAsFixed(2)} kg'),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Cerrar'),
+            ),
+          ],
+        ),
+      );
+    }
+  }
+
+  Widget _buildDetailItem(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: const TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 14,
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            value,
+            style: const TextStyle(fontSize: 14),
+          ),
+          const Divider(),
+        ],
       ),
     );
   }

@@ -114,56 +114,93 @@ class EntregaModel {
     });
 
     factory EntregaModel.fromJson(Map<String, dynamic> json) => EntregaModel(
-        idEntrega: json["idEntrega"],
-        docEntry: json["docEntry"],
-        docNum: json["docNum"],
-        docNumF: json["docNumF"],
-        factura: json["factura"],
-        docDate: DateTime.parse(json["docDate"]),
-        docTime: json["docTime"],
-        cardCode: json["cardCode"],
-        cardName: json["cardName"],
-        addressEntregaFac: json["addressEntregaFac"],
-        addressEntregaMat: json["addressEntregaMat"],
-        vendedor: json["vendedor"],
-        itemCode: json["itemCode"],
-        dscription: json["dscription"],
-        whsCode: json["whsCode"],
-        quantity: json["quantity"],
-        openQty: json["openQty"],
-        db: json["db"],
-        valido: json["valido"],
-        peso: json["peso"],
+        idEntrega: json["idEntrega"] ?? 0,
+        docEntry: json["docEntry"] ?? 0,
+        docNum: json["docNum"] ?? 0,
+        docNumF: json["docNumF"] ?? 0,
+        factura: json["factura"] ?? 0,
+        docDate: json["docDate"] != null ? DateTime.parse(json["docDate"]) : DateTime.now(),
+        docTime: json["docTime"] ?? "",
+        cardCode: json["cardCode"] ?? "",
+        cardName: json["cardName"] ?? "",
+        addressEntregaFac: json["addressEntregaFac"] ?? "",
+        addressEntregaMat: json["addressEntregaMat"] ?? "",
+        vendedor: json["vendedor"] ?? "",
+        itemCode: json["itemCode"] ?? "",
+        dscription: json["dscription"] ?? "",
+        whsCode: json["whsCode"] ?? "",
+        quantity: json["quantity"] ?? 0,
+        openQty: json["openQty"] ?? 0,
+        db: json["db"] ?? "",
+        valido: json["valido"] ?? "",
+        peso: (json["peso"] ?? 0).toDouble(),
         cochePlaca: json["cochePlaca"],
-        prioridad: json["prioridad"],
-        tipo: json["tipo"],
-        obsF: json["obsF"],
-        fueEntregado: json["fueEntregado"],
-        fechaEntrega: DateTime.parse(json["fechaEntrega"]),
-        latitud: json["latitud"],
-        longitud: json["longitud"],
-        direccionEntrega: json["direccionEntrega"],
-        obs: json["obs"],
-        codSucursalChofer: json["codSucursalChofer"],
-        codCiudadChofer: json["codCiudadChofer"],
-        audUsuario: json["audUsuario"],
+        prioridad: json["prioridad"] ?? "-Prioridad Desconocida-",
+        tipo: json["tipo"] ?? "",
+        obsF: json["obsF"] ?? "",
+        fueEntregado: json["fueEntregado"] ?? 0,
+        fechaEntrega: json["fechaEntrega"] != null ? 
+            (json["fechaEntrega"] is String ? 
+                _parseFechaEntrega(json["fechaEntrega"]) : 
+                DateTime.now()) : 
+            DateTime.now(),
+        latitud: (json["latitud"] ?? 0).toDouble(),
+        longitud: (json["longitud"] ?? 0).toDouble(),
+        direccionEntrega: json["direccionEntrega"] ?? "",
+        obs: json["obs"] ?? "",
+        codSucursalChofer: json["codSucursalChofer"] ?? 0,
+        codCiudadChofer: json["codCiudadChofer"] ?? 0,
+        audUsuario: json["audUsuario"] ?? 0,
         fechaNota: json["fechaNota"],
-        nombreCompleto: json["nombreCompleto"],
-        diferenciaMinutos: json["diferenciaMinutos"],
-        codEmpleado: json["codEmpleado"],
-        codSucursal: json["codSucursal"],
+        nombreCompleto: json["nombreCompleto"] ?? "",
+        diferenciaMinutos: json["diferenciaMinutos"] ?? 0,
+        codEmpleado: json["codEmpleado"] ?? 0,
+        codSucursal: json["codSucursal"] ?? 0,
         cargo: json["cargo"],
-        flag: json["flag"],
-        ord: json["ord"],
+        flag: json["flag"] ?? 0,
+        ord: json["ord"] ?? 0,
         fechaEntregaCad: json["fechaEntregaCad"],
-        rutaDiaria: json["rutaDiaria"],
+        rutaDiaria: json["rutaDiaria"] ?? 0,
         fechaInicio: json["fechaInicio"],
         fechaFin: json["fechaFin"],
         fechaInicioRutaCad: json["fechaInicioRutaCad"],
         fechaFinRutaCad: json["fechaFinRutaCad"],
         estatusRuta: json["estatusRuta"],
-        uchofer: json["uchofer"],
+        uchofer: json["uchofer"] ?? 0,
     );
+
+    // Helper method to parse fechaEntrega with different formats
+    static DateTime _parseFechaEntrega(String dateStr) {
+      try {
+        // Try parsing ISO format first
+        return DateTime.parse(dateStr);
+      } catch (e) {
+        try {
+          // Try parsing custom format "dd/MM/yyyy HH:mm:ss"
+          final parts = dateStr.split(' ');
+          if (parts.length >= 2) {
+            final dateParts = parts[0].split('/');
+            final timeParts = parts[1].split(':');
+            
+            if (dateParts.length == 3 && timeParts.length >= 2) {
+              return DateTime(
+                int.parse(dateParts[2]), // year
+                int.parse(dateParts[1]), // month
+                int.parse(dateParts[0]), // day
+                int.parse(timeParts[0]), // hour
+                int.parse(timeParts[1]), // minute
+                timeParts.length > 2 ? int.parse(timeParts[2]) : 0, // second
+              );
+            }
+          }
+          // If custom parsing fails, return current time
+          return DateTime.now();
+        } catch (e) {
+          // If all parsing fails, return current time
+          return DateTime.now();
+        }
+      }
+    }
 
     Map<String, dynamic> toJson() => {
         "idEntrega": idEntrega,
@@ -272,7 +309,6 @@ class EntregaModel {
     );
   }
 
-  /// Convert from Entity
   /// Convert from Entity
   factory EntregaModel.fromEntity(EntregaEntity entity) {
     return EntregaModel(
