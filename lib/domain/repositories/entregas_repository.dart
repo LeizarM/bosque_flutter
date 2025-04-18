@@ -1,16 +1,16 @@
 import 'package:bosque_flutter/domain/entities/entregas_entity.dart';
 
 abstract class EntregasRepository {
-  
   Future<List<EntregaEntity>> getEntregas(int uchofer);
-  
+
   // Método para sincronizar entregas completadas con el servidor
   Future<bool> sincronizarEntregasCompletadas(List<EntregaEntity> entregas);
 
   Future<void> registrarInicioEntrega(EntregaEntity entrega);
-  
+
   // Método para marcar como entregado todo un documento (grupo de entregas)
-  Future<bool> marcarDocumentoEntregado(int docNum, {
+  Future<bool> marcarDocumentoEntregado(
+    int docNum, {
     required int docEntry,
     required String db,
     required double latitud,
@@ -22,12 +22,12 @@ abstract class EntregasRepository {
     required int codCiudadChofer,
     String? observaciones,
   });
-  
+
   // Método para obtener dirección a partir de coordenadas usando un servicio externo
   Future<String> obtenerDireccionDesdeAPI(double latitud, double longitud);
 
   //Metodo para registrar el inicio o fin de una ruta
-  Future<bool> registrarRuta( {
+  Future<bool> registrarRuta({
     required int docEntry,
     required int docNum,
     required int factura,
@@ -43,10 +43,15 @@ abstract class EntregasRepository {
     required DateTime fechaEntrega,
     required double latitud,
     required double longitud,
-    required String  obs,
-    required int audUsuario
-    
+    required String obs,
+    required int audUsuario,
+  });
 
-  }
-  );
+
+  //metodo para obtener el historial de ruta por chofer
+  Future<List<EntregaEntity>> getHistorialRuta( DateTime fecha, int codEmpleado );
+
+  //metodo para obtener la lista de choferes
+  Future<List<EntregaEntity>> getChoferes();
+
 }

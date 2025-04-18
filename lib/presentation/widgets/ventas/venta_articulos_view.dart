@@ -778,7 +778,7 @@ class _VentasArticulosViewState extends ConsumerState<VentasArticulosView> {
                                         Expanded(
                                           flex: 3,
                                           child: Text(
-                                            articulo.condicionPrecio ?? 'Sin condición',
+                                            articulo.condicionPrecio,
                                             style: const TextStyle(
                                               fontSize: 12,
                                             ),
@@ -1261,18 +1261,17 @@ class _VentasArticulosViewState extends ConsumerState<VentasArticulosView> {
                         ),
 
                         // Condición de precio
-                        if (articulo.condicionPrecio != null)
-                          Padding(
-                            padding: const EdgeInsets.symmetric(
-                              vertical: 6,
-                            ),
-                            child: Text(
-                              'Condición: ${articulo.condicionPrecio}',
-                              style: const TextStyle(
-                                fontSize: 14,
-                              ),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(
+                            vertical: 6,
+                          ),
+                          child: Text(
+                            'Condición: ${articulo.condicionPrecio}',
+                            style: const TextStyle(
+                              fontSize: 14,
                             ),
                           ),
+                        ),
 
                         // Precio
                         Text(

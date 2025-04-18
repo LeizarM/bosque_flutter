@@ -8,6 +8,12 @@ class AppConstants {
   static const String entregasEndpoint = '/entregas/chofer-entrega';
   static const String marcarEntregaCompletada = '/entregas/registro-entrega-chofer';
   static const String inicioEntregaYFinEndpoint = '/entregas/registro-inicio-fin-entrega';
+  static const String rutaChoferEndpoint = '/entregas/entregas-fecha';
+  static const String choferesEndPoint = '/entregas/choferes';
+
+
+
+
   
   // Constantes para el servicio de geocodificación de Nominatim
   static const String nominatimBaseUrl = 'https://nominatim.openstreetmap.org';

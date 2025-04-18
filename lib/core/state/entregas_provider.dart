@@ -1,10 +1,10 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:bosque_flutter/domain/entities/entregas_entity.dart';
 import 'package:bosque_flutter/domain/repositories/entregas_repository.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:bosque_flutter/core/state/user_provider.dart';
-import 'package:geocoding/geocoding.dart';
 
 // Estado para el proveedor de entregas
 class EntregasState {
@@ -17,6 +17,7 @@ class EntregasState {
   final Position? posicionInicial;
   final Position? posicionFinal;
   final bool sincronizacionEnProceso;
+  final List<EntregaEntity> historialRuta; // Nuevo campo para historial de ruta
 
   EntregasState({
     this.isLoading = false,
@@ -28,6 +29,7 @@ class EntregasState {
     this.posicionInicial,
     this.posicionFinal,
     this.sincronizacionEnProceso = false,
+    this.historialRuta = const [], // Inicializado como lista vacía
   });
 
   EntregasState copyWith({
@@ -40,6 +42,7 @@ class EntregasState {
     Position? posicionInicial,
     Position? posicionFinal,
     bool? sincronizacionEnProceso,
+    List<EntregaEntity>? historialRuta, // Añadido al método copyWith
   }) {
     return EntregasState(
       isLoading: isLoading ?? this.isLoading,
@@ -51,6 +54,7 @@ class EntregasState {
       posicionInicial: posicionInicial ?? this.posicionInicial,
       posicionFinal: posicionFinal ?? this.posicionFinal,
       sincronizacionEnProceso: sincronizacionEnProceso ?? this.sincronizacionEnProceso,
+      historialRuta: historialRuta ?? this.historialRuta, // Añadido a copyWith
     );
   }
 }
@@ -272,11 +276,6 @@ class EntregasNotifier extends StateNotifier<EntregasState> {
       // Marcar la entrega en el estado como en proceso de sincronización
       state = state.copyWith(sincronizacionEnProceso: true);
       
-      // Log para depuración
-      print('Marcando entrega con ID: $idEntrega');
-      print('DocNum: $docNum, DocEntry: $docEntry');
-      print('Posición: ${posicion.latitude}, ${posicion.longitude}');
-      print('Dirección obtenida de API: $direccionGeo');
       
       try {
         // Llamar al método que marca todo el documento de una vez
@@ -315,26 +314,43 @@ class EntregasNotifier extends StateNotifier<EntregasState> {
             error: null,
             sincronizacionEnProceso: false,
           );
-          print('Entrega marcada exitosamente');
+          debugPrint('Entrega marcada exitosamente');
         } else {
-          print('Error: No se pudo marcar el documento como entregado');
+          debugPrint('Error: No se pudo marcar el documento como entregado');
           state = state.copyWith(
             error: 'No se pudo marcar el documento como entregado. Intente nuevamente.',
             sincronizacionEnProceso: false,
           );
         }
       } catch (repoError) {
-        print('Error en la comunicación con el repositorio: ${repoError.toString()}');
+        debugPrint('Error en la comunicación con el repositorio: ${repoError.toString()}');
         state = state.copyWith(
           error: 'Error de comunicación: ${repoError.toString()}',
           sincronizacionEnProceso: false,
         );
       }
     } catch (e) {
-      print('Error en marcarEntregaCompletada: ${e.toString()}');
+      debugPrint('Error en marcarEntregaCompletada: ${e.toString()}');
       state = state.copyWith(
         error: e.toString(),
         sincronizacionEnProceso: false,
+      );
+    }
+  }
+
+  // Cargar historial de ruta para un chofer específico en una fecha determinada
+  Future<void> loadHistorialRuta(DateTime fecha, int codEmpleado) async {
+    try {
+      state = state.copyWith(isLoading: true, error: null);
+      final historialRuta = await _repository.getHistorialRuta(fecha, codEmpleado);
+      state = state.copyWith(
+        isLoading: false,
+        historialRuta: historialRuta,
+      );
+    } catch (e) {
+      state = state.copyWith(
+        isLoading: false,
+        error: e.toString(),
       );
     }
   }
@@ -361,7 +377,7 @@ class EntregasNotifier extends StateNotifier<EntregasState> {
 
       return true;
     } catch (e) {
-      print('Error al verificar servicios de localización: ${e.toString()}');
+      debugPrint('Error al verificar servicios de localización: ${e.toString()}');
       return false;
     }
   }

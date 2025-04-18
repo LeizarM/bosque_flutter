@@ -5,6 +5,7 @@ import 'package:bosque_flutter/data/models/entregas_model.dart';
 import 'package:bosque_flutter/core/network/dio_client.dart';
 import 'package:bosque_flutter/domain/entities/entregas_entity.dart';
 import 'package:bosque_flutter/domain/repositories/entregas_repository.dart';
+import 'package:logger/web.dart';
 
 class EntregasImpl implements EntregasRepository {
   final Dio _dio = DioClient.getInstance();
@@ -62,7 +63,7 @@ class EntregasImpl implements EntregasRepository {
                   'latitud': entrega.latitud,
                   'longitud': entrega.longitud,
                   'direccionEntrega': entrega.direccionEntrega,
-                  'fechaEntrega': entrega.fechaEntrega.toIso8601String(),
+                  'fechaEntrega': entrega.fechaEntrega,
                 },
               )
               .toList();
@@ -353,7 +354,6 @@ class EntregasImpl implements EntregasRepository {
     required String obs,
     required int audUsuario,
   }) async {
-    
     try {
       // Formatear la fecha al formato esperado por el backend: "yyyy-MM-dd HH:mm:ss"
       final fechaFormateada = fechaEntrega
@@ -399,18 +399,89 @@ class EntregasImpl implements EntregasRepository {
           debugPrint('ERROR DETALLADO: ${e.error}');
         }
 
-        
-
         return false;
       }
     } catch (e) {
       debugPrint('Error desconocido al marcar documento: ${e.toString()}');
       // Intentamos guardar localmente para sincronizar después
-      
-      
+
       return false;
     }
+  }
 
+  @override
+  Future<List<EntregaEntity>> getHistorialRuta(
+    DateTime fecha,
+    int codEmpleado,
+  ) async {
+
+    // Formatear la fecha al formato esperado por el backend: "yyyy-MM-dd"
+    final fechaFormateada = "${fecha.year}-${fecha.month.toString().padLeft(2, '0')}-${fecha.day.toString().padLeft(2, '0')}";
+
+    
+
+    try {
+      final response = await _dio.post(
+        AppConstants.rutaChoferEndpoint,
+        data: {
+          'fechaEntrega': fechaFormateada,
+          'codEmpleado': codEmpleado,
+        },
+      );
+
+      if (response.statusCode == 200 && response.data != null) {
+        final items =
+            (response.data as List<dynamic>)
+                .map((json) => EntregaModel.fromJson(json))
+                .toList();
+        
+        Logger().i(items.map((model) => model.toJson()).toList());
+        return items.map((model) => model.toEntity()).toList();
+      } else {
+        throw Exception('Error al obtener el historial de ruta por chofer');
+      }
+    } on DioException catch (e) {
+      // Manejar errores de red o del servidor
+      String errorMessage = 'Error de conexión: ${e.message}';
+      if (e.response != null && e.response!.data != null) {
+        errorMessage =
+            'Error del servidor: ${e.response!.statusCode} - ${e.response!.data.toString()}';
+      }
+      throw Exception(errorMessage);
+    } catch (e) {
+      throw Exception('Error desconocido: ${e.toString()}');
+    }
+  }
+  
+  @override
+  Future<List<EntregaEntity>> getChoferes() async {
+    
+    try {
+      final response = await _dio.post(
+        AppConstants.choferesEndPoint,
+        data: {}
+      );
+
+      if (response.statusCode == 200 && response.data != null) {
+        final items =
+            (response.data as List<dynamic>)
+                .map((json) => EntregaModel.fromJson(json))
+                .toList();
+        return items.map((model) => model.toEntity()).toList();
+      } else {
+        throw Exception('Error al obtener los choferes');
+      }
+    } on DioException catch (e) {
+      // Manejar errores de red o del servidor
+      String errorMessage = 'Error de conexión: ${e.message}';
+      if (e.response != null && e.response!.data != null) {
+        errorMessage =
+            'Error del servidor: ${e.response!.statusCode} - ${e.response!.data.toString()}';
+      }
+      throw Exception(errorMessage);
+    } catch (e) {
+      throw Exception('Error desconocido: ${e.toString()}');
+    }
 
   }
 }

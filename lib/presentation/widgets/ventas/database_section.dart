@@ -7,10 +7,10 @@ class DatabaseSection extends StatelessWidget {
   final Map<String, List<ArticulosxAlmacenEntity>> articlesByCity;
 
   const DatabaseSection({
-    Key? key,
+    super.key,
     required this.dbName,
     required this.articlesByCity,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

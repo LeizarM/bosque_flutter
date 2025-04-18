@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:bosque_flutter/core/network/dio_client.dart';
 import 'package:bosque_flutter/core/state/user_provider.dart';
 import 'package:bosque_flutter/core/utils/secure_storage.dart';
-import 'package:bosque_flutter/domain/entities/articulos_ciudad_entity.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -71,8 +70,14 @@ final routerProvider = Provider<GoRouter>((ref) {
               name: 'trch_chofer_revision',
               builder: (context, state) => const EntregasHomeScreen(),
             ),
-            // Artículos
-            
+            // Ruta para ver las entregas de uno o varios choferes
+            GoRoute(
+              path: '/dashboard/trch_choferEntrega/Resumen',
+              name: 'trch_chofer_resumen',
+              builder: (context, state) => const EntregasDashboardScreen(),
+            ),
+
+
             // Productos
           ],
         ),
@@ -89,6 +94,10 @@ final routerProvider = Provider<GoRouter>((ref) {
         GoRoute(
           path: '/trch_choferEntrega/Revision',
           redirect: (context, state) => '/dashboard/trch_choferEntrega/Revision',
+        ),
+        GoRoute(
+          path: '/trch_choferEntrega/Resumen',
+          redirect: (context, state) => '/dashboard/trch_choferEntrega/Resumen',
         ),
         
       ],

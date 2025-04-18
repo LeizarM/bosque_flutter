@@ -337,7 +337,7 @@ class EntregaCardView extends StatelessWidget {
                 ),
                 
                 // Observaciones si existen
-                if (entregas.first.obsF != null && entregas.first.obsF.isNotEmpty)
+                if (entregas.first.obsF.isNotEmpty)
                   Padding(
                     padding: const EdgeInsets.only(top: 8.0, bottom: 16.0),
                     child: Column(

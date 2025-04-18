@@ -1,3 +1,5 @@
+
+export 'package:bosque_flutter/presentation/entregas/entregas_dashboard_screen.dart';
 export 'package:bosque_flutter/presentation/entregas/entregas_home_screen.dart';
 export 'package:bosque_flutter/presentation/screens/dashboard/dasboard_screen.dart';
 export 'package:bosque_flutter/presentation/screens/dashboard/dashboard_home_content.dart';
