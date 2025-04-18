@@ -424,183 +424,167 @@ class _EntregasPorChoferContentState extends ConsumerState<EntregasPorChoferCont
 
   // Widget de tabla de entregas
   Widget _buildTablaEntregas(List<EntregaEntity> historialRuta) {
-    // Get paginated data
-    final paginatedData = _getPaginatedData(historialRuta);
-    final totalPages = (historialRuta.length / _itemsPerPage).ceil();
-    
-    return Card(
-      elevation: 4,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          // Encabezado con scroll horizontal
-          SingleChildScrollView(
+  final paginatedData = _getPaginatedData(historialRuta);
+  final totalPages = (historialRuta.length / _itemsPerPage).ceil();
+
+  return Card(
+    elevation: 4,
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        // Encabezado con scroll horizontal
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Row(
+            children: const [
+              _TableHeader(text: 'Tipo', width: 80),
+              _TableHeader(text: 'Factura', width: 100),
+              _TableHeader(text: 'Cliente', width: 150),
+              _TableHeader(text: 'Fecha Nota', width: 120),
+              _TableHeader(text: 'Fecha Entrega', width: 120),
+              _TableHeader(text: 'Dif. Min.', width: 80),
+              _TableHeader(text: 'Dirección', width: 200),
+              _TableHeader(text: 'Vendedor', width: 120),
+              _TableHeader(text: 'Chofer', width: 120),
+              _TableHeader(text: 'Coche', width: 100),
+              _TableHeader(text: 'Peso (KG)', width: 100),
+              _TableHeader(text: 'Observaciones', width: 150),
+              _TableHeader(text: 'Acciones', width: 120),
+            ],
+          ),
+        ),
+        // Contenido de la tabla con scroll en ambas direcciones
+        Expanded(
+          child: SingleChildScrollView(
             scrollDirection: Axis.horizontal,
-            child: Container(
-              padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
-              color: Colors.grey[200],
+            child: IntrinsicWidth(
+              child: SingleChildScrollView(
+                scrollDirection: Axis.vertical,
+                child: paginatedData.isEmpty
+                    ? Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Icon(Icons.info_outline, size: 40, color: Colors.grey),
+                            const SizedBox(height: 8),
+                            Text(
+                              'No hay datos disponibles',
+                              style: TextStyle(color: Colors.grey[600]),
+                            )
+                          ],
+                        ),
+                      )
+                    : Column(
+                        children: [
+                          for (int i = 0; i < paginatedData.length; i++)
+                            _buildRowItem(
+                              paginatedData[i],
+                              i + ((_currentPage - 1) * _itemsPerPage),
+                            ),
+                        ],
+                      ),
+              ),
+            ),
+          ),
+        ),
+        // Paginador
+        if (historialRuta.isNotEmpty)
+          Container(
+            padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+            decoration: BoxDecoration(
+              color: Colors.grey[100],
+              border: Border(
+                top: BorderSide(
+                  color: Colors.grey[300]!,
+                  width: 1,
+                ),
+              ),
+            ),
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
               child: Row(
-                children: const [
-                  _TableHeader(text: 'Tipo', width: 80),
-                  _TableHeader(text: 'Factura', width: 100),
-                  _TableHeader(text: 'Cliente', width: 150),
-                  _TableHeader(text: 'Fecha Nota', width: 120),
-                  _TableHeader(text: 'Fecha Entrega', width: 120),
-                  _TableHeader(text: 'Dif. Min.', width: 80),
-                  _TableHeader(text: 'Dirección', width: 200),
-                  _TableHeader(text: 'Vendedor', width: 120),
-                  _TableHeader(text: 'Chofer', width: 120),
-                  _TableHeader(text: 'Coche', width: 100),
-                  _TableHeader(text: 'Peso (KG)', width: 100),
-                  _TableHeader(text: 'Observaciones', width: 150),
-                  _TableHeader(text: 'Acciones', width: 120),
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text('Mostrando ${paginatedData.length} de ${historialRuta.length} registros'),
+                  const SizedBox(width: 16),
+                  Row(
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.first_page),
+                        onPressed: _currentPage > 1
+                            ? () => setState(() {
+                                  _currentPage = 1;
+                                  _selectedRowIndex = null;
+                                })
+                            : null,
+                        tooltip: 'Primera página',
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.chevron_left),
+                        onPressed: _currentPage > 1
+                            ? () => setState(() {
+                                  _currentPage--;
+                                  _selectedRowIndex = null;
+                                })
+                            : null,
+                        tooltip: 'Página anterior',
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        child: Text(
+                          'Página $_currentPage de $totalPages',
+                          style: const TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.chevron_right),
+                        onPressed: _currentPage < totalPages
+                            ? () => setState(() {
+                                  _currentPage++;
+                                  _selectedRowIndex = null;
+                                })
+                            : null,
+                        tooltip: 'Página siguiente',
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.last_page),
+                        onPressed: _currentPage < totalPages
+                            ? () => setState(() {
+                                  _currentPage = totalPages;
+                                  _selectedRowIndex = null;
+                                })
+                            : null,
+                        tooltip: 'Última página',
+                      ),
+                      const SizedBox(width: 16),
+                      DropdownButton<int>(
+                        value: _itemsPerPage,
+                        items: [10, 25, 50, 100].map((int value) {
+                          return DropdownMenuItem<int>(
+                            value: value,
+                            child: Text('$value por página'),
+                          );
+                        }).toList(),
+                        onChanged: (int? newValue) {
+                          if (newValue != null) {
+                            setState(() {
+                              _itemsPerPage = newValue;
+                              _currentPage = 1;
+                              _selectedRowIndex = null;
+                            });
+                          }
+                        },
+                      ),
+                    ],
+                  ),
                 ],
               ),
             ),
           ),
-
-          // Contenido de la tabla con scroll en ambas direcciones
-          Expanded(
-            child: historialRuta.isEmpty 
-              ? Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Icon(Icons.info_outline, size: 40, color: Colors.grey),
-                      const SizedBox(height: 8),
-                      Text(
-                        'No hay datos disponibles',
-                        style: TextStyle(color: Colors.grey[600]),
-                      )
-                    ],
-                  ),
-                )
-              : SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: SizedBox(
-                    // Set minimum width to ensure horizontal scroll works
-                    width: 1540, // Sum of all column widths + padding
-                    child: SingleChildScrollView(
-                      scrollDirection: Axis.vertical,
-                      child: Column(
-                        children: [
-                          // Lista de filas
-                          for (int i = 0; i < paginatedData.length; i++)
-                            _buildRowItem(paginatedData[i], i + ((_currentPage - 1) * _itemsPerPage)),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-          ),
-          
-          // Paginador
-          if (historialRuta.isNotEmpty)
-            Container(
-              padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-              decoration: BoxDecoration(
-                color: Colors.grey[100],
-                border: Border(
-                  top: BorderSide(
-                    color: Colors.grey[300]!,
-                    width: 1,
-                  ),
-                ),
-              ),
-              child: SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text('Mostrando ${paginatedData.length} de ${historialRuta.length} registros'),
-                    
-                    const SizedBox(width: 16),
-                    
-                    Row(
-                      children: [
-                        IconButton(
-                          icon: const Icon(Icons.first_page),
-                          onPressed: _currentPage > 1 
-                              ? () => setState(() {
-                                  _currentPage = 1;
-                                  _selectedRowIndex = null;
-                                }) 
-                              : null,
-                          tooltip: 'Primera página',
-                        ),
-                        
-                        IconButton(
-                          icon: const Icon(Icons.chevron_left),
-                          onPressed: _currentPage > 1 
-                              ? () => setState(() {
-                                  _currentPage--;
-                                  _selectedRowIndex = null;
-                                }) 
-                              : null,
-                          tooltip: 'Página anterior',
-                        ),
-                        
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
-                          child: Text(
-                            'Página $_currentPage de $totalPages',
-                            style: const TextStyle(fontWeight: FontWeight.bold),
-                          ),
-                        ),
-                        
-                        IconButton(
-                          icon: const Icon(Icons.chevron_right),
-                          onPressed: _currentPage < totalPages 
-                              ? () => setState(() {
-                                  _currentPage++;
-                                  _selectedRowIndex = null;
-                                }) 
-                              : null,
-                          tooltip: 'Página siguiente',
-                        ),
-                        
-                        IconButton(
-                          icon: const Icon(Icons.last_page),
-                          onPressed: _currentPage < totalPages 
-                              ? () => setState(() {
-                                  _currentPage = totalPages;
-                                  _selectedRowIndex = null;
-                                }) 
-                              : null,
-                          tooltip: 'Última página',
-                        ),
-                        
-                        const SizedBox(width: 16),
-                        
-                        // Items per page selector
-                        DropdownButton<int>(
-                          value: _itemsPerPage,
-                          items: [10, 25, 50, 100].map((int value) {
-                            return DropdownMenuItem<int>(
-                              value: value,
-                              child: Text('$value por página'),
-                            );
-                          }).toList(),
-                          onChanged: (int? newValue) {
-                            if (newValue != null) {
-                              setState(() {
-                                _itemsPerPage = newValue;
-                                _currentPage = 1; // Reset to first page
-                                _selectedRowIndex = null;
-                              });
-                            }
-                          },
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ),
-        ],
-      ),
-    );
-  }
+      ],
+    ),
+  );
+}
 
   // Construir una fila de datos
   Widget _buildRowItem(EntregaEntity entrega, int index) {
