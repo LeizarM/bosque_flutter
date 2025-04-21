@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:logger/web.dart';
 import 'package:pluto_grid/pluto_grid.dart';
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -96,22 +97,29 @@ class _EntregasPorChoferContentState
   }
 
   Color _getRowBackgroundColor(EntregaEntity entrega) {
-    if (entrega.prioridad == 'Alta') {
-      return Colors.orange.shade100;
-    } else if (entrega.docEntry == -1) {
-      return Colors.blue.shade100;
+    if (entrega.docEntry == -1) {
+      return Colors.lime.shade100; // Lima limón para docEntry = -1
     } else if (entrega.docEntry == 0) {
-      return Colors.green.shade100;
-    } else if (entrega.flag == -1) {
-      return Colors.red.shade100;
+      return Colors.blue.shade100; // Azul para docEntry = 0
+    } else if (entrega.prioridad == 'Alta') {
+      return Colors.orange.shade100; // Naranja para prioridad alta
     }
-    return Colors.transparent;
+    return const Color.fromARGB(0, 255, 255, 255); // Color normal para el resto
   }
 
   List<EntregaEntity> _getPaginatedData(List<EntregaEntity> allData) {
-    final startIndex = (_currentPage - 1) * _itemsPerPage;
-    final endIndex = (startIndex + _itemsPerPage).clamp(0, allData.length);
-    if (startIndex >= allData.length) return [];
+    if (allData.isEmpty) return [];
+    
+    final int totalPages = (allData.length / _itemsPerPage).ceil();
+    if (_currentPage > totalPages) {
+      _currentPage = totalPages;
+    }
+    
+    final int startIndex = (_currentPage - 1) * _itemsPerPage;
+    final int endIndex = startIndex + _itemsPerPage > allData.length 
+                          ? allData.length 
+                          : startIndex + _itemsPerPage;
+    
     return allData.sublist(startIndex, endIndex);
   }
 
@@ -339,7 +347,8 @@ class _EntregasPorChoferContentState
         enableContextMenu: false,
         enableDropToResize: false,
         enableColumnDrag: false,
-        enableSorting: true,
+        enableSorting: false,
+        enableEditingMode: false,
       ),
       PlutoColumn(
         title: 'Factura',
@@ -349,6 +358,7 @@ class _EntregasPorChoferContentState
         enableContextMenu: false,
         enableDropToResize: false,
         enableColumnDrag: false,
+        enableEditingMode: false,
       ),
       PlutoColumn(
         title: 'Cliente',
@@ -358,6 +368,7 @@ class _EntregasPorChoferContentState
         enableContextMenu: false,
         enableDropToResize: false,
         enableColumnDrag: false,
+        enableEditingMode: false,
       ),
       PlutoColumn(
         title: 'Fecha Nota',
@@ -367,6 +378,7 @@ class _EntregasPorChoferContentState
         enableContextMenu: false,
         enableDropToResize: false,
         enableColumnDrag: false,
+        enableEditingMode: false,
       ),
       PlutoColumn(
         title: 'Fecha Entrega',
@@ -376,6 +388,7 @@ class _EntregasPorChoferContentState
         enableContextMenu: false,
         enableDropToResize: false,
         enableColumnDrag: false,
+        enableEditingMode: false,
       ),
       PlutoColumn(
         title: 'Dif. Min.',
@@ -386,6 +399,7 @@ class _EntregasPorChoferContentState
         enableContextMenu: false,
         enableDropToResize: false,
         enableColumnDrag: false,
+        enableEditingMode: false,
       ),
       PlutoColumn(
         title: 'Dirección',
@@ -395,6 +409,7 @@ class _EntregasPorChoferContentState
         enableContextMenu: false,
         enableDropToResize: false,
         enableColumnDrag: false,
+        enableEditingMode: false,
       ),
       PlutoColumn(
         title: 'Vendedor',
@@ -404,6 +419,7 @@ class _EntregasPorChoferContentState
         enableContextMenu: false,
         enableDropToResize: false,
         enableColumnDrag: false,
+        enableEditingMode: false,
       ),
       PlutoColumn(
         title: 'Chofer',
@@ -413,6 +429,7 @@ class _EntregasPorChoferContentState
         enableContextMenu: false,
         enableDropToResize: false,
         enableColumnDrag: false,
+        enableEditingMode: false,
       ),
       PlutoColumn(
         title: 'Coche',
@@ -422,6 +439,7 @@ class _EntregasPorChoferContentState
         enableContextMenu: false,
         enableDropToResize: false,
         enableColumnDrag: false,
+        enableEditingMode: false,
       ),
       PlutoColumn(
         title: 'Peso (KG)',
@@ -432,6 +450,7 @@ class _EntregasPorChoferContentState
         enableContextMenu: false,
         enableDropToResize: false,
         enableColumnDrag: false,
+        enableEditingMode: false,
       ),
       PlutoColumn(
         title: 'Observaciones',
@@ -441,6 +460,7 @@ class _EntregasPorChoferContentState
         enableContextMenu: false,
         enableDropToResize: false,
         enableColumnDrag: false,
+        enableEditingMode: false,
       ),
       PlutoColumn(
         title: 'Acciones',
@@ -451,6 +471,15 @@ class _EntregasPorChoferContentState
         enableDropToResize: false,
         enableColumnDrag: false,
         renderer: (rendererContext) {
+          // Obtener el índice de la fila actual
+          final int rowIdx = rendererContext.rowIdx;
+          
+          // Calcular el índice real en la lista historialRuta considerando la paginación
+          final int realIdx = (_currentPage - 1) * _itemsPerPage + rowIdx;
+          
+          // Verificar que el índice está dentro del rango válido
+          final bool isValidIdx = realIdx >= 0 && realIdx < historialRuta.length;
+          
           return Center(
             child: IconButton(
               icon: const Icon(
@@ -458,17 +487,10 @@ class _EntregasPorChoferContentState
                 color: Colors.blue,
                 size: 20,
               ),
-              onPressed: () {
-                final entregaIdx = historialRuta.indexWhere(
-                  (e) =>
-                      e.idEntrega.toString() ==
-                      rendererContext.row.cells['id']?.value,
-                );
-
-                if (entregaIdx >= 0) {
-                  _onVerEntrega(historialRuta[entregaIdx]);
-                }
-              },
+              onPressed: isValidIdx ? () {
+                // Pasar directamente el objeto de entrega por su índice real
+                _onVerEntrega(historialRuta[realIdx]);
+              } : null,
               tooltip: 'Ver detalles',
             ),
           );
@@ -482,17 +504,7 @@ class _EntregasPorChoferContentState
           return PlutoRow(
             cells: {
               'id': PlutoCell(value: entrega.idEntrega.toString()),
-              'tipo': PlutoCell(
-                value:
-                    entrega.tipo ??
-                    (entrega.cardName != null &&
-                            entrega.cardName!.contains("Inicio")
-                        ? "Inicio"
-                        : entrega.cardName != null &&
-                            entrega.cardName!.contains("Fin")
-                        ? "Fin"
-                        : "-"),
-              ),
+              'tipo': PlutoCell(value: entrega.tipo),
               'factura': PlutoCell(
                 value: entrega.factura > 0 ? entrega.factura.toString() : '-',
               ),
@@ -507,7 +519,6 @@ class _EntregasPorChoferContentState
               'direccion': PlutoCell(
                 value:
                     entrega.direccionEntrega ??
-                    entrega.addressEntregaFac ??
                     '-',
               ),
               'vendedor': PlutoCell(value: entrega.vendedor ?? '-'),
@@ -530,8 +541,7 @@ class _EntregasPorChoferContentState
             columns: columns,
             rows: rows,
             rowColorCallback: (PlutoRowColorContext ctx) {
-              final idEntrega =
-                  int.tryParse(ctx.row.cells['id']?.value ?? '0') ?? 0;
+              final idEntrega = int.tryParse(ctx.row.cells['id']?.value ?? '0') ?? 0;
               final entregaIdx = historialRuta.indexWhere(
                 (e) => e.idEntrega == idEntrega,
               );
@@ -559,10 +569,12 @@ class _EntregasPorChoferContentState
                 iconColor: Theme.of(context).colorScheme.primary,
                 iconSize: 18,
                 rowHeight: 46,
+                activatedColor: Colors.transparent,
               ),
             ),
+            mode: PlutoGridMode.normal,
             onLoaded: (PlutoGridOnLoadedEvent event) {
-              event.stateManager.setSelectingMode(PlutoGridSelectingMode.row);
+              event.stateManager.setSelectingMode(PlutoGridSelectingMode.none);
               event.stateManager.setShowColumnFilter(false);
             },
             onSelected: (PlutoGridOnSelectedEvent event) {
@@ -698,6 +710,10 @@ class _EntregasPorChoferContentState
   void _onVerEntrega(EntregaEntity entrega) {
     // Verificar si tiene coordenadas válidas para mostrar en el mapa
     final bool tieneUbicacion = entrega.latitud != 0 && entrega.longitud != 0;
+
+    Logger().d(
+      'Ver entrega: ${entrega.cardName}, Latitud: ${entrega.latitud}, Longitud: ${entrega.longitud}',
+    );
 
     showDialog(
       context: context,
