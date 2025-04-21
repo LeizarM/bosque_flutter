@@ -22,6 +22,7 @@ class AppConstants {
   
   // Constante para Google Maps Search
   static const String googleMapsSearchBaseUrl = 'https://www.google.com/maps/search/?api=1&query';
+  static const String googleMapsOpenStreetMaps= 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
   
   // Puedes agregar más endpoints aquí cuando sea necesario
 }

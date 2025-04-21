@@ -1,3 +1,4 @@
+import 'package:bosque_flutter/presentation/widgets/entregas/entrega_detalle_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:logger/web.dart';
@@ -12,6 +13,8 @@ import 'package:bosque_flutter/domain/entities/chofer_entity.dart';
 import 'package:bosque_flutter/domain/entities/entregas_entity.dart';
 import 'package:bosque_flutter/core/utils/responsive_utils_bosque.dart';
 import 'package:bosque_flutter/core/constants/app_constants.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
 
 class EntregasPorChoferContent extends ConsumerStatefulWidget {
   const EntregasPorChoferContent({Key? key}) : super(key: key);
@@ -724,172 +727,9 @@ class _EntregasPorChoferContentState
   }
 
   void _onVerEntrega(EntregaEntity entrega) {
-    final bool tieneUbicacion = entrega.latitud != 0 && entrega.longitud != 0;
-    Logger().d(
-      'Ver entrega: ${entrega.cardName}, Latitud: ${entrega.latitud}, Longitud: ${entrega.longitud}',
-    );
-    showDialog(
-      context: context,
-      builder:
-          (context) => AlertDialog(
-            title: Text('Detalles de ${entrega.tipo}'),
-            content: SingleChildScrollView(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  if (entrega.cardName.isNotEmpty)
-                    _buildDetailItem('Cliente', entrega.cardName),
-                  if (entrega.factura > 0)
-                    _buildDetailItem('Factura', '${entrega.factura}'),
-                  if (entrega.fechaNota != null)
-                    _buildDetailItem(
-                      'Fecha Nota',
-                      _formatDate(entrega.fechaNota),
-                    ),
-                  _buildDetailItem(
-                    'Fecha Entrega',
-                    _formatDate(entrega.fechaEntrega),
-                  ),
-                  if ((entrega.direccionEntrega != null &&
-                          entrega.direccionEntrega.isNotEmpty) ||
-                      (entrega.addressEntregaFac != null &&
-                          entrega.addressEntregaFac.isNotEmpty))
-                    _buildDetailItem(
-                      'Dirección',
-                      entrega.direccionEntrega != null &&
-                              entrega.direccionEntrega.isNotEmpty
-                          ? entrega.direccionEntrega
-                          : entrega.addressEntregaFac,
-                    ),
-                  if (entrega.obs != null && entrega.obs.isNotEmpty)
-                    _buildDetailItem('Observaciones', entrega.obs),
-                  if (entrega.vendedor != null && entrega.vendedor.isNotEmpty)
-                    _buildDetailItem('Vendedor', entrega.vendedor),
-                  if (entrega.peso > 0)
-                    _buildDetailItem(
-                      'Peso',
-                      '${entrega.peso.toStringAsFixed(2)} kg',
-                    ),
-                  if (tieneUbicacion) ...[
-                    const Divider(height: 24),
-                    const Text(
-                      'Ubicación de entrega',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Latitud: ${entrega.latitud.toStringAsFixed(6)}\nLongitud: ${entrega.longitud.toStringAsFixed(6)}',
-                      style: const TextStyle(fontSize: 14),
-                    ),
-                    const SizedBox(height: 8),
-                    Container(
-                      height: 200,
-                      width: double.infinity,
-                      decoration: BoxDecoration(
-                        border: Border.all(color: Colors.grey.shade300),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(8),
-                        child: _buildMapPreview(entrega),
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-            ),
-            actions: [
-              if (tieneUbicacion)
-                TextButton(
-                  onPressed: () => _abrirMapaExterno(entrega),
-                  child: const Text('Ver en Google Maps'),
-                ),
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(),
-                child: const Text('Cerrar'),
-              ),
-            ],
-          ),
-    );
-  }
-
-  Widget _buildMapPreview(EntregaEntity entrega) {
-    return Stack(
-      children: [
-        Container(color: Colors.grey.shade200),
-        Center(
-          child: Icon(
-            Icons.location_on,
-            color: Theme.of(context).colorScheme.primary,
-            size: 40,
-          ),
-        ),
-        Positioned(
-          bottom: 10,
-          left: 0,
-          right: 0,
-          child: Container(
-            alignment: Alignment.center,
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            color: Colors.white.withOpacity(0.8),
-            child: Text(
-              entrega.direccionEntrega ??
-                  entrega.addressEntregaFac ??
-                  'Ubicación de entrega',
-              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
-              textAlign: TextAlign.center,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  void _abrirMapaExterno(EntregaEntity entrega) async {
-    final Uri uri = Uri.parse(
-      '${AppConstants.googleMapsSearchBaseUrl}=${entrega.latitud},${entrega.longitud}',
-    );
-    try {
-      if (await canLaunchUrl(uri)) {
-        await launchUrl(uri, mode: LaunchMode.externalApplication);
-      } else {
-        debugPrint('No se pudo abrir el mapa: $uri');
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('No se pudo abrir el mapa')),
-          );
-        }
-      }
-    } catch (e) {
-      debugPrint('Error al abrir el mapa: $e');
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error al abrir el mapa: ${e.toString()}')),
-        );
-      }
-    }
-  }
-
-  Widget _buildDetailItem(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            label,
-            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-          ),
-          const SizedBox(height: 2),
-          Text(value, style: const TextStyle(fontSize: 14)),
-          const Divider(),
-        ],
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => EntregaDetalleScreen(entrega: entrega),
       ),
     );
   }
