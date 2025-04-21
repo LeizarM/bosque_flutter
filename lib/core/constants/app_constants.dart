@@ -20,5 +20,8 @@ class AppConstants {
   static const String nominatimReverseEndpoint = '/reverse';
   static const String nominatimUserAgent = 'Bosque';
   
+  // Constante para Google Maps Search
+  static const String googleMapsSearchBaseUrl = 'https://www.google.com/maps/search/?api=1&query';
+  
   // Puedes agregar más endpoints aquí cuando sea necesario
 }
