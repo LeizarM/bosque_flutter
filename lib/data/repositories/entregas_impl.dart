@@ -506,13 +506,16 @@ class EntregasImpl implements EntregasRepository {
   @override
   Future<List<EntregaEntity>> getExtractoRutas( DateTime fechaInicio, DateTime fechaFin ) async {
     
+
     try {
       final response = await _dio.post(
-        AppConstants.rutaChoferEndpoint,
+        AppConstants.entregasRutasChoferes,
         data: {
           'fechaInicio': "${fechaInicio.year}-${fechaInicio.month.toString().padLeft(2, '0')}-${fechaInicio.day.toString().padLeft(2, '0')}",
           'fechaFin': "${fechaFin.year}-${fechaFin.month.toString().padLeft(2, '0')}-${fechaFin.day.toString().padLeft(2, '0')}",
         }
+
+        
       );
 
       if (response.statusCode == 200 && response.data != null) {
