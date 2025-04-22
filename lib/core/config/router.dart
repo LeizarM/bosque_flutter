@@ -76,6 +76,12 @@ final routerProvider = Provider<GoRouter>((ref) {
               name: 'trch_chofer_resumen',
               builder: (context, state) => const EntregasDashboardScreen(),
             ),
+            //Ruta para ver los usuarios del sistema
+            GoRoute(
+              path: '/dashboard/tbUsuario/usuario',
+              name: 'tbUsuario',
+              builder: (context, state) => const UsuariosHomeScreen(),
+            ),
 
 
             // Productos
@@ -98,6 +104,10 @@ final routerProvider = Provider<GoRouter>((ref) {
         GoRoute(
           path: '/trch_choferEntrega/Resumen',
           redirect: (context, state) => '/dashboard/trch_choferEntrega/Resumen',
+        ),
+        GoRoute(
+          path: '/tbUsuario/Usuario',
+          redirect: (context, state) => '/dashboard/tbUsuario/usuario',
         ),
         
       ],

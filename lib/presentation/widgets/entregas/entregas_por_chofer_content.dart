@@ -100,12 +100,13 @@ class _EntregasPorChoferContentState
   }
 
   Color _getRowBackgroundColor(EntregaEntity entrega) {
+    final colorScheme = Theme.of(context).colorScheme;
     if (entrega.docEntry == -1) {
-      return Colors.blue.shade100;
+      return colorScheme.tertiaryContainer.withOpacity(0.5);
     } else if (entrega.docEntry == 0) {
-      return Colors.green.shade100;
+      return colorScheme.primaryContainer.withOpacity(0.5);
     } else {
-      return Colors.white;
+      return colorScheme.surface;
     }
   }
 
@@ -318,16 +319,17 @@ class _EntregasPorChoferContentState
   }
 
   Widget _buildInitialStateMessage() {
-    return const Center(
+    final colorScheme = Theme.of(context).colorScheme;
+    return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.search, size: 80, color: Colors.grey),
-          SizedBox(height: 16),
+          Icon(Icons.search, size: 80, color: colorScheme.outlineVariant),
+          const SizedBox(height: 16),
           Text(
             'Seleccione un chofer y una fecha para ver las entregas',
             textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 16, color: Colors.grey),
+            style: TextStyle(fontSize: 16, color: colorScheme.outline),
           ),
         ],
       ),
@@ -478,9 +480,9 @@ class _EntregasPorChoferContentState
             child: IconButton(
               icon: const Icon(
                 Icons.remove_red_eye,
-                color: Colors.blue,
                 size: 20,
               ),
+              color: Theme.of(context).colorScheme.primary,
               onPressed: isValidIdx ? () {
                 _onVerEntrega(paginatedData[realIdx]);
               } : null,
@@ -514,16 +516,17 @@ class _EntregasPorChoferContentState
                 resizeMode: PlutoResizeMode.normal,
               ),
               style: PlutoGridStyleConfig(
-                cellTextStyle: const TextStyle(fontSize: 12),
-                columnTextStyle: const TextStyle(
+                cellTextStyle: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurface),
+                columnTextStyle: TextStyle(
                   fontWeight: FontWeight.bold,
                   fontSize: 12,
+                  color: Theme.of(context).colorScheme.primary,
                 ),
-                gridBackgroundColor: Colors.white,
-                gridBorderColor: Colors.grey,
-                gridBorderRadius: BorderRadius.all(Radius.circular(8)),
+                gridBackgroundColor: Theme.of(context).colorScheme.surface,
+                gridBorderColor: Theme.of(context).colorScheme.outlineVariant,
+                gridBorderRadius: const BorderRadius.all(Radius.circular(8)),
                 activatedBorderColor: Theme.of(context).colorScheme.primary,
-                borderColor: Colors.grey,
+                borderColor: Theme.of(context).colorScheme.outlineVariant,
                 iconColor: Theme.of(context).colorScheme.primary,
                 iconSize: 18,
                 rowHeight: 46,
@@ -640,20 +643,22 @@ class _EntregasPorChoferContentState
   }
 
   Widget _createGridFooter(List<EntregaEntity> historialRuta) {
+    final colorScheme = Theme.of(context).colorScheme;
     final totalPages = (historialRuta.length / _itemsPerPage).ceil();
     final paginatedData = _getPaginatedData(historialRuta);
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      color: Colors.grey.shade50,
+      color: colorScheme.surfaceVariant,
       child: Row(
         children: [
           Text(
             'Mostrando ${paginatedData.length} de ${historialRuta.length} registros',
+            style: TextStyle(color: colorScheme.onSurface),
           ),
           const Spacer(),
           IconButton(
-            icon: const Icon(Icons.first_page),
+            icon: Icon(Icons.first_page, color: colorScheme.primary),
             onPressed: _currentPage > 1
                 ? () {
                     setState(() {
@@ -664,7 +669,7 @@ class _EntregasPorChoferContentState
             tooltip: 'Primera página',
           ),
           IconButton(
-            icon: const Icon(Icons.chevron_left),
+            icon: Icon(Icons.chevron_left, color: colorScheme.primary),
             onPressed: _currentPage > 1
                 ? () {
                     setState(() {
@@ -678,11 +683,11 @@ class _EntregasPorChoferContentState
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Text(
               'Página $_currentPage de $totalPages',
-              style: const TextStyle(fontWeight: FontWeight.bold),
+              style: TextStyle(fontWeight: FontWeight.bold, color: colorScheme.primary),
             ),
           ),
           IconButton(
-            icon: const Icon(Icons.chevron_right),
+            icon: Icon(Icons.chevron_right, color: colorScheme.primary),
             onPressed: _currentPage < totalPages
                 ? () {
                     setState(() {
@@ -693,7 +698,7 @@ class _EntregasPorChoferContentState
             tooltip: 'Página siguiente',
           ),
           IconButton(
-            icon: const Icon(Icons.last_page),
+            icon: Icon(Icons.last_page, color: colorScheme.primary),
             onPressed: _currentPage < totalPages
                 ? () {
                     setState(() {
@@ -706,10 +711,11 @@ class _EntregasPorChoferContentState
           const SizedBox(width: 16),
           DropdownButton<int>(
             value: _itemsPerPage,
+            dropdownColor: colorScheme.surface,
             items: [10, 25, 50, 100].map((int value) {
               return DropdownMenuItem<int>(
                 value: value,
-                child: Text('$value por página'),
+                child: Text('$value por página', style: TextStyle(color: colorScheme.onSurface)),
               );
             }).toList(),
             onChanged: (int? newValue) {
@@ -735,6 +741,7 @@ class _EntregasPorChoferContentState
   }
 
   Widget _buildMobileTable(List<EntregaEntity> historialRuta) {
+    final colorScheme = Theme.of(context).colorScheme;
     return ListView.builder(
       itemCount: historialRuta.length,
       itemBuilder: (context, index) {
@@ -743,21 +750,23 @@ class _EntregasPorChoferContentState
           color: _getRowBackgroundColor(entrega),
           margin: const EdgeInsets.symmetric(vertical: 8),
           child: ListTile(
-            title: Text(entrega.cardName ?? '-'),
+            title: Text(entrega.cardName ?? '-', style: TextStyle(color: colorScheme.onSurface)),
             subtitle: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   'Factura: ${entrega.factura > 0 ? entrega.factura.toString() : '-'}',
+                  style: TextStyle(color: colorScheme.onSurfaceVariant),
                 ),
-                Text('Fecha Entrega: ${_formatDate(entrega.fechaEntrega)}'),
+                Text('Fecha Entrega: ${_formatDate(entrega.fechaEntrega)}', style: TextStyle(color: colorScheme.onSurfaceVariant)),
                 Text(
                   'Dirección: ${entrega.direccionEntrega ?? entrega.addressEntregaFac ?? '-'}',
+                  style: TextStyle(color: colorScheme.onSurfaceVariant),
                 ),
               ],
             ),
             trailing: IconButton(
-              icon: const Icon(Icons.remove_red_eye, color: Colors.blue),
+              icon: Icon(Icons.remove_red_eye, color: colorScheme.primary),
               onPressed: () => _onVerEntrega(entrega),
             ),
           ),

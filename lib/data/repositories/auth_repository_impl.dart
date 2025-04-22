@@ -1,13 +1,15 @@
+import 'package:dio/dio.dart';
 import 'package:bosque_flutter/core/constants/app_constants.dart';
 import 'package:bosque_flutter/core/network/dio_client.dart';
 import 'package:bosque_flutter/core/utils/secure_storage.dart';
 import 'package:bosque_flutter/data/models/login_model.dart';
 import 'package:bosque_flutter/domain/entities/login_entity.dart';
 import 'package:bosque_flutter/domain/repositories/auth_repository.dart';
-import 'package:dio/dio.dart';
 
 
 class AuthRepositoryImpl implements AuthRepository {
+  
+  
   final Dio _dio = DioClient.getInstance();
 
   @override
@@ -40,5 +42,40 @@ class AuthRepositoryImpl implements AuthRepository {
     } catch (e) {
       return (null, 'Error desconocido: ${e.toString()}');
     }
+  }
+  
+  /// Método para obtener los usuarios
+  @override
+  Future<List<LoginEntity>> getUsers() async {    
+
+     try {
+      final response = await _dio.post(
+        AppConstants.usuariosEndPoint,
+        data: {
+        }
+        
+      );
+
+      if (response.statusCode == 200 && response.data != null) {
+        final items =
+            (response.data as List<dynamic>)
+                .map((json) => LoginModel.fromJson(json))
+                .toList();
+        return items.map((model) => model.toEntity()).toList();
+      } else {
+        throw Exception('Error al obtener los usuarios');
+      }
+    } on DioException catch (e) {
+      // Manejar errores de red o del servidor
+      String errorMessage = 'Error de conexión: ${e.message}';
+      if (e.response != null && e.response!.data != null) {
+        errorMessage =
+            'Error del servidor: ${e.response!.statusCode} - ${e.response!.data.toString()}';
+      }
+      throw Exception(errorMessage);
+    } catch (e) {
+      throw Exception('Error desconocido: ${e.toString()}');
+    }
+
   }
 }

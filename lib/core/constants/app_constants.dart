@@ -11,6 +11,7 @@ class AppConstants {
   static const String rutaChoferEndpoint = '/entregas/entregas-fecha';
   static const String choferesEndPoint = '/entregas/choferes';
   static const String entregasRutasChoferes = '/entregas/extracto';
+  static const String usuariosEndPoint = '/auth/lstUsers';
 
 
 

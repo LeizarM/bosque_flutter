@@ -117,6 +117,11 @@ class UserStateNotifier extends StateNotifier<LoginEntity?> {
       return jsonDecode(userDataJson!)['tipoUsuario'] ?? 0;
     }
   }
+
+
+ 
+
+
 }
 
 // Definimos el provider usando StateNotifierProvider

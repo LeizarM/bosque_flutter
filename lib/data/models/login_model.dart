@@ -21,7 +21,7 @@ class LoginModel {
     );
   }
 
-  LoginEntity? toEntity() {
+  LoginEntity toEntity() {
     if (data != null) {
       return LoginEntity(
         token: data!.token,
@@ -36,9 +36,35 @@ class LoginModel {
         login: data!.login,
         versionApp: data!.versionApp,
         codSucursal: data!.codSucursal,
+        esAutorizador: data!.esAutorizador,
+        estado: data!.estado,
+        audUsuarioI: data!.audUsuarioI,
+        nombreSucursal: data!.nombreSucursal,
+        nombreCiudad: data!.nombreCiudad,
+        nombreEmpresa: data!.nombreEmpresa,
+      );
+    } else {
+      return LoginEntity(
+        token: '',
+        bearer: '',
+        nombreCompleto: '',
+        cargo: '',
+        tipoUsuario: '',
+        codUsuario: 0,
+        codEmpleado: 0,
+        codEmpresa: 0,
+        codCiudad: 0,
+        login: '',
+        versionApp: '',
+        codSucursal: 0,
+        esAutorizador: '',
+        estado: '',
+        audUsuarioI: 0,
+        nombreSucursal: '',
+        nombreCiudad: '',
+        nombreEmpresa: '',
       );
     }
-    return null;
   }
 }
 
@@ -55,6 +81,12 @@ class LoginDataModel {
   final String login;
   final String versionApp;
   final int codSucursal;
+  final String esAutorizador;
+  final String estado;
+  final int audUsuarioI;
+  final String nombreSucursal;
+  final String nombreCiudad;
+  final String nombreEmpresa;
 
   LoginDataModel({
     required this.token,
@@ -69,6 +101,13 @@ class LoginDataModel {
     required this.login,
     required this.versionApp,
     required this.codSucursal,
+    required this.esAutorizador,
+    required this.estado,
+    required this.audUsuarioI,
+    required this.nombreSucursal,
+    required this.nombreCiudad,
+    required this.nombreEmpresa,
+    //... other fields if needed
   });
 
   factory LoginDataModel.fromJson(Map<String, dynamic> json) {
@@ -85,6 +124,13 @@ class LoginDataModel {
       login: json['login'] ?? '',
       versionApp: json['versionApp'] ?? '',
       codSucursal: json['codSucursal'] ?? 0,
+      esAutorizador: json['esAutorizador'] ?? '',
+      estado: json['estado'] ?? '',
+      audUsuarioI: json['audUsuarioI'] ?? 0,
+      nombreSucursal: json['nombreSucursal'] ?? '',
+      nombreCiudad: json['nombreCiudad'] ?? '',
+      nombreEmpresa: json['nombreEmpresa'] ?? '',
+      //... other fields if needed
     );
   }
 }

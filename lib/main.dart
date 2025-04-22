@@ -10,7 +10,6 @@ import 'package:bosque_flutter/core/utils/responsive_utils_bosque.dart';
 import 'package:bosque_flutter/core/utils/secure_storage.dart';
 import 'package:bosque_flutter/data/repositories/entregas_impl.dart';
 
-
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   final token = await SecureStorage().getToken();

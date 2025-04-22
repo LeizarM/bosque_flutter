@@ -11,6 +11,13 @@ class LoginEntity {
   final String login;
   final String versionApp;
   final int codSucursal;
+  
+  final String esAutorizador;
+  final String estado;
+  final int audUsuarioI;
+  final String nombreSucursal;
+  final String nombreCiudad;
+  final String nombreEmpresa;
 
   LoginEntity({
     required this.token,
@@ -25,6 +32,12 @@ class LoginEntity {
     required this.login,
     required this.versionApp,
     required this.codSucursal,
+    required this.esAutorizador,
+    required this.estado,
+    required this.audUsuarioI,
+    required this.nombreSucursal,
+    required this.nombreCiudad,
+    required this.nombreEmpresa,
   });
 
   factory LoginEntity.fromJson(Map<String, dynamic> json) {
@@ -41,6 +54,12 @@ class LoginEntity {
       login: json['login'] ?? '',
       versionApp: json['versionApp'] ?? '',
       codSucursal: json['codSucursal'] ?? 0,
+      esAutorizador: json['esAutorizador'] ?? '',
+      estado: json['estado'] ?? '',
+      audUsuarioI: json['audUsuarioI'] ?? 0,
+      nombreSucursal: json['nombreSucursal'] ?? '',
+      nombreCiudad: json['nombreCiudad'] ?? '',
+      nombreEmpresa: json['nombreEmpresa'] ?? '',
     );
   }
 
