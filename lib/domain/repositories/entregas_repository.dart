@@ -54,4 +54,9 @@ abstract class EntregasRepository {
   //metodo para obtener la lista de choferes
   Future<List<EntregaEntity>> getChoferes();
 
+  //Metodo para obtener el extracto de rutas de todos los choferes entre fechas
+  Future<List<EntregaEntity>> getExtractoRutas(
+     DateTime fechaInicio,
+     DateTime fechaFin
+  );
 }

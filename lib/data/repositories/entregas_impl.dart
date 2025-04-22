@@ -502,4 +502,39 @@ class EntregasImpl implements EntregasRepository {
     }
 
   }
+  
+  @override
+  Future<List<EntregaEntity>> getExtractoRutas( DateTime fechaInicio, DateTime fechaFin ) async {
+    
+    try {
+      final response = await _dio.post(
+        AppConstants.rutaChoferEndpoint,
+        data: {
+          'fechaInicio': "${fechaInicio.year}-${fechaInicio.month.toString().padLeft(2, '0')}-${fechaInicio.day.toString().padLeft(2, '0')}",
+          'fechaFin': "${fechaFin.year}-${fechaFin.month.toString().padLeft(2, '0')}-${fechaFin.day.toString().padLeft(2, '0')}",
+        }
+      );
+
+      if (response.statusCode == 200 && response.data != null) {
+        final items =
+            (response.data as List<dynamic>)
+                .map((json) => EntregaModel.fromJson(json))
+                .toList();
+        return items.map((model) => model.toEntity()).toList();
+      } else {
+        throw Exception('Error al obtener la ruta de los choferes');
+      }
+    } on DioException catch (e) {
+      // Manejar errores de red o del servidor
+      String errorMessage = 'Error de conexión: ${e.message}';
+      if (e.response != null && e.response!.data != null) {
+        errorMessage =
+            'Error del servidor: ${e.response!.statusCode} - ${e.response!.data.toString()}';
+      }
+      throw Exception(errorMessage);
+    } catch (e) {
+      throw Exception('Error desconocido: ${e.toString()}');
+    }
+
+  }
 }

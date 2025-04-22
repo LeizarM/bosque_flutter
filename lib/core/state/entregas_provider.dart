@@ -355,6 +355,24 @@ class EntregasNotifier extends StateNotifier<EntregasState> {
     }
   }
 
+  // Ver extracto de rutas de choferes entre fechas osea sus rutas
+  Future<void> cargarExtractoChoferes( DateTime fechaInicio, DateTime fechaFin ) async {
+
+    try {
+      state = state.copyWith(isLoading: true, error: null);
+      final extractoChoferes = await _repository.getExtractoRutas(fechaInicio, fechaFin);
+      state = state.copyWith(
+        isLoading: false,
+        entregas: extractoChoferes,
+      );
+    } catch (e) {
+      state = state.copyWith(
+        isLoading: false,
+        error: e.toString(),
+      );
+    }
+  }
+
   // Verificar si los servicios de localización están disponibles
   Future<bool> verificarServiciosLocalizacion() async {
     try {
