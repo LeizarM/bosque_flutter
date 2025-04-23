@@ -1,5 +1,3 @@
-
-
 import 'package:bosque_flutter/domain/entities/login_entity.dart';
 
 class LoginModel {
@@ -21,28 +19,18 @@ class LoginModel {
     );
   }
 
+  Map<String, dynamic> toJson() {
+    final Map<String, dynamic> dataMap = {
+      'mensaje': mensaje,
+      'status': status,
+    };
+    if (data != null) dataMap['data'] = data!.toJson();
+    return dataMap;
+  }
+
   LoginEntity toEntity() {
     if (data != null) {
-      return LoginEntity(
-        token: data!.token,
-        bearer: data!.bearer,
-        nombreCompleto: data!.nombreCompleto,
-        cargo: data!.cargo,
-        tipoUsuario: data!.tipoUsuario,
-        codUsuario: data!.codUsuario,
-        codEmpleado: data!.codEmpleado,
-        codEmpresa: data!.codEmpresa,
-        codCiudad: data!.codCiudad,
-        login: data!.login,
-        versionApp: data!.versionApp,
-        codSucursal: data!.codSucursal,
-        esAutorizador: data!.esAutorizador,
-        estado: data!.estado,
-        audUsuarioI: data!.audUsuarioI,
-        nombreSucursal: data!.nombreSucursal,
-        nombreCiudad: data!.nombreCiudad,
-        nombreEmpresa: data!.nombreEmpresa,
-      );
+      return data!.toEntity();
     } else {
       return LoginEntity(
         token: '',
@@ -63,6 +51,7 @@ class LoginModel {
         nombreSucursal: '',
         nombreCiudad: '',
         nombreEmpresa: '',
+        npassword: '',
       );
     }
   }
@@ -87,6 +76,7 @@ class LoginDataModel {
   final String nombreSucursal;
   final String nombreCiudad;
   final String nombreEmpresa;
+  String npassword;
 
   LoginDataModel({
     required this.token,
@@ -107,30 +97,86 @@ class LoginDataModel {
     required this.nombreSucursal,
     required this.nombreCiudad,
     required this.nombreEmpresa,
-    //... other fields if needed
+    required this.npassword,
   });
 
   factory LoginDataModel.fromJson(Map<String, dynamic> json) {
+    // Mapeo seguro para cargo anidado
+    String cargo = '';
+    try {
+      cargo = json['empleado']?['empleadoCargo']?['cargoSucursal']?['cargo']?['descripcion'] ?? '';
+    } catch (_) {
+      cargo = '';
+    }
+
     return LoginDataModel(
       token: json['token'] ?? '',
       bearer: json['bearer'] ?? '',
       nombreCompleto: json['nombreCompleto'] ?? '',
-      cargo: json['cargo'] ?? '',
+      cargo: cargo,
       tipoUsuario: json['tipoUsuario'] ?? '',
-      codUsuario: json['codUsuario'] ?? 0,
-      codEmpleado: json['codEmpleado'] ?? 0,
-      codEmpresa: json['codEmpresa'] ?? 0,
-      codCiudad: json['codCiudad'] ?? 0,
+      codUsuario: json['codUsuario'] ?? json['codusuario'] ?? 0,
+      codEmpleado: json['codEmpleado'] ?? json['codempleado'] ?? 0,
+      codEmpresa: json['codEmpresa'] ?? json['codempresa'] ?? 0,
+      codCiudad: json['codCiudad'] ?? json['codciudad'] ?? 0,
       login: json['login'] ?? '',
       versionApp: json['versionApp'] ?? '',
-      codSucursal: json['codSucursal'] ?? 0,
+      codSucursal: json['codSucursal'] ?? json['codsucursal'] ?? 0,
       esAutorizador: json['esAutorizador'] ?? '',
       estado: json['estado'] ?? '',
       audUsuarioI: json['audUsuarioI'] ?? 0,
       nombreSucursal: json['nombreSucursal'] ?? '',
       nombreCiudad: json['nombreCiudad'] ?? '',
       nombreEmpresa: json['nombreEmpresa'] ?? '',
-      //... other fields if needed
+      npassword: json['npassword'] ?? '',
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    final Map<String, dynamic> data = {};
+    if (token.isNotEmpty) data['token'] = token;
+    if (bearer.isNotEmpty) data['bearer'] = bearer;
+    if (nombreCompleto.isNotEmpty) data['nombreCompleto'] = nombreCompleto;
+    if (cargo.isNotEmpty) data['cargo'] = cargo;
+    if (tipoUsuario.isNotEmpty) data['tipoUsuario'] = tipoUsuario;
+    if (codUsuario != 0) data['codUsuario'] = codUsuario;
+    if (codEmpleado != 0) data['codEmpleado'] = codEmpleado;
+    if (codEmpresa != 0) data['codEmpresa'] = codEmpresa;
+    if (codCiudad != 0) data['codCiudad'] = codCiudad;
+    if (login.isNotEmpty) data['login'] = login;
+    if (versionApp.isNotEmpty) data['versionApp'] = versionApp;
+    if (codSucursal != 0) data['codSucursal'] = codSucursal;
+    if (esAutorizador.isNotEmpty) data['esAutorizador'] = esAutorizador;
+    if (estado.isNotEmpty) data['estado'] = estado;
+    if (audUsuarioI != 0) data['audUsuarioI'] = audUsuarioI;
+    if (nombreSucursal.isNotEmpty) data['nombreSucursal'] = nombreSucursal;
+    if (nombreCiudad.isNotEmpty) data['nombreCiudad'] = nombreCiudad;
+    if (nombreEmpresa.isNotEmpty) data['nombreEmpresa'] = nombreEmpresa;
+    return data;
+  }
+
+  LoginEntity toEntity() {
+    return LoginEntity(
+      token: token,
+      bearer: bearer,
+      nombreCompleto: nombreCompleto,
+      cargo: cargo,
+      tipoUsuario: tipoUsuario,
+      codUsuario: codUsuario,
+      codEmpleado: codEmpleado,
+      codEmpresa: codEmpresa,
+      codCiudad: codCiudad,
+      login: login,
+      versionApp: versionApp,
+      codSucursal: codSucursal,
+      esAutorizador: esAutorizador,
+      estado: estado,
+      audUsuarioI: audUsuarioI,
+      nombreSucursal: nombreSucursal,
+      nombreCiudad: nombreCiudad,
+      nombreEmpresa: nombreEmpresa,
+      npassword: npassword,
+
     );
   }
 }

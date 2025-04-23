@@ -2,8 +2,12 @@ import 'dart:convert';
 import 'package:bosque_flutter/domain/entities/login_entity.dart';
 import 'package:bosque_flutter/core/utils/secure_storage.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:bosque_flutter/domain/repositories/auth_repository.dart';
+import 'package:bosque_flutter/data/repositories/auth_repository_impl.dart';
 
 class UserStateNotifier extends StateNotifier<LoginEntity?> {
+  final AuthRepository _authRepository = AuthRepositoryImpl();
+  
   UserStateNotifier() : super(null) {
     _loadUserFromStorage(); // Cargar datos del usuario al inicializar
   }
@@ -118,11 +122,32 @@ class UserStateNotifier extends StateNotifier<LoginEntity?> {
     }
   }
 
+  Future<List<LoginEntity>> getUsers() async {
+    try {
+      final users = await _authRepository.getUsers();
+      if (users.isNotEmpty) {
+        print('Primer usuario: \\n${users.first.toJson()}');
+      } else {
+        print('No llegaron usuarios del backend');
+      }
+      return users;
+    } catch (e) {
+      print('Error al obtener usuarios: $e');
+      return [];
+    }
+  }
 
- 
-
-
+  Future<bool> changePassword(LoginEntity user) async {
+    user.npassword = '123456789';
+    return await _authRepository.changePassword(user);
+  }
 }
+
+// Definir un provider adicional para la lista de usuarios
+final usersListProvider = FutureProvider<List<LoginEntity>>((ref) {
+  final userNotifier = ref.watch(userProvider.notifier);
+  return userNotifier.getUsers();
+});
 
 // Definimos el provider usando StateNotifierProvider
 final userProvider = StateNotifierProvider<UserStateNotifier, LoginEntity?>((ref) {

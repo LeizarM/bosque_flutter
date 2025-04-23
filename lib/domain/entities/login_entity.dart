@@ -11,13 +11,13 @@ class LoginEntity {
   final String login;
   final String versionApp;
   final int codSucursal;
-  
   final String esAutorizador;
   final String estado;
   final int audUsuarioI;
   final String nombreSucursal;
   final String nombreCiudad;
   final String nombreEmpresa;
+  String npassword;
 
   LoginEntity({
     required this.token,
@@ -38,45 +38,62 @@ class LoginEntity {
     required this.nombreSucursal,
     required this.nombreCiudad,
     required this.nombreEmpresa,
+    required this.npassword,
   });
 
   factory LoginEntity.fromJson(Map<String, dynamic> json) {
+    // Mapeo seguro para cargo anidado
+    String cargo = '';
+    try {
+      cargo = json['empleado']?['empleadoCargo']?['cargoSucursal']?['cargo']?['descripcion'] ?? '';
+    } catch (_) {
+      cargo = '';
+    }
+
     return LoginEntity(
       token: json['token'] ?? '',
       bearer: json['bearer'] ?? '',
       nombreCompleto: json['nombreCompleto'] ?? '',
-      cargo: json['cargo'] ?? '',
+      cargo: cargo,
       tipoUsuario: json['tipoUsuario'] ?? '',
-      codUsuario: json['codUsuario'] ?? 0,
-      codEmpleado: json['codEmpleado'] ?? 0,
-      codEmpresa: json['codEmpresa'] ?? 0,
-      codCiudad: json['codCiudad'] ?? 0,
+      codUsuario: json['codUsuario'] ?? json['codusuario'] ?? 0,
+      codEmpleado: json['codEmpleado'] ?? json['codempleado'] ?? 0,
+      codEmpresa: json['codEmpresa'] ?? json['codempresa'] ?? 0,
+      codCiudad: json['codCiudad'] ?? json['codciudad'] ?? 0,
       login: json['login'] ?? '',
       versionApp: json['versionApp'] ?? '',
-      codSucursal: json['codSucursal'] ?? 0,
+      codSucursal: json['codSucursal'] ?? json['codsucursal'] ?? 0,
       esAutorizador: json['esAutorizador'] ?? '',
       estado: json['estado'] ?? '',
       audUsuarioI: json['audUsuarioI'] ?? 0,
       nombreSucursal: json['nombreSucursal'] ?? '',
       nombreCiudad: json['nombreCiudad'] ?? '',
       nombreEmpresa: json['nombreEmpresa'] ?? '',
+      npassword: json['npassword'] ?? '',
     );
   }
 
   Map<String, dynamic> toJson() {
-    return {
-      'token': token,
-      'bearer': bearer,
-      'nombreCompleto': nombreCompleto,
-      'cargo': cargo,
-      'tipoUsuario': tipoUsuario,
-      'codUsuario': codUsuario,
-      'codEmpleado': codEmpleado,
-      'codEmpresa': codEmpresa,
-      'codCiudad': codCiudad,
-      'login': login,
-      'versionApp': versionApp,
-      'codSucursal': codSucursal,
-    };
+    final Map<String, dynamic> data = {};
+    if (token.isNotEmpty) data['token'] = token;
+    if (bearer.isNotEmpty) data['bearer'] = bearer;
+    if (nombreCompleto.isNotEmpty) data['nombreCompleto'] = nombreCompleto;
+    if (cargo.isNotEmpty) data['cargo'] = cargo;
+    if (tipoUsuario.isNotEmpty) data['tipoUsuario'] = tipoUsuario;
+    if (codUsuario != 0) data['codUsuario'] = codUsuario;
+    if (codEmpleado != 0) data['codEmpleado'] = codEmpleado;
+    if (codEmpresa != 0) data['codEmpresa'] = codEmpresa;
+    if (codCiudad != 0) data['codCiudad'] = codCiudad;
+    if (login.isNotEmpty) data['login'] = login;
+    if (versionApp.isNotEmpty) data['versionApp'] = versionApp;
+    if (codSucursal != 0) data['codSucursal'] = codSucursal;
+    if (esAutorizador.isNotEmpty) data['esAutorizador'] = esAutorizador;
+    if (estado.isNotEmpty) data['estado'] = estado;
+    if (audUsuarioI != 0) data['audUsuarioI'] = audUsuarioI;
+    if (nombreSucursal.isNotEmpty) data['nombreSucursal'] = nombreSucursal;
+    if (nombreCiudad.isNotEmpty) data['nombreCiudad'] = nombreCiudad;
+    if (nombreEmpresa.isNotEmpty) data['nombreEmpresa'] = nombreEmpresa;
+    if (npassword.isNotEmpty) data['npassword'] = npassword;
+    return data;
   }
 }
