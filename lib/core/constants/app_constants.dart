@@ -15,6 +15,7 @@ class AppConstants {
   static const String changePasswordEndPoint = '/auth/changePasswordDefault';
   static const String registrarCombustibleEndPoint = '/gasolina/registrar-gasolina';
   static const String listarCoches = '/gasolina/lst-coches';
+  static const String listarKilometrajeCoches = '/gasolina/lst-kilometraje';
 
 
 

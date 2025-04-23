@@ -88,7 +88,12 @@ final routerProvider = Provider<GoRouter>((ref) {
               name: 'tgas_ControlCombustible',
               builder: (context, state) => const ControlCombustibleScreen(),
             ),
-
+            //ruta para ver el historial de gasolina de los coches
+            GoRoute(
+              path: '/dashboard/tgas_ControlCombustible/View',
+              name: 'tgas_ControlCombustibleView',
+              builder: (context, state) => const ControlCombustibleViewScreen(),
+            ),
 
             // Productos
           ],
@@ -118,6 +123,10 @@ final routerProvider = Provider<GoRouter>((ref) {
         GoRoute(
           path: '/tgas_ControlCombustible/Registro',
           redirect: (context, state) => '/dashboard/tgas_ControlCombustible/Registro',
+        ),
+        GoRoute(
+          path: '/tgas_ControlCombustible/View',
+          redirect: (context, state) => '/dashboard/tgas_ControlCombustible/View',
         ),
         
       ],

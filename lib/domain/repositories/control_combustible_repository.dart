@@ -8,4 +8,6 @@ abstract class ControlCombustibleRepository {
 
   Future<List<CombustibleControlEntity>> getCoches();
   
+
+  Future<List<CombustibleControlEntity>> getCombustiblesPorCoche( int idCoche);
 }

@@ -13,6 +13,11 @@ final controlCombustibleProvider = StateNotifierProvider<ControlCombustibleNotif
   return ControlCombustibleNotifier(repo);
 });
 
+final combustiblesPorCocheProvider = FutureProvider.family<List<CombustibleControlEntity>, int>((ref, idCoche) async {
+  final repo = ref.read(controlCombustibleRepositoryProvider);
+  return await repo.getCombustiblesPorCoche(idCoche);
+});
+
 class ControlCombustibleNotifier extends StateNotifier<AsyncValue<bool>> {
   final ControlCombustibleRepository _repo;
   ControlCombustibleNotifier(this._repo) : super(const AsyncData(false));
