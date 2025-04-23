@@ -44,22 +44,22 @@ class CombustibleControlModel {
     });
 
     factory CombustibleControlModel.fromJson(Map<String, dynamic> json) => CombustibleControlModel(
-        idC: json["idC"],
-        idCoche: json["idCoche"],
-        fecha: DateTime.parse(json["fecha"]),
-        estacionServicio: json["estacionServicio"],
-        nroFactura: json["nroFactura"],
-        importe: json["importe"]?.toDouble(),
-        kilometraje: json["kilometraje"]?.toDouble(),
-        codEmpleado: json["codEmpleado"],
-        diferencia: json["diferencia"]?.toDouble(),
-        codSucursalCoche: json["codSucursalCoche"],
-        obs: json["obs"],
-        litros: json["litros"]?.toDouble(),
-        tipoCombustible: json["tipoCombustible"],
-        audUsuario: json["audUsuario"],
-        coche: json["coche"],
-        kilometrajeAnterior: json["kilometrajeAnterior"]?.toDouble(),
+        idC: json["idC"] ?? 0,
+        idCoche: json["idCoche"] ?? 0,
+        fecha: json["fecha"] != null && json["fecha"] != '' ? DateTime.parse(json["fecha"]) : DateTime.now(),
+        estacionServicio: json["estacionServicio"] ?? '',
+        nroFactura: json["nroFactura"] ?? '',
+        importe: (json["importe"] ?? 0).toDouble(),
+        kilometraje: (json["kilometraje"] ?? 0).toDouble(),
+        codEmpleado: json["codEmpleado"] ?? 0,
+        diferencia: (json["diferencia"] ?? 0).toDouble(),
+        codSucursalCoche: json["codSucursalCoche"] ?? 0,
+        obs: json["obs"] ?? '',
+        litros: (json["litros"] ?? 0).toDouble(),
+        tipoCombustible: json["tipoCombustible"] ?? '',
+        audUsuario: json["audUsuario"] ?? 0,
+        coche: json["coche"] ?? '',
+        kilometrajeAnterior: (json["kilometrajeAnterior"] ?? 0).toDouble(),
     );
 
     Map<String, dynamic> toJson() => {
@@ -100,4 +100,25 @@ class CombustibleControlModel {
       coche: coche,
       kilometrajeAnterior: kilometrajeAnterior,
     );
+
+  static fromEntity(CombustibleControlEntity data) {
+    return CombustibleControlModel(
+      idC: data.idC,
+      idCoche: data.idCoche,
+      fecha: data.fecha,
+      estacionServicio: data.estacionServicio,
+      nroFactura: data.nroFactura,
+      importe: data.importe,
+      kilometraje: data.kilometraje,
+      codEmpleado: data.codEmpleado,
+      diferencia: data.diferencia,
+      codSucursalCoche: data.codSucursalCoche,
+      obs: data.obs,
+      litros: data.litros,
+      tipoCombustible: data.tipoCombustible,
+      audUsuario: data.audUsuario,
+      coche: data.coche,
+      kilometrajeAnterior: data.kilometrajeAnterior,
+    );
+  }
 }

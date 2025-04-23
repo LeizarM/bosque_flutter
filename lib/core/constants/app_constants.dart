@@ -13,6 +13,8 @@ class AppConstants {
   static const String entregasRutasChoferes = '/entregas/extracto';
   static const String usuariosEndPoint = '/auth/lstUsers';
   static const String changePasswordEndPoint = '/auth/changePasswordDefault';
+  static const String registrarCombustibleEndPoint = '/gasolina/registrar-gasolina';
+  static const String listarCoches = '/gasolina/lst-coches';
 
 
 

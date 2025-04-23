@@ -1,5 +1,5 @@
 class CombustibleControlEntity {
-    final num idC;
+    final int idC;
     final int idCoche;
     final DateTime fecha;
     final String estacionServicio;
