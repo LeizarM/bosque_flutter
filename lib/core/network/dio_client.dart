@@ -27,9 +27,7 @@ class DioClient {
         onRequest: (options, handler) async {
           // Obtener el token almacenado
           final token = await SecureStorage().getToken();
-          //String token = "eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJtamFpbWVzIiwianRpIjoiMzQiLCJub21icmVDb21wbGV0byI6IiBKQUlNRVMgTUFSQ0VMTyBKQVZJRVIiLCJjb2RFbXBsZWFkbyI6MTcyLCJjYXJnbyI6IlJFU1BPTlNBQkxFIERFIFNJU1RFTUFTIiwiY29kU3VjdXJzYWwiOjIwLCJjb2RFbXByZXNhIjo2LCJjb2RDaXVkYWQiOjAsInRpcG9Vc3VhcmlvIjoiUk9MRV9BRE0iLCJ2ZXJzaW9uQXBwIjoiMi42LjAiLCJpYXQiOjE3NDQzODIxNjksImV4cCI6MTc0NDQxODE2OX0.FWHqqX5HidIcK5aJBtAIciflzKQuVvK4QMfSyrcp2e2XDGuVdxK4s3HUYCmKfraoq5ijUEvsp2UY0ceYNOsTJA";
-
-          debugPrint('Token es: $token');
+          //String token = "eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJtamFpbWVzIiwianRpIjoiMzQiLCJub21icmVDb21wbGV0byI6IiBKQUlNRVMgTUFSQ0VMTyBKQVZJRVIiLCJjb2RFbXBsZWFkbyI6MTcyLCJjYXJnbyI6IlJFU1BPTlNBQkxFIERFIFNJU1RFTUFTIiwiY29kU3VjdXJzYWwiOjIwLCJjb2RFbXByZXNhIjo2LCJjb2RDaXVkYWQiOjAsInRpcG9Vc3VhcmlvIjoiUk9MRV9BRE0iLCJ2ZXJzaW9uQXBwIjoiMi42LjAiLCJpYXQiOjE3NDQzODIxNjksImV4cCI6MTc0NDQxODE2OX0.FWHqqX5HidIcK5aJBtAIciflzKQuVvK4QMfSyrcp2e2XDGuVdxK4s3HUYCmKfraoq5ijUEvsp2UY0ceYNOsTJA";         
           if (token != null) {
             options.headers['Authorization'] = 'Bearer $token';
           }

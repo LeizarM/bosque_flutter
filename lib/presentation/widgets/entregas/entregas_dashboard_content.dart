@@ -21,12 +21,27 @@ class _EntregasDashboardContentState extends ConsumerState<EntregasDashboardCont
   int _currentPage = 1;
   int _itemsPerPage = 10;
 
+  late TextEditingController _fechaInicioController;
+  late TextEditingController _fechaFinController;
+
   @override
   void initState() {
     super.initState();
     final now = DateTime.now();
     _fechaInicio = DateTime(now.year, now.month, 1);
     _fechaFin = now;
+    _fechaInicioController = TextEditingController(text: _dateFormat.format(_fechaInicio!));
+    _fechaFinController = TextEditingController(text: _dateFormat.format(_fechaFin!));
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _actualizarExtracto();
+    });
+  }
+
+  @override
+  void dispose() {
+    _fechaInicioController.dispose();
+    _fechaFinController.dispose();
+    super.dispose();
   }
 
   Future<void> _pickDate(BuildContext context, bool isInicio) async {
@@ -43,10 +58,13 @@ class _EntregasDashboardContentState extends ConsumerState<EntregasDashboardCont
       setState(() {
         if (isInicio) {
           _fechaInicio = picked;
+          _fechaInicioController.text = _dateFormat.format(picked);
         } else {
           _fechaFin = picked;
+          _fechaFinController.text = _dateFormat.format(picked);
         }
       });
+      _actualizarExtracto();
     }
   }
 
@@ -54,7 +72,7 @@ class _EntregasDashboardContentState extends ConsumerState<EntregasDashboardCont
     if (_fechaInicio == null || _fechaFin == null) return;
     setState(() {
       _loading = true;
-      _currentPage = 1; // Reiniciar a la primera página al actualizar
+      _currentPage = 1;
     });
     await ref.read(entregasNotifierProvider.notifier).cargarExtractoChoferes(_fechaInicio!, _fechaFin!);
     setState(() => _loading = false);
@@ -63,7 +81,6 @@ class _EntregasDashboardContentState extends ConsumerState<EntregasDashboardCont
   List<EntregaEntity> _getPaginatedData(List<EntregaEntity> allData) {
     if (allData.isEmpty) return [];
     final int totalPages = (allData.length / _itemsPerPage).ceil();
-    // Si la página actual está fuera de rango, vuelve a la primera página automáticamente
     if (_currentPage > totalPages && totalPages > 0) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) setState(() { _currentPage = 1; });
@@ -84,7 +101,6 @@ class _EntregasDashboardContentState extends ConsumerState<EntregasDashboardCont
     final isMobile = ResponsiveUtilsBosque.isMobile(context);
     final colorScheme = Theme.of(context).colorScheme;
 
-    // Filtros responsivos
     Widget filtros = isMobile
         ? Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -94,7 +110,7 @@ class _EntregasDashboardContentState extends ConsumerState<EntregasDashboardCont
                   Expanded(
                     child: TextFormField(
                       readOnly: true,
-                      controller: TextEditingController(text: _fechaInicio != null ? _dateFormat.format(_fechaInicio!) : ''),
+                      controller: _fechaInicioController,
                       decoration: const InputDecoration(
                         labelText: 'Fecha Inicio',
                         prefixIcon: Icon(Icons.calendar_today),
@@ -106,7 +122,7 @@ class _EntregasDashboardContentState extends ConsumerState<EntregasDashboardCont
                   Expanded(
                     child: TextFormField(
                       readOnly: true,
-                      controller: TextEditingController(text: _fechaFin != null ? _dateFormat.format(_fechaFin!) : ''),
+                      controller: _fechaFinController,
                       decoration: const InputDecoration(
                         labelText: 'Fecha Fin',
                         prefixIcon: Icon(Icons.calendar_today),
@@ -134,7 +150,7 @@ class _EntregasDashboardContentState extends ConsumerState<EntregasDashboardCont
               Expanded(
                 child: TextFormField(
                   readOnly: true,
-                  controller: TextEditingController(text: _fechaInicio != null ? _dateFormat.format(_fechaInicio!) : ''),
+                  controller: _fechaInicioController,
                   decoration: const InputDecoration(
                     labelText: 'Fecha Inicio',
                     prefixIcon: Icon(Icons.calendar_today),
@@ -146,7 +162,7 @@ class _EntregasDashboardContentState extends ConsumerState<EntregasDashboardCont
               Expanded(
                 child: TextFormField(
                   readOnly: true,
-                  controller: TextEditingController(text: _fechaFin != null ? _dateFormat.format(_fechaFin!) : ''),
+                  controller: _fechaFinController,
                   decoration: const InputDecoration(
                     labelText: 'Fecha Fin',
                     prefixIcon: Icon(Icons.calendar_today),
@@ -174,7 +190,6 @@ class _EntregasDashboardContentState extends ConsumerState<EntregasDashboardCont
             ],
           );
 
-    // Resumen responsivo
     final total = state.entregas.where((e) => e.flag != -1).length;
     final completadas = state.entregas.where((e) =>  e.flag == 1 ).length;
     final porcentaje = total > 0 ? (completadas / total * 100).toStringAsFixed(1) : '0.0';
@@ -275,11 +290,10 @@ class _EntregasDashboardContentState extends ConsumerState<EntregasDashboardCont
             ],
           );
 
-    // Tabla responsiva y paginación
     Widget tablaResponsive;
     if (isDesktop || isTablet) {
       final paginatedData = _getPaginatedData(state.entregas);
-      final gridKey = ValueKey('plutoGrid_${_currentPage}_$_itemsPerPage');
+      final gridKey = ValueKey('plutoGrid_${_currentPage}_${_itemsPerPage}_${state.entregas.length}');
       final columns = <PlutoColumn>[
         PlutoColumn(title: '#', field: 'num', type: PlutoColumnType.text(), enableEditingMode: false),
         PlutoColumn(title: 'Chofer', field: 'chofer', type: PlutoColumnType.text(), enableEditingMode: false),
@@ -375,7 +389,6 @@ class _EntregasDashboardContentState extends ConsumerState<EntregasDashboardCont
         ],
       );
     } else {
-      // Tabla móvil con paginación, scroll vertical y footer en columna para evitar overflow
       final paginatedData = _getPaginatedData(state.entregas);
       final totalPages = (state.entregas.length / _itemsPerPage).ceil();
       final startIndex = ((_currentPage - 1) * _itemsPerPage) + 1;
@@ -424,7 +437,6 @@ class _EntregasDashboardContentState extends ConsumerState<EntregasDashboardCont
               ),
             ),
           ),
-          // Footer de paginación en móvil, en columna para evitar overflow
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
             child: Column(
@@ -469,7 +481,6 @@ class _EntregasDashboardContentState extends ConsumerState<EntregasDashboardCont
       );
     }
 
-    // Estructura principal sin SingleChildScrollView global
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [

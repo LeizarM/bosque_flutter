@@ -357,18 +357,18 @@ class EntregasNotifier extends StateNotifier<EntregasState> {
 
   // Ver extracto de rutas de choferes entre fechas osea sus rutas
   Future<void> cargarExtractoChoferes( DateTime fechaInicio, DateTime fechaFin ) async {
-   
+    debugPrint('⏳ Llamando a cargarExtractoChoferes con fechas: '
+      'inicio=${fechaInicio.toIso8601String()}, fin=${fechaFin.toIso8601String()}');
     try {
       state = state.copyWith(isLoading: true, error: null);
       final extractoChoferes = await _repository.getExtractoRutas(fechaInicio, fechaFin);
-      
-      
+      debugPrint('✅ Datos recibidos del backend: ${extractoChoferes.length} registros');
       state = state.copyWith(
         isLoading: false,
         entregas: extractoChoferes,
       );
     } catch (e) {
-      
+      debugPrint('❌ Error en cargarExtractoChoferes: ${e.toString()}');
       state = state.copyWith(
         isLoading: false,
         error: e.toString(),

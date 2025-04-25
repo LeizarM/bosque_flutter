@@ -172,6 +172,14 @@ class _ControlCombustibleViewScreenState extends ConsumerState<ControlCombustibl
                                             ),
                                           ],
                                         ),
+                                        const SizedBox(height: 8),
+                                        Row(
+                                          children: [
+                                            Icon(Icons.route, size: 18, color: colorScheme.primary),
+                                            const SizedBox(width: 4),
+                                            Text('Total recorrido: ${c.diferencia.toStringAsFixed(2)} km', style: TextStyle(color: colorScheme.onSurface)),
+                                          ],
+                                        ),
                                         if ((c.obs ?? '').isNotEmpty) ...[
                                           const SizedBox(height: 8),
                                           Text('Obs: ${c.obs}', style: TextStyle(color: colorScheme.onSurface.withOpacity(0.7))),
@@ -216,6 +224,7 @@ class _ControlCombustibleViewScreenState extends ConsumerState<ControlCombustibl
                                         DataColumn(label: Text('Importe', style: TextStyle(fontWeight: FontWeight.bold))),
                                         DataColumn(label: Text('Kilometraje', style: TextStyle(fontWeight: FontWeight.bold))),
                                         DataColumn(label: Text('Litros', style: TextStyle(fontWeight: FontWeight.bold))),
+                                        DataColumn(label: Text('Total Recorrido', style: TextStyle(fontWeight: FontWeight.bold))),
                                         DataColumn(label: Text('Tipo', style: TextStyle(fontWeight: FontWeight.bold))),
                                         DataColumn(label: Text('Obs.', style: TextStyle(fontWeight: FontWeight.bold))),
                                       ],
@@ -238,6 +247,7 @@ class _ControlCombustibleViewScreenState extends ConsumerState<ControlCombustibl
                                             DataCell(Text(c.importe.toStringAsFixed(2), style: TextStyle(color: colorScheme.onSurface))),
                                             DataCell(Text(c.kilometraje.toStringAsFixed(0), style: TextStyle(color: colorScheme.onSurface))),
                                             DataCell(Text(c.litros.toStringAsFixed(2), style: TextStyle(color: colorScheme.onSurface))),
+                                            DataCell(Text(c.diferencia.toStringAsFixed(2), style: TextStyle(color: colorScheme.onSurface))),
                                             DataCell(Text(c.tipoCombustible, style: TextStyle(color: colorScheme.primary))),
                                             DataCell(Text(c.obs ?? '', style: TextStyle(color: colorScheme.onSurface.withOpacity(0.7)))),
                                           ],
