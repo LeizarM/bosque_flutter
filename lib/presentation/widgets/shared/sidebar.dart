@@ -574,7 +574,7 @@ class _AppSidebarState extends ConsumerState<AppSidebar> {
                     ),
                     child: const Center(
                       child: Text(
-                        'BF',
+                        'B',
                         style: TextStyle(
                           color: Colors.white,
                           fontWeight: FontWeight.bold,

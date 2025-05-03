@@ -94,6 +94,12 @@ final routerProvider = Provider<GoRouter>((ref) {
               name: 'tgas_ControlCombustibleView',
               builder: (context, state) => const ControlCombustibleViewScreen(),
             ),
+            // Para el registro de bidones
+            GoRoute(
+              path: '/dashboard/tgas_ControlCombustibleMaqMont/Registro',
+              name: 'tgas_ControlCombustibleMaqMont',
+              builder: (context, state) => const ControlCombustibleMaquinaMontacargaScreen(),
+            ),
 
             // Productos
           ],
@@ -127,6 +133,10 @@ final routerProvider = Provider<GoRouter>((ref) {
         GoRoute(
           path: '/tgas_ControlCombustible/View',
           redirect: (context, state) => '/dashboard/tgas_ControlCombustible/View',
+        ),
+        GoRoute(
+          path: '/tgas_ControlCombustibleMaqMont/Registro',
+          redirect: (context, state) => '/dashboard/tgas_ControlCombustibleMaqMont/Registro',
         ),
         
       ],
