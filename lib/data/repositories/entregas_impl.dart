@@ -5,7 +5,6 @@ import 'package:bosque_flutter/data/models/entregas_model.dart';
 import 'package:bosque_flutter/core/network/dio_client.dart';
 import 'package:bosque_flutter/domain/entities/entregas_entity.dart';
 import 'package:bosque_flutter/domain/repositories/entregas_repository.dart';
-import 'package:logger/web.dart';
 
 class EntregasImpl implements EntregasRepository {
   final Dio _dio = DioClient.getInstance();

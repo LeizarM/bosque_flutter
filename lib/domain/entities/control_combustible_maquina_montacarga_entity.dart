@@ -1,5 +1,5 @@
 class ControlCombustibleMaquinaMontacargaEntity {
-    final int idCm;
+    final int idCM;
     final int idMaquina;
     final DateTime fecha;
     final double litrosIngreso;
@@ -14,8 +14,11 @@ class ControlCombustibleMaquinaMontacargaEntity {
     final String whsCode;
     final String whsName;
 
+    final String maquina;
+    final String nombreCompleto;
+
     ControlCombustibleMaquinaMontacargaEntity({
-        required this.idCm,
+        required this.idCM,
         required this.idMaquina,
         required this.fecha,
         required this.litrosIngreso,
@@ -29,6 +32,8 @@ class ControlCombustibleMaquinaMontacargaEntity {
         required this.audUsuario,
         required this.whsCode,
         required this.whsName,
+        required this.maquina,
+        required this.nombreCompleto,
     });
 
 }

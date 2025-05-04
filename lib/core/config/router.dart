@@ -100,6 +100,12 @@ final routerProvider = Provider<GoRouter>((ref) {
               name: 'tgas_ControlCombustibleMaqMont',
               builder: (context, state) => const ControlCombustibleMaquinaMontacargaScreen(),
             ),
+            //Para ver el historial de bidones
+            GoRoute(
+              path: '/dashboard/tgas_ControlCombustibleMaqMont/View',
+              name: 'tgas_ControlCombustibleMaqMontView',
+              builder: (context, state) => const ControlCombustibleMaquinaMontaCargaViewScreen(),
+            ),
 
             // Productos
           ],
@@ -138,6 +144,10 @@ final routerProvider = Provider<GoRouter>((ref) {
           path: '/tgas_ControlCombustibleMaqMont/Registro',
           redirect: (context, state) => '/dashboard/tgas_ControlCombustibleMaqMont/Registro',
         ),
+        GoRoute(
+          path: '/tgas_ControlCombustibleMaqMont/View',
+          redirect: (context, state) => '/dashboard/tgas_ControlCombustibleMaqMont/View',
+        ),
         
       ],
       errorBuilder: (context, state) => Scaffold(
@@ -162,68 +172,16 @@ final routerProvider = Provider<GoRouter>((ref) {
         ),
       ),
       redirect: (BuildContext context, GoRouterState state) async {
-        // Verificar si el token ha expirado
-        final secureStorage = SecureStorage();
-        final isTokenExpired = await secureStorage.isTokenExpired();
-        
-        // Si el token expiró, limpiar datos y redirigir al login
-        if (isTokenExpired) {
-          debugPrint('🔑 Token expirado detectado en redirect');
-          // Limpiar datos de sesión
-          await secureStorage.clearSession();
-          
-          // Use a ProviderContainer to avoid Riverpod dependency issues during navigation
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            final container = ProviderContainer();
-            try {
-              container.read(userProvider.notifier).clearUser();
-              container.read(authStateProvider.notifier).state = false;
-            } finally {
-              container.dispose();
-            }
-          });
-          
-          // Solo redirigir si no estamos ya en el login
-          if (state.uri.toString() != '/login') {
-            return '/login';
-          }
-        }
-        
-        // Usar un container aislado para acceder al estado de Riverpod
-        // de esta manera evitamos conflictos de dependencias
+        // Validar usuario y versión usando asyncUserProvider
         final container = ProviderContainer();
-        bool isLoggedIn;
-        
-        try {
-          final user = container.read(userProvider);
-          final token = await secureStorage.getToken();
-          isLoggedIn = (user != null || token != null) && !isTokenExpired;
-          
-          // Actualizar el estado de auth en el siguiente frame para evitar errores
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            try {
-              ref.read(authStateProvider.notifier).state = isLoggedIn;
-            } catch (e) {
-              debugPrint('Error updating auth state: $e');
-            }
-          });
-        } finally {
-          container.dispose();
-        }
-
+        final asyncUser = await container.read(asyncUserProvider.future);
         final isOnLoginPage = state.uri.toString() == '/login';
-
-        // Si no está logueado y no está en login, redirigir a login
-        if (!isLoggedIn && !isOnLoginPage) {
+        if (asyncUser == null && !isOnLoginPage) {
           return '/login';
-        } 
-        
-        // Si está logueado y está en login, redirigir a dashboard
-        if (isLoggedIn && isOnLoginPage) {
+        }
+        if (asyncUser != null && isOnLoginPage) {
           return '/dashboard';
         }
-        
-        // En otros casos, mantener la ruta actual
         return null;
       },
     );

@@ -15,7 +15,7 @@ String controlCombustibleMaquinaMontacargaModelToJson(
 ) => json.encode(data.toJson());
 
 class ControlCombustibleMaquinaMontacargaModel {
-  final int idCm;
+  final int idCM;
   final int idMaquina;
   final DateTime fecha;
   final double litrosIngreso;
@@ -29,9 +29,12 @@ class ControlCombustibleMaquinaMontacargaModel {
   final int audUsuario;
   final String whsCode;
   final String whsName;
+  final String maquina;
+  final String nombreCompleto;
+
 
   ControlCombustibleMaquinaMontacargaModel({
-    required this.idCm,
+    required this.idCM,
     required this.idMaquina,
     required this.fecha,
     required this.litrosIngreso,
@@ -45,29 +48,33 @@ class ControlCombustibleMaquinaMontacargaModel {
     required this.audUsuario,
     required this.whsCode,
     required this.whsName,
+    required this.maquina,
+    required this.nombreCompleto,
   });
 
   factory ControlCombustibleMaquinaMontacargaModel.fromJson(
     Map<String, dynamic> json,
   ) => ControlCombustibleMaquinaMontacargaModel(
-    idCm: json["idCM"],
-    idMaquina: json["idMaquina"],
-    fecha: DateTime.parse(json["fecha"]),
-    litrosIngreso: json["litrosIngreso"]?.toDouble(),
-    litrosSalida: json["litrosSalida"]?.toDouble(),
-    saldoLitros: json["saldoLitros"]?.toDouble(),
-    horasUso: json["horasUso"]?.toDouble(),
-    horometro: json["horometro"]?.toDouble(),
-    codEmpleado: json["codEmpleado"],
-    codAlmacen: json["codAlmacen"],
-    obs: json["obs"],
-    audUsuario: json["audUsuario"],
-    whsCode: json["WhsCode"],
-    whsName: json["WhsName"],
+    idCM: json["idCM"] ?? 0,
+    idMaquina: json["idMaquina"] ?? 0,
+    fecha: json["fecha"] != null ? DateTime.parse(json["fecha"]) : DateTime.now(),
+    litrosIngreso: json["litrosIngreso"]?.toDouble() ?? 0.0,
+    litrosSalida: json["litrosSalida"]?.toDouble() ?? 0.0,
+    saldoLitros: json["saldoLitros"]?.toDouble() ?? 0.0,
+    horasUso: json["horasUso"]?.toDouble() ?? 0.0,
+    horometro: json["horometro"]?.toDouble() ?? 0.0,
+    codEmpleado: json["codEmpleado"] ?? 0,
+    codAlmacen: json["codAlmacen"] ?? "",
+    obs: json["obs"] ?? "",
+    audUsuario: json["audUsuario"] ?? 0,
+    whsCode: json["whsCode"] ?? "",
+    whsName: json["whsName"] ?? "",
+    maquina: json["maquina"] ?? "",
+    nombreCompleto: json["nombreCompleto"] ?? "",
   );
 
   Map<String, dynamic> toJson() => {
-    "idCM": idCm,
+    "idCM": idCM,
     "idMaquina": idMaquina,
     "fecha": fecha.toIso8601String(),
     "litrosIngreso": litrosIngreso,
@@ -79,14 +86,17 @@ class ControlCombustibleMaquinaMontacargaModel {
     "codAlmacen": codAlmacen,
     "obs": obs,
     "audUsuario": audUsuario,
-    "WhsCode": whsCode,
-    "WhsName": whsName,
+    // audFecha se establece en el servidor
+    "whsCode": whsCode,
+    "whsName": whsName,
+    "maquina": maquina,
+    "nombreCompleto": nombreCompleto,
   };
 
   // Método para convertir de Model a Entity
   ControlCombustibleMaquinaMontacargaEntity toEntity() =>
       ControlCombustibleMaquinaMontacargaEntity(
-        idCm: idCm,
+        idCM: idCM,
         idMaquina: idMaquina,
         fecha: fecha,
         litrosIngreso: litrosIngreso,
@@ -100,13 +110,16 @@ class ControlCombustibleMaquinaMontacargaModel {
         audUsuario: audUsuario,
         whsCode: whsCode,
         whsName: whsName,
+        maquina: maquina,
+        nombreCompleto: nombreCompleto,
+        
       );
 
   // Método factory para convertir de Entity a Model
   factory ControlCombustibleMaquinaMontacargaModel.fromEntity(
     ControlCombustibleMaquinaMontacargaEntity entity,
   ) => ControlCombustibleMaquinaMontacargaModel(
-    idCm: entity.idCm,
+    idCM: entity.idCM,
     idMaquina: entity.idMaquina,
     fecha: entity.fecha,
     litrosIngreso: entity.litrosIngreso,
@@ -120,5 +133,8 @@ class ControlCombustibleMaquinaMontacargaModel {
     audUsuario: entity.audUsuario,
     whsCode: entity.whsCode,
     whsName: entity.whsName,
+    maquina: entity.maquina,
+    nombreCompleto: entity.nombreCompleto,
+
   );
 }

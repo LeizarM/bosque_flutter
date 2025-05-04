@@ -9,5 +9,7 @@ abstract class ControlCombustibleMaquinaMontacargaRepository {
   Future<List<ControlCombustibleMaquinaMontacargaEntity>> obtenerAlmacenes();
 
   Future<List<ControlCombustibleMaquinaMontacargaEntity>> obtenerMaquinasMontacarga();
+
+  Future<List<ControlCombustibleMaquinaMontacargaEntity>> obtenerBidoenesXMaquina( int idMaquina );
   
 }

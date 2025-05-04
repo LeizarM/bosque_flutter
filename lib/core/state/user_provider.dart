@@ -1,9 +1,33 @@
 import 'dart:convert';
+import 'package:bosque_flutter/core/constants/app_constants.dart';
 import 'package:bosque_flutter/domain/entities/login_entity.dart';
 import 'package:bosque_flutter/core/utils/secure_storage.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:bosque_flutter/domain/repositories/auth_repository.dart';
 import 'package:bosque_flutter/data/repositories/auth_repository_impl.dart';
+
+final asyncUserProvider = FutureProvider<LoginEntity?>((ref) async {
+  final storage = SecureStorage();
+  final userDataJson = await storage.getUserData();
+  if (userDataJson != null) {
+    try {
+      final userDataMap = jsonDecode(userDataJson);
+      final userVersion = userDataMap['versionApp']?.toString();
+      if (userVersion != null && userVersion != AppConstants.APP_VERSION) {
+        // Si la versión no coincide, limpiar usuario y token
+        await storage.deleteUserData();
+        await storage.deleteToken();
+        return null;
+      }
+      return LoginEntity.fromJson(userDataMap);
+    } catch (_) {
+      await storage.deleteUserData();
+      await storage.deleteToken();
+      return null;
+    }
+  }
+  return null;
+});
 
 class UserStateNotifier extends StateNotifier<LoginEntity?> {
   final AuthRepository _authRepository = AuthRepositoryImpl();
@@ -17,8 +41,17 @@ class UserStateNotifier extends StateNotifier<LoginEntity?> {
     final userDataJson = await storage.getUserData();
     if (userDataJson != null) {
       try {
-        // Deserializar los datos del usuario desde JSON
         final userDataMap = jsonDecode(userDataJson);
+        // Validar versión de la app
+        final userVersion = userDataMap['versionApp']?.toString();
+        if (userVersion != null && userVersion != AppConstants.APP_VERSION) {
+          // Si la versión no coincide, limpiar usuario y token
+          state = null;
+          await storage.deleteUserData();
+          await storage.deleteToken();
+          return;
+        }
+        // Deserializar los datos del usuario desde JSON
         state = LoginEntity.fromJson(userDataMap);
       } catch (e) {
         // Si hay un error al deserializar, limpiar el estado

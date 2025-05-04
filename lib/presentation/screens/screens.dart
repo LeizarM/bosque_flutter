@@ -1,5 +1,7 @@
 
+
 export 'package:bosque_flutter/presentation/screens/control-combustible-maquina-montacarga/control_combustible_maquina_montacarga_screen.dart';
+export 'package:bosque_flutter/presentation/screens/control-combustible-maquina-montacarga/control_combustible_maquina_montacarga_view_screen.dart';
 export 'package:bosque_flutter/presentation/screens/control-combustible/control_combustible_screen.dart';
 export 'package:bosque_flutter/presentation/screens/control-combustible/control_combustible_view_screen.dart';
 export 'package:bosque_flutter/presentation/screens/dashboard/dasboard_screen.dart';

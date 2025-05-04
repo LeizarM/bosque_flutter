@@ -1,7 +1,10 @@
+import 'package:bosque_flutter/core/constants/app_constants.dart';
 import 'package:bosque_flutter/core/utils/secure_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'dart:convert';
+
 
 /// Widget que verifica si el usuario está autenticado antes de mostrar contenido protegido
 /// Útil para rutas o widgets que requieren autenticación pero no son parte del árbol principal
@@ -32,15 +35,28 @@ class _AuthGuardState extends ConsumerState<AuthGuard> {
   Future<void> _checkAuthStatus() async {
     final secureStorage = SecureStorage();
     final isTokenExpired = await secureStorage.isTokenExpired();
+    bool isVersionValid = true;
+    final userDataJson = await secureStorage.getUserData();
+    if (userDataJson != null) {
+      try {
+        final userDataMap = jsonDecode(userDataJson);
+        final userVersion = userDataMap['versionApp']?.toString();
+        if (userVersion != null && userVersion != AppConstants.APP_VERSION) {
+          isVersionValid = false;
+          // Limpiar sesión si la versión no coincide
+          await secureStorage.clearSession();
+        }
+      } catch (_) {}
+    }
 
     if (mounted) {
       setState(() {
-        _isAuthenticated = !isTokenExpired;
+        _isAuthenticated = !isTokenExpired && isVersionValid;
         _isLoading = false;
       });
       
-      // Si el token expiró y estamos montados, redirigir al login
-      if (isTokenExpired && mounted) {
+      // Si el token expiró o la versión es inválida, redirigir al login
+      if ((!_isAuthenticated) && mounted) {
         // Small delay to let the UI render first
         Future.delayed(const Duration(milliseconds: 100), () {
           context.go(widget.redirectRoute);

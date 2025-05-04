@@ -1,6 +1,10 @@
 class AppConstants {
+
+  
   static const String baseUrl = 'http://192.168.3.107:9223';
   //static const String baseUrl = 'http://181.114.119.194:8800';
+  static const String APP_VERSION = "2.6.0";
+
   static const String loginEndpoint = '/auth/login';
   static const String menuEndpoint = '/view/vistaDinamica';
   static const String articulosEndpoint = '/paginaXApp/articulosX';
@@ -16,10 +20,10 @@ class AppConstants {
   static const String registrarCombustibleEndPoint = '/gasolina/registrar-gasolina';
   static const String listarCoches = '/gasolina/lst-coches';
   static const String listarKilometrajeCoches = '/gasolina/lst-kilometraje';
-  static const String registrarControlCombustibleMaqMont = '/gasolina-maquina/registrar-gmaquina';
-  static const String listarAlmacenes = '/gasolina-maquina/lst-almacenes';
-  static const String listarMaquinaMontacarga = '/gasolina-maquina/lst-maqmontacarga"';
-
+  static const String registrarControlCombustibleMaqMont = '/gasolinaMaquina/registrarMaquina';
+  static const String listarAlmacenes = '/gasolinaMaquina/lst-almacenes';
+  static const String listarMaquinaMontacarga = '/gasolinaMaquina/lst-maqmontacarga';
+  static const String listarBidonesXMaquina = '/gasolinaMaquina/lst-bidonesxMaquina';
 
 
 
