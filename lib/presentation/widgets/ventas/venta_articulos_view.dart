@@ -945,6 +945,14 @@ class _VentasArticulosViewState extends ConsumerState<VentasArticulosView> {
                     fontSize: 13,
                   ),
                 ),
+                Text(
+                  'UTM: ${articuloPrincipal.utm ?? ''}',
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onPrimary,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 13,
+                  ),
+                ),
               ],
             ),
           ),
@@ -1123,7 +1131,7 @@ class _VentasArticulosViewState extends ConsumerState<VentasArticulosView> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         // Código
-                        Text(
+                        SelectableText(
                           'Código: ${articuloPrincipal.codArticulo}',
                           style: const TextStyle(
                             fontWeight: FontWeight.w500,
@@ -1132,7 +1140,7 @@ class _VentasArticulosViewState extends ConsumerState<VentasArticulosView> {
                         ),
 
                         // Descripción
-                        Text(
+                        SelectableText(
                           articuloPrincipal.datoArt.toUpperCase(),
                           style: const TextStyle(fontSize: 14),
                         ),

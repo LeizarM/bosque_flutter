@@ -1,7 +1,7 @@
 name: bosque_flutter
-description: "A new Flutter project."
+description: "Bosque"
 publish_to: 'none'
-version: 0.1.0
+version: 1.0.0
 
 environment:
   sdk: ^3.7.2
@@ -10,6 +10,7 @@ dependencies:
   dio: ^5.8.0+1
   flutter:
     sdk: flutter
+  flutter_launcher_icons: ^0.14.3
   flutter_map: ^8.1.1
   flutter_riverpod: ^2.6.1
   flutter_secure_storage: ^9.2.4
@@ -29,6 +30,13 @@ dev_dependencies:
   flutter_lints: ^5.0.0
   flutter_test:
     sdk: flutter
+
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/icon/logo.png"
+  adaptive_icon_background: "assets/icon/logo.png"
+
 
 flutter:
   uses-material-design: true
