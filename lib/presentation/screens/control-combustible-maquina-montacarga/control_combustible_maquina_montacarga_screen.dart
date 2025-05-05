@@ -161,12 +161,26 @@ class _ControlCombustibleMaquinaMontacargaScreenState
         state.maquinasStatus == FetchStatus.loading ||
         state.registroStatus == RegistroStatus.loading;
     
-    // Verificar si el registro fue exitoso para resetear el formulario
+    // Verificar si el registro fue exitoso para resetear el formulario y mostrar SnackBar
     if (state.registroStatus == RegistroStatus.success) {
-      // Usar Future.delayed para no causar errores de setState durante el build
       Future.microtask(() {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Registro completado con éxito'),
+            backgroundColor: Colors.green,
+          ),
+        );
         _resetForm();
-        // Resetear el estado para no volver a entrar en esta condición
+        ref.read(controlCombustibleMaquinaMontacargaNotifierProvider.notifier).resetRegistroStatus();
+      });
+    } else if (state.registroStatus == RegistroStatus.error && state.errorMessage != null) {
+      Future.microtask(() {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(state.errorMessage!),
+            backgroundColor: Colors.red,
+          ),
+        );
         ref.read(controlCombustibleMaquinaMontacargaNotifierProvider.notifier).resetRegistroStatus();
       });
     }
@@ -189,6 +203,7 @@ class _ControlCombustibleMaquinaMontacargaScreenState
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min, // Cambiado de max a min para evitar error de constraints
             children: [
               // Tarjeta para el formulario
               Card(
@@ -197,6 +212,7 @@ class _ControlCombustibleMaquinaMontacargaScreenState
                   padding: EdgeInsets.all(isDesktop ? 24.0 : 16.0),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min, // Cambiado de max a min
                     children: [
                       Text(
                         'Registro de Control de Combustible',
@@ -292,8 +308,10 @@ class _ControlCombustibleMaquinaMontacargaScreenState
                       // Fila para litros de ingreso y salida con diseño responsivo
                       Flex(
                         direction: (isDesktop || isTablet) ? Axis.horizontal : Axis.vertical,
+                        mainAxisSize: MainAxisSize.min, // Cambiado de max a min
                         children: [
-                          Expanded(
+                          Flexible(
+                            fit: FlexFit.loose,
                             child: TextField(
                               controller: _litrosIngresoController,
                               keyboardType: TextInputType.number,
@@ -305,7 +323,8 @@ class _ControlCombustibleMaquinaMontacargaScreenState
                             ),
                           ),
                           SizedBox(width: (isDesktop || isTablet) ? 16 : 0, height: (isDesktop || isTablet) ? 0 : 16),
-                          Expanded(
+                          Flexible(
+                            fit: FlexFit.loose,
                             child: TextField(
                               controller: _litrosSalidaController,
                               keyboardType: TextInputType.number,
