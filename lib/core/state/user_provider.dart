@@ -174,6 +174,11 @@ class UserStateNotifier extends StateNotifier<LoginEntity?> {
     user.npassword = '123456789';
     return await _authRepository.changePassword(user);
   }
+
+  Future<bool> changePasswordDefault(LoginEntity user) async {
+   
+    return await _authRepository.changePassword(user);
+  }
 }
 
 // Definir un provider adicional para la lista de usuarios

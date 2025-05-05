@@ -5,4 +5,6 @@ abstract class AuthRepository {
   Future<List<LoginEntity>> getUsers();
 
   Future<bool> changePassword( LoginEntity user );
+
+  
 }

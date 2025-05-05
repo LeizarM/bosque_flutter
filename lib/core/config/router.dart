@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:bosque_flutter/core/network/dio_client.dart';
 import 'package:bosque_flutter/core/state/user_provider.dart';
 import 'package:bosque_flutter/core/utils/secure_storage.dart';
+import 'package:bosque_flutter/domain/entities/login_entity.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -149,6 +150,21 @@ final routerProvider = Provider<GoRouter>((ref) {
           redirect: (context, state) => '/dashboard/tgas_ControlCombustibleMaqMont/View',
         ),
         
+        GoRoute(
+          path: '/change-password',
+          name: 'change-password',
+          builder: (context, state) {
+            final user = state.extra as LoginEntity?;
+            if (user == null) {
+              // Si no hay usuario, redirigir al login
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                context.go('/login');
+              });
+              return const SizedBox.shrink();
+            }
+            return ChangePasswordScreen(user: user);
+          },
+        ),
       ],
       errorBuilder: (context, state) => Scaffold(
         appBar: AppBar(

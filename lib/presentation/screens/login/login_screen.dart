@@ -55,6 +55,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           }
           // Guardar los datos del usuario en el provider y en almacenamiento
           await ref.read(userProvider.notifier).setUser(loginEntity);
+          // Si la contraseña es la predeterminada, forzar cambio
+          if (_passwordController.text == '123456789') {
+            context.go('/change-password', extra: loginEntity);
+            return;
+          }
           context.go('/dashboard');
         } else {
           setState(() {
