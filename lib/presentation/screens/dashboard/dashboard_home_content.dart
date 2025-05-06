@@ -19,15 +19,7 @@ class DashboardHomeContent extends ConsumerWidget {
                   'Bienvenido, ${user.nombreCompleto}',
                   style: Theme.of(context).textTheme.headlineMedium,
                 ),
-                const SizedBox(height: 16),
-                Text(
-                  'Cargo: ${user.cargo}',
-                  style: Theme.of(context).textTheme.bodyLarge,
-                ),
-                Text(
-                  'Tipo de Usuario: ${user.tipoUsuario}',
-                  style: Theme.of(context).textTheme.bodyLarge,
-                ),
+                const SizedBox(height: 16)
               ],
             )
           : const Text('No hay datos de usuario disponibles'),
