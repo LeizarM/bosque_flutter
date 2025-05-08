@@ -35,8 +35,8 @@ class BancoXCuentaModel {
       BancoXCuentaModel(
         idBxC: json["idBxC"],
         codBanco: json["codBanco"],
-        numCuenta: json["numCuenta"],
-        moneda: json["moneda"],
+        numCuenta: json["numCuenta"] ?? "",
+        moneda: json["moneda"] ?? "",
         codEmpresa: json["codEmpresa"],
         audUsuario: json["audUsuario"],
         nombreBanco: json["nombreBanco"],

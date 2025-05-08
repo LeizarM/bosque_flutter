@@ -1,8 +1,5 @@
 class AppConstants {
-
-  //static const String baseUrl = 'https://app.esppapel.com:8443';
   static const String baseUrl = 'http://192.168.3.107:9223';
-  //static const String baseUrl = 'http://181.114.119.194:8800';
   static const String APP_VERSION = "1.0.0";
 
   static const String loginEndpoint = '/auth/login';
@@ -24,28 +21,21 @@ class AppConstants {
   static const String listarAlmacenes = '/gasolinaMaquina/lst-almacenes';
   static const String listarMaquinaMontacarga = '/gasolinaMaquina/lst-maqmontacarga';
   static const String listarBidonesXMaquina = '/gasolinaMaquina/lst-bidonesxMaquina';
-  
-  //Endpoints para la gestión de depósitos de cheques
+
+  // Endpoints para la gestión de depósitos de cheques
   static const String deplstEmpresas = '/deposito-cheque/lst-empresas';
   static const String deplstSocioNegocio = '/deposito-cheque/lst-socios-negocio';
   static const String deplstBancos = '/deposito-cheque/lst-banco';
+  static const String deplstNotaRemision = '/deposito-cheque/lst-notaRemision';
 
 
 
-
-
-
-
-
-  
   // Constantes para el servicio de geocodificación de Nominatim
   static const String nominatimBaseUrl = 'https://nominatim.openstreetmap.org';
   static const String nominatimReverseEndpoint = '/reverse';
   static const String nominatimUserAgent = 'Bosque';
-  
+
   // Constante para Google Maps Search
   static const String googleMapsSearchBaseUrl = 'https://www.google.com/maps/search/?api=1&query';
-  static const String googleMapsOpenStreetMaps= 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
-  
-  // Puedes agregar más endpoints aquí cuando sea necesario
+  static const String googleMapsOpenStreetMaps = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
 }

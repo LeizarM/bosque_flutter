@@ -18,8 +18,8 @@ class NotaRemisionModel {
   final int docNum;
   final DateTime fecha;
   final int numFact;
-  final int totalMonto;
-  final int saldoPendiente;
+  final double totalMonto;
+  final double saldoPendiente;
   final int audUsuario;
   final String codCliente;
   final String nombreCliente;

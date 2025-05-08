@@ -26,7 +26,7 @@ class EmpresaModel {
     codEmpresa: json["codEmpresa"],
     nombre: json["nombre"],
     codPadre: json["codPadre"],
-    sigla: json["sigla"],
+    sigla: json["sigla"] ?? "",
     audUsuario: json["audUsuario"],
   );
 

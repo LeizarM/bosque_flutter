@@ -1,11 +1,12 @@
 
 
 import 'dart:io';
+import 'package:bosque_flutter/data/models/nota_remision_model.dart';
+import 'package:dio/dio.dart';
 import 'package:bosque_flutter/core/constants/app_constants.dart';
 import 'package:bosque_flutter/data/models/banco_cuenta_model.dart';
 import 'package:bosque_flutter/data/models/empresa_model.dart';
 import 'package:bosque_flutter/data/models/socio_negocio_model.dart';
-import 'package:dio/dio.dart';
 import 'package:bosque_flutter/core/network/dio_client.dart';
 import 'package:bosque_flutter/domain/entities/banco_cuenta_entity.dart';
 import 'package:bosque_flutter/domain/entities/deposito_cheque_entity.dart';
@@ -45,7 +46,7 @@ class DepositoChequesImpl implements DepositoChequesRepository {
       }
       throw Exception(errorMessage);
     } catch (e) {
-      throw Exception('Error desconocido: ${e.toString()}');
+      throw Exception('Error desconocido getBancos por cuentas: ${e.toString()}');
     }
   }
 
@@ -75,15 +76,41 @@ class DepositoChequesImpl implements DepositoChequesRepository {
       }
       throw Exception(errorMessage);
     } catch (e) {
-      throw Exception('Error desconocido: ${e.toString()}');
+      throw Exception('Error desconocido getEmpresas: ${e.toString()}');
     }
 
   }
 
   @override
-  Future<List<NotaRemisionEntity>> getNotasRemision(int codEmpresa, String codCliente) {
-    // TODO: implement getNotasRemision
-    throw UnimplementedError();
+  Future<List<NotaRemisionEntity>> getNotasRemision(int codEmpresa, String codCliente) async {
+    try {
+      final response = await _dio.post(AppConstants.deplstNotaRemision, data: {
+        'codEmpresaBosque': codEmpresa,
+        'codCliente': codCliente
+      });
+
+      // El backend retorna: { message, data: [ ... ], status }
+      if (response.statusCode == 200 && response.data != null) {
+        final data = response.data['data'] ?? [];
+        final items = (data as List<dynamic>)
+            .map((json) => NotaRemisionModel.fromJson(json))
+            .toList();
+        
+        return items.map((model) => model.toEntity()).toList();
+      } else {
+        throw Exception('Error al obtener las notas de remisión por cliente');
+      }
+    } on DioException catch (e) {
+      // Manejar errores de red o del servidor
+      String errorMessage = 'Error de conexión: ${e.message}';
+      if (e.response != null && e.response!.data != null) {
+        errorMessage =
+            'Error del servidor: ${e.response!.statusCode} - ${e.response!.data.toString()}';
+      }
+      throw Exception(errorMessage);
+    } catch (e) {
+      throw Exception('Error desconocido getNotasRemision: ${e.toString()}');
+    }
   }
 
   @override
@@ -114,7 +141,7 @@ class DepositoChequesImpl implements DepositoChequesRepository {
       }
       throw Exception(errorMessage);
     } catch (e) {
-      throw Exception('Error desconocido: ${e.toString()}');
+      throw Exception('Error desconocido getSociosNegocio: ${e.toString()}');
     }
 
   }

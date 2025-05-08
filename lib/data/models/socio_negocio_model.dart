@@ -40,12 +40,12 @@ class SocioNegocioModel {
   factory SocioNegocioModel.fromJson(Map<String, dynamic> json) =>
       SocioNegocioModel(
         codCliente: json["codCliente"],
-        datoCliente: json["datoCliente"],
+        datoCliente: json["datoCliente"] ?? "",
         razonSocial: json["razonSocial"],
-        nit: json["nit"],
+        nit: json["nit"] ?? "",
         codCiudad: json["codCiudad"],
-        datoCiudad: json["datoCiudad"],
-        esVigente: json["esVigente"],
+        datoCiudad: json["datoCiudad"] ?? "",
+        esVigente: json["esVigente"] ?? "",
         codEmpresa: json["codEmpresa"],
         audUsuario: json["audUsuario"],
         nombreCompleto: json["nombreCompleto"],

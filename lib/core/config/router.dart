@@ -107,8 +107,14 @@ final routerProvider = Provider<GoRouter>((ref) {
               name: 'tgas_ControlCombustibleMaqMontView',
               builder: (context, state) => const ControlCombustibleMaquinaMontaCargaViewScreen(),
             ),
+            //Para registrar los depositos
+             GoRoute(
+              path: '/dashboard/tdep_Deposito/Registro',
+              name: 'tdep_DepositoReg',
+              builder: (context, state) => const DepositoChequeRegisterScreen(),
+            ),
 
-            // Productos
+            
           ],
         ),
         
@@ -148,6 +154,10 @@ final routerProvider = Provider<GoRouter>((ref) {
         GoRoute(
           path: '/tgas_ControlCombustibleMaqMont/View',
           redirect: (context, state) => '/dashboard/tgas_ControlCombustibleMaqMont/View',
+        ),
+         GoRoute(
+          path: '/tdep_Deposito/Registro',
+          redirect: (context, state) => '/dashboard/tdep_Deposito/Registro',
         ),
         
         GoRoute(
