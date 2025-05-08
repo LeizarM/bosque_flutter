@@ -1,9 +1,9 @@
 class AppConstants {
 
-  
+  //static const String baseUrl = 'https://app.esppapel.com:8443';
   static const String baseUrl = 'http://192.168.3.107:9223';
   //static const String baseUrl = 'http://181.114.119.194:8800';
-  static const String APP_VERSION = "2.6.0";
+  static const String APP_VERSION = "1.0.0";
 
   static const String loginEndpoint = '/auth/login';
   static const String menuEndpoint = '/view/vistaDinamica';
@@ -24,6 +24,11 @@ class AppConstants {
   static const String listarAlmacenes = '/gasolinaMaquina/lst-almacenes';
   static const String listarMaquinaMontacarga = '/gasolinaMaquina/lst-maqmontacarga';
   static const String listarBidonesXMaquina = '/gasolinaMaquina/lst-bidonesxMaquina';
+  
+  //Endpoints para la gestión de depósitos de cheques
+  static const String deplstEmpresas = '/deposito-cheque/lst-empresas';
+  static const String deplstSocioNegocio = '/deposito-cheque/lst-socios-negocio';
+  static const String deplstBancos = '/deposito-cheque/lst-banco';
 
 
 
