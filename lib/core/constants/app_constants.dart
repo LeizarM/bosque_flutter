@@ -27,6 +27,9 @@ class AppConstants {
   static const String deplstSocioNegocio = '/deposito-cheque/lst-socios-negocio';
   static const String deplstBancos = '/deposito-cheque/lst-banco';
   static const String deplstNotaRemision = '/deposito-cheque/lst-notaRemision';
+  static const String depRegister = '/deposito-cheque/registro';
+  static const String depRegisterNotaRemision = '/deposito-cheque/registrar-nota-remision';
+
 
 
 

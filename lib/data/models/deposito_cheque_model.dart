@@ -18,7 +18,7 @@ class DepositoChequeModel {
   final int estado;
   final String fotoPath;
   final double aCuenta;
-  final DateTime fechaI;
+  final DateTime? fechaI;
   final String nroTransaccion;
   final String obs;
   final int audUsuario;
@@ -44,7 +44,7 @@ class DepositoChequeModel {
     required this.estado,
     required this.fotoPath,
     required this.aCuenta,
-    required this.fechaI,
+    this.fechaI,
     required this.nroTransaccion,
     required this.obs,
     required this.audUsuario,
@@ -72,7 +72,7 @@ class DepositoChequeModel {
         estado: json["estado"],
         fotoPath: json["fotoPath"],
         aCuenta: json["aCuenta"]?.toDouble(),
-        fechaI: DateTime.parse(json["fechaI"]),
+        fechaI: json["fechaI"] != null ? DateTime.parse(json["fechaI"]) : null,
         nroTransaccion: json["nroTransaccion"],
         obs: json["obs"],
         audUsuario: json["audUsuario"],
@@ -99,7 +99,7 @@ class DepositoChequeModel {
     "estado": estado,
     "fotoPath": fotoPath,
     "aCuenta": aCuenta,
-    "fechaI": fechaI.toIso8601String(),
+    if (fechaI != null) "fechaI": fechaI!.toIso8601String(),
     "nroTransaccion": nroTransaccion,
     "obs": obs,
     "audUsuario": audUsuario,

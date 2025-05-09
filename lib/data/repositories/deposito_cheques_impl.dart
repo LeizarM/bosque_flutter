@@ -1,8 +1,12 @@
 
 
+import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';
+import 'package:bosque_flutter/data/models/deposito_cheque_model.dart';
 import 'package:bosque_flutter/data/models/nota_remision_model.dart';
 import 'package:dio/dio.dart';
+import 'package:http_parser/http_parser.dart';
 import 'package:bosque_flutter/core/constants/app_constants.dart';
 import 'package:bosque_flutter/data/models/banco_cuenta_model.dart';
 import 'package:bosque_flutter/data/models/empresa_model.dart';
@@ -14,6 +18,7 @@ import 'package:bosque_flutter/domain/entities/empresa_entity.dart';
 import 'package:bosque_flutter/domain/entities/nota_remision_entity.dart';
 import 'package:bosque_flutter/domain/entities/socio_negocio_entity.dart';
 import 'package:bosque_flutter/domain/repositories/deposito_cheques_repository.dart';
+import 'package:logger/logger.dart';
 
 class DepositoChequesImpl implements DepositoChequesRepository {
   
@@ -147,9 +152,79 @@ class DepositoChequesImpl implements DepositoChequesRepository {
   }
 
   @override
-  Future<bool> guardarNotaRemision(NotaRemisionEntity notaRemision) {
-    // TODO: implement guardarNotaRemision
-    throw UnimplementedError();
+  Future<bool> registrarDeposito(DepositoChequeEntity deposito, dynamic imagen) async {
+   final model = DepositoChequeModel.fromEntity(deposito);
+
+
+    try {
+      
+      MultipartFile multipartFile;
+
+      if (imagen is Uint8List) {
+        multipartFile = MultipartFile.fromBytes(
+          imagen,
+          filename: "imagen.jpg",
+          contentType: MediaType('image', 'jpeg'),
+        );
+      } else if (imagen is File) {
+        multipartFile = await MultipartFile.fromFile(
+          imagen.path,
+          filename: "imagen.jpg",
+          contentType: MediaType('image', 'jpeg'),
+        );
+      } else {
+        throw Exception('Formato de imagen no soportado');
+      }
+      
+      FormData formData = FormData.fromMap({
+        'depositoCheque': jsonEncode(model.toJson()),
+        'file': multipartFile,
+      });
+      
+      final response = await _dio.post(
+        AppConstants.depRegister,
+        data: formData, // Asegúrate de que EntregaEntity tenga un método toJson()
+      );
+
+      return response.statusCode == 200 || response.statusCode == 201;
+    } on DioException catch (e) {
+      // Manejar errores de red o del servidor
+      String errorMessage = 'Error de conexión: ${e.message}';
+      if (e.response != null && e.response!.data != null) {
+        errorMessage =
+            'Error del servidor: ${e.response!.statusCode} - ${e.response!.data.toString()}';
+      }
+      throw Exception(errorMessage);
+    } catch (e) {
+      throw Exception('Error desconocido registrarDeposito: ${e.toString()}');
+    }
+  }
+  
+
+  @override
+  Future<bool> guardarNotaRemision(NotaRemisionEntity notaRemision) async {
+    final model = NotaRemisionModel.fromEntity(notaRemision);
+
+    Logger().d('NotaRemisionModel: ${model.toJson()}'); 
+
+    try {
+      final response = await _dio.post(
+        AppConstants.depRegisterNotaRemision,
+        data: model.toJson(), // Asegúrate de que EntregaEntity tenga un método toJson()
+      );
+
+      return response.statusCode == 200 || response.statusCode == 201;
+    } on DioException catch (e) {
+      // Manejar errores de red o del servidor
+      String errorMessage = 'Error de conexión: ${e.message}';
+      if (e.response != null && e.response!.data != null) {
+        errorMessage =
+            'Error del servidor: ${e.response!.statusCode} - ${e.response!.data.toString()}';
+      }
+      throw Exception(errorMessage);
+    } catch (e) {
+      throw Exception('Error desconocido guardarNotaRemision: ${e.toString()}');
+    }
   }
 
   @override
@@ -164,11 +239,6 @@ class DepositoChequesImpl implements DepositoChequesRepository {
     throw UnimplementedError();
   }
 
-  @override
-  Future<bool> registrarDeposito(DepositoChequeEntity deposito, File imagen) {
-    // TODO: implement registrarDeposito
-    throw UnimplementedError();
-  }
   
 
 

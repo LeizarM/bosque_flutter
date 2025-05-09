@@ -138,8 +138,33 @@ class DepositoChequeRegisterScreen extends ConsumerWidget {
                             child: const Text('Cancelar'),
                           ),
                           ElevatedButton.icon(
-                            onPressed: () {
-                              // Aquí iría la lógica de guardar
+                            onPressed: () async {
+                              final tieneNotas = state.notasSeleccionadas.isNotEmpty;
+                              final tieneACuenta = state.aCuenta > 0;
+                              if (!(tieneNotas || tieneACuenta) || state.importeTotal <= 0) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(content: Text('Debe seleccionar al menos una nota de remisión o ingresar un valor a cuenta mayor a 0. El importe total debe ser mayor a 0.')),
+                                );
+                                return;
+                              }
+                              try {
+                                // Imagen puede ser File (móvil) o Uint8List (web)
+                                final imageBytes = ref.read(imageBytesProvider);
+                                final imagen = kIsWeb ? imageBytes : state.imagenDeposito;
+                                final okDeposito = await notifier.registrarDeposito(imagen);
+                                if (!okDeposito) throw Exception('No se pudo registrar el depósito');
+                                final okNotas = await notifier.guardarNotasRemision();
+                                if (!okNotas) throw Exception('No se pudieron registrar todas las notas de remisión');
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(content: Text('Depósito y notas de remisión registrados correctamente.')),
+                                );
+                                notifier.limpiarFormulario();
+                                ref.read(imageBytesProvider.notifier).state = null;
+                              } catch (e) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(content: Text('Error: ${e.toString()}')),
+                                );
+                              }
                             },
                             icon: const Icon(Icons.save),
                             label: const Text('Guardar'),
@@ -427,7 +452,7 @@ class DepositoChequeRegisterScreen extends ConsumerWidget {
     );
   }
 
-  // Campo de Importe Total
+  // Campo de Importe Total (solo lectura y calculado en tiempo real)
   Widget _buildImporteTotalField(BuildContext context, dynamic state, dynamic notifier) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -445,14 +470,18 @@ class DepositoChequeRegisterScreen extends ConsumerWidget {
           ),
         ),
         SizedBox(height: 8),
-        TextFormField(
-          initialValue: state.importeTotal.toStringAsFixed(2),
-          keyboardType: TextInputType.number,
-          decoration: const InputDecoration(
-            border: OutlineInputBorder(),
-            contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+          decoration: BoxDecoration(
+            border: Border.all(color: Colors.grey),
+            borderRadius: BorderRadius.circular(4),
+            color: Colors.grey.shade100,
           ),
-          onChanged: (v) => notifier.setImporteTotal(double.tryParse(v) ?? 0.0),
+          child: Text(
+            state.importeTotal.toStringAsFixed(2),
+            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+          ),
         ),
       ],
     );
@@ -766,6 +795,13 @@ class DepositoChequeRegisterScreen extends ConsumerWidget {
         totalSeleccionados += saldosEditados[nota.docNum]?.toDouble() ?? nota.saldoPendiente.toDouble();
       }
     }
+    // Actualizar el importe total automáticamente
+    final double nuevoImporteTotal = totalSeleccionados + (state.aCuenta ?? 0);
+    if (state.importeTotal != nuevoImporteTotal) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        notifier.setImporteTotal(nuevoImporteTotal);
+      });
+    }
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -778,13 +814,12 @@ class DepositoChequeRegisterScreen extends ConsumerWidget {
           scrollDirection: Axis.horizontal,
           child: DataTable(
             columns: const [
-              DataColumn(label: Text('')),
-              DataColumn(label: Text('Número de Documento')),
-              DataColumn(label: Text('Num. Factura')),
-              DataColumn(label: Text('Fecha')),
-              DataColumn(label: Text('Cliente')),
-              DataColumn(label: Text('Total (Bs)')),
-              DataColumn(label: Text('Saldo Pendiente (Bs)')),
+              DataColumn(label: Text('Número de Documento', style: TextStyle(color: Colors.green))),
+              DataColumn(label: Text('Num. Factura', style: TextStyle(color: Colors.green))),
+              DataColumn(label: Text('Fecha', style: TextStyle(color: Colors.green))),
+              DataColumn(label: Text('Cliente', style: TextStyle(color: Colors.green))),
+              DataColumn(label: Text('Total (Bs)', style: TextStyle(color: Colors.green))),
+              DataColumn(label: Text('Saldo Pendiente (Bs)', style: TextStyle(color: Colors.green))),
             ],
             rows: notas.map<DataRow>((nota) {
               final seleccionado = seleccionadas.contains(nota.docNum);
@@ -795,12 +830,6 @@ class DepositoChequeRegisterScreen extends ConsumerWidget {
                   notifier.seleccionarNota(nota.docNum, selected ?? false);
                 },
                 cells: [
-                  DataCell(Checkbox(
-                    value: seleccionado,
-                    onChanged: (selected) {
-                      notifier.seleccionarNota(nota.docNum, selected ?? false);
-                    },
-                  )),
                   DataCell(Text(nota.docNum.toString())),
                   DataCell(Text(nota.numFact.toString())),
                   DataCell(Text('${nota.fecha.day.toString().padLeft(2, '0')}/${nota.fecha.month.toString().padLeft(2, '0')}/${nota.fecha.year}')),
@@ -815,7 +844,9 @@ class DepositoChequeRegisterScreen extends ConsumerWidget {
                             keyboardType: TextInputType.number,
                             onChanged: (v) {
                               final val = double.tryParse(v) ?? 0.0;
-                              notifier.editarSaldoPendiente(nota.docNum, val);
+                              if (val <= nota.saldoPendiente) {
+                                notifier.editarSaldoPendiente(nota.docNum, val);
+                              }
                             },
                             decoration: const InputDecoration(
                               border: OutlineInputBorder(),

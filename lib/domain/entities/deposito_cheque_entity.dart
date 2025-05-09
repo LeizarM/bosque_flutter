@@ -8,7 +8,7 @@ class DepositoChequeEntity {
     final int estado;
     final String fotoPath;
     final double aCuenta;
-    final DateTime fechaI;
+    final DateTime? fechaI;
     final String nroTransaccion;
     final String obs;
     final int audUsuario;
@@ -34,7 +34,7 @@ class DepositoChequeEntity {
         required this.estado,
         required this.fotoPath,
         required this.aCuenta,
-        required this.fechaI,
+        this.fechaI,
         required this.nroTransaccion,
         required this.obs,
         required this.audUsuario,

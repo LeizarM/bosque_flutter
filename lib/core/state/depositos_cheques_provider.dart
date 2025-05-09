@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:bosque_flutter/domain/entities/deposito_cheque_entity.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:bosque_flutter/domain/entities/empresa_entity.dart';
 import 'package:bosque_flutter/domain/entities/socio_negocio_entity.dart';
@@ -30,8 +31,8 @@ class DepositosChequesState {
     this.clienteSeleccionado,
     this.bancos = const [],
     this.bancoSeleccionado,
-    this.monedas = const ['Bolivianos', 'Dólares'],
-    this.monedaSeleccionada = 'Bolivianos',
+    this.monedas = const ['BS', 'USD'],
+    this.monedaSeleccionada = 'BS',
     this.aCuenta = 0.0,
     this.importeTotal = 0.0,
     this.imagenDeposito,
@@ -109,7 +110,13 @@ class DepositosChequesNotifier extends StateNotifier<DepositosChequesState> {
   }
 
   Future<void> seleccionarCliente(SocioNegocioEntity? cliente) async {
-    state = state.copyWith(clienteSeleccionado: cliente, notasRemision: [], notasSeleccionadas: [], saldosEditados: {});
+    state = state.copyWith(
+      clienteSeleccionado: cliente,
+      notasRemision: [],
+      notasSeleccionadas: [],
+      saldosEditados: {},
+      importeTotal: 0.0,
+    );
     if (cliente != null && state.empresaSeleccionada != null) {
       state = state.copyWith(cargando: true);
       final notas = await _repo.getNotasRemision(state.empresaSeleccionada!.codEmpresa, cliente.codCliente);
@@ -127,18 +134,6 @@ class DepositosChequesNotifier extends StateNotifier<DepositosChequesState> {
     }
   }
 
-  void setACuenta(double value) {
-    state = state.copyWith(aCuenta: value);
-  }
-
-  void setImporteTotal(double value) {
-    state = state.copyWith(importeTotal: value);
-  }
-
-  void setImagenDeposito(File? file) {
-    state = state.copyWith(imagenDeposito: file);
-  }
-
   void seleccionarNota(int docNum, bool selected) {
     final seleccionadas = [...state.notasSeleccionadas];
     if (selected) {
@@ -146,17 +141,120 @@ class DepositosChequesNotifier extends StateNotifier<DepositosChequesState> {
     } else {
       seleccionadas.remove(docNum);
     }
-    state = state.copyWith(notasSeleccionadas: seleccionadas);
+    final nuevoImporteTotal = _calcularImporteTotal(
+      seleccionadas,
+      state.saldosEditados,
+      state.notasRemision,
+      state.aCuenta,
+    );
+    state = state.copyWith(notasSeleccionadas: seleccionadas, importeTotal: nuevoImporteTotal);
   }
 
   void editarSaldoPendiente(int docNum, double nuevoSaldo) {
     final nuevosSaldos = Map<int, double>.from(state.saldosEditados);
     nuevosSaldos[docNum] = nuevoSaldo;
-    state = state.copyWith(saldosEditados: nuevosSaldos);
+    final nuevoImporteTotal = _calcularImporteTotal(
+      state.notasSeleccionadas,
+      nuevosSaldos,
+      state.notasRemision,
+      state.aCuenta,
+    );
+    state = state.copyWith(saldosEditados: nuevosSaldos, importeTotal: nuevoImporteTotal);
+  }
+
+  void setACuenta(double value) {
+    final nuevoImporteTotal = _calcularImporteTotal(
+      state.notasSeleccionadas,
+      state.saldosEditados,
+      state.notasRemision,
+      value,
+    );
+    state = state.copyWith(aCuenta: value, importeTotal: nuevoImporteTotal);
+  }
+
+  double _calcularImporteTotal(List<int> seleccionadas, Map<int, double> saldosEditados, List<NotaRemisionEntity> notas, double aCuenta) {
+    double totalSeleccionados = 0;
+    for (var nota in notas) {
+      if (seleccionadas.contains(nota.docNum)) {
+        totalSeleccionados += saldosEditados[nota.docNum]?.toDouble() ?? nota.saldoPendiente.toDouble();
+      }
+    }
+    return totalSeleccionados + (aCuenta);
   }
 
   void limpiarFormulario() {
     state = DepositosChequesState(empresas: state.empresas);
+  }
+
+  Future<bool> registrarDeposito(dynamic imagen) async {
+    state = state.copyWith(cargando: true);
+    try {
+      // Construir entidad DepositoChequeEntity (sin fechaI, el backend la genera)
+      final deposito = DepositoChequeEntity(
+        idDeposito: 0,
+        codCliente: state.clienteSeleccionado?.codCliente ?? '',
+        codEmpresa: state.empresaSeleccionada?.codEmpresa ?? 0,
+        idBxC: state.bancoSeleccionado?.idBxC ?? 0,
+        importe: state.importeTotal,
+        moneda: state.monedaSeleccionada,
+        estado: 1,
+        fotoPath: '',
+        aCuenta: state.aCuenta,
+        fechaI: null, // Enviar como null
+        nroTransaccion: '',
+        obs: '',
+        audUsuario: 0,
+        codBanco: state.bancoSeleccionado?.codBanco ?? 0,
+        fechaInicio: DateTime.now(),
+        fechaFin: DateTime.now(),
+        nombreBanco: state.bancoSeleccionado?.nombreBanco ?? '',
+        nombreEmpresa: state.empresaSeleccionada?.nombre ?? '',
+        esPendiente: '',
+        numeroDeDocumentos: state.notasSeleccionadas.length.toString(),
+        fechasDeDepositos: '',
+        numeroDeFacturas: '',
+        totalMontos: '',
+        estadoFiltro: '',
+      );
+      final result = await _repo.registrarDeposito(deposito, imagen);
+      state = state.copyWith(cargando: false);
+      return result;
+    } catch (e) {
+      state = state.copyWith(cargando: false);
+      rethrow;
+    }
+  }
+
+  Future<bool> guardarNotasRemision() async {
+    state = state.copyWith(cargando: true);
+    try {
+      bool allOk = true;
+      for (final docNum in state.notasSeleccionadas) {
+        final nota = state.notasRemision.firstWhere((n) => n.docNum == docNum);
+        final saldoEditado = state.saldosEditados[docNum] ?? nota.saldoPendiente;
+        final notaEditada = NotaRemisionEntity(
+          idNr: nota.idNr,
+          idDeposito: nota.idDeposito,
+          docNum: nota.docNum,
+          fecha: nota.fecha,
+          numFact: nota.numFact,
+          totalMonto: nota.totalMonto,
+          saldoPendiente: saldoEditado,
+          audUsuario: nota.audUsuario,
+          codCliente: nota.codCliente,
+          nombreCliente: nota.nombreCliente,
+          db: nota.db,
+          codEmpresaBosque: nota.codEmpresaBosque,
+        );
+        final ok = await _repo.guardarNotaRemision(notaEditada);
+        if (!ok) allOk = false;
+      }
+      state = state.copyWith(cargando: false);
+      return allOk;
+    } catch (e) {
+      state = state.copyWith(cargando: false);
+      rethrow;
+    }
   }
 }
 
