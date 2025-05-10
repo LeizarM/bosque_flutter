@@ -103,7 +103,12 @@ class DepositosChequesNotifier extends StateNotifier<DepositosChequesState> {
     if (empresa != null) {
       final clientes = await _repo.getSociosNegocio(empresa.codEmpresa);
       final bancos = await _repo.getBancos(empresa.codEmpresa);
-      state = state.copyWith(clientes: clientes, bancos: bancos, cargando: false);
+      // Si no hay clientes, quitar cargando y dejar la lista vacía
+      if (clientes.isEmpty) {
+        state = state.copyWith(clientes: [], bancos: bancos, cargando: false);
+      } else {
+        state = state.copyWith(clientes: clientes, bancos: bancos, cargando: false);
+      }
     } else {
       state = state.copyWith(cargando: false);
     }

@@ -141,16 +141,27 @@ class DepositoChequeRegisterScreen extends ConsumerWidget {
                             onPressed: () async {
                               final tieneNotas = state.notasSeleccionadas.isNotEmpty;
                               final tieneACuenta = state.aCuenta > 0;
+                              if (state.bancoSeleccionado == null) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(content: Text('Debe seleccionar un banco.')),
+                                );
+                                return;
+                              }
                               if (!(tieneNotas || tieneACuenta) || state.importeTotal <= 0) {
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   const SnackBar(content: Text('Debe seleccionar al menos una nota de remisión o ingresar un valor a cuenta mayor a 0. El importe total debe ser mayor a 0.')),
                                 );
                                 return;
                               }
+                              final imageBytes = ref.read(imageBytesProvider);
+                              final imagen = kIsWeb ? imageBytes : state.imagenDeposito;
+                              if (imagen == null) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(content: Text('Debe cargar una imagen del depósito.')),
+                                );
+                                return;
+                              }
                               try {
-                                // Imagen puede ser File (móvil) o Uint8List (web)
-                                final imageBytes = ref.read(imageBytesProvider);
-                                final imagen = kIsWeb ? imageBytes : state.imagenDeposito;
                                 final okDeposito = await notifier.registrarDeposito(imagen);
                                 if (!okDeposito) throw Exception('No se pudo registrar el depósito');
                                 final okNotas = await notifier.guardarNotasRemision();
@@ -333,13 +344,17 @@ class DepositoChequeRegisterScreen extends ConsumerWidget {
         ),
         SizedBox(height: 8),
         // Verificamos si hay clientes para mostrar
-        state.clientes.isEmpty
-            ? TextField(
-                enabled: false,
-                decoration: InputDecoration(
-                  border: OutlineInputBorder(),
-                  hintText: 'Seleccione una empresa primero',
-                  contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+        state.clientes.isEmpty && state.empresaSeleccionada != null
+            ? Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  border: Border.all(color: Colors.red),
+                  borderRadius: BorderRadius.circular(4),
+                  color: Colors.red.shade50,
+                ),
+                child: const Text(
+                  'No existen clientes para la empresa seleccionada.',
+                  style: TextStyle(color: Colors.red),
                 ),
               )
             : Stack(
@@ -489,11 +504,15 @@ class DepositoChequeRegisterScreen extends ConsumerWidget {
 
   // Campo de Moneda
   Widget _buildMonedaField(BuildContext context, dynamic state, dynamic notifier) {
-    // Corregir el error de tipo generando explícitamente los DropdownMenuItem<dynamic>
-    final monedaItems = state.monedas.map<DropdownMenuItem<dynamic>>((m) => 
-      DropdownMenuItem<dynamic>(
-        value: m,
-        child: Text(m),
+    // Opciones con label y valor
+    final monedaOptions = const [
+      {'label': 'Bolivianos', 'value': 'BS'},
+      {'label': 'Dólares', 'value': 'USD'},
+    ];
+    final monedaItems = monedaOptions.map<DropdownMenuItem<String>>((m) =>
+      DropdownMenuItem<String>(
+        value: m['value']!,
+        child: Text(m['label']!),
       )
     ).toList();
 
@@ -513,7 +532,7 @@ class DepositoChequeRegisterScreen extends ConsumerWidget {
           ),
         ),
         SizedBox(height: 8),
-        DropdownButtonFormField<dynamic>(  // Especificar el tipo genérico aquí
+        DropdownButtonFormField<String>(
           value: state.monedaSeleccionada,
           items: monedaItems,
           onChanged: (value) => notifier.seleccionarMoneda(value),
@@ -795,13 +814,13 @@ class DepositoChequeRegisterScreen extends ConsumerWidget {
         totalSeleccionados += saldosEditados[nota.docNum]?.toDouble() ?? nota.saldoPendiente.toDouble();
       }
     }
-    // Actualizar el importe total automáticamente
     final double nuevoImporteTotal = totalSeleccionados + (state.aCuenta ?? 0);
     if (state.importeTotal != nuevoImporteTotal) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         notifier.setImporteTotal(nuevoImporteTotal);
       });
     }
+    final isMobile = MediaQuery.of(context).size.width < 600;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -837,23 +856,16 @@ class DepositoChequeRegisterScreen extends ConsumerWidget {
                   DataCell(Text(nota.totalMonto.toString())),
                   DataCell(
                     seleccionado
-                      ? SizedBox(
-                          width: 100,
-                          child: TextFormField(
-                            initialValue: saldoValue,
-                            keyboardType: TextInputType.number,
-                            onChanged: (v) {
-                              final val = double.tryParse(v) ?? 0.0;
-                              if (val <= nota.saldoPendiente) {
-                                notifier.editarSaldoPendiente(nota.docNum, val);
-                              }
-                            },
-                            decoration: const InputDecoration(
-                              border: OutlineInputBorder(),
-                              isDense: true,
-                              contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-                            ),
-                          ),
+                      ? _EditableSaldoPendienteCell(
+                          valorOriginal: nota.saldoPendiente,
+                          valorActual: saldoValue,
+                          onChanged: (v, showError) {
+                            final val = double.tryParse(v) ?? 0.0;
+                            if (val <= nota.saldoPendiente) {
+                              notifier.editarSaldoPendiente(nota.docNum, val);
+                            }
+                            showError(val > nota.saldoPendiente);
+                          },
                         )
                       : Text(nota.saldoPendiente.toString()),
                   ),
@@ -1044,3 +1056,86 @@ class DottedBorder extends StatelessWidget {
 }
 
 enum BorderType { RRect }
+
+// Widget para celda editable de saldo pendiente con validación y error en tiempo real
+class _EditableSaldoPendienteCell extends StatefulWidget {
+  final double valorOriginal;
+  final String valorActual;
+  final void Function(String, void Function(bool)) onChanged;
+  const _EditableSaldoPendienteCell({
+    required this.valorOriginal,
+    required this.valorActual,
+    required this.onChanged,
+    Key? key,
+  }) : super(key: key);
+
+  @override
+  State<_EditableSaldoPendienteCell> createState() => _EditableSaldoPendienteCellState();
+}
+
+class _EditableSaldoPendienteCellState extends State<_EditableSaldoPendienteCell> {
+  late TextEditingController _controller;
+  String? _errorText;
+  final FocusNode _focusNode = FocusNode();
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController(text: widget.valorActual);
+  }
+
+  @override
+  void didUpdateWidget(covariant _EditableSaldoPendienteCell oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Solo actualiza el texto si el valor cambió y el campo NO tiene el foco
+    if (oldWidget.valorActual != widget.valorActual && !_focusNode.hasFocus) {
+      _controller.text = widget.valorActual;
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SizedBox(
+          width: 100,
+          child: TextFormField(
+            controller: _controller,
+            keyboardType: TextInputType.number,
+            focusNode: _focusNode,
+            onChanged: (v) {
+              final val = double.tryParse(v) ?? 0.0;
+              if (val > widget.valorOriginal) {
+                setState(() {
+                  _errorText = 'No puede ser mayor al saldo original';
+                });
+              } else {
+                setState(() {
+                  _errorText = null;
+                });
+              }
+              widget.onChanged(v, (show) {
+                setState(() {
+                  _errorText = show ? 'No puede ser mayor al saldo original' : null;
+                });
+              });
+            },
+            decoration: InputDecoration(
+              border: const OutlineInputBorder(),
+              isDense: true,
+              contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+              errorText: _errorText,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
