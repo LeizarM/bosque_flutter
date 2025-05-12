@@ -138,45 +138,47 @@ class DepositoChequeRegisterScreen extends ConsumerWidget {
                             child: const Text('Cancelar'),
                           ),
                           ElevatedButton.icon(
-                            onPressed: () async {
-                              final tieneNotas = state.notasSeleccionadas.isNotEmpty;
-                              final tieneACuenta = state.aCuenta > 0;
-                              if (state.bancoSeleccionado == null) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(content: Text('Debe seleccionar un banco.')),
-                                );
-                                return;
-                              }
-                              if (!(tieneNotas || tieneACuenta) || state.importeTotal <= 0) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(content: Text('Debe seleccionar al menos una nota de remisión o ingresar un valor a cuenta mayor a 0. El importe total debe ser mayor a 0.')),
-                                );
-                                return;
-                              }
-                              final imageBytes = ref.read(imageBytesProvider);
-                              final imagen = kIsWeb ? imageBytes : state.imagenDeposito;
-                              if (imagen == null) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(content: Text('Debe cargar una imagen del depósito.')),
-                                );
-                                return;
-                              }
-                              try {
-                                final okDeposito = await notifier.registrarDeposito(imagen);
-                                if (!okDeposito) throw Exception('No se pudo registrar el depósito');
-                                final okNotas = await notifier.guardarNotasRemision();
-                                if (!okNotas) throw Exception('No se pudieron registrar todas las notas de remisión');
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(content: Text('Depósito y notas de remisión registrados correctamente.')),
-                                );
-                                notifier.limpiarFormulario();
-                                ref.read(imageBytesProvider.notifier).state = null;
-                              } catch (e) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(content: Text('Error: ${e.toString()}')),
-                                );
-                              }
-                            },
+                            onPressed: _isGuardarEnabled(state, ref)
+                                ? () async {
+                                    final tieneNotas = state.notasSeleccionadas.isNotEmpty;
+                                    final tieneACuenta = state.aCuenta > 0;
+                                    if (state.bancoSeleccionado == null) {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        const SnackBar(content: Text('Debe seleccionar un banco.')),
+                                      );
+                                      return;
+                                    }
+                                    if (!(tieneNotas || tieneACuenta) || state.importeTotal <= 0) {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        const SnackBar(content: Text('Debe seleccionar al menos una nota de remisión o ingresar un valor a cuenta mayor a 0. El importe total debe ser mayor a 0.')),
+                                      );
+                                      return;
+                                    }
+                                    final imageBytes = ref.read(imageBytesProvider);
+                                    final imagen = kIsWeb ? imageBytes : state.imagenDeposito;
+                                    if (imagen == null) {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        const SnackBar(content: Text('Debe cargar una imagen del depósito.')),
+                                      );
+                                      return;
+                                    }
+                                    try {
+                                      final okDeposito = await notifier.registrarDeposito(imagen);
+                                      if (!okDeposito) throw Exception('No se pudo registrar el depósito');
+                                      final okNotas = await notifier.guardarNotasRemision();
+                                      if (!okNotas) throw Exception('No se pudieron registrar todas las notas de remisión');
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        const SnackBar(content: Text('Depósito y notas de remisión registrados correctamente.')),
+                                      );
+                                      notifier.limpiarFormulario();
+                                      ref.read(imageBytesProvider.notifier).state = null;
+                                    } catch (e) {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        SnackBar(content: Text('Error: ${e.toString()}')),
+                                      );
+                                    }
+                                  }
+                                : null,
                             icon: const Icon(Icons.save),
                             label: const Text('Guardar'),
                             style: ElevatedButton.styleFrom(
@@ -875,8 +877,9 @@ class DepositoChequeRegisterScreen extends ConsumerWidget {
           ),
         ),
         SizedBox(height: 8),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        Wrap(
+          spacing: 16,
+          runSpacing: 4,
           children: [
             Text('Total de documentos: ${notas.length}'),
             Text('Documentos seleccionados: ${seleccionadas.length} | Total de documentos: ${totalSeleccionados.toStringAsFixed(2)}'),
@@ -884,6 +887,22 @@ class DepositoChequeRegisterScreen extends ConsumerWidget {
         ),
       ],
     );
+  }
+
+  bool _isGuardarEnabled(dynamic state, WidgetRef ref) {
+    final tieneNotas = state.notasSeleccionadas.isNotEmpty;
+    final tieneACuenta = state.aCuenta > 0;
+    final bancoSeleccionado = state.bancoSeleccionado != null;
+    final imagen = kIsWeb ? ref.read(imageBytesProvider) : state.imagenDeposito;
+    final imagenCargada = imagen != null;
+    final importeValido = state.importeTotal > 0;
+    // Validar que todos los saldos editados sean <= al original
+    final saldosValidos = (state.notasSeleccionadas as List<int>).every((docNum) {
+      final nota = state.notasRemision.firstWhere((n) => n.docNum == docNum);
+      final saldoEditado = state.saldosEditados[docNum] ?? nota.saldoPendiente;
+      return saldoEditado <= nota.saldoPendiente;
+    });
+    return bancoSeleccionado && imagenCargada && importeValido && (tieneNotas || tieneACuenta) && saldosValidos;
   }
 }
 
@@ -1101,8 +1120,9 @@ class _EditableSaldoPendienteCellState extends State<_EditableSaldoPendienteCell
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+    return Wrap(
+      direction: Axis.vertical,
+      crossAxisAlignment: WrapCrossAlignment.start,
       children: [
         SizedBox(
           width: 100,
@@ -1131,10 +1151,20 @@ class _EditableSaldoPendienteCellState extends State<_EditableSaldoPendienteCell
               border: const OutlineInputBorder(),
               isDense: true,
               contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-              errorText: _errorText,
+              errorText: null, // No uses errorText aquí, lo mostramos abajo
             ),
           ),
         ),
+        if (_errorText != null)
+          Padding(
+            padding: const EdgeInsets.only(top: 2, left: 4, right: 4),
+            child: Text(
+              _errorText!,
+              style: const TextStyle(color: Colors.red, fontSize: 11),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
       ],
     );
   }
