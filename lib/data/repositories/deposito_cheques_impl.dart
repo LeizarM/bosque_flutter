@@ -16,6 +16,7 @@ import 'package:bosque_flutter/domain/entities/empresa_entity.dart';
 import 'package:bosque_flutter/domain/entities/nota_remision_entity.dart';
 import 'package:bosque_flutter/domain/entities/socio_negocio_entity.dart';
 import 'package:bosque_flutter/domain/repositories/deposito_cheques_repository.dart';
+import 'package:intl/intl.dart';
 import 'package:logger/logger.dart';
 
 class DepositoChequesImpl implements DepositoChequesRepository {
@@ -188,9 +189,6 @@ class DepositoChequesImpl implements DepositoChequesRepository {
   @override
   Future<bool> guardarNotaRemision(NotaRemisionEntity notaRemision) async {
     final model = NotaRemisionModel.fromEntity(notaRemision);
-
-    Logger().d('NotaRemisionModel: ${model.toJson()}'); 
-
     try {
       final response = await _dio.post(
         AppConstants.depRegisterNotaRemision,
@@ -212,16 +210,49 @@ class DepositoChequesImpl implements DepositoChequesRepository {
   }
 
   @override
-  Future<List<DepositoChequeEntity>> lstDepositxIdentificar(int idBxC, DateTime fechaInicio, DateTime fechaFin, String codCliente) {
+  Future<List<DepositoChequeEntity>> obtenerDepositos(int codEmpresa, int idBxC, DateTime? fechaInicio, DateTime? fechaFin, String codCliente, String estadoFiltro) async {
+    final Map<String, dynamic> data = {
+      'codEmpresa': codEmpresa,
+      'idBxC': idBxC,
+      'codCliente': codCliente,
+      'estadoFiltro': estadoFiltro,
+    };
+    if (fechaInicio != null) {
+      data['fechaInicio'] = DateFormat('yyyy-MM-dd').format(fechaInicio);
+    } else {
+      data.remove('fechaInicio');
+    }
+    if (fechaFin != null) {
+      data['fechaFin'] = DateFormat('yyyy-MM-dd').format(fechaFin);
+    } else {
+      data.remove('fechaFin');
+    }
+    Logger().d('Data para obtenerDepositos: $data');
+    try {
+      final response = await _dio.post(AppConstants.depListarDepositos, data: data);
+      if (response.statusCode == 200 && response.data != null) {
+        final data = response.data['data'] ?? [];
+        final items = (data as List<dynamic>)
+            .map((json) => DepositoChequeModel.fromJson(json))
+            .toList();
+        return items.map((model) => model.toEntity()).toList();
+      } else {
+        return [];
+      }
+    } on DioException catch (e) {
+      return [];
+    } catch (e) {
+      return [];
+    }
+  }
+  
+  @override
+  Future<List<DepositoChequeEntity>> lstDepositxIdentificar(int idBxC, DateTime? fechaInicio, DateTime? fechaFin, String codCliente) {
     // TODO: implement lstDepositxIdentificar
     throw UnimplementedError();
   }
 
-  @override
-  Future<List<DepositoChequeEntity>> obtenerDepositos(int codEmpresa, int idBxC, DateTime fechaInicio, DateTime fechaFin, String codCliente, String estadoFiltro) {
-    // TODO: implement obtenerDepositos
-    throw UnimplementedError();
-  }
+  
 
   
 

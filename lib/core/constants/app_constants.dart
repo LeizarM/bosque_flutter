@@ -29,6 +29,7 @@ class AppConstants {
   static const String deplstNotaRemision = '/deposito-cheque/lst-notaRemision';
   static const String depRegister = '/deposito-cheque/registro';
   static const String depRegisterNotaRemision = '/deposito-cheque/registrar-nota-remision';
+  static const String depListarDepositos = '/deposito-cheque/listar';
 
 
 

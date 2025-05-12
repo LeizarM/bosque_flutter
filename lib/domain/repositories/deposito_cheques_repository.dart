@@ -23,16 +23,16 @@ abstract class DepositoChequesRepository {
   Future<List<DepositoChequeEntity>> obtenerDepositos(
     int codEmpresa,
     int idBxC,
-    DateTime fechaInicio,
-    DateTime fechaFin,
+    DateTime? fechaInicio,
+    DateTime? fechaFin,
     String codCliente,
     String estadoFiltro,
   );
 
   Future<List<DepositoChequeEntity>> lstDepositxIdentificar(
     int idBxC,
-    DateTime fechaInicio,
-    DateTime fechaFin,
+    DateTime? fechaInicio,
+    DateTime? fechaFin,
     String codCliente,
   );
 }

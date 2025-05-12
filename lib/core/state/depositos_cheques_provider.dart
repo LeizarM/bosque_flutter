@@ -23,6 +23,16 @@ class DepositosChequesState {
   final List<NotaRemisionEntity> notasRemision;
   final List<int> notasSeleccionadas; // docNum de las seleccionadas
   final Map<int, double> saldosEditados; // docNum -> saldoPendiente editado
+  final List<DepositoChequeEntity> depositos;
+  final String? selectedEstado;
+  final DateTime? fechaDesde;
+  final DateTime? fechaHasta;
+  final int page;
+  final int rowsPerPage;
+  final int totalRegistros;
+
+  final bool setFechaDesdeNull;
+  final bool setFechaHastaNull;
 
   DepositosChequesState({
     this.empresas = const [],
@@ -40,6 +50,16 @@ class DepositosChequesState {
     this.notasRemision = const [],
     this.notasSeleccionadas = const [],
     this.saldosEditados = const {},
+    this.depositos = const [],
+    this.selectedEstado = 'Todos',
+    this.fechaDesde,
+    this.fechaHasta,
+    this.page = 0,
+    this.rowsPerPage = 10,
+    this.totalRegistros = 0,
+
+    this.setFechaDesdeNull = false,
+    this.setFechaHastaNull = false,
   });
 
   DepositosChequesState copyWith({
@@ -58,6 +78,15 @@ class DepositosChequesState {
     List<NotaRemisionEntity>? notasRemision,
     List<int>? notasSeleccionadas,
     Map<int, double>? saldosEditados,
+    List<DepositoChequeEntity>? depositos,
+    String? selectedEstado,
+    DateTime? fechaDesde,
+    DateTime? fechaHasta,
+    int? page,
+    int? rowsPerPage,
+    int? totalRegistros,
+    bool? setFechaDesdeNull,
+    bool? setFechaHastaNull,
   }) {
     return DepositosChequesState(
       empresas: empresas ?? this.empresas,
@@ -75,6 +104,13 @@ class DepositosChequesState {
       notasRemision: notasRemision ?? this.notasRemision,
       notasSeleccionadas: notasSeleccionadas ?? this.notasSeleccionadas,
       saldosEditados: saldosEditados ?? this.saldosEditados,
+      depositos: depositos ?? this.depositos,
+      selectedEstado: selectedEstado ?? this.selectedEstado,
+      fechaDesde: setFechaDesdeNull == true ? null : (fechaDesde ?? this.fechaDesde),
+      fechaHasta: setFechaHastaNull == true ? null : (fechaHasta ?? this.fechaHasta),
+      page: page ?? this.page,
+      rowsPerPage: rowsPerPage ?? this.rowsPerPage,
+      totalRegistros: totalRegistros ?? this.totalRegistros,
     );
   }
 }
@@ -260,6 +296,67 @@ class DepositosChequesNotifier extends StateNotifier<DepositosChequesState> {
       state = state.copyWith(cargando: false);
       rethrow;
     }
+  }
+
+  void setEstado(String? estado) {
+    state = state.copyWith(selectedEstado: estado ?? 'Todos');
+  }
+
+  void setFechaDesde(DateTime? fecha) {
+  if (fecha == null) {
+    state = state.copyWith(setFechaDesdeNull: true);
+  } else {
+    state = state.copyWith(fechaDesde: fecha);
+  }
+}
+
+void setFechaHasta(DateTime? fecha) {
+  if (fecha == null) {
+    state = state.copyWith(setFechaHastaNull: true);
+  } else {
+    state = state.copyWith(fechaHasta: fecha);
+  }
+}
+
+  void setRowsPerPage(int? rows) {
+    if (rows != null) {
+      state = state.copyWith(rowsPerPage: rows, page: 0);
+    }
+  }
+
+  void setPage(int page) {
+    state = state.copyWith(page: page);
+  }
+
+  Future<void> buscarDepositos() async {
+    state = state.copyWith(cargando: true);
+    try {
+      final empresa = state.empresaSeleccionada;
+      final banco = state.bancoSeleccionado;
+      final cliente = state.clienteSeleccionado;
+      final estadoFiltro = state.selectedEstado == 'Todos' ? '' : state.selectedEstado;
+      final codEmpresa = empresa?.codEmpresa ?? 0;
+      final idBxC = banco?.idBxC ?? 0;
+      final fechaInicio = state.fechaDesde; // Puede ser null
+      final fechaFin = state.fechaHasta; // Puede ser null
+      final codCliente = cliente?.codCliente ?? '';
+      final depositos = await _repo.obtenerDepositos(
+        codEmpresa,
+        idBxC,
+        fechaInicio,
+        fechaFin,
+        codCliente,
+        estadoFiltro ?? '',
+      );
+      state = state.copyWith(
+        depositos: depositos,
+        totalRegistros: depositos.length,
+        cargando: false,
+      );
+    } catch (e) {
+      state = state.copyWith(cargando: false);
+    }
+
   }
 }
 
