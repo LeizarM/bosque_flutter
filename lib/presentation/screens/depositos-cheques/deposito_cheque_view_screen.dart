@@ -294,9 +294,45 @@ class _DatePickerFieldState extends State<_DatePickerField> {
     );
   }
 }
-class _DepositosTable extends ConsumerWidget {
+
+class _DepositosTable extends ConsumerStatefulWidget {
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  _DepositosTableState createState() => _DepositosTableState();
+}
+
+class _DepositosTableState extends ConsumerState<_DepositosTable> {
+  // ScrollController como variable de estado
+  late ScrollController horizontalController;
+  
+  @override
+  void initState() {
+    super.initState();
+    horizontalController = ScrollController();
+  }
+  
+  @override
+  void dispose() {
+    // Es importante liberar el controller para evitar memory leaks
+    horizontalController.dispose();
+    super.dispose();
+  }
+
+  Widget _emptyTablePlaceholder() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 48),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: const [
+          Icon(Icons.search_off, size: 48, color: Colors.black26),
+          SizedBox(height: 8),
+          Text('No se encontraron depósitos', style: TextStyle(color: Colors.black54)),
+        ],
+      ),
+    );
+  }
+  
+  @override
+  Widget build(BuildContext context) {
     final state = ref.watch(depositosChequesProvider);
     final columns = const [
       'ID', 'Cliente', 'Banco', 'Empresa', 'Importe', 'Moneda', 'Fecha Ingreso', 'Num. Transaccion', 'Estado', 'Acciones'
@@ -308,68 +344,96 @@ class _DepositosTable extends ConsumerWidget {
     final start = total == 0 ? 0 : (page * rowsPerPage) + 1;
     final end = ((page + 1) * rowsPerPage).clamp(0, total);
     final paged = depositos.skip(page * rowsPerPage).take(rowsPerPage).toList();
-    // Debug print for troubleshooting
-
+    
     return Card(
       elevation: 0,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Scroll vertical y horizontal para la tabla
-          SizedBox(
-            height: 400, // Altura máxima visible de la tabla (ajustable)
-            child: Scrollbar(
-              thumbVisibility: true,
-              child: SingleChildScrollView(
-                scrollDirection: Axis.vertical,
+          // Tabla con scroll horizontal y vertical
+          if (paged.isEmpty)
+            _emptyTablePlaceholder()
+          else
+            SizedBox(
+              height: 400,
+              child: RawScrollbar(
+                // Scroll horizontal en la parte inferior
+                thumbVisibility: true,
+                controller: horizontalController,
+                thickness: 8,
+                radius: const Radius.circular(5),
+                thumbColor: Colors.grey.shade400,
                 child: SingleChildScrollView(
+                  controller: horizontalController,
                   scrollDirection: Axis.horizontal,
+                  physics: const AlwaysScrollableScrollPhysics(),
                   child: ConstrainedBox(
-                    constraints: const BoxConstraints(minWidth: 1100),
-                    child: DataTable(
-                      columns: [
-                        for (final col in columns)
+                    constraints: BoxConstraints(
+                      minWidth: MediaQuery.of(context).size.width,
+                    ),
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.vertical,
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      child: DataTable(
+                        columnSpacing: 20,
+                        horizontalMargin: 20,
+                        headingRowHeight: 50,
+                        dataRowHeight: 60,
+                        dividerThickness: 1,
+                        columns: columns.map((col) => 
                           DataColumn(
-                            label: Text(col, style: const TextStyle(fontWeight: FontWeight.bold)),
+                            label: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                              child: Text(
+                                col, 
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          )
+                        ).toList(),
+                        rows: paged.map((d) => DataRow(cells: [
+                          DataCell(Text(d.idDeposito.toString())),
+                          DataCell(Text(d.codCliente)),
+                          DataCell(Text(d.nombreBanco)),
+                          DataCell(Text(d.nombreEmpresa)),
+                          DataCell(Text(d.importe.toStringAsFixed(2))),
+                          DataCell(Text(d.moneda)),
+                          DataCell(Text(d.fechaI != null ? "${d.fechaI!.day.toString().padLeft(2, '0')}/${d.fechaI!.month.toString().padLeft(2, '0')}/${d.fechaI!.year}" : '')),
+                          DataCell(Text(d.nroTransaccion)),
+                          DataCell(Text(d.esPendiente)),
+                          DataCell(
+                            Container(
+                              constraints: const BoxConstraints(minWidth: 120),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  IconButton(
+                                    icon: const Icon(Icons.picture_as_pdf, size: 20),
+                                    onPressed: () {},
+                                  ),
+                                  IconButton(
+                                    icon: const Icon(Icons.image, size: 20),
+                                    onPressed: () {},
+                                  ),
+                                  IconButton(
+                                    icon: const Icon(Icons.edit, size: 20), 
+                                    onPressed: () {},
+                                  ),
+                                ],
+                              ),
+                            ),
                           ),
-                      ],
-                      rows: paged.isEmpty
-                          ? []
-                          : paged.map((d) => DataRow(cells: [
-                                DataCell(Text(d.idDeposito.toString())),
-                                DataCell(Text(d.codCliente)),
-                                DataCell(Text(d.nombreBanco)),
-                                DataCell(Text(d.nombreEmpresa)),
-                                DataCell(Text(d.importe.toStringAsFixed(2))),
-                                DataCell(Text(d.moneda)),
-                                DataCell(Text(d.fechaI != null ? "${d.fechaI!.day.toString().padLeft(2, '0')}/${d.fechaI!.month.toString().padLeft(2, '0')}/${d.fechaI!.year}" : '')),
-                                DataCell(Text(d.nroTransaccion)),
-                                DataCell(Text(d.esPendiente)),
-                                DataCell(Row(
-                                  children: [
-                                    IconButton(icon: const Icon(Icons.picture_as_pdf, size: 20), onPressed: () {}),
-                                    IconButton(icon: const Icon(Icons.image, size: 20), onPressed: () {}),
-                                    IconButton(icon: const Icon(Icons.edit, size: 20), onPressed: () {}),
-                                  ],
-                                )),
-                              ])).toList(),
+                        ])).toList(),
+                      ),
                     ),
                   ),
                 ),
               ),
             ),
-          ),
-          if (paged.isEmpty)
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 48),
-              child: Column(
-                children: const [
-                  Icon(Icons.search_off, size: 48, color: Colors.black26),
-                  SizedBox(height: 8),
-                  Text('No se encontraron depósitos', style: TextStyle(color: Colors.black54)),
-                ],
-              ),
-            ),
+          
           // Paginación
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
