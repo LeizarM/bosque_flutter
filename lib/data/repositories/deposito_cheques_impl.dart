@@ -20,22 +20,23 @@ import 'package:intl/intl.dart';
 import 'package:logger/logger.dart';
 
 class DepositoChequesImpl implements DepositoChequesRepository {
-  
   final Dio _dio = DioClient.getInstance();
-  
+
   @override
   Future<List<BancoXCuentaEntity>> getBancos(int codEmpresa) async {
     try {
-      final response = await _dio.post(AppConstants.deplstBancos, data: {
-        'codEmpresa': codEmpresa
-      });
+      final response = await _dio.post(
+        AppConstants.deplstBancos,
+        data: {'codEmpresa': codEmpresa},
+      );
 
       // El backend retorna: { message, data: [ ... ], status }
       if (response.statusCode == 200 && response.data != null) {
         final data = response.data['data'] ?? [];
-        final items = (data as List<dynamic>)
-            .map((json) => BancoXCuentaModel.fromJson(json))
-            .toList();
+        final items =
+            (data as List<dynamic>)
+                .map((json) => BancoXCuentaModel.fromJson(json))
+                .toList();
         return items.map((model) => model.toEntity()).toList();
       } else {
         // Si el backend responde con error, retorna lista vacía en vez de lanzar excepción
@@ -52,17 +53,17 @@ class DepositoChequesImpl implements DepositoChequesRepository {
 
   @override
   Future<List<EmpresaEntity>> getEmpresas() async {
-    
     try {
       final response = await _dio.post(AppConstants.deplstEmpresas, data: {});
 
       // El backend retorna: { message, data: [ ... ], status }
       if (response.statusCode == 200 && response.data != null) {
         final data = response.data['data'] ?? [];
-        final items = (data as List<dynamic>)
-            .map((json) => EmpresaModel.fromJson(json))
-            .toList();
-        
+        final items =
+            (data as List<dynamic>)
+                .map((json) => EmpresaModel.fromJson(json))
+                .toList();
+
         return items.map((model) => model.toEntity()).toList();
       } else {
         throw Exception('Error al obtener las empresas');
@@ -78,23 +79,26 @@ class DepositoChequesImpl implements DepositoChequesRepository {
     } catch (e) {
       throw Exception('Error desconocido getEmpresas: ${e.toString()}');
     }
-
   }
 
   @override
-  Future<List<NotaRemisionEntity>> getNotasRemision(int codEmpresa, String codCliente) async {
+  Future<List<NotaRemisionEntity>> getNotasRemision(
+    int codEmpresa,
+    String codCliente,
+  ) async {
     try {
-      final response = await _dio.post(AppConstants.deplstNotaRemision, data: {
-        'codEmpresaBosque': codEmpresa,
-        'codCliente': codCliente
-      });
+      final response = await _dio.post(
+        AppConstants.deplstNotaRemision,
+        data: {'codEmpresaBosque': codEmpresa, 'codCliente': codCliente},
+      );
 
       // El backend retorna: { message, data: [ ... ], status }
       if (response.statusCode == 200 && response.data != null) {
         final data = response.data['data'] ?? [];
-        final items = (data as List<dynamic>)
-            .map((json) => NotaRemisionModel.fromJson(json))
-            .toList();
+        final items =
+            (data as List<dynamic>)
+                .map((json) => NotaRemisionModel.fromJson(json))
+                .toList();
         return items.map((model) => model.toEntity()).toList();
       } else {
         // Si el backend responde con error, retorna lista vacía en vez de lanzar excepción
@@ -112,16 +116,18 @@ class DepositoChequesImpl implements DepositoChequesRepository {
   @override
   Future<List<SocioNegocioEntity>> getSociosNegocio(int codEmpresa) async {
     try {
-      final response = await _dio.post(AppConstants.deplstSocioNegocio, data: {
-        'codEmpresa': codEmpresa
-      });
+      final response = await _dio.post(
+        AppConstants.deplstSocioNegocio,
+        data: {'codEmpresa': codEmpresa},
+      );
 
       // El backend retorna: { message, data: [ ... ], status }
       if (response.statusCode == 200 && response.data != null) {
         final data = response.data['data'] ?? [];
-        final items = (data as List<dynamic>)
-            .map((json) => SocioNegocioModel.fromJson(json))
-            .toList();
+        final items =
+            (data as List<dynamic>)
+                .map((json) => SocioNegocioModel.fromJson(json))
+                .toList();
         return items.map((model) => model.toEntity()).toList();
       } else {
         // Si el backend responde con error, retorna lista vacía en vez de lanzar excepción
@@ -137,12 +143,13 @@ class DepositoChequesImpl implements DepositoChequesRepository {
   }
 
   @override
-  Future<bool> registrarDeposito(DepositoChequeEntity deposito, dynamic imagen) async {
-   final model = DepositoChequeModel.fromEntity(deposito);
-
+  Future<bool> registrarDeposito(
+    DepositoChequeEntity deposito,
+    dynamic imagen,
+  ) async {
+    final model = DepositoChequeModel.fromEntity(deposito);
 
     try {
-      
       MultipartFile multipartFile;
 
       if (imagen is Uint8List) {
@@ -160,15 +167,16 @@ class DepositoChequesImpl implements DepositoChequesRepository {
       } else {
         throw Exception('Formato de imagen no soportado');
       }
-      
+
       FormData formData = FormData.fromMap({
         'depositoCheque': jsonEncode(model.toJson()),
         'file': multipartFile,
       });
-      
+
       final response = await _dio.post(
         AppConstants.depRegister,
-        data: formData, // Asegúrate de que EntregaEntity tenga un método toJson()
+        data:
+            formData, // Asegúrate de que EntregaEntity tenga un método toJson()
       );
 
       return response.statusCode == 200 || response.statusCode == 201;
@@ -184,7 +192,6 @@ class DepositoChequesImpl implements DepositoChequesRepository {
       throw Exception('Error desconocido registrarDeposito: ${e.toString()}');
     }
   }
-  
 
   @override
   Future<bool> guardarNotaRemision(NotaRemisionEntity notaRemision) async {
@@ -192,7 +199,9 @@ class DepositoChequesImpl implements DepositoChequesRepository {
     try {
       final response = await _dio.post(
         AppConstants.depRegisterNotaRemision,
-        data: model.toJson(), // Asegúrate de que EntregaEntity tenga un método toJson()
+        data:
+            model
+                .toJson(), // Asegúrate de que EntregaEntity tenga un método toJson()
       );
 
       return response.statusCode == 200 || response.statusCode == 201;
@@ -210,7 +219,14 @@ class DepositoChequesImpl implements DepositoChequesRepository {
   }
 
   @override
-  Future<List<DepositoChequeEntity>> obtenerDepositos(int codEmpresa, int idBxC, DateTime? fechaInicio, DateTime? fechaFin, String codCliente, String estadoFiltro) async {
+  Future<List<DepositoChequeEntity>> obtenerDepositos(
+    int codEmpresa,
+    int idBxC,
+    DateTime? fechaInicio,
+    DateTime? fechaFin,
+    String codCliente,
+    String estadoFiltro,
+  ) async {
     final Map<String, dynamic> data = {
       'codEmpresa': codEmpresa,
       'idBxC': idBxC,
@@ -227,34 +243,38 @@ class DepositoChequesImpl implements DepositoChequesRepository {
     } else {
       data.remove('fechaFin');
     }
-    Logger().d('Data para obtenerDepositos: $data');
+
     try {
-      final response = await _dio.post(AppConstants.depListarDepositos, data: data);
+      final response = await _dio.post(
+        AppConstants.depListarDepositos,
+        data: data,
+      );
       if (response.statusCode == 200 && response.data != null) {
         final data = response.data['data'] ?? [];
-        final items = (data as List<dynamic>)
-            .map((json) => DepositoChequeModel.fromJson(json))
-            .toList();
+        final items =
+            (data as List<dynamic>)
+                .map((json) => DepositoChequeModel.fromJson(json))
+                .toList();
+        Logger().i(items.length);
         return items.map((model) => model.toEntity()).toList();
       } else {
         return [];
       }
-    } on DioException catch (e) {
+    } on DioException {
       return [];
     } catch (e) {
       return [];
     }
   }
-  
+
   @override
-  Future<List<DepositoChequeEntity>> lstDepositxIdentificar(int idBxC, DateTime? fechaInicio, DateTime? fechaFin, String codCliente) {
+  Future<List<DepositoChequeEntity>> lstDepositxIdentificar(
+    int idBxC,
+    DateTime? fechaInicio,
+    DateTime? fechaFin,
+    String codCliente,
+  ) {
     // TODO: implement lstDepositxIdentificar
     throw UnimplementedError();
   }
-
-  
-
-  
-
-
 }

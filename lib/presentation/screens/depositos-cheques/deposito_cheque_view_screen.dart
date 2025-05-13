@@ -308,40 +308,55 @@ class _DepositosTable extends ConsumerWidget {
     final start = total == 0 ? 0 : (page * rowsPerPage) + 1;
     final end = ((page + 1) * rowsPerPage).clamp(0, total);
     final paged = depositos.skip(page * rowsPerPage).take(rowsPerPage).toList();
+    // Debug print for troubleshooting
+
     return Card(
       elevation: 0,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       child: Column(
         children: [
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: DataTable(
-              columns: [
-                for (final col in columns)
-                  DataColumn(
-                    label: Text(col, style: const TextStyle(fontWeight: FontWeight.bold)),
+          // Scroll vertical y horizontal para la tabla
+          SizedBox(
+            height: 400, // Altura máxima visible de la tabla (ajustable)
+            child: Scrollbar(
+              thumbVisibility: true,
+              child: SingleChildScrollView(
+                scrollDirection: Axis.vertical,
+                child: SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(minWidth: 1100),
+                    child: DataTable(
+                      columns: [
+                        for (final col in columns)
+                          DataColumn(
+                            label: Text(col, style: const TextStyle(fontWeight: FontWeight.bold)),
+                          ),
+                      ],
+                      rows: paged.isEmpty
+                          ? []
+                          : paged.map((d) => DataRow(cells: [
+                                DataCell(Text(d.idDeposito.toString())),
+                                DataCell(Text(d.codCliente)),
+                                DataCell(Text(d.nombreBanco)),
+                                DataCell(Text(d.nombreEmpresa)),
+                                DataCell(Text(d.importe.toStringAsFixed(2))),
+                                DataCell(Text(d.moneda)),
+                                DataCell(Text(d.fechaI != null ? "${d.fechaI!.day.toString().padLeft(2, '0')}/${d.fechaI!.month.toString().padLeft(2, '0')}/${d.fechaI!.year}" : '')),
+                                DataCell(Text(d.nroTransaccion)),
+                                DataCell(Text(d.esPendiente)),
+                                DataCell(Row(
+                                  children: [
+                                    IconButton(icon: const Icon(Icons.picture_as_pdf, size: 20), onPressed: () {}),
+                                    IconButton(icon: const Icon(Icons.image, size: 20), onPressed: () {}),
+                                    IconButton(icon: const Icon(Icons.edit, size: 20), onPressed: () {}),
+                                  ],
+                                )),
+                              ])).toList(),
+                    ),
                   ),
-              ],
-              rows: paged.isEmpty
-                  ? []
-                  : paged.map((d) => DataRow(cells: [
-                        DataCell(Text(d.idDeposito.toString())),
-                        DataCell(Text(d.codCliente)),
-                        DataCell(Text(d.nombreBanco)),
-                        DataCell(Text(d.nombreEmpresa)),
-                        DataCell(Text(d.importe.toStringAsFixed(2))),
-                        DataCell(Text(d.moneda)),
-                        DataCell(Text(d.fechaI != null ? "${d.fechaI!.day.toString().padLeft(2, '0')}/${d.fechaI!.month.toString().padLeft(2, '0')}/${d.fechaI!.year}" : '')),
-                        DataCell(Text(d.nroTransaccion)),
-                        DataCell(Text(d.esPendiente)),
-                        DataCell(Row(
-                          children: [
-                            IconButton(icon: const Icon(Icons.picture_as_pdf, size: 20), onPressed: () {}),
-                            IconButton(icon: const Icon(Icons.image, size: 20), onPressed: () {}),
-                            IconButton(icon: const Icon(Icons.edit, size: 20), onPressed: () {}),
-                          ],
-                        )),
-                      ])).toList(),
+                ),
+              ),
             ),
           ),
           if (paged.isEmpty)
