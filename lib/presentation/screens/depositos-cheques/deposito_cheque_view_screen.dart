@@ -1,3 +1,4 @@
+import 'package:bosque_flutter/core/utils/responsive_utils_bosque.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/state/depositos_cheques_provider.dart';
@@ -20,6 +21,13 @@ class DepositoChequeViewScreen extends ConsumerWidget {
     final state = ref.watch(depositosChequesProvider);
     final notifier = ref.read(depositosChequesProvider.notifier);
 
+    // Valores responsive
+    final isDesktop = ResponsiveUtilsBosque.isDesktop(context);
+    final isTablet = ResponsiveUtilsBosque.isTablet(context);
+    final isMobile = ResponsiveUtilsBosque.isMobile(context);
+    final horizontalPadding = ResponsiveUtilsBosque.getHorizontalPadding(context);
+    final verticalPadding = ResponsiveUtilsBosque.getVerticalPadding(context);
+
     // Opción 'Todos' para empresa, banco y cliente
     final empresaTodos = EmpresaEntity(codEmpresa: 0, nombre: 'Todos', codPadre: 0, sigla: '', audUsuario: 0);
     final bancoTodos = BancoXCuentaEntity(idBxC: 0, codBanco: 0, numCuenta: '', moneda: '', codEmpresa: 0, audUsuario: 0, nombreBanco: 'Todos');
@@ -32,143 +40,75 @@ class DepositoChequeViewScreen extends ConsumerWidget {
           child: IgnorePointer(
             ignoring: state.cargando,
             child: SingleChildScrollView(
-              padding: const EdgeInsets.all(32),
+              padding: EdgeInsets.all(isDesktop ? 32 : (isMobile ? 16 : 24)),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // Encabezado
                   Row(
                     children: [
-                      const Icon(Icons.account_balance_wallet_outlined, size: 32, color: Colors.black54),
-                      const SizedBox(width: 12),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: const [
-                          Text('Consulta de Depósitos', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
-                          SizedBox(height: 2),
-                          Text('Busque y visualice los depósitos registrados', style: TextStyle(fontSize: 15, color: Colors.black54)),
-                        ],
+                      Icon(Icons.account_balance_wallet_outlined, 
+                        size: isDesktop ? 32 : 28, 
+                        color: Colors.black54
+                      ),
+                      SizedBox(width: isDesktop ? 12 : 8),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('Consulta de Depósitos', 
+                              style: TextStyle(
+                                fontSize: isDesktop ? 22 : (isMobile ? 18 : 20), 
+                                fontWeight: FontWeight.bold
+                              )
+                            ),
+                            SizedBox(height: 2),
+                            Text('Busque y visualice los depósitos registrados', 
+                              style: TextStyle(
+                                fontSize: isDesktop ? 15 : (isMobile ? 13 : 14), 
+                                color: Colors.black54
+                              )
+                            ),
+                          ],
+                        ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 24),
-                  const Divider(),
-                  const SizedBox(height: 12),
+                  SizedBox(height: isDesktop ? 24 : 16),
+                  Divider(),
+                  SizedBox(height: isDesktop ? 12 : 8),
+                  
                   // Criterios de búsqueda
-                  const Text('Criterios de Búsqueda', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16)),
-                  const SizedBox(height: 16),
-                  Row(
-                    children: [
-                      // Empresa
-                      Expanded(
-                        child: DropdownButtonFormField<EmpresaEntity>(
-                          value: state.empresaSeleccionada ?? empresaTodos,
-                          decoration: const InputDecoration(labelText: 'Empresa'),
-                          items: [
-                            DropdownMenuItem<EmpresaEntity>(value: empresaTodos, child: const Text('Todos')),
-                            ...state.empresas.map((e) => DropdownMenuItem<EmpresaEntity>(value: e, child: Text(e.nombre)))
-                          ],
-                          onChanged: (v) async {
-                            notifier.seleccionarEmpresa(v?.codEmpresa == 0 ? null : v);
-                          },
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      // Banco
-                      Expanded(
-                        child: DropdownButtonFormField<BancoXCuentaEntity>(
-                          value: state.bancoSeleccionado ?? bancoTodos,
-                          decoration: const InputDecoration(labelText: 'Banco'),
-                          items: [
-                            DropdownMenuItem<BancoXCuentaEntity>(value: bancoTodos, child: const Text('Todos')),
-                            ...state.bancos.map((b) => DropdownMenuItem<BancoXCuentaEntity>(value: b, child: Text(b.nombreBanco)))
-                          ],
-                          onChanged: (v) => notifier.seleccionarBanco(v?.idBxC == 0 ? null : v),
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      // Desde
-                      Expanded(
-                        child: _DatePickerField(
-                          label: 'Desde',
-                          date: state.fechaDesde,
-                          onChanged: notifier.setFechaDesde,
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      // Hasta
-                      Expanded(
-                        child: _DatePickerField(
-                          label: 'Hasta',
-                          date: state.fechaHasta,
-                          onChanged: notifier.setFechaHasta,
-                        ),
-                      ),
-                    ],
+                  Text('Criterios de Búsqueda', 
+                    style: TextStyle(
+                      fontWeight: FontWeight.w600, 
+                      fontSize: isDesktop ? 16 : 14
+                    )
                   ),
-                  const SizedBox(height: 16),
-                  Row(
-                    children: [
-                      // Cliente
-                      Expanded(
-                        flex: 2,
-                        child: DropdownButtonFormField<SocioNegocioEntity>(
-                          value: state.clienteSeleccionado ?? clienteTodos,
-                          decoration: const InputDecoration(labelText: 'Cliente'),
-                          items: [
-                            DropdownMenuItem<SocioNegocioEntity>(value: clienteTodos, child: const Text('Todos')),
-                            ...state.clientes.map((c) => DropdownMenuItem<SocioNegocioEntity>(value: c, child: Text(c.nombreCompleto)))
-                          ],
-                          onChanged: (v) => notifier.seleccionarCliente(v?.codCliente == '' ? null : v),
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      // Estado
-                      Expanded(
-                        child: DropdownButtonFormField<String>(
-                          value: state.selectedEstado ?? 'Todos',
-                          decoration: const InputDecoration(labelText: 'Estado'),
-                          items: estadosDeposito
-                              .map((e) => DropdownMenuItem<String>(value: e['value'], child: Text(e['label']!)))
-                              .toList(),
-                          onChanged: notifier.setEstado,
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      // Botón Buscar
-                      ElevatedButton.icon(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF6C63FF),
-                          padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 18),
-                        ),
-                        onPressed: notifier.buscarDepositos,
-                        icon: const Icon(Icons.search, color: Colors.white),
-                        label: const Text('Buscar/Actualizar', style: TextStyle(color: Colors.white)),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 32),
+                  SizedBox(height: isDesktop ? 16 : 12),
+                  
+                  // Primera fila de filtros (o columna en móvil)
+                  if (isDesktop || isTablet)
+                    _buildDesktopFiltersRow1(context, state, notifier, empresaTodos, bancoTodos)
+                  else
+                    _buildMobileFilters1(context, state, notifier, empresaTodos, bancoTodos),
+                  
+                  SizedBox(height: isDesktop ? 16 : 12),
+                  
+                  // Segunda fila de filtros (o columna en móvil)
+                  if (isDesktop || isTablet)
+                    _buildDesktopFiltersRow2(context, state, notifier, clienteTodos)
+                  else
+                    _buildMobileFilters2(context, state, notifier, clienteTodos),
+                  
+                  SizedBox(height: isDesktop ? 32 : 24),
+                  
                   // Resultados
-                  Row(
-                    children: [
-                      const Text('Resultados', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16)),
-                      const Spacer(),
-                      ElevatedButton.icon(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.white,
-                          foregroundColor: const Color(0xFF6C63FF),
-                          side: const BorderSide(color: Color(0xFF6C63FF)),
-                          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
-                        ),
-                        onPressed: () {}, // TODO: Exportar PDF
-                        icon: const Icon(Icons.picture_as_pdf_outlined),
-                        label: const Text('Exportar PDF'),
-                      ),
-                      const SizedBox(width: 16),
-                      Text('${state.totalRegistros} registros encontrados', style: const TextStyle(color: Colors.black54)),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
+                  _buildResultsHeader(context, state),
+                  
+                  SizedBox(height: isDesktop ? 12 : 8),
+                  
+                  // Tabla
                   _DepositosTable(),
                 ],
               ),
@@ -176,7 +116,7 @@ class DepositoChequeViewScreen extends ConsumerWidget {
           ),
         ),
         if (state.cargando)
-          const Positioned.fill(
+          Positioned.fill(
             child: Center(
               child: CircularProgressIndicator(),
             ),
@@ -184,8 +124,256 @@ class DepositoChequeViewScreen extends ConsumerWidget {
       ],
     );
   }
+  
+  // Métodos para construir la UI según el tipo de dispositivo
+  
+  Widget _buildDesktopFiltersRow1(BuildContext context, DepositosChequesState state, DepositosChequesNotifier notifier, EmpresaEntity empresaTodos, BancoXCuentaEntity bancoTodos) {
+    return Row(
+      children: [
+        // Empresa
+        Expanded(
+          child: DropdownButtonFormField<EmpresaEntity>(
+            value: state.empresaSeleccionada ?? empresaTodos,
+            decoration: const InputDecoration(labelText: 'Empresa'),
+            items: [
+              DropdownMenuItem<EmpresaEntity>(value: empresaTodos, child: const Text('Todos')),
+              ...state.empresas.map((e) => DropdownMenuItem<EmpresaEntity>(value: e, child: Text(e.nombre)))
+            ],
+            onChanged: (v) async {
+              notifier.seleccionarEmpresa(v?.codEmpresa == 0 ? null : v);
+            },
+          ),
+        ),
+        const SizedBox(width: 16),
+        // Banco
+        Expanded(
+          child: DropdownButtonFormField<BancoXCuentaEntity>(
+            value: state.bancoSeleccionado ?? bancoTodos,
+            decoration: const InputDecoration(labelText: 'Banco'),
+            items: [
+              DropdownMenuItem<BancoXCuentaEntity>(value: bancoTodos, child: const Text('Todos')),
+              ...state.bancos.map((b) => DropdownMenuItem<BancoXCuentaEntity>(value: b, child: Text(b.nombreBanco)))
+            ],
+            onChanged: (v) => notifier.seleccionarBanco(v?.idBxC == 0 ? null : v),
+          ),
+        ),
+        const SizedBox(width: 16),
+        // Desde
+        Expanded(
+          child: _DatePickerField(
+            label: 'Desde',
+            date: state.fechaDesde,
+            onChanged: notifier.setFechaDesde,
+          ),
+        ),
+        const SizedBox(width: 16),
+        // Hasta
+        Expanded(
+          child: _DatePickerField(
+            label: 'Hasta',
+            date: state.fechaHasta,
+            onChanged: notifier.setFechaHasta,
+          ),
+        ),
+      ],
+    );
+  }
+  
+  Widget _buildMobileFilters1(BuildContext context, DepositosChequesState state, DepositosChequesNotifier notifier, EmpresaEntity empresaTodos, BancoXCuentaEntity bancoTodos) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        // Empresa
+        DropdownButtonFormField<EmpresaEntity>(
+          value: state.empresaSeleccionada ?? empresaTodos,
+          decoration: const InputDecoration(labelText: 'Empresa'),
+          items: [
+            DropdownMenuItem<EmpresaEntity>(value: empresaTodos, child: const Text('Todos')),
+            ...state.empresas.map((e) => DropdownMenuItem<EmpresaEntity>(value: e, child: Text(e.nombre)))
+          ],
+          onChanged: (v) async {
+            notifier.seleccionarEmpresa(v?.codEmpresa == 0 ? null : v);
+          },
+        ),
+        const SizedBox(height: 12),
+        // Banco
+        DropdownButtonFormField<BancoXCuentaEntity>(
+          value: state.bancoSeleccionado ?? bancoTodos,
+          decoration: const InputDecoration(labelText: 'Banco'),
+          items: [
+            DropdownMenuItem<BancoXCuentaEntity>(value: bancoTodos, child: const Text('Todos')),
+            ...state.bancos.map((b) => DropdownMenuItem<BancoXCuentaEntity>(value: b, child: Text(b.nombreBanco)))
+          ],
+          onChanged: (v) => notifier.seleccionarBanco(v?.idBxC == 0 ? null : v),
+        ),
+        const SizedBox(height: 12),
+        // Desde y Hasta en una fila
+        Row(
+          children: [
+            Expanded(
+              child: _DatePickerField(
+                label: 'Desde',
+                date: state.fechaDesde,
+                onChanged: notifier.setFechaDesde,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _DatePickerField(
+                label: 'Hasta',
+                date: state.fechaHasta,
+                onChanged: notifier.setFechaHasta,
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+    
+  }
+  
+  
+  Widget _buildDesktopFiltersRow2(BuildContext context, DepositosChequesState state, DepositosChequesNotifier notifier, SocioNegocioEntity clienteTodos) {
+    return Row(
+      children: [
+        // Cliente
+        Expanded(
+          flex: 2,
+          child: DropdownButtonFormField<SocioNegocioEntity>(
+            value: state.clienteSeleccionado ?? clienteTodos,
+            decoration: const InputDecoration(labelText: 'Cliente'),
+            items: [
+              DropdownMenuItem<SocioNegocioEntity>(value: clienteTodos, child: const Text('Todos')),
+              ...state.clientes.map((c) => DropdownMenuItem<SocioNegocioEntity>(value: c, child: Text(c.nombreCompleto)))
+            ],
+            onChanged: (v) => notifier.seleccionarCliente(v?.codCliente == '' ? null : v),
+          ),
+        ),
+        const SizedBox(width: 16),
+        // Estado
+        Expanded(
+          child: DropdownButtonFormField<String>(
+            value: state.selectedEstado ?? 'Todos',
+            decoration: const InputDecoration(labelText: 'Estado'),
+            items: estadosDeposito
+                .map((e) => DropdownMenuItem<String>(value: e['value'], child: Text(e['label']!)))
+                .toList(),
+            onChanged: notifier.setEstado,
+          ),
+        ),
+        const SizedBox(width: 16),
+        // Botón Buscar
+        ElevatedButton.icon(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: const Color(0xFF6C63FF),
+            padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 18),
+          ),
+          onPressed: notifier.buscarDepositos,
+          icon: const Icon(Icons.search, color: Colors.white),
+          label: const Text('Buscar/Actualizar', style: TextStyle(color: Colors.white)),
+        ),
+      ],
+    );
+  }
+  
+  Widget _buildMobileFilters2(BuildContext context, DepositosChequesState state, DepositosChequesNotifier notifier, SocioNegocioEntity clienteTodos) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        // Cliente
+        DropdownButtonFormField<SocioNegocioEntity>(
+          value: state.clienteSeleccionado ?? clienteTodos,
+          decoration: const InputDecoration(labelText: 'Cliente'),
+          items: [
+            DropdownMenuItem<SocioNegocioEntity>(value: clienteTodos, child: const Text('Todos')),
+            ...state.clientes.map((c) => DropdownMenuItem<SocioNegocioEntity>(value: c, child: Text(c.nombreCompleto)))
+          ],
+          onChanged: (v) => notifier.seleccionarCliente(v?.codCliente == '' ? null : v),
+        ),
+        const SizedBox(height: 12),
+        // Estado
+        DropdownButtonFormField<String>(
+          value: state.selectedEstado ?? 'Todos',
+          decoration: const InputDecoration(labelText: 'Estado'),
+          items: estadosDeposito
+              .map((e) => DropdownMenuItem<String>(value: e['value'], child: Text(e['label']!)))
+              .toList(),
+          onChanged: notifier.setEstado,
+        ),
+        const SizedBox(height: 16),
+        // Botón Buscar
+        ElevatedButton.icon(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: const Color(0xFF6C63FF),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+          ),
+          onPressed: notifier.buscarDepositos,
+          icon: const Icon(Icons.search, color: Colors.white),
+          label: const Text('Buscar/Actualizar', style: TextStyle(color: Colors.white)),
+        ),
+      ],
+    );
+  }
+  
+  Widget _buildResultsHeader(BuildContext context, DepositosChequesState state) {
+    final isDesktop = ResponsiveUtilsBosque.isDesktop(context);
+    final isMobile = ResponsiveUtilsBosque.isMobile(context);
+    
+    if (isDesktop) {
+      return Row(
+        children: [
+          Text('Resultados', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16)),
+          const Spacer(),
+          ElevatedButton.icon(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.white,
+              foregroundColor: const Color(0xFF6C63FF),
+              side: const BorderSide(color: Color(0xFF6C63FF)),
+              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+            ),
+            onPressed: () {}, // TODO: Exportar PDF
+            icon: const Icon(Icons.picture_as_pdf_outlined),
+            label: const Text('Exportar PDF'),
+          ),
+          const SizedBox(width: 16),
+          Text('${state.totalRegistros} registros encontrados', 
+            style: const TextStyle(color: Colors.black54)
+          ),
+        ],
+      );
+    } else {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Text('Resultados', style: TextStyle(fontWeight: FontWeight.w600, fontSize: isMobile ? 14 : 16)),
+              const Spacer(),
+              Text('${state.totalRegistros} registros', 
+                style: TextStyle(color: Colors.black54, fontSize: isMobile ? 13 : 14)
+              ),
+            ],
+          ),
+          SizedBox(height: 8),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.white,
+                foregroundColor: const Color(0xFF6C63FF),
+                side: const BorderSide(color: Color(0xFF6C63FF)),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              ),
+              onPressed: () {}, // TODO: Exportar PDF
+              icon: const Icon(Icons.picture_as_pdf_outlined, size: 18),
+              label: const Text('Exportar PDF'),
+            ),
+          ),
+        ],
+      );
+    }
+  }
 }
-
 class _DatePickerField extends StatefulWidget {
   final String label;
   final DateTime? date;
@@ -232,76 +420,107 @@ class _DatePickerFieldState extends State<_DatePickerField> {
 
   @override
   Widget build(BuildContext context) {
+    // Valores responsive
+    final isDesktop = ResponsiveUtilsBosque.isDesktop(context);
+    final isMobile = ResponsiveUtilsBosque.isMobile(context);
+    
     return TextFormField(
       readOnly: true,
       controller: _controller,
+      style: TextStyle(fontSize: isMobile ? 13 : null),
       decoration: InputDecoration(
         labelText: widget.label,
+        labelStyle: TextStyle(fontSize: isMobile ? 13 : null),
+        contentPadding: EdgeInsets.symmetric(
+          vertical: isMobile ? 10 : 12, 
+          horizontal: isMobile ? 10 : 12
+        ),
         suffixIcon: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
             if (widget.date != null)
               IconButton(
-                icon: const Icon(Icons.clear, color: Colors.redAccent),
+                icon: Icon(Icons.clear, 
+                  color: Colors.redAccent,
+                  size: isMobile ? 18 : 20,
+                ),
                 tooltip: 'Borrar fecha',
                 onPressed: _clearDate,
+                padding: EdgeInsets.all(isMobile ? 4 : 8),
+                constraints: BoxConstraints(),
               ),
             IconButton(
-              icon: const Icon(Icons.calendar_month, color: Color(0xFF6C63FF)),
+              icon: Icon(Icons.calendar_month, 
+                color: Color(0xFF6C63FF),
+                size: isMobile ? 18 : 20,
+              ),
               onPressed: () async {
                 final picked = await showDatePicker(
                   context: context,
                   initialDate: widget.date ?? DateTime.now(),
                   firstDate: DateTime(2000),
                   lastDate: DateTime(2100),
+                  builder: (context, child) {
+                    // Hacemos el DatePicker responsive
+                    return Theme(
+                      data: Theme.of(context).copyWith(
+                        dialogTheme: DialogTheme(
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16)
+                          )
+                        )
+                      ),
+                      child: child!,
+                    );
+                  },
                 );
                 if (picked != null) {
                   _controller.text = _getDateText(picked);
                   widget.onChanged(picked);
                 }
               },
+              padding: EdgeInsets.all(isMobile ? 4 : 8),
+              constraints: BoxConstraints(),
             ),
           ],
         ),
       ),
       onTap: () async {
         // Si ya hay una fecha, mostrar el date picker
-        if (widget.date != null) {
-          final picked = await showDatePicker(
-            context: context,
-            initialDate: widget.date,
-            firstDate: DateTime(2000),
-            lastDate: DateTime(2100),
-          );
-          if (picked != null) {
-            _controller.text = _getDateText(picked);
-            widget.onChanged(picked);
-          }
-        } else {
-          // Si no hay fecha, mostrar el date picker con fecha actual
-          final picked = await showDatePicker(
-            context: context,
-            initialDate: DateTime.now(),
-            firstDate: DateTime(2000),
-            lastDate: DateTime(2100),
-          );
-          if (picked != null) {
-            _controller.text = _getDateText(picked);
-            widget.onChanged(picked);
-          }
+        final picked = await showDatePicker(
+          context: context,
+          initialDate: widget.date ?? DateTime.now(),
+          firstDate: DateTime(2000),
+          lastDate: DateTime(2100),
+          builder: (context, child) {
+            // Hacemos el DatePicker responsive
+            return Theme(
+              data: Theme.of(context).copyWith(
+                dialogTheme: DialogTheme(
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16)
+                  )
+                )
+              ),
+              child: child!,
+            );
+          },
+        );
+        if (picked != null) {
+          _controller.text = _getDateText(picked);
+          widget.onChanged(picked);
         }
       },
     );
   }
 }
-
+// También hay que adaptar la clase _DepositosTable para móviles
 class _DepositosTable extends ConsumerStatefulWidget {
   @override
   _DepositosTableState createState() => _DepositosTableState();
 }
 
 class _DepositosTableState extends ConsumerState<_DepositosTable> {
-  // ScrollController como variable de estado
   late ScrollController horizontalController;
   
   @override
@@ -312,7 +531,6 @@ class _DepositosTableState extends ConsumerState<_DepositosTable> {
   
   @override
   void dispose() {
-    // Es importante liberar el controller para evitar memory leaks
     horizontalController.dispose();
     super.dispose();
   }
@@ -345,6 +563,11 @@ class _DepositosTableState extends ConsumerState<_DepositosTable> {
     final end = ((page + 1) * rowsPerPage).clamp(0, total);
     final paged = depositos.skip(page * rowsPerPage).take(rowsPerPage).toList();
     
+    // Valores responsive
+    final isDesktop = ResponsiveUtilsBosque.isDesktop(context);
+    final isTablet = ResponsiveUtilsBosque.isTablet(context);
+    final isMobile = ResponsiveUtilsBosque.isMobile(context);
+    
     return Card(
       elevation: 0,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
@@ -356,12 +579,11 @@ class _DepositosTableState extends ConsumerState<_DepositosTable> {
             _emptyTablePlaceholder()
           else
             SizedBox(
-              height: 400,
+              height: isDesktop ? 400 : (isMobile ? 350 : 380),
               child: RawScrollbar(
-                // Scroll horizontal en la parte inferior
                 thumbVisibility: true,
                 controller: horizontalController,
-                thickness: 8,
+                thickness: isDesktop ? 8 : 6,
                 radius: const Radius.circular(5),
                 thumbColor: Colors.grey.shade400,
                 child: SingleChildScrollView(
@@ -376,34 +598,44 @@ class _DepositosTableState extends ConsumerState<_DepositosTable> {
                       scrollDirection: Axis.vertical,
                       physics: const AlwaysScrollableScrollPhysics(),
                       child: DataTable(
-                        columnSpacing: 20,
-                        horizontalMargin: 20,
-                        headingRowHeight: 50,
-                        dataRowHeight: 60,
+                        columnSpacing: isDesktop ? 20 : (isMobile ? 12 : 16),
+                        horizontalMargin: isDesktop ? 20 : (isMobile ? 12 : 16),
+                        headingRowHeight: isDesktop ? 50 : 45,
+                        dataRowHeight: isDesktop ? 60 : 55,
                         dividerThickness: 1,
                         columns: columns.map((col) => 
                           DataColumn(
                             label: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                              padding: EdgeInsets.symmetric(horizontal: isDesktop ? 8.0 : 4.0),
                               child: Text(
                                 col, 
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontWeight: FontWeight.bold,
+                                  fontSize: isDesktop ? 14 : (isMobile ? 12 : 13),
                                 ),
                               ),
                             ),
                           )
                         ).toList(),
                         rows: paged.map((d) => DataRow(cells: [
-                          DataCell(Text(d.idDeposito.toString())),
-                          DataCell(Text(d.codCliente)),
-                          DataCell(Text(d.nombreBanco)),
-                          DataCell(Text(d.nombreEmpresa)),
-                          DataCell(Text(d.importe.toStringAsFixed(2))),
-                          DataCell(Text(d.moneda)),
-                          DataCell(Text(d.fechaI != null ? "${d.fechaI!.day.toString().padLeft(2, '0')}/${d.fechaI!.month.toString().padLeft(2, '0')}/${d.fechaI!.year}" : '')),
-                          DataCell(Text(d.nroTransaccion)),
-                          DataCell(Text(d.esPendiente)),
+                          DataCell(Text(d.idDeposito.toString(), 
+                            style: TextStyle(fontSize: isMobile ? 12 : null))),
+                          DataCell(Text(d.codCliente, 
+                            style: TextStyle(fontSize: isMobile ? 12 : null))),
+                          DataCell(Text(d.nombreBanco, 
+                            style: TextStyle(fontSize: isMobile ? 12 : null))),
+                          DataCell(Text(d.nombreEmpresa, 
+                            style: TextStyle(fontSize: isMobile ? 12 : null))),
+                          DataCell(Text(d.importe.toStringAsFixed(2), 
+                            style: TextStyle(fontSize: isMobile ? 12 : null))),
+                          DataCell(Text(d.moneda, 
+                            style: TextStyle(fontSize: isMobile ? 12 : null))),
+                          DataCell(Text(d.fechaI != null ? "${d.fechaI!.day.toString().padLeft(2, '0')}/${d.fechaI!.month.toString().padLeft(2, '0')}/${d.fechaI!.year}" : '', 
+                            style: TextStyle(fontSize: isMobile ? 12 : null))),
+                          DataCell(Text(d.nroTransaccion, 
+                            style: TextStyle(fontSize: isMobile ? 12 : null))),
+                          DataCell(Text(d.esPendiente, 
+                            style: TextStyle(fontSize: isMobile ? 12 : null))),
                           DataCell(
                             Container(
                               constraints: const BoxConstraints(minWidth: 120),
@@ -411,16 +643,22 @@ class _DepositosTableState extends ConsumerState<_DepositosTable> {
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
                                   IconButton(
-                                    icon: const Icon(Icons.picture_as_pdf, size: 20),
+                                    icon: Icon(Icons.picture_as_pdf, size: isDesktop ? 20 : 18),
                                     onPressed: () {},
+                                    padding: EdgeInsets.all(isDesktop ? 8 : 4),
+                                    constraints: BoxConstraints(),
                                   ),
                                   IconButton(
-                                    icon: const Icon(Icons.image, size: 20),
+                                    icon: Icon(Icons.image, size: isDesktop ? 20 : 18),
                                     onPressed: () {},
+                                    padding: EdgeInsets.all(isDesktop ? 8 : 4),
+                                    constraints: BoxConstraints(),
                                   ),
                                   IconButton(
-                                    icon: const Icon(Icons.edit, size: 20), 
+                                    icon: Icon(Icons.edit, size: isDesktop ? 20 : 18), 
                                     onPressed: () {},
+                                    padding: EdgeInsets.all(isDesktop ? 8 : 4),
+                                    constraints: BoxConstraints(),
                                   ),
                                 ],
                               ),
@@ -434,42 +672,105 @@ class _DepositosTableState extends ConsumerState<_DepositosTable> {
               ),
             ),
           
-          // Paginación
+          // Paginación - adaptada para móvil y desktop
+          _buildPagination(context, state, start, end, total),
+        ],
+      ),
+    );
+  }
+  
+  Widget _buildPagination(BuildContext context, DepositosChequesState state, int start, int end, int total) {
+    final isDesktop = ResponsiveUtilsBosque.isDesktop(context);
+    final isMobile = ResponsiveUtilsBosque.isMobile(context);
+    
+    if (isMobile) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
           Padding(
-            padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
+            padding: const EdgeInsets.fromLTRB(8, 12, 8, 4),
+            child: Text('Mostrando $start a $end de $total depósitos',
+              style: TextStyle(fontSize: 13),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(8, 4, 8, 8),
             child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Text('Mostrando $start a $end de $total depósitos'),
-                const Spacer(),
                 IconButton(
-                  icon: const Icon(Icons.first_page),
+                  icon: const Icon(Icons.first_page, size: 20),
                   onPressed: state.page > 0 ? () => ref.read(depositosChequesProvider.notifier).setPage(0) : null,
+                  padding: EdgeInsets.zero,
+                  constraints: BoxConstraints(),
                 ),
                 IconButton(
-                  icon: const Icon(Icons.chevron_left),
+                  icon: const Icon(Icons.chevron_left, size: 20),
                   onPressed: state.page > 0 ? () => ref.read(depositosChequesProvider.notifier).setPage(state.page - 1) : null,
+                  padding: EdgeInsets.zero,
+                  constraints: BoxConstraints(),
                 ),
-                IconButton(
-                  icon: const Icon(Icons.chevron_right),
-                  onPressed: end < total ? () => ref.read(depositosChequesProvider.notifier).setPage(state.page + 1) : null,
-                ),
-                IconButton(
-                  icon: const Icon(Icons.last_page),
-                  onPressed: end < total ? () => ref.read(depositosChequesProvider.notifier).setPage((total / state.rowsPerPage).ceil() - 1) : null,
-                ),
-                const SizedBox(width: 16),
+                SizedBox(width: 8),
                 DropdownButton<int>(
                   value: state.rowsPerPage,
+                  isDense: true,
                   items: const [10, 20, 50]
                       .map((e) => DropdownMenuItem(value: e, child: Text(e.toString())))
                       .toList(),
                   onChanged: (v) => ref.read(depositosChequesProvider.notifier).setRowsPerPage(v),
                 ),
+                SizedBox(width: 8),
+                IconButton(
+                  icon: const Icon(Icons.chevron_right, size: 20),
+                  onPressed: end < total ? () => ref.read(depositosChequesProvider.notifier).setPage(state.page + 1) : null,
+                  padding: EdgeInsets.zero,
+                  constraints: BoxConstraints(),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.last_page, size: 20),
+                  onPressed: end < total ? () => ref.read(depositosChequesProvider.notifier).setPage((total / state.rowsPerPage).ceil() - 1) : null,
+                  padding: EdgeInsets.zero,
+                  constraints: BoxConstraints(),
+                ),
               ],
             ),
           ),
         ],
-      ),
-    );
+      );
+    } else {
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
+        child: Row(
+          children: [
+            Text('Mostrando $start a $end de $total depósitos'),
+            const Spacer(),
+            IconButton(
+              icon: const Icon(Icons.first_page),
+              onPressed: state.page > 0 ? () => ref.read(depositosChequesProvider.notifier).setPage(0) : null,
+            ),
+            IconButton(
+              icon: const Icon(Icons.chevron_left),
+              onPressed: state.page > 0 ? () => ref.read(depositosChequesProvider.notifier).setPage(state.page - 1) : null,
+            ),
+            IconButton(
+              icon: const Icon(Icons.chevron_right),
+              onPressed: end < total ? () => ref.read(depositosChequesProvider.notifier).setPage(state.page + 1) : null,
+            ),
+            IconButton(
+              icon: const Icon(Icons.last_page),
+              onPressed: end < total ? () => ref.read(depositosChequesProvider.notifier).setPage((total / state.rowsPerPage).ceil() - 1) : null,
+            ),
+            const SizedBox(width: 16),
+            DropdownButton<int>(
+              value: state.rowsPerPage,
+              items: const [10, 20, 50]
+                  .map((e) => DropdownMenuItem(value: e, child: Text(e.toString())))
+                  .toList(),
+              onChanged: (v) => ref.read(depositosChequesProvider.notifier).setRowsPerPage(v),
+            ),
+          ],
+        ),
+      );
+    }
   }
 }
