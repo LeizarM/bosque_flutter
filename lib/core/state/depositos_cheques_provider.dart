@@ -123,49 +123,79 @@ class DepositosChequesNotifier extends StateNotifier<DepositosChequesState> {
 
   Future<void> cargarEmpresas() async {
     state = state.copyWith(cargando: true);
-    final empresas = await _repo.getEmpresas();
-    state = state.copyWith(empresas: empresas, cargando: false);
+    try {
+      final empresas = await _repo.getEmpresas();
+      state = state.copyWith(
+        empresas: empresas, 
+        cargando: false,
+        // Asegurarse de que empresaSeleccionada sea válida
+        empresaSeleccionada: state.empresaSeleccionada != null && 
+                            empresas.any((e) => e.codEmpresa == state.empresaSeleccionada!.codEmpresa) 
+                            ? state.empresaSeleccionada 
+                            : null
+      );
+    } catch (e) {
+      // En caso de error, al menos quitar el indicador de carga
+      state = state.copyWith(cargando: false);
+    }
   }
 
   Future<void> seleccionarEmpresa(EmpresaEntity? empresa) async {
+    // Si empresa es null (Todos), limpiar todos los filtros dependientes
+    if (empresa == null) {
+      state = state.copyWith(
+        empresaSeleccionada: null,
+        clienteSeleccionado: null,
+        bancoSeleccionado: null,
+        clientes: [],
+        bancos: [],
+        selectedEstado: 'Todos',
+        cargando: false,
+      );
+      return;
+    }
+    // Si se selecciona una empresa específica
     state = state.copyWith(
       empresaSeleccionada: empresa,
       clienteSeleccionado: null,
       bancoSeleccionado: null,
       clientes: [],
       bancos: [],
+      selectedEstado: 'Todos',
       cargando: true,
     );
-    if (empresa != null) {
-      final clientes = await _repo.getSociosNegocio(empresa.codEmpresa);
-      final bancos = await _repo.getBancos(empresa.codEmpresa);
-      // Si no hay clientes, quitar cargando y dejar la lista vacía
-      if (clientes.isEmpty) {
-        state = state.copyWith(clientes: [], bancos: bancos, cargando: false);
-      } else {
-        state = state.copyWith(clientes: clientes, bancos: bancos, cargando: false);
-      }
+    final clientes = await _repo.getSociosNegocio(empresa.codEmpresa);
+    final bancos = await _repo.getBancos(empresa.codEmpresa);
+    // Si no hay clientes, quitar cargando y dejar la lista vacía
+    if (clientes.isEmpty) {
+      state = state.copyWith(clientes: [], bancos: bancos, cargando: false);
     } else {
-      state = state.copyWith(cargando: false);
+      state = state.copyWith(clientes: clientes, bancos: bancos, cargando: false);
     }
   }
 
   Future<void> seleccionarCliente(SocioNegocioEntity? cliente) async {
+    // Si cliente es null (Todos), limpiar selección
     state = state.copyWith(
-      clienteSeleccionado: cliente,
+      clienteSeleccionado: null,
       notasRemision: [],
       notasSeleccionadas: [],
       saldosEditados: {},
       importeTotal: 0.0,
     );
     if (cliente != null && state.empresaSeleccionada != null) {
-      state = state.copyWith(cargando: true);
+      state = state.copyWith(clienteSeleccionado: cliente, cargando: true);
       final notas = await _repo.getNotasRemision(state.empresaSeleccionada!.codEmpresa, cliente.codCliente);
       state = state.copyWith(notasRemision: notas, cargando: false);
     }
   }
 
   void seleccionarBanco(BancoXCuentaEntity? banco) {
+    // Si banco es null (Todos), limpiar selección
+    if (banco == null) {
+      state = state.copyWith(bancoSeleccionado: null);
+      return;
+    }
     state = state.copyWith(bancoSeleccionado: banco);
   }
 
@@ -299,6 +329,7 @@ class DepositosChequesNotifier extends StateNotifier<DepositosChequesState> {
   }
 
   void setEstado(String? estado) {
+    // Si estado es null o 'Todos', limpiar selección
     state = state.copyWith(selectedEstado: estado ?? 'Todos');
   }
 
