@@ -163,20 +163,20 @@ Widget _buildEmpresaDropdown(BuildContext context, DepositosChequesState state, 
   
   // Usamos int (codEmpresa) como valor del dropdown en lugar del objeto completo
   // Si no hay empresa seleccionada, mostrar 'Todos' (null)
-  // Si selecciona "Todos", el valor es 0 (nulo lógico para backend)
-  int? currentValue = state.empresaSeleccionada?.codEmpresa ?? 0;
-  // Forzar rebuild con UniqueKey si el valor es "Todos"
-  final dropdownKey = currentValue == 0
-      ? ValueKey('empresa-dropdown-${state.empresas.length}-todos-${UniqueKey()}')
-      : ValueKey('empresa-dropdown-${state.empresas.length}-$currentValue');
+  int? currentValue = state.empresaSeleccionada?.codEmpresa;
+  // Si la empresa seleccionada no está en la lista, o es null, usar null
+  if (state.empresaSeleccionada == null ||
+      !state.empresas.any((e) => e.codEmpresa == currentValue)) {
+    currentValue = null;
+  }
   return DropdownButtonFormField<int?>(
-    key: dropdownKey,
+    key: ValueKey('empresa-dropdown-${state.empresas.length}-${currentValue ?? 'todos'}'), // Clave única
     value: currentValue,
     decoration: const InputDecoration(labelText: 'Empresa'),
     isExpanded: true,
     items: [
       DropdownMenuItem<int?>(
-        value: 0,
+        value: null,
         child: const Text('Todos'),
       ),
       ...state.empresas.map((e) => DropdownMenuItem<int?>(
@@ -189,7 +189,7 @@ Widget _buildEmpresaDropdown(BuildContext context, DepositosChequesState state, 
       )),
     ],
     onChanged: (int? codEmpresa) {
-      if (codEmpresa == null || codEmpresa == 0) {
+      if (codEmpresa == null) {
         notifier.seleccionarEmpresa(null);
       } else {
         // Encontrar la empresa con ese código
@@ -309,24 +309,20 @@ Widget _buildBancoDropdown(BuildContext context, DepositosChequesState state, De
 }
 Widget _buildClienteDropdown(BuildContext context, DepositosChequesState state, DepositosChequesNotifier notifier) {
   // Usamos String (codCliente) como valor del dropdown
-  // Si selecciona "Todos", el valor es "" (nulo lógico para backend)
-  String currentValue = state.clienteSeleccionado?.codCliente ?? "";
-  // Si el valor no está en la lista, también usar ""
-  if (currentValue != "" && !state.clientes.any((c) => c.codCliente == currentValue)) {
-    currentValue = "";
+  String? currentValue = state.clienteSeleccionado?.codCliente;
+  // Si el cliente seleccionado es null o no está en la lista, usar null
+  if (state.clienteSeleccionado == null ||
+      !state.clientes.any((c) => c.codCliente == currentValue)) {
+    currentValue = null;
   }
-  // Forzar rebuild con UniqueKey si el valor es "Todos"
-  final dropdownKey = currentValue.isEmpty
-      ? ValueKey('cliente-dropdown-${state.clientes.length}-todos-${UniqueKey()}')
-      : ValueKey('cliente-dropdown-${state.clientes.length}-$currentValue');
   return DropdownButtonFormField<String?>(
-    key: dropdownKey,
+    key: ValueKey('cliente-dropdown-${state.clientes.length}-${currentValue ?? 'todos'}'),
     value: currentValue,
     decoration: const InputDecoration(labelText: 'Cliente'),
     isExpanded: true,
     items: [
       DropdownMenuItem<String?>(
-        value: "",
+        value: null,
         child: const Text('Todos'),
       ),
       ...state.clientes.map((c) => DropdownMenuItem<String?>(
@@ -339,7 +335,7 @@ Widget _buildClienteDropdown(BuildContext context, DepositosChequesState state, 
       )),
     ],
     onChanged: (String? codCliente) {
-      if (codCliente == null || codCliente.isEmpty) {
+      if (codCliente == null) {
         notifier.seleccionarCliente(null);
       } else {
         // Encontrar el cliente con ese código
