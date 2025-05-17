@@ -162,40 +162,35 @@ Widget _buildEmpresaDropdown(BuildContext context, DepositosChequesState state, 
   }
   
   // Usamos int (codEmpresa) como valor del dropdown en lugar del objeto completo
-  // Si no hay empresa seleccionada, mostrar 'Todos' (null)
   int? currentValue = state.empresaSeleccionada?.codEmpresa;
-  // Si la empresa seleccionada no está en la lista, o es null, usar null
+  final dropdownKey = '${state.empresaSeleccionada?.codEmpresa ?? 0}_${state.empresas.length}_${state.clientes.length}_${state.bancos.length}_${state.selectedEstado}';
+  // Los items ya incluyen "Todos" desde el provider
+  final empresaItems = state.empresas.map((e) => DropdownMenuItem<int?>(
+    value: e.codEmpresa,
+    child: Text(
+      e.nombre,
+      overflow: TextOverflow.ellipsis,
+      maxLines: 1,
+    ),
+  )).toList();
+  // Si la empresa seleccionada no está en la lista, o es null, usar 0 ("Todos")
   if (state.empresaSeleccionada == null ||
       !state.empresas.any((e) => e.codEmpresa == currentValue)) {
-    currentValue = null;
+    currentValue = 0;
   }
   return DropdownButtonFormField<int?>(
-    key: ValueKey('empresa-dropdown-${state.empresas.length}-${currentValue ?? 'todos'}'), // Clave única
+    key: ValueKey('empresa-dropdown-$dropdownKey'),
     value: currentValue,
     decoration: const InputDecoration(labelText: 'Empresa'),
     isExpanded: true,
-    items: [
-      DropdownMenuItem<int?>(
-        value: null,
-        child: const Text('Todos'),
-      ),
-      ...state.empresas.map((e) => DropdownMenuItem<int?>(
-        value: e.codEmpresa,
-        child: Text(
-          e.nombre,
-          overflow: TextOverflow.ellipsis,
-          maxLines: 1,
-        ),
-      )),
-    ],
+    items: empresaItems,
     onChanged: (int? codEmpresa) {
-      if (codEmpresa == null) {
+      if (codEmpresa == null || codEmpresa == 0) {
         notifier.seleccionarEmpresa(null);
       } else {
-        // Encontrar la empresa con ese código
         final empresa = state.empresas.firstWhere(
           (e) => e.codEmpresa == codEmpresa,
-          orElse: () => state.empresas.first, // Fallback seguro
+          orElse: () => state.empresas.first,
         );
         notifier.seleccionarEmpresa(empresa);
       }
@@ -310,35 +305,31 @@ Widget _buildBancoDropdown(BuildContext context, DepositosChequesState state, De
 Widget _buildClienteDropdown(BuildContext context, DepositosChequesState state, DepositosChequesNotifier notifier) {
   // Usamos String (codCliente) como valor del dropdown
   String? currentValue = state.clienteSeleccionado?.codCliente;
-  // Si el cliente seleccionado es null o no está en la lista, usar null
+  final dropdownKey = '${state.clienteSeleccionado?.codCliente ?? ''}_${state.clientes.length}_${state.empresas.length}_${state.bancos.length}_${state.selectedEstado}';
+  // Los items ya incluyen "Todos" desde el provider
+  final clienteItems = state.clientes.map((c) => DropdownMenuItem<String?>(
+    value: c.codCliente,
+    child: Text(
+      c.nombreCompleto,
+      overflow: TextOverflow.ellipsis,
+      maxLines: 1,
+    ),
+  )).toList();
+  // Si el cliente seleccionado es null o no está en la lista, usar "" ("Todos")
   if (state.clienteSeleccionado == null ||
       !state.clientes.any((c) => c.codCliente == currentValue)) {
-    currentValue = null;
+    currentValue = "";
   }
   return DropdownButtonFormField<String?>(
-    key: ValueKey('cliente-dropdown-${state.clientes.length}-${currentValue ?? 'todos'}'),
+    key: ValueKey('cliente-dropdown-$dropdownKey'),
     value: currentValue,
     decoration: const InputDecoration(labelText: 'Cliente'),
     isExpanded: true,
-    items: [
-      DropdownMenuItem<String?>(
-        value: null,
-        child: const Text('Todos'),
-      ),
-      ...state.clientes.map((c) => DropdownMenuItem<String?>(
-        value: c.codCliente,
-        child: Text(
-          c.nombreCompleto,
-          overflow: TextOverflow.ellipsis,
-          maxLines: 1,
-        ),
-      )),
-    ],
+    items: clienteItems,
     onChanged: (String? codCliente) {
-      if (codCliente == null) {
+      if (codCliente == null || codCliente.isEmpty) {
         notifier.seleccionarCliente(null);
       } else {
-        // Encontrar el cliente con ese código
         final cliente = state.clientes.firstWhere(
           (c) => c.codCliente == codCliente,
           orElse: () => state.clientes.first,
