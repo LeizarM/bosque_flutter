@@ -1,3 +1,4 @@
+import 'package:bosque_flutter/core/utils/pdf_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/state/depositos_cheques_provider.dart';
@@ -117,340 +118,429 @@ class DepositoChequeViewScreen extends ConsumerWidget {
 
   // Métodos para construir la UI según el tipo de dispositivo
 
- Widget _buildDesktopFiltersRow1(BuildContext context, DepositosChequesState state, DepositosChequesNotifier notifier) {
-  return Row(
-    children: [
-      // Empresa - Usamos IDs en lugar de objetos
-      Expanded(
-        child: _buildEmpresaDropdown(context, state, notifier),
-      ),
-      const SizedBox(width: 16),
-      // Banco
-      Expanded(
-        child: _buildBancoDropdown(context, state, notifier),
-      ),
-      const SizedBox(width: 16),
-      // Desde
-      Expanded(
-        child: _DatePickerField(
-          label: 'Desde',
-          date: state.fechaDesde,
-          onChanged: notifier.setFechaDesde,
+  Widget _buildDesktopFiltersRow1(
+    BuildContext context,
+    DepositosChequesState state,
+    DepositosChequesNotifier notifier,
+  ) {
+    return Row(
+      children: [
+        // Empresa - Usamos IDs en lugar de objetos
+        Expanded(child: _buildEmpresaDropdown(context, state, notifier)),
+        const SizedBox(width: 16),
+        // Banco
+        Expanded(child: _buildBancoDropdown(context, state, notifier)),
+        const SizedBox(width: 16),
+        // Desde
+        Expanded(
+          child: _DatePickerField(
+            label: 'Desde',
+            date: state.fechaDesde,
+            onChanged: notifier.setFechaDesde,
+          ),
         ),
-      ),
-      const SizedBox(width: 16),
-      // Hasta
-      Expanded(
-        child: _DatePickerField(
-          label: 'Hasta',
-          date: state.fechaHasta,
-          onChanged: notifier.setFechaHasta,
+        const SizedBox(width: 16),
+        // Hasta
+        Expanded(
+          child: _DatePickerField(
+            label: 'Hasta',
+            date: state.fechaHasta,
+            onChanged: notifier.setFechaHasta,
+          ),
         ),
-      ),
-    ],
-  );
-}
-
-
-Widget _buildEmpresaDropdown(BuildContext context, DepositosChequesState state, DepositosChequesNotifier notifier) {
-  // Si empresas aún no se ha cargado, mostrar un placeholder
-  if (state.empresas.isEmpty) {
-    return InputDecorator(
-      decoration: const InputDecoration(labelText: 'Empresa'),
-      child: const Text('Cargando...', style: TextStyle(color: Colors.grey)),
+      ],
     );
   }
-  
-  // Usamos int (codEmpresa) como valor del dropdown en lugar del objeto completo
-  int? currentValue = state.empresaSeleccionada?.codEmpresa;
-  final dropdownKey = '${state.empresaSeleccionada?.codEmpresa ?? 0}_${state.empresas.length}_${state.clientes.length}_${state.bancos.length}_${state.selectedEstado}';
-  // Los items ya incluyen "Todos" desde el provider
-  final empresaItems = state.empresas.map((e) => DropdownMenuItem<int?>(
-    value: e.codEmpresa,
-    child: Text(
-      e.nombre,
-      overflow: TextOverflow.ellipsis,
-      maxLines: 1,
-    ),
-  )).toList();
-  // Si la empresa seleccionada no está en la lista, o es null, usar 0 ("Todos")
-  if (state.empresaSeleccionada == null ||
-      !state.empresas.any((e) => e.codEmpresa == currentValue)) {
-    currentValue = 0;
+
+  Widget _buildEmpresaDropdown(
+    BuildContext context,
+    DepositosChequesState state,
+    DepositosChequesNotifier notifier,
+  ) {
+    // Si empresas aún no se ha cargado, mostrar un placeholder
+    if (state.empresas.isEmpty) {
+      return InputDecorator(
+        decoration: const InputDecoration(labelText: 'Empresa'),
+        child: const Text('Cargando...', style: TextStyle(color: Colors.grey)),
+      );
+    }
+
+    // Usamos int (codEmpresa) como valor del dropdown en lugar del objeto completo
+    int? currentValue = state.empresaSeleccionada?.codEmpresa;
+    final dropdownKey =
+        '${state.empresaSeleccionada?.codEmpresa ?? 0}_${state.empresas.length}_${state.clientes.length}_${state.bancos.length}_${state.selectedEstado}';
+    // Los items ya incluyen "Todos" desde el provider
+    final empresaItems =
+        state.empresas
+            .map(
+              (e) => DropdownMenuItem<int?>(
+                value: e.codEmpresa,
+                child: Text(
+                  e.nombre,
+                  overflow: TextOverflow.ellipsis,
+                  maxLines: 1,
+                ),
+              ),
+            )
+            .toList();
+    // Si la empresa seleccionada no está en la lista, o es null, usar 0 ("Todos")
+    if (state.empresaSeleccionada == null ||
+        !state.empresas.any((e) => e.codEmpresa == currentValue)) {
+      currentValue = 0;
+    }
+    return DropdownButtonFormField<int?>(
+      key: ValueKey('empresa-dropdown-$dropdownKey'),
+      value: currentValue,
+      decoration: const InputDecoration(labelText: 'Empresa'),
+      isExpanded: true,
+      items: empresaItems,
+      onChanged: (int? codEmpresa) {
+        if (codEmpresa == null || codEmpresa == 0) {
+          notifier.seleccionarEmpresa(null);
+        } else {
+          final empresa = state.empresas.firstWhere(
+            (e) => e.codEmpresa == codEmpresa,
+            orElse: () => state.empresas.first,
+          );
+          notifier.seleccionarEmpresa(empresa);
+        }
+      },
+    );
   }
-  return DropdownButtonFormField<int?>(
-    key: ValueKey('empresa-dropdown-$dropdownKey'),
-    value: currentValue,
-    decoration: const InputDecoration(labelText: 'Empresa'),
-    isExpanded: true,
-    items: empresaItems,
-    onChanged: (int? codEmpresa) {
-      if (codEmpresa == null || codEmpresa == 0) {
-        notifier.seleccionarEmpresa(null);
-      } else {
-        final empresa = state.empresas.firstWhere(
-          (e) => e.codEmpresa == codEmpresa,
-          orElse: () => state.empresas.first,
-        );
-        notifier.seleccionarEmpresa(empresa);
-      }
-    },
-  );
-}
 
-Widget _buildBancoDropdown(BuildContext context, DepositosChequesState state, DepositosChequesNotifier notifier) {
-  // Usamos int (idBxC) como valor del dropdown
-  int? currentValue = state.bancoSeleccionado?.idBxC;
-  
-  return DropdownButtonFormField<int?>(
-    value: currentValue,
-    decoration: const InputDecoration(labelText: 'Banco'),
-    isExpanded: true,
-    items: [
-      DropdownMenuItem<int?>(
-        value: null,
-        child: const Text('Todos'),
-      ),
-      ...state.bancos.map((b) => DropdownMenuItem<int?>(
-        value: b.idBxC,
-        child: Text(
-          b.nombreBanco,
-          overflow: TextOverflow.ellipsis,
-          maxLines: 1,
+  Widget _buildBancoDropdown(
+    BuildContext context,
+    DepositosChequesState state,
+    DepositosChequesNotifier notifier,
+  ) {
+    // Usamos int (idBxC) como valor del dropdown
+    int? currentValue = state.bancoSeleccionado?.idBxC;
+
+    return DropdownButtonFormField<int?>(
+      value: currentValue,
+      decoration: const InputDecoration(labelText: 'Banco'),
+      isExpanded: true,
+      items: [
+        DropdownMenuItem<int?>(value: null, child: const Text('Todos')),
+        ...state.bancos.map(
+          (b) => DropdownMenuItem<int?>(
+            value: b.idBxC,
+            child: Text(
+              b.nombreBanco,
+              overflow: TextOverflow.ellipsis,
+              maxLines: 1,
+            ),
+          ),
         ),
-      )),
-    ],
-    onChanged: (int? idBxC) {
-      if (idBxC == null) {
-        notifier.seleccionarBanco(null);
-      } else {
-        // Encontrar el banco con ese ID
-        final banco = state.bancos.firstWhere(
-          (b) => b.idBxC == idBxC,
-        );
-        notifier.seleccionarBanco(banco);
-      }
-    },
-  );
-}
-  Widget _buildMobileFilters1(BuildContext context, DepositosChequesState state, DepositosChequesNotifier notifier) {
-  return Column(
-    crossAxisAlignment: CrossAxisAlignment.stretch,
-    children: [
-      // Empresa
-      _buildEmpresaDropdown(context, state, notifier),
-      const SizedBox(height: 12),
-      // Banco
-      _buildBancoDropdown(context, state, notifier),
-      const SizedBox(height: 12),
-      // Desde y Hasta en una fila
-      Row(
-        children: [
-          Expanded(
-            child: _DatePickerField(
-              label: 'Desde',
-              date: state.fechaDesde,
-              onChanged: notifier.setFechaDesde,
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: _DatePickerField(
-              label: 'Hasta',
-              date: state.fechaHasta,
-              onChanged: notifier.setFechaHasta,
-            ),
-          ),
-        ],
-      ),
-    ],
-  );
-}
+      ],
+      onChanged: (int? idBxC) {
+        if (idBxC == null) {
+          notifier.seleccionarBanco(null);
+        } else {
+          // Encontrar el banco con ese ID
+          final banco = state.bancos.firstWhere((b) => b.idBxC == idBxC);
+          notifier.seleccionarBanco(banco);
+        }
+      },
+    );
+  }
 
-  Widget _buildDesktopFiltersRow2(BuildContext context, DepositosChequesState state, DepositosChequesNotifier notifier) {
-  return Row(
-    children: [
-      // Cliente
-      Expanded(
-        flex: 2,
-        child: _buildClienteDropdown(context, state, notifier),
-      ),
-      const SizedBox(width: 16),
-      // Estado
-      Expanded(
-        child: DropdownButtonFormField<String>(
+  Widget _buildMobileFilters1(
+    BuildContext context,
+    DepositosChequesState state,
+    DepositosChequesNotifier notifier,
+  ) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        // Empresa
+        _buildEmpresaDropdown(context, state, notifier),
+        const SizedBox(height: 12),
+        // Banco
+        _buildBancoDropdown(context, state, notifier),
+        const SizedBox(height: 12),
+        // Desde y Hasta en una fila
+        Row(
+          children: [
+            Expanded(
+              child: _DatePickerField(
+                label: 'Desde',
+                date: state.fechaDesde,
+                onChanged: notifier.setFechaDesde,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _DatePickerField(
+                label: 'Hasta',
+                date: state.fechaHasta,
+                onChanged: notifier.setFechaHasta,
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildDesktopFiltersRow2(
+    BuildContext context,
+    DepositosChequesState state,
+    DepositosChequesNotifier notifier,
+  ) {
+    return Row(
+      children: [
+        // Cliente
+        Expanded(
+          flex: 2,
+          child: _buildClienteDropdown(context, state, notifier),
+        ),
+        const SizedBox(width: 16),
+        // Estado
+        Expanded(
+          child: DropdownButtonFormField<String>(
+            value: state.selectedEstado ?? 'Todos',
+            decoration: const InputDecoration(labelText: 'Estado'),
+            items:
+                estadosDeposito
+                    .map(
+                      (e) => DropdownMenuItem<String>(
+                        value: e['value'],
+                        child: Text(e['label']!),
+                      ),
+                    )
+                    .toList(),
+            onChanged: notifier.setEstado,
+            isExpanded: true,
+          ),
+        ),
+        const SizedBox(width: 16),
+        // Botón Buscar
+        ElevatedButton.icon(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: const Color(0xFF6C63FF),
+            padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 18),
+          ),
+          onPressed: notifier.buscarDepositos,
+          icon: const Icon(Icons.search, color: Colors.white),
+          label: const Text(
+            'Buscar/Actualizar',
+            style: TextStyle(color: Colors.white),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildClienteDropdown(
+    BuildContext context,
+    DepositosChequesState state,
+    DepositosChequesNotifier notifier,
+  ) {
+    // Usamos String (codCliente) como valor del dropdown
+    String? currentValue = state.clienteSeleccionado?.codCliente;
+    final dropdownKey =
+        '${state.clienteSeleccionado?.codCliente ?? ''}_${state.clientes.length}_${state.empresas.length}_${state.bancos.length}_${state.selectedEstado}';
+    // Los items ya incluyen "Todos" desde el provider
+    final clienteItems =
+        state.clientes
+            .map(
+              (c) => DropdownMenuItem<String?>(
+                value: c.codCliente,
+                child: Text(
+                  c.nombreCompleto,
+                  overflow: TextOverflow.ellipsis,
+                  maxLines: 1,
+                ),
+              ),
+            )
+            .toList();
+    // Si el cliente seleccionado es null o no está en la lista, usar "" ("Todos")
+    if (state.clienteSeleccionado == null ||
+        !state.clientes.any((c) => c.codCliente == currentValue)) {
+      currentValue = "";
+    }
+    return DropdownButtonFormField<String?>(
+      key: ValueKey('cliente-dropdown-$dropdownKey'),
+      value: currentValue,
+      decoration: const InputDecoration(labelText: 'Cliente'),
+      isExpanded: true,
+      items: clienteItems,
+      onChanged: (String? codCliente) {
+        if (codCliente == null || codCliente.isEmpty) {
+          notifier.seleccionarCliente(null);
+        } else {
+          final cliente = state.clientes.firstWhere(
+            (c) => c.codCliente == codCliente,
+            orElse: () => state.clientes.first,
+          );
+          notifier.seleccionarCliente(cliente);
+        }
+      },
+    );
+  }
+
+  Widget _buildMobileFilters2(
+    BuildContext context,
+    DepositosChequesState state,
+    DepositosChequesNotifier notifier,
+  ) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        // Cliente
+        _buildClienteDropdown(context, state, notifier),
+        const SizedBox(height: 12),
+        // Estado
+        DropdownButtonFormField<String>(
           value: state.selectedEstado ?? 'Todos',
           decoration: const InputDecoration(labelText: 'Estado'),
-          items: estadosDeposito
-              .map((e) => DropdownMenuItem<String>(value: e['value'], child: Text(e['label']!)))
-              .toList(),
+          items:
+              estadosDeposito
+                  .map(
+                    (e) => DropdownMenuItem<String>(
+                      value: e['value'],
+                      child: Text(e['label']!),
+                    ),
+                  )
+                  .toList(),
           onChanged: notifier.setEstado,
           isExpanded: true,
         ),
-      ),
-      const SizedBox(width: 16),
-      // Botón Buscar
-      ElevatedButton.icon(
-        style: ElevatedButton.styleFrom(
-          backgroundColor: const Color(0xFF6C63FF),
-          padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 18),
-        ),
-        onPressed: notifier.buscarDepositos,
-        icon: const Icon(Icons.search, color: Colors.white),
-        label: const Text('Buscar/Actualizar', style: TextStyle(color: Colors.white)),
-      ),
-    ],
-  );
-}
-Widget _buildClienteDropdown(BuildContext context, DepositosChequesState state, DepositosChequesNotifier notifier) {
-  // Usamos String (codCliente) como valor del dropdown
-  String? currentValue = state.clienteSeleccionado?.codCliente;
-  final dropdownKey = '${state.clienteSeleccionado?.codCliente ?? ''}_${state.clientes.length}_${state.empresas.length}_${state.bancos.length}_${state.selectedEstado}';
-  // Los items ya incluyen "Todos" desde el provider
-  final clienteItems = state.clientes.map((c) => DropdownMenuItem<String?>(
-    value: c.codCliente,
-    child: Text(
-      c.nombreCompleto,
-      overflow: TextOverflow.ellipsis,
-      maxLines: 1,
-    ),
-  )).toList();
-  // Si el cliente seleccionado es null o no está en la lista, usar "" ("Todos")
-  if (state.clienteSeleccionado == null ||
-      !state.clientes.any((c) => c.codCliente == currentValue)) {
-    currentValue = "";
-  }
-  return DropdownButtonFormField<String?>(
-    key: ValueKey('cliente-dropdown-$dropdownKey'),
-    value: currentValue,
-    decoration: const InputDecoration(labelText: 'Cliente'),
-    isExpanded: true,
-    items: clienteItems,
-    onChanged: (String? codCliente) {
-      if (codCliente == null || codCliente.isEmpty) {
-        notifier.seleccionarCliente(null);
-      } else {
-        final cliente = state.clientes.firstWhere(
-          (c) => c.codCliente == codCliente,
-          orElse: () => state.clientes.first,
-        );
-        notifier.seleccionarCliente(cliente);
-      }
-    },
-  );
-}
-
-
-  Widget _buildMobileFilters2(BuildContext context, DepositosChequesState state, DepositosChequesNotifier notifier) {
-  return Column(
-    crossAxisAlignment: CrossAxisAlignment.stretch,
-    children: [
-      // Cliente
-      _buildClienteDropdown(context, state, notifier),
-      const SizedBox(height: 12),
-      // Estado
-      DropdownButtonFormField<String>(
-        value: state.selectedEstado ?? 'Todos',
-        decoration: const InputDecoration(labelText: 'Estado'),
-        items: estadosDeposito
-            .map((e) => DropdownMenuItem<String>(value: e['value'], child: Text(e['label']!)))
-            .toList(),
-        onChanged: notifier.setEstado,
-        isExpanded: true,
-      ),
-      const SizedBox(height: 16),
-      // Botón Buscar
-      ElevatedButton.icon(
-        style: ElevatedButton.styleFrom(
-          backgroundColor: const Color(0xFF6C63FF),
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-        ),
-        onPressed: notifier.buscarDepositos,
-        icon: const Icon(Icons.search, color: Colors.white),
-        label: const Text('Buscar/Actualizar', style: TextStyle(color: Colors.white)),
-      ),
-    ],
-  );
-}
-
-  Widget _buildResultsHeader(
-    BuildContext context,
-    DepositosChequesState state,
-  ) {
-    final isDesktop = ResponsiveUtilsBosque.isDesktop(context);
-    final isMobile = ResponsiveUtilsBosque.isMobile(context);
-
-    if (isDesktop) {
-      return Row(
-        children: [
-          Text(
-            'Resultados',
-            style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
+        const SizedBox(height: 16),
+        // Botón Buscar
+        ElevatedButton.icon(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: const Color(0xFF6C63FF),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
           ),
-          const Spacer(),
-          ElevatedButton.icon(
+          onPressed: notifier.buscarDepositos,
+          icon: const Icon(Icons.search, color: Colors.white),
+          label: const Text(
+            'Buscar/Actualizar',
+            style: TextStyle(color: Colors.white),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildResultsHeader(BuildContext context, DepositosChequesState state) {
+  final isDesktop = ResponsiveUtilsBosque.isDesktop(context);
+  final isMobile = ResponsiveUtilsBosque.isMobile(context);
+
+  if (isDesktop) {
+    return Row(
+      children: [
+        Text(
+          'Resultados',
+          style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
+        ),
+        const Spacer(),
+        ElevatedButton.icon(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.white,
+            foregroundColor: const Color(0xFF6C63FF),
+            side: const BorderSide(color: Color(0xFF6C63FF)),
+            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+          ),
+          onPressed: state.depositos.isEmpty 
+            ? null  // Deshabilitar si no hay datos
+            : () {
+                // Crear mapa de filtros aplicados
+                final filtros = {
+                  'Empresa': state.empresaSeleccionada?.nombre ?? 'Todos',
+                  'Cliente': state.clienteSeleccionado?.nombreCompleto ?? 'Todos',
+                  'Banco': state.bancoSeleccionado?.nombreBanco ?? 'Todos',
+                  'Estado': state.selectedEstado ?? 'Todos',
+                  'Desde': state.fechaDesde,
+                  'Hasta': state.fechaHasta,
+                };
+                
+                // Llamar al servicio PDF
+                PdfService.generateAndViewDepositosPdf(
+                  context: context,
+                  title: 'Consulta de Depósitos',
+                  depositos: state.depositos,
+                  filtros: filtros,
+                );
+              },
+          icon: const Icon(Icons.picture_as_pdf_outlined),
+          label: const Text('Exportar PDF'),
+        ),
+        const SizedBox(width: 16),
+        Text(
+          '${state.totalRegistros} registros encontrados',
+          style: const TextStyle(color: Colors.black54),
+        ),
+      ],
+    );
+  } else {
+    // Similar para móvil
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Text(
+              'Resultados',
+              style: TextStyle(
+                fontWeight: FontWeight.w600,
+                fontSize: isMobile ? 14 : 16,
+              ),
+            ),
+            const Spacer(),
+            Text(
+              '${state.totalRegistros} registros',
+              style: TextStyle(
+                color: Colors.black54,
+                fontSize: isMobile ? 13 : 14,
+              ),
+            ),
+          ],
+        ),
+        SizedBox(height: 8),
+        SizedBox(
+          width: double.infinity,
+          child: ElevatedButton.icon(
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.white,
               foregroundColor: const Color(0xFF6C63FF),
               side: const BorderSide(color: Color(0xFF6C63FF)),
-              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+              padding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 10,
+              ),
             ),
-            onPressed: () {}, // TODO: Exportar PDF
-            icon: const Icon(Icons.picture_as_pdf_outlined),
+            onPressed: state.depositos.isEmpty
+              ? null  // Deshabilitar si no hay datos
+              : () {
+                  // Crear mapa de filtros aplicados
+                  final filtros = {
+                    'Empresa': state.empresaSeleccionada?.nombre ?? 'Todos',
+                    'Cliente': state.clienteSeleccionado?.nombreCompleto ?? 'Todos',
+                    'Banco': state.bancoSeleccionado?.nombreBanco ?? 'Todos',
+                    'Estado': state.selectedEstado ?? 'Todos',
+                    'Desde': state.fechaDesde,
+                    'Hasta': state.fechaHasta,
+                  };
+                  
+                  // Llamar al servicio PDF
+                  PdfService.generateAndViewDepositosPdf(
+                    context: context,
+                    title: 'Consulta de Depósitos',
+                    depositos: state.depositos,
+                    filtros: filtros,
+                  );
+                },
+            icon: const Icon(Icons.picture_as_pdf_outlined, size: 18),
             label: const Text('Exportar PDF'),
           ),
-          const SizedBox(width: 16),
-          Text(
-            '${state.totalRegistros} registros encontrados',
-            style: const TextStyle(color: Colors.black54),
-          ),
-        ],
-      );
-    } else {
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Text(
-                'Resultados',
-                style: TextStyle(
-                  fontWeight: FontWeight.w600,
-                  fontSize: isMobile ? 14 : 16,
-                ),
-              ),
-              const Spacer(),
-              Text(
-                '${state.totalRegistros} registros',
-                style: TextStyle(
-                  color: Colors.black54,
-                  fontSize: isMobile ? 13 : 14,
-                ),
-              ),
-            ],
-          ),
-          SizedBox(height: 8),
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton.icon(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.white,
-                foregroundColor: const Color(0xFF6C63FF),
-                side: const BorderSide(color: Color(0xFF6C63FF)),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 10,
-                ),
-              ),
-              onPressed: () {}, // TODO: Exportar PDF
-              icon: const Icon(Icons.picture_as_pdf_outlined, size: 18),
-              label: const Text('Exportar PDF'),
-            ),
-          ),
-        ],
-      );
-    }
+        ),
+      ],
+    );
   }
+}
 }
 
 class _DatePickerField extends StatefulWidget {
