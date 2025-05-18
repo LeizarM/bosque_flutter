@@ -277,4 +277,46 @@ class DepositoChequesImpl implements DepositoChequesRepository {
     // TODO: implement lstDepositxIdentificar
     throw UnimplementedError();
   }
+
+  @override
+  Future<Uint8List> obtenerPdfDeposito(
+    int idDeposito,
+    DepositoChequeEntity deposito,
+  ) async {
+    try {
+      final model = DepositoChequeModel.fromEntity(deposito);
+
+      final response = await _dio.post(
+        AppConstants.depGenPdfDeposito + idDeposito.toString(),
+        data: model.toJson(),
+        options: Options(
+        responseType: ResponseType.bytes,  // Crucial para recibir datos binarios
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/pdf',
+        },
+      ),
+      );
+
+      if (response.statusCode == 200) {
+        // Verificar que tenemos datos y son del tipo correcto
+        if (response.data is List<int>) {
+          final pdfBytes = Uint8List.fromList(response.data);
+
+          // Verificar que los datos parecen ser un PDF
+          if (pdfBytes.isNotEmpty) {
+            return pdfBytes;
+          } else {
+            throw Exception('El PDF recibido está vacío');
+          }
+        } else {
+          throw Exception('Formato inesperado: ${response.data.runtimeType}');
+        }
+      } else {
+        throw Exception('Error obteniendo PDF: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('Error en la solicitud: $e');
+    }
+  }
 }

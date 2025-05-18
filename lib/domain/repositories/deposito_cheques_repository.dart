@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:bosque_flutter/domain/entities/banco_cuenta_entity.dart';
 import 'package:bosque_flutter/domain/entities/deposito_cheque_entity.dart';
@@ -35,4 +36,6 @@ abstract class DepositoChequesRepository {
     DateTime? fechaFin,
     String codCliente,
   );
+
+  Future<Uint8List> obtenerPdfDeposito(int idDeposito, DepositoChequeEntity deposito);
 }

@@ -425,122 +425,134 @@ class DepositoChequeViewScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildResultsHeader(BuildContext context, DepositosChequesState state) {
-  final isDesktop = ResponsiveUtilsBosque.isDesktop(context);
-  final isMobile = ResponsiveUtilsBosque.isMobile(context);
+  Widget _buildResultsHeader(
+    BuildContext context,
+    DepositosChequesState state,
+  ) {
+    final isDesktop = ResponsiveUtilsBosque.isDesktop(context);
+    final isMobile = ResponsiveUtilsBosque.isMobile(context);
 
-  if (isDesktop) {
-    return Row(
-      children: [
-        Text(
-          'Resultados',
-          style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
-        ),
-        const Spacer(),
-        ElevatedButton.icon(
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.white,
-            foregroundColor: const Color(0xFF6C63FF),
-            side: const BorderSide(color: Color(0xFF6C63FF)),
-            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+    if (isDesktop) {
+      return Row(
+        children: [
+          Text(
+            'Resultados',
+            style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
           ),
-          onPressed: state.depositos.isEmpty 
-            ? null  // Deshabilitar si no hay datos
-            : () {
-                // Crear mapa de filtros aplicados
-                final filtros = {
-                  'Empresa': state.empresaSeleccionada?.nombre ?? 'Todos',
-                  'Cliente': state.clienteSeleccionado?.nombreCompleto ?? 'Todos',
-                  'Banco': state.bancoSeleccionado?.nombreBanco ?? 'Todos',
-                  'Estado': state.selectedEstado ?? 'Todos',
-                  'Desde': state.fechaDesde,
-                  'Hasta': state.fechaHasta,
-                };
-                
-                // Llamar al servicio PDF
-                PdfService.generateAndViewDepositosPdf(
-                  context: context,
-                  title: 'Consulta de Depósitos',
-                  depositos: state.depositos,
-                  filtros: filtros,
-                );
-              },
-          icon: const Icon(Icons.picture_as_pdf_outlined),
-          label: const Text('Exportar PDF'),
-        ),
-        const SizedBox(width: 16),
-        Text(
-          '${state.totalRegistros} registros encontrados',
-          style: const TextStyle(color: Colors.black54),
-        ),
-      ],
-    );
-  } else {
-    // Similar para móvil
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Text(
-              'Resultados',
-              style: TextStyle(
-                fontWeight: FontWeight.w600,
-                fontSize: isMobile ? 14 : 16,
-              ),
-            ),
-            const Spacer(),
-            Text(
-              '${state.totalRegistros} registros',
-              style: TextStyle(
-                color: Colors.black54,
-                fontSize: isMobile ? 13 : 14,
-              ),
-            ),
-          ],
-        ),
-        SizedBox(height: 8),
-        SizedBox(
-          width: double.infinity,
-          child: ElevatedButton.icon(
+          const Spacer(),
+          ElevatedButton.icon(
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.white,
               foregroundColor: const Color(0xFF6C63FF),
               side: const BorderSide(color: Color(0xFF6C63FF)),
-              padding: const EdgeInsets.symmetric(
-                horizontal: 16,
-                vertical: 10,
-              ),
+              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
             ),
-            onPressed: state.depositos.isEmpty
-              ? null  // Deshabilitar si no hay datos
-              : () {
-                  // Crear mapa de filtros aplicados
-                  final filtros = {
-                    'Empresa': state.empresaSeleccionada?.nombre ?? 'Todos',
-                    'Cliente': state.clienteSeleccionado?.nombreCompleto ?? 'Todos',
-                    'Banco': state.bancoSeleccionado?.nombreBanco ?? 'Todos',
-                    'Estado': state.selectedEstado ?? 'Todos',
-                    'Desde': state.fechaDesde,
-                    'Hasta': state.fechaHasta,
-                  };
-                  
-                  // Llamar al servicio PDF
-                  PdfService.generateAndViewDepositosPdf(
-                    context: context,
-                    title: 'Consulta de Depósitos',
-                    depositos: state.depositos,
-                    filtros: filtros,
-                  );
-                },
-            icon: const Icon(Icons.picture_as_pdf_outlined, size: 18),
+            onPressed:
+                state.depositos.isEmpty
+                    ? null // Deshabilitar si no hay datos
+                    : () {
+                      // Crear mapa de filtros aplicados
+                      final filtros = {
+                        'Empresa': state.empresaSeleccionada?.nombre ?? 'Todos',
+                        'Cliente':
+                            state.clienteSeleccionado?.nombreCompleto ??
+                            'Todos',
+                        'Banco':
+                            state.bancoSeleccionado?.nombreBanco ?? 'Todos',
+                        'Estado': state.selectedEstado ?? 'Todos',
+                        'Desde': state.fechaDesde,
+                        'Hasta': state.fechaHasta,
+                      };
+
+                      // Llamar al servicio PDF
+                      PdfService.generateAndViewDepositosPdf(
+                        context: context,
+                        title: 'Consulta de Depósitos',
+                        depositos: state.depositos,
+                        filtros: filtros,
+                      );
+                    },
+            icon: const Icon(Icons.picture_as_pdf_outlined),
             label: const Text('Exportar PDF'),
           ),
-        ),
-      ],
-    );
+          const SizedBox(width: 16),
+          Text(
+            '${state.totalRegistros} registros encontrados',
+            style: const TextStyle(color: Colors.black54),
+          ),
+        ],
+      );
+    } else {
+      // Similar para móvil
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Text(
+                'Resultados',
+                style: TextStyle(
+                  fontWeight: FontWeight.w600,
+                  fontSize: isMobile ? 14 : 16,
+                ),
+              ),
+              const Spacer(),
+              Text(
+                '${state.totalRegistros} registros',
+                style: TextStyle(
+                  color: Colors.black54,
+                  fontSize: isMobile ? 13 : 14,
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 8),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.white,
+                foregroundColor: const Color(0xFF6C63FF),
+                side: const BorderSide(color: Color(0xFF6C63FF)),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 10,
+                ),
+              ),
+              onPressed:
+                  state.depositos.isEmpty
+                      ? null // Deshabilitar si no hay datos
+                      : () {
+                        // Crear mapa de filtros aplicados
+                        final filtros = {
+                          'Empresa':
+                              state.empresaSeleccionada?.nombre ?? 'Todos',
+                          'Cliente':
+                              state.clienteSeleccionado?.nombreCompleto ??
+                              'Todos',
+                          'Banco':
+                              state.bancoSeleccionado?.nombreBanco ?? 'Todos',
+                          'Estado': state.selectedEstado ?? 'Todos',
+                          'Desde': state.fechaDesde,
+                          'Hasta': state.fechaHasta,
+                        };
+
+                        // Llamar al servicio PDF
+                        PdfService.generateAndViewDepositosPdf(
+                          context: context,
+                          title: 'Consulta de Depósitos',
+                          depositos: state.depositos,
+                          filtros: filtros,
+                        );
+                      },
+              icon: const Icon(Icons.picture_as_pdf_outlined, size: 18),
+              label: const Text('Exportar PDF'),
+            ),
+          ),
+        ],
+      );
+    }
   }
-}
 }
 
 class _DatePickerField extends StatefulWidget {
@@ -891,43 +903,77 @@ class _DepositosTableState extends ConsumerState<_DepositosTable> {
                                       DataCell(
                                         Container(
                                           constraints: const BoxConstraints(
-                                            minWidth: 120,
+                                            minWidth: 160,
                                           ),
                                           child: Row(
                                             mainAxisSize: MainAxisSize.min,
                                             children: [
                                               IconButton(
                                                 icon: Icon(
-                                                  Icons.picture_as_pdf,
-                                                  size: isDesktop ? 20 : 18,
+                                                  Icons.image,
+                                                  color: Colors.indigo,
+                                                  size: 20,
                                                 ),
-                                                onPressed: () {},
-                                                padding: EdgeInsets.all(
-                                                  isDesktop ? 8 : 4,
-                                                ),
-                                                constraints: BoxConstraints(),
+                                                tooltip: 'Ver imagen',
+                                                onPressed: () {
+                                                  // TODO: Acción ver imagen
+                                                },
                                               ),
                                               IconButton(
                                                 icon: Icon(
-                                                  Icons.image,
-                                                  size: isDesktop ? 20 : 18,
+                                                  Icons.description,
+                                                  color: Colors.blue,
+                                                  size: 20,
                                                 ),
-                                                onPressed: () {},
-                                                padding: EdgeInsets.all(
-                                                  isDesktop ? 8 : 4,
-                                                ),
-                                                constraints: BoxConstraints(),
+                                                tooltip: 'Ver documento',
+                                                onPressed: () {
+                                                  // TODO: Acción ver documento
+                                                  try {
+                                                    // Llamar al método que descarga el PDF específico
+                                                    ref
+                                                        .read(
+                                                          depositosChequesProvider
+                                                              .notifier,
+                                                        )
+                                                        .descargarPdfDeposito(
+                                                          d.idDeposito,
+                                                          context,
+                                                        );
+                                                  } catch (e) {
+                                                    // Mostrar un mensaje de error
+                                                    ScaffoldMessenger.of(
+                                                      context,
+                                                    ).showSnackBar(
+                                                      SnackBar(
+                                                        content: Text(
+                                                          'Error al descargar el PDF: $e',
+                                                        ),
+                                                      ),
+                                                    );
+                                                  }
+                                                },
                                               ),
                                               IconButton(
                                                 icon: Icon(
                                                   Icons.edit,
-                                                  size: isDesktop ? 20 : 18,
+                                                  color: Colors.deepPurple,
+                                                  size: 20,
                                                 ),
-                                                onPressed: () {},
-                                                padding: EdgeInsets.all(
-                                                  isDesktop ? 8 : 4,
+                                                tooltip: 'Editar',
+                                                onPressed: () {
+                                                  // TODO: Acción editar
+                                                },
+                                              ),
+                                              IconButton(
+                                                icon: Icon(
+                                                  Icons.close,
+                                                  color: Colors.red,
+                                                  size: 20,
                                                 ),
-                                                constraints: BoxConstraints(),
+                                                tooltip: 'Eliminar',
+                                                onPressed: () {
+                                                  // TODO: Acción eliminar
+                                                },
                                               ),
                                             ],
                                           ),

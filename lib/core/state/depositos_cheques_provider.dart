@@ -1,11 +1,16 @@
 import 'dart:io';
+import 'dart:typed_data';
 import 'package:bosque_flutter/domain/entities/deposito_cheque_entity.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:bosque_flutter/domain/entities/empresa_entity.dart';
 import 'package:bosque_flutter/domain/entities/socio_negocio_entity.dart';
 import 'package:bosque_flutter/domain/entities/banco_cuenta_entity.dart';
 import 'package:bosque_flutter/domain/entities/nota_remision_entity.dart';
 import 'package:bosque_flutter/data/repositories/deposito_cheques_impl.dart';
+import 'package:printing/printing.dart';
+import 'package:universal_html/html.dart' as html;
 
 class DepositosChequesState {
   final List<EmpresaEntity> empresas;
@@ -120,6 +125,9 @@ class DepositosChequesNotifier extends StateNotifier<DepositosChequesState> {
   DepositosChequesNotifier() : super(DepositosChequesState()) {
     cargarEmpresas();
   }
+
+  
+
 
   Future<void> cargarEmpresas() async {
     state = state.copyWith(cargando: true);
@@ -385,6 +393,84 @@ class DepositosChequesNotifier extends StateNotifier<DepositosChequesState> {
   }
 }
 
+Future<void> descargarPdfDeposito(int idDeposito, BuildContext context) async {
+  state = state.copyWith(cargando: true);
+  try {
+    // Buscamos el depósito por ID
+    final deposito = state.depositos.firstWhere(
+      (d) => d.idDeposito == idDeposito,
+      orElse: () => throw Exception('Depósito no encontrado'),
+    );
+    
+    // Mostrar mensaje de inicio para depuración
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Descargando PDF del depósito $idDeposito...')),
+    );
+    
+    // Descargamos el PDF
+    final pdfBytes = await _repo.obtenerPdfDeposito(idDeposito, deposito);
+    
+    // Verificar que los bytes parecen ser un PDF (comienzan con %PDF)
+    if (pdfBytes.length > 4 && 
+        String.fromCharCodes(pdfBytes.sublist(0, 4)) == '%PDF') {
+      // Procesamos el PDF según la plataforma
+      procesarPdfDescargado(pdfBytes, context, idDeposito);
+      
+      // Mostrar mensaje de éxito
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('PDF descargado correctamente')),
+      );
+    } else {
+      throw Exception('Los datos recibidos no parecen ser un PDF válido');
+    }
+    
+    state = state.copyWith(cargando: false);
+  } catch (e) {
+    state = state.copyWith(cargando: false);
+    
+    // Mostrar mensaje de error detallado
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Error al descargar PDF: $e'),
+        backgroundColor: Colors.red,
+        duration: Duration(seconds: 5),
+      ),
+    );
+    
+    print('Error detallado: $e');
+  }
+}
+
+void procesarPdfDescargado(Uint8List pdfBytes, BuildContext context, int idDeposito) {
+  if (kIsWeb) {
+    // En web, iniciamos la descarga
+    downloadWebPdf(pdfBytes, 'deposito_$idDeposito.pdf');
+  } else {
+    // En móvil, mostramos la pantalla de previsualización
+    Printing.layoutPdf(
+      onLayout: (format) async => pdfBytes,
+      name: 'Depósito $idDeposito',
+    );
+  }
+}
+
+// Método para descargar PDF en web
+void downloadWebPdf(Uint8List pdfBytes, String fileName) {
+  final blob = html.Blob([pdfBytes], 'application/pdf');
+  final url = html.Url.createObjectUrlFromBlob(blob);
+  final anchor = html.AnchorElement(href: url)
+    ..setAttribute('download', fileName)
+    ..style.display = 'none';
+  html.document.body?.children.add(anchor);
+  
+  // Simular click para iniciar descarga
+  anchor.click();
+  
+  // Limpiar
+  html.document.body?.children.remove(anchor);
+  html.Url.revokeObjectUrl(url);
+}
+
 void setFechaHasta(DateTime? fecha) {
   if (fecha == null) {
     state = state.copyWith(setFechaHastaNull: true);
@@ -433,6 +519,8 @@ void setFechaHasta(DateTime? fecha) {
     }
 
   }
+
+  
 }
 
 final depositosChequesProvider = StateNotifierProvider<DepositosChequesNotifier, DepositosChequesState>((ref) {
