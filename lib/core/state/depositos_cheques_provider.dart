@@ -9,6 +9,7 @@ import 'package:bosque_flutter/domain/entities/socio_negocio_entity.dart';
 import 'package:bosque_flutter/domain/entities/banco_cuenta_entity.dart';
 import 'package:bosque_flutter/domain/entities/nota_remision_entity.dart';
 import 'package:bosque_flutter/data/repositories/deposito_cheques_impl.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:printing/printing.dart';
 import 'package:universal_html/html.dart' as html;
 
@@ -520,6 +521,102 @@ void setFechaHasta(DateTime? fecha) {
 
   }
 
+
+  Future<void> descargarImagenDeposito(int idDeposito, BuildContext context) async {
+  state = state.copyWith(cargando: true);
+  try {
+    // Descargamos la imagen
+    final imageBytes = await _repo.obtenerImagenDeposito(idDeposito);
+    
+    // Procesamos la imagen según la plataforma
+    await manejarArchivoImagen(imageBytes, 'deposito_$idDeposito.jpg', context);
+    
+    state = state.copyWith(cargando: false);
+  } catch (e) {
+    state = state.copyWith(cargando: false);
+    // Mostrar mensaje de error
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Error al descargar imagen: $e'),
+        backgroundColor: Colors.red,
+      ),
+    );
+  }
+}
+
+Future<void> manejarArchivoImagen(Uint8List bytes, String fileName, BuildContext context) async {
+  if (kIsWeb) {
+    // En web, imitar el comportamiento de Angular
+    final blob = html.Blob([bytes]);
+    final url = html.Url.createObjectUrlFromBlob(blob);
+    final anchor = html.AnchorElement(href: url)
+      ..setAttribute('download', fileName)
+      ..click();
+    
+    html.Url.revokeObjectUrl(url);
+    
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Descarga iniciada: $fileName')),
+    );
+  } else {
+    // En móvil, guardar la imagen y permitir verla
+    try {
+      // Mostrar cuadro de diálogo con opciones
+      showDialog(
+        context: context,
+        builder: (BuildContext dialogContext) {
+          return AlertDialog(
+            title: Text('Imagen descargada'),
+            content: Image.memory(
+              bytes,
+              fit: BoxFit.contain,
+              height: 200,
+            ),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.pop(dialogContext);
+                },
+                child: Text('Cerrar'),
+              ),
+              TextButton(
+                onPressed: () async {
+                  Navigator.pop(dialogContext);
+                  await _guardarImagenEnDispositivo(bytes, fileName);
+                },
+                child: Text('Guardar'),
+              ),
+            ],
+          );
+        },
+      );
+    } catch (e) {
+      throw Exception('Error al manejar la imagen: $e');
+    }
+  }
+}
+
+Future<void> _guardarImagenEnDispositivo(Uint8List bytes, String fileName) async {
+  try {
+    // Implementación específica según la plataforma
+    if (Platform.isAndroid || Platform.isIOS) {
+      // Usar path_provider para obtener directorio temporal
+      final tempDir = await getTemporaryDirectory();
+      final file = File('${tempDir.path}/$fileName');
+      await file.writeAsBytes(bytes);
+      
+      // Usar un plugin como share_plus para compartir la imagen
+      // await Share.shareFiles([file.path], text: 'Imagen de depósito');
+      
+      // O simplemente mostrar un mensaje de éxito
+      print('Imagen guardada en: ${file.path}');
+    } else {
+      throw Exception('Plataforma no soportada para guardar imágenes localmente');
+    }
+  } catch (e) {
+    throw Exception('Error al guardar imagen: $e');
+  }
+}
   
 }
 

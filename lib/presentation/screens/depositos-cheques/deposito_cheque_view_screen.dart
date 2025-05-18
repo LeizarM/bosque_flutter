@@ -916,7 +916,27 @@ class _DepositosTableState extends ConsumerState<_DepositosTable> {
                                                 ),
                                                 tooltip: 'Ver imagen',
                                                 onPressed: () {
-                                                  // TODO: Acción ver imagen
+                                                  try {
+                                                    ref
+                                                        .read(
+                                                          depositosChequesProvider
+                                                              .notifier,
+                                                        )
+                                                        .descargarImagenDeposito(
+                                                          d.idDeposito,
+                                                          context,
+                                                        );
+                                                  } catch (e) {
+                                                    ScaffoldMessenger.of(
+                                                      context,
+                                                    ).showSnackBar(
+                                                      SnackBar(
+                                                        content: Text(
+                                                          'Error al descargar imagen: $e',
+                                                        ),
+                                                      ),
+                                                    );
+                                                  }
                                                 },
                                               ),
                                               IconButton(

@@ -20,6 +20,7 @@ import 'package:intl/intl.dart';
 import 'package:logger/logger.dart';
 
 class DepositoChequesImpl implements DepositoChequesRepository {
+  
   final Dio _dio = DioClient.getInstance();
 
   @override
@@ -318,5 +319,43 @@ class DepositoChequesImpl implements DepositoChequesRepository {
     } catch (e) {
       throw Exception('Error en la solicitud: $e');
     }
+  }
+  
+  @override
+  Future<Uint8List> obtenerImagenDeposito( int idDeposito ) async {
+    
+    try {
+    final response = await _dio.get(
+      AppConstants.depObtImagen + idDeposito.toString(),
+      options: Options(
+        responseType: ResponseType.bytes,
+        headers: {
+          'Accept': '*/*',  // Aceptar cualquier tipo de contenido
+        },
+      ),
+    );
+
+    if (response.statusCode == 200) {
+      if (response.data is List<int>) {
+        final bytes = Uint8List.fromList(response.data);
+        
+        // Verificar que tenemos datos
+        if (bytes.isNotEmpty) {
+         
+          return bytes;
+        } else {
+          throw Exception('La imagen recibida está vacía');
+        }
+      } else {
+        throw Exception('Formato inesperado: ${response.data.runtimeType}');
+      }
+    } else {
+      throw Exception('Error obteniendo imagen: ${response.statusCode}');
+    }
+  } catch (e) {
+    throw Exception('Error en la solicitud: $e');
+  }
+
+
   }
 }
