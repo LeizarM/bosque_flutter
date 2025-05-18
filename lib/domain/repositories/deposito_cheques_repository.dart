@@ -40,5 +40,8 @@ abstract class DepositoChequesRepository {
   Future<Uint8List> obtenerPdfDeposito(int idDeposito, DepositoChequeEntity deposito);
 
   Future<Uint8List> obtenerImagenDeposito(int idDeposito);
-  
+
+  Future<bool> actualizarNroTransaccion( DepositoChequeEntity deposito );
+
+  Future<bool> rechazarNotaRemision( DepositoChequeEntity deposito );
 }

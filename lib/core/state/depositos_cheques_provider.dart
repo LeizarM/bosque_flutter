@@ -127,8 +127,89 @@ class DepositosChequesNotifier extends StateNotifier<DepositosChequesState> {
     cargarEmpresas();
   }
 
-  
+  // Permite acceso al repositorio para casos específicos como cargar bancos
+  DepositoChequesImpl get repo => _repo;
 
+  // Método para actualizar número de transacción y banco de un depósito
+  Future<void> actualizarDepositoTransaccionYBanco({
+    required DepositoChequeEntity deposito,
+    required String nuevoNroTransaccion,
+    required BancoXCuentaEntity nuevoBanco,
+    required BuildContext context,
+  }) async {
+    state = state.copyWith(cargando: true);
+    try {
+      // Crear una nueva instancia del depósito con los valores actualizados
+      final depositoActualizado = DepositoChequeEntity(
+        idDeposito: deposito.idDeposito,
+        codCliente: deposito.codCliente,
+        codEmpresa: deposito.codEmpresa,
+        idBxC: nuevoBanco.idBxC, // Nuevo banco
+        importe: deposito.importe,
+        moneda: deposito.moneda,
+        estado: deposito.estado,
+        fotoPath: deposito.fotoPath,
+        aCuenta: deposito.aCuenta,
+        //fechaI: deposito.fechaI,
+        nroTransaccion: nuevoNroTransaccion, // Nuevo número de transacción
+        obs: deposito.obs,
+        audUsuario: deposito.audUsuario,
+        codBanco: nuevoBanco.codBanco, // Nuevo banco
+        fechaInicio: deposito.fechaInicio,
+        fechaFin: deposito.fechaFin,
+        nombreBanco: nuevoBanco.nombreBanco, // Nuevo nombre de banco
+        nombreEmpresa: deposito.nombreEmpresa,
+        esPendiente: deposito.esPendiente,
+        numeroDeDocumentos: deposito.numeroDeDocumentos,
+        fechasDeDepositos: deposito.fechasDeDepositos,
+        numeroDeFacturas: deposito.numeroDeFacturas,
+        totalMontos: deposito.totalMontos,
+        estadoFiltro: deposito.estadoFiltro,
+      );
+      
+      // Llamar al método existente para actualizar
+      final resultado = await _repo.actualizarNroTransaccion(depositoActualizado);
+      
+      // Actualizar lista de depósitos si fue exitoso
+      if (resultado) {
+        // Buscar y actualizar el depósito en la lista actual
+        final listaActualizada = state.depositos.map((d) {
+          if (d.idDeposito == deposito.idDeposito) {
+            return depositoActualizado;
+          }
+          return d;
+        }).toList();
+        
+        state = state.copyWith(depositos: listaActualizada, cargando: false);
+        
+        // Mostrar mensaje de éxito
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Depósito actualizado correctamente'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      } else {
+        state = state.copyWith(cargando: false);
+        // Mostrar mensaje de error
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('No se pudo actualizar el depósito'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } catch (e) {
+      state = state.copyWith(cargando: false);
+      // Mostrar mensaje de error
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error al actualizar depósito: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
 
   Future<void> cargarEmpresas() async {
     state = state.copyWith(cargando: true);

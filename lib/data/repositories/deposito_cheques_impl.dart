@@ -358,4 +358,59 @@ class DepositoChequesImpl implements DepositoChequesRepository {
 
 
   }
+  
+  @override
+  Future<bool> actualizarNroTransaccion( DepositoChequeEntity deposito ) async {
+    
+    final model = DepositoChequeModel.fromEntity(deposito);
+
+    try {
+      final response = await _dio.post(
+        AppConstants.depActualizarNotaRemision,
+        data:
+            model.toJson(), // Asegúrate de que EntregaEntity tenga un método toJson()
+      );
+
+      return response.statusCode == 200 || response.statusCode == 201;
+    } on DioException catch (e) {
+      // Manejar errores de red o del servidor
+      String errorMessage = 'Error de conexión: ${e.message}';
+      if (e.response != null && e.response!.data != null) {
+        errorMessage =
+            'Error del servidor: ${e.response!.statusCode} - ${e.response!.data.toString()}';
+      }
+      throw Exception(errorMessage);
+    } catch (e) {
+      throw Exception('Error desconocido: ${e.toString()}');
+    }
+
+  }
+  
+  @override
+  Future<bool> rechazarNotaRemision( DepositoChequeEntity deposito ) async {
+    
+    final model = DepositoChequeModel.fromEntity(deposito);
+
+    try {
+      final response = await _dio.post(
+        AppConstants.depRechazarNotaRemision,
+        data:
+            model.toJson(), // Asegúrate de que EntregaEntity tenga un método toJson()
+      );
+
+      return response.statusCode == 200 || response.statusCode == 201;
+    } on DioException catch (e) {
+      // Manejar errores de red o del servidor
+      String errorMessage = 'Error de conexión: ${e.message}';
+      if (e.response != null && e.response!.data != null) {
+        errorMessage =
+            'Error del servidor: ${e.response!.statusCode} - ${e.response!.data.toString()}';
+      }
+      throw Exception(errorMessage);
+    } catch (e) {
+      throw Exception('Error desconocido: ${e.toString()}');
+    }
+
+
+  }
 }

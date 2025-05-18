@@ -1,4 +1,5 @@
 import 'package:bosque_flutter/core/utils/pdf_service.dart';
+import 'package:bosque_flutter/domain/entities/banco_cuenta_entity.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/state/depositos_cheques_provider.dart';
@@ -947,7 +948,7 @@ class _DepositosTableState extends ConsumerState<_DepositosTable> {
                                                 ),
                                                 tooltip: 'Ver documento',
                                                 onPressed: () {
-                                                  // TODO: Acción ver documento
+                                                  
                                                   try {
                                                     // Llamar al método que descarga el PDF específico
                                                     ref
@@ -972,16 +973,119 @@ class _DepositosTableState extends ConsumerState<_DepositosTable> {
                                                     );
                                                   }
                                                 },
-                                              ),
-                                              IconButton(
+                                              ),                                              IconButton(
                                                 icon: Icon(
                                                   Icons.edit,
                                                   color: Colors.deepPurple,
                                                   size: 20,
                                                 ),
                                                 tooltip: 'Editar',
-                                                onPressed: () {
-                                                  // TODO: Acción editar
+                                                onPressed: () async {
+                                                  final notifier = ref.read(depositosChequesProvider.notifier);
+                                                  // Cargar bancos para la empresa del depósito seleccionado
+                                                  final bancos = await notifier.repo.getBancos(d.codEmpresa);
+                                                  
+                                                  // Valor inicial para el dropdown
+                                                  BancoXCuentaEntity? bancoSeleccionado;
+                                                  try {
+                                                    bancoSeleccionado = bancos.firstWhere(
+                                                      (b) => b.idBxC == d.idBxC,
+                                                    );
+                                                  } catch (e) {
+                                                    bancoSeleccionado = bancos.isNotEmpty ? bancos.first : null;
+                                                  }
+                                                  
+                                                  if (bancos.isEmpty) {
+                                                    ScaffoldMessenger.of(context).showSnackBar(
+                                                      SnackBar(
+                                                        content: Text('No hay bancos disponibles para esta empresa'),
+                                                        backgroundColor: Colors.orange,
+                                                      ),
+                                                    );
+                                                    return;
+                                                  }
+
+                                                  // Mostrar diálogo para editar
+                                                  await showDialog(
+                                                    context: context,
+                                                    builder: (dialogContext) {
+                                                      // Controlador para el campo de texto
+                                                      final controller = TextEditingController(text: d.nroTransaccion);
+                                                      
+                                                      // Variable local para el banco seleccionado en el diálogo
+                                                      BancoXCuentaEntity? localBancoSeleccionado = bancoSeleccionado;
+                                                      
+                                                      // Usamos StatefulBuilder para manejar estado local del diálogo
+                                                      return StatefulBuilder(
+                                                        builder: (context, setState) {
+                                                          return AlertDialog(
+                                                            title: Text('Editar depósito'),
+                                                            content: Column(
+                                                              mainAxisSize: MainAxisSize.min,
+                                                              children: [
+                                                                TextField(
+                                                                  decoration: InputDecoration(
+                                                                    labelText: 'Nro. Transacción',
+                                                                    border: OutlineInputBorder(),
+                                                                  ),
+                                                                  controller: controller,
+                                                                ),
+                                                                SizedBox(height: 16),
+                                                                DropdownButtonFormField<BancoXCuentaEntity>(
+                                                                  decoration: InputDecoration(
+                                                                    labelText: 'Banco',
+                                                                    border: OutlineInputBorder(),
+                                                                  ),
+                                                                  value: localBancoSeleccionado,
+                                                                  isExpanded: true,
+                                                                  items: bancos.map((banco) {
+                                                                    return DropdownMenuItem(
+                                                                      value: banco,
+                                                                      child: Text(banco.nombreBanco),
+                                                                    );
+                                                                  }).toList(),
+                                                                  onChanged: (value) {
+                                                                    setState(() => localBancoSeleccionado = value);
+                                                                  },
+                                                                ),
+                                                              ],
+                                                            ),
+                                                            actions: [
+                                                              TextButton(
+                                                                onPressed: () => Navigator.pop(dialogContext),
+                                                                child: Text('Cancelar'),
+                                                              ),
+                                                              ElevatedButton(
+                                                                style: ElevatedButton.styleFrom(
+                                                                  backgroundColor: Theme.of(context).primaryColor,
+                                                                  foregroundColor: Colors.white,
+                                                                ),
+                                                                onPressed: () async {
+                                                                  if (localBancoSeleccionado != null) {
+                                                                    await notifier.actualizarDepositoTransaccionYBanco(
+                                                                      deposito: d,
+                                                                      nuevoNroTransaccion: controller.text,
+                                                                      nuevoBanco: localBancoSeleccionado!,
+                                                                      context: context,
+                                                                    );
+                                                                    Navigator.pop(dialogContext);
+                                                                  } else {
+                                                                    ScaffoldMessenger.of(context).showSnackBar(
+                                                                      SnackBar(
+                                                                        content: Text('Debe seleccionar un banco'),
+                                                                        backgroundColor: Colors.orange,
+                                                                      ),
+                                                                    );
+                                                                  }
+                                                                },
+                                                                child: Text('Guardar'),
+                                                              ),
+                                                            ],
+                                                          );
+                                                        },
+                                                      );
+                                                    },
+                                                  );
                                                 },
                                               ),
                                               IconButton(
