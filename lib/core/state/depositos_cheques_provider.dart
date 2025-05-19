@@ -775,6 +775,23 @@ Future<void> _guardarImagenEnDispositivo(Uint8List bytes, String fileName) async
       );
     }
   }
+
+  void clearState() {
+  // Restablecer el estado manteniendo solo las empresas
+  state = DepositosChequesState(
+    empresas: state.empresas,  // Mantener empresas para no tener que cargarlas nuevamente
+    depositos: [],             // Vaciar lista de depósitos
+    clientes: [],
+    bancos: [],
+    cargando: false,
+    page: 0,
+    rowsPerPage: 10,
+    totalRegistros: 0,
+    selectedEstado: 'Todos',
+    fechaDesde: DateTime.now(),
+    fechaHasta: DateTime.now(),
+  );
+}
 }
 
 final depositosChequesProvider = StateNotifierProvider<DepositosChequesNotifier, DepositosChequesState>((ref) {
