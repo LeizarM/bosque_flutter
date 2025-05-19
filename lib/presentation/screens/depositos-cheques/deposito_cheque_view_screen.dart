@@ -339,45 +339,87 @@ class DepositoChequeViewScreen extends ConsumerWidget {
     DepositosChequesState state,
     DepositosChequesNotifier notifier,
   ) {
-    // Usamos String (codCliente) como valor del dropdown
-    String? currentValue = state.clienteSeleccionado?.codCliente;
-    final dropdownKey =
-        '${state.clienteSeleccionado?.codCliente ?? ''}_${state.clientes.length}_${state.empresas.length}_${state.bancos.length}_${state.selectedEstado}';
-    // Los items ya incluyen "Todos" desde el provider
-    final clienteItems =
-        state.clientes
-            .map(
-              (c) => DropdownMenuItem<String?>(
-                value: c.codCliente,
-                child: Text(
-                  c.nombreCompleto,
-                  overflow: TextOverflow.ellipsis,
-                  maxLines: 1,
+    final clienteSeleccionado = state.clienteSeleccionado;
+    return GestureDetector(
+      onTap: () async {
+        final seleccionado = await _showClienteSearchDialog(context, state.clientes, clienteSeleccionado);
+        if (seleccionado != null) {
+          notifier.seleccionarCliente(seleccionado);
+        }
+      },
+      child: AbsorbPointer(
+        child: TextFormField(
+          decoration: const InputDecoration(
+            labelText: 'Cliente',
+            suffixIcon: Icon(Icons.search),
+          ),
+          controller: TextEditingController(
+            text: clienteSeleccionado?.nombreCompleto ?? 'Todos',
+          ),
+          readOnly: true,
+        ),
+      ),
+    );
+  }
+
+  Future<dynamic> _showClienteSearchDialog(BuildContext context, List<dynamic> clientes, dynamic clienteSeleccionado) async {
+    TextEditingController searchController = TextEditingController();
+    List<dynamic> filtered = List.from(clientes);
+    return await showDialog(
+      context: context,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              title: const Text('Buscar cliente'),
+              content: SizedBox(
+                width: 400,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    TextField(
+                      controller: searchController,
+                      decoration: const InputDecoration(
+                        labelText: 'Buscar por nombre...',
+                        prefixIcon: Icon(Icons.search),
+                      ),
+                      onChanged: (value) {
+                        setState(() {
+                          filtered = clientes.where((c) => (c.nombreCompleto ?? '').toLowerCase().contains(value.toLowerCase())).toList();
+                        });
+                      },
+                    ),
+                    const SizedBox(height: 12),
+                    Expanded(
+                      child: ListView.builder(
+                        shrinkWrap: true,
+                        itemCount: filtered.length,
+                        itemBuilder: (context, index) {
+                          final c = filtered[index];
+                          return ListTile(
+                            title: Text(c.nombreCompleto ?? ''),
+                            selected: clienteSeleccionado?.codCliente == c.codCliente,
+                            onTap: () => Navigator.of(context).pop(c),
+                          );
+                        },
+                      ),
+                    ),
+                  ],
                 ),
               ),
-            )
-            .toList();
-    // Si el cliente seleccionado es null o no está en la lista, usar "" ("Todos")
-    if (state.clienteSeleccionado == null ||
-        !state.clientes.any((c) => c.codCliente == currentValue)) {
-      currentValue = "";
-    }
-    return DropdownButtonFormField<String?>(
-      key: ValueKey('cliente-dropdown-$dropdownKey'),
-      value: currentValue,
-      decoration: const InputDecoration(labelText: 'Cliente'),
-      isExpanded: true,
-      items: clienteItems,
-      onChanged: (String? codCliente) {
-        if (codCliente == null || codCliente.isEmpty) {
-          notifier.seleccionarCliente(null);
-        } else {
-          final cliente = state.clientes.firstWhere(
-            (c) => c.codCliente == codCliente,
-            orElse: () => state.clientes.first,
-          );
-          notifier.seleccionarCliente(cliente);
-        }
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: const Text('Cancelar'),
+                ),
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(clientes.first),
+                  child: const Text('Todos'),
+                ),
+              ],
+            );
+          },
+        );
       },
     );
   }
