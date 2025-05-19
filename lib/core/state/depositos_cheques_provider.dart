@@ -699,6 +699,82 @@ Future<void> _guardarImagenEnDispositivo(Uint8List bytes, String fileName) async
   }
 }
   
+  Future<void> rechazarDepositoCheque({
+    required DepositoChequeEntity deposito,
+    required BuildContext context,
+  }) async {
+    state = state.copyWith(cargando: true);
+    try {
+      // Actualizar el estado del depósito a rechazado (3)
+      final depositoRechazado = DepositoChequeEntity(
+        idDeposito: deposito.idDeposito,
+        codCliente: deposito.codCliente,
+        codEmpresa: deposito.codEmpresa,
+        idBxC: deposito.idBxC,
+        importe: deposito.importe,
+        moneda: deposito.moneda,
+        estado: 3, // Rechazado (1: Pendiente, 2: Verificado, 3: Rechazado)
+        fotoPath: deposito.fotoPath,
+        aCuenta: deposito.aCuenta,
+        nroTransaccion: deposito.nroTransaccion,
+        obs: deposito.obs,
+        audUsuario: deposito.audUsuario,
+        codBanco: deposito.codBanco,
+        fechaInicio: deposito.fechaInicio,
+        fechaFin: deposito.fechaFin,
+        nombreBanco: deposito.nombreBanco,
+        nombreEmpresa: deposito.nombreEmpresa,
+        esPendiente: deposito.esPendiente,
+        numeroDeDocumentos: deposito.numeroDeDocumentos,
+        fechasDeDepositos: deposito.fechasDeDepositos,
+        numeroDeFacturas: deposito.numeroDeFacturas,
+        totalMontos: deposito.totalMontos,
+        estadoFiltro: deposito.estadoFiltro,
+      );
+      
+      // Llamar al método existente en el repositorio para rechazar
+      final resultado = await _repo.rechazarNotaRemision(depositoRechazado);
+      
+      // Actualizar lista de depósitos si fue exitoso
+      if (resultado) {
+        // Buscar y actualizar el depósito en la lista actual
+        final listaActualizada = state.depositos.map((d) {
+          if (d.idDeposito == deposito.idDeposito) {
+            return depositoRechazado;
+          }
+          return d;
+        }).toList();
+        
+        state = state.copyWith(depositos: listaActualizada, cargando: false);
+        
+        // Mostrar mensaje de éxito
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Depósito rechazado correctamente'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      } else {
+        state = state.copyWith(cargando: false);
+        // Mostrar mensaje de error
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('No se pudo rechazar el depósito'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } catch (e) {
+      state = state.copyWith(cargando: false);
+      // Mostrar mensaje de error
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error al rechazar depósito: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
 }
 
 final depositosChequesProvider = StateNotifierProvider<DepositosChequesNotifier, DepositosChequesState>((ref) {

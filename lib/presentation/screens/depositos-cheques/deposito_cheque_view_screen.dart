@@ -906,7 +906,14 @@ class _DepositosTableState extends ConsumerState<_DepositosTable> {
                                           constraints: const BoxConstraints(
                                             minWidth: 160,
                                           ),
-                                          child: Row(
+                                          child: d.esPendiente == "Rechazado" 
+                                            ? Text("No disponible", 
+                                                style: TextStyle(
+                                                  fontStyle: FontStyle.italic,
+                                                  color: Colors.grey,
+                                                  fontSize: isMobile ? 12 : null,
+                                                ))
+                                            : Row(
                                             mainAxisSize: MainAxisSize.min,
                                             children: [
                                               IconButton(
@@ -1087,16 +1094,45 @@ class _DepositosTableState extends ConsumerState<_DepositosTable> {
                                                     },
                                                   );
                                                 },
-                                              ),
-                                              IconButton(
+                                              ),                                              IconButton(
                                                 icon: Icon(
                                                   Icons.close,
                                                   color: Colors.red,
                                                   size: 20,
                                                 ),
-                                                tooltip: 'Eliminar',
-                                                onPressed: () {
-                                                  // TODO: Acción eliminar
+                                                tooltip: 'Rechazar',
+                                                onPressed: () async {
+                                                  // Mostrar diálogo de confirmación
+                                                  final confirmar = await showDialog<bool>(
+                                                    context: context,
+                                                    builder: (context) => AlertDialog(
+                                                      title: Text('Confirmar rechazo'),
+                                                      content: Text('¿Está seguro que desea rechazar este depósito?'),
+                                                      actions: [
+                                                        TextButton(
+                                                          onPressed: () => Navigator.pop(context, false),
+                                                          child: Text('Cancelar'),
+                                                        ),
+                                                        ElevatedButton(
+                                                          style: ElevatedButton.styleFrom(
+                                                            backgroundColor: Colors.red,
+                                                            foregroundColor: Colors.white,
+                                                          ),
+                                                          onPressed: () => Navigator.pop(context, true),
+                                                          child: Text('Rechazar'),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                  );
+                                                  
+                                                  // Si el usuario confirma, rechazar el depósito
+                                                  if (confirmar == true) {
+                                                    final notifier = ref.read(depositosChequesProvider.notifier);
+                                                    await notifier.rechazarDepositoCheque(
+                                                      deposito: d,
+                                                      context: context,
+                                                    );
+                                                  }
                                                 },
                                               ),
                                             ],
