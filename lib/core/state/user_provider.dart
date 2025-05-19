@@ -1,7 +1,9 @@
 import 'dart:convert';
 import 'package:bosque_flutter/core/constants/app_constants.dart';
+import 'package:bosque_flutter/core/state/button_permissions_provider.dart';
 import 'package:bosque_flutter/domain/entities/login_entity.dart';
 import 'package:bosque_flutter/core/utils/secure_storage.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:bosque_flutter/domain/repositories/auth_repository.dart';
 import 'package:bosque_flutter/data/repositories/auth_repository_impl.dart';
@@ -31,7 +33,7 @@ final asyncUserProvider = FutureProvider<LoginEntity?>((ref) async {
 
 class UserStateNotifier extends StateNotifier<LoginEntity?> {
   final AuthRepository _authRepository = AuthRepositoryImpl();
-  
+
   UserStateNotifier() : super(null) {
     _loadUserFromStorage(); // Cargar datos del usuario al inicializar
   }
@@ -70,6 +72,7 @@ class UserStateNotifier extends StateNotifier<LoginEntity?> {
     await storage.saveUserData(userDataJson);
     // Guardar el token por separado si es necesario
     await storage.saveToken(user.token);
+    
   }
 
   Future<void> clearUser() async {
@@ -78,16 +81,30 @@ class UserStateNotifier extends StateNotifier<LoginEntity?> {
     final storage = SecureStorage();
     await storage.deleteUserData();
     await storage.deleteToken();
+
+    // Reiniciar completamente el estado de permisos
+    // Usamos una referencia global al contenedor de providers para asegurarnos de limpiar el estado
+    try {
+      // Obtener el notificador de permisos directamente desde el container global
+      final providerContainer = ProviderContainer();
+      // Esto asegura que el estado se establezca en "loading" nuevamente
+      providerContainer
+          .read(buttonPermissionsProvider.notifier)
+          .clearPermisos();
+      providerContainer.refresh(buttonPermissionsProvider);
+    } catch (e) {
+      debugPrint('Error al limpiar permisos: $e');
+    }
   }
 
-  Future<int> getCodCiudad()  async {
+  Future<int> getCodCiudad() async {
     // Obtener el código de la ciudad del usuario desde el estado
     if (state != null) {
       return state!.codCiudad;
     } else {
       final storage = SecureStorage();
       final userDataJson = await storage.getUserData();
-     
+
       return jsonDecode(userDataJson!)['codCiudad'] ?? 0;
     }
   }
@@ -97,10 +114,9 @@ class UserStateNotifier extends StateNotifier<LoginEntity?> {
     if (state != null) {
       return state!.token;
     } else {
-
       final storage = SecureStorage();
       final userDataJson = await storage.getUserData();
-     
+
       return jsonDecode(userDataJson!)['token'] ?? 0;
     }
   }
@@ -110,11 +126,10 @@ class UserStateNotifier extends StateNotifier<LoginEntity?> {
     if (state != null) {
       return state!.codUsuario;
     } else {
-
       final storage = SecureStorage();
       final userDataJson = await storage.getUserData();
-     
-      return jsonDecode(userDataJson!)['codUsuario'] ?? 0;  
+
+      return jsonDecode(userDataJson!)['codUsuario'] ?? 0;
     }
   }
 
@@ -125,9 +140,8 @@ class UserStateNotifier extends StateNotifier<LoginEntity?> {
     } else {
       final storage = SecureStorage();
       final userDataJson = await storage.getUserData();
-      
+
       return jsonDecode(userDataJson!)['codEmpleado'] ?? 0;
-      
     }
   }
 
@@ -138,7 +152,7 @@ class UserStateNotifier extends StateNotifier<LoginEntity?> {
     } else {
       final storage = SecureStorage();
       final userDataJson = await storage.getUserData();
-     
+
       return jsonDecode(userDataJson!)['codSucursal'] ?? 0;
     }
   }
@@ -150,7 +164,7 @@ class UserStateNotifier extends StateNotifier<LoginEntity?> {
     } else {
       final storage = SecureStorage();
       final userDataJson = await storage.getUserData();
-     
+
       return jsonDecode(userDataJson!)['tipoUsuario'] ?? 0;
     }
   }
@@ -176,7 +190,6 @@ class UserStateNotifier extends StateNotifier<LoginEntity?> {
   }
 
   Future<bool> changePasswordDefault(LoginEntity user) async {
-   
     return await _authRepository.changePassword(user);
   }
 }
@@ -188,6 +201,8 @@ final usersListProvider = FutureProvider<List<LoginEntity>>((ref) {
 });
 
 // Definimos el provider usando StateNotifierProvider
-final userProvider = StateNotifierProvider<UserStateNotifier, LoginEntity?>((ref) {
+final userProvider = StateNotifierProvider<UserStateNotifier, LoginEntity?>((
+  ref,
+) {
   return UserStateNotifier();
 });

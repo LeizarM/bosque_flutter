@@ -1,5 +1,6 @@
 import 'package:bosque_flutter/core/utils/pdf_service.dart';
 import 'package:bosque_flutter/domain/entities/banco_cuenta_entity.dart';
+import 'package:bosque_flutter/presentation/widgets/shared/permission_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/state/depositos_cheques_provider.dart';
@@ -798,6 +799,7 @@ class _DepositosTableState extends ConsumerState<_DepositosTable> {
                         columnSpacing: isDesktop ? 20 : (isMobile ? 12 : 16),
                         horizontalMargin: isDesktop ? 20 : (isMobile ? 12 : 16),
                         headingRowHeight: isDesktop ? 50 : 45,
+                        // ignore: deprecated_member_use
                         dataRowHeight: isDesktop ? 60 : 55,
                         dividerThickness: 1,
                         columns:
@@ -906,237 +908,372 @@ class _DepositosTableState extends ConsumerState<_DepositosTable> {
                                           constraints: const BoxConstraints(
                                             minWidth: 160,
                                           ),
-                                          child: d.esPendiente == "Rechazado" 
-                                            ? Text("No disponible", 
-                                                style: TextStyle(
-                                                  fontStyle: FontStyle.italic,
-                                                  color: Colors.grey,
-                                                  fontSize: isMobile ? 12 : null,
-                                                ))
-                                            : Row(
-                                            mainAxisSize: MainAxisSize.min,
-                                            children: [
-                                              IconButton(
-                                                icon: Icon(
-                                                  Icons.image,
-                                                  color: Colors.indigo,
-                                                  size: 20,
-                                                ),
-                                                tooltip: 'Ver imagen',
-                                                onPressed: () {
-                                                  try {
-                                                    ref
-                                                        .read(
-                                                          depositosChequesProvider
-                                                              .notifier,
-                                                        )
-                                                        .descargarImagenDeposito(
-                                                          d.idDeposito,
-                                                          context,
-                                                        );
-                                                  } catch (e) {
-                                                    ScaffoldMessenger.of(
-                                                      context,
-                                                    ).showSnackBar(
-                                                      SnackBar(
-                                                        content: Text(
-                                                          'Error al descargar imagen: $e',
-                                                        ),
-                                                      ),
-                                                    );
-                                                  }
-                                                },
-                                              ),
-                                              IconButton(
-                                                icon: Icon(
-                                                  Icons.description,
-                                                  color: Colors.blue,
-                                                  size: 20,
-                                                ),
-                                                tooltip: 'Ver documento',
-                                                onPressed: () {
-                                                  
-                                                  try {
-                                                    // Llamar al método que descarga el PDF específico
-                                                    ref
-                                                        .read(
-                                                          depositosChequesProvider
-                                                              .notifier,
-                                                        )
-                                                        .descargarPdfDeposito(
-                                                          d.idDeposito,
-                                                          context,
-                                                        );
-                                                  } catch (e) {
-                                                    // Mostrar un mensaje de error
-                                                    ScaffoldMessenger.of(
-                                                      context,
-                                                    ).showSnackBar(
-                                                      SnackBar(
-                                                        content: Text(
-                                                          'Error al descargar el PDF: $e',
-                                                        ),
-                                                      ),
-                                                    );
-                                                  }
-                                                },
-                                              ),                                              IconButton(
-                                                icon: Icon(
-                                                  Icons.edit,
-                                                  color: Colors.deepPurple,
-                                                  size: 20,
-                                                ),
-                                                tooltip: 'Editar',
-                                                onPressed: () async {
-                                                  final notifier = ref.read(depositosChequesProvider.notifier);
-                                                  // Cargar bancos para la empresa del depósito seleccionado
-                                                  final bancos = await notifier.repo.getBancos(d.codEmpresa);
-                                                  
-                                                  // Valor inicial para el dropdown
-                                                  BancoXCuentaEntity? bancoSeleccionado;
-                                                  try {
-                                                    bancoSeleccionado = bancos.firstWhere(
-                                                      (b) => b.idBxC == d.idBxC,
-                                                    );
-                                                  } catch (e) {
-                                                    bancoSeleccionado = bancos.isNotEmpty ? bancos.first : null;
-                                                  }
-                                                  
-                                                  if (bancos.isEmpty) {
-                                                    ScaffoldMessenger.of(context).showSnackBar(
-                                                      SnackBar(
-                                                        content: Text('No hay bancos disponibles para esta empresa'),
-                                                        backgroundColor: Colors.orange,
-                                                      ),
-                                                    );
-                                                    return;
-                                                  }
-
-                                                  // Mostrar diálogo para editar
-                                                  await showDialog(
-                                                    context: context,
-                                                    builder: (dialogContext) {
-                                                      // Controlador para el campo de texto
-                                                      final controller = TextEditingController(text: d.nroTransaccion);
-                                                      
-                                                      // Variable local para el banco seleccionado en el diálogo
-                                                      BancoXCuentaEntity? localBancoSeleccionado = bancoSeleccionado;
-                                                      
-                                                      // Usamos StatefulBuilder para manejar estado local del diálogo
-                                                      return StatefulBuilder(
-                                                        builder: (context, setState) {
-                                                          return AlertDialog(
-                                                            title: Text('Editar depósito'),
-                                                            content: Column(
-                                                              mainAxisSize: MainAxisSize.min,
-                                                              children: [
-                                                                TextField(
-                                                                  decoration: InputDecoration(
-                                                                    labelText: 'Nro. Transacción',
-                                                                    border: OutlineInputBorder(),
-                                                                  ),
-                                                                  controller: controller,
-                                                                ),
-                                                                SizedBox(height: 16),
-                                                                DropdownButtonFormField<BancoXCuentaEntity>(
-                                                                  decoration: InputDecoration(
-                                                                    labelText: 'Banco',
-                                                                    border: OutlineInputBorder(),
-                                                                  ),
-                                                                  value: localBancoSeleccionado,
-                                                                  isExpanded: true,
-                                                                  items: bancos.map((banco) {
-                                                                    return DropdownMenuItem(
-                                                                      value: banco,
-                                                                      child: Text(banco.nombreBanco),
-                                                                    );
-                                                                  }).toList(),
-                                                                  onChanged: (value) {
-                                                                    setState(() => localBancoSeleccionado = value);
-                                                                  },
-                                                                ),
-                                                              ],
-                                                            ),
-                                                            actions: [
-                                                              TextButton(
-                                                                onPressed: () => Navigator.pop(dialogContext),
-                                                                child: Text('Cancelar'),
-                                                              ),
-                                                              ElevatedButton(
-                                                                style: ElevatedButton.styleFrom(
-                                                                  backgroundColor: Theme.of(context).primaryColor,
-                                                                  foregroundColor: Colors.white,
-                                                                ),
-                                                                onPressed: () async {
-                                                                  if (localBancoSeleccionado != null) {
-                                                                    await notifier.actualizarDepositoTransaccionYBanco(
-                                                                      deposito: d,
-                                                                      nuevoNroTransaccion: controller.text,
-                                                                      nuevoBanco: localBancoSeleccionado!,
-                                                                      context: context,
-                                                                    );
-                                                                    Navigator.pop(dialogContext);
-                                                                  } else {
-                                                                    ScaffoldMessenger.of(context).showSnackBar(
-                                                                      SnackBar(
-                                                                        content: Text('Debe seleccionar un banco'),
-                                                                        backgroundColor: Colors.orange,
-                                                                      ),
-                                                                    );
-                                                                  }
-                                                                },
-                                                                child: Text('Guardar'),
-                                                              ),
-                                                            ],
-                                                          );
-                                                        },
-                                                      );
-                                                    },
-                                                  );
-                                                },
-                                              ),                                              IconButton(
-                                                icon: Icon(
-                                                  Icons.close,
-                                                  color: Colors.red,
-                                                  size: 20,
-                                                ),
-                                                tooltip: 'Rechazar',
-                                                onPressed: () async {
-                                                  // Mostrar diálogo de confirmación
-                                                  final confirmar = await showDialog<bool>(
-                                                    context: context,
-                                                    builder: (context) => AlertDialog(
-                                                      title: Text('Confirmar rechazo'),
-                                                      content: Text('¿Está seguro que desea rechazar este depósito?'),
-                                                      actions: [
-                                                        TextButton(
-                                                          onPressed: () => Navigator.pop(context, false),
-                                                          child: Text('Cancelar'),
-                                                        ),
-                                                        ElevatedButton(
-                                                          style: ElevatedButton.styleFrom(
-                                                            backgroundColor: Colors.red,
-                                                            foregroundColor: Colors.white,
-                                                          ),
-                                                          onPressed: () => Navigator.pop(context, true),
-                                                          child: Text('Rechazar'),
-                                                        ),
-                                                      ],
+                                          child:
+                                              d.esPendiente == "Rechazado"
+                                                  ? Text(
+                                                    "No disponible",
+                                                    style: TextStyle(
+                                                      fontStyle:
+                                                          FontStyle.italic,
+                                                      color: Colors.grey,
+                                                      fontSize:
+                                                          isMobile ? 12 : null,
                                                     ),
-                                                  );
-                                                  
-                                                  // Si el usuario confirma, rechazar el depósito
-                                                  if (confirmar == true) {
-                                                    final notifier = ref.read(depositosChequesProvider.notifier);
-                                                    await notifier.rechazarDepositoCheque(
-                                                      deposito: d,
-                                                      context: context,
-                                                    );
-                                                  }
-                                                },
-                                              ),
-                                            ],
-                                          ),
+                                                  )
+                                                  : Row(
+                                                    mainAxisSize:
+                                                        MainAxisSize.min,
+                                                    children: [
+                                                      IconButton(
+                                                        icon: Icon(
+                                                          Icons.image,
+                                                          color: Colors.indigo,
+                                                          size: 20,
+                                                        ),
+                                                        tooltip: 'Ver imagen',
+                                                        onPressed: () {
+                                                          try {
+                                                            ref
+                                                                .read(
+                                                                  depositosChequesProvider
+                                                                      .notifier,
+                                                                )
+                                                                .descargarImagenDeposito(
+                                                                  d.idDeposito,
+                                                                  context,
+                                                                );
+                                                          } catch (e) {
+                                                            ScaffoldMessenger.of(
+                                                              context,
+                                                            ).showSnackBar(
+                                                              SnackBar(
+                                                                content: Text(
+                                                                  'Error al descargar imagen: $e',
+                                                                ),
+                                                              ),
+                                                            );
+                                                          }
+                                                        },
+                                                      ),
+                                                      IconButton(
+                                                        icon: Icon(
+                                                          Icons.description,
+                                                          color: Colors.blue,
+                                                          size: 20,
+                                                        ),
+                                                        tooltip:
+                                                            'Ver documento',
+                                                        onPressed: () {
+                                                          try {
+                                                            // Llamar al método que descarga el PDF específico
+                                                            ref
+                                                                .read(
+                                                                  depositosChequesProvider
+                                                                      .notifier,
+                                                                )
+                                                                .descargarPdfDeposito(
+                                                                  d.idDeposito,
+                                                                  context,
+                                                                );
+                                                          } catch (e) {
+                                                            // Mostrar un mensaje de error
+                                                            ScaffoldMessenger.of(
+                                                              context,
+                                                            ).showSnackBar(
+                                                              SnackBar(
+                                                                content: Text(
+                                                                  'Error al descargar el PDF: $e',
+                                                                ),
+                                                              ),
+                                                            );
+                                                          }
+                                                        },
+                                                      ),
+
+                                                      PermissionWidget(
+                                                        buttonName:
+                                                            'btnNroTransac',
+                                                        child: IconButton(
+                                                          icon: Icon(
+                                                            Icons.edit,
+                                                            color:
+                                                                Colors
+                                                                    .deepPurple,
+                                                            size: 20,
+                                                          ),
+                                                          tooltip: 'Editar',
+                                                          onPressed: () async {
+                                                            final notifier = ref
+                                                                .read(
+                                                                  depositosChequesProvider
+                                                                      .notifier,
+                                                                );
+                                                            // Cargar bancos para la empresa del depósito seleccionado
+                                                            final bancos =
+                                                                await notifier
+                                                                    .repo
+                                                                    .getBancos(
+                                                                      d.codEmpresa,
+                                                                    );
+
+                                                            // Valor inicial para el dropdown
+                                                            BancoXCuentaEntity?
+                                                            bancoSeleccionado;
+                                                            try {
+                                                              bancoSeleccionado =
+                                                                  bancos.firstWhere(
+                                                                    (b) =>
+                                                                        b.idBxC ==
+                                                                        d.idBxC,
+                                                                  );
+                                                            } catch (e) {
+                                                              bancoSeleccionado =
+                                                                  bancos.isNotEmpty
+                                                                      ? bancos
+                                                                          .first
+                                                                      : null;
+                                                            }
+
+                                                            if (bancos
+                                                                .isEmpty) {
+                                                              ScaffoldMessenger.of(
+                                                                context,
+                                                              ).showSnackBar(
+                                                                SnackBar(
+                                                                  content: Text(
+                                                                    'No hay bancos disponibles para esta empresa',
+                                                                  ),
+                                                                  backgroundColor:
+                                                                      Colors
+                                                                          .orange,
+                                                                ),
+                                                              );
+                                                              return;
+                                                            }
+
+                                                            // Mostrar diálogo para editar
+                                                            await showDialog(
+                                                              context: context,
+                                                              builder: (
+                                                                dialogContext,
+                                                              ) {
+                                                                // Controlador para el campo de texto
+                                                                final controller =
+                                                                    TextEditingController(
+                                                                      text:
+                                                                          d.nroTransaccion,
+                                                                    );
+
+                                                                // Variable local para el banco seleccionado en el diálogo
+                                                                BancoXCuentaEntity?
+                                                                localBancoSeleccionado =
+                                                                    bancoSeleccionado;
+
+                                                                // Usamos StatefulBuilder para manejar estado local del diálogo
+                                                                return StatefulBuilder(
+                                                                  builder: (
+                                                                    context,
+                                                                    setState,
+                                                                  ) {
+                                                                    return AlertDialog(
+                                                                      title: Text(
+                                                                        'Editar depósito',
+                                                                      ),
+                                                                      content: Column(
+                                                                        mainAxisSize:
+                                                                            MainAxisSize.min,
+                                                                        children: [
+                                                                          TextField(
+                                                                            decoration: InputDecoration(
+                                                                              labelText:
+                                                                                  'Nro. Transacción',
+                                                                              border:
+                                                                                  OutlineInputBorder(),
+                                                                            ),
+                                                                            controller:
+                                                                                controller,
+                                                                          ),
+                                                                          SizedBox(
+                                                                            height:
+                                                                                16,
+                                                                          ),
+                                                                          DropdownButtonFormField<
+                                                                            BancoXCuentaEntity
+                                                                          >(
+                                                                            decoration: InputDecoration(
+                                                                              labelText:
+                                                                                  'Banco',
+                                                                              border:
+                                                                                  OutlineInputBorder(),
+                                                                            ),
+                                                                            value:
+                                                                                localBancoSeleccionado,
+                                                                            isExpanded:
+                                                                                true,
+                                                                            items:
+                                                                                bancos.map((
+                                                                                  banco,
+                                                                                ) {
+                                                                                  return DropdownMenuItem(
+                                                                                    value:
+                                                                                        banco,
+                                                                                    child: Text(
+                                                                                      banco.nombreBanco,
+                                                                                    ),
+                                                                                  );
+                                                                                }).toList(),
+                                                                            onChanged: (
+                                                                              value,
+                                                                            ) {
+                                                                              setState(
+                                                                                () =>
+                                                                                    localBancoSeleccionado =
+                                                                                        value,
+                                                                              );
+                                                                            },
+                                                                          ),
+                                                                        ],
+                                                                      ),
+                                                                      actions: [
+                                                                        TextButton(
+                                                                          onPressed:
+                                                                              () => Navigator.pop(
+                                                                                dialogContext,
+                                                                              ),
+                                                                          child: Text(
+                                                                            'Cancelar',
+                                                                          ),
+                                                                        ),
+                                                                        ElevatedButton(
+                                                                          style: ElevatedButton.styleFrom(
+                                                                            backgroundColor:
+                                                                                Theme.of(
+                                                                                  context,
+                                                                                ).primaryColor,
+                                                                            foregroundColor:
+                                                                                Colors.white,
+                                                                          ),
+                                                                          onPressed: () async {
+                                                                            if (localBancoSeleccionado !=
+                                                                                null) {
+                                                                              await notifier.actualizarDepositoTransaccionYBanco(
+                                                                                deposito:
+                                                                                    d,
+                                                                                nuevoNroTransaccion:
+                                                                                    controller.text,
+                                                                                nuevoBanco:
+                                                                                    localBancoSeleccionado!,
+                                                                                context:
+                                                                                    context,
+                                                                              );
+                                                                              Navigator.pop(
+                                                                                dialogContext,
+                                                                              );
+                                                                            } else {
+                                                                              ScaffoldMessenger.of(
+                                                                                context,
+                                                                              ).showSnackBar(
+                                                                                SnackBar(
+                                                                                  content: Text(
+                                                                                    'Debe seleccionar un banco',
+                                                                                  ),
+                                                                                  backgroundColor:
+                                                                                      Colors.orange,
+                                                                                ),
+                                                                              );
+                                                                            }
+                                                                          },
+                                                                          child: Text(
+                                                                            'Guardar',
+                                                                          ),
+                                                                        ),
+                                                                      ],
+                                                                    );
+                                                                  },
+                                                                );
+                                                              },
+                                                            );
+                                                          },
+                                                        ),
+                                                      ),
+
+                                                      PermissionWidget(
+                                                        buttonName:
+                                                            'btnRechazado',
+                                                        child: IconButton(
+                                                          icon: Icon(
+                                                            Icons.close,
+                                                            color: Colors.red,
+                                                            size: 20,
+                                                          ),
+                                                          tooltip: 'Rechazar',
+                                                          onPressed: () async {
+                                                            // Mostrar diálogo de confirmación
+                                                            final confirmar = await showDialog<
+                                                              bool
+                                                            >(
+                                                              context: context,
+                                                              builder:
+                                                                  (
+                                                                    context,
+                                                                  ) => AlertDialog(
+                                                                    title: Text(
+                                                                      'Confirmar rechazo',
+                                                                    ),
+                                                                    content: Text(
+                                                                      '¿Está seguro que desea rechazar este depósito?',
+                                                                    ),
+                                                                    actions: [
+                                                                      TextButton(
+                                                                        onPressed:
+                                                                            () => Navigator.pop(
+                                                                              context,
+                                                                              false,
+                                                                            ),
+                                                                        child: Text(
+                                                                          'Cancelar',
+                                                                        ),
+                                                                      ),
+                                                                      ElevatedButton(
+                                                                        style: ElevatedButton.styleFrom(
+                                                                          backgroundColor:
+                                                                              Colors.red,
+                                                                          foregroundColor:
+                                                                              Colors.white,
+                                                                        ),
+                                                                        onPressed:
+                                                                            () => Navigator.pop(
+                                                                              context,
+                                                                              true,
+                                                                            ),
+                                                                        child: Text(
+                                                                          'Rechazar',
+                                                                        ),
+                                                                      ),
+                                                                    ],
+                                                                  ),
+                                                            );
+
+                                                            // Si el usuario confirma, rechazar el depósito
+                                                            if (confirmar ==
+                                                                true) {
+                                                              final notifier =
+                                                                  ref.read(
+                                                                    depositosChequesProvider
+                                                                        .notifier,
+                                                                  );
+                                                              await notifier
+                                                                  .rechazarDepositoCheque(
+                                                                    deposito: d,
+                                                                    context:
+                                                                        context,
+                                                                  );
+                                                            }
+                                                          },
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  ),
                                         ),
                                       ),
                                     ],

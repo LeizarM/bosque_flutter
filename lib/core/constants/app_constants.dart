@@ -36,6 +36,10 @@ class AppConstants {
   static const String depRechazarNotaRemision = '/deposito-cheque/rechazar-deposito';
 
 
+  //Para cargar permisos de botones por usuario
+  static const String ubtnPermisosBotones = '/view/vistaBtn';
+
+
 
 
   // Constantes para el servicio de geocodificación de Nominatim
