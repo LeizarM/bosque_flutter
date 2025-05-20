@@ -34,11 +34,11 @@ class DepositosChequesState {
   final DateTime? fechaDesde;
   final DateTime? fechaHasta;
   final int page;
-  final int rowsPerPage;
-  final int totalRegistros;
+  final int rowsPerPage;  final int totalRegistros;
 
   final bool setFechaDesdeNull;
   final bool setFechaHastaNull;
+  final String obs; // Almacenar las observaciones
 
   DepositosChequesState({
     this.empresas = const [],
@@ -66,6 +66,7 @@ class DepositosChequesState {
 
     this.setFechaDesdeNull = false,
     this.setFechaHastaNull = false,
+    this.obs = '',
   });
 
   DepositosChequesState copyWith({
@@ -93,6 +94,7 @@ class DepositosChequesState {
     int? totalRegistros,
     bool? setFechaDesdeNull,
     bool? setFechaHastaNull,
+    String? obs,
   }) {
     return DepositosChequesState(
       empresas: empresas ?? this.empresas,
@@ -117,6 +119,7 @@ class DepositosChequesState {
       page: page ?? this.page,
       rowsPerPage: rowsPerPage ?? this.rowsPerPage,
       totalRegistros: totalRegistros ?? this.totalRegistros,
+      obs: obs ?? this.obs,
     );
   }
 }
@@ -365,9 +368,7 @@ class DepositosChequesNotifier extends StateNotifier<DepositosChequesState> {
       state.aCuenta,
     );
     state = state.copyWith(saldosEditados: nuevosSaldos, importeTotal: nuevoImporteTotal);
-  }
-
-  void setACuenta(double value) {
+  }  void setACuenta(double value) {
     final nuevoImporteTotal = _calcularImporteTotal(
       state.notasSeleccionadas,
       state.saldosEditados,
@@ -375,6 +376,14 @@ class DepositosChequesNotifier extends StateNotifier<DepositosChequesState> {
       value,
     );
     state = state.copyWith(aCuenta: value, importeTotal: nuevoImporteTotal);
+  }
+  // Método para actualizar el importe total directamente (para pantalla de depósitos sin identificar)
+  void setImporteTotal(double value) {
+    state = state.copyWith(importeTotal: value);
+  }
+  // Método para actualizar observaciones
+  void setObservaciones(String valor) {
+    state = state.copyWith(obs: valor);
   }
 
   double _calcularImporteTotal(List<int> seleccionadas, Map<int, double> saldosEditados, List<NotaRemisionEntity> notas, double aCuenta) {
@@ -390,7 +399,6 @@ class DepositosChequesNotifier extends StateNotifier<DepositosChequesState> {
   void limpiarFormulario() {
     state = DepositosChequesState(empresas: state.empresas);
   }
-
   Future<bool> registrarDeposito(dynamic imagen) async {
     state = state.copyWith(cargando: true);
     try {
@@ -407,7 +415,7 @@ class DepositosChequesNotifier extends StateNotifier<DepositosChequesState> {
         aCuenta: state.aCuenta,
         fechaI: null, // Enviar como null
         nroTransaccion: '',
-        obs: '',
+        obs: state.obs, // Usar las observaciones guardadas en el estado
         audUsuario: 0,
         codBanco: state.bancoSeleccionado?.codBanco ?? 0,
         fechaInicio: DateTime.now(),
