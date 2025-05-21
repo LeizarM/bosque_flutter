@@ -143,6 +143,7 @@ class DepositoChequesImpl implements DepositoChequesRepository {
     }
   }
 
+  @override
   Future<bool> registrarDeposito(
   DepositoChequeEntity deposito,
   dynamic imagen,
@@ -264,7 +265,7 @@ class DepositoChequesImpl implements DepositoChequesRepository {
             (data as List<dynamic>)
                 .map((json) => DepositoChequeModel.fromJson(json))
                 .toList();
-        Logger().i(items.length);
+       
         return items.map((model) => model.toEntity()).toList();
       } else {
         return [];
@@ -282,9 +283,46 @@ class DepositoChequesImpl implements DepositoChequesRepository {
     DateTime? fechaInicio,
     DateTime? fechaFin,
     String codCliente,
-  ) {
-    // TODO: implement lstDepositxIdentificar
-    throw UnimplementedError();
+  ) async {
+    
+    final Map<String, dynamic> data = {
+      'idBxC': idBxC,
+      'fechaInicio': fechaInicio,
+      'fechaFin': fechaFin,
+      'codCliente': codCliente,
+    };
+    if (fechaInicio != null) {
+      data['fechaInicio'] = DateFormat('yyyy-MM-dd').format(fechaInicio);
+    } else {
+      data.remove('fechaInicio');
+    }
+    if (fechaFin != null) {
+      data['fechaFin'] = DateFormat('yyyy-MM-dd').format(fechaFin);
+    } else {
+      data.remove('fechaFin');
+    }
+
+    try {
+      final response = await _dio.post(
+        AppConstants.depListDepositosIde,
+        data: data,
+      );
+      if (response.statusCode == 200 && response.data != null) {
+        final data = response.data['data'] ?? [];
+        final items =
+            (data as List<dynamic>)
+                .map((json) => DepositoChequeModel.fromJson(json))
+                .toList();
+       
+        return items.map((model) => model.toEntity()).toList();
+      } else {
+        return [];
+      }
+    } on DioException {
+      return [];
+    } catch (e) {
+      return [];
+    }
   }
 
   @override

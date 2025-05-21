@@ -125,6 +125,12 @@ final routerProvider = Provider<GoRouter>((ref) {
               name: 'tdep_DepositoIdeReg',
               builder: (context, state) => const DepositoChequeIdentificarScreen(),
             ),
+            //para ver depositos sin identificar
+            GoRoute(
+              path: '/dashboard/tdep_DepositoIde/View',
+              name: 'tdep_DepositoIdeView',
+              builder: (context, state) => const DepositoChequeIdentificarViewScreen(),
+            )
             
           ],
         ),
@@ -177,6 +183,10 @@ final routerProvider = Provider<GoRouter>((ref) {
         GoRoute(
           path: '/tdep_DepositoIde/Registro',
           redirect: (context, state) => '/dashboard/tdep_DepositoIde/Registro',
+        ),
+        GoRoute(
+          path: '/tdep_DepositoIde/View',
+          redirect: (context, state) => '/dashboard/tdep_DepositoIde/View',
         ),
 
 

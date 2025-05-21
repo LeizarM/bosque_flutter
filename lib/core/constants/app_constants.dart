@@ -1,5 +1,7 @@
 class AppConstants {
+  //static const String baseUrl = 'https://app.esppapel.com:8443';
   static const String baseUrl = 'http://192.168.3.107:9223';
+  
   static const String APP_VERSION = "1.0.0";
 
   static const String loginEndpoint = '/auth/login';
@@ -30,6 +32,7 @@ class AppConstants {
   static const String depRegister = '/deposito-cheque/registro';
   static const String depRegisterNotaRemision = '/deposito-cheque/registrar-nota-remision';
   static const String depListarDepositos = '/deposito-cheque/listar';
+  static const String depListDepositosIde = '/deposito-cheque/listar-dep-identificar';
   static const String depGenPdfDeposito = '/deposito-cheque/pdf/';
   static const String depObtImagen = '/deposito-cheque/descargar/';
   static const String depActualizarNotaRemision = '/deposito-cheque/registrar-nroTransaccion';

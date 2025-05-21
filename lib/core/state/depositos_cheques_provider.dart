@@ -130,6 +130,32 @@ class DepositosChequesNotifier extends StateNotifier<DepositosChequesState> {
     cargarEmpresas();
   }
 
+  /// Busca depósitos pendientes por identificar usando el método lstDepositxIdentificar del repositorio
+  Future<void> buscarDepositosPorIdentificar({
+    required int idBxC,
+    DateTime? fechaDesde,
+    DateTime? fechaHasta,
+    String? codCliente,
+  }) async {
+    state = state.copyWith(cargando: true);
+    try {
+      final depositos = await _repo.lstDepositxIdentificar(
+        idBxC,
+        fechaDesde,
+        fechaHasta,
+        codCliente ?? '',
+      );
+      state = state.copyWith(
+        depositos: depositos,
+        totalRegistros: depositos.length,
+        cargando: false,
+        page: 0,
+      );
+    } catch (e) {
+      state = state.copyWith(cargando: false);
+    }
+  }
+
   // Permite acceso al repositorio para casos específicos como cargar bancos
   DepositoChequesImpl get repo => _repo;
 

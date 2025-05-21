@@ -77,7 +77,7 @@ class ButtonPermissionsNotifier extends StateNotifier<AsyncValue<List<UsuarioBtn
     }
     
     // El rol de administrador siempre tiene permiso
-    if (_currentUser?.tipoUsuario == 'ROLE_ADM') {
+    if (_currentUser.tipoUsuario == 'ROLE_ADM') {
       return true;
     }
     
