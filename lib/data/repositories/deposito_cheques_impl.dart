@@ -144,10 +144,7 @@ class DepositoChequesImpl implements DepositoChequesRepository {
   }
 
   @override
-  Future<bool> registrarDeposito(
-  DepositoChequeEntity deposito,
-  dynamic imagen,
-) async {
+  Future<bool> registrarDeposito(  DepositoChequeEntity deposito,  dynamic imagen) async {
   final model = DepositoChequeModel.fromEntity(deposito);
 
   try {
@@ -189,6 +186,9 @@ class DepositoChequesImpl implements DepositoChequesRepository {
       AppConstants.depRegister,
       data: formData,
     );
+    Logger().w('Response model to Json: ${model.toJson()}');
+    Logger().d('Request: ${formData.fields}');
+    Logger().e('Response: ${response.data}');
 
     return response.statusCode == 200 || response.statusCode == 201;
   } on DioException catch (e) {

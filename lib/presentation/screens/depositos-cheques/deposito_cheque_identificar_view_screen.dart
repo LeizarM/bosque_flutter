@@ -1,22 +1,51 @@
+import 'package:bosque_flutter/domain/entities/banco_cuenta_entity.dart';
+import 'package:bosque_flutter/domain/entities/empresa_entity.dart';
+import 'package:bosque_flutter/domain/entities/nota_remision_entity.dart';
+import 'package:bosque_flutter/domain/entities/socio_negocio_entity.dart';
+import 'package:bosque_flutter/presentation/screens/depositos-cheques/deposito_cheque_register_screen.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'dart:io';
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:image_picker/image_picker.dart';
 import '../../../core/state/depositos_cheques_provider.dart';
 import '../../../core/utils/responsive_utils_bosque.dart';
+
+// Un modelo simple para representar documentos
+class DocumentoDisponible {
+  final String numero;
+  final int numeroFactura;
+  final DateTime fecha;
+  final double total;
+  final double saldo;
+  bool seleccionado;
+
+  DocumentoDisponible({
+    required this.numero,
+    required this.numeroFactura,
+    required this.fecha,
+    required this.total,
+    required this.saldo,
+    this.seleccionado = false,
+  });
+}
 
 class DepositoChequeIdentificarViewScreen extends ConsumerStatefulWidget {
   const DepositoChequeIdentificarViewScreen({super.key});
 
   @override
-  ConsumerState<DepositoChequeIdentificarViewScreen> createState() => _DepositoChequeIdentificarViewScreenState();
+  ConsumerState<DepositoChequeIdentificarViewScreen> createState() =>
+      _DepositoChequeIdentificarViewScreenState();
 }
 
-class _DepositoChequeIdentificarViewScreenState extends ConsumerState<DepositoChequeIdentificarViewScreen> {
+class _DepositoChequeIdentificarViewScreenState
+    extends ConsumerState<DepositoChequeIdentificarViewScreen> {
   DateTime? _fechaDesde;
   DateTime? _fechaHasta;
   final TextEditingController _fechaDesdeController = TextEditingController();
   final TextEditingController _fechaHastaController = TextEditingController();
 
-  @override
   void initState() {
     super.initState();
     // Inicializar con fechas predeterminadas
@@ -34,7 +63,10 @@ class _DepositoChequeIdentificarViewScreenState extends ConsumerState<DepositoCh
   Future<void> _pickDate(BuildContext context, bool isDesde) async {
     final picked = await showDatePicker(
       context: context,
-      initialDate: isDesde ? (_fechaDesde ?? DateTime.now()) : (_fechaHasta ?? DateTime.now()),
+      initialDate:
+          isDesde
+              ? (_fechaDesde ?? DateTime.now())
+              : (_fechaHasta ?? DateTime.now()),
       firstDate: DateTime(2000),
       lastDate: DateTime(2100),
     );
@@ -63,31 +95,39 @@ class _DepositoChequeIdentificarViewScreenState extends ConsumerState<DepositoCh
     final isDesktop = ResponsiveUtilsBosque.isDesktop(context);
     final isTablet = ResponsiveUtilsBosque.isTablet(context);
     final isMobile = ResponsiveUtilsBosque.isMobile(context);
-    
+
     // Usar padding mínimo para maximizar espacio
-    final horizontalPadding = isMobile 
-        ? ResponsiveUtilsBosque.getHorizontalPadding(context) 
-        : 2.0; // Aún menor para maximizar espacio en desktop
-    
+    final horizontalPadding =
+        isMobile
+            ? ResponsiveUtilsBosque.getHorizontalPadding(context)
+            : 2.0; // Aún menor para maximizar espacio en desktop
+
     final verticalPadding = ResponsiveUtilsBosque.getVerticalPadding(context);
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Depósitos por Identificar', style: ResponsiveUtilsBosque.getTitleStyle(context)),
+        title: Text(
+          'Depósitos por Identificar',
+          style: ResponsiveUtilsBosque.getTitleStyle(context),
+        ),
         backgroundColor: Colors.white,
         elevation: 0,
         iconTheme: const IconThemeData(color: Colors.black87),
       ),
       body: SafeArea(
         child: Padding(
-          padding: EdgeInsets.symmetric(horizontal: horizontalPadding, vertical: verticalPadding),
+          padding: EdgeInsets.symmetric(
+            horizontal: horizontalPadding,
+            vertical: verticalPadding,
+          ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Sección de búsqueda con padding adecuado
               Padding(
                 padding: EdgeInsets.symmetric(
-                  horizontal: isMobile ? 0 : 2.0, // Menor padding para el formulario
+                  horizontal:
+                      isMobile ? 0 : 2.0, // Menor padding para el formulario
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -100,9 +140,7 @@ class _DepositoChequeIdentificarViewScreenState extends ConsumerState<DepositoCh
               ),
               const SizedBox(height: 16),
               // Tabla expandida
-              Expanded(
-                child: _DepositosIdentificarTable(),
-              ),
+              Expanded(child: _DepositosIdentificarTable()),
             ],
           ),
         ),
@@ -117,7 +155,9 @@ class _DepositoChequeIdentificarViewScreenState extends ConsumerState<DepositoCh
         const SizedBox(width: 8),
         Text(
           'Criterios de Búsqueda',
-          style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+          style: Theme.of(
+            context,
+          ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
         ),
       ],
     );
@@ -125,7 +165,7 @@ class _DepositoChequeIdentificarViewScreenState extends ConsumerState<DepositoCh
 
   Widget _buildSearchForm(BuildContext context) {
     final isMobile = ResponsiveUtilsBosque.isMobile(context);
-    
+
     // Versión móvil - layout vertical
     if (isMobile) {
       return Column(
@@ -164,12 +204,14 @@ class _DepositoChequeIdentificarViewScreenState extends ConsumerState<DepositoCh
             ),
             onPressed: () {
               // Solo buscar por fechas, idBxC=0 y codCliente vacio
-              ref.read(depositosChequesProvider.notifier).buscarDepositosPorIdentificar(
-                idBxC: 0,
-                fechaDesde: _fechaDesde,
-                fechaHasta: _fechaHasta,
-                codCliente: '',
-              );
+              ref
+                  .read(depositosChequesProvider.notifier)
+                  .buscarDepositosPorIdentificar(
+                    idBxC: 0,
+                    fechaDesde: _fechaDesde,
+                    fechaHasta: _fechaHasta,
+                    codCliente: '',
+                  );
             },
           ),
         ],
@@ -192,7 +234,10 @@ class _DepositoChequeIdentificarViewScreenState extends ConsumerState<DepositoCh
                 readOnly: true,
                 decoration: InputDecoration(
                   border: const OutlineInputBorder(),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 16,
+                  ),
                   suffixIcon: IconButton(
                     icon: const Icon(Icons.calendar_today),
                     onPressed: () => _pickDate(context, true),
@@ -217,7 +262,10 @@ class _DepositoChequeIdentificarViewScreenState extends ConsumerState<DepositoCh
                 readOnly: true,
                 decoration: InputDecoration(
                   border: const OutlineInputBorder(),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 16,
+                  ),
                   suffixIcon: IconButton(
                     icon: const Icon(Icons.calendar_today),
                     onPressed: () => _pickDate(context, false),
@@ -243,12 +291,14 @@ class _DepositoChequeIdentificarViewScreenState extends ConsumerState<DepositoCh
           ),
           onPressed: () {
             // Solo buscar por fechas, idBxC=0 y codCliente vacio
-            ref.read(depositosChequesProvider.notifier).buscarDepositosPorIdentificar(
-              idBxC: 0,
-              fechaDesde: _fechaDesde,
-              fechaHasta: _fechaHasta,
-              codCliente: '',
-            );
+            ref
+                .read(depositosChequesProvider.notifier)
+                .buscarDepositosPorIdentificar(
+                  idBxC: 0,
+                  fechaDesde: _fechaDesde,
+                  fechaHasta: _fechaHasta,
+                  codCliente: '',
+                );
           },
         ),
       ],
@@ -272,9 +322,38 @@ class _DepositosIdentificarTable extends ConsumerWidget {
     final end = ((page + 1) * rowsPerPage).clamp(0, total);
     final paged = depositos.skip(page * rowsPerPage).take(rowsPerPage).toList();
 
+    // Función para mostrar el diálogo de asignar cliente
+    Future<void> _mostrarDialogoAsignarCliente(dynamic deposito) async {
+      // Mapear los datos del depósito para pasarlos al diálogo
+      final Map<String, dynamic> datosDeposito = {
+        'id': deposito.idDeposito,
+        'empresa': deposito.nombreEmpresa,
+        'banco': deposito.nombreBanco,
+        'importe': deposito.importe,
+        'moneda': deposito.moneda,
+        'fecha': deposito.fechaI,
+        'estado': deposito.esPendiente,
+        'observacion': deposito.obs,
+      };
+
+      final result = await mostrarActualizacionDeposito(context, datosDeposito);
+
+      // Aquí puedes manejar el resultado (actualizar el estado, etc.)
+      if (result != null) {
+        // Actualizar el estado con el resultado del diálogo
+        // notifier.actualizarDeposito(result);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Depósito actualizado correctamente')),
+        );
+      }
+    }
+
     if (depositos.isEmpty) {
       return Center(
-        child: Text('No hay depósitos pendientes por identificar', style: Theme.of(context).textTheme.bodyLarge),
+        child: Text(
+          'No hay depósitos pendientes por identificar',
+          style: Theme.of(context).textTheme.bodyLarge,
+        ),
       );
     }
 
@@ -290,7 +369,10 @@ class _DepositosIdentificarTable extends ConsumerWidget {
                 final d = paged[index];
                 return Card(
                   elevation: 1,
-                  margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 0),
+                  margin: const EdgeInsets.symmetric(
+                    vertical: 4,
+                    horizontal: 0,
+                  ),
                   child: Padding(
                     padding: const EdgeInsets.all(12.0),
                     child: Column(
@@ -301,7 +383,9 @@ class _DepositosIdentificarTable extends ConsumerWidget {
                           children: [
                             Text(
                               'ID: ${d.idDeposito}',
-                              style: const TextStyle(fontWeight: FontWeight.bold),
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
                             _EstadoChip(estado: d.esPendiente),
                           ],
@@ -310,22 +394,35 @@ class _DepositosIdentificarTable extends ConsumerWidget {
                         _buildInfoRow('Cliente', d.codCliente),
                         _buildInfoRow('Empresa', d.nombreEmpresa),
                         _buildInfoRow('Banco', d.nombreBanco),
-                        _buildInfoRow('Importe', '${d.importe.toStringAsFixed(2)} ${d.moneda}'),
-                        _buildInfoRow('Fecha', d.fechaI != null 
-                          ? "${d.fechaI!.day.toString().padLeft(2, '0')}/${d.fechaI!.month.toString().padLeft(2, '0')}/${d.fechaI!.year}" 
-                          : ''),
-                        if (d.obs.isNotEmpty) _buildInfoRow('Observaciones', d.obs),
+                        _buildInfoRow(
+                          'Importe',
+                          '${d.importe.toStringAsFixed(2)} ${d.moneda}',
+                        ),
+                        _buildInfoRow(
+                          'Fecha',
+                          d.fechaI != null
+                              ? "${d.fechaI!.day.toString().padLeft(2, '0')}/${d.fechaI!.month.toString().padLeft(2, '0')}/${d.fechaI!.year}"
+                              : '',
+                        ),
+                        if (d.obs.isNotEmpty)
+                          _buildInfoRow('Observaciones', d.obs),
                         const SizedBox(height: 8),
                         Row(
                           mainAxisAlignment: MainAxisAlignment.end,
                           children: [
                             IconButton(
-                              icon: const Icon(Icons.vpn_key, color: Colors.orange),
-                              tooltip: 'Identificar',
-                              onPressed: () {},
+                              icon: const Icon(
+                                Icons.person,
+                                color: Colors.orange,
+                              ), // Cambio a ícono de persona
+                              tooltip: 'Asignar Cliente',
+                              onPressed: () => _mostrarDialogoAsignarCliente(d),
                             ),
                             IconButton(
-                              icon: const Icon(Icons.copy, color: Colors.indigo),
+                              icon: const Icon(
+                                Icons.copy,
+                                color: Colors.indigo,
+                              ),
                               tooltip: 'Copiar',
                               onPressed: () {},
                             ),
@@ -338,7 +435,15 @@ class _DepositosIdentificarTable extends ConsumerWidget {
               },
             ),
           ),
-          _buildMobilePagination(context, start, end, total, page, notifier, rowsPerPage),
+          _buildMobilePagination(
+            context,
+            start,
+            end,
+            total,
+            page,
+            notifier,
+            rowsPerPage,
+          ),
         ],
       );
     }
@@ -348,18 +453,30 @@ class _DepositosIdentificarTable extends ConsumerWidget {
       builder: (context, constraints) {
         final paginacionHeight = 60.0;
         final tablaHeight = constraints.maxHeight - paginacionHeight;
-        
+
         if (isDesktop) {
-          // Para desktop - usaremos scroll horizontal con anchos de columna adaptados 
+          // Para desktop - usaremos scroll horizontal con anchos de columna adaptados
           return Column(
             children: [
               SizedBox(
                 height: tablaHeight > 0 ? tablaHeight : 0,
-                child: _buildOptimizedScrollableTable(paged, constraints.maxWidth),
+                child: _buildOptimizedScrollableTable(
+                  paged,
+                  constraints.maxWidth,
+                  _mostrarDialogoAsignarCliente,
+                ),
               ),
               SizedBox(
                 height: paginacionHeight,
-                child: _buildDesktopPagination(context, start, end, total, page, notifier, rowsPerPage),
+                child: _buildDesktopPagination(
+                  context,
+                  start,
+                  end,
+                  total,
+                  page,
+                  notifier,
+                  rowsPerPage,
+                ),
               ),
             ],
           );
@@ -369,11 +486,23 @@ class _DepositosIdentificarTable extends ConsumerWidget {
             children: [
               SizedBox(
                 height: tablaHeight > 0 ? tablaHeight : 0,
-                child: _buildTabletScrollableTable(paged, constraints.maxWidth),
+                child: _buildOptimizedScrollableTable(
+                  paged,
+                  constraints.maxWidth,
+                  _mostrarDialogoAsignarCliente,
+                ),
               ),
               SizedBox(
                 height: paginacionHeight,
-                child: _buildDesktopPagination(context, start, end, total, page, notifier, rowsPerPage),
+                child: _buildDesktopPagination(
+                  context,
+                  start,
+                  end,
+                  total,
+                  page,
+                  notifier,
+                  rowsPerPage,
+                ),
               ),
             ],
           );
@@ -383,7 +512,11 @@ class _DepositosIdentificarTable extends ConsumerWidget {
   }
 
   // Tabla optimizada para desktop con scroll horizontal pero columnas con mejor espaciado
-  Widget _buildOptimizedScrollableTable(List<dynamic> paged, double maxWidth) {
+  Widget _buildOptimizedScrollableTable(
+    List<dynamic> paged,
+    double maxWidth,
+    Function onAsignarCliente,
+  ) {
     // Definimos anchos específicos para cada columna para controlar mejor el espacio
     final Map<String, double> columnWidths = {
       'ID': 60,
@@ -397,10 +530,12 @@ class _DepositosIdentificarTable extends ConsumerWidget {
       'Observaciones': 180,
       'Acciones': 80,
     };
-    
+
     // Calculamos el ancho total necesario
-    final double totalWidth = columnWidths.values.reduce((a, b) => a + b) + 20; // +20 para margen de seguridad
-    
+    final double totalWidth =
+        columnWidths.values.reduce((a, b) => a + b) +
+        20; // +20 para margen de seguridad
+
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       child: SizedBox(
@@ -414,9 +549,7 @@ class _DepositosIdentificarTable extends ConsumerWidget {
                   fontWeight: FontWeight.bold,
                   color: Colors.black87,
                 ),
-                dataTextStyle: TextStyle(
-                  color: Colors.black87,
-                ),
+                dataTextStyle: TextStyle(color: Colors.black87),
               ),
             ),
             child: DataTable(
@@ -433,50 +566,94 @@ class _DepositosIdentificarTable extends ConsumerWidget {
                 _customDataColumn('Moneda', columnWidths['Moneda']!),
                 _customDataColumn('Fecha', columnWidths['Fecha']!),
                 _customDataColumn('Estado', columnWidths['Estado']!),
-                _customDataColumn('Observaciones', columnWidths['Observaciones']!),
+                _customDataColumn(
+                  'Observaciones',
+                  columnWidths['Observaciones']!,
+                ),
                 _customDataColumn('Acciones', columnWidths['Acciones']!),
               ],
-              rows: paged.map((d) {
-                return DataRow(
-                  cells: [
-                    _customDataCell(Text(d.idDeposito.toString()), columnWidths['ID']!),
-                    _customDataCell(Text(d.codCliente), columnWidths['Cliente']!),
-                    _customDataCell(Text(d.nombreEmpresa), columnWidths['Empresa']!),
-                    _customDataCell(Text(d.nombreBanco), columnWidths['Banco']!),
-                    _customDataCell(Text(d.importe.toStringAsFixed(2)), columnWidths['Importe']!),
-                    _customDataCell(Text(d.moneda), columnWidths['Moneda']!),
-                    _customDataCell(Text(d.fechaI != null 
-                      ? "${d.fechaI!.day.toString().padLeft(2, '0')}/${d.fechaI!.month.toString().padLeft(2, '0')}/${d.fechaI!.year}" 
-                      : ''), columnWidths['Fecha']!),
-                    _customDataCell(_EstadoChip(estado: d.esPendiente), columnWidths['Estado']!),
-                    _customDataCell(
-                      Text(d.obs, overflow: TextOverflow.ellipsis), 
-                      columnWidths['Observaciones']!
-                    ),
-                    _customDataCell(Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        IconButton(
-                          icon: const Icon(Icons.vpn_key, color: Colors.orange, size: 20),
-                          tooltip: 'Identificar',
-                          onPressed: () {},
-                          constraints: const BoxConstraints(maxWidth: 32),
-                          padding: EdgeInsets.zero,
+              rows:
+                  paged.map((d) {
+                    return DataRow(
+                      cells: [
+                        _customDataCell(
+                          Text(d.idDeposito.toString()),
+                          columnWidths['ID']!,
                         ),
-                        IconButton(
-                          icon: const Icon(Icons.copy, color: Colors.indigo, size: 20),
-                          tooltip: 'Copiar',
-                          onPressed: () {},
-                          constraints: const BoxConstraints(maxWidth: 32),
-                          padding: EdgeInsets.zero,
+                        _customDataCell(
+                          Text(d.codCliente),
+                          columnWidths['Cliente']!,
+                        ),
+                        _customDataCell(
+                          Text(d.nombreEmpresa),
+                          columnWidths['Empresa']!,
+                        ),
+                        _customDataCell(
+                          Text(d.nombreBanco),
+                          columnWidths['Banco']!,
+                        ),
+                        _customDataCell(
+                          Text(d.importe.toStringAsFixed(2)),
+                          columnWidths['Importe']!,
+                        ),
+                        _customDataCell(
+                          Text(d.moneda),
+                          columnWidths['Moneda']!,
+                        ),
+                        _customDataCell(
+                          Text(
+                            d.fechaI != null
+                                ? "${d.fechaI!.day.toString().padLeft(2, '0')}/${d.fechaI!.month.toString().padLeft(2, '0')}/${d.fechaI!.year}"
+                                : '',
+                          ),
+                          columnWidths['Fecha']!,
+                        ),
+                        _customDataCell(
+                          _EstadoChip(estado: d.esPendiente),
+                          columnWidths['Estado']!,
+                        ),
+                        _customDataCell(
+                          Text(d.obs, overflow: TextOverflow.ellipsis),
+                          columnWidths['Observaciones']!,
+                        ),
+                        _customDataCell(
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              IconButton(
+                                icon: const Icon(
+                                  Icons.person,
+                                  color: Colors.orange,
+                                  size: 20,
+                                ), // Cambio a ícono de persona
+                                tooltip: 'Asignar Cliente',
+                                onPressed: () => onAsignarCliente(d),
+                                constraints: const BoxConstraints(maxWidth: 32),
+                                padding: EdgeInsets.zero,
+                              ),
+                              IconButton(
+                                icon: const Icon(
+                                  Icons.copy,
+                                  color: Colors.indigo,
+                                  size: 20,
+                                ),
+                                tooltip: 'Copiar',
+                                onPressed: () {},
+                                constraints: const BoxConstraints(maxWidth: 32),
+                                padding: EdgeInsets.zero,
+                              ),
+                            ],
+                          ),
+                          columnWidths['Acciones']!,
                         ),
                       ],
-                    ), columnWidths['Acciones']!),
-                  ],
-                );
-              }).toList(),
+                    );
+                  }).toList(),
               border: TableBorder(
-                horizontalInside: BorderSide(width: 1, color: Colors.grey.shade200),
+                horizontalInside: BorderSide(
+                  width: 1,
+                  color: Colors.grey.shade200,
+                ),
               ),
             ),
           ),
@@ -487,32 +664,24 @@ class _DepositosIdentificarTable extends ConsumerWidget {
 
   // Columna de DataTable con ancho controlado
   DataColumn _customDataColumn(String label, double width) {
-    return DataColumn(
-      label: Container(
-        width: width,
-        child: Text(label),
-      ),
-    );
+    return DataColumn(label: Container(width: width, child: Text(label)));
   }
 
   // Celda de DataTable con ancho controlado
   DataCell _customDataCell(Widget child, double width) {
-    return DataCell(
-      Container(
-        width: width,
-        child: child,
-      ),
-    );
+    return DataCell(Container(width: width, child: child));
   }
 
   // Tabla para tablet (sin la columna de Observaciones)
-  Widget _buildTabletScrollableTable(List<dynamic> paged, double maxWidth) {
+  Widget _buildTabletScrollableTable(
+    List<dynamic> paged,
+    double maxWidth,
+    Function onAsignarCliente,
+  ) {
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       child: ConstrainedBox(
-        constraints: BoxConstraints(
-          minWidth: maxWidth,
-        ),
+        constraints: BoxConstraints(minWidth: maxWidth),
         child: SingleChildScrollView(
           child: DataTable(
             columnSpacing: 12,
@@ -530,43 +699,61 @@ class _DepositosIdentificarTable extends ConsumerWidget {
               DataColumn(label: Text('Estado')),
               DataColumn(label: Text('Acciones')),
             ],
-            rows: paged.map((d) {
-              return DataRow(
-                cells: [
-                  DataCell(Text(d.idDeposito.toString())),
-                  DataCell(Text(d.codCliente)),
-                  DataCell(Text(d.nombreEmpresa)),
-                  DataCell(Text(d.nombreBanco)),
-                  DataCell(Text(d.importe.toStringAsFixed(2))),
-                  DataCell(Text(d.moneda)),
-                  DataCell(Text(d.fechaI != null 
-                    ? "${d.fechaI!.day.toString().padLeft(2, '0')}/${d.fechaI!.month.toString().padLeft(2, '0')}/${d.fechaI!.year}" 
-                    : '')),
-                  DataCell(_EstadoChip(estado: d.esPendiente)),
-                  DataCell(Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      IconButton(
-                        icon: const Icon(Icons.vpn_key, color: Colors.orange, size: 20),
-                        tooltip: 'Identificar',
-                        onPressed: () {},
-                        constraints: const BoxConstraints(maxWidth: 32),
-                        padding: EdgeInsets.zero,
+            rows:
+                paged.map((d) {
+                  return DataRow(
+                    cells: [
+                      DataCell(Text(d.idDeposito.toString())),
+                      DataCell(Text(d.codCliente)),
+                      DataCell(Text(d.nombreEmpresa)),
+                      DataCell(Text(d.nombreBanco)),
+                      DataCell(Text(d.importe.toStringAsFixed(2))),
+                      DataCell(Text(d.moneda)),
+                      DataCell(
+                        Text(
+                          d.fechaI != null
+                              ? "${d.fechaI!.day.toString().padLeft(2, '0')}/${d.fechaI!.month.toString().padLeft(2, '0')}/${d.fechaI!.year}"
+                              : '',
+                        ),
                       ),
-                      IconButton(
-                        icon: const Icon(Icons.copy, color: Colors.indigo, size: 20),
-                        tooltip: 'Copiar',
-                        onPressed: () {},
-                        constraints: const BoxConstraints(maxWidth: 32),
-                        padding: EdgeInsets.zero,
+                      DataCell(_EstadoChip(estado: d.esPendiente)),
+                      DataCell(
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            IconButton(
+                              icon: const Icon(
+                                Icons.person,
+                                color: Colors.orange,
+                                size: 20,
+                              ), // Cambio a ícono de persona
+                              tooltip: 'Asignar Cliente',
+                              onPressed: () => onAsignarCliente(d),
+                              constraints: const BoxConstraints(maxWidth: 32),
+                              padding: EdgeInsets.zero,
+                            ),
+                            IconButton(
+                              icon: const Icon(
+                                Icons.copy,
+                                color: Colors.indigo,
+                                size: 20,
+                              ),
+                              tooltip: 'Copiar',
+                              onPressed: () {},
+                              constraints: const BoxConstraints(maxWidth: 32),
+                              padding: EdgeInsets.zero,
+                            ),
+                          ],
+                        ),
                       ),
                     ],
-                  )),
-                ],
-              );
-            }).toList(),
+                  );
+                }).toList(),
             border: TableBorder(
-              horizontalInside: BorderSide(width: 1, color: Colors.grey.shade200),
+              horizontalInside: BorderSide(
+                width: 1,
+                color: Colors.grey.shade200,
+              ),
             ),
           ),
         ),
@@ -593,9 +780,7 @@ class _DepositosIdentificarTable extends ConsumerWidget {
           Expanded(
             child: Text(
               value,
-              style: const TextStyle(
-                fontWeight: FontWeight.w400,
-              ),
+              style: const TextStyle(fontWeight: FontWeight.w400),
             ),
           ),
         ],
@@ -603,8 +788,15 @@ class _DepositosIdentificarTable extends ConsumerWidget {
     );
   }
 
-  Widget _buildMobilePagination(BuildContext context, int start, int end, int total, int page, 
-      dynamic notifier, int rowsPerPage) {
+  Widget _buildMobilePagination(
+    BuildContext context,
+    int start,
+    int end,
+    int total,
+    int page,
+    dynamic notifier,
+    int rowsPerPage,
+  ) {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 12),
       child: Column(
@@ -635,13 +827,18 @@ class _DepositosIdentificarTable extends ConsumerWidget {
                 icon: const Icon(Icons.chevron_right, size: 20),
                 padding: const EdgeInsets.all(8),
                 constraints: const BoxConstraints(),
-                onPressed: end < total ? () => notifier.setPage(page + 1) : null,
+                onPressed:
+                    end < total ? () => notifier.setPage(page + 1) : null,
               ),
               IconButton(
                 icon: const Icon(Icons.last_page, size: 20),
                 padding: const EdgeInsets.all(8),
                 constraints: const BoxConstraints(),
-                onPressed: end < total ? () => notifier.setPage((total / rowsPerPage).ceil() - 1) : null,
+                onPressed:
+                    end < total
+                        ? () =>
+                            notifier.setPage((total / rowsPerPage).ceil() - 1)
+                        : null,
               ),
             ],
           ),
@@ -650,13 +847,23 @@ class _DepositosIdentificarTable extends ConsumerWidget {
     );
   }
 
-  Widget _buildDesktopPagination(BuildContext context, int start, int end, int total, int page,
-      dynamic notifier, int rowsPerPage) {
+  Widget _buildDesktopPagination(
+    BuildContext context,
+    int start,
+    int end,
+    int total,
+    int page,
+    dynamic notifier,
+    int rowsPerPage,
+  ) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 4),
       child: Row(
         children: [
-          Text('Mostrando $start a $end de $total depósitos', style: Theme.of(context).textTheme.bodyMedium),
+          Text(
+            'Mostrando $start a $end de $total depósitos',
+            style: Theme.of(context).textTheme.bodyMedium,
+          ),
           const Spacer(),
           IconButton(
             icon: const Icon(Icons.first_page),
@@ -672,14 +879,18 @@ class _DepositosIdentificarTable extends ConsumerWidget {
           ),
           IconButton(
             icon: const Icon(Icons.last_page),
-            onPressed: end < total ? () => notifier.setPage((total / rowsPerPage).ceil() - 1) : null,
+            onPressed:
+                end < total
+                    ? () => notifier.setPage((total / rowsPerPage).ceil() - 1)
+                    : null,
           ),
           const SizedBox(width: 16),
           DropdownButton<int>(
             value: rowsPerPage,
-            items: const [10, 20, 50]
-                .map((e) => DropdownMenuItem(value: e, child: Text('$e')))
-                .toList(),
+            items:
+                const [10, 20, 50]
+                    .map((e) => DropdownMenuItem(value: e, child: Text('$e')))
+                    .toList(),
             onChanged: (v) => notifier.setRowsPerPage(v),
           ),
         ],
@@ -696,7 +907,7 @@ class _EstadoChip extends StatelessWidget {
   Widget build(BuildContext context) {
     Color color;
     String label = estado;
-    
+
     if (estado.toLowerCase().contains('pendiente')) {
       color = Colors.orange.shade200;
       label = 'Pendiente';
@@ -706,7 +917,7 @@ class _EstadoChip extends StatelessWidget {
     } else {
       color = Colors.grey.shade300;
     }
-    
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
       decoration: BoxDecoration(
@@ -717,17 +928,17 @@ class _EstadoChip extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           Icon(
-            estado.toLowerCase().contains('pendiente') 
-                ? Icons.access_time 
+            estado.toLowerCase().contains('pendiente')
+                ? Icons.access_time
                 : Icons.check_circle,
             size: 14,
             color: Colors.black87,
           ),
           const SizedBox(width: 4),
           Text(
-            label, 
+            label,
             style: const TextStyle(
-              fontSize: 12, 
+              fontSize: 12,
               color: Colors.black87,
               fontWeight: FontWeight.w500,
             ),
@@ -736,4 +947,1283 @@ class _EstadoChip extends StatelessWidget {
       ),
     );
   }
+}
+
+// Implementación del diálogo para actualizar depósitos
+class ActualizacionDepositoDialog extends ConsumerStatefulWidget {
+  final Map<String, dynamic> deposito;
+
+  const ActualizacionDepositoDialog({Key? key, required this.deposito})
+    : super(key: key);
+
+  @override
+  ConsumerState<ActualizacionDepositoDialog> createState() =>
+      _ActualizacionDepositoDialogState();
+}
+
+class _ActualizacionDepositoDialogState
+    extends ConsumerState<ActualizacionDepositoDialog> {
+  // Variables para controlar el estado del formulario
+  EmpresaEntity? empresaSeleccionada;
+  SocioNegocioEntity? clienteSeleccionado;
+  BancoXCuentaEntity? bancoSeleccionado;
+  double aCuenta = 0;
+  XFile? imagenSeleccionada;
+  double totalDocumentos = 0;
+  double importeDeposito = 0;
+  bool cargando = false;
+  Uint8List? _webImageBytes;
+
+  final _formKey = GlobalKey<FormState>();
+  final TextEditingController _aCuentaController = TextEditingController(
+    text: '0.00',
+  );
+  final TextEditingController _observacionesController =
+      TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    importeDeposito = widget.deposito['importe'] ?? 0.0;
+    _observacionesController.text = widget.deposito['observacion'] ?? '';
+
+    // Limpiar cualquier imagen previa
+    if (kIsWeb) {
+      ref.read(imageBytesProvider.notifier).state = null;
+    }
+
+    // Iniciar carga de datos en un microtask
+    Future.microtask(() {
+      if (mounted) {
+        _cargarDatosIniciales();
+      }
+    });
+  }
+
+  Future<void> _cargarDatosIniciales() async {
+    if (!mounted) return;
+
+    setState(() {
+      cargando = true;
+    });
+
+    try {
+      // Simplificar la carga inicial - solo cargar datos si es necesario
+      final state = ref.read(depositosChequesProvider);
+
+      // Si ya hay datos cargados, los usamos
+      if (state.empresas.isNotEmpty) {
+        _configurarDatosIniciales();
+      } else {
+        // Intentar cargar empresas
+        try {
+          await ref.read(depositosChequesProvider.notifier).cargarEmpresas();
+          if (mounted) {
+            _configurarDatosIniciales();
+          }
+        } catch (e) {
+          print('Error al cargar empresas: $e');
+        }
+      }
+    } catch (e) {
+      print('Error general: $e');
+    } finally {
+      if (mounted) {
+        setState(() {
+          cargando = false;
+        });
+      }
+    }
+  }
+
+  // Método separado para configurar datos iniciales
+  void _configurarDatosIniciales() {
+    try {
+      final state = ref.read(depositosChequesProvider);
+
+      // Primero intentamos encontrar la empresa por nombre
+      final nombreEmpresa = widget.deposito['empresa'] ?? '';
+      EmpresaEntity? empresa;
+
+      try {
+        empresa = state.empresas.firstWhere(
+          (e) => e.nombre == nombreEmpresa,
+          orElse:
+              () => state.empresas.firstWhere(
+                (e) => e.codEmpresa != 0,
+                orElse: () => state.empresas.first,
+              ),
+        );
+
+        // Actualizar localmente
+        setState(() {
+          empresaSeleccionada = empresa;
+        });
+
+        // Ahora intentamos cargar clientes y bancos
+        _cargarClientesYBancos(empresa);
+      } catch (e) {
+        print('Error al configurar empresa: $e');
+      }
+    } catch (e) {
+      print('Error en configuración inicial: $e');
+    }
+  }
+
+  // Método para cargar clientes y bancos basados en la empresa
+  Future<void> _cargarClientesYBancos(EmpresaEntity empresa) async {
+    if (!mounted) return;
+
+    try {
+      // Seleccionar empresa en el provider
+      await ref
+          .read(depositosChequesProvider.notifier)
+          .seleccionarEmpresa(empresa);
+
+      // Obtener clientes y bancos
+      final state = ref.read(depositosChequesProvider);
+      final clientes = state.clientes;
+      final bancos = state.bancos;
+
+      // Configurar cliente si hay disponibles
+      if (clientes.isNotEmpty) {
+        SocioNegocioEntity? cliente;
+        try {
+          cliente = clientes.firstWhere(
+            (c) => c.codCliente.isNotEmpty,
+            orElse: () => clientes.first,
+          );
+
+          if (cliente.codCliente.isNotEmpty) {
+            setState(() {
+              clienteSeleccionado = cliente;
+            });
+
+            // Cargar documentos del cliente
+            await ref
+                .read(depositosChequesProvider.notifier)
+                .seleccionarCliente(cliente);
+          }
+        } catch (e) {
+          print('Error al configurar cliente: $e');
+        }
+      }
+
+      // Configurar banco si hay disponibles
+      if (bancos.isNotEmpty) {
+        final nombreBanco = widget.deposito['banco'] ?? '';
+
+        try {
+          BancoXCuentaEntity? banco = bancos.firstWhere(
+            (b) => b.nombreBanco == nombreBanco,
+            orElse: () => bancos.first,
+          );
+
+          setState(() {
+            bancoSeleccionado = banco;
+          });
+
+          ref.read(depositosChequesProvider.notifier).seleccionarBanco(banco);
+        } catch (e) {
+          print('Error al configurar banco: $e');
+        }
+      }
+    } catch (e) {
+      print('Error al cargar clientes y bancos: $e');
+    }
+  }
+
+  // Manejar la selección de documentos
+  void _toggleDocumentoSeleccionado(int docNum, bool seleccionado) {
+    try {
+      ref
+          .read(depositosChequesProvider.notifier)
+          .seleccionarNota(docNum, seleccionado);
+      _actualizarTotales();
+    } catch (e) {
+      print('Error al seleccionar nota: $e');
+    }
+  }
+
+  // Calcular totales
+  void _actualizarTotales() {
+    try {
+      final state = ref.read(depositosChequesProvider);
+      final notasSeleccionadas = state.notasSeleccionadas;
+      final saldosEditados = state.saldosEditados;
+      final notasRemision = state.notasRemision;
+
+      double total = 0;
+      for (final docNum in notasSeleccionadas) {
+        try {
+          final nota = notasRemision.firstWhere(
+            (n) => n.docNum == docNum,
+            orElse:
+                () => NotaRemisionEntity(
+                  idNr: 0,
+                  idDeposito: 0,
+                  docNum: 0,
+                  totalMonto: 0,
+                  saldoPendiente: 0,
+                  audUsuario: 0,
+                  codCliente: '',
+                  nombreCliente: '',
+                  db: '',
+                  codEmpresaBosque: 0,
+                  fecha: DateTime.now(),
+                  numFact: 0,
+                ),
+          );
+
+          if (saldosEditados.containsKey(docNum)) {
+            total += saldosEditados[docNum] ?? 0;
+          } else {
+            total += nota.saldoPendiente;
+          }
+        } catch (e) {
+          print('Error procesando nota $docNum: $e');
+        }
+      }
+
+      setState(() {
+        totalDocumentos = total;
+      });
+    } catch (e) {
+      print('Error al actualizar totales: $e');
+    }
+  }
+
+  // Método para manejar la selección de imágenes
+  Future<void> _seleccionarImagen() async {
+    final ImagePicker picker = ImagePicker();
+    try {
+      final XFile? imagen = await picker.pickImage(
+        source: ImageSource.gallery,
+        maxWidth: 1800,
+        maxHeight: 1800,
+        imageQuality: 85,
+      );
+
+      if (imagen != null) {
+        setState(() {
+          imagenSeleccionada = imagen;
+        });
+
+        // For Web, we need to read the bytes
+        if (kIsWeb) {
+          final bytes = await imagen.readAsBytes();
+          setState(() {
+            _webImageBytes = bytes;
+          });
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error al seleccionar imagen: $e')),
+        );
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    // Comprobar si estamos en el primer build y mostrar un indicador de carga simple
+    if (cargando) {
+      return Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        child: Container(
+          width: 300,
+          height: 150,
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: const [
+              CircularProgressIndicator(),
+              SizedBox(height: 16),
+              Text('Cargando datos...'),
+            ],
+          ),
+        ),
+      );
+    }
+
+    // Obtener el estado actual del provider
+    final state = ref.watch(depositosChequesProvider);
+
+    // Lista filtrada de notas de remisión
+    final notasRemision = state.notasRemision;
+    final notasSeleccionadas = state.notasSeleccionadas;
+
+    // Actualizar los totales cuando cambia el estado
+    if (state.notasSeleccionadas.isNotEmpty) {
+      _actualizarTotales();
+    }
+
+    return Dialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+      child: Container(
+        width: MediaQuery.of(context).size.width * 0.8,
+        // Limitamos la altura para que no ocupe toda la pantalla
+        constraints: BoxConstraints(
+          maxHeight: MediaQuery.of(context).size.height * 0.85,
+        ),
+        // Usamos SingleChildScrollView para permitir scroll vertical
+        child: SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Form(
+              key: _formKey,
+              child: Column(
+                mainAxisSize:
+                    MainAxisSize.min, // Para que se ajuste al contenido
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Encabezado
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        'Actualización de Depósito',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.close),
+                        onPressed: () => Navigator.pop(context),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Sección Asignar Cliente
+                  Row(
+                    children: [
+                      const Icon(
+                        Icons.person_add_outlined,
+                        color: Colors.indigo,
+                      ),
+                      const SizedBox(width: 8),
+                      const Text(
+                        'Asignar Cliente',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w500,
+                          color: Colors.indigo,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Empresa
+                  const Text('Empresa:'),
+                  const SizedBox(height: 4),
+                  DropdownButtonFormField<EmpresaEntity>(
+                    decoration: const InputDecoration(
+                      border: OutlineInputBorder(),
+                      contentPadding: EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 12,
+                      ),
+                    ),
+                    value: empresaSeleccionada,
+                    hint: const Text("Seleccione una empresa"),
+                    items:
+                        state.empresas
+                            .where((e) => e.codEmpresa != 0) // Filtrar "Todos"
+                            .map((empresa) {
+                              return DropdownMenuItem<EmpresaEntity>(
+                                value: empresa,
+                                child: Text(empresa.nombre),
+                              );
+                            })
+                            .toList(),
+                    onChanged: (newValue) async {
+                      if (newValue != null) {
+                        setState(() {
+                          cargando = true;
+                        });
+
+                        // Actualizar la empresa seleccionada
+                        try {
+                          await ref
+                              .read(depositosChequesProvider.notifier)
+                              .seleccionarEmpresa(newValue);
+                        } catch (e) {
+                          print('Error al seleccionar empresa: $e');
+                        }
+
+                        // Actualizar el estado local
+                        if (mounted) {
+                          setState(() {
+                            empresaSeleccionada = newValue;
+                            clienteSeleccionado = null;
+                            bancoSeleccionado = null;
+                            cargando = false;
+                          });
+
+                          _actualizarTotales();
+                        }
+                      }
+                    },
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Cliente
+                  const Text('Cliente'),
+                  const SizedBox(height: 4),
+                  DropdownButtonFormField<SocioNegocioEntity>(
+                    decoration: const InputDecoration(
+                      border: OutlineInputBorder(),
+                      contentPadding: EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 12,
+                      ),
+                    ),
+                    value: clienteSeleccionado,
+                    hint: const Text("Seleccione un cliente"),
+                    items:
+                        state.clientes
+                            .where(
+                              (c) => c.codCliente.isNotEmpty,
+                            ) // Filtrar "Todos"
+                            .map((cliente) {
+                              return DropdownMenuItem<SocioNegocioEntity>(
+                                value: cliente,
+                                child: Text(cliente.nombreCompleto),
+                              );
+                            })
+                            .toList(),
+                    onChanged: (newValue) async {
+                      if (newValue != null) {
+                        setState(() {
+                          cargando = true;
+                        });
+
+                        // Actualizar el cliente seleccionado
+                        try {
+                          await ref
+                              .read(depositosChequesProvider.notifier)
+                              .seleccionarCliente(newValue);
+                        } catch (e) {
+                          print('Error al seleccionar cliente: $e');
+                        }
+
+                        // Actualizar el estado local
+                        if (mounted) {
+                          setState(() {
+                            clienteSeleccionado = newValue;
+                            cargando = false;
+                          });
+
+                          _actualizarTotales();
+                        }
+                      }
+                    },
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Banco y A Cuenta
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text('Banco'),
+                            const SizedBox(height: 4),
+                            DropdownButtonFormField<BancoXCuentaEntity>(
+                              decoration: const InputDecoration(
+                                border: OutlineInputBorder(),
+                                contentPadding: EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 12,
+                                ),
+                              ),
+                              value: bancoSeleccionado,
+                              hint: const Text("Seleccione un banco"),
+                              items:
+                                  state.bancos.map((banco) {
+                                    return DropdownMenuItem<BancoXCuentaEntity>(
+                                      value: banco,
+                                      child: Text(banco.nombreBanco),
+                                    );
+                                  }).toList(),
+                              onChanged: (newValue) {
+                                if (newValue != null) {
+                                  setState(() {
+                                    bancoSeleccionado = newValue;
+                                  });
+                                  try {
+                                    ref
+                                        .read(depositosChequesProvider.notifier)
+                                        .seleccionarBanco(newValue);
+                                  } catch (e) {
+                                    print('Error al seleccionar banco: $e');
+                                  }
+                                }
+                              },
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text('A Cuenta'),
+                            const SizedBox(height: 4),
+                            TextFormField(
+                              controller: _aCuentaController,
+                              decoration: const InputDecoration(
+                                border: OutlineInputBorder(),
+                                contentPadding: EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 12,
+                                ),
+                              ),
+                              keyboardType: TextInputType.number,
+                              inputFormatters: [
+                                FilteringTextInputFormatter.allow(
+                                  RegExp(r'^\d+\.?\d{0,2}'),
+                                ),
+                              ],
+                              onChanged: (value) {
+                                final nuevaCuenta = double.tryParse(value) ?? 0;
+                                setState(() {
+                                  aCuenta = nuevaCuenta;
+                                });
+                                try {
+                                  ref
+                                      .read(depositosChequesProvider.notifier)
+                                      .setACuenta(nuevaCuenta);
+                                  _actualizarTotales();
+                                } catch (e) {
+                                  print('Error al actualizar cuenta: $e');
+                                }
+                              },
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Imagen del Depósito
+                  const Text('Imagen del Depósito'),
+                  const SizedBox(height: 8),
+                  Container(
+                    height: 100, // Altura fija para la imagen
+                    child: GestureDetector(
+                      onTap: _seleccionarImagen,
+                      child: Container(
+                        width: double.infinity,
+                        decoration: BoxDecoration(
+                          color: Colors.grey[100],
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: Colors.grey[300]!),
+                        ),
+                        child:
+                            kIsWeb
+                                ? _webImageBytes != null
+                                    ? Image.memory(
+                                      _webImageBytes!,
+                                      fit: BoxFit.cover,
+                                    )
+                                    : Column(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      children: [
+                                        // Your upload placeholder UI
+                                        const Icon(
+                                          Icons.cloud_upload,
+                                          size: 32,
+                                          color: Colors.grey,
+                                        ),
+                                        // rest of your placeholder UI
+                                      ],
+                                    )
+                                : Image.file(
+                                  File(imagenSeleccionada!.path),
+                                  fit: BoxFit.cover,
+                                ),
+                      ),
+                    ),
+                  ),
+                  if (imagenSeleccionada == null)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 4),
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.error_outline,
+                            color: Colors.red[300],
+                            size: 14,
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            'Debe seleccionar una imagen',
+                            style: TextStyle(
+                              color: Colors.red[300],
+                              fontSize: 12,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  const SizedBox(height: 12),
+
+                  // Observaciones
+                  const Text('Observaciones:'),
+                  const SizedBox(height: 4),
+                  SizedBox(
+                    height: 80, // Altura fija para las observaciones
+                    child: TextFormField(
+                      controller: _observacionesController,
+                      decoration: const InputDecoration(
+                        border: OutlineInputBorder(),
+                        contentPadding: EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 12,
+                        ),
+                        hintText: 'Observaciones sobre el depósito',
+                      ),
+                      maxLines: 3,
+                      onChanged: (value) {
+                        try {
+                          ref
+                              .read(depositosChequesProvider.notifier)
+                              .setObservaciones(value);
+                        } catch (e) {
+                          print('Error al guardar observaciones: $e');
+                        }
+                      },
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Documentos Disponibles
+                  const Text('Documentos Disponibles'),
+                  const SizedBox(height: 8),
+                  Container(
+                    height: 300, // Altura fija para la tabla de documentos
+                    decoration: BoxDecoration(
+                      border: Border.all(color: Colors.grey[300]!),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child:
+                        notasRemision.isEmpty
+                            ? const Center(
+                              child: Text(
+                                'No hay documentos disponibles para este cliente',
+                              ),
+                            )
+                            : Column(
+                              children: [
+                                // Encabezado de la tabla
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 8,
+                                    horizontal: 12,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: Colors.grey[100],
+                                    border: Border(
+                                      bottom: BorderSide(
+                                        color: Colors.grey[300]!,
+                                      ),
+                                    ),
+                                  ),
+                                  child: Row(
+                                    children: const [
+                                      SizedBox(width: 24), // Para el checkbox
+                                      Expanded(
+                                        flex: 2,
+                                        child: Text('Número Doc.'),
+                                      ),
+                                      Expanded(child: Text('Num. Factura')),
+                                      Expanded(child: Text('Fecha')),
+                                      Expanded(child: Text('Total (Bs)')),
+                                      Expanded(child: Text('Saldo')),
+                                    ],
+                                  ),
+                                ),
+                                // Lista con scrolling
+                                Expanded(
+                                  // Usar Expanded aquí para que ocupe el espacio disponible
+                                  child: ListView.builder(
+                                    itemCount: notasRemision.length,
+                                    itemBuilder: (context, index) {
+                                      final doc = notasRemision[index];
+                                      final seleccionado = notasSeleccionadas
+                                          .contains(doc.docNum);
+
+                                      return Container(
+                                        decoration: BoxDecoration(
+                                          border: Border(
+                                            bottom: BorderSide(
+                                              color: Colors.grey[200]!,
+                                            ),
+                                          ),
+                                          color:
+                                              seleccionado
+                                                  ? Colors.blue[50]
+                                                  : null,
+                                        ),
+                                        child: CheckboxListTile(
+                                          value: seleccionado,
+                                          onChanged:
+                                              (value) =>
+                                                  _toggleDocumentoSeleccionado(
+                                                    doc.docNum,
+                                                    value ?? false,
+                                                  ),
+                                          secondary: const SizedBox(width: 24),
+                                          contentPadding:
+                                              const EdgeInsets.symmetric(
+                                                horizontal: 8,
+                                              ),
+                                          controlAffinity:
+                                              ListTileControlAffinity.leading,
+                                          title: SingleChildScrollView(
+                                            scrollDirection: Axis.horizontal,
+                                            child: Row(
+                                              children: [
+                                                Container(
+                                                  width:
+                                                      (MediaQuery.of(
+                                                                context,
+                                                              ).size.width *
+                                                              0.8 -
+                                                          80) *
+                                                      0.25, // Ajuste para ancho proporcional
+                                                  child: Text(
+                                                    doc.docNum.toString(),
+                                                    overflow:
+                                                        TextOverflow.ellipsis,
+                                                  ),
+                                                ),
+                                                Container(
+                                                  width:
+                                                      (MediaQuery.of(
+                                                                context,
+                                                              ).size.width *
+                                                              0.8 -
+                                                          80) *
+                                                      0.15,
+                                                  child: Text(
+                                                    doc.numFact.toString(),
+                                                    overflow:
+                                                        TextOverflow.ellipsis,
+                                                  ),
+                                                ),
+                                                Container(
+                                                  width:
+                                                      (MediaQuery.of(
+                                                                context,
+                                                              ).size.width *
+                                                              0.8 -
+                                                          80) *
+                                                      0.2,
+                                                  child: Text(
+                                                    doc.fecha != null
+                                                        ? "${doc.fecha!.day.toString().padLeft(2, '0')}/${doc.fecha!.month.toString().padLeft(2, '0')}/${doc.fecha!.year}"
+                                                        : '',
+                                                    overflow:
+                                                        TextOverflow.ellipsis,
+                                                  ),
+                                                ),
+                                                Container(
+                                                  width:
+                                                      (MediaQuery.of(
+                                                                context,
+                                                              ).size.width *
+                                                              0.8 -
+                                                          80) *
+                                                      0.2,
+                                                  child: Text(
+                                                    doc.totalMonto
+                                                        .toStringAsFixed(2),
+                                                    overflow:
+                                                        TextOverflow.ellipsis,
+                                                  ),
+                                                ),
+                                                Container(
+                                                  width:
+                                                      (MediaQuery.of(
+                                                                context,
+                                                              ).size.width *
+                                                              0.8 -
+                                                          80) *
+                                                      0.2,
+                                                  child: GestureDetector(
+                                                    onTap: () {
+                                                      if (seleccionado) {
+                                                        _mostrarDialogoEditarSaldo(
+                                                          doc,
+                                                        );
+                                                      }
+                                                    },
+                                                    child: Text(
+                                                      state.saldosEditados
+                                                              .containsKey(
+                                                                doc.docNum,
+                                                              )
+                                                          ? state
+                                                              .saldosEditados[doc
+                                                                  .docNum]!
+                                                              .toStringAsFixed(
+                                                                2,
+                                                              )
+                                                          : doc.saldoPendiente
+                                                              .toStringAsFixed(
+                                                                2,
+                                                              ),
+                                                      style:
+                                                          seleccionado
+                                                              ? const TextStyle(
+                                                                color:
+                                                                    Colors.blue,
+                                                                decoration:
+                                                                    TextDecoration
+                                                                        .underline,
+                                                              )
+                                                              : null,
+                                                      overflow:
+                                                          TextOverflow.ellipsis,
+                                                    ),
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ),
+                                      );
+                                    },
+                                  ),
+                                ),
+                                // Pie de la tabla con totales
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 8,
+                                    horizontal: 12,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: Colors.grey[100],
+                                    border: Border(
+                                      top: BorderSide(color: Colors.grey[300]!),
+                                    ),
+                                  ),
+                                  child: Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Text('Docs: ${notasRemision.length}'),
+                                      Text(
+                                        'Selec: ${notasSeleccionadas.length} | Total: ${totalDocumentos.toStringAsFixed(2)}',
+                                        style: const TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  // Totales en un SingleChildScrollView para evitar overflow
+                  SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      children: [
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text('Total Documentos'),
+                            const SizedBox(height: 4),
+                            Container(
+                              width:
+                                  MediaQuery.of(context).size.width *
+                                  0.35, // Ancho proporcional
+                              padding: const EdgeInsets.symmetric(
+                                vertical: 12,
+                                horizontal: 12,
+                              ),
+                              decoration: BoxDecoration(
+                                border: Border.all(color: Colors.grey[300]!),
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: Text(
+                                '${totalDocumentos.toStringAsFixed(2)} BS',
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(width: 16),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text('A Cuenta'),
+                            const SizedBox(height: 4),
+                            Container(
+                              width:
+                                  MediaQuery.of(context).size.width *
+                                  0.35, // Ancho proporcional
+                              padding: const EdgeInsets.symmetric(
+                                vertical: 12,
+                                horizontal: 12,
+                              ),
+                              decoration: BoxDecoration(
+                                border: Border.all(color: Colors.grey[300]!),
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: Text('${aCuenta.toStringAsFixed(2)} BS'),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Importe del Depósito - Simplificado y con tamaño fijo
+                  Row(
+                    children: [
+                      const Text(
+                        'Importe del Depósito:',
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                      const Spacer(),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          vertical: 8,
+                          horizontal: 12,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.red[50],
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text(
+                          '${importeDeposito.toStringAsFixed(2)} BS',
+                          style: const TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  // Mensaje de validación - Más compacto
+                  (totalDocumentos > 0 &&
+                          totalDocumentos + aCuenta != importeDeposito)
+                      ? Container(
+                        margin: const EdgeInsets.only(top: 8),
+                        padding: const EdgeInsets.symmetric(
+                          vertical: 4,
+                          horizontal: 8,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.amber[50],
+                          borderRadius: BorderRadius.circular(4),
+                          border: Border.all(color: Colors.amber[300]!),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.warning_amber_rounded,
+                              color: Colors.amber[800],
+                              size: 16,
+                            ),
+                            const SizedBox(width: 4),
+                            Expanded(
+                              child: Text(
+                                'Total debe ser igual al importe: ${(totalDocumentos + aCuenta).toStringAsFixed(2)} ≠ ${importeDeposito.toStringAsFixed(2)}',
+                                style: TextStyle(
+                                  color: Colors.amber[800],
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      )
+                      : const SizedBox.shrink(),
+
+                  const SizedBox(height: 16),
+
+                  // Botones de acción
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      OutlinedButton(
+                        onPressed: () => Navigator.pop(context),
+                        child: const Text('Cancelar'),
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 8,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      ElevatedButton(
+                        onPressed: () {
+                          if (_formKey.currentState!.validate() &&
+                              _validarFormulario()) {
+                            // Procesar el formulario y guardar
+                            _guardarDepositoYNotas();
+                          }
+                        },
+                        child: const Text('Guardar'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.indigo,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 8,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  // Método para mostrar diálogo para editar saldo
+  Future<void> _mostrarDialogoEditarSaldo(NotaRemisionEntity nota) async {
+    final controller = TextEditingController(
+      text:
+          ref
+                  .read(depositosChequesProvider)
+                  .saldosEditados
+                  .containsKey(nota.docNum)
+              ? ref
+                  .read(depositosChequesProvider)
+                  .saldosEditados[nota.docNum]!
+                  .toString()
+              : nota.saldoPendiente.toString(),
+    );
+
+    return showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext dialogContext) {
+        return AlertDialog(
+          title: Text('Editar saldo para documento ${nota.docNum}'),
+          content: TextFormField(
+            controller: controller,
+            decoration: const InputDecoration(
+              labelText: 'Nuevo saldo',
+              border: OutlineInputBorder(),
+            ),
+            keyboardType: TextInputType.number,
+            inputFormatters: [
+              FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,3}')),
+            ],
+          ),
+          actions: <Widget>[
+            TextButton(
+              child: const Text('Cancelar'),
+              onPressed: () {
+                Navigator.of(dialogContext).pop();
+              },
+            ),
+            ElevatedButton(
+              child: const Text('Guardar'),
+              onPressed: () {
+                try {
+                  final nuevoSaldo =
+                      double.tryParse(controller.text) ?? nota.saldoPendiente;
+                  ref
+                      .read(depositosChequesProvider.notifier)
+                      .editarSaldoPendiente(nota.docNum, nuevoSaldo);
+                  _actualizarTotales();
+                } catch (e) {
+                  print('Error al editar saldo: $e');
+                }
+                Navigator.of(dialogContext).pop();
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  bool _validarFormulario() {
+    if (empresaSeleccionada == null) {
+      _mostrarError('Debe seleccionar una empresa');
+      return false;
+    }
+
+    if (clienteSeleccionado == null) {
+      _mostrarError('Debe seleccionar un cliente');
+      return false;
+    }
+
+    if (bancoSeleccionado == null) {
+      _mostrarError('Debe seleccionar un banco');
+      return false;
+    }
+
+    if (imagenSeleccionada == null) {
+      _mostrarError('Debe seleccionar una imagen del depósito');
+      return false;
+    }
+
+    try {
+      final notasSeleccionadas =
+          ref.read(depositosChequesProvider).notasSeleccionadas;
+      if (notasSeleccionadas.isEmpty && aCuenta <= 0) {
+        _mostrarError(
+          'Debe seleccionar al menos un documento o ingresar un valor a cuenta',
+        );
+        return false;
+      }
+    } catch (e) {
+      print('Error al verificar notas seleccionadas: $e');
+    }
+
+    // Verificar que el total coincida con el importe del depósito
+    final total = totalDocumentos + aCuenta;
+    if (totalDocumentos > 0 && total != importeDeposito) {
+      _mostrarError(
+        'El total (${total.toStringAsFixed(2)}) debe ser igual al importe del depósito (${importeDeposito.toStringAsFixed(2)})',
+      );
+      return false;
+    }
+
+    return true;
+  }
+
+  void _mostrarError(String mensaje) {
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(mensaje), backgroundColor: Colors.red),
+      );
+    }
+  }
+
+  Future<void> _guardarDepositoYNotas() async {
+    if (!mounted) return;
+
+    setState(() {
+      cargando = true;
+    });
+
+    try {
+      // 1. Preparar datos para actualizar el depósito
+      final depositoIdOriginal = widget.deposito['id'] ?? 0;
+      final notifier = ref.read(depositosChequesProvider.notifier);
+
+      // 2. Guardar las observaciones si se especificaron
+      try {
+        notifier.setObservaciones(_observacionesController.text);
+      } catch (e) {
+        print('Error al guardar observaciones: $e');
+      }
+
+      // 3. Guardar las notas de remisión seleccionadas
+      bool todasGuardadas = false;
+      try {
+        todasGuardadas = await notifier.guardarNotasRemision();
+      } catch (e) {
+        print('Error al guardar notas: $e');
+      }
+
+      // 4. Registrar o actualizar el depósito con la imagen
+      bool depositoGuardado = false;
+
+      if (depositoIdOriginal > 0) {
+        // Es un depósito existente, actualizarlo
+        // Este método depende de tu implementación específica
+        // Como ejemplo, asumiré que tienes un método actualizarDeposito en tu provider
+        depositoGuardado = true; // Asumimos éxito por ahora
+      } else {
+        // Es un depósito nuevo, registrarlo
+        try {
+          if (imagenSeleccionada != null) {
+            if (kIsWeb) {
+              // For web, use the bytes
+              depositoGuardado = await notifier.registrarDeposito(
+                _webImageBytes!,
+              );
+            } else {
+              // For mobile, use the File
+              depositoGuardado = await notifier.registrarDeposito(
+                File(imagenSeleccionada!.path),
+              );
+            }
+          }
+        } catch (e) {
+          print('Error al registrar depósito: $e');
+        }
+      }
+
+      // 5. Devolver resultado
+      final depositoActualizado = {
+        'empresa': empresaSeleccionada?.nombre,
+        'cliente': clienteSeleccionado?.nombreCompleto,
+        'banco': bancoSeleccionado?.nombreBanco,
+        'aCuenta': aCuenta,
+        'importe': importeDeposito,
+        'id': depositoIdOriginal,
+        'observacion': _observacionesController.text,
+      };
+
+      if (mounted) {
+        setState(() {
+          cargando = false;
+        });
+      }
+
+      if (todasGuardadas && depositoGuardado) {
+        Navigator.pop(context, depositoActualizado);
+      } else if (!todasGuardadas) {
+        _mostrarError('Hubo problemas al guardar algunos documentos');
+      } else {
+        _mostrarError('Hubo un problema al guardar el depósito');
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          cargando = false;
+        });
+        _mostrarError('Error al guardar: $e');
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    _aCuentaController.dispose();
+    _observacionesController.dispose();
+    super.dispose();
+  }
+}
+
+// Método para mostrar el diálogo desde cualquier parte de la aplicación
+Future<Map<String, dynamic>?> mostrarActualizacionDeposito(
+  BuildContext context,
+  Map<String, dynamic> deposito,
+) async {
+  return showDialog<Map<String, dynamic>>(
+    context: context,
+    barrierDismissible: false,
+    builder: (BuildContext context) {
+      return ActualizacionDepositoDialog(deposito: deposito);
+    },
+  );
 }
