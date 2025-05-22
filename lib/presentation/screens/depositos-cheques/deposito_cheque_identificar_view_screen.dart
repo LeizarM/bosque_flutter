@@ -2134,8 +2134,6 @@ class _ActualizacionDepositoDialogState
     final depositoIdOriginal = widget.deposito['id'] ?? 0;
     final notifier = ref.read(depositosChequesProvider.notifier);
 
-    print('[DEBUG][DIALOG] notifier.hashCode: ${notifier.hashCode}');
-    print('[DEBUG][DIALOG] depositoIdOriginal: $depositoIdOriginal');
 
     // --- SINCRONIZAR ESTADO DEL PROVIDER CON LOS VALORES DEL DIALOG ---
     // IMPORTANTE: Usar métodos de sincronización que NO reseteen las selecciones de notas
@@ -2163,77 +2161,41 @@ class _ActualizacionDepositoDialogState
     notifier.setObservaciones(_observacionesController.text);
     
     // Debug: Mostrar estado de las notas seleccionadas antes de guardar
-    notifier.mostrarEstadoNotasSeleccionadas();
 
     // Guardar las notas de remisión seleccionadas
     bool todasGuardadas = false;
-    print('[DEBUG][DIALOG] ========== INICIANDO GUARDADO DE NOTAS ==========');
-    print('[DEBUG][DIALOG] Antes de guardar notas - depositoIdOriginal: $depositoIdOriginal');
     
     try {
-      print('[DEBUG][DIALOG] Llamando a notifier.guardarNotasRemision()...');
       todasGuardadas = await notifier.guardarNotasRemision(idDepositoParaNotas: depositoIdOriginal > 0 ? depositoIdOriginal : null);
-      print('[DEBUG][DIALOG] Resultado guardarNotasRemision: $todasGuardadas');
     } catch (e) {
       print('[DEBUG][DIALOG] Error al guardar notas: $e');
       todasGuardadas = false;
     }
     
-    print('[DEBUG][DIALOG] ========== FIN GUARDADO DE NOTAS ==========');
 
     // Registrar o actualizar el depósito con la imagen
     // El mismo método registrarDeposito maneja ambos casos basándose en el ID
     bool depositoGuardado = false;
-    dynamic responseBackend;
 
-    print('[DEBUG] imagenSeleccionada antes del try: $imagenSeleccionada');
     
     try {
       if (imagenSeleccionada != null) {
-        print('[DEBUG] imagenSeleccionada dentro del if: $imagenSeleccionada');
-        print('[DEBUG] Antes de llamar a notifier.registrarDeposito');
-        print('[DEBUG][DIALOG] notifier.hashCode (antes registrarDeposito): ${notifier.hashCode}');
-        
         if (kIsWeb) {
           depositoGuardado = await notifier.registrarDeposito(_webImageBytes!, idDepositoActualizacion: depositoIdOriginal > 0 ? depositoIdOriginal : null);
         } else {
           depositoGuardado = await notifier.registrarDeposito(File(imagenSeleccionada!.path), idDepositoActualizacion: depositoIdOriginal > 0 ? depositoIdOriginal : null);
         }
-        
-        print('[DEBUG] Después de llamar a notifier.registrarDeposito, depositoGuardado: $depositoGuardado');
-        responseBackend = notifier.lastResponse;
-        print('[DEBUG] Respuesta backend (éxito): $responseBackend');
       } else {
-        print('[DEBUG] imagenSeleccionada es null dentro del if');
-        // Para actualizaciones sin nueva imagen, podríamos pasar null o la imagen existente
-        // Dependiendo de cómo maneje tu backend las actualizaciones sin nueva imagen
         if (depositoIdOriginal > 0) {
-          // Es actualización pero sin nueva imagen
           depositoGuardado = await notifier.registrarDeposito(null, idDepositoActualizacion: depositoIdOriginal);
         } else {
-          // Es nuevo registro sin imagen (esto debería dar error en validación)
           depositoGuardado = await notifier.registrarDeposito(null);
         }
       }
     } catch (e) {
-      print('Error al registrar/actualizar depósito: $e');
-      responseBackend = notifier.lastResponse;
-      print('[DEBUG] Respuesta backend (error): $responseBackend');
+      // No hacer nada, el error se maneja abajo
     }
 
-    print("Estado del formulario antes de guardar:");
-    print("depositoIdOriginal: $depositoIdOriginal");
-    print("codEmpresa: ${empresaSeleccionada?.codEmpresa}");
-    print("Cliente: ${clienteSeleccionado?.codCliente}");
-    print("Banco: ${bancoSeleccionado?.idBxC}");
-    print("A Cuenta: $aCuenta");
-    print("Importe Total: $importeDeposito");
-    print("Imagen seleccionada: ${imagenSeleccionada != null}");
-    if (kIsWeb) {
-      print("Bytes de imagen web: ${_webImageBytes != null ? _webImageBytes!.length : 'null'}");
-    }
-    print("Observaciones: ${_observacionesController.text}");
-    print("==== [DEBUG] Respuesta backend registrarDeposito (final): ${notifier.lastResponse}");
 
     // Devolver resultado
     final depositoActualizado = {

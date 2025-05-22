@@ -4,6 +4,7 @@ import 'dart:typed_data';
 import 'package:bosque_flutter/data/models/deposito_cheque_model.dart';
 import 'package:bosque_flutter/data/models/nota_remision_model.dart';
 import 'package:dio/dio.dart';
+import 'package:flutter/material.dart';
 import 'package:http_parser/http_parser.dart';
 import 'package:bosque_flutter/core/constants/app_constants.dart';
 import 'package:bosque_flutter/data/models/banco_cuenta_model.dart';
@@ -146,8 +147,7 @@ class DepositoChequesImpl implements DepositoChequesRepository {
   @override
   Future<bool> registrarDeposito(  DepositoChequeEntity deposito,  dynamic imagen) async {
   final model = DepositoChequeModel.fromEntity(deposito);
-  print('[DEBUG][repo] registrarDeposito - datos enviados: ${model.toJson()}');
-  print('[DEBUG][repo] registrarDeposito - imagen: ${imagen != null ? (imagen is File ? imagen.path : 'bytes') : 'null'}');
+  
   try {
     // Convertir el modelo a JSON y luego a String
     final depositoChequeJson = jsonEncode(model.toJson());
@@ -176,28 +176,22 @@ class DepositoChequesImpl implements DepositoChequesRepository {
       // Añadir la imagen como un archivo
       formData.files.add(MapEntry('file', multipartFile));
     }
-    print('[DEBUG][repo] registrarDeposito - formData.fields: ${formData.fields}');
-    print('[DEBUG][repo] registrarDeposito - formData.files: ${formData.files}');
+   
     // Realizar la solicitud POST
     final response = await _dio.post(
       AppConstants.depRegister,
       data: formData,
     );
-    print('[DEBUG][repo] registrarDeposito - response.statusCode: ${response.statusCode}');
-    print('[DEBUG][repo] registrarDeposito - response.data: ${response.data}');
+   
     return response.statusCode == 200 || response.statusCode == 201;
   } on DioException catch (e) {
-    print('[DEBUG][repo] registrarDeposito - DioException: $e');
-    if (e.response != null && e.response!.data != null) {
-      print('[DEBUG][repo] registrarDeposito - DioException response: ${e.response!.data}');
-    }
     String errorMessage = 'Error de conexión: ${e.message}';
     if (e.response != null && e.response!.data != null) {
       errorMessage = 'Error del servidor: ${e.response!.statusCode} - ${e.response!.data.toString()}';
     }
     throw Exception(errorMessage);
   } catch (e) {
-    print('[DEBUG][repo] registrarDeposito - Exception: $e');
+    
     throw Exception('Error desconocido registrarDeposito: ${e.toString()}');
   }
 }

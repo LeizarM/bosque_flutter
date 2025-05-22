@@ -472,23 +472,7 @@ class DepositosChequesNotifier extends StateNotifier<DepositosChequesState> {
     lastResponse = null;
 
     try {
-      // Construir entidad DepositoChequeEntity (sin fechaI, el backend la genera)
-      print(
-        '[DEBUG][provider] clienteSeleccionado: \\n  ${state.clienteSeleccionado}',
-      );
-      print(
-        '[DEBUG][provider] empresaSeleccionada: \\n  ${state.empresaSeleccionada}',
-      );
-      print(
-        '[DEBUG][provider] bancoSeleccionado: \\n  ${state.bancoSeleccionado}',
-      );
-      print('[DEBUG][provider] importeTotal: ${state.importeTotal}');
-      print('[DEBUG][provider] aCuenta: ${state.aCuenta}');
-      print(
-        '[DEBUG][provider] monedaSeleccionada: ${state.monedaSeleccionada}',
-      );
-      print('[DEBUG][provider] obs: ${state.obs}');
-
+      
       // Usar el ID pasado como parámetro para actualizaciones, 0 para nuevos registros
       final idDeposito = idDepositoActualizacion ?? 0;
 
@@ -518,22 +502,14 @@ class DepositosChequesNotifier extends StateNotifier<DepositosChequesState> {
         totalMontos: '',
         estadoFiltro: '',
       );
-      print('[DEBUG][provider] depositoChequeEntity: ${deposito.toString()}');
+      
       bool result = false;
-      print('[DEBUG] Antes de llamar a _repo.registrarDeposito');
+     
       try {
         result = await _repo.registrarDeposito(deposito, imagen);
-        print(
-          '[DEBUG] Después de llamar a _repo.registrarDeposito, result: '
-          '\x1B[32m$result\x1B[0m',
-        );
-        // Si el repo usa Logger, no retorna el response, así que no lo capturamos aquí.
-        lastResponse = "Registro exitoso (no hay response body)";
+       
       } catch (e, st) {
-        print('[DEBUG] Excepción en _repo.registrarDeposito: $e');
-        print('[DEBUG] StackTrace: $st');
-        lastResponse = e.toString();
-        rethrow;
+        debugPrint('[DEBUG][provider] Error al registrar depósito: $e; ${st.toString()}');
       }
       state = state.copyWith(cargando: false);
       return result;
@@ -546,34 +522,26 @@ class DepositosChequesNotifier extends StateNotifier<DepositosChequesState> {
 
   /// Útil para mantener las selecciones hechas en el modal
   void sincronizarClienteSeleccionado(SocioNegocioEntity? cliente) {
-    print(
-      '[DEBUG][provider] Sincronizando cliente sin recargar notas: ${cliente?.codCliente}',
-    );
+    
     state = state.copyWith(clienteSeleccionado: cliente);
   }
 
   /// Sincroniza la empresa seleccionada sin recargar clientes/bancos
   /// Útil para mantener las selecciones hechas en el modal
   void sincronizarEmpresaSeleccionada(EmpresaEntity? empresa) {
-    print(
-      '[DEBUG][provider] Sincronizando empresa sin recargar datos: ${empresa?.codEmpresa}',
-    );
+    
     state = state.copyWith(empresaSeleccionada: empresa);
   }
 
   /// Sincroniza el banco seleccionado
   void sincronizarBancoSeleccionado(BancoXCuentaEntity? banco) {
-    print('[DEBUG][provider] Sincronizando banco: ${banco?.idBxC}');
+    
     state = state.copyWith(bancoSeleccionado: banco);
   }
 
   /// Método para verificar el estado de las notas seleccionadas (debug)
   void mostrarEstadoNotasSeleccionadas() {
-    print('[DEBUG][provider] Notas seleccionadas: ${state.notasSeleccionadas}');
-    print(
-      '[DEBUG][provider] Total notas disponibles: ${state.notasRemision.length}',
-    );
-    print('[DEBUG][provider] Saldos editados: ${state.saldosEditados}');
+    
 
     for (final docNum in state.notasSeleccionadas) {
       final nota = state.notasRemision.firstWhere(
@@ -595,10 +563,7 @@ class DepositosChequesNotifier extends StateNotifier<DepositosChequesState> {
             ),
       );
 
-      final saldoEditado = state.saldosEditados[docNum] ?? nota.saldoPendiente;
-      print(
-        '[DEBUG][provider] Nota seleccionada - DocNum: $docNum, Saldo: $saldoEditado',
-      );
+      
     }
   }
 
@@ -606,15 +571,10 @@ class DepositosChequesNotifier extends StateNotifier<DepositosChequesState> {
   state = state.copyWith(cargando: true);
   
   try {
-    print('[DEBUG][provider] ==========================================');
-    print('[DEBUG][provider] Iniciando guardado de notas de remisión');
-    print('[DEBUG][provider] ID del depósito para las notas: $idDepositoParaNotas');
-    print('[DEBUG][provider] Notas seleccionadas: ${state.notasSeleccionadas}');
-    print('[DEBUG][provider] Total notas a guardar: ${state.notasSeleccionadas.length}');
-    print('[DEBUG][provider] ==========================================');
+   
     
     if (state.notasSeleccionadas.isEmpty) {
-      print('[DEBUG][provider] ⚠️  No hay notas seleccionadas para guardar');
+      
       state = state.copyWith(cargando: false);
       return true; // Si no hay notas, consideramos exitoso
     }
@@ -623,26 +583,20 @@ class DepositosChequesNotifier extends StateNotifier<DepositosChequesState> {
     int notasGuardadas = 0;
     
     for (final docNum in state.notasSeleccionadas) {
-      print('[DEBUG][provider] Procesando nota con docNum: $docNum');
+      
       
       try {
         final nota = state.notasRemision.firstWhere(
           (n) => n.docNum == docNum,
           orElse: () {
-            print('[DEBUG][provider] ❌ No se encontró la nota con docNum: $docNum');
+            
             throw Exception('Nota no encontrada: $docNum');
           },
         );
         
         final saldoEditado = state.saldosEditados[docNum] ?? nota.saldoPendiente;
         
-        print('[DEBUG][provider] Nota encontrada:');
-        print('[DEBUG][provider]   - DocNum: ${nota.docNum}');
-        print('[DEBUG][provider]   - Cliente: ${nota.codCliente}');
-        print('[DEBUG][provider]   - Saldo original: ${nota.saldoPendiente}');
-        print('[DEBUG][provider]   - Saldo editado: $saldoEditado');
-        print('[DEBUG][provider]   - ID Depósito original: ${nota.idDeposito}');
-        print('[DEBUG][provider]   - ID Depósito nuevo: ${idDepositoParaNotas ?? nota.idDeposito}');
+        
         
         final notaEditada = NotaRemisionEntity(
           idNr: nota.idNr,
@@ -659,41 +613,30 @@ class DepositosChequesNotifier extends StateNotifier<DepositosChequesState> {
           codEmpresaBosque: nota.codEmpresaBosque,
         );
         
-        print('[DEBUG][provider] Datos de la nota a enviar:');
-        print('[DEBUG][provider]   - idNr: ${notaEditada.idNr}');
-        print('[DEBUG][provider]   - idDeposito: ${notaEditada.idDeposito}');
-        print('[DEBUG][provider]   - docNum: ${notaEditada.docNum}');
-        print('[DEBUG][provider]   - saldoPendiente: ${notaEditada.saldoPendiente}');
-        
-        print('[DEBUG][provider] Enviando nota al repositorio...');
+       
         final ok = await _repo.guardarNotaRemision(notaEditada);
         
         if (ok) {
           notasGuardadas++;
-          print('[DEBUG][provider] ✅ Nota $docNum guardada exitosamente');
+          
         } else {
           allOk = false;
-          print('[DEBUG][provider] ❌ Error al guardar nota $docNum');
+          
         }
         
       } catch (e) {
         allOk = false;
-        print('[DEBUG][provider] ❌ Excepción al procesar nota $docNum: $e');
+       
       }
     }
     
-    print('[DEBUG][provider] ==========================================');
-    print('[DEBUG][provider] Resumen del guardado:');
-    print('[DEBUG][provider] - Notas procesadas: ${state.notasSeleccionadas.length}');
-    print('[DEBUG][provider] - Notas guardadas exitosamente: $notasGuardadas');
-    print('[DEBUG][provider] - Resultado general: ${allOk ? 'ÉXITO' : 'ERROR'}');
-    print('[DEBUG][provider] ==========================================');
+    
     
     state = state.copyWith(cargando: false);
     return allOk;
     
   } catch (e) {
-    print('[DEBUG][provider] ❌ Error general en guardarNotasRemision: $e');
+    
     state = state.copyWith(cargando: false);
     rethrow;
   }
