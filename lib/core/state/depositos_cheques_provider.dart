@@ -125,6 +125,8 @@ class DepositosChequesState {
 }
 
 class DepositosChequesNotifier extends StateNotifier<DepositosChequesState> {
+  /// Última respuesta cruda del backend al registrar depósito (para depuración)
+  dynamic lastResponse;
   final DepositoChequesImpl _repo = DepositoChequesImpl();
   DepositosChequesNotifier() : super(DepositosChequesState()) {
     cargarEmpresas();
@@ -425,12 +427,29 @@ class DepositosChequesNotifier extends StateNotifier<DepositosChequesState> {
   void limpiarFormulario() {
     state = DepositosChequesState(empresas: state.empresas);
   }
-  Future<bool> registrarDeposito(dynamic imagen) async {
+
+  
+  Future<bool> registrarDeposito( dynamic imagen, {int? idDepositoActualizacion} ) async {
     state = state.copyWith(cargando: true);
+    lastResponse = null;
+    
+    
+    
     try {
       // Construir entidad DepositoChequeEntity (sin fechaI, el backend la genera)
+      print('[DEBUG][provider] clienteSeleccionado: \\n  ${state.clienteSeleccionado}');
+      print('[DEBUG][provider] empresaSeleccionada: \\n  ${state.empresaSeleccionada}');
+      print('[DEBUG][provider] bancoSeleccionado: \\n  ${state.bancoSeleccionado}');
+      print('[DEBUG][provider] importeTotal: ${state.importeTotal}');
+      print('[DEBUG][provider] aCuenta: ${state.aCuenta}');
+      print('[DEBUG][provider] monedaSeleccionada: ${state.monedaSeleccionada}');
+      print('[DEBUG][provider] obs: ${state.obs}');
+      
+      // Usar el ID pasado como parámetro para actualizaciones, 0 para nuevos registros
+    final idDeposito = idDepositoActualizacion ?? 0;
+
       final deposito = DepositoChequeEntity(
-        idDeposito: 0,
+        idDeposito: idDeposito,
         codCliente: state.clienteSeleccionado?.codCliente ?? '',
         codEmpresa: state.empresaSeleccionada?.codEmpresa ?? 0,
         idBxC: state.bancoSeleccionado?.idBxC ?? 0,
@@ -455,11 +474,26 @@ class DepositosChequesNotifier extends StateNotifier<DepositosChequesState> {
         totalMontos: '',
         estadoFiltro: '',
       );
-      final result = await _repo.registrarDeposito(deposito, imagen);
+      print('[DEBUG][provider] depositoChequeEntity: ${deposito.toString()}');
+      bool result = false;
+      print('[DEBUG] Antes de llamar a _repo.registrarDeposito');
+      try {
+        result = await _repo.registrarDeposito(deposito, imagen);
+        print('[DEBUG] Después de llamar a _repo.registrarDeposito, result: '
+            '\x1B[32m$result\x1B[0m');
+        // Si el repo usa Logger, no retorna el response, así que no lo capturamos aquí.
+        lastResponse = "Registro exitoso (no hay response body)";
+      } catch (e, st) {
+        print('[DEBUG] Excepción en _repo.registrarDeposito: $e');
+        print('[DEBUG] StackTrace: $st');
+        lastResponse = e.toString();
+        rethrow;
+      }
       state = state.copyWith(cargando: false);
       return result;
     } catch (e) {
       state = state.copyWith(cargando: false);
+      lastResponse = e.toString();
       rethrow;
     }
   }

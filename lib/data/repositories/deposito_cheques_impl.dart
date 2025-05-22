@@ -146,21 +146,18 @@ class DepositoChequesImpl implements DepositoChequesRepository {
   @override
   Future<bool> registrarDeposito(  DepositoChequeEntity deposito,  dynamic imagen) async {
   final model = DepositoChequeModel.fromEntity(deposito);
-
+  print('[DEBUG][repo] registrarDeposito - datos enviados: ${model.toJson()}');
+  print('[DEBUG][repo] registrarDeposito - imagen: ${imagen != null ? (imagen is File ? imagen.path : 'bytes') : 'null'}');
   try {
     // Convertir el modelo a JSON y luego a String
     final depositoChequeJson = jsonEncode(model.toJson());
-    
     // Crear FormData con el campo 'depositoCheque' como String
     FormData formData = FormData();
-    
     // Añadir el campo depositoCheque como un campo normal, no como parte de un objeto
     formData.fields.add(MapEntry('depositoCheque', depositoChequeJson));
-    
     // Añadir la imagen si existe
     if (imagen != null) {
       MultipartFile multipartFile;
-
       if (imagen is Uint8List) {
         multipartFile = MultipartFile.fromBytes(
           imagen,
@@ -176,29 +173,31 @@ class DepositoChequesImpl implements DepositoChequesRepository {
       } else {
         throw Exception('Formato de imagen no soportado');
       }
-      
       // Añadir la imagen como un archivo
       formData.files.add(MapEntry('file', multipartFile));
     }
-
+    print('[DEBUG][repo] registrarDeposito - formData.fields: ${formData.fields}');
+    print('[DEBUG][repo] registrarDeposito - formData.files: ${formData.files}');
     // Realizar la solicitud POST
     final response = await _dio.post(
       AppConstants.depRegister,
       data: formData,
     );
-    Logger().w('Response model to Json: ${model.toJson()}');
-    Logger().d('Request: ${formData.fields}');
-    Logger().e('Response: ${response.data}');
-
+    print('[DEBUG][repo] registrarDeposito - response.statusCode: ${response.statusCode}');
+    print('[DEBUG][repo] registrarDeposito - response.data: ${response.data}');
     return response.statusCode == 200 || response.statusCode == 201;
   } on DioException catch (e) {
-    // Manejo de errores
+    print('[DEBUG][repo] registrarDeposito - DioException: $e');
+    if (e.response != null && e.response!.data != null) {
+      print('[DEBUG][repo] registrarDeposito - DioException response: ${e.response!.data}');
+    }
     String errorMessage = 'Error de conexión: ${e.message}';
     if (e.response != null && e.response!.data != null) {
       errorMessage = 'Error del servidor: ${e.response!.statusCode} - ${e.response!.data.toString()}';
     }
     throw Exception(errorMessage);
   } catch (e) {
+    print('[DEBUG][repo] registrarDeposito - Exception: $e');
     throw Exception('Error desconocido registrarDeposito: ${e.toString()}');
   }
 }

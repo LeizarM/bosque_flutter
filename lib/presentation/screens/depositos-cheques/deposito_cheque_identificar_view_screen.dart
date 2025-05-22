@@ -1528,30 +1528,37 @@ class _ActualizacionDepositoDialogState
                           borderRadius: BorderRadius.circular(8),
                           border: Border.all(color: Colors.grey[300]!),
                         ),
-                        child:
-                            kIsWeb
-                                ? _webImageBytes != null
-                                    ? Image.memory(
-                                      _webImageBytes!,
-                                      fit: BoxFit.cover,
-                                    )
-                                    : Column(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.center,
-                                      children: [
-                                        // Your upload placeholder UI
-                                        const Icon(
-                                          Icons.cloud_upload,
-                                          size: 32,
-                                          color: Colors.grey,
-                                        ),
-                                        // rest of your placeholder UI
-                                      ],
-                                    )
-                                : Image.file(
-                                  File(imagenSeleccionada!.path),
-                                  fit: BoxFit.cover,
-                                ),
+                        child: kIsWeb
+                            ? (_webImageBytes != null
+                                ? Image.memory(
+                                    _webImageBytes!,
+                                    fit: BoxFit.cover,
+                                  )
+                                : Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      const Icon(
+                                        Icons.cloud_upload,
+                                        size: 32,
+                                        color: Colors.grey,
+                                      ),
+                                    ],
+                                  ))
+                            : (imagenSeleccionada != null
+                                ? Image.file(
+                                    File(imagenSeleccionada!.path),
+                                    fit: BoxFit.cover,
+                                  )
+                                : Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      const Icon(
+                                        Icons.cloud_upload,
+                                        size: 32,
+                                        color: Colors.grey,
+                                      ),
+                                    ],
+                                  )),
                       ),
                     ),
                   ),
@@ -2116,95 +2123,131 @@ class _ActualizacionDepositoDialogState
     }
   }
 
-  Future<void> _guardarDepositoYNotas() async {
-    if (!mounted) return;
+ Future<void> _guardarDepositoYNotas() async {
+  if (!mounted) return;
 
-    setState(() {
-      cargando = true;
-    });
+  setState(() {
+    cargando = true;
+  });
 
+  try {
+    final depositoIdOriginal = widget.deposito['id'] ?? 0;
+    final notifier = ref.read(depositosChequesProvider.notifier);
+
+    print('[DEBUG][DIALOG] notifier.hashCode: ${notifier.hashCode}');
+    print('[DEBUG][DIALOG] depositoIdOriginal: $depositoIdOriginal');
+
+    // --- SINCRONIZAR ESTADO DEL PROVIDER CON LOS VALORES DEL DIALOG ---
+    // Cliente
+    if (clienteSeleccionado != null) {
+      await notifier.seleccionarCliente(clienteSeleccionado!);
+    }
+    // Banco
+    if (bancoSeleccionado != null) {
+      notifier.seleccionarBanco(bancoSeleccionado!);
+    }
+    // A Cuenta
+    notifier.setACuenta(aCuenta);
+    // Importe total (importante para actualizaciones)
+    notifier.setImporteTotal(importeDeposito);
+    // Observaciones
+    notifier.setObservaciones(_observacionesController.text);
+
+    // Guardar las notas de remisión seleccionadas
+    bool todasGuardadas = false;
     try {
-      // 1. Preparar datos para actualizar el depósito
-      final depositoIdOriginal = widget.deposito['id'] ?? 0;
-      final notifier = ref.read(depositosChequesProvider.notifier);
+      todasGuardadas = await notifier.guardarNotasRemision();
+    } catch (e) {
+      print('Error al guardar notas: $e');
+    }
 
-      // 2. Guardar las observaciones si se especificaron
-      try {
-        notifier.setObservaciones(_observacionesController.text);
-      } catch (e) {
-        print('Error al guardar observaciones: $e');
-      }
+    // Registrar o actualizar el depósito con la imagen
+    // El mismo método registrarDeposito maneja ambos casos basándose en el ID
+    bool depositoGuardado = false;
+    dynamic responseBackend;
 
-      // 3. Guardar las notas de remisión seleccionadas
-      bool todasGuardadas = false;
-      try {
-        todasGuardadas = await notifier.guardarNotasRemision();
-      } catch (e) {
-        print('Error al guardar notas: $e');
-      }
-
-      // 4. Registrar o actualizar el depósito con la imagen
-      bool depositoGuardado = false;
-
-      if (depositoIdOriginal > 0) {
-        // Es un depósito existente, actualizarlo
-        // Este método depende de tu implementación específica
-        // Como ejemplo, asumiré que tienes un método actualizarDeposito en tu provider
-        depositoGuardado = true; // Asumimos éxito por ahora
+    print('[DEBUG] imagenSeleccionada antes del try: $imagenSeleccionada');
+    
+    try {
+      if (imagenSeleccionada != null) {
+        print('[DEBUG] imagenSeleccionada dentro del if: $imagenSeleccionada');
+        print('[DEBUG] Antes de llamar a notifier.registrarDeposito');
+        print('[DEBUG][DIALOG] notifier.hashCode (antes registrarDeposito): ${notifier.hashCode}');
+        
+        if (kIsWeb) {
+          depositoGuardado = await notifier.registrarDeposito(_webImageBytes!, idDepositoActualizacion: depositoIdOriginal > 0 ? depositoIdOriginal : null);
+        } else {
+          depositoGuardado = await notifier.registrarDeposito(File(imagenSeleccionada!.path), idDepositoActualizacion: depositoIdOriginal > 0 ? depositoIdOriginal : null);
+        }
+        
+        print('[DEBUG] Después de llamar a notifier.registrarDeposito, depositoGuardado: $depositoGuardado');
+        responseBackend = notifier.lastResponse;
+        print('[DEBUG] Respuesta backend (éxito): $responseBackend');
       } else {
-        // Es un depósito nuevo, registrarlo
-        try {
-          if (imagenSeleccionada != null) {
-            if (kIsWeb) {
-              // For web, use the bytes
-              depositoGuardado = await notifier.registrarDeposito(
-                _webImageBytes!,
-              );
-            } else {
-              // For mobile, use the File
-              depositoGuardado = await notifier.registrarDeposito(
-                File(imagenSeleccionada!.path),
-              );
-            }
-          }
-        } catch (e) {
-          print('Error al registrar depósito: $e');
+        print('[DEBUG] imagenSeleccionada es null dentro del if');
+        // Para actualizaciones sin nueva imagen, podríamos pasar null o la imagen existente
+        // Dependiendo de cómo maneje tu backend las actualizaciones sin nueva imagen
+        if (depositoIdOriginal > 0) {
+          // Es actualización pero sin nueva imagen
+          depositoGuardado = await notifier.registrarDeposito(null, idDepositoActualizacion: depositoIdOriginal);
+        } else {
+          // Es nuevo registro sin imagen (esto debería dar error en validación)
+          depositoGuardado = await notifier.registrarDeposito(null);
         }
       }
-
-      // 5. Devolver resultado
-      final depositoActualizado = {
-        'empresa': empresaSeleccionada?.nombre,
-        'cliente': clienteSeleccionado?.nombreCompleto,
-        'banco': bancoSeleccionado?.nombreBanco,
-        'aCuenta': aCuenta,
-        'importe': importeDeposito,
-        'id': depositoIdOriginal,
-        'observacion': _observacionesController.text,
-      };
-
-      if (mounted) {
-        setState(() {
-          cargando = false;
-        });
-      }
-
-      if (todasGuardadas && depositoGuardado) {
-        Navigator.pop(context, depositoActualizado);
-      } else if (!todasGuardadas) {
-        _mostrarError('Hubo problemas al guardar algunos documentos');
-      } else {
-        _mostrarError('Hubo un problema al guardar el depósito');
-      }
     } catch (e) {
-      if (mounted) {
-        setState(() {
-          cargando = false;
-        });
-        _mostrarError('Error al guardar: $e');
-      }
+      print('Error al registrar/actualizar depósito: $e');
+      responseBackend = notifier.lastResponse;
+      print('[DEBUG] Respuesta backend (error): $responseBackend');
+    }
+
+    print("Estado del formulario antes de guardar:");
+    print("depositoIdOriginal: $depositoIdOriginal");
+    print("codEmpresa: ${empresaSeleccionada?.codEmpresa}");
+    print("Cliente: ${clienteSeleccionado?.codCliente}");
+    print("Banco: ${bancoSeleccionado?.idBxC}");
+    print("A Cuenta: $aCuenta");
+    print("Importe Total: $importeDeposito");
+    print("Imagen seleccionada: ${imagenSeleccionada != null}");
+    if (kIsWeb) {
+      print("Bytes de imagen web: ${_webImageBytes != null ? _webImageBytes!.length : 'null'}");
+    }
+    print("Observaciones: ${_observacionesController.text}");
+    print("==== [DEBUG] Respuesta backend registrarDeposito (final): ${notifier.lastResponse}");
+
+    // Devolver resultado
+    final depositoActualizado = {
+      'empresa': empresaSeleccionada?.nombre,
+      'cliente': clienteSeleccionado?.nombreCompleto,
+      'banco': bancoSeleccionado?.nombreBanco,
+      'aCuenta': aCuenta,
+      'importe': importeDeposito,
+      'id': depositoIdOriginal,
+      'observacion': _observacionesController.text,
+    };
+
+    if (mounted) {
+      setState(() {
+        cargando = false;
+      });
+    }
+
+    if (todasGuardadas && depositoGuardado) {
+      Navigator.pop(context, depositoActualizado);
+    } else if (!todasGuardadas) {
+      _mostrarError('Hubo problemas al guardar algunos documentos');
+    } else {
+      _mostrarError('Hubo un problema al guardar el depósito');
+    }
+  } catch (e) {
+    if (mounted) {
+      setState(() {
+        cargando = false;
+      });
+      _mostrarError('Error al guardar: $e');
     }
   }
+}
 
   @override
   void dispose() {
