@@ -2138,28 +2138,48 @@ class _ActualizacionDepositoDialogState
     print('[DEBUG][DIALOG] depositoIdOriginal: $depositoIdOriginal');
 
     // --- SINCRONIZAR ESTADO DEL PROVIDER CON LOS VALORES DEL DIALOG ---
-    // Cliente
-    if (clienteSeleccionado != null) {
-      await notifier.seleccionarCliente(clienteSeleccionado!);
+    // IMPORTANTE: Usar métodos de sincronización que NO reseteen las selecciones de notas
+    
+    // Empresa (sin recargar datos)
+    if (empresaSeleccionada != null) {
+      notifier.sincronizarEmpresaSeleccionada(empresaSeleccionada!);
     }
+    
+    // Cliente (sin recargar notas - esto es clave para mantener selecciones)
+    if (clienteSeleccionado != null) {
+      notifier.sincronizarClienteSeleccionado(clienteSeleccionado!);
+    }
+    
     // Banco
     if (bancoSeleccionado != null) {
-      notifier.seleccionarBanco(bancoSeleccionado!);
+      notifier.sincronizarBancoSeleccionado(bancoSeleccionado!);
     }
+    
     // A Cuenta
     notifier.setACuenta(aCuenta);
     // Importe total (importante para actualizaciones)
     notifier.setImporteTotal(importeDeposito);
     // Observaciones
     notifier.setObservaciones(_observacionesController.text);
+    
+    // Debug: Mostrar estado de las notas seleccionadas antes de guardar
+    notifier.mostrarEstadoNotasSeleccionadas();
 
     // Guardar las notas de remisión seleccionadas
     bool todasGuardadas = false;
+    print('[DEBUG][DIALOG] ========== INICIANDO GUARDADO DE NOTAS ==========');
+    print('[DEBUG][DIALOG] Antes de guardar notas - depositoIdOriginal: $depositoIdOriginal');
+    
     try {
-      todasGuardadas = await notifier.guardarNotasRemision();
+      print('[DEBUG][DIALOG] Llamando a notifier.guardarNotasRemision()...');
+      todasGuardadas = await notifier.guardarNotasRemision(idDepositoParaNotas: depositoIdOriginal > 0 ? depositoIdOriginal : null);
+      print('[DEBUG][DIALOG] Resultado guardarNotasRemision: $todasGuardadas');
     } catch (e) {
-      print('Error al guardar notas: $e');
+      print('[DEBUG][DIALOG] Error al guardar notas: $e');
+      todasGuardadas = false;
     }
+    
+    print('[DEBUG][DIALOG] ========== FIN GUARDADO DE NOTAS ==========');
 
     // Registrar o actualizar el depósito con la imagen
     // El mismo método registrarDeposito maneja ambos casos basándose en el ID
@@ -2248,7 +2268,6 @@ class _ActualizacionDepositoDialogState
     }
   }
 }
-
   @override
   void dispose() {
     _aCuentaController.dispose();

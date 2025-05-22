@@ -34,7 +34,8 @@ class DepositosChequesState {
   final DateTime? fechaDesde;
   final DateTime? fechaHasta;
   final int page;
-  final int rowsPerPage;  final int totalRegistros;
+  final int rowsPerPage;
+  final int totalRegistros;
 
   final bool setFechaDesdeNull;
   final bool setFechaHastaNull;
@@ -114,8 +115,10 @@ class DepositosChequesState {
       saldosEditados: saldosEditados ?? this.saldosEditados,
       depositos: depositos ?? this.depositos,
       selectedEstado: selectedEstado ?? this.selectedEstado,
-      fechaDesde: setFechaDesdeNull == true ? null : (fechaDesde ?? this.fechaDesde),
-      fechaHasta: setFechaHastaNull == true ? null : (fechaHasta ?? this.fechaHasta),
+      fechaDesde:
+          setFechaDesdeNull == true ? null : (fechaDesde ?? this.fechaDesde),
+      fechaHasta:
+          setFechaHastaNull == true ? null : (fechaHasta ?? this.fechaHasta),
       page: page ?? this.page,
       rowsPerPage: rowsPerPage ?? this.rowsPerPage,
       totalRegistros: totalRegistros ?? this.totalRegistros,
@@ -197,22 +200,25 @@ class DepositosChequesNotifier extends StateNotifier<DepositosChequesState> {
         totalMontos: deposito.totalMontos,
         estadoFiltro: deposito.estadoFiltro,
       );
-      
+
       // Llamar al método existente para actualizar
-      final resultado = await _repo.actualizarNroTransaccion(depositoActualizado);
-      
+      final resultado = await _repo.actualizarNroTransaccion(
+        depositoActualizado,
+      );
+
       // Actualizar lista de depósitos si fue exitoso
       if (resultado) {
         // Buscar y actualizar el depósito en la lista actual
-        final listaActualizada = state.depositos.map((d) {
-          if (d.idDeposito == deposito.idDeposito) {
-            return depositoActualizado;
-          }
-          return d;
-        }).toList();
-        
+        final listaActualizada =
+            state.depositos.map((d) {
+              if (d.idDeposito == deposito.idDeposito) {
+                return depositoActualizado;
+              }
+              return d;
+            }).toList();
+
         state = state.copyWith(depositos: listaActualizada, cargando: false);
-        
+
         // Mostrar mensaje de éxito
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -255,16 +261,20 @@ class DepositosChequesNotifier extends StateNotifier<DepositosChequesState> {
           sigla: '',
           audUsuario: 0,
         ),
-        ...empresasRaw
+        ...empresasRaw,
       ];
       state = state.copyWith(
         empresas: empresas,
         cargando: false,
         // Asegurarse de que empresaSeleccionada sea válida
-        empresaSeleccionada: state.empresaSeleccionada != null &&
-                empresas.any((e) => e.codEmpresa == state.empresaSeleccionada!.codEmpresa)
-            ? state.empresaSeleccionada
-            : null,
+        empresaSeleccionada:
+            state.empresaSeleccionada != null &&
+                    empresas.any(
+                      (e) =>
+                          e.codEmpresa == state.empresaSeleccionada!.codEmpresa,
+                    )
+                ? state.empresaSeleccionada
+                : null,
       );
     } catch (e) {
       // En caso de error, al menos quitar el indicador de carga
@@ -290,7 +300,10 @@ class DepositosChequesNotifier extends StateNotifier<DepositosChequesState> {
         ),
       ];
       state = state.copyWith(
-        empresaSeleccionada: state.empresas.isNotEmpty ? state.empresas.first : null, // Selecciona "Todos"
+        empresaSeleccionada:
+            state.empresas.isNotEmpty
+                ? state.empresas.first
+                : null, // Selecciona "Todos"
         clienteSeleccionado: clientesTodos.first, // Selecciona "Todos"
         bancoSeleccionado: null,
         clientes: clientesTodos,
@@ -325,7 +338,7 @@ class DepositosChequesNotifier extends StateNotifier<DepositosChequesState> {
         audUsuario: 0,
         nombreCompleto: 'Todos',
       ),
-      ...clientesRaw
+      ...clientesRaw,
     ];
     final bancos = await _repo.getBancos(empresa.codEmpresa);
     state = state.copyWith(
@@ -340,7 +353,10 @@ class DepositosChequesNotifier extends StateNotifier<DepositosChequesState> {
     // Si cliente es null (Todos), limpiar selección y seleccionar "Todos"
     if (cliente == null || cliente.codCliente == '') {
       state = state.copyWith(
-        clienteSeleccionado: state.clientes.isNotEmpty ? state.clientes.first : null, // Selecciona "Todos"
+        clienteSeleccionado:
+            state.clientes.isNotEmpty
+                ? state.clientes.first
+                : null, // Selecciona "Todos"
         notasRemision: [],
         notasSeleccionadas: [],
         saldosEditados: {},
@@ -350,7 +366,10 @@ class DepositosChequesNotifier extends StateNotifier<DepositosChequesState> {
     }
     if (cliente != null && state.empresaSeleccionada != null) {
       state = state.copyWith(clienteSeleccionado: cliente, cargando: true);
-      final notas = await _repo.getNotasRemision(state.empresaSeleccionada!.codEmpresa, cliente.codCliente);
+      final notas = await _repo.getNotasRemision(
+        state.empresaSeleccionada!.codEmpresa,
+        cliente.codCliente,
+      );
       state = state.copyWith(notasRemision: notas, cargando: false);
     }
   }
@@ -383,7 +402,10 @@ class DepositosChequesNotifier extends StateNotifier<DepositosChequesState> {
       state.notasRemision,
       state.aCuenta,
     );
-    state = state.copyWith(notasSeleccionadas: seleccionadas, importeTotal: nuevoImporteTotal);
+    state = state.copyWith(
+      notasSeleccionadas: seleccionadas,
+      importeTotal: nuevoImporteTotal,
+    );
   }
 
   void editarSaldoPendiente(int docNum, double nuevoSaldo) {
@@ -395,8 +417,13 @@ class DepositosChequesNotifier extends StateNotifier<DepositosChequesState> {
       state.notasRemision,
       state.aCuenta,
     );
-    state = state.copyWith(saldosEditados: nuevosSaldos, importeTotal: nuevoImporteTotal);
-  }  void setACuenta(double value) {
+    state = state.copyWith(
+      saldosEditados: nuevosSaldos,
+      importeTotal: nuevoImporteTotal,
+    );
+  }
+
+  void setACuenta(double value) {
     final nuevoImporteTotal = _calcularImporteTotal(
       state.notasSeleccionadas,
       state.saldosEditados,
@@ -405,20 +432,29 @@ class DepositosChequesNotifier extends StateNotifier<DepositosChequesState> {
     );
     state = state.copyWith(aCuenta: value, importeTotal: nuevoImporteTotal);
   }
+
   // Método para actualizar el importe total directamente (para pantalla de depósitos sin identificar)
   void setImporteTotal(double value) {
     state = state.copyWith(importeTotal: value);
   }
+
   // Método para actualizar observaciones
   void setObservaciones(String valor) {
     state = state.copyWith(obs: valor);
   }
 
-  double _calcularImporteTotal(List<int> seleccionadas, Map<int, double> saldosEditados, List<NotaRemisionEntity> notas, double aCuenta) {
+  double _calcularImporteTotal(
+    List<int> seleccionadas,
+    Map<int, double> saldosEditados,
+    List<NotaRemisionEntity> notas,
+    double aCuenta,
+  ) {
     double totalSeleccionados = 0;
     for (var nota in notas) {
       if (seleccionadas.contains(nota.docNum)) {
-        totalSeleccionados += saldosEditados[nota.docNum]?.toDouble() ?? nota.saldoPendiente.toDouble();
+        totalSeleccionados +=
+            saldosEditados[nota.docNum]?.toDouble() ??
+            nota.saldoPendiente.toDouble();
       }
     }
     return totalSeleccionados + (aCuenta);
@@ -428,25 +464,33 @@ class DepositosChequesNotifier extends StateNotifier<DepositosChequesState> {
     state = DepositosChequesState(empresas: state.empresas);
   }
 
-  
-  Future<bool> registrarDeposito( dynamic imagen, {int? idDepositoActualizacion} ) async {
+  Future<bool> registrarDeposito(
+    dynamic imagen, {
+    int? idDepositoActualizacion,
+  }) async {
     state = state.copyWith(cargando: true);
     lastResponse = null;
-    
-    
-    
+
     try {
       // Construir entidad DepositoChequeEntity (sin fechaI, el backend la genera)
-      print('[DEBUG][provider] clienteSeleccionado: \\n  ${state.clienteSeleccionado}');
-      print('[DEBUG][provider] empresaSeleccionada: \\n  ${state.empresaSeleccionada}');
-      print('[DEBUG][provider] bancoSeleccionado: \\n  ${state.bancoSeleccionado}');
+      print(
+        '[DEBUG][provider] clienteSeleccionado: \\n  ${state.clienteSeleccionado}',
+      );
+      print(
+        '[DEBUG][provider] empresaSeleccionada: \\n  ${state.empresaSeleccionada}',
+      );
+      print(
+        '[DEBUG][provider] bancoSeleccionado: \\n  ${state.bancoSeleccionado}',
+      );
       print('[DEBUG][provider] importeTotal: ${state.importeTotal}');
       print('[DEBUG][provider] aCuenta: ${state.aCuenta}');
-      print('[DEBUG][provider] monedaSeleccionada: ${state.monedaSeleccionada}');
+      print(
+        '[DEBUG][provider] monedaSeleccionada: ${state.monedaSeleccionada}',
+      );
       print('[DEBUG][provider] obs: ${state.obs}');
-      
+
       // Usar el ID pasado como parámetro para actualizaciones, 0 para nuevos registros
-    final idDeposito = idDepositoActualizacion ?? 0;
+      final idDeposito = idDepositoActualizacion ?? 0;
 
       final deposito = DepositoChequeEntity(
         idDeposito: idDeposito,
@@ -479,8 +523,10 @@ class DepositosChequesNotifier extends StateNotifier<DepositosChequesState> {
       print('[DEBUG] Antes de llamar a _repo.registrarDeposito');
       try {
         result = await _repo.registrarDeposito(deposito, imagen);
-        print('[DEBUG] Después de llamar a _repo.registrarDeposito, result: '
-            '\x1B[32m$result\x1B[0m');
+        print(
+          '[DEBUG] Después de llamar a _repo.registrarDeposito, result: '
+          '\x1B[32m$result\x1B[0m',
+        );
         // Si el repo usa Logger, no retorna el response, así que no lo capturamos aquí.
         lastResponse = "Registro exitoso (no hay response body)";
       } catch (e, st) {
@@ -498,16 +544,109 @@ class DepositosChequesNotifier extends StateNotifier<DepositosChequesState> {
     }
   }
 
-  Future<bool> guardarNotasRemision() async {
-    state = state.copyWith(cargando: true);
-    try {
-      bool allOk = true;
-      for (final docNum in state.notasSeleccionadas) {
-        final nota = state.notasRemision.firstWhere((n) => n.docNum == docNum);
+  /// Útil para mantener las selecciones hechas en el modal
+  void sincronizarClienteSeleccionado(SocioNegocioEntity? cliente) {
+    print(
+      '[DEBUG][provider] Sincronizando cliente sin recargar notas: ${cliente?.codCliente}',
+    );
+    state = state.copyWith(clienteSeleccionado: cliente);
+  }
+
+  /// Sincroniza la empresa seleccionada sin recargar clientes/bancos
+  /// Útil para mantener las selecciones hechas en el modal
+  void sincronizarEmpresaSeleccionada(EmpresaEntity? empresa) {
+    print(
+      '[DEBUG][provider] Sincronizando empresa sin recargar datos: ${empresa?.codEmpresa}',
+    );
+    state = state.copyWith(empresaSeleccionada: empresa);
+  }
+
+  /// Sincroniza el banco seleccionado
+  void sincronizarBancoSeleccionado(BancoXCuentaEntity? banco) {
+    print('[DEBUG][provider] Sincronizando banco: ${banco?.idBxC}');
+    state = state.copyWith(bancoSeleccionado: banco);
+  }
+
+  /// Método para verificar el estado de las notas seleccionadas (debug)
+  void mostrarEstadoNotasSeleccionadas() {
+    print('[DEBUG][provider] Notas seleccionadas: ${state.notasSeleccionadas}');
+    print(
+      '[DEBUG][provider] Total notas disponibles: ${state.notasRemision.length}',
+    );
+    print('[DEBUG][provider] Saldos editados: ${state.saldosEditados}');
+
+    for (final docNum in state.notasSeleccionadas) {
+      final nota = state.notasRemision.firstWhere(
+        (n) => n.docNum == docNum,
+        orElse:
+            () => NotaRemisionEntity(
+              idNr: 0,
+              idDeposito: 0,
+              docNum: docNum,
+              totalMonto: 0,
+              saldoPendiente: 0,
+              audUsuario: 0,
+              codCliente: '',
+              nombreCliente: '',
+              db: '',
+              codEmpresaBosque: 0,
+              fecha: DateTime.now(),
+              numFact: 0,
+            ),
+      );
+
+      final saldoEditado = state.saldosEditados[docNum] ?? nota.saldoPendiente;
+      print(
+        '[DEBUG][provider] Nota seleccionada - DocNum: $docNum, Saldo: $saldoEditado',
+      );
+    }
+  }
+
+  Future<bool> guardarNotasRemision({int? idDepositoParaNotas}) async {
+  state = state.copyWith(cargando: true);
+  
+  try {
+    print('[DEBUG][provider] ==========================================');
+    print('[DEBUG][provider] Iniciando guardado de notas de remisión');
+    print('[DEBUG][provider] ID del depósito para las notas: $idDepositoParaNotas');
+    print('[DEBUG][provider] Notas seleccionadas: ${state.notasSeleccionadas}');
+    print('[DEBUG][provider] Total notas a guardar: ${state.notasSeleccionadas.length}');
+    print('[DEBUG][provider] ==========================================');
+    
+    if (state.notasSeleccionadas.isEmpty) {
+      print('[DEBUG][provider] ⚠️  No hay notas seleccionadas para guardar');
+      state = state.copyWith(cargando: false);
+      return true; // Si no hay notas, consideramos exitoso
+    }
+    
+    bool allOk = true;
+    int notasGuardadas = 0;
+    
+    for (final docNum in state.notasSeleccionadas) {
+      print('[DEBUG][provider] Procesando nota con docNum: $docNum');
+      
+      try {
+        final nota = state.notasRemision.firstWhere(
+          (n) => n.docNum == docNum,
+          orElse: () {
+            print('[DEBUG][provider] ❌ No se encontró la nota con docNum: $docNum');
+            throw Exception('Nota no encontrada: $docNum');
+          },
+        );
+        
         final saldoEditado = state.saldosEditados[docNum] ?? nota.saldoPendiente;
+        
+        print('[DEBUG][provider] Nota encontrada:');
+        print('[DEBUG][provider]   - DocNum: ${nota.docNum}');
+        print('[DEBUG][provider]   - Cliente: ${nota.codCliente}');
+        print('[DEBUG][provider]   - Saldo original: ${nota.saldoPendiente}');
+        print('[DEBUG][provider]   - Saldo editado: $saldoEditado');
+        print('[DEBUG][provider]   - ID Depósito original: ${nota.idDeposito}');
+        print('[DEBUG][provider]   - ID Depósito nuevo: ${idDepositoParaNotas ?? nota.idDeposito}');
+        
         final notaEditada = NotaRemisionEntity(
           idNr: nota.idNr,
-          idDeposito: nota.idDeposito,
+          idDeposito: idDepositoParaNotas ?? nota.idDeposito, // USAR EL ID CORRECTO
           docNum: nota.docNum,
           fecha: nota.fecha,
           numFact: nota.numFact,
@@ -519,16 +658,46 @@ class DepositosChequesNotifier extends StateNotifier<DepositosChequesState> {
           db: nota.db,
           codEmpresaBosque: nota.codEmpresaBosque,
         );
+        
+        print('[DEBUG][provider] Datos de la nota a enviar:');
+        print('[DEBUG][provider]   - idNr: ${notaEditada.idNr}');
+        print('[DEBUG][provider]   - idDeposito: ${notaEditada.idDeposito}');
+        print('[DEBUG][provider]   - docNum: ${notaEditada.docNum}');
+        print('[DEBUG][provider]   - saldoPendiente: ${notaEditada.saldoPendiente}');
+        
+        print('[DEBUG][provider] Enviando nota al repositorio...');
         final ok = await _repo.guardarNotaRemision(notaEditada);
-        if (!ok) allOk = false;
+        
+        if (ok) {
+          notasGuardadas++;
+          print('[DEBUG][provider] ✅ Nota $docNum guardada exitosamente');
+        } else {
+          allOk = false;
+          print('[DEBUG][provider] ❌ Error al guardar nota $docNum');
+        }
+        
+      } catch (e) {
+        allOk = false;
+        print('[DEBUG][provider] ❌ Excepción al procesar nota $docNum: $e');
       }
-      state = state.copyWith(cargando: false);
-      return allOk;
-    } catch (e) {
-      state = state.copyWith(cargando: false);
-      rethrow;
     }
+    
+    print('[DEBUG][provider] ==========================================');
+    print('[DEBUG][provider] Resumen del guardado:');
+    print('[DEBUG][provider] - Notas procesadas: ${state.notasSeleccionadas.length}');
+    print('[DEBUG][provider] - Notas guardadas exitosamente: $notasGuardadas');
+    print('[DEBUG][provider] - Resultado general: ${allOk ? 'ÉXITO' : 'ERROR'}');
+    print('[DEBUG][provider] ==========================================');
+    
+    state = state.copyWith(cargando: false);
+    return allOk;
+    
+  } catch (e) {
+    print('[DEBUG][provider] ❌ Error general en guardarNotasRemision: $e');
+    state = state.copyWith(cargando: false);
+    rethrow;
   }
+}
 
   void setEstado(String? estado) {
     // Si estado es null o 'Todos', limpiar selección
@@ -536,98 +705,106 @@ class DepositosChequesNotifier extends StateNotifier<DepositosChequesState> {
   }
 
   void setFechaDesde(DateTime? fecha) {
-  if (fecha == null) {
-    state = state.copyWith(setFechaDesdeNull: true);
-  } else {
-    state = state.copyWith(fechaDesde: fecha);
-  }
-}
-
-Future<void> descargarPdfDeposito(int idDeposito, BuildContext context) async {
-  state = state.copyWith(cargando: true);
-  try {
-    // Buscamos el depósito por ID
-    final deposito = state.depositos.firstWhere(
-      (d) => d.idDeposito == idDeposito,
-      orElse: () => throw Exception('Depósito no encontrado'),
-    );
-    
-    // Mostrar mensaje de inicio para depuración
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Descargando PDF del depósito $idDeposito...')),
-    );
-    
-    // Descargamos el PDF
-    final pdfBytes = await _repo.obtenerPdfDeposito(idDeposito, deposito);
-    
-    // Verificar que los bytes parecen ser un PDF (comienzan con %PDF)
-    if (pdfBytes.length > 4 && 
-        String.fromCharCodes(pdfBytes.sublist(0, 4)) == '%PDF') {
-      // Procesamos el PDF según la plataforma
-      procesarPdfDescargado(pdfBytes, context, idDeposito);
-      
-      // Mostrar mensaje de éxito
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('PDF descargado correctamente')),
-      );
+    if (fecha == null) {
+      state = state.copyWith(setFechaDesdeNull: true);
     } else {
-      throw Exception('Los datos recibidos no parecen ser un PDF válido');
+      state = state.copyWith(fechaDesde: fecha);
     }
-    
-    state = state.copyWith(cargando: false);
-  } catch (e) {
-    state = state.copyWith(cargando: false);
-    
-    // Mostrar mensaje de error detallado
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Error al descargar PDF: $e'),
-        backgroundColor: Colors.red,
-        duration: Duration(seconds: 5),
-      ),
-    );
-    
-    print('Error detallado: $e');
   }
-}
 
-void procesarPdfDescargado(Uint8List pdfBytes, BuildContext context, int idDeposito) {
-  if (kIsWeb) {
-    // En web, iniciamos la descarga
-    downloadWebPdf(pdfBytes, 'deposito_$idDeposito.pdf');
-  } else {
-    // En móvil, mostramos la pantalla de previsualización
-    Printing.layoutPdf(
-      onLayout: (format) async => pdfBytes,
-      name: 'Depósito $idDeposito',
-    );
+  Future<void> descargarPdfDeposito(
+    int idDeposito,
+    BuildContext context,
+  ) async {
+    state = state.copyWith(cargando: true);
+    try {
+      // Buscamos el depósito por ID
+      final deposito = state.depositos.firstWhere(
+        (d) => d.idDeposito == idDeposito,
+        orElse: () => throw Exception('Depósito no encontrado'),
+      );
+
+      // Mostrar mensaje de inicio para depuración
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Descargando PDF del depósito $idDeposito...')),
+      );
+
+      // Descargamos el PDF
+      final pdfBytes = await _repo.obtenerPdfDeposito(idDeposito, deposito);
+
+      // Verificar que los bytes parecen ser un PDF (comienzan con %PDF)
+      if (pdfBytes.length > 4 &&
+          String.fromCharCodes(pdfBytes.sublist(0, 4)) == '%PDF') {
+        // Procesamos el PDF según la plataforma
+        procesarPdfDescargado(pdfBytes, context, idDeposito);
+
+        // Mostrar mensaje de éxito
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('PDF descargado correctamente')));
+      } else {
+        throw Exception('Los datos recibidos no parecen ser un PDF válido');
+      }
+
+      state = state.copyWith(cargando: false);
+    } catch (e) {
+      state = state.copyWith(cargando: false);
+
+      // Mostrar mensaje de error detallado
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error al descargar PDF: $e'),
+          backgroundColor: Colors.red,
+          duration: Duration(seconds: 5),
+        ),
+      );
+
+      print('Error detallado: $e');
+    }
   }
-}
 
-// Método para descargar PDF en web
-void downloadWebPdf(Uint8List pdfBytes, String fileName) {
-  final blob = html.Blob([pdfBytes], 'application/pdf');
-  final url = html.Url.createObjectUrlFromBlob(blob);
-  final anchor = html.AnchorElement(href: url)
-    ..setAttribute('download', fileName)
-    ..style.display = 'none';
-  html.document.body?.children.add(anchor);
-  
-  // Simular click para iniciar descarga
-  anchor.click();
-  
-  // Limpiar
-  html.document.body?.children.remove(anchor);
-  html.Url.revokeObjectUrl(url);
-}
-
-void setFechaHasta(DateTime? fecha) {
-  if (fecha == null) {
-    state = state.copyWith(setFechaHastaNull: true);
-  } else {
-    state = state.copyWith(fechaHasta: fecha);
+  void procesarPdfDescargado(
+    Uint8List pdfBytes,
+    BuildContext context,
+    int idDeposito,
+  ) {
+    if (kIsWeb) {
+      // En web, iniciamos la descarga
+      downloadWebPdf(pdfBytes, 'deposito_$idDeposito.pdf');
+    } else {
+      // En móvil, mostramos la pantalla de previsualización
+      Printing.layoutPdf(
+        onLayout: (format) async => pdfBytes,
+        name: 'Depósito $idDeposito',
+      );
+    }
   }
-}
+
+  // Método para descargar PDF en web
+  void downloadWebPdf(Uint8List pdfBytes, String fileName) {
+    final blob = html.Blob([pdfBytes], 'application/pdf');
+    final url = html.Url.createObjectUrlFromBlob(blob);
+    final anchor =
+        html.AnchorElement(href: url)
+          ..setAttribute('download', fileName)
+          ..style.display = 'none';
+    html.document.body?.children.add(anchor);
+
+    // Simular click para iniciar descarga
+    anchor.click();
+
+    // Limpiar
+    html.document.body?.children.remove(anchor);
+    html.Url.revokeObjectUrl(url);
+  }
+
+  void setFechaHasta(DateTime? fecha) {
+    if (fecha == null) {
+      state = state.copyWith(setFechaHastaNull: true);
+    } else {
+      state = state.copyWith(fechaHasta: fecha);
+    }
+  }
 
   void setRowsPerPage(int? rows) {
     if (rows != null) {
@@ -645,7 +822,8 @@ void setFechaHasta(DateTime? fecha) {
       final empresa = state.empresaSeleccionada;
       final banco = state.bancoSeleccionado;
       final cliente = state.clienteSeleccionado;
-      final estadoFiltro = state.selectedEstado == 'Todos' ? '' : state.selectedEstado;
+      final estadoFiltro =
+          state.selectedEstado == 'Todos' ? '' : state.selectedEstado;
       final codEmpresa = empresa?.codEmpresa ?? 0;
       final idBxC = banco?.idBxC ?? 0;
       final fechaInicio = state.fechaDesde; // Puede ser null
@@ -667,106 +845,117 @@ void setFechaHasta(DateTime? fecha) {
     } catch (e) {
       state = state.copyWith(cargando: false);
     }
-
   }
 
-
-  Future<void> descargarImagenDeposito(int idDeposito, BuildContext context) async {
-  state = state.copyWith(cargando: true);
-  try {
-    // Descargamos la imagen
-    final imageBytes = await _repo.obtenerImagenDeposito(idDeposito);
-    
-    // Procesamos la imagen según la plataforma
-    await manejarArchivoImagen(imageBytes, 'deposito_$idDeposito.jpg', context);
-    
-    state = state.copyWith(cargando: false);
-  } catch (e) {
-    state = state.copyWith(cargando: false);
-    // Mostrar mensaje de error
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Error al descargar imagen: $e'),
-        backgroundColor: Colors.red,
-      ),
-    );
-  }
-}
-
-Future<void> manejarArchivoImagen(Uint8List bytes, String fileName, BuildContext context) async {
-  if (kIsWeb) {
-    // En web, imitar el comportamiento de Angular
-    final blob = html.Blob([bytes]);
-    final url = html.Url.createObjectUrlFromBlob(blob);
-    final anchor = html.AnchorElement(href: url)
-      ..setAttribute('download', fileName)
-      ..click();
-    
-    html.Url.revokeObjectUrl(url);
-    
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Descarga iniciada: $fileName')),
-    );
-  } else {
-    // En móvil, guardar la imagen y permitir verla
+  Future<void> descargarImagenDeposito(
+    int idDeposito,
+    BuildContext context,
+  ) async {
+    state = state.copyWith(cargando: true);
     try {
-      // Mostrar cuadro de diálogo con opciones
-      showDialog(
-        context: context,
-        builder: (BuildContext dialogContext) {
-          return AlertDialog(
-            title: Text('Imagen descargada'),
-            content: Image.memory(
-              bytes,
-              fit: BoxFit.contain,
-              height: 200,
-            ),
-            actions: [
-              TextButton(
-                onPressed: () {
-                  Navigator.pop(dialogContext);
-                },
-                child: Text('Cerrar'),
-              ),
-              TextButton(
-                onPressed: () async {
-                  Navigator.pop(dialogContext);
-                  await _guardarImagenEnDispositivo(bytes, fileName);
-                },
-                child: Text('Guardar'),
-              ),
-            ],
-          );
-        },
-      );
-    } catch (e) {
-      throw Exception('Error al manejar la imagen: $e');
-    }
-  }
-}
+      // Descargamos la imagen
+      final imageBytes = await _repo.obtenerImagenDeposito(idDeposito);
 
-Future<void> _guardarImagenEnDispositivo(Uint8List bytes, String fileName) async {
-  try {
-    // Implementación específica según la plataforma
-    if (Platform.isAndroid || Platform.isIOS) {
-      // Usar path_provider para obtener directorio temporal
-      final tempDir = await getTemporaryDirectory();
-      final file = File('${tempDir.path}/$fileName');
-      await file.writeAsBytes(bytes);
-      
-      // Usar un plugin como share_plus para compartir la imagen
-      // await Share.shareFiles([file.path], text: 'Imagen de depósito');
-      
-      // O simplemente mostrar un mensaje de éxito
-      print('Imagen guardada en: ${file.path}');
-    } else {
-      throw Exception('Plataforma no soportada para guardar imágenes localmente');
+      // Procesamos la imagen según la plataforma
+      await manejarArchivoImagen(
+        imageBytes,
+        'deposito_$idDeposito.jpg',
+        context,
+      );
+
+      state = state.copyWith(cargando: false);
+    } catch (e) {
+      state = state.copyWith(cargando: false);
+      // Mostrar mensaje de error
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error al descargar imagen: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
     }
-  } catch (e) {
-    throw Exception('Error al guardar imagen: $e');
   }
-}
-  
+
+  Future<void> manejarArchivoImagen(
+    Uint8List bytes,
+    String fileName,
+    BuildContext context,
+  ) async {
+    if (kIsWeb) {
+      // En web, imitar el comportamiento de Angular
+      final blob = html.Blob([bytes]);
+      final url = html.Url.createObjectUrlFromBlob(blob);
+      final anchor =
+          html.AnchorElement(href: url)
+            ..setAttribute('download', fileName)
+            ..click();
+
+      html.Url.revokeObjectUrl(url);
+
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Descarga iniciada: $fileName')));
+    } else {
+      // En móvil, guardar la imagen y permitir verla
+      try {
+        // Mostrar cuadro de diálogo con opciones
+        showDialog(
+          context: context,
+          builder: (BuildContext dialogContext) {
+            return AlertDialog(
+              title: Text('Imagen descargada'),
+              content: Image.memory(bytes, fit: BoxFit.contain, height: 200),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.pop(dialogContext);
+                  },
+                  child: Text('Cerrar'),
+                ),
+                TextButton(
+                  onPressed: () async {
+                    Navigator.pop(dialogContext);
+                    await _guardarImagenEnDispositivo(bytes, fileName);
+                  },
+                  child: Text('Guardar'),
+                ),
+              ],
+            );
+          },
+        );
+      } catch (e) {
+        throw Exception('Error al manejar la imagen: $e');
+      }
+    }
+  }
+
+  Future<void> _guardarImagenEnDispositivo(
+    Uint8List bytes,
+    String fileName,
+  ) async {
+    try {
+      // Implementación específica según la plataforma
+      if (Platform.isAndroid || Platform.isIOS) {
+        // Usar path_provider para obtener directorio temporal
+        final tempDir = await getTemporaryDirectory();
+        final file = File('${tempDir.path}/$fileName');
+        await file.writeAsBytes(bytes);
+
+        // Usar un plugin como share_plus para compartir la imagen
+        // await Share.shareFiles([file.path], text: 'Imagen de depósito');
+
+        // O simplemente mostrar un mensaje de éxito
+        print('Imagen guardada en: ${file.path}');
+      } else {
+        throw Exception(
+          'Plataforma no soportada para guardar imágenes localmente',
+        );
+      }
+    } catch (e) {
+      throw Exception('Error al guardar imagen: $e');
+    }
+  }
+
   Future<void> rechazarDepositoCheque({
     required DepositoChequeEntity deposito,
     required BuildContext context,
@@ -799,22 +988,23 @@ Future<void> _guardarImagenEnDispositivo(Uint8List bytes, String fileName) async
         totalMontos: deposito.totalMontos,
         estadoFiltro: deposito.estadoFiltro,
       );
-      
+
       // Llamar al método existente en el repositorio para rechazar
       final resultado = await _repo.rechazarNotaRemision(depositoRechazado);
-      
+
       // Actualizar lista de depósitos si fue exitoso
       if (resultado) {
         // Buscar y actualizar el depósito en la lista actual
-        final listaActualizada = state.depositos.map((d) {
-          if (d.idDeposito == deposito.idDeposito) {
-            return depositoRechazado;
-          }
-          return d;
-        }).toList();
-        
+        final listaActualizada =
+            state.depositos.map((d) {
+              if (d.idDeposito == deposito.idDeposito) {
+                return depositoRechazado;
+              }
+              return d;
+            }).toList();
+
         state = state.copyWith(depositos: listaActualizada, cargando: false);
-        
+
         // Mostrar mensaje de éxito
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -845,23 +1035,28 @@ Future<void> _guardarImagenEnDispositivo(Uint8List bytes, String fileName) async
   }
 
   void clearState() {
-  // Restablecer el estado manteniendo solo las empresas
-  state = DepositosChequesState(
-    empresas: state.empresas,  // Mantener empresas para no tener que cargarlas nuevamente
-    depositos: [],             // Vaciar lista de depósitos
-    clientes: [],
-    bancos: [],
-    cargando: false,
-    page: 0,
-    rowsPerPage: 10,
-    totalRegistros: 0,
-    selectedEstado: 'Todos',
-    fechaDesde: DateTime.now(),
-    fechaHasta: DateTime.now(),
-  );
-}
+    // Restablecer el estado manteniendo solo las empresas
+    state = DepositosChequesState(
+      empresas:
+          state
+              .empresas, // Mantener empresas para no tener que cargarlas nuevamente
+      depositos: [], // Vaciar lista de depósitos
+      clientes: [],
+      bancos: [],
+      cargando: false,
+      page: 0,
+      rowsPerPage: 10,
+      totalRegistros: 0,
+      selectedEstado: 'Todos',
+      fechaDesde: DateTime.now(),
+      fechaHasta: DateTime.now(),
+    );
+  }
 }
 
-final depositosChequesProvider = StateNotifierProvider<DepositosChequesNotifier, DepositosChequesState>((ref) {
-  return DepositosChequesNotifier();
-});
+final depositosChequesProvider =
+    StateNotifierProvider<DepositosChequesNotifier, DepositosChequesState>((
+      ref,
+    ) {
+      return DepositosChequesNotifier();
+    });
