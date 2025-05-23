@@ -10,6 +10,10 @@ import 'dart:typed_data';
 // Proveedor para almacenar los bytes de la imagen (necesario para web)
 final imageBytesProvider = StateProvider<Uint8List?>((ref) => null);
 
+final depositosChequesRegisterProvider = StateNotifierProvider.autoDispose<DepositosChequesNotifier, DepositosChequesState>(
+  (ref) => DepositosChequesNotifier(ref),
+);
+
 class DepositoChequeRegisterScreen extends ConsumerStatefulWidget {
   const DepositoChequeRegisterScreen({super.key});
 
@@ -25,14 +29,14 @@ class _DepositoChequeRegisterScreenState
     super.initState();
     // Reiniciar el estado al entrar a esta pantalla
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(depositosChequesProvider.notifier).clearState();
+      ref.read(depositosChequesRegisterProvider.notifier).clearState();
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    final state = ref.watch(depositosChequesProvider);
-    final notifier = ref.read(depositosChequesProvider.notifier);
+    final state = ref.watch(depositosChequesRegisterProvider);
+    final notifier = ref.read(depositosChequesRegisterProvider.notifier);
     final imageBytes = ref.watch(imageBytesProvider);
     
     // Determinar si estamos en móvil o desktop
