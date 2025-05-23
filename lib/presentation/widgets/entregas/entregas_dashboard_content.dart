@@ -306,9 +306,8 @@ class _EntregasDashboardContentState extends ConsumerState<EntregasDashboardCont
       final rows = paginatedData.asMap().entries.map((entry) {
         final i = entry.key;
         final e = entry.value;
-        final estado = e.fueEntregado == 1
-            ? (e.obsF.toLowerCase().contains('sistema') ? 'Completado Por Sistema' : 'Completo')
-            : 'Incompleto o en ruta';
+        // Estado: usar e.estatusRuta en desktop/tablet
+        final estado = e.estatusRuta ?? '';
         return PlutoRow(cells: {
           'num': PlutoCell(value: (_currentPage - 1) * _itemsPerPage + i + 1),
           'chofer': PlutoCell(value: e.nombreCompleto ?? ''),
@@ -316,7 +315,7 @@ class _EntregasDashboardContentState extends ConsumerState<EntregasDashboardCont
           'fecha': PlutoCell(value: e.fechaEntregaCad ?? ''),
           'inicio': PlutoCell(value: e.fechaInicioRutaCad ?? ''),
           'fin': PlutoCell(value: e.fechaFinRutaCad ?? ''),
-          'estado': PlutoCell(value: e.estatusRuta),
+          'estado': PlutoCell(value: estado),
         });
       }).toList();
       tablaResponsive = Column(
@@ -414,9 +413,8 @@ class _EntregasDashboardContentState extends ConsumerState<EntregasDashboardCont
                     rows: paginatedData.asMap().entries.map((entry) {
                       final i = entry.key;
                       final e = entry.value;
-                      final estado = e.fueEntregado == 1
-                          ? (e.obsF.toLowerCase().contains('sistema') ? 'Completado Por Sistema' : 'Completo')
-                          : 'Incompleto o en ruta';
+                      // CORRECTO: usa e.estatusRuta para el estado en móvil
+                      final estado = e.estatusRuta ?? '';
                       final color = estado == 'Completo'
                           ? colorScheme.primary
                           : estado == 'Completado Por Sistema'

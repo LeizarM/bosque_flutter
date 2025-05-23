@@ -42,6 +42,7 @@ class _ControlCombustibleMaquinaMontacargaScreenState
     _litrosIngresoController.text = '0.0';
     _litrosSalidaController.text = '0.0';
     _saldoLitrosController.text = '0.0';
+    _horometroController.text = '0.0';
 
     // Cargar datos al iniciar la pantalla
     Future.microtask(
@@ -76,11 +77,11 @@ class _ControlCombustibleMaquinaMontacargaScreenState
       return;
     }
 
-    // Validación para litros ingreso (debe ser mayor a cero)
+    // Validación para litros ingreso (debe ser igual o mayor a cero)
     double litrosIngreso = double.tryParse(_litrosIngresoController.text) ?? 0.0;
-    if (litrosIngreso <= 0) {
+    if (litrosIngreso < 0) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Litros de ingreso debe ser mayor a cero')),
+        const SnackBar(content: Text('Litros de ingreso no puede ser negativo')),
       );
       return;
     }
@@ -94,14 +95,7 @@ class _ControlCombustibleMaquinaMontacargaScreenState
       return;
     }
 
-    // Validación para horómetro (puede ser cero o mayor)
-    double horometro = double.tryParse(_horometroController.text) ?? 0.0;
-    if (horometro < 0) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Horómetro no puede ser negativo')),
-      );
-      return;
-    }
+    // Quitar validación para horómetro, ya que siempre será cero
 
     // Obtener codEmpleado y codUsuario del UserProvider
     final userNotifier = ref.read(userProvider.notifier);
@@ -109,26 +103,24 @@ class _ControlCombustibleMaquinaMontacargaScreenState
     final codUsuario = await userNotifier.getCodUsuario();
 
     // Construir la entidad con los datos del formulario
-    // Construir la entidad con los datos del formulario
-  final controlCombustible = ControlCombustibleMaquinaMontacargaEntity(
-    idCM: 0,
-    idMaquina: _selectedMaquina!.idMaquina,
-    fecha: _selectedDate,
-    litrosIngreso: double.tryParse(_litrosIngresoController.text) ?? 0.0,
-    litrosSalida: double.tryParse(_litrosSalidaController.text) ?? 0.0,
-    saldoLitros: 0.0,
-    horasUso: 0.0,
-    horometro: double.tryParse(_horometroController.text) ?? 0.0,
-    codEmpleado: codEmpleado,
-    codAlmacen: _selectedAlmacen!.whsCode, // Usamos whsCode directamente como String
-    obs: _obsController.text,
-    audUsuario: codUsuario,
-    whsCode: _selectedAlmacen!.whsCode,
-    whsName: _selectedAlmacen!.whsName,
-    maquina: "",
-    nombreCompleto: "",
-  );
-  
+    final controlCombustible = ControlCombustibleMaquinaMontacargaEntity(
+      idCM: 0,
+      idMaquina: _selectedMaquina!.idMaquina,
+      fecha: _selectedDate,
+      litrosIngreso: double.tryParse(_litrosIngresoController.text) ?? 0.0,
+      litrosSalida: double.tryParse(_litrosSalidaController.text) ?? 0.0,
+      saldoLitros: 0.0,
+      horasUso: 0.0,
+      horometro: 0.0, // Siempre cero
+      codEmpleado: codEmpleado,
+      codAlmacen: _selectedAlmacen!.whsCode,
+      obs: _obsController.text,
+      audUsuario: codUsuario,
+      whsCode: _selectedAlmacen!.whsCode,
+      whsName: _selectedAlmacen!.whsName,
+      maquina: "",
+      nombreCompleto: "",
+    );
 
     // Llamar al método del notifier para registrar
     ref
@@ -141,7 +133,6 @@ class _ControlCombustibleMaquinaMontacargaScreenState
     setState(() {
       _litrosIngresoController.text = '0.0';
       _litrosSalidaController.text = '0.0';
-      _horometroController.text = '0.0';
       _obsController.text = '';
       _selectedMaquina = null;
       _selectedAlmacen = null;
@@ -340,16 +331,7 @@ class _ControlCombustibleMaquinaMontacargaScreenState
                       
                       SizedBox(height: verticalPadding),
                       
-                      // Campo de horómetro
-                      TextField(
-                        controller: _horometroController,
-                        keyboardType: TextInputType.number,
-                        decoration: const InputDecoration(
-                          labelText: 'Horómetro',
-                          border: OutlineInputBorder(),
-                          suffixText: 'hrs',
-                        ),
-                      ),
+                      // Quitar campo de horómetro
                       
                       SizedBox(height: verticalPadding),
 

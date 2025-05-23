@@ -325,10 +325,28 @@ class _EntregasHomeScreenState extends ConsumerState<EntregasHomeScreen> {
                                     },
                                   )
                                 : isTablet
-                                    ? EntregasTabletView(
-                                        entregasAgrupadas: filteredEntregas,
-                                        rutaIniciada: state.rutaIniciada,
-                                        onMarcarEntrega: _mostrarDialogoDireccion,
+                                    ? Padding(
+                                        padding: EdgeInsets.symmetric(horizontal: horizontalPadding / 2),
+                                        child: GridView.builder(
+                                          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                                            crossAxisCount: 2,
+                                            crossAxisSpacing: 16,
+                                            mainAxisSpacing: 16,
+                                            childAspectRatio: 1.0, // Ajusta si quieres más alto o más ancho
+                                          ),
+                                          itemCount: filteredEntregas.length,
+                                          itemBuilder: (context, index) {
+                                            final facturaData = filteredEntregas[index];
+                                            final cliente = facturaData.key;
+                                            final entregas = facturaData.value;
+                                            // Usa el mismo widget de tarjeta que en móvil
+                                            return EntregasMobileView(
+                                              entregasAgrupadas: [MapEntry(cliente, entregas)],
+                                              rutaIniciada: state.rutaIniciada,
+                                              onMarcarEntrega: _mostrarDialogoDireccion,
+                                            );
+                                          },
+                                        ),
                                       )
                                     : EntregasMobileView(
                                         entregasAgrupadas: filteredEntregas,
