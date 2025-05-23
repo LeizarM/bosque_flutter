@@ -20,17 +20,29 @@ class EditableSaldoPendienteCell extends StatefulWidget {
 class _EditableSaldoPendienteCellState extends State<EditableSaldoPendienteCell> {
   late TextEditingController _controller;
   bool _hasError = false;
+  FocusNode _focusNode = FocusNode();
+  bool _isEditing = false;
 
   @override
   void initState() {
     super.initState();
     _controller = TextEditingController(text: widget.valorActual);
+    
+    // Agregar listeners para mejor gestión del estado de edición
+    _focusNode.addListener(_onFocusChange);
+  }
+
+  void _onFocusChange() {
+    setState(() {
+      _isEditing = _focusNode.hasFocus;
+    });
   }
 
   @override
   void didUpdateWidget(EditableSaldoPendienteCell oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.valorActual != widget.valorActual) {
+    // Solo actualizar el texto si no estamos editando activamente
+    if (!_isEditing && oldWidget.valorActual != widget.valorActual) {
       _controller.text = widget.valorActual;
     }
   }
@@ -41,7 +53,8 @@ class _EditableSaldoPendienteCellState extends State<EditableSaldoPendienteCell>
       width: 120,
       child: TextFormField(
         controller: _controller,
-        keyboardType: TextInputType.number,
+        focusNode: _focusNode,
+        keyboardType: TextInputType.numberWithOptions(decimal: true),
         inputFormatters: [
           FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,2}')),
         ],
@@ -58,6 +71,7 @@ class _EditableSaldoPendienteCellState extends State<EditableSaldoPendienteCell>
           ),
         ),
         onChanged: (value) {
+          // Pasar el valor completo del campo, no solo el último caracter
           widget.onChanged(value, (hasError) {
             if (mounted) {
               setState(() {
@@ -66,12 +80,18 @@ class _EditableSaldoPendienteCellState extends State<EditableSaldoPendienteCell>
             }
           });
         },
+        // Agregamos un listener para capturar cuando termina la edición
+        onEditingComplete: () {
+          _focusNode.unfocus();
+        },
       ),
     );
   }
 
   @override
   void dispose() {
+    _focusNode.removeListener(_onFocusChange);
+    _focusNode.dispose();
     _controller.dispose();
     super.dispose();
   }
