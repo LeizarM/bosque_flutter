@@ -393,22 +393,44 @@ class DepositosChequesNotifier extends StateNotifier<DepositosChequesState> {
   }
 
   void seleccionarNota(int docNum, bool selected) {
-    final seleccionadas = [...state.notasSeleccionadas];
+    debugPrint('⭐ INICIO seleccionarNota: docNum=$docNum, selected=$selected');
+    debugPrint('  Estado ANTES: notasSeleccionadas=${state.notasSeleccionadas}');
+    
+    // Crear una nueva lista para evitar problemas de mutación
+    final List<int> nuevasSeleccionadas = List<int>.from(state.notasSeleccionadas);
+    
     if (selected) {
-      if (!seleccionadas.contains(docNum)) seleccionadas.add(docNum);
+      if (!nuevasSeleccionadas.contains(docNum)) {
+        nuevasSeleccionadas.add(docNum);
+        debugPrint('  ✅ Añadido $docNum a la lista');
+      } else {
+        debugPrint('  ⚠️ El docNum $docNum ya estaba en la lista');
+      }
     } else {
-      seleccionadas.remove(docNum);
+      if (nuevasSeleccionadas.contains(docNum)) {
+        nuevasSeleccionadas.remove(docNum);
+        debugPrint('  ❌ Eliminado $docNum de la lista');
+      } else {
+        debugPrint('  ⚠️ El docNum $docNum no estaba en la lista');
+      }
     }
+    
+    // Calcular nuevo importe total
     final nuevoImporteTotal = _calcularImporteTotal(
-      seleccionadas,
+      nuevasSeleccionadas,
       state.saldosEditados,
       state.notasRemision,
       state.aCuenta,
     );
+    
+    // Actualizar el estado con nueva copia de la lista
     state = state.copyWith(
-      notasSeleccionadas: seleccionadas,
+      notasSeleccionadas: nuevasSeleccionadas,
       importeTotal: nuevoImporteTotal,
     );
+    
+    debugPrint('  Estado DESPUÉS: notasSeleccionadas=${state.notasSeleccionadas}');
+    debugPrint('⭐ FIN seleccionarNota');
   }
 
   void editarSaldoPendiente(int docNum, double nuevoSaldo) {

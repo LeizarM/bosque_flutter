@@ -35,11 +35,6 @@ class _DepositoChequeRegisterScreenState
     final notifier = ref.read(depositosChequesProvider.notifier);
     final imageBytes = ref.watch(imageBytesProvider);
     
-    // Limpiar el estado relacionado con el registro de depósitos al entrar a esta pantalla
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      notifier.clearRegistroDepositos();
-    });
-    
     // Determinar si estamos en móvil o desktop
     final isMobile = ResponsiveUtilsBosque.isMobile(context);
     
@@ -843,7 +838,6 @@ class _DepositoChequeRegisterScreenState
         notifier.setImporteTotal(nuevoImporteTotal);
       });
     }
-    final isMobile = MediaQuery.of(context).size.width < 600;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -852,61 +846,135 @@ class _DepositoChequeRegisterScreenState
           style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
         ),
         SizedBox(height: 8),
-        SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: DataTable(
-            columns: const [
-              DataColumn(label: Text('Número de Documento', style: TextStyle(color: Colors.green))),
-              DataColumn(label: Text('Num. Factura', style: TextStyle(color: Colors.green))),
-              DataColumn(label: Text('Fecha', style: TextStyle(color: Colors.green))),
-              DataColumn(label: Text('Cliente', style: TextStyle(color: Colors.green))),
-              DataColumn(label: Text('Total (Bs)', style: TextStyle(color: Colors.green))),
-              DataColumn(label: Text('Saldo Pendiente (Bs)', style: TextStyle(color: Colors.green))),
-            ],
-            rows: notas.map<DataRow>((nota) {
-              final seleccionado = seleccionadas.contains(nota.docNum);
-              final saldoValue = saldosEditados[nota.docNum]?.toString() ?? nota.saldoPendiente.toString();
-              return DataRow(
-                selected: seleccionado,
-                onSelectChanged: (selected) {
-                  notifier.seleccionarNota(nota.docNum, selected ?? false);
-                },
-                cells: [
-                  DataCell(Text(nota.docNum.toString())),
-                  DataCell(Text(nota.numFact.toString())),
-                  DataCell(Text('${nota.fecha.day.toString().padLeft(2, '0')}/${nota.fecha.month.toString().padLeft(2, '0')}/${nota.fecha.year}')),
-                  DataCell(Text(nota.nombreCliente)),
-                  DataCell(Text(nota.totalMonto.toString())),
-                  DataCell(
-                    seleccionado
-                      ? _EditableSaldoPendienteCell(
-                          valorOriginal: nota.saldoPendiente,
-                          valorActual: saldoValue,
-                          onChanged: (v, showError) {
-                            final val = double.tryParse(v) ?? 0.0;
-                            if (val <= nota.saldoPendiente) {
-                              notifier.editarSaldoPendiente(nota.docNum, val);
-                            }
-                            showError(val > nota.saldoPendiente);
-                          },
-                        )
-                      : Text(nota.saldoPendiente.toString()),
+        Container(
+          decoration: BoxDecoration(
+            border: Border.all(color: Colors.grey.shade300),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Encabezados
+                Container(
+                  color: Colors.teal.shade50,
+                  child: Row(
+                    children: [
+                      _buildTableHeader('Selección', 80),
+                      _buildTableHeader('Número de Documento', 180),
+                      _buildTableHeader('Num. Factura', 120),
+                      _buildTableHeader('Fecha', 120),
+                      _buildTableHeader('Cliente', 180),
+                      _buildTableHeader('Total (Bs)', 120),
+                      _buildTableHeader('Saldo Pendiente (Bs)', 200),
+                    ],
                   ),
-                ],
-              );
-            }).toList(growable: false),
+                ),
+                // Filas
+                ...notas.map((nota) {
+                  final bool seleccionado = seleccionadas.contains(nota.docNum);
+                  final saldoValue = saldosEditados[nota.docNum]?.toString() ?? nota.saldoPendiente.toString();
+                  
+                  return Container(
+                    color: seleccionado ? Colors.green.withOpacity(0.1) : Colors.white,
+                    child: Row(
+                      children: [
+                        // Cambia aquí: usa Checkbox real
+                        Container(
+                          width: 80,
+                          padding: EdgeInsets.all(8),
+                          child: Center(
+                            child: Checkbox(
+                              value: seleccionado,
+                              onChanged: (checked) {
+                                notifier.seleccionarNota(nota.docNum, checked ?? false);
+                              },
+                              activeColor: Colors.green,
+                            ),
+                          ),
+                        ),
+                        _buildTableCell(nota.docNum.toString(), 180),
+                        _buildTableCell(nota.numFact.toString(), 120),
+                        _buildTableCell('${nota.fecha.day.toString().padLeft(2, '0')}/${nota.fecha.month.toString().padLeft(2, '0')}/${nota.fecha.year}', 120),
+                        _buildTableCell(nota.nombreCliente, 180),
+                        _buildTableCell(nota.totalMonto.toString(), 120),
+                        Container(
+                          width: 200,
+                          padding: EdgeInsets.all(8),
+                          child: seleccionado
+                              ? _EditableSaldoPendienteCell(
+                                  valorOriginal: nota.saldoPendiente,
+                                  valorActual: saldoValue,
+                                  onChanged: (v, showError) {
+                                    final val = double.tryParse(v) ?? 0.0;
+                                    if (val <= nota.saldoPendiente) {
+                                      notifier.editarSaldoPendiente(nota.docNum, val);
+                                    }
+                                    showError(val > nota.saldoPendiente);
+                                  },
+                                )
+                              : Text(
+                                  nota.saldoPendiente.toString(),
+                                  textAlign: TextAlign.center,
+                                ),
+                        ),
+                      ],
+                    ),
+                  );
+                }).toList(),
+              ],
+            ),
           ),
         ),
-        SizedBox(height: 8),
+        SizedBox(height: 16),
         Wrap(
           spacing: 16,
-          runSpacing: 4,
+          runSpacing: 8,
           children: [
-            Text('Total de documentos: ${notas.length}'),
-            Text('Documentos seleccionados: ${seleccionadas.length} | Total de documentos: ${totalSeleccionados.toStringAsFixed(2)}'),
+            Text(
+              'Total de documentos: ${notas.length}',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+            Text(
+              'Documentos seleccionados: ${seleccionadas.length}',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+            Text(
+              'Total seleccionado: ${totalSeleccionados.toStringAsFixed(2)} Bs',
+              style: TextStyle(fontWeight: FontWeight.bold, color: Colors.green),
+            ),
           ],
         ),
       ],
+    );
+  }
+
+  Widget _buildTableHeader(String text, double width) {
+    return Container(
+      width: width,
+      padding: EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+      alignment: Alignment.center,
+      child: Text(
+        text,
+        style: TextStyle(
+          fontWeight: FontWeight.bold,
+          color: Colors.green,
+        ),
+        textAlign: TextAlign.center,
+      ),
+    );
+  }
+
+  Widget _buildTableCell(String text, double width) {
+    return Container(
+      width: width,
+      padding: EdgeInsets.all(8),
+      child: Text(
+        text,
+        textAlign: TextAlign.center,
+        overflow: TextOverflow.ellipsis,
+      ),
     );
   }
 

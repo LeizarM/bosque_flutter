@@ -1055,6 +1055,7 @@ class _ActualizacionDepositoDialogState
       ref
           .read(depositosChequesProvider.notifier)
           .seleccionarNota(docNum, seleccionado);
+      setState(() {}); // <-- Fuerza el rebuild para reflejar el cambio visual
       _actualizarTotales();
     } catch (e) {
       print('Error al seleccionar nota: $e');
