@@ -93,55 +93,47 @@ class _DepositoChequeIdentificarViewScreenState
   Widget build(BuildContext context) {
     final state = ref.watch(depositosChequesProvider);
     final notifier = ref.read(depositosChequesProvider.notifier);
-    final isDesktop = ResponsiveUtilsBosque.isDesktop(context);
-    final isTablet = ResponsiveUtilsBosque.isTablet(context);
     final isMobile = ResponsiveUtilsBosque.isMobile(context);
+    final isDesktop = ResponsiveUtilsBosque.isDesktop(context);
 
-    // Usar padding mínimo para maximizar espacio
-    final horizontalPadding =
-        isMobile
-            ? ResponsiveUtilsBosque.getHorizontalPadding(context)
-            : 2.0; // Aún menor para maximizar espacio en desktop
-
-    final verticalPadding = ResponsiveUtilsBosque.getVerticalPadding(context);
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
 
     return Scaffold(
       appBar: AppBar(
         title: Text(
           'Depósitos por Identificar',
-          style: ResponsiveUtilsBosque.getTitleStyle(context),
+          style: textTheme.titleLarge?.copyWith(
+            color: colorScheme.onSurface,
+            fontWeight: FontWeight.bold,
+          ),
         ),
-        backgroundColor: Colors.white,
-        elevation: 0,
-        iconTheme: const IconThemeData(color: Colors.black87),
+        backgroundColor: colorScheme.surface,
+        elevation: 2,
+        iconTheme: IconThemeData(color: colorScheme.primary),
       ),
       body: SafeArea(
         child: Padding(
           padding: EdgeInsets.symmetric(
-            horizontal: horizontalPadding,
-            vertical: verticalPadding,
+            horizontal: ResponsiveUtilsBosque.getHorizontalPadding(context),
+            vertical: ResponsiveUtilsBosque.getVerticalPadding(context),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Sección de búsqueda con padding adecuado
-              Padding(
-                padding: EdgeInsets.symmetric(
-                  horizontal:
-                      isMobile ? 0 : 2.0, // Menor padding para el formulario
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _buildSearchHeader(context),
-                    const SizedBox(height: 12),
-                    _buildSearchForm(context),
-                  ],
-                ),
-              ),
+              _buildSearchHeader(context),
               const SizedBox(height: 16),
-              // Tabla expandida
-              Expanded(child: _DepositosIdentificarTable()),
+              _buildSearchForm(context, notifier),
+              const SizedBox(height: 24),
+              Expanded(
+                child: state.cargando
+                    ? Center(
+                        child: CircularProgressIndicator(
+                          color: colorScheme.primary,
+                        ),
+                      )
+                    : _DepositosIdentificarTable(),
+              ),
             ],
           ),
         ),
@@ -150,24 +142,46 @@ class _DepositoChequeIdentificarViewScreenState
   }
 
   Widget _buildSearchHeader(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
     return Row(
       children: [
-        const Icon(Icons.search, color: Color(0xFF6C63FF)),
+        Icon(Icons.search, color: colorScheme.primary),
         const SizedBox(width: 8),
         Text(
           'Criterios de Búsqueda',
-          style: Theme.of(
-            context,
-          ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+          style: textTheme.titleMedium?.copyWith(
+            color: colorScheme.onSurface,
+            fontWeight: FontWeight.bold,
+          ),
         ),
       ],
     );
   }
 
-  Widget _buildSearchForm(BuildContext context) {
+  Widget _buildSearchForm(BuildContext context, dynamic notifier) {
     final isMobile = ResponsiveUtilsBosque.isMobile(context);
+    final colorScheme = Theme.of(context).colorScheme;
 
-    // Versión móvil - layout vertical
+    final inputDecoration = InputDecoration(
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(8),
+        borderSide: BorderSide(color: colorScheme.outline),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(8),
+        borderSide: BorderSide(color: colorScheme.outline.withOpacity(0.6)),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(8),
+        borderSide: BorderSide(color: colorScheme.primary, width: 2),
+      ),
+      filled: true,
+      fillColor: colorScheme.surface,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+    );
+
     if (isMobile) {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -175,10 +189,9 @@ class _DepositoChequeIdentificarViewScreenState
           TextFormField(
             controller: _fechaDesdeController,
             readOnly: true,
-            decoration: const InputDecoration(
+            decoration: inputDecoration.copyWith(
               labelText: 'Desde',
-              prefixIcon: Icon(Icons.calendar_today),
-              border: OutlineInputBorder(),
+              prefixIcon: Icon(Icons.calendar_today, color: colorScheme.primary),
             ),
             onTap: () => _pickDate(context, true),
           ),
@@ -186,10 +199,9 @@ class _DepositoChequeIdentificarViewScreenState
           TextFormField(
             controller: _fechaHastaController,
             readOnly: true,
-            decoration: const InputDecoration(
+            decoration: inputDecoration.copyWith(
               labelText: 'Hasta',
-              prefixIcon: Icon(Icons.calendar_today),
-              border: OutlineInputBorder(),
+              prefixIcon: Icon(Icons.calendar_today, color: colorScheme.primary),
             ),
             onTap: () => _pickDate(context, false),
           ),
@@ -198,108 +210,70 @@ class _DepositoChequeIdentificarViewScreenState
             icon: const Icon(Icons.search),
             label: const Text('Buscar'),
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF6C63FF),
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-              minimumSize: const Size(double.infinity, 50),
+              backgroundColor: colorScheme.primary,
+              foregroundColor: colorScheme.onPrimary,
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
             ),
             onPressed: () {
-              // Solo buscar por fechas, idBxC=0 y codCliente vacio
-              ref
-                  .read(depositosChequesProvider.notifier)
-                  .buscarDepositosPorIdentificar(
-                    idBxC: 0,
-                    fechaDesde: _fechaDesde,
-                    fechaHasta: _fechaHasta,
-                    codCliente: '',
-                  );
+              notifier.buscarDepositosPorIdentificar(
+                idBxC: 0,
+                fechaDesde: _fechaDesde,
+                fechaHasta: _fechaHasta,
+                codCliente: '',
+              );
             },
           ),
         ],
       );
     }
 
-    // Versión desktop - layout como en la imagen
     return Row(
       children: [
-        // Campo Desde con etiqueta arriba
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text('Desde'),
-            const SizedBox(height: 4),
-            SizedBox(
-              width: 300,
-              child: TextFormField(
-                controller: _fechaDesdeController,
-                readOnly: true,
-                decoration: InputDecoration(
-                  border: const OutlineInputBorder(),
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 16,
-                  ),
-                  suffixIcon: IconButton(
-                    icon: const Icon(Icons.calendar_today),
-                    onPressed: () => _pickDate(context, true),
-                  ),
-                ),
-                onTap: () => _pickDate(context, true),
-              ),
+        Expanded(
+          child: TextFormField(
+            controller: _fechaDesdeController,
+            readOnly: true,
+            decoration: inputDecoration.copyWith(
+              labelText: 'Desde',
+              suffixIcon: Icon(Icons.calendar_today, color: colorScheme.primary),
             ),
-          ],
+            onTap: () => _pickDate(context, true),
+          ),
         ),
         const SizedBox(width: 16),
-        // Campo Hasta con etiqueta arriba
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text('Hasta'),
-            const SizedBox(height: 4),
-            SizedBox(
-              width: 300,
-              child: TextFormField(
-                controller: _fechaHastaController,
-                readOnly: true,
-                decoration: InputDecoration(
-                  border: const OutlineInputBorder(),
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 16,
-                  ),
-                  suffixIcon: IconButton(
-                    icon: const Icon(Icons.calendar_today),
-                    onPressed: () => _pickDate(context, false),
-                  ),
-                ),
-                onTap: () => _pickDate(context, false),
-              ),
+        Expanded(
+          child: TextFormField(
+            controller: _fechaHastaController,
+            readOnly: true,
+            decoration: inputDecoration.copyWith(
+              labelText: 'Hasta',
+              suffixIcon: Icon(Icons.calendar_today, color: colorScheme.primary),
             ),
-          ],
+            onTap: () => _pickDate(context, false),
+          ),
         ),
         const SizedBox(width: 16),
-        // Botón de búsqueda redondeado
         ElevatedButton.icon(
           icon: const Icon(Icons.search),
           label: const Text('Buscar'),
           style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFF6C63FF),
-            foregroundColor: Colors.white,
+            backgroundColor: colorScheme.primary,
+            foregroundColor: colorScheme.onPrimary,
             padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(24),
+              borderRadius: BorderRadius.circular(8),
             ),
           ),
           onPressed: () {
-            // Solo buscar por fechas, idBxC=0 y codCliente vacio
-            ref
-                .read(depositosChequesProvider.notifier)
-                .buscarDepositosPorIdentificar(
-                  idBxC: 0,
-                  fechaDesde: _fechaDesde,
-                  fechaHasta: _fechaHasta,
-                  codCliente: '',
-                );
+            notifier.buscarDepositosPorIdentificar(
+              idBxC: 0,
+              fechaDesde: _fechaDesde,
+              fechaHasta: _fechaHasta,
+              codCliente: '',
+            );
           },
         ),
       ],
@@ -2174,115 +2148,241 @@ class _ActualizacionDepositoDialogState
     final state = ref.watch(depositosChequesProvider);
     final notasRemision = state.notasRemision;
     final notasSeleccionadas = state.notasSeleccionadas;
+    final isDesktop = ResponsiveUtilsBosque.isDesktop(context);
+    final isMobile = ResponsiveUtilsBosque.isMobile(context);
     
     // Configurar un ancho mínimo para la tabla
-    const double tableMinWidth = 700.0;
+    final double tableMinWidth = isDesktop ? 800.0 : 700.0;
     
-    return Scrollbar(
-      thumbVisibility: true,
-      controller: _verticalController,
-      child: Scrollbar(
-        thumbVisibility: true,
-        controller: _horizontalController,
-        notificationPredicate: (notif) => notif.depth == 1 && notif.metrics.axis == Axis.horizontal,
-        child: SingleChildScrollView(
+    return Theme(
+      data: Theme.of(context).copyWith(
+        dividerColor: Colors.grey.shade300,
+        dataTableTheme: DataTableThemeData(
+          headingTextStyle: TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: isDesktop ? 14 : 13,
+            color: Colors.teal.shade800,
+          ),
+          dataTextStyle: TextStyle(
+            fontSize: isDesktop ? 14 : 13,
+            color: Colors.black87,
+          ),
+        ),
+      ),
+      child: Container(
+        decoration: BoxDecoration(
+          border: Border.all(color: Colors.grey.shade300),
+          borderRadius: BorderRadius.circular(8),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 5,
+              spreadRadius: 1,
+            ),
+          ],
+        ),
+        child: Scrollbar(
+          thumbVisibility: true,
           controller: _verticalController,
-          child: SingleChildScrollView(
+          thickness: 8,
+          radius: Radius.circular(4),
+          child: Scrollbar(
+            thumbVisibility: true,
             controller: _horizontalController,
-            scrollDirection: Axis.horizontal,
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(
-                minWidth: tableMinWidth,
-              ),
-              child: DataTable(
-                columnSpacing: 16,
-                headingRowHeight: 40,
-                dataRowHeight: 46,
-                headingRowColor: MaterialStateProperty.all(Colors.grey[100]),
-                border: TableBorder(
-                  verticalInside: BorderSide(width: 1, color: Colors.grey[300]!),
-                  horizontalInside: BorderSide(width: 1, color: Colors.grey[300]!),
-                ),
-                columns: const [
-                  DataColumn(
-                    label: Text('Seleccionar', style: TextStyle(fontWeight: FontWeight.bold)),
+            thickness: 8,
+            radius: Radius.circular(4),
+            notificationPredicate: (notif) => notif.depth == 1 && notif.metrics.axis == Axis.horizontal,
+            child: SingleChildScrollView(
+              controller: _verticalController,
+              child: SingleChildScrollView(
+                controller: _horizontalController,
+                scrollDirection: Axis.horizontal,
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(
+                    minWidth: tableMinWidth,
                   ),
-                  DataColumn(
-                    label: Text('Número Doc.', style: TextStyle(fontWeight: FontWeight.bold)),
-                  ),
-                  DataColumn(
-                    label: Text('Num. Factura', style: TextStyle(fontWeight: FontWeight.bold)),
-                  ),
-                  DataColumn(
-                    label: Text('Fecha', style: TextStyle(fontWeight: FontWeight.bold)),
-                  ),
-                  DataColumn(
-                    label: Text('Total (Bs)', style: TextStyle(fontWeight: FontWeight.bold)),
-                  ),
-                  DataColumn(
-                    label: Text('Saldo Pendiente (Bs)', style: TextStyle(fontWeight: FontWeight.bold)),
-                  ),
-                ],
-                rows: notasRemision.map<DataRow>((doc) {
-                  final seleccionado = notasSeleccionadas.contains(doc.docNum);
-                  final saldoValue = state.saldosEditados[doc.docNum]?.toString() ??
-                      doc.saldoPendiente.toString();
-                  
-                  // Utilizar una key única para cada fila para mantener el estado
-                  return DataRow(
-                    key: ValueKey('doc_${doc.docNum}_${seleccionado ? '1' : '0'}'),
-                    cells: [
-                      DataCell(
-                        Container(
-                          key: ValueKey('check_${doc.docNum}_${seleccionado ? '1' : '0'}'),
-                          child: Checkbox(
-                            value: seleccionado,
-                            onChanged: (value) => _toggleDocumentoSeleccionado(
-                              doc.docNum,
-                              value ?? false,
-                            ),
-                          ),
+                  child: DataTable(
+                    columnSpacing: isDesktop ? 20 : 16,
+                    headingRowHeight: 50,
+                    dataRowHeight: 56,
+                    dividerThickness: 1,
+                    headingRowColor: MaterialStateProperty.all(Colors.grey.shade100),
+                    border: TableBorder(
+                      top: BorderSide(width: 1, color: Colors.grey.shade300),
+                      bottom: BorderSide(width: 1, color: Colors.grey.shade300),
+                      left: BorderSide.none,
+                      right: BorderSide.none,
+                      verticalInside: BorderSide(width: 1, color: Colors.grey.shade200),
+                      horizontalInside: BorderSide(width: 1, color: Colors.grey.shade200),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    columns: [
+                      DataColumn(
+                        label: Row(
+                          children: [
+                            Icon(Icons.check_box_outline_blank, size: 16, color: Colors.teal.shade800),
+                            SizedBox(width: 4),
+                            Text('Seleccionar'),
+                          ],
                         ),
                       ),
-                      DataCell(Text(doc.docNum.toString())),
-                      DataCell(Text(doc.numFact.toString())),
-                      DataCell(
-                        Text(
-                          doc.fecha != null
-                              ? "${doc.fecha!.day.toString().padLeft(2, '0')}/${doc.fecha!.month.toString().padLeft(2, '0')}/${doc.fecha!.year}"
-                              : '',
+                      DataColumn(
+                        label: Row(
+                          children: [
+                            Icon(Icons.description, size: 16, color: Colors.teal.shade800),
+                            SizedBox(width: 4),
+                            Text('Número Doc.'),
+                          ],
                         ),
                       ),
-                      DataCell(Text(doc.totalMonto.toStringAsFixed(2))),
-                      DataCell(
-                        seleccionado
-                            ? Container(
-                                key: ValueKey('editable_${doc.docNum}_${seleccionado ? '1' : '0'}'),
-                                child: EditableSaldoPendienteCell(
-                                  valorOriginal: doc.saldoPendiente,
-                                  valorActual: saldoValue,
-                                  onChanged: (v, showError) {
-                                    final val = double.tryParse(v) ?? 0.0;
-                                    if (val <= doc.saldoPendiente) {
-                                      ref
-                                          .read(depositosChequesProvider.notifier)
-                                          .editarSaldoPendiente(doc.docNum, val);
-                                      _actualizarTotales();
-                                    }
-                                    showError(val > doc.saldoPendiente);
-                                  },
-                                ),
-                              )
-                            : Text(doc.saldoPendiente.toStringAsFixed(2)),
+                      DataColumn(
+                        label: Row(
+                          children: [
+                            Icon(Icons.receipt, size: 16, color: Colors.teal.shade800),
+                            SizedBox(width: 4),
+                            Text('Num. Factura'),
+                          ],
+                        ),
+                      ),
+                      DataColumn(
+                        label: Row(
+                          children: [
+                            Icon(Icons.calendar_today, size: 16, color: Colors.teal.shade800),
+                            SizedBox(width: 4),
+                            Text('Fecha'),
+                          ],
+                        ),
+                      ),
+                      DataColumn(
+                        label: Row(
+                          children: [
+                            Icon(Icons.attach_money, size: 16, color: Colors.teal.shade800),
+                            SizedBox(width: 4),
+                            Text('Total (Bs)'),
+                          ],
+                        ),
+                      ),
+                      DataColumn(
+                        label: Row(
+                          children: [
+                            Icon(Icons.account_balance_wallet, size: 16, color: Colors.teal.shade800),
+                            SizedBox(width: 4),
+                            Text('Saldo Pendiente'),
+                          ],
+                        ),
                       ),
                     ],
-                  );
-                }).toList(growable: false),
+                    rows: notasRemision.map<DataRow>((doc) {
+                      final seleccionado = notasSeleccionadas.contains(doc.docNum);
+                      final saldoValue = state.saldosEditados[doc.docNum]?.toString() ??
+                          doc.saldoPendiente.toString();
+                      
+                      // Utilizar una key única para cada fila para mantener el estado
+                      return DataRow(
+                        key: ValueKey('doc_${doc.docNum}_${seleccionado ? '1' : '0'}'),
+                        color: MaterialStateProperty.resolveWith<Color?>(
+                          (Set<MaterialState> states) {
+                            if (seleccionado) return Colors.teal.shade50;
+                            if (states.contains(MaterialState.hovered)) return Colors.grey.shade50;
+                            return null;
+                          },
+                        ),
+                        cells: [
+                          DataCell(
+                            Container(
+                              key: ValueKey('check_${doc.docNum}_${seleccionado ? '1' : '0'}'),
+                              child: Checkbox(
+                                value: seleccionado,
+                                activeColor: Colors.teal.shade600,
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+                                onChanged: (value) => _toggleDocumentoSeleccionado(
+                                  doc.docNum,
+                                  value ?? false,
+                                ),
+                              ),
+                            ),
+                          ),
+                          DataCell(
+                            Container(
+                              padding: EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: Colors.grey.shade100,
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: Text(
+                                doc.docNum.toString(),
+                                style: TextStyle(fontWeight: FontWeight.w500),
+                              ),
+                            ),
+                          ),
+                          DataCell(Text(doc.numFact.toString())),
+                          DataCell(
+                            Container(
+                              padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: Colors.blue.shade50,
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(color: Colors.blue.shade100),
+                              ),
+                              child: Text(
+                                doc.fecha != null
+                                    ? "${doc.fecha!.day.toString().padLeft(2, '0')}/${doc.fecha!.month.toString().padLeft(2, '0')}/${doc.fecha!.year}"
+                                    : '',
+                                style: TextStyle(
+                                  color: Colors.blue.shade800,
+                                  fontSize: 13,
+                                ),
+                              ),
+                            ),
+                          ),
+                          DataCell(
+                            Text(
+                              doc.totalMonto.toStringAsFixed(2),
+                              style: TextStyle(fontWeight: FontWeight.w500),
+                            ),
+                          ),
+                          DataCell(
+                            seleccionado
+                                ? Container(
+                                    key: ValueKey('editable_${doc.docNum}_${seleccionado ? '1' : '0'}'),
+                                    child: EditableSaldoPendienteCell(
+                                      valorOriginal: doc.saldoPendiente,
+                                      valorActual: saldoValue,
+                                      onChanged: (v, showError) {
+                                        final val = double.tryParse(v) ?? 0.0;
+                                        if (val <= doc.saldoPendiente) {
+                                          ref
+                                              .read(depositosChequesProvider.notifier)
+                                              .editarSaldoPendiente(doc.docNum, val);
+                                          _actualizarTotales();
+                                        }
+                                        showError(val > doc.saldoPendiente);
+                                      },
+                                    ),
+                                  )
+                                : Container(
+                                    padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                    decoration: BoxDecoration(
+                                      color: Colors.grey.shade50,
+                                      borderRadius: BorderRadius.circular(8),
+                                      border: Border.all(color: Colors.grey.shade300),
+                                    ),
+                                    child: Text(
+                                      doc.saldoPendiente.toStringAsFixed(2),
+                                      style: TextStyle(fontWeight: FontWeight.w400),
+                                    ),
+                                  ),
+                          ),
+                        ],
+                      );
+                    }).toList(growable: false),
+                  ),
+                ),
               ),
             ),
           ),
         ),
-      ),
+      )
     );
   }
 }
