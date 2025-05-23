@@ -46,7 +46,8 @@ class _ControlCombustibleViewScreenState extends ConsumerState<ControlCombustibl
     final theme = Theme.of(context);
     return Scaffold(
       appBar: AppBar(title: const Text('Control de Combustible')),
-      body: Card(
+      body: SingleChildScrollView( // <-- Agrega scroll a todo el contenido
+        child: Card(
           margin: const EdgeInsets.symmetric(horizontal: 0, vertical: 24),
           elevation: 4,
           color: Theme.of(context).cardColor,
@@ -267,6 +268,7 @@ class _ControlCombustibleViewScreenState extends ConsumerState<ControlCombustibl
             ),
           ),
         ),
+      ),
       
     );
   }

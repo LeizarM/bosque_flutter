@@ -429,8 +429,7 @@ class DepositosChequesNotifier extends StateNotifier<DepositosChequesState> {
       importeTotal: nuevoImporteTotal,
     );
     
-    debugPrint('  Estado DESPUÉS: notasSeleccionadas=${state.notasSeleccionadas}');
-    debugPrint('⭐ FIN seleccionarNota');
+   
   }
 
   void editarSaldoPendiente(int docNum, double nuevoSaldo) {

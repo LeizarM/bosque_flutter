@@ -1,11 +1,9 @@
 import 'dart:typed_data';
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 import 'package:universal_html/html.dart' as html;
-import 'package:path_provider/path_provider.dart';
 import 'package:bosque_flutter/domain/entities/deposito_cheque_entity.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
