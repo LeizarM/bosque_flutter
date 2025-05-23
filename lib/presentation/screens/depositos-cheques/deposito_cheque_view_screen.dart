@@ -757,14 +757,8 @@ class _DepositosTableState extends ConsumerState<_DepositosTable> {
     super.initState();
     horizontalController = ScrollController();
     
-    
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final provider = ref.read(depositosChequesProvider.notifier);
-      // Solo limpiar si hay datos
-      if (ref.read(depositosChequesProvider).depositos.isNotEmpty) {
-        provider.clearState();
-      }
-    });
+    // Remover la lógica de clearState automática
+    // ya que ahora manejamos esto específicamente en la otra pantalla
   }
 
   @override

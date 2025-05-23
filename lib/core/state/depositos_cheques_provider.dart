@@ -989,6 +989,32 @@ class DepositosChequesNotifier extends StateNotifier<DepositosChequesState> {
       fechaHasta: DateTime.now(),
     );
   }
+
+  // Nuevo método para limpiar solo los resultados de búsqueda de depósitos
+  void clearDepositosResults() {
+    state = state.copyWith(
+      depositos: [],
+      totalRegistros: 0,
+      page: 0,
+      selectedEstado: 'Todos',
+      fechaDesde: null,
+      fechaHasta: null,
+      setFechaDesdeNull: true,
+      setFechaHastaNull: true,
+    );
+  }
+
+  // Nuevo método para limpiar específicamente el estado de registro de depósitos
+  void clearRegistroDepositos() {
+    state = state.copyWith(
+      clienteSeleccionado: null,
+      notasSeleccionadas: [],
+      saldosEditados: {},
+      aCuenta: 0.0,
+      importeTotal: 0.0,
+      obs: '',
+    );
+  }
 }
 
 final depositosChequesProvider =

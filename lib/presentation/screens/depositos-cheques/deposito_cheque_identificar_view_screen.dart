@@ -52,6 +52,11 @@ class _DepositoChequeIdentificarViewScreenState
     // Inicializar con fechas predeterminadas
     _fechaDesdeController.text = "01/05/2025";
     _fechaHastaController.text = "31/05/2025";
+    
+    // Limpiar los resultados de búsqueda de depósitos al entrar a esta pantalla
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(depositosChequesProvider.notifier).clearDepositosResults();
+    });
   }
 
   @override
@@ -2251,7 +2256,7 @@ class _ActualizacionDepositoDialogState
                             Icon(Icons.calendar_today, size: 16, color: Colors.teal.shade800),
                             SizedBox(width: 4),
                             Text('Fecha'),
-                          ],
+                          ]
                         ),
                       ),
                       DataColumn(
