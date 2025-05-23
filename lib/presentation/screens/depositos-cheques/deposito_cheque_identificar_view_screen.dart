@@ -510,134 +510,73 @@ class _DepositosIdentificarTable extends ConsumerWidget {
     double maxWidth,
     Function onAsignarCliente,
   ) {
-    // Definimos anchos específicos para cada columna para controlar mejor el espacio
-    final Map<String, double> columnWidths = {
-      'ID': 60,
-      'Cliente': 90,
-      'Empresa': 90,
-      'Banco': 200,
-      'Importe': 90,
-      'Moneda': 60,
-      'Fecha': 80,
-      'Estado': 100,
-      'Observaciones': 180,
-      'Acciones': 80,
-    };
-
-    // Calculamos el ancho total necesario
-    final double totalWidth =
-        columnWidths.values.reduce((a, b) => a + b) +
-        20; // +20 para margen de seguridad
-
+    // Definir una constante para el ancho mínimo de la tabla
+    const double tableMinWidth = 950.0;
+    
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       child: SizedBox(
-        // Aseguramos que el ancho sea el adecuado
-        width: totalWidth > maxWidth ? totalWidth : maxWidth,
+        // Asegurar un ancho mínimo para la tabla
+        width: tableMinWidth > maxWidth ? tableMinWidth : maxWidth,
         child: SingleChildScrollView(
-          child: Theme(
-            data: ThemeData.light().copyWith(
-              dataTableTheme: const DataTableThemeData(
-                headingTextStyle: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black87,
-                ),
-                dataTextStyle: TextStyle(color: Colors.black87),
-              ),
-            ),
-            child: DataTable(
-              columnSpacing: 8, // Un poco más de espacio entre columnas
-              horizontalMargin: 8,
-              headingRowHeight: 46,
-              dataRowHeight: 52,
-              columns: [
-                _customDataColumn('ID', columnWidths['ID']!),
-                _customDataColumn('Cliente', columnWidths['Cliente']!),
-                _customDataColumn('Empresa', columnWidths['Empresa']!),
-                _customDataColumn('Banco', columnWidths['Banco']!),
-                _customDataColumn('Importe', columnWidths['Importe']!),
-                _customDataColumn('Moneda', columnWidths['Moneda']!),
-                _customDataColumn('Fecha', columnWidths['Fecha']!),
-                _customDataColumn('Estado', columnWidths['Estado']!),
-                _customDataColumn(
-                  'Observaciones',
-                  columnWidths['Observaciones']!,
-                ),
-                _customDataColumn('Acciones', columnWidths['Acciones']!),
-              ],
-              rows:
-                  paged.map((d) {
-                    return DataRow(
-                      cells: [
-                        _customDataCell(
-                          Text(d.idDeposito.toString()),
-                          columnWidths['ID']!,
-                        ),
-                        _customDataCell(
-                          Text(d.codCliente),
-                          columnWidths['Cliente']!,
-                        ),
-                        _customDataCell(
-                          Text(d.nombreEmpresa),
-                          columnWidths['Empresa']!,
-                        ),
-                        _customDataCell(
-                          Text(d.nombreBanco),
-                          columnWidths['Banco']!,
-                        ),
-                        _customDataCell(
-                          Text(d.importe.toStringAsFixed(2)),
-                          columnWidths['Importe']!,
-                        ),
-                        _customDataCell(
-                          Text(d.moneda),
-                          columnWidths['Moneda']!,
-                        ),
-                        _customDataCell(
-                          Text(
-                            d.fechaI != null
-                                ? "${d.fechaI!.day.toString().padLeft(2, '0')}/${d.fechaI!.month.toString().padLeft(2, '0')}/${d.fechaI!.year}"
-                                : '',
+          child: DataTable(
+            columnSpacing: 8,
+            horizontalMargin: 8,
+            headingRowHeight: 46,
+            dataRowHeight: 52,
+            columns: [
+              _customDataColumn('ID', 60),
+              _customDataColumn('Cliente', 90), 
+              _customDataColumn('Empresa', 90),
+              _customDataColumn('Banco', 200),
+              _customDataColumn('Importe', 90),
+              _customDataColumn('Moneda', 60),
+              _customDataColumn('Fecha', 80),
+              _customDataColumn('Estado', 100),
+              _customDataColumn('Observaciones', 180),
+              _customDataColumn('Acciones', 80),
+            ],
+            rows: paged.map((d) {
+              return DataRow(
+                cells: [
+                  _customDataCell(Text(d.idDeposito.toString()), 60),
+                  _customDataCell(Text(d.codCliente), 90),
+                  _customDataCell(Text(d.nombreEmpresa), 90),
+                  _customDataCell(Text(d.nombreBanco), 200),
+                  _customDataCell(Text(d.importe.toStringAsFixed(2)), 90),
+                  _customDataCell(Text(d.moneda), 60),
+                  _customDataCell(
+                    Text(
+                      d.fechaI != null
+                          ? "${d.fechaI!.day.toString().padLeft(2, '0')}/${d.fechaI!.month.toString().padLeft(2, '0')}/${d.fechaI!.year}"
+                          : '',
+                    ),
+                    80,
+                  ),
+                  _customDataCell(_EstadoChip(estado: d.esPendiente), 100),
+                  _customDataCell(Text(d.obs, overflow: TextOverflow.ellipsis), 180),
+                  _customDataCell(
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        IconButton(
+                          icon: const Icon(
+                            Icons.person,
+                            color: Colors.orange,
+                            size: 20,
                           ),
-                          columnWidths['Fecha']!,
-                        ),
-                        _customDataCell(
-                          _EstadoChip(estado: d.esPendiente),
-                          columnWidths['Estado']!,
-                        ),
-                        _customDataCell(
-                          Text(d.obs, overflow: TextOverflow.ellipsis),
-                          columnWidths['Observaciones']!,
-                        ),
-                        _customDataCell(
-                          Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              IconButton(
-                                icon: const Icon(
-                                  Icons.person,
-                                  color: Colors.orange,
-                                  size: 20,
-                                ), // Cambio a ícono de persona
-                                tooltip: 'Asignar Cliente',
-                                onPressed: () => onAsignarCliente(d),
-                                constraints: const BoxConstraints(maxWidth: 32),
-                                padding: EdgeInsets.zero,
-                              ),
-                            ],
-                          ),
-                          columnWidths['Acciones']!,
+                          tooltip: 'Asignar Cliente',
+                          onPressed: () => onAsignarCliente(d),
+                          constraints: const BoxConstraints(maxWidth: 32),
+                          padding: EdgeInsets.zero,
                         ),
                       ],
-                    );
-                  }).toList(),
-              border: TableBorder(
-                horizontalInside: BorderSide(
-                  width: 1,
-                  color: Colors.grey.shade200,
-                ),
-              ),
-            ),
+                    ),
+                    80,
+                  ),
+                ],
+              );
+            }).toList(),
           ),
         ),
       ),
@@ -1786,113 +1725,7 @@ class _ActualizacionDepositoDialogState
                               'No hay documentos disponibles para este cliente',
                             ),
                           )
-                        : LayoutBuilder(
-                            builder: (context, constraints) {
-                              final minTableWidth = 700.0;
-                              // Usa los controladores persistentes y verifica null
-                              return Scrollbar(
-                                thumbVisibility: true,
-                                controller: _verticalController,
-                                child: SingleChildScrollView(
-                                  controller: _verticalController,
-                                  scrollDirection: Axis.vertical,
-                                  child: Scrollbar(
-                                    thumbVisibility: true,
-                                    controller: _horizontalController,
-                                    notificationPredicate: (notif) => notif.metrics.axis == Axis.horizontal,
-                                    child: SingleChildScrollView(
-                                      controller: _horizontalController,
-                                      scrollDirection: Axis.horizontal,
-                                      child: ConstrainedBox(
-                                        constraints: BoxConstraints(
-                                          minWidth: minTableWidth,
-                                          maxWidth: double.infinity,
-                                        ),
-                                        child: DataTable(
-                                          columnSpacing: 16,
-                                          headingRowHeight: 40,
-                                          dataRowHeight: 46,
-                                          headingRowColor: MaterialStateProperty.all(Colors.grey[100]),
-                                          border: TableBorder(
-                                            verticalInside: BorderSide(width: 1, color: Colors.grey[300]!),
-                                            horizontalInside: BorderSide(width: 1, color: Colors.grey[300]!),
-                                          ),
-                                          columns: const [
-                                            DataColumn(
-                                              label: Text('Seleccionar', style: TextStyle(fontWeight: FontWeight.bold)),
-                                            ),
-                                            DataColumn(
-                                              label: Text('Número Doc.', style: TextStyle(fontWeight: FontWeight.bold)),
-                                            ),
-                                            DataColumn(
-                                              label: Text('Num. Factura', style: TextStyle(fontWeight: FontWeight.bold)),
-                                            ),
-                                            DataColumn(
-                                              label: Text('Fecha', style: TextStyle(fontWeight: FontWeight.bold)),
-                                            ),
-                                            DataColumn(
-                                              label: Text('Total (Bs)', style: TextStyle(fontWeight: FontWeight.bold)),
-                                            ),
-                                            DataColumn(
-                                              label: Text('Saldo Pendiente (Bs)', style: TextStyle(fontWeight: FontWeight.bold)),
-                                            ),
-                                          ],
-                                          rows: notasRemision
-                                              .map<DataRow>((doc) {
-                                                final seleccionado = notasSeleccionadas.contains(doc.docNum);
-                                                final saldoValue = state.saldosEditados[doc.docNum]?.toString() ??
-                                                    doc.saldoPendiente.toString();
-                                                return DataRow(
-                                                  cells: [
-                                                    DataCell(
-                                                      Checkbox(
-                                                        value: seleccionado,
-                                                        onChanged: (value) => _toggleDocumentoSeleccionado(
-                                                          doc.docNum,
-                                                          value ?? false,
-                                                        ),
-                                                      ),
-                                                    ),
-                                                    DataCell(Text(doc.docNum.toString())),
-                                                    DataCell(Text(doc.numFact.toString())),
-                                                    DataCell(
-                                                      Text(
-                                                        doc.fecha != null
-                                                            ? "${doc.fecha!.day.toString().padLeft(2, '0')}/${doc.fecha!.month.toString().padLeft(2, '0')}/${doc.fecha!.year}"
-                                                            : '',
-                                                      ),
-                                                    ),
-                                                    DataCell(Text(doc.totalMonto.toStringAsFixed(2))),
-                                                    DataCell(
-                                                      seleccionado
-                                                          ? EditableSaldoPendienteCell(
-                                                              valorOriginal: doc.saldoPendiente,
-                                                              valorActual: saldoValue,
-                                                              onChanged: (v, showError) {
-                                                                final val = double.tryParse(v) ?? 0.0;
-                                                                if (val <= doc.saldoPendiente) {
-                                                                  ref
-                                                                      .read(depositosChequesProvider.notifier)
-                                                                      .editarSaldoPendiente(doc.docNum, val);
-                                                                  _actualizarTotales();
-                                                                }
-                                                                showError(val > doc.saldoPendiente);
-                                                              },
-                                                            )
-                                                          : Text(doc.saldoPendiente.toStringAsFixed(2)),
-                                                    ),
-                                                  ],
-                                                );
-                                              })
-                                              .toList(growable: false),
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              );
-                            },
-                          ),
+                        : _buildDocumentosTable(),
                   ),
 
                   SizedBox(height: verticalPadding),
@@ -2334,6 +2167,123 @@ class _ActualizacionDepositoDialogState
     _verticalController?.dispose();
     _horizontalController?.dispose();
     super.dispose();
+  }
+
+  // Añadir este nuevo método dentro de la clase _ActualizacionDepositoDialogState:
+  Widget _buildDocumentosTable() {
+    final state = ref.watch(depositosChequesProvider);
+    final notasRemision = state.notasRemision;
+    final notasSeleccionadas = state.notasSeleccionadas;
+    
+    // Configurar un ancho mínimo para la tabla
+    const double tableMinWidth = 700.0;
+    
+    return Scrollbar(
+      thumbVisibility: true,
+      controller: _verticalController,
+      child: Scrollbar(
+        thumbVisibility: true,
+        controller: _horizontalController,
+        notificationPredicate: (notif) => notif.depth == 1 && notif.metrics.axis == Axis.horizontal,
+        child: SingleChildScrollView(
+          controller: _verticalController,
+          child: SingleChildScrollView(
+            controller: _horizontalController,
+            scrollDirection: Axis.horizontal,
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(
+                minWidth: tableMinWidth,
+              ),
+              child: DataTable(
+                columnSpacing: 16,
+                headingRowHeight: 40,
+                dataRowHeight: 46,
+                headingRowColor: MaterialStateProperty.all(Colors.grey[100]),
+                border: TableBorder(
+                  verticalInside: BorderSide(width: 1, color: Colors.grey[300]!),
+                  horizontalInside: BorderSide(width: 1, color: Colors.grey[300]!),
+                ),
+                columns: const [
+                  DataColumn(
+                    label: Text('Seleccionar', style: TextStyle(fontWeight: FontWeight.bold)),
+                  ),
+                  DataColumn(
+                    label: Text('Número Doc.', style: TextStyle(fontWeight: FontWeight.bold)),
+                  ),
+                  DataColumn(
+                    label: Text('Num. Factura', style: TextStyle(fontWeight: FontWeight.bold)),
+                  ),
+                  DataColumn(
+                    label: Text('Fecha', style: TextStyle(fontWeight: FontWeight.bold)),
+                  ),
+                  DataColumn(
+                    label: Text('Total (Bs)', style: TextStyle(fontWeight: FontWeight.bold)),
+                  ),
+                  DataColumn(
+                    label: Text('Saldo Pendiente (Bs)', style: TextStyle(fontWeight: FontWeight.bold)),
+                  ),
+                ],
+                rows: notasRemision.map<DataRow>((doc) {
+                  final seleccionado = notasSeleccionadas.contains(doc.docNum);
+                  final saldoValue = state.saldosEditados[doc.docNum]?.toString() ??
+                      doc.saldoPendiente.toString();
+                  
+                  // Utilizar una key única para cada fila para mantener el estado
+                  return DataRow(
+                    key: ValueKey('doc_${doc.docNum}_${seleccionado ? '1' : '0'}'),
+                    cells: [
+                      DataCell(
+                        Container(
+                          key: ValueKey('check_${doc.docNum}_${seleccionado ? '1' : '0'}'),
+                          child: Checkbox(
+                            value: seleccionado,
+                            onChanged: (value) => _toggleDocumentoSeleccionado(
+                              doc.docNum,
+                              value ?? false,
+                            ),
+                          ),
+                        ),
+                      ),
+                      DataCell(Text(doc.docNum.toString())),
+                      DataCell(Text(doc.numFact.toString())),
+                      DataCell(
+                        Text(
+                          doc.fecha != null
+                              ? "${doc.fecha!.day.toString().padLeft(2, '0')}/${doc.fecha!.month.toString().padLeft(2, '0')}/${doc.fecha!.year}"
+                              : '',
+                        ),
+                      ),
+                      DataCell(Text(doc.totalMonto.toStringAsFixed(2))),
+                      DataCell(
+                        seleccionado
+                            ? Container(
+                                key: ValueKey('editable_${doc.docNum}_${seleccionado ? '1' : '0'}'),
+                                child: EditableSaldoPendienteCell(
+                                  valorOriginal: doc.saldoPendiente,
+                                  valorActual: saldoValue,
+                                  onChanged: (v, showError) {
+                                    final val = double.tryParse(v) ?? 0.0;
+                                    if (val <= doc.saldoPendiente) {
+                                      ref
+                                          .read(depositosChequesProvider.notifier)
+                                          .editarSaldoPendiente(doc.docNum, val);
+                                      _actualizarTotales();
+                                    }
+                                    showError(val > doc.saldoPendiente);
+                                  },
+                                ),
+                              )
+                            : Text(doc.saldoPendiente.toStringAsFixed(2)),
+                      ),
+                    ],
+                  );
+                }).toList(growable: false),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
   }
 }
 
