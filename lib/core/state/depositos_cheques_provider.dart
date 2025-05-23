@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'dart:typed_data';
+import 'package:bosque_flutter/core/state/user_provider.dart';
 import 'package:bosque_flutter/domain/entities/deposito_cheque_entity.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -131,7 +132,9 @@ class DepositosChequesNotifier extends StateNotifier<DepositosChequesState> {
   /// Última respuesta cruda del backend al registrar depósito (para depuración)
   dynamic lastResponse;
   final DepositoChequesImpl _repo = DepositoChequesImpl();
-  DepositosChequesNotifier() : super(DepositosChequesState()) {
+  final Ref ref;
+
+  DepositosChequesNotifier(this.ref) : super(DepositosChequesState()) {
     cargarEmpresas();
   }
 
@@ -472,9 +475,12 @@ class DepositosChequesNotifier extends StateNotifier<DepositosChequesState> {
     lastResponse = null;
 
     try {
-      
       // Usar el ID pasado como parámetro para actualizaciones, 0 para nuevos registros
       final idDeposito = idDepositoActualizacion ?? 0;
+
+      // Obtener codUsuario correctamente desde userProvider
+      final user = ref.read(userProvider);
+      final codUsuario = user?.codUsuario ?? 0;
 
       final deposito = DepositoChequeEntity(
         idDeposito: idDeposito,
@@ -489,7 +495,7 @@ class DepositosChequesNotifier extends StateNotifier<DepositosChequesState> {
         fechaI: null, // Enviar como null
         nroTransaccion: '',
         obs: state.obs, // Usar las observaciones guardadas en el estado
-        audUsuario: 0,
+        audUsuario: codUsuario, // <-- Aquí se llena correctamente
         codBanco: state.bancoSeleccionado?.codBanco ?? 0,
         fechaInicio: DateTime.now(),
         fechaFin: DateTime.now(),
@@ -568,79 +574,67 @@ class DepositosChequesNotifier extends StateNotifier<DepositosChequesState> {
   }
 
   Future<bool> guardarNotasRemision({int? idDepositoParaNotas}) async {
-  state = state.copyWith(cargando: true);
-  
-  try {
-   
-    
-    if (state.notasSeleccionadas.isEmpty) {
-      
-      state = state.copyWith(cargando: false);
-      return true; // Si no hay notas, consideramos exitoso
-    }
-    
-    bool allOk = true;
-    int notasGuardadas = 0;
-    
-    for (final docNum in state.notasSeleccionadas) {
-      
-      
-      try {
-        final nota = state.notasRemision.firstWhere(
-          (n) => n.docNum == docNum,
-          orElse: () {
-            
-            throw Exception('Nota no encontrada: $docNum');
-          },
-        );
-        
-        final saldoEditado = state.saldosEditados[docNum] ?? nota.saldoPendiente;
-        
-        
-        
-        final notaEditada = NotaRemisionEntity(
-          idNr: nota.idNr,
-          idDeposito: idDepositoParaNotas ?? nota.idDeposito, // USAR EL ID CORRECTO
-          docNum: nota.docNum,
-          fecha: nota.fecha,
-          numFact: nota.numFact,
-          totalMonto: nota.totalMonto,
-          saldoPendiente: saldoEditado,
-          audUsuario: nota.audUsuario,
-          codCliente: nota.codCliente,
-          nombreCliente: nota.nombreCliente,
-          db: nota.db,
-          codEmpresaBosque: nota.codEmpresaBosque,
-        );
-        
-       
-        final ok = await _repo.guardarNotaRemision(notaEditada);
-        
-        if (ok) {
-          notasGuardadas++;
-          
-        } else {
-          allOk = false;
-          
-        }
-        
-      } catch (e) {
-        allOk = false;
-       
+    state = state.copyWith(cargando: true);
+
+    try {
+      if (state.notasSeleccionadas.isEmpty) {
+        state = state.copyWith(cargando: false);
+        return true; // Si no hay notas, consideramos exitoso
       }
+
+      bool allOk = true;
+      int notasGuardadas = 0;
+
+      // Obtener codUsuario desde userProvider
+      final user = ref.read(userProvider);
+      final codUsuario = user?.codUsuario ?? 0;
+
+      for (final docNum in state.notasSeleccionadas) {
+        try {
+          final nota = state.notasRemision.firstWhere(
+            (n) => n.docNum == docNum,
+            orElse: () {
+              throw Exception('Nota no encontrada: $docNum');
+            },
+          );
+
+          final saldoEditado = state.saldosEditados[docNum] ?? nota.saldoPendiente;
+
+          final notaEditada = NotaRemisionEntity(
+            idNr: nota.idNr,
+            idDeposito: idDepositoParaNotas ?? nota.idDeposito, // USAR EL ID CORRECTO
+            docNum: nota.docNum,
+            fecha: nota.fecha,
+            numFact: nota.numFact,
+            totalMonto: nota.totalMonto,
+            saldoPendiente: saldoEditado,
+            audUsuario: codUsuario, // <-- Aquí se llena correctamente
+            codCliente: nota.codCliente,
+            nombreCliente: nota.nombreCliente,
+            db: nota.db,
+            codEmpresaBosque: nota.codEmpresaBosque,
+          );
+
+          final ok = await _repo.guardarNotaRemision(notaEditada);
+
+          if (ok) {
+            notasGuardadas++;
+          } else {
+            allOk = false;
+          }
+        } catch (e) {
+          allOk = false;
+        }
+      }
+
+      state = state.copyWith(cargando: false);
+      return allOk;
+
+    } catch (e) {
+      state = state.copyWith(cargando: false);
+      rethrow;
     }
-    
-    
-    
-    state = state.copyWith(cargando: false);
-    return allOk;
-    
-  } catch (e) {
-    
-    state = state.copyWith(cargando: false);
-    rethrow;
   }
-}
 
   void setEstado(String? estado) {
     // Si estado es null o 'Todos', limpiar selección
@@ -1001,5 +995,5 @@ final depositosChequesProvider =
     StateNotifierProvider<DepositosChequesNotifier, DepositosChequesState>((
       ref,
     ) {
-      return DepositosChequesNotifier();
+      return DepositosChequesNotifier(ref);
     });
