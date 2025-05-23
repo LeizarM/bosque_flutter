@@ -10,7 +10,7 @@ import 'dart:typed_data';
 // Proveedor para almacenar los bytes de la imagen (necesario para web)
 final imageBytesProvider = StateProvider<Uint8List?>((ref) => null);
 
-final depositosChequesRegisterProvider = StateNotifierProvider.autoDispose<DepositosChequesNotifier, DepositosChequesState>(
+final depositosChequesRegisterProvider = StateNotifierProvider<DepositosChequesNotifier, DepositosChequesState>(
   (ref) => DepositosChequesNotifier(ref),
 );
 

@@ -6,6 +6,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/state/depositos_cheques_provider.dart';
 import '../../../core/utils/responsive_utils_bosque.dart';
 
+final depositosChequesViewProvider = StateNotifierProvider<DepositosChequesNotifier, DepositosChequesState>(
+  (ref) => DepositosChequesNotifier(ref),
+);
+
 class DepositoChequeViewScreen extends ConsumerWidget {
   const DepositoChequeViewScreen({super.key});
 
@@ -18,8 +22,8 @@ class DepositoChequeViewScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final state = ref.watch(depositosChequesProvider);
-    final notifier = ref.read(depositosChequesProvider.notifier);
+    final state = ref.watch(depositosChequesViewProvider);
+    final notifier = ref.read(depositosChequesViewProvider.notifier);
 
     // Valores responsive
     final isDesktop = ResponsiveUtilsBosque.isDesktop(context); // Used below
@@ -786,7 +790,7 @@ class _DepositosTableState extends ConsumerState<_DepositosTable> {
 
   @override
   Widget build(BuildContext context) {
-    final state = ref.watch(depositosChequesProvider);
+    final state = ref.watch(depositosChequesViewProvider);
     final columns = const [
       'ID',
       'Cliente',
@@ -980,7 +984,7 @@ class _DepositosTableState extends ConsumerState<_DepositosTable> {
                                                           try {
                                                             ref
                                                                 .read(
-                                                                  depositosChequesProvider
+                                                                  depositosChequesViewProvider
                                                                       .notifier,
                                                                 )
                                                                 .descargarImagenDeposito(
@@ -1013,7 +1017,7 @@ class _DepositosTableState extends ConsumerState<_DepositosTable> {
                                                             // Llamar al método que descarga el PDF específico
                                                             ref
                                                                 .read(
-                                                                  depositosChequesProvider
+                                                                  depositosChequesViewProvider
                                                                       .notifier,
                                                                 )
                                                                 .descargarPdfDeposito(
@@ -1050,7 +1054,7 @@ class _DepositosTableState extends ConsumerState<_DepositosTable> {
                                                           onPressed: () async {
                                                             final notifier = ref
                                                                 .read(
-                                                                  depositosChequesProvider
+                                                                  depositosChequesViewProvider
                                                                       .notifier,
                                                                 );
                                                             // Cargar bancos para la empresa del depósito seleccionado
@@ -1301,7 +1305,7 @@ class _DepositosTableState extends ConsumerState<_DepositosTable> {
                                                               true) {
                                                             final notifier = ref
                                                                 .read(
-                                                                  depositosChequesProvider
+                                                                  depositosChequesViewProvider
                                                                       .notifier,
                                                                 );
                                                             await notifier
@@ -1366,7 +1370,7 @@ class _DepositosTableState extends ConsumerState<_DepositosTable> {
                   onPressed:
                       state.page > 0
                           ? () => ref
-                              .read(depositosChequesProvider.notifier)
+                              .read(depositosChequesViewProvider.notifier)
                               .setPage(0)
                           : null,
                   padding: EdgeInsets.zero,
@@ -1377,7 +1381,7 @@ class _DepositosTableState extends ConsumerState<_DepositosTable> {
                   onPressed:
                       state.page > 0
                           ? () => ref
-                              .read(depositosChequesProvider.notifier)
+                              .read(depositosChequesViewProvider.notifier)
                               .setPage(state.page - 1)
                           : null,
                   padding: EdgeInsets.zero,
@@ -1398,7 +1402,7 @@ class _DepositosTableState extends ConsumerState<_DepositosTable> {
                           .toList(),
                   onChanged:
                       (v) => ref
-                          .read(depositosChequesProvider.notifier)
+                          .read(depositosChequesViewProvider.notifier)
                           .setRowsPerPage(v),
                 ),
                 SizedBox(width: 8),
@@ -1407,7 +1411,7 @@ class _DepositosTableState extends ConsumerState<_DepositosTable> {
                   onPressed:
                       end < total
                           ? () => ref
-                              .read(depositosChequesProvider.notifier)
+                              .read(depositosChequesViewProvider.notifier)
                               .setPage(state.page + 1)
                           : null,
                   padding: EdgeInsets.zero,
@@ -1418,7 +1422,7 @@ class _DepositosTableState extends ConsumerState<_DepositosTable> {
                   onPressed:
                       end < total
                           ? () => ref
-                              .read(depositosChequesProvider.notifier)
+                              .read(depositosChequesViewProvider.notifier)
                               .setPage((total / state.rowsPerPage).ceil() - 1)
                           : null,
                   padding: EdgeInsets.zero,
@@ -1441,7 +1445,7 @@ class _DepositosTableState extends ConsumerState<_DepositosTable> {
               onPressed:
                   state.page > 0
                       ? () =>
-                          ref.read(depositosChequesProvider.notifier).setPage(0)
+                          ref.read(depositosChequesViewProvider.notifier).setPage(0)
                       : null,
             ),
             IconButton(
@@ -1449,7 +1453,7 @@ class _DepositosTableState extends ConsumerState<_DepositosTable> {
               onPressed:
                   state.page > 0
                       ? () => ref
-                          .read(depositosChequesProvider.notifier)
+                          .read(depositosChequesViewProvider.notifier)
                           .setPage(state.page - 1)
                       : null,
             ),
@@ -1458,7 +1462,7 @@ class _DepositosTableState extends ConsumerState<_DepositosTable> {
               onPressed:
                   end < total
                       ? () => ref
-                          .read(depositosChequesProvider.notifier)
+                          .read(depositosChequesViewProvider.notifier)
                           .setPage(state.page + 1)
                       : null,
             ),
@@ -1467,7 +1471,7 @@ class _DepositosTableState extends ConsumerState<_DepositosTable> {
               onPressed:
                   end < total
                       ? () => ref
-                          .read(depositosChequesProvider.notifier)
+                          .read(depositosChequesViewProvider.notifier)
                           .setPage((total / state.rowsPerPage).ceil() - 1)
                       : null,
             ),
@@ -1485,7 +1489,7 @@ class _DepositosTableState extends ConsumerState<_DepositosTable> {
                       .toList(),
               onChanged:
                   (v) => ref
-                      .read(depositosChequesProvider.notifier)
+                      .read(depositosChequesViewProvider.notifier)
                       .setRowsPerPage(v),
             ),
           ],

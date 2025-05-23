@@ -32,6 +32,10 @@ class DocumentoDisponible {
   });
 }
 
+final depositosChequesIdentificarViewProvider = StateNotifierProvider<DepositosChequesNotifier, DepositosChequesState>(
+  (ref) => DepositosChequesNotifier(ref),
+);
+
 class DepositoChequeIdentificarViewScreen extends ConsumerStatefulWidget {
   const DepositoChequeIdentificarViewScreen({super.key});
 
@@ -96,8 +100,8 @@ class _DepositoChequeIdentificarViewScreenState
 
   @override
   Widget build(BuildContext context) {
-    final state = ref.watch(depositosChequesProvider);
-    final notifier = ref.read(depositosChequesProvider.notifier);
+    final state = ref.watch(depositosChequesIdentificarViewProvider);
+    final notifier = ref.read(depositosChequesIdentificarViewProvider.notifier);
     final isMobile = ResponsiveUtilsBosque.isMobile(context);
     final isDesktop = ResponsiveUtilsBosque.isDesktop(context);
 
@@ -289,8 +293,8 @@ class _DepositoChequeIdentificarViewScreenState
 class _DepositosIdentificarTable extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final state = ref.watch(depositosChequesProvider);
-    final notifier = ref.read(depositosChequesProvider.notifier);
+    final state = ref.watch(depositosChequesIdentificarViewProvider);
+    final notifier = ref.read(depositosChequesIdentificarViewProvider.notifier);
     final isDesktop = ResponsiveUtilsBosque.isDesktop(context);
     final isTablet = ResponsiveUtilsBosque.isTablet(context);
     final isMobile = ResponsiveUtilsBosque.isMobile(context);

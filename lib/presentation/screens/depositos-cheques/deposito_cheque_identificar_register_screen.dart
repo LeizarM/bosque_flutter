@@ -3,14 +3,17 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:bosque_flutter/core/state/depositos_cheques_provider.dart';
 import 'package:bosque_flutter/core/utils/responsive_utils_bosque.dart';
 
+final depositosChequesIdentificarRegisterProvider = StateNotifierProvider<DepositosChequesNotifier, DepositosChequesState>(
+  (ref) => DepositosChequesNotifier(ref),
+);
 
 class DepositoChequeIdentificarScreen extends ConsumerWidget {
   const DepositoChequeIdentificarScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final state = ref.watch(depositosChequesProvider);
-    final notifier = ref.read(depositosChequesProvider.notifier);
+    final state = ref.watch(depositosChequesIdentificarRegisterProvider);
+    final notifier = ref.read(depositosChequesIdentificarRegisterProvider.notifier);
     final isMobile = ResponsiveUtilsBosque.isMobile(context);
     final horizontalPadding = ResponsiveUtilsBosque.getHorizontalPadding(context);
     final verticalPadding = ResponsiveUtilsBosque.getVerticalPadding(context);
