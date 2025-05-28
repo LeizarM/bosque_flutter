@@ -1,7 +1,9 @@
 import 'package:bosque_flutter/core/constants/app_constants.dart';
 import 'package:bosque_flutter/core/network/dio_client.dart';
 import 'package:bosque_flutter/data/models/control_combustible_maquina_montacarga_model.dart';
+import 'package:bosque_flutter/data/models/maquina_montacarga_model.dart';
 import 'package:bosque_flutter/domain/entities/control_combustible_maquina_montacarga_entity.dart';
+import 'package:bosque_flutter/domain/entities/maquina_montacarga_entity.dart';
 import 'package:bosque_flutter/domain/repositories/control_combustible_maquina_montacarga_repository.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
@@ -14,10 +16,12 @@ class ControlCombustibleMaquinaMontacargaImpl
   // Implementación de los métodos de la interfaz
 
   @override
-  Future<bool> registerControlCombustibleMaquinaMontacarga( ControlCombustibleMaquinaMontacargaEntity mb ) async {
+  Future<bool> registerControlCombustibleMaquinaMontacarga(
+    ControlCombustibleMaquinaMontacargaEntity mb,
+  ) async {
     try {
       // Crear el mapa de datos como lo estás enviando actualmente
-      final data = ControlCombustibleMaquinaMontacargaModel.fromEntity( mb );
+      final data = ControlCombustibleMaquinaMontacargaModel.fromEntity(mb);
 
       final response = await _dio.post(
         AppConstants.registrarControlCombustibleMaqMont,
@@ -57,10 +61,15 @@ class ControlCombustibleMaquinaMontacargaImpl
       if (response.statusCode == 200 && response.data != null) {
         final data = response.data['data'] ?? [];
 
-        // Crear manualmente las entidades para manejar la estructura específica de los almacenes
-        final List<ControlCombustibleMaquinaMontacargaEntity> almacenes = [];
+        final items =
+            (data as List<dynamic>)
+                .map(
+                  (json) =>
+                      ControlCombustibleMaquinaMontacargaModel.fromJson(json),
+                )
+                .toList();
 
-        return almacenes;
+        return items.map((model) => model.toEntity()).toList();
       } else {
         throw Exception('Error al obtener los almacenes');
       }
@@ -77,6 +86,40 @@ class ControlCombustibleMaquinaMontacargaImpl
     }
   }
 
+  @override
+  Future<List<MaquinaMontacargaEntity>> obtenerMaquinasMontacargas() async {
+    try {
+      final response = await _dio.post(
+        AppConstants.listarMaquinaMontacarga,
+        data: {},
+      );
 
-  
+      if (response.statusCode == 200 && response.data != null) {
+        final data = response.data['data'] ?? [];
+
+        final items =
+            (data as List<dynamic>)
+                .map((json) => MaquinaMontacargaModel.fromJson(json))
+                .toList();
+
+        return items.map((model) => model.toEntity()).toList();
+      } else {
+        throw Exception(
+          'Error al obtener los los montacargas, bidones o maquinas',
+        );
+      }
+    } on DioException catch (e) {
+      // Manejar errores de red o del servidor
+      String errorMessage = 'Error de conexión: ${e.message}';
+      if (e.response != null && e.response!.data != null) {
+        errorMessage =
+            'Error del servidor: ${e.response!.statusCode} - ${e.response!.data.toString()}';
+      }
+      throw Exception(errorMessage);
+    } catch (e) {
+      throw Exception(
+        'Error desconocido en obtenerMaquinasMontacargas: ${e.toString()}',
+      );
+    }
+  }
 }

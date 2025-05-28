@@ -16,6 +16,8 @@ class ControlCombustibleMaquinaMontacargaModel {
   final int idMaquinaVehiculoDestino;
   final int codSucursalMaqVehiOrigen;
   final int codSucursalMaqVehiDestino;
+  final String codigoOrigen;
+  final String codigoDestino;
   final DateTime fecha;
   final double litrosIngreso;
   final double litrosSalida;
@@ -36,6 +38,8 @@ class ControlCombustibleMaquinaMontacargaModel {
     required this.idMaquinaVehiculoDestino,
     required this.codSucursalMaqVehiOrigen,
     required this.codSucursalMaqVehiDestino,
+    required this.codigoOrigen,
+    required this.codigoDestino,
     required this.fecha,
     required this.litrosIngreso,
     required this.litrosSalida,
@@ -59,6 +63,8 @@ class ControlCombustibleMaquinaMontacargaModel {
     idMaquinaVehiculoDestino: json["idMaquinaVehiculoDestino"],
     codSucursalMaqVehiOrigen: json["codSucursalMaqVehiOrigen"],
     codSucursalMaqVehiDestino: json["codSucursalMaqVehiDestino"],
+    codigoOrigen: json["codigoOrigen"] ?? '',
+    codigoDestino: json["codigoDestino"] ?? '',
     fecha: DateTime.parse(json["fecha"]),
     litrosIngreso: json["litrosIngreso"]?.toDouble(),
     litrosSalida: json["litrosSalida"]?.toDouble(),
@@ -80,6 +86,8 @@ class ControlCombustibleMaquinaMontacargaModel {
     "idMaquinaVehiculoDestino": idMaquinaVehiculoDestino,
     "codSucursalMaqVehiOrigen": codSucursalMaqVehiOrigen,
     "codSucursalMaqVehiDestino": codSucursalMaqVehiDestino,
+    "codigoOrigen": codigoOrigen,
+    "codigoDestino": codigoDestino,
     "fecha": fecha.toIso8601String(),
     "litrosIngreso": litrosIngreso,
     "litrosSalida": litrosSalida,
@@ -103,6 +111,8 @@ class ControlCombustibleMaquinaMontacargaModel {
         idMaquinaVehiculoDestino: idMaquinaVehiculoDestino,
         codSucursalMaqVehiOrigen: codSucursalMaqVehiOrigen,
         codSucursalMaqVehiDestino: codSucursalMaqVehiDestino,
+        codigoOrigen: codigoOrigen,
+        codigoDestino: codigoDestino,
         fecha: fecha,
         litrosIngreso: litrosIngreso,
         litrosSalida: litrosSalida,
@@ -127,6 +137,9 @@ class ControlCombustibleMaquinaMontacargaModel {
     idMaquinaVehiculoDestino: entity.idMaquinaVehiculoDestino,
     codSucursalMaqVehiOrigen: entity.codSucursalMaqVehiOrigen,
     codSucursalMaqVehiDestino: entity.codSucursalMaqVehiDestino,
+    codigoOrigen: entity.codigoOrigen,
+    codigoDestino: entity.codigoDestino,
+
     fecha: entity.fecha,
     litrosIngreso: entity.litrosIngreso,
     litrosSalida: entity.litrosSalida,

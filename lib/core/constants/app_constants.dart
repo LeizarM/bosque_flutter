@@ -19,10 +19,12 @@ class AppConstants {
   static const String registrarCombustibleEndPoint = '/gasolina/registrar-gasolina';
   static const String listarCoches = '/gasolina/lst-coches';
   static const String listarKilometrajeCoches = '/gasolina/lst-kilometraje';
+  
+  //Endpoints para la gestion de bidones
   static const String registrarControlCombustibleMaqMont = '/gasolinaMaquina/registrarMaquina';
   static const String listarAlmacenes = '/gasolinaMaquina/lst-almacenes';
   static const String listarMaquinaMontacarga = '/gasolinaMaquina/lst-maqmontacarga';
-  static const String listarBidonesXMaquina = '/gasolinaMaquina/lst-bidonesxMaquina';
+  
 
   // Endpoints para la gestión de depósitos de cheques
   static const String deplstEmpresas = '/deposito-cheque/lst-empresas';

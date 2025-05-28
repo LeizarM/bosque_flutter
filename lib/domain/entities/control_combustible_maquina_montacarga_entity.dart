@@ -4,6 +4,8 @@ class ControlCombustibleMaquinaMontacargaEntity {
     final int idMaquinaVehiculoDestino;
     final int codSucursalMaqVehiOrigen;
     final int codSucursalMaqVehiDestino;
+    final String codigoOrigen;
+    final String codigoDestino;
     final DateTime fecha;
     final double litrosIngreso;
     final double litrosSalida;
@@ -24,6 +26,8 @@ class ControlCombustibleMaquinaMontacargaEntity {
         required this.idMaquinaVehiculoDestino,
         required this.codSucursalMaqVehiOrigen,
         required this.codSucursalMaqVehiDestino,
+        required this.codigoOrigen,
+        required this.codigoDestino,
         required this.fecha,
         required this.litrosIngreso,
         required this.litrosSalida,
