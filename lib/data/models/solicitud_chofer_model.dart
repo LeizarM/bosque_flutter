@@ -20,7 +20,7 @@ class SolicitudChoferModel {
   final String cargo;
   final int estado;
   final int idCocheSol;
-  final int idEs;
+  final int idES;
   final int requiereChofer;
   final int audUsuario;
   final String fechaSolicitudCad;
@@ -36,7 +36,7 @@ class SolicitudChoferModel {
     required this.cargo,
     required this.estado,
     required this.idCocheSol,
-    required this.idEs,
+    required this.idES,
     required this.requiereChofer,
     required this.audUsuario,
     required this.fechaSolicitudCad,
@@ -47,20 +47,22 @@ class SolicitudChoferModel {
 
   factory SolicitudChoferModel.fromJson(Map<String, dynamic> json) =>
       SolicitudChoferModel(
-        idSolicitud: json["idSolicitud"],
-        fechaSolicitud: DateTime.parse(json["fechaSolicitud"]),
-        motivo: json["motivo"],
-        codEmpSoli: json["codEmpSoli"],
-        cargo: json["cargo"],
-        estado: json["estado"],
-        idCocheSol: json["idCocheSol"],
-        idEs: json["idES"],
-        requiereChofer: json["requiereChofer"],
-        audUsuario: json["audUsuario"],
-        fechaSolicitudCad: json["fechaSolicitudCad"],
-        estadoCad: json["estadoCad"],
-        codSucursal: json["codSucursal"],
-        coche: json["coche"],
+        idSolicitud: json["idSolicitud"] ?? 0,
+        fechaSolicitud: json["fechaSolicitud"] != null 
+            ? DateTime.parse(json["fechaSolicitud"]) 
+            : DateTime.now(),
+        motivo: json["motivo"] ?? '',
+        codEmpSoli: json["codEmpSoli"] ?? 0,
+        cargo: json["cargo"] ?? '',
+        estado: json["estado"] ?? 0,
+        idCocheSol: json["idCocheSol"] ?? 0,
+        idES: json["idES"] ?? 0,
+        requiereChofer: json["requiereChofer"] ?? 0,
+        audUsuario: json["audUsuario"] ?? 0,
+        fechaSolicitudCad: json["fechaSolicitudCad"] ?? '',
+        estadoCad: json["estadoCad"] ?? '',
+        codSucursal: json["codSucursal"] ?? 0,
+        coche: json["coche"] ?? '',
       );
 
   Map<String, dynamic> toJson() => {
@@ -71,7 +73,7 @@ class SolicitudChoferModel {
     "cargo": cargo,
     "estado": estado,
     "idCocheSol": idCocheSol,
-    "idES": idEs,
+    "idES": idES,
     "requiereChofer": requiereChofer,
     "audUsuario": audUsuario,
     "fechaSolicitudCad": fechaSolicitudCad,
@@ -89,7 +91,7 @@ class SolicitudChoferModel {
     cargo: cargo,
     estado: estado,
     idCocheSol: idCocheSol,
-    idEs: idEs,
+    idES: idES,
     requiereChofer: requiereChofer,
     audUsuario: audUsuario,
     fechaSolicitudCad: fechaSolicitudCad,
@@ -108,7 +110,7 @@ class SolicitudChoferModel {
         cargo: entity.cargo,
         estado: entity.estado,
         idCocheSol: entity.idCocheSol,
-        idEs: entity.idEs,
+        idES: entity.idES,
         requiereChofer: entity.requiereChofer,
         audUsuario: entity.audUsuario,
         fechaSolicitudCad: entity.fechaSolicitudCad,

@@ -9,13 +9,13 @@ String tipoSolicitudModelToJson(TipoSolicitudModel data) =>
     json.encode(data.toJson());
 
 class TipoSolicitudModel {
-  final int idEs;
+  final int idES;
   final String descripcion;
   final int estado;
   final int audUsuario;
 
   TipoSolicitudModel({
-    required this.idEs,
+    required this.idES,
     required this.descripcion,
     required this.estado,
     required this.audUsuario,
@@ -23,14 +23,14 @@ class TipoSolicitudModel {
 
   factory TipoSolicitudModel.fromJson(Map<String, dynamic> json) =>
       TipoSolicitudModel(
-        idEs: json["idEs"],
-        descripcion: json["descripcion"],
-        estado: json["estado"],
-        audUsuario: json["audUsuario"],
+        idES: json["idES"] ?? 0,
+        descripcion: json["descripcion"] ?? '',
+        estado: json["estado"] ?? 0,
+        audUsuario: json["audUsuario"] ?? 0,
       );
 
   Map<String, dynamic> toJson() => {
-    "idEs": idEs,
+    "idES": idES,
     "descripcion": descripcion,
     "estado": estado,
     "audUsuario": audUsuario,
@@ -38,7 +38,7 @@ class TipoSolicitudModel {
 
   // Método para convertir de Model a Entity
   TipoSolicitudEntity toEntity() => TipoSolicitudEntity(
-    idEs: idEs,
+    idES: idES,
     descripcion: descripcion,
     estado: estado,
     audUsuario: audUsuario,
@@ -47,7 +47,7 @@ class TipoSolicitudModel {
   // Método factory para convertir de Entity a Model
   factory TipoSolicitudModel.fromEntity(TipoSolicitudEntity entity) =>
       TipoSolicitudModel(
-        idEs: entity.idEs,
+        idES: entity.idES,
         descripcion: entity.descripcion,
         estado: entity.estado,
         audUsuario: entity.audUsuario,

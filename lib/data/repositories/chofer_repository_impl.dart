@@ -39,10 +39,10 @@ class ChoferRepositoryImpl implements ChoferRepository {
       if (e.response != null && e.response!.data != null) {
         errorMessage = 'Error del servidor: ${e.response!.statusCode} - ${e.response!.data.toString()}';
       }
-      debugPrint('❌ $errorMessage');
+      debugPrint(errorMessage);
       throw Exception(errorMessage);
     } catch (e) {
-      debugPrint('❌ Error desconocido: ${e.toString()}');
+      debugPrint('Error desconocido: ${e.toString()}');
       throw Exception('Error desconocido: ${e.toString()}');
     }
   }

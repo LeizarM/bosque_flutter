@@ -157,6 +157,49 @@ class UserStateNotifier extends StateNotifier<LoginEntity?> {
     }
   }
 
+
+  Future<String> getCargo() async {
+    // First try to get cargo from state if available
+    if (state?.cargo?.isNotEmpty == true) {
+      return state!.cargo;
+    }
+    
+    // If not in state, try to get from storage
+    final storage = SecureStorage();
+    final userDataJson = await storage.getUserData();
+    if (userDataJson == null) return 'USUARIO SIN CARGO ASIGNADO';
+    
+    try {
+      final userData = jsonDecode(userDataJson);
+      
+      // Check for cargo in different possible locations in JSON
+      String? cargo;
+      
+      // Check in nested data object
+      if (userData['data']?['cargo'] != null) {
+        cargo = userData['data']['cargo'].toString();
+      }
+      // Check directly in userData
+      else if (userData['cargo'] != null) {
+        cargo = userData['cargo'].toString();
+      }
+      // Try to extract from JWT token if present
+      else if (userData['token'] != null) {
+        final token = userData['token'].toString();
+        final parts = token.split('.');
+        if (parts.length > 1) {
+          final payload = base64Url.normalize(parts[1]);
+          final payloadData = jsonDecode(utf8.decode(base64Url.decode(payload)));
+          cargo = payloadData['cargo']?.toString();
+        }
+      }
+      
+      return cargo?.isNotEmpty == true ? cargo! : 'USUARIO SIN CARGO ASIGNADO';
+    } catch (e) {
+      return 'USUARIO SIN CARGO ASIGNADO';
+    }
+  }
+
   Future<String> getTipoUsuario() async {
     // Obtener el tipo de usuario desde el estado
     if (state != null) {
@@ -201,7 +244,7 @@ final usersListProvider = FutureProvider<List<LoginEntity>>((ref) {
 });
 
 // Definimos el provider usando StateNotifierProvider
-final userProvider = StateNotifierProvider<UserStateNotifier, LoginEntity?>((
+               final userProvider = StateNotifierProvider<UserStateNotifier, LoginEntity?>((
   ref,
 ) {
   return UserStateNotifier();

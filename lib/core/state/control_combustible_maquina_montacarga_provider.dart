@@ -128,50 +128,10 @@ class ControlCombustibleMaquinaMontacargaNotifier extends StateNotifier<Registro
     }
   }
   
-  Future<void> cargarMaquinasMontacarga() async {
-    state = state.copyWith(maquinasStatus: FetchStatus.loading);
-    
-    try {
-      final maquinas = await _repository.obtenerMaquinasMontacarga();
-      
-      state = state.copyWith(
-        maquinasStatus: FetchStatus.success,
-        maquinasMontacarga: maquinas,
-      );
-    } catch (e) {
-      state = state.copyWith(
-        maquinasStatus: FetchStatus.error,
-        errorMessage: e.toString(),
-      );
-    }
-  }
   
-  // Método nuevo para cargar bidones por máquina
-  Future<void> cargarBidonesPorMaquina(int idMaquina) async {
-    state = state.copyWith(bidonesStatus: FetchStatus.loading);
-    
-    try {
-      final bidones = await _repository.obtenerBidoenesXMaquina(idMaquina);
-      
-      state = state.copyWith(
-        bidonesStatus: FetchStatus.success,
-        bidones: bidones,
-      );
-    } catch (e) {
-      state = state.copyWith(
-        bidonesStatus: FetchStatus.error,
-        errorMessage: e.toString(),
-      );
-    }
-  }
   
-  Future<void> cargarDatosIniciales() async {
-    // Carga tanto almacenes como máquinas en paralelo
-    await Future.wait([
-      cargarAlmacenes(),
-      cargarMaquinasMontacarga(),
-    ]);
-  }
+  
+  
   
   void resetRegistroStatus() {
     state = state.copyWith(registroStatus: RegistroStatus.initial);

@@ -38,6 +38,14 @@ class AppConstants {
   static const String depActualizarNotaRemision = '/deposito-cheque/registrar-nroTransaccion';
   static const String depRechazarNotaRemision = '/deposito-cheque/rechazar-deposito';
 
+  // Endpoints para el prestamos de vehículos
+  static const String preRegister = '/prestamo-coches/registroSolicitud';
+  static const String preTipoSolicitudes = '/prestamo-coches/tipoSolicitudes';
+  static const String preCoches = '/prestamo-coches/coches';
+  static const String preSolicitudesXEmp = '/prestamo-coches/solicitudes';
+
+
+
 
   //Para cargar permisos de botones por usuario
   static const String ubtnPermisosBotones = '/view/vistaBtn';

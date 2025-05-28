@@ -1,11 +1,11 @@
 class TipoSolicitudEntity {
-    final int idEs;
+    final int idES;
     final String descripcion;
     final int estado;
     final int audUsuario;
 
     TipoSolicitudEntity({
-        required this.idEs,
+        required this.idES,
         required this.descripcion,
         required this.estado,
         required this.audUsuario,

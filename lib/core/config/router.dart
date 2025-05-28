@@ -130,6 +130,12 @@ final routerProvider = Provider<GoRouter>((ref) {
               path: '/dashboard/tdep_DepositoIde/View',
               name: 'tdep_DepositoIdeView',
               builder: (context, state) => const DepositoChequeIdentificarViewScreen(),
+            ),
+            //Para el prestamo de vehiculos
+            GoRoute(
+              path: '/dashboard/tpre_Solicitud/Solicitud',
+              name: 'tpre_Solicitud',
+              builder: (context, state) => const PrestamoDashboardScreen(),
             )
             
           ],
@@ -188,7 +194,11 @@ final routerProvider = Provider<GoRouter>((ref) {
           path: '/tdep_DepositoIde/View',
           redirect: (context, state) => '/dashboard/tdep_DepositoIde/View',
         ),
-
+        // Ruta para prestamo de vehiculos
+        GoRoute(
+          path: '/tpre_Solicitud/Solicitud',
+          redirect: (context, state) => '/dashboard/tpre_Solicitud/Solicitud',
+        ),
 
 
 

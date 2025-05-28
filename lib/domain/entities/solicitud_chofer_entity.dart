@@ -6,7 +6,7 @@ class SolicitudChoferEntity {
     final String cargo;
     final int estado;
     final int idCocheSol;
-    final int idEs;
+    final int idES;
     final int requiereChofer;
     final int audUsuario;
     final String fechaSolicitudCad;
@@ -22,7 +22,7 @@ class SolicitudChoferEntity {
         required this.cargo,
         required this.estado,
         required this.idCocheSol,
-        required this.idEs,
+        required this.idES,
         required this.requiereChofer,
         required this.audUsuario,
         required this.fechaSolicitudCad,
