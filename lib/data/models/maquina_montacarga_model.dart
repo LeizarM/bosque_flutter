@@ -51,7 +51,7 @@ class MaquinaMontacargaModel {
         estado: json["estado"] ?? 0,
         audUsuario: json["audUsuario"] ?? 0,
         nombreSucursal: json["nombreSucursal"] ?? '',
-        maquinaOVehiculo: json["maquinaOVehiculo"] ?? '',
+        maquinaOVehiculo: json["maquinaOVehiculo"] ?? json["maquinaOvehiculo"] ?? '', // Try both possible field names
       );
 
   Map<String, dynamic> toJson() => {

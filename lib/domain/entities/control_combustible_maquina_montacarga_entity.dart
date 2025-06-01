@@ -19,6 +19,11 @@ class ControlCombustibleMaquinaMontacargaEntity {
     final String whsName;
     final String maquina;
     final String nombreCompleto;
+    final String nombreMaquinaOrigen;
+    final String nombreMaquinaDestino;
+    final String nombreSucursal;
+    final DateTime fechaInicio;
+    final DateTime fechaFin;
 
     ControlCombustibleMaquinaMontacargaEntity({
         required this.idCM,
@@ -41,6 +46,11 @@ class ControlCombustibleMaquinaMontacargaEntity {
         required this.whsName,
         required this.maquina,
         required this.nombreCompleto,
+        required this.nombreMaquinaOrigen,
+        required this.nombreMaquinaDestino,
+        required this.nombreSucursal,
+        required this.fechaInicio,
+        required this.fechaFin,
     });
 
 }

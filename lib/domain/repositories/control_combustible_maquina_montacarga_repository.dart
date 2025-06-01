@@ -11,4 +11,6 @@ abstract class ControlCombustibleMaquinaMontacargaRepository {
 
   Future<List<MaquinaMontacargaEntity>> obtenerMaquinasMontacargas();
 
+
+  Future<List<ControlCombustibleMaquinaMontacargaEntity>> lstRptMovBidonesXTipoTransaccion( DateTime fechaInicio, DateTime fechaFin ); 
 }

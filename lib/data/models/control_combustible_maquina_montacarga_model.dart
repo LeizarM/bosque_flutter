@@ -31,6 +31,11 @@ class ControlCombustibleMaquinaMontacargaModel {
   final String whsName;
   final String maquina;
   final String nombreCompleto;
+  final String nombreMaquinaOrigen;
+  final String nombreMaquinaDestino;
+  final String nombreSucursal;
+  final DateTime fechaInicio;
+  final DateTime fechaFin;
 
   ControlCombustibleMaquinaMontacargaModel({
     required this.idCM,
@@ -53,54 +58,67 @@ class ControlCombustibleMaquinaMontacargaModel {
     required this.whsName,
     required this.maquina,
     required this.nombreCompleto,
+    required this.nombreMaquinaOrigen,
+    required this.nombreMaquinaDestino,
+    required this.nombreSucursal,
+    required this.fechaInicio,
+    required this.fechaFin,
   });
 
   factory ControlCombustibleMaquinaMontacargaModel.fromJson(
     Map<String, dynamic> json,
   ) => ControlCombustibleMaquinaMontacargaModel(
-    idCM: json["idCM"],
-    idMaquinaVehiculoOrigen: json["idMaquinaVehiculoOrigen"],
-    idMaquinaVehiculoDestino: json["idMaquinaVehiculoDestino"],
-    codSucursalMaqVehiOrigen: json["codSucursalMaqVehiOrigen"],
-    codSucursalMaqVehiDestino: json["codSucursalMaqVehiDestino"],
+    idCM: json["idCM"] ?? 0,
+    idMaquinaVehiculoOrigen: json["idMaquinaVehiculoOrigen"] ?? 0,
+    idMaquinaVehiculoDestino: json["idMaquinaVehiculoDestino"] ?? 0,
+    codSucursalMaqVehiOrigen: json["codSucursalMaqVehiOrigen"] ?? 0,
+    codSucursalMaqVehiDestino: json["codSucursalMaqVehiDestino"] ?? 0,
     codigoOrigen: json["codigoOrigen"] ?? '',
     codigoDestino: json["codigoDestino"] ?? '',
-    fecha: DateTime.parse(json["fecha"]),
-    litrosIngreso: json["litrosIngreso"]?.toDouble(),
-    litrosSalida: json["litrosSalida"]?.toDouble(),
-    saldoLitros: json["saldoLitros"]?.toDouble(),
-    codEmpleado: json["codEmpleado"],
-    codAlmacen: json["codAlmacen"],
-    obs: json["obs"],
-    tipoTransaccion: json["tipoTransaccion"],
-    audUsuario: json["audUsuario"],
-    whsCode: json["whsCode"],
-    whsName: json["whsName"],
-    maquina: json["maquina"],
-    nombreCompleto: json["nombreCompleto"],
+    fecha: json["fecha"] != null && json["fecha"] != '' ? DateTime.parse(json["fecha"]) : DateTime.now(),
+    litrosIngreso: json["litrosIngreso"]?.toDouble() ?? 0.0,
+    litrosSalida: json["litrosSalida"]?.toDouble() ?? 0.0  ,
+    saldoLitros: json["saldoLitros"]?.toDouble() ?? 0.0,
+    codEmpleado: json["codEmpleado"] ?? 0,
+    codAlmacen: json["codAlmacen"] ?? '',
+    obs: json["obs"] ?? '',
+    tipoTransaccion: json["tipoTransaccion"] ?? '',
+    audUsuario: json["audUsuario"] ?? 0,
+    whsCode: json["whsCode"] ?? '',
+    whsName: json["whsName"] ?? '',
+    maquina: json["maquina"] ?? '',
+    nombreCompleto: json["nombreCompleto"] ?? '',
+    nombreMaquinaOrigen: json["nombreMaquinaOrigen"] ?? '',
+    nombreMaquinaDestino: json["nombreMaquinaDestino"] ?? '',
+    nombreSucursal: json["nombreSucursal"] ?? '',
+    fechaInicio: json["fechaInicio"] != null && json["fechaInicio"] != '' ? DateTime.parse(json["fechaInicio"]) : DateTime.now(),
+    fechaFin: json["fechaFin"] != null && json["fechaFin"] != '' ? DateTime.parse(json["fechaFin"]) : DateTime.now(),
   );
 
   Map<String, dynamic> toJson() => {
-    "idCM": idCM,
     "idMaquinaVehiculoOrigen": idMaquinaVehiculoOrigen,
-    "idMaquinaVehiculoDestino": idMaquinaVehiculoDestino,
-    "codSucursalMaqVehiOrigen": codSucursalMaqVehiOrigen,
-    "codSucursalMaqVehiDestino": codSucursalMaqVehiDestino,
-    "codigoOrigen": codigoOrigen,
-    "codigoDestino": codigoDestino,
+    "idMaquinaVehiculoDestino": idMaquinaVehiculoDestino == 0 ? null : idMaquinaVehiculoDestino,
+    "codSucursalMaqVehiOrigen": codSucursalMaqVehiOrigen == 0 ? null : codSucursalMaqVehiOrigen,
+    "codSucursalMaqVehiDestino": codSucursalMaqVehiDestino == 0 ? null : codSucursalMaqVehiDestino,
+    "codigoOrigen": codigoOrigen.isEmpty ? null : codigoOrigen,
+    "codigoDestino": codigoDestino.isEmpty ? null : codigoDestino,
     "fecha": fecha.toIso8601String(),
     "litrosIngreso": litrosIngreso,
     "litrosSalida": litrosSalida,
-    "saldoLitros": saldoLitros,
     "codEmpleado": codEmpleado,
     "codAlmacen": codAlmacen,
     "obs": obs,
-    "tipoTransaccion": tipoTransaccion,
     "audUsuario": audUsuario,
-    "whsCode": whsCode,
-    "whsName": whsName,
-    "maquina": maquina,
-    "nombreCompleto": nombreCompleto,
+    "tipoTransaccion": tipoTransaccion.isEmpty ? null : tipoTransaccion,
+    "whsCode": whsCode.isEmpty ? null : whsCode,
+    "whsName": whsName.isEmpty ? null : whsName,
+    "maquina": maquina.isEmpty ? null : maquina,
+    "nombreCompleto": nombreCompleto.isEmpty ? null : nombreCompleto,
+    "nombreMaquinaOrigen": nombreMaquinaOrigen.isEmpty ? null : nombreMaquinaOrigen,
+    "nombreMaquinaDestino": nombreMaquinaDestino.isEmpty ? null : nombreMaquinaDestino,
+    "nombreSucursal": nombreSucursal.isEmpty ? null : nombreSucursal,
+    "fechaInicio": fechaInicio.toIso8601String(),
+    "fechaFin": fechaFin.toIso8601String(),
   };
 
   // Método para convertir de Model a Entity
@@ -126,6 +144,11 @@ class ControlCombustibleMaquinaMontacargaModel {
         whsName: whsName,
         maquina: maquina,
         nombreCompleto: nombreCompleto,
+        nombreMaquinaOrigen: nombreMaquinaOrigen,
+        nombreMaquinaDestino: nombreMaquinaDestino,
+        nombreSucursal: nombreSucursal,
+        fechaInicio: fechaInicio,
+        fechaFin: fechaFin,
       );
 
   // Método factory para convertir de Entity a Model
@@ -153,5 +176,11 @@ class ControlCombustibleMaquinaMontacargaModel {
     whsName: entity.whsName,
     maquina: entity.maquina,
     nombreCompleto: entity.nombreCompleto,
+    nombreMaquinaOrigen: entity.nombreMaquinaOrigen,
+    nombreMaquinaDestino: entity.nombreMaquinaDestino,
+    nombreSucursal: entity.nombreSucursal,
+    fechaInicio: entity.fechaInicio,
+    fechaFin: entity.fechaFin,
+
   );
 }

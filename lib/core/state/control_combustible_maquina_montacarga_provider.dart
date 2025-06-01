@@ -2,6 +2,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:bosque_flutter/data/repositories/control_combustible_maquina_montacarga_impl.dart';
 import 'package:bosque_flutter/domain/entities/control_combustible_maquina_montacarga_entity.dart';
+import 'package:bosque_flutter/domain/entities/maquina_montacarga_entity.dart';
 import 'package:bosque_flutter/domain/repositories/control_combustible_maquina_montacarga_repository.dart';
 
 enum RegistroStatus {
@@ -22,42 +23,50 @@ class RegistroState {
   final RegistroStatus registroStatus;
   final FetchStatus almacenesStatus;
   final FetchStatus maquinasStatus;
-  final FetchStatus bidonesStatus; // Nuevo estado para bidones
+  final FetchStatus bidonesStatus;
+  final FetchStatus reporteStatus; // Nuevo estado para el reporte
   final String? errorMessage;
   final List<ControlCombustibleMaquinaMontacargaEntity> almacenes;
-  final List<ControlCombustibleMaquinaMontacargaEntity> maquinasMontacarga;
-  final List<ControlCombustibleMaquinaMontacargaEntity> bidones; // Nueva lista para bidones
+  final List<MaquinaMontacargaEntity> maquinasMontacarga;
+  final List<ControlCombustibleMaquinaMontacargaEntity> bidones;
+  final List<ControlCombustibleMaquinaMontacargaEntity> reporteMovimientos; // Nueva lista para el reporte
   
   RegistroState({
     required this.registroStatus,
     required this.almacenesStatus,
     required this.maquinasStatus,
-    required this.bidonesStatus, // Incluir en el constructor
+    required this.bidonesStatus,
+    required this.reporteStatus,
     this.errorMessage,
     required this.almacenes,
     required this.maquinasMontacarga,
-    required this.bidones, // Incluir en el constructor
+    required this.bidones,
+    required this.reporteMovimientos,
   });
   
   RegistroState copyWith({
     RegistroStatus? registroStatus,
     FetchStatus? almacenesStatus,
     FetchStatus? maquinasStatus,
-    FetchStatus? bidonesStatus, // Agregar al método copyWith
+    FetchStatus? bidonesStatus,
+    FetchStatus? reporteStatus,
     String? errorMessage,
     List<ControlCombustibleMaquinaMontacargaEntity>? almacenes,
-    List<ControlCombustibleMaquinaMontacargaEntity>? maquinasMontacarga,
-    List<ControlCombustibleMaquinaMontacargaEntity>? bidones, // Agregar al método copyWith
+    List<MaquinaMontacargaEntity>? maquinasMontacarga,
+    List<ControlCombustibleMaquinaMontacargaEntity>? bidones,
+    List<ControlCombustibleMaquinaMontacargaEntity>? reporteMovimientos,
   }) {
     return RegistroState(
       registroStatus: registroStatus ?? this.registroStatus,
       almacenesStatus: almacenesStatus ?? this.almacenesStatus,
       maquinasStatus: maquinasStatus ?? this.maquinasStatus,
-      bidonesStatus: bidonesStatus ?? this.bidonesStatus, // Incluir en el retorno
+      bidonesStatus: bidonesStatus ?? this.bidonesStatus,
+      reporteStatus: reporteStatus ?? this.reporteStatus,
       errorMessage: errorMessage ?? this.errorMessage,
       almacenes: almacenes ?? this.almacenes,
       maquinasMontacarga: maquinasMontacarga ?? this.maquinasMontacarga,
-      bidones: bidones ?? this.bidones, // Incluir en el retorno
+      bidones: bidones ?? this.bidones,
+      reporteMovimientos: reporteMovimientos ?? this.reporteMovimientos,
     );
   }
   
@@ -65,10 +74,12 @@ class RegistroState {
     registroStatus: RegistroStatus.initial,
     almacenesStatus: FetchStatus.initial,
     maquinasStatus: FetchStatus.initial,
-    bidonesStatus: FetchStatus.initial, // Inicializar estado de bidones
+    bidonesStatus: FetchStatus.initial,
+    reporteStatus: FetchStatus.initial,
     almacenes: [],
     maquinasMontacarga: [],
-    bidones: [], // Inicializar lista de bidones
+    bidones: [],
+    reporteMovimientos: [],
   );
 }
 
@@ -86,7 +97,7 @@ class ControlCombustibleMaquinaMontacargaNotifier extends StateNotifier<Registro
       if (result) {
         state = state.copyWith(
           registroStatus: RegistroStatus.success,
-          errorMessage: null, // Limpiar cualquier mensaje de error previo
+          errorMessage: null,
         );
       } else {
         state = state.copyWith(
@@ -95,18 +106,10 @@ class ControlCombustibleMaquinaMontacargaNotifier extends StateNotifier<Registro
         );
       }
     } catch (e) {
-      // Si el error contiene "400" podría ser que el registro fue exitoso pero el servidor devolvió un error
-      if (e.toString().contains('400')) {
-        state = state.copyWith(
-          registroStatus: RegistroStatus.success,
-          errorMessage: null,
-        );
-      } else {
-        state = state.copyWith(
-          registroStatus: RegistroStatus.error,
-          errorMessage: e.toString(),
-        );
-      }
+      state = state.copyWith(
+        registroStatus: RegistroStatus.error,
+        errorMessage: e.toString(),
+      );
     }
   }
   
@@ -128,10 +131,42 @@ class ControlCombustibleMaquinaMontacargaNotifier extends StateNotifier<Registro
     }
   }
   
+  Future<void> cargarMaquinasMontacargas() async {
+    state = state.copyWith(maquinasStatus: FetchStatus.loading);
+    
+    try {
+      final maquinas = await _repository.obtenerMaquinasMontacargas();
+      
+      state = state.copyWith(
+        maquinasStatus: FetchStatus.success,
+        maquinasMontacarga: maquinas,
+      );
+    } catch (e) {
+      state = state.copyWith(
+        maquinasStatus: FetchStatus.error,
+        errorMessage: e.toString(),
+      );
+    }
+  }
   
-  
-  
-  
+  Future<void> cargarReporteMovimientos(DateTime fechaInicio, DateTime fechaFin) async {
+    state = state.copyWith(reporteStatus: FetchStatus.loading);
+    
+    try {
+      final reporte = await _repository.lstRptMovBidonesXTipoTransaccion(fechaInicio, fechaFin);
+      
+      state = state.copyWith(
+        reporteStatus: FetchStatus.success,
+        reporteMovimientos: reporte,
+        errorMessage: null,
+      );
+    } catch (e) {
+      state = state.copyWith(
+        reporteStatus: FetchStatus.error,
+        errorMessage: e.toString(),
+      );
+    }
+  }
   
   void resetRegistroStatus() {
     state = state.copyWith(registroStatus: RegistroStatus.initial);
@@ -153,11 +188,16 @@ final almacenesProvider = Provider<List<ControlCombustibleMaquinaMontacargaEntit
   return ref.watch(controlCombustibleMaquinaMontacargaNotifierProvider).almacenes;
 });
 
-final maquinasMontacargaProvider = Provider<List<ControlCombustibleMaquinaMontacargaEntity>>((ref) {
+final maquinasMontacargaProvider = Provider<List<MaquinaMontacargaEntity>>((ref) {
   return ref.watch(controlCombustibleMaquinaMontacargaNotifierProvider).maquinasMontacarga;
 });
 
 // Nuevo provider para acceder directamente a los bidones
 final bidonesMaquinaProvider = Provider<List<ControlCombustibleMaquinaMontacargaEntity>>((ref) {
   return ref.watch(controlCombustibleMaquinaMontacargaNotifierProvider).bidones;
+});
+
+// Nuevo provider para acceder directamente al reporte de movimientos
+final reporteMovimientosProvider = Provider<List<ControlCombustibleMaquinaMontacargaEntity>>((ref) {
+  return ref.watch(controlCombustibleMaquinaMontacargaNotifierProvider).reporteMovimientos;
 });

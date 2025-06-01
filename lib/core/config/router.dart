@@ -105,7 +105,7 @@ final routerProvider = Provider<GoRouter>((ref) {
             GoRoute(
               path: '/dashboard/tgas_ControlCombustibleMaqMont/View',
               name: 'tgas_ControlCombustibleMaqMontView',
-              builder: (context, state) => const ControlCombustibleMaquinaMontaCargaViewScreen(),
+              builder: (context, state) => const ControlCombustibleMainScreen(),
             ),
             //Para registrar los depositos
             GoRoute(

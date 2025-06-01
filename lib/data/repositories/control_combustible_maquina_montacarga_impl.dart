@@ -20,33 +20,52 @@ class ControlCombustibleMaquinaMontacargaImpl
     ControlCombustibleMaquinaMontacargaEntity mb,
   ) async {
     try {
-      // Crear el mapa de datos como lo estás enviando actualmente
+      // Create the data map to send to the backend
       final data = ControlCombustibleMaquinaMontacargaModel.fromEntity(mb);
+      final jsonData = data.toJson();
+      
+      debugPrint('🚀 Sending data to backend: $jsonData');
 
       final response = await _dio.post(
         AppConstants.registrarControlCombustibleMaqMont,
-        data: data.toJson(),
+        data: jsonData,
       );
 
-      return response.statusCode == 200 || response.statusCode == 201;
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        // Check if response indicates success - accept both 200 and 201
+        if (response.data != null && 
+            (response.data['status'] == 200 || response.data['status'] == 201)) {
+          debugPrint('✅ Registration successful');
+          return true;
+        }
+      }
+      
+      debugPrint('❌ Registration failed - Invalid response');
+      return false;
     } on DioException catch (e) {
-      debugPrint('ERROR: ${e.type}');
+      debugPrint('❌ DioException during registration:');
+      debugPrint('Error type: ${e.type}');
       debugPrint('URL: ${e.requestOptions.uri}');
-      debugPrint('Método: ${e.requestOptions.method}');
+      debugPrint('Method: ${e.requestOptions.method}');
 
       if (e.response != null) {
-        debugPrint('Código de estado: ${e.response!.statusCode}');
-        debugPrint('Respuesta del servidor: ${e.response!.data}');
+        debugPrint('Status code: ${e.response!.statusCode}');
+        debugPrint('Response data: ${e.response!.data}');
       }
 
       String errorMessage = 'Error de conexión: ${e.message}';
       if (e.response != null && e.response!.data != null) {
-        errorMessage =
-            'Error del servidor: ${e.response!.statusCode} - ${e.response!.data.toString()}';
+        // Try to extract error message from response
+        if (e.response!.data is Map && e.response!.data['message'] != null) {
+          errorMessage = 'Error del servidor: ${e.response!.data['message']}';
+        } else {
+          errorMessage = 'Error del servidor: ${e.response!.statusCode} - ${e.response!.data.toString()}';
+        }
       }
       throw Exception(errorMessage);
     } catch (e) {
-      debugPrint('Error desconocido: $e');
+      debugPrint('❌ Unknown error during registration: $e');
       throw Exception('Error desconocido: ${e.toString()}');
     }
   }
@@ -82,7 +101,7 @@ class ControlCombustibleMaquinaMontacargaImpl
       }
       throw Exception(errorMessage);
     } catch (e) {
-      throw Exception('Error desconocido: ${e.toString()}');
+      throw Exception('Error desconocido obtenerAlmacenes: ${e.toString()}');
     }
   }
 
@@ -102,14 +121,15 @@ class ControlCombustibleMaquinaMontacargaImpl
                 .map((json) => MaquinaMontacargaModel.fromJson(json))
                 .toList();
 
-        return items.map((model) => model.toEntity()).toList();
+        final entities = items.map((model) => model.toEntity()).toList();
+
+        return entities;
       } else {
         throw Exception(
           'Error al obtener los los montacargas, bidones o maquinas',
         );
       }
     } on DioException catch (e) {
-      // Manejar errores de red o del servidor
       String errorMessage = 'Error de conexión: ${e.message}';
       if (e.response != null && e.response!.data != null) {
         errorMessage =
@@ -121,5 +141,50 @@ class ControlCombustibleMaquinaMontacargaImpl
         'Error desconocido en obtenerMaquinasMontacargas: ${e.toString()}',
       );
     }
+  }
+  
+  @override
+  Future<List<ControlCombustibleMaquinaMontacargaEntity>> lstRptMovBidonesXTipoTransaccion(DateTime fechaInicio, DateTime fechaFin) async {
+    
+    final data = {
+      'fechaInicio': DateFormat('yyyy-MM-dd').format(fechaInicio),
+      'fechaFin': DateFormat('yyyy-MM-dd').format(fechaFin),
+    };
+
+    try {
+      final response = await _dio.post(
+        AppConstants.listarBidones,
+        data: data,
+      );
+
+      if (response.statusCode == 200 && response.data != null) {
+        final data = response.data['data'] ?? [];
+
+        final items =
+            (data as List<dynamic>)
+                .map((json) => ControlCombustibleMaquinaMontacargaModel.fromJson(json))
+                .toList();
+
+        final entities = items.map((model) => model.toEntity()).toList();
+
+        return entities;
+      } else {
+        throw Exception(
+          'Error al obtener los movimientos de los bidones por tipo de transacción',
+        );
+      }
+    } on DioException catch (e) {
+      String errorMessage = 'Error de conexión: ${e.message}';
+      if (e.response != null && e.response!.data != null) {
+        errorMessage =
+            'Error del servidor: ${e.response!.statusCode} - ${e.response!.data.toString()}';
+      }
+      throw Exception(errorMessage);
+    } catch (e) {
+      throw Exception(
+        'Error desconocido en lstRptMovBidonesXTipoTransaccion: ${e.toString()}',
+      );
+    }
+
   }
 }
