@@ -51,6 +51,7 @@ class ControlCombustibleMaquinaMontacargaEntity {
         required this.nombreSucursal,
         required this.fechaInicio,
         required this.fechaFin,
+
     });
 
 }

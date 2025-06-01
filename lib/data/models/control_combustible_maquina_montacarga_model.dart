@@ -36,6 +36,7 @@ class ControlCombustibleMaquinaMontacargaModel {
   final String nombreSucursal;
   final DateTime fechaInicio;
   final DateTime fechaFin;
+  
 
   ControlCombustibleMaquinaMontacargaModel({
     required this.idCM,
@@ -63,6 +64,7 @@ class ControlCombustibleMaquinaMontacargaModel {
     required this.nombreSucursal,
     required this.fechaInicio,
     required this.fechaFin,
+    
   });
 
   factory ControlCombustibleMaquinaMontacargaModel.fromJson(

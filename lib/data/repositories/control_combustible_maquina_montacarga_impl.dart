@@ -187,4 +187,85 @@ class ControlCombustibleMaquinaMontacargaImpl
     }
 
   }
+  
+  @override
+  Future<List<ControlCombustibleMaquinaMontacargaEntity>> lstBidonesXSucursal() async {
+    try {
+      final response = await _dio.post(
+        AppConstants.listarBidonesXSucursales,
+        data: {},
+      );
+
+      if (response.statusCode == 200 && response.data != null) {
+        final data = response.data['data'] ?? [];
+
+        final items =
+            (data as List<dynamic>)
+                .map((json) => ControlCombustibleMaquinaMontacargaModel.fromJson(json))
+                .toList();
+
+        final entities = items.map((model) => model.toEntity()).toList();
+
+        return entities;
+      } else {
+        throw Exception(
+          'Error al obtener los movimientos de los bidones por sucursal',
+        );
+      }
+    } on DioException catch (e) {
+      String errorMessage = 'Error de conexión: ${e.message}';
+      if (e.response != null && e.response!.data != null) {
+        errorMessage =
+            'Error del servidor: ${e.response!.statusCode} - ${e.response!.data.toString()}';
+      }
+      throw Exception(errorMessage);
+    } catch (e) {
+      throw Exception(
+        'Error desconocido en lstBidonesXSucursal: ${e.toString()}',
+      );
+    }
+
+  }
+  
+  @override
+  Future<List<ControlCombustibleMaquinaMontacargaEntity>> lstBidonesUltimosMov() async {
+    
+    try {
+      final response = await _dio.post(
+        AppConstants.listarUltimosMovBidones,
+        data: {},
+      );
+
+      if (response.statusCode == 200 && response.data != null) {
+        final data = response.data['data'] ?? [];
+
+        final items =
+            (data as List<dynamic>)
+                .map((json) => ControlCombustibleMaquinaMontacargaModel.fromJson(json))
+                .toList();
+
+        final entities = items.map((model) => model.toEntity()).toList();
+
+        return entities;
+      } else {
+        throw Exception(
+          'Error al obtener los ultimos movimientos de los bidones',
+        );
+      }
+    } on DioException catch (e) {
+      String errorMessage = 'Error de conexión: ${e.message}';
+      if (e.response != null && e.response!.data != null) {
+        errorMessage =
+            'Error del servidor: ${e.response!.statusCode} - ${e.response!.data.toString()}';
+      }
+      throw Exception(errorMessage);
+    } catch (e) {
+      throw Exception(
+        'Error desconocido en lstBidonesUltimosMov: ${e.toString()}',
+      );
+    }
+
+
+
+  }
 }
