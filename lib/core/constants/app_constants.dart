@@ -48,6 +48,10 @@ class AppConstants {
   static const String preTipoSolicitudes = '/prestamo-coches/tipoSolicitudes';
   static const String preCoches = '/prestamo-coches/coches';
   static const String preSolicitudesXEmp = '/prestamo-coches/solicitudes';
+  static const String preListarSolicitudesPrestamos = '/prestamo-coches/solicitudesPrestamo';
+  static const String preEstados = '/prestamo-coches/estados';
+  static const String preRegistrarPrestamo= '/prestamo-coches/registroPrestamo';
+  static const String preActualizarSolicitud = '/prestamo-coches/actualizarSolicitud';
 
 
 

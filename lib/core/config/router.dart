@@ -136,6 +136,11 @@ final routerProvider = Provider<GoRouter>((ref) {
               path: '/dashboard/tpre_Solicitud/Solicitud',
               name: 'tpre_Solicitud',
               builder: (context, state) => const PrestamoDashboardScreen(),
+            ),
+            GoRoute(
+              path: '/dashboard/tpre_Solicitud/VerSolicitud',
+              name: 'tpre_SolicitudView',
+              builder: (context, state) => const PrestamoViewScreen(),
             )
             
           ],
@@ -198,6 +203,11 @@ final routerProvider = Provider<GoRouter>((ref) {
         GoRoute(
           path: '/tpre_Solicitud/Solicitud',
           redirect: (context, state) => '/dashboard/tpre_Solicitud/Solicitud',
+        ),
+        //Para ver el prestamo de vehiculos
+        GoRoute(
+          path: '/tpre_Solicitud/VerSolicitud',
+          redirect: (context, state) => '/dashboard/tpre_Solicitud/VerSolicitud',
         ),
 
 
