@@ -21,11 +21,15 @@ class PrestamoVehiculosImpl implements PrestamoVehiculosRepository {
    
     final model = SolicitudChoferModel.fromEntity(mb);
 
+    // Crear JSON sin la fecha para que el backend no la procese
+    final Map<String, dynamic> requestData = model.toJson();
+    requestData.remove('fechaSolicitud'); // Remover para que el backend no la modifique
+    requestData.remove('fechaSolicitudCad'); // Remover también la cadena formateada
   
     try {
       final response = await _dio.post(
-        AppConstants.preRegister,
-        data: model.toJson(),
+        AppConstants.preActualizarSolicitud,
+        data: requestData,
       );
 
       return response.statusCode == 200 || response.statusCode == 201;
@@ -86,6 +90,12 @@ class PrestamoVehiculosImpl implements PrestamoVehiculosRepository {
 
       if (response.statusCode == 200 && response.data != null) {
         final data = response.data['data'] ?? [];
+        
+        // Si no hay datos, retornar lista vacía en lugar de error
+        if (data is List && data.isEmpty) {
+          return [];
+        }
+        
         final items =
             (data as List<dynamic>)
                 .map((json) => PrestamoChoferModel.fromJson(json))
@@ -93,7 +103,8 @@ class PrestamoVehiculosImpl implements PrestamoVehiculosRepository {
 
         return items.map((model) => model.toEntity()).toList();
       } else {
-        throw Exception('Error al obtener la solicitudes para prestamos');
+        // En lugar de lanzar excepción, retornar lista vacía para respuestas sin datos
+        return [];
       }
     } on DioException catch (e) {
       // Manejar errores de red o del servidor
@@ -189,6 +200,12 @@ class PrestamoVehiculosImpl implements PrestamoVehiculosRepository {
       
       if (response.statusCode == 200 && response.data != null) {
         final data = response.data['data'] ?? [];
+        
+        // Si no hay datos, retornar lista vacía en lugar de error
+        if (data is List && data.isEmpty) {
+          return [];
+        }
+        
         final items =
             (data as List<dynamic>)
                 .map((json) => SolicitudChoferModel.fromJson(json))
@@ -196,7 +213,8 @@ class PrestamoVehiculosImpl implements PrestamoVehiculosRepository {
 
         return items.map((model) => model.toEntity()).toList();
       } else {
-        throw Exception('Error al obtener la solicitud de coches');
+        // En lugar de lanzar excepción, retornar lista vacía para respuestas sin datos
+        return [];
       }
     } on DioException catch (e) {
       // Manejar errores de red o del servidor

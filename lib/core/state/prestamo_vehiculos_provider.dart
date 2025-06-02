@@ -1,3 +1,4 @@
+import 'package:bosque_flutter/core/state/user_provider.dart';
 import 'package:bosque_flutter/domain/entities/prestamo_chofer_entity.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:bosque_flutter/data/repositories/prestamo_vehiculos_impl.dart';
@@ -83,10 +84,27 @@ class SolicitudesNotifier extends StateNotifier<SolicitudesState> {
         errorMessage: null,
       );
     } catch (e) {
-      state = state.copyWith(
-        status: FetchStatus.error,
-        errorMessage: e.toString(),
-      );
+      // Verificar si es un error de "no hay datos" vs un error real
+      final errorMessage = e.toString().toLowerCase();
+      if (errorMessage.contains('no hay') || 
+          errorMessage.contains('empty') || 
+          errorMessage.contains('sin datos') ||
+          errorMessage.contains('no encontrado') ||
+          errorMessage.contains('no solicitudes') ||
+          errorMessage.contains('obtain solicitudes')) {
+        // Tratar como éxito con lista vacía
+        state = state.copyWith(
+          status: FetchStatus.success,
+          solicitudes: [],
+          errorMessage: null,
+        );
+      } else {
+        // Error real
+        state = state.copyWith(
+          status: FetchStatus.error,
+          errorMessage: e.toString(),
+        );
+      }
     }
   }
 }
@@ -200,10 +218,25 @@ class SolicitudesPrestamosNotifier extends StateNotifier<SolicitudesPrestamosSta
         errorMessage: null,
       );
     } catch (e) {
-      state = state.copyWith(
-        status: FetchStatus.error,
-        errorMessage: e.toString(),
-      );
+      // Verificar si es un error de "no hay datos" vs un error real
+      final errorMessage = e.toString().toLowerCase();
+      if (errorMessage.contains('no hay') || 
+          errorMessage.contains('empty') || 
+          errorMessage.contains('sin datos') ||
+          errorMessage.contains('no encontrado')) {
+        // Tratar como éxito con lista vacía
+        state = state.copyWith(
+          status: FetchStatus.success,
+          solicitudesPrestamos: [],
+          errorMessage: null,
+        );
+      } else {
+        // Error real
+        state = state.copyWith(
+          status: FetchStatus.error,
+          errorMessage: e.toString(),
+        );
+      }
     }
   }
 
@@ -259,12 +292,12 @@ class SolicitudesPrestamosNotifier extends StateNotifier<SolicitudesPrestamosSta
         coche: '',
         estadoDisponibilidad: '',
         requiereChofer: 0,
-        // Usar los campos Aux para enviar los estados como string
-        estadoLateralesEntregaAux: datosEntrega["estadoLateralesEntrega"] ?? '',
-        estadoInteriorEntregaAux: datosEntrega["estadoInteriorEntrega"] ?? '',
-        estadoDelanteraEntregaAux: datosEntrega["estadoDelanteraEntrega"] ?? '',
-        estadoTraseraEntregaAux: datosEntrega["estadoTraseraEntrega"] ?? '',
-        estadoCapoteEntregaAux: datosEntrega["estadoCapoteEntrega"] ?? '',
+        // Enviar los campos Aux con los estados como string para que el backend los procese
+        estadoLateralesEntregaAux: datosEntrega["estadoLateralesEntregaAux"] ?? '',
+        estadoInteriorEntregaAux: datosEntrega["estadoInteriorEntregaAux"] ?? '',
+        estadoDelanteraEntregaAux: datosEntrega["estadoDelanteraEntregaAux"] ?? '',
+        estadoTraseraEntregaAux: datosEntrega["estadoTraseraEntregaAux"] ?? '',
+        estadoCapoteEntregaAux: datosEntrega["estadoCapoteEntregaAux"] ?? '',
         estadoLateralRecepcionAux: '',
         estadoInteriorRecepcionAux: '',
         estadoDelanteraRecepcionAux: '',
@@ -337,6 +370,84 @@ class SolicitudesPrestamosNotifier extends StateNotifier<SolicitudesPrestamosSta
 
       // Usar el mismo método registerPrestamo para la recepción
       final result = await _repository.registerPrestamo(prestamoEntity);
+      
+      if (result) {
+        return true;
+      }
+      
+      return false;
+    } catch (e) {
+      state = state.copyWith(
+        errorMessage: e.toString(),
+      );
+      return false;
+    }
+  }
+
+  Future<bool> aprobarSolicitud(int idSolicitud) async {
+    try {
+      // Obtener el código de usuario para auditoría
+      final userNotifier = UserStateNotifier();
+      final audUsuario = await userNotifier.getCodUsuario();
+      
+      // Crear entity con el estado aprobado (2) sin fecha
+      final solicitudEntity = SolicitudChoferEntity(
+        idSolicitud: idSolicitud,
+        fechaSolicitud: DateTime.now(), // Será ignorado por el backend
+        motivo: '',
+        codEmpSoli: 0,
+        cargo: '',
+        estado: 2, // Estado aprobado
+        idCocheSol: 0,
+        idES: 0,
+        requiereChofer: 0,
+        audUsuario: audUsuario,
+        fechaSolicitudCad: '',
+        estadoCad: '',
+        codSucursal: 0,
+        coche: '',
+      );
+
+      final result = await _repository.actualizarSolicitud(solicitudEntity);
+      
+      if (result) {
+        return true;
+      }
+      
+      return false;
+    } catch (e) {
+      state = state.copyWith(
+        errorMessage: e.toString(),
+      );
+      return false;
+    }
+  }
+
+  Future<bool> rechazarSolicitud(int idSolicitud) async {
+    try {
+      // Obtener el código de usuario para auditoría
+      final userNotifier = UserStateNotifier();
+      final audUsuario = await userNotifier.getCodUsuario();
+      
+      // Crear entity con el estado rechazado (3) sin fecha
+      final solicitudEntity = SolicitudChoferEntity(
+        idSolicitud: idSolicitud,
+        fechaSolicitud: DateTime.now(), // Será ignorado por el backend
+        motivo: '',
+        codEmpSoli: 0,
+        cargo: '',
+        estado: 3, // Estado rechazado
+        idCocheSol: 0,
+        idES: 0,
+        requiereChofer: 0,
+        audUsuario: audUsuario,
+        fechaSolicitudCad: '',
+        estadoCad: '',
+        codSucursal: 0,
+        coche: '',
+      );
+
+      final result = await _repository.actualizarSolicitud(solicitudEntity);
       
       if (result) {
         return true;

@@ -257,6 +257,7 @@ class PrestamoChoferModel {
         coche: entity.coche,
         estadoDisponibilidad: entity.estadoDisponibilidad,
         requiereChofer: entity.requiereChofer,
+        // Asegurar que todos los campos Aux estén incluidos
         estadoLateralesEntregaAux: entity.estadoLateralesEntregaAux,
         estadoInteriorEntregaAux: entity.estadoInteriorEntregaAux,
         estadoDelanteraEntregaAux: entity.estadoDelanteraEntregaAux,

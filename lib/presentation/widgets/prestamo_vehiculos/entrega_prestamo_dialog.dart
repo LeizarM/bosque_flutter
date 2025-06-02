@@ -1,3 +1,4 @@
+import 'package:bosque_flutter/domain/entities/estado_chofer_entity.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:bosque_flutter/core/state/prestamo_vehiculos_provider.dart';
@@ -24,7 +25,7 @@ class _EntregaPrestamoDialogState extends ConsumerState<EntregaPrestamoDialog> {
   List<String> _estadoTrasera = [];
   List<String> _estadoCapote = [];
 
-  List<String> _estadosDisponibles = [];
+  List<EstadoChoferEntity> _estadosDisponibles = []; // Cambiar a entidades completas
   bool _loadingEstados = false;
   String? _errorEstados;
 
@@ -46,7 +47,7 @@ class _EntregaPrestamoDialogState extends ConsumerState<EntregaPrestamoDialog> {
       final repo = ref.read(prestamoVehiculosProvider);
       final estados = await repo.lstEstados();
       setState(() {
-        _estadosDisponibles = estados.map((e) => e.estado).toList();
+        _estadosDisponibles = estados; // Guardar entidades completas
         _loadingEstados = false;
       });
     } catch (e) {
@@ -62,38 +63,35 @@ class _EntregaPrestamoDialogState extends ConsumerState<EntregaPrestamoDialog> {
     final user = ref.read(userProvider);
     if (user == null) return;
 
-    // Validar chofer si es requerido
-    if (widget.solicitud.requiereChofer == 1 && _selectedChofer == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Debe seleccionar un chofer')),
-      );
-      return;
+    // Convertir estados seleccionados a IDs separados por comas
+    String joinEstadosIds(List<String> estadosSeleccionados) {
+      List<String> ids = [];
+      for (String estadoLabel in estadosSeleccionados) {
+        // Buscar el ID correspondiente al label
+        final estado = _estadosDisponibles.firstWhere(
+          (e) => e.estado == estadoLabel,
+          orElse: () => throw Exception('Estado no encontrado: $estadoLabel'),
+        );
+        ids.add(estado.idEst.toString());
+      }
+      return ids.join(',');
     }
 
-    String joinEstados(List<String> estados) => estados.join(', ');
-
     final entrega = {
-      "idPrestamo": widget.solicitud.idPrestamo,
+      "idPrestamo": 0, // Nuevo préstamo
       "idCoche": widget.solicitud.idCoche,
       "idSolicitud": widget.solicitud.idSolicitud,
-      "codSucursal": widget.solicitud.codSucursal,
-      // No enviar fechaEntrega - el backend la calculará automáticamente
-      "codEmpChoferSolicitado": _selectedChofer ?? 0, // Usar chofer seleccionado
+      "codSucursal": user.codSucursal,
+      "codEmpChoferSolicitado": widget.solicitud.requiereChofer == 1 ? _selectedChofer : 0,
       "codEmpEntregadoPor": user.codEmpleado,
       "kilometrajeEntrega": double.tryParse(_kmEntregaController.text) ?? 0.0,
-      "kilometrajeRecepcion": 0.0,
       "nivelCombustibleEntrega": _nivelCombustible.round(),
-      "nivelCombustibleRecepcion": 0,
-      "estadoLateralesEntrega": joinEstados(_estadoLaterales),
-      "estadoInteriorEntrega": joinEstados(_estadoInterior),
-      "estadoDelanteraEntrega": joinEstados(_estadoDelantera),
-      "estadoTraseraEntrega": joinEstados(_estadoTrasera),
-      "estadoCapoteEntrega": joinEstados(_estadoCapote),
-      "estadoLateralRecepcion": "",
-      "estadoInteriorRecepcion": "",
-      "estadoDelanteraRecepcion": "",
-      "estadoTraseraRecepcion": "",
-      "estadoCapoteRecepcion": "",
+      // Enviar IDs de estado en lugar de labels
+      "estadoLateralesEntregaAux": joinEstadosIds(_estadoLaterales),
+      "estadoInteriorEntregaAux": joinEstadosIds(_estadoInterior),
+      "estadoDelanteraEntregaAux": joinEstadosIds(_estadoDelantera),
+      "estadoTraseraEntregaAux": joinEstadosIds(_estadoTrasera),
+      "estadoCapoteEntregaAux": joinEstadosIds(_estadoCapote),
       "audUsuario": user.codUsuario,
     };
 
@@ -124,19 +122,19 @@ class _EntregaPrestamoDialogState extends ConsumerState<EntregaPrestamoDialog> {
                           itemCount: _estadosDisponibles.length,
                           itemBuilder: (context, index) {
                             final estado = _estadosDisponibles[index];
-                            final isSelected = tempSelected.contains(estado);
+                            final isSelected = tempSelected.contains(estado.estado);
                             
                             return CheckboxListTile(
                               value: isSelected,
-                              title: Text(estado),
+                              title: Text(estado.estado),
                               onChanged: (checked) {
                                 setStateDialog(() {
                                   if (checked == true) {
-                                    if (!tempSelected.contains(estado)) {
-                                      tempSelected.add(estado);
+                                    if (!tempSelected.contains(estado.estado)) {
+                                      tempSelected.add(estado.estado);
                                     }
                                   } else {
-                                    tempSelected.remove(estado);
+                                    tempSelected.remove(estado.estado);
                                   }
                                 });
                               },

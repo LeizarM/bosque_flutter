@@ -1,3 +1,4 @@
+import 'package:bosque_flutter/domain/entities/estado_chofer_entity.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:bosque_flutter/core/state/prestamo_vehiculos_provider.dart';
@@ -23,7 +24,7 @@ class _RecepcionPrestamoDialogState extends ConsumerState<RecepcionPrestamoDialo
   List<String> _estadoTrasera = [];
   List<String> _estadoCapote = [];
 
-  List<String> _estadosDisponibles = [];
+  List<EstadoChoferEntity> _estadosDisponibles = []; // Cambiar a entidades completas
   bool _loadingEstados = false;
   String? _errorEstados;
 
@@ -44,7 +45,7 @@ class _RecepcionPrestamoDialogState extends ConsumerState<RecepcionPrestamoDialo
       final repo = ref.read(prestamoVehiculosProvider);
       final estados = await repo.lstEstados();
       setState(() {
-        _estadosDisponibles = estados.map((e) => e.estado).toList();
+        _estadosDisponibles = estados; // Guardar entidades completas
         _loadingEstados = false;
       });
     } catch (e) {
@@ -60,17 +61,30 @@ class _RecepcionPrestamoDialogState extends ConsumerState<RecepcionPrestamoDialo
     final user = ref.read(userProvider);
     if (user == null) return;
 
-    String joinEstados(List<String> estados) => estados.join(', ');
+    // Convertir estados seleccionados a IDs separados por comas
+    String joinEstadosIds(List<String> estadosSeleccionados) {
+      List<String> ids = [];
+      for (String estadoLabel in estadosSeleccionados) {
+        // Buscar el ID correspondiente al label
+        final estado = _estadosDisponibles.firstWhere(
+          (e) => e.estado == estadoLabel,
+          orElse: () => throw Exception('Estado no encontrado: $estadoLabel'),
+        );
+        ids.add(estado.idEst.toString());
+      }
+      return ids.join(',');
+    }
 
     final recepcion = {
       "idPrestamo": widget.solicitud.idPrestamo,
       "kilometrajeRecepcion": double.tryParse(_kmRecepcionController.text) ?? 0.0,
       "nivelCombustibleRecepcion": _nivelCombustible.round(),
-      "estadoLateralRecepcionAux": joinEstados(_estadoLaterales),
-      "estadoInteriorRecepcionAux": joinEstados(_estadoInterior),
-      "estadoDelanteraRecepcionAux": joinEstados(_estadoDelantera),
-      "estadoTraseraRecepcionAux": joinEstados(_estadoTrasera),
-      "estadoCapoteRecepcionAux": joinEstados(_estadoCapote),
+      // Enviar IDs de estado en lugar de labels
+      "estadoLateralRecepcionAux": joinEstadosIds(_estadoLaterales),
+      "estadoInteriorRecepcionAux": joinEstadosIds(_estadoInterior),
+      "estadoDelanteraRecepcionAux": joinEstadosIds(_estadoDelantera),
+      "estadoTraseraRecepcionAux": joinEstadosIds(_estadoTrasera),
+      "estadoCapoteRecepcionAux": joinEstadosIds(_estadoCapote),
       "audUsuario": user.codUsuario,
     };
 
@@ -100,19 +114,19 @@ class _RecepcionPrestamoDialogState extends ConsumerState<RecepcionPrestamoDialo
                           itemCount: _estadosDisponibles.length,
                           itemBuilder: (context, index) {
                             final estado = _estadosDisponibles[index];
-                            final isSelected = tempSelected.contains(estado);
+                            final isSelected = tempSelected.contains(estado.estado);
                             
                             return CheckboxListTile(
                               value: isSelected,
-                              title: Text(estado),
+                              title: Text(estado.estado),
                               onChanged: (checked) {
                                 setStateDialog(() {
                                   if (checked == true) {
-                                    if (!tempSelected.contains(estado)) {
-                                      tempSelected.add(estado);
+                                    if (!tempSelected.contains(estado.estado)) {
+                                      tempSelected.add(estado.estado);
                                     }
                                   } else {
-                                    tempSelected.remove(estado);
+                                    tempSelected.remove(estado.estado);
                                   }
                                 });
                               },

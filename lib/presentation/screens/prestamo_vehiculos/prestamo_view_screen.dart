@@ -229,28 +229,68 @@ class _PrestamoViewScreenState extends ConsumerState<PrestamoViewScreen> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(
-              Icons.inbox_outlined, 
-              size: 64, 
-              color: colorScheme.onSurfaceVariant
+              Icons.assignment_outlined, 
+              size: 80, 
+              color: colorScheme.primary.withOpacity(0.5)
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 24),
             Text(
               _estadoFiltro == 'TODOS' 
                   ? 'No hay solicitudes de préstamos'
-                  : 'No hay solicitudes con estado: $_estadoFiltro',
+                  : 'Sin solicitudes para: $_estadoFiltro',
               style: TextStyle(
-                fontSize: 18, 
-                color: colorScheme.onSurfaceVariant
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Las solicitudes aparecerán aquí cuando haya préstamos pendientes',
-              style: TextStyle(
-                fontSize: 14, 
-                color: colorScheme.onSurfaceVariant.withOpacity(0.7)
+                fontSize: 20, 
+                fontWeight: FontWeight.w600,
+                color: colorScheme.onSurface
               ),
               textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 12),
+            Container(
+              constraints: const BoxConstraints(maxWidth: 300),
+              child: Text(
+                _estadoFiltro == 'TODOS' 
+                    ? 'Actualmente no hay solicitudes de préstamos de vehículos pendientes de gestión. Las nuevas solicitudes aparecerán aquí automáticamente.'
+                    : 'No se encontraron solicitudes con el estado seleccionado. Intente cambiar el filtro para ver otras solicitudes.',
+                style: TextStyle(
+                  fontSize: 14, 
+                  color: colorScheme.onSurfaceVariant.withOpacity(0.8),
+                  height: 1.4,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ),
+            const SizedBox(height: 24),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                ElevatedButton.icon(
+                  onPressed: _cargarSolicitudesPrestamos,
+                  icon: const Icon(Icons.refresh, size: 18),
+                  label: const Text('Actualizar'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: colorScheme.primary,
+                    foregroundColor: colorScheme.onPrimary,
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  ),
+                ),
+                if (_estadoFiltro != 'TODOS') ...[
+                  const SizedBox(width: 12),
+                  OutlinedButton.icon(
+                    onPressed: () {
+                      setState(() {
+                        _estadoFiltro = 'TODOS';
+                      });
+                    },
+                    icon: const Icon(Icons.clear_all, size: 18),
+                    label: const Text('Ver Todas'),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: colorScheme.primary,
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    ),
+                  ),
+                ],
+              ],
             ),
           ],
         ),
@@ -265,18 +305,113 @@ class _PrestamoViewScreenState extends ConsumerState<PrestamoViewScreen> {
         : _buildMobileList(solicitudesFiltradas, colorScheme);
   }
 
-  void _aprobarSolicitud(dynamic solicitud) {
-    // TODO: Implementar lógica de aprobación
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Aprobar solicitud #${solicitud.idSolicitud}')),
+  // Métodos de acción para los botones
+  void _aprobarSolicitud(dynamic solicitud) async {
+    // Mostrar diálogo de confirmación
+    final confirmar = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Confirmar Aprobación'),
+        content: Text('¿Está seguro que desea aprobar la solicitud #${solicitud.idSolicitud}?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancelar'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.green,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Aprobar'),
+          ),
+        ],
+      ),
     );
+
+    if (confirmar == true) {
+      final success = await ref
+          .read(solicitudesPrestamosNotifierProvider.notifier)
+          .aprobarSolicitud(solicitud.idSolicitud);
+
+      if (success) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Solicitud #${solicitud.idSolicitud} aprobada exitosamente'),
+            backgroundColor: Colors.green,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          ),
+        );
+        // Recargar la lista
+        _cargarSolicitudesPrestamos();
+      } else {
+        final state = ref.read(solicitudesPrestamosNotifierProvider);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error al aprobar solicitud: ${state.errorMessage ?? "Error desconocido"}'),
+            backgroundColor: Theme.of(context).colorScheme.error,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          ),
+        );
+      }
+    }
   }
 
-  void _rechazarSolicitud(dynamic solicitud) {
-    // TODO: Implementar lógica de rechazo
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Rechazar solicitud #${solicitud.idSolicitud}')),
+  void _rechazarSolicitud(dynamic solicitud) async {
+    // Mostrar diálogo de confirmación
+    final confirmar = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Confirmar Rechazo'),
+        content: Text('¿Está seguro que desea rechazar la solicitud #${solicitud.idSolicitud}?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancelar'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Rechazar'),
+          ),
+        ],
+      ),
     );
+
+    if (confirmar == true) {
+      final success = await ref
+          .read(solicitudesPrestamosNotifierProvider.notifier)
+          .rechazarSolicitud(solicitud.idSolicitud);
+
+      if (success) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Solicitud #${solicitud.idSolicitud} rechazada exitosamente'),
+            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          ),
+        );
+        // Recargar la lista
+        _cargarSolicitudesPrestamos();
+      } else {
+        final state = ref.read(solicitudesPrestamosNotifierProvider);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error al rechazar solicitud: ${state.errorMessage ?? "Error desconocido"}'),
+            backgroundColor: Theme.of(context).colorScheme.error,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          ),
+        );
+      }
+    }
   }
 
   void _entregarVehiculo(dynamic solicitud) async {
