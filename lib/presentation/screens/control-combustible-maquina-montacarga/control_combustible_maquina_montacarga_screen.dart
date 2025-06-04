@@ -73,10 +73,238 @@ class _ControlCombustibleMaquinaMontacargaScreenState
         backgroundColor: colorScheme.primary,
         foregroundColor: colorScheme.onPrimary,
         elevation: ResponsiveUtilsBosque.isDesktop(context) ? 2 : 4,
+        actions: [
+          IconButton(
+            onPressed: () => _mostrarInstrucciones(context, colorScheme),
+            icon: const Icon(Icons.info_outline),
+            tooltip: 'Ver instrucciones',
+          ),
+        ],
       ),
       body: ResponsiveUtilsBosque.isDesktop(context)
           ? _buildDesktopLayout(context, state, colorScheme)
           : _buildMobileLayout(context, state, colorScheme),
+    );
+  }
+
+  void _mostrarInstrucciones(BuildContext context, ColorScheme colorScheme) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Row(
+            children: [
+              Icon(Icons.info, color: colorScheme.primary),
+              const SizedBox(width: 8),
+              Text(
+                'Instrucciones de Uso',
+                style: TextStyle(
+                  color: colorScheme.primary,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildInstruccionItem(
+                  '1.',
+                  'Traspasos entre un Vehículo a Bidón es un Ingreso',
+                  colorScheme,
+                  Icons.arrow_forward,
+                  Colors.green,
+                ),
+                const SizedBox(height: 12),
+                _buildInstruccionItem(
+                  '2.',
+                  'Traspaso entre bidones es un "Traspaso"',
+                  colorScheme,
+                  Icons.swap_horiz,
+                  Colors.blue,
+                ),
+                const SizedBox(height: 12),
+                _buildInstruccionItem(
+                  '3.',
+                  'Traspaso a una máquina o montacarga es una "Salida"',
+                  colorScheme,
+                  Icons.arrow_back,
+                  Colors.orange,
+                ),
+                const SizedBox(height: 12),
+                _buildInstruccionItem(
+                  '4.',
+                  'Para hacer un traspaso entre un bidón de una sucursal X a una sucursal Y primero se debe hacer o registrar una salida y luego una entrada',
+                  colorScheme,
+                  Icons.location_on,
+                  Colors.purple,
+                ),
+                const SizedBox(height: 12),
+                _buildInstruccionItem(
+                  '5.',
+                  'No existe un traspaso entre Vehículo a montacarga o máquina o viceversa',
+                  colorScheme,
+                  Icons.block,
+                  Colors.red,
+                ),
+                const SizedBox(height: 12),
+                _buildInstruccionItem(
+                  '6.',
+                  'Los bidones pueden transferir a cualquier sucursal',
+                  colorScheme,
+                  Icons.location_city,
+                  Colors.teal,
+                ),
+                const SizedBox(height: 12),
+                _buildInstruccionItem(
+                  '7.',
+                  'Los vehículos solo pueden transferir dentro de la misma sucursal',
+                  colorScheme,
+                  Icons.local_shipping,
+                  Colors.indigo,
+                ),
+                const SizedBox(height: 12),
+                _buildInstruccionItem(
+                  '8.',
+                  'Complete los litros de ingreso y salida según corresponda',
+                  colorScheme,
+                  Icons.local_gas_station,
+                  Colors.brown,
+                ),
+                const SizedBox(height: 16),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: colorScheme.primaryContainer.withOpacity(0.3),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: colorScheme.primary.withOpacity(0.3),
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.lightbulb_outline,
+                        color: colorScheme.primary,
+                        size: 20,
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'Tip: Seleccione primero la máquina origen para habilitar las opciones de destino disponibles.',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: colorScheme.onPrimaryContainer,
+                            fontStyle: FontStyle.italic,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.amber.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: Colors.amber.withOpacity(0.5),
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(
+                        Icons.warning_amber,
+                        color: Colors.amber,
+                        size: 20,
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'Importante: Para traspasos entre sucursales, registre primero una SALIDA en la sucursal origen y luego un INGRESO en la sucursal destino.',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.amber[800],
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: Text(
+                'Entendido',
+                style: TextStyle(
+                  color: colorScheme.primary,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ],
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildInstruccionItem(
+    String numero,
+    String texto,
+    ColorScheme colorScheme,
+    IconData icon,
+    Color iconColor,
+  ) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          width: 24,
+          height: 24,
+          decoration: BoxDecoration(
+            color: iconColor.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: iconColor.withOpacity(0.3)),
+          ),
+          child: Center(
+            child: Text(
+              numero,
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
+                color: iconColor,
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(width: 12),
+        Icon(
+          icon,
+          color: iconColor,
+          size: 20,
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Text(
+            texto,
+            style: TextStyle(
+              fontSize: 14,
+              color: colorScheme.onSurface,
+              height: 1.4,
+            ),
+          ),
+        ),
+      ],
     );
   }
 

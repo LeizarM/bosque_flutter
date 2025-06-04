@@ -1,17 +1,17 @@
 name: bosque_flutter
 description: "Bosque"
 publish_to: 'none'
-version: 1.0.0+1
+version: 1.0.0+3
 
 environment:
   sdk: ^3.7.2
 
 dependencies:
+  cupertino_icons: ^1.0.0
   dio: ^5.8.0+1
   dropdown_search: ^6.0.2
   flutter:
     sdk: flutter
-  flutter_launcher_icons: ^0.14.3
   flutter_map: ^8.1.1
   flutter_riverpod: ^2.6.1
   flutter_secure_storage: ^9.2.4
@@ -33,15 +33,19 @@ dependencies:
   url_launcher: ^6.3.1
 
 dev_dependencies:
+  flutter_native_splash: ^2.4.1
   flutter_lints: ^5.0.0
   flutter_test:
     sdk: flutter
 
-flutter_launcher_icons:
-  android: true
-  ios: true
-  image_path: "assets/icon/logo.png"
-  adaptive_icon_background: "assets/icon/logo.png"
+flutter_native_splash:
+  color: "#ffffff"
+  image: "assets/icon/logo.png"
+  android_12:
+    image: "assets/icon/logo.png"
+    color: "#ffffff"
+    icon_background_color: "#ffffff"
+  web: false
 
 flutter:
   uses-material-design: true
