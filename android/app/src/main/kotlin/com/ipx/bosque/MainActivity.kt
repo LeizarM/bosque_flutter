@@ -1,4 +1,4 @@
-package com.bosque.bo.bosque_flutter
+package com.ipx.bosque
 
 import io.flutter.embedding.android.FlutterActivity
 
