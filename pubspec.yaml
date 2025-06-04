@@ -7,7 +7,6 @@ environment:
   sdk: ^3.7.2
 
 dependencies:
-  
   cupertino_icons: ^1.0.0
   dio: ^5.8.0+1
   dropdown_search: ^6.0.2
@@ -36,18 +35,44 @@ dependencies:
 dev_dependencies:
   change_app_package_name: ^1.5.0
   flutter_lints: ^5.0.0
-  flutter_native_splash: ^2.4.1
+  flutter_launcher_icons: ^0.13.1
   flutter_test:
     sdk: flutter
 
-flutter_native_splash:
-  color: "#ffffff"
-  image: "assets/icon/logo.png"
+# Configuración de iconos para todas las plataformas
+flutter_launcher_icons:
+  android: "launcher_icon"
+  ios: true
+  image_path: "assets/icon/logo.png"
+  min_sdk_android: 21 # Android 5.0
+  
+  # Configuración específica para Android
   android_12:
-    image: "assets/icon/logo.png"
-    color: "#ffffff"
-    icon_background_color: "#ffffff"
-  web: false
+    image_path: "assets/icon/logo.png"
+    adaptive_icon_background: "#ffffff"
+    adaptive_icon_foreground: "assets/icon/logo.png"
+  
+  # Configuración para diferentes tamaños de Android
+  adaptive_icon_background: "#ffffff"
+  adaptive_icon_foreground: "assets/icon/logo.png"
+  
+  # Configuración para web
+  web:
+    generate: true
+    image_path: "assets/icon/logo.png"
+    background_color: "#ffffff"
+    theme_color: "#ffffff"
+  
+  # Configuración para Windows
+  windows:
+    generate: true
+    image_path: "assets/icon/logo.png"
+    icon_size: 48 # min:48, max:256, default: 48
+  
+  # Configuración para macOS
+  macos:
+    generate: true
+    image_path: "assets/icon/logo.png"
 
 flutter:
   uses-material-design: true
