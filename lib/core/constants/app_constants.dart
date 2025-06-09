@@ -32,6 +32,7 @@ class AppConstants {
   static const String listarBidonesXSucursales = '/gasolinaMaquina/lstSaldosBidones';
   static const String listarUltimosMovBidones = '/gasolinaMaquina/lstUltimoMovBidones';
   static const String listarBidonesPendientes = '/gasolinaMaquina/lstBidonesPendientes';
+  static const String listarDetalleBidon = '/gasolinaMaquina/lstDetalleBidon';
   
 
   // Endpoints para la gestión de depósitos de cheques

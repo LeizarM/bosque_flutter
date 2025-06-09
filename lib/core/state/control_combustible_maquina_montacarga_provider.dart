@@ -309,3 +309,9 @@ final listBidonesPendientesProvider = FutureProvider.family<List<ControlCombusti
 final bidonesPendientesProvider = Provider<List<ControlCombustibleMaquinaMontacargaEntity>>((ref) {
   return ref.watch(controlCombustibleMaquinaMontacargaNotifierProvider).bidonesPendientes;
 });
+
+// Provider para listDetalleBidon usando FutureProvider.family
+final listDetalleBidonProvider = FutureProvider.family<List<ControlCombustibleMaquinaMontacargaEntity>, dynamic>((ref, idCM) async {
+  final repo = ref.read(controlCombustibleMaquinaMontacargaProvider);
+  return await repo.listDetalleBidon(idCM);
+});

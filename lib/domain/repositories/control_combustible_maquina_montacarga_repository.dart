@@ -17,4 +17,6 @@ abstract class ControlCombustibleMaquinaMontacargaRepository {
 
   Future<List<ControlCombustibleMaquinaMontacargaEntity>> listBidonesPendientes( int codSucursalMaqVehiDestino );
 
+  Future<List<ControlCombustibleMaquinaMontacargaEntity>> listDetalleBidon( dynamic idCM );
+
 }
