@@ -14,6 +14,7 @@ class ControlCombustibleMaquinaMontacargaEntity {
     final String codAlmacen;
     final String obs;
     final String tipoTransaccion;
+    final int estado;
     final int audUsuario;
     final String whsCode;
     final String whsName;
@@ -41,6 +42,7 @@ class ControlCombustibleMaquinaMontacargaEntity {
         required this.codAlmacen,
         required this.obs,
         required this.tipoTransaccion,
+        required this.estado,
         required this.audUsuario,
         required this.whsCode,
         required this.whsName,

@@ -20,9 +20,11 @@ class CombustibleControlModel {
     final String obs;
     final double litros;
     final String tipoCombustible;
+    final int idCM;
     final int audUsuario;
     final String coche;
     final double kilometrajeAnterior;
+    final int esMenor;
 
     CombustibleControlModel({
         required this.idC,
@@ -38,9 +40,11 @@ class CombustibleControlModel {
         required this.obs,
         required this.litros,
         required this.tipoCombustible,
+        required this.idCM,
         required this.audUsuario,
         required this.coche,
         required this.kilometrajeAnterior,
+        required this.esMenor,
     });
 
     factory CombustibleControlModel.fromJson(Map<String, dynamic> json) => CombustibleControlModel(
@@ -57,9 +61,11 @@ class CombustibleControlModel {
         obs: json["obs"] ?? '',
         litros: (json["litros"] ?? 0).toDouble(),
         tipoCombustible: json["tipoCombustible"] ?? '',
+        idCM: json["idCM"] ?? 0,
         audUsuario: json["audUsuario"] ?? 0,
         coche: json["coche"] ?? '',
         kilometrajeAnterior: (json["kilometrajeAnterior"] ?? 0).toDouble(),
+        esMenor: json["esMenor"] ?? 1,
     );
 
     Map<String, dynamic> toJson() => {
@@ -76,9 +82,11 @@ class CombustibleControlModel {
         "obs": obs,
         "litros": litros,
         "tipoCombustible": tipoCombustible,
+        "idCM": idCM,
         "audUsuario": audUsuario,
         "coche": coche,
         "kilometrajeAnterior": kilometrajeAnterior,
+        "esMenor": esMenor,
     };
 
     //to Entity
@@ -96,9 +104,11 @@ class CombustibleControlModel {
       obs: obs,
       litros: litros,
       tipoCombustible: tipoCombustible,
+      idCM: idCM,
       audUsuario: audUsuario,
       coche: coche,
       kilometrajeAnterior: kilometrajeAnterior,
+      esMenor: esMenor,
     );
 
   static fromEntity(CombustibleControlEntity data) {
@@ -116,9 +126,11 @@ class CombustibleControlModel {
       obs: data.obs,
       litros: data.litros,
       tipoCombustible: data.tipoCombustible,
+      idCM: data.idCM,
       audUsuario: data.audUsuario,
       coche: data.coche,
       kilometrajeAnterior: data.kilometrajeAnterior,
+      esMenor: data.esMenor,
     );
   }
 }

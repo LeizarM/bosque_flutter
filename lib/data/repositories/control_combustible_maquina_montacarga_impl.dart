@@ -24,8 +24,6 @@ class ControlCombustibleMaquinaMontacargaImpl
       final data = ControlCombustibleMaquinaMontacargaModel.fromEntity(mb);
       final jsonData = data.toJson();
       
-      debugPrint('🚀 Sending data to backend: $jsonData');
-
       final response = await _dio.post(
         AppConstants.registrarControlCombustibleMaqMont,
         data: jsonData,
@@ -36,24 +34,12 @@ class ControlCombustibleMaquinaMontacargaImpl
         // Check if response indicates success - accept both 200 and 201
         if (response.data != null && 
             (response.data['status'] == 200 || response.data['status'] == 201)) {
-          debugPrint('✅ Registration successful');
           return true;
         }
       }
       
-      debugPrint('❌ Registration failed - Invalid response');
       return false;
     } on DioException catch (e) {
-      debugPrint('❌ DioException during registration:');
-      debugPrint('Error type: ${e.type}');
-      debugPrint('URL: ${e.requestOptions.uri}');
-      debugPrint('Method: ${e.requestOptions.method}');
-
-      if (e.response != null) {
-        debugPrint('Status code: ${e.response!.statusCode}');
-        debugPrint('Response data: ${e.response!.data}');
-      }
-
       String errorMessage = 'Error de conexión: ${e.message}';
       if (e.response != null && e.response!.data != null) {
         // Try to extract error message from response
@@ -65,7 +51,6 @@ class ControlCombustibleMaquinaMontacargaImpl
       }
       throw Exception(errorMessage);
     } catch (e) {
-      debugPrint('❌ Unknown error during registration: $e');
       throw Exception('Error desconocido: ${e.toString()}');
     }
   }
@@ -267,5 +252,53 @@ class ControlCombustibleMaquinaMontacargaImpl
 
 
 
+  }
+  
+  @override
+  Future<List<ControlCombustibleMaquinaMontacargaEntity>> listBidonesPendientes(int codSucursalMaqVehiDestino) async {
+    final requestData = {
+      'codSucursalMaqVehiDestino': codSucursalMaqVehiDestino,
+    };
+
+    try {
+      final response = await _dio.post(
+        AppConstants.listarBidonesPendientes,
+        data: requestData,
+      );
+
+      // Aceptar tanto 200 como 204. 204 significa que no hay contenido (no hay bidones)
+      if (response.statusCode == 200 || response.statusCode == 204) {
+        // Si es 204 o no hay datos, retornar lista vacía
+        if (response.statusCode == 204 || response.data == null) {
+          return [];
+        }
+        
+        final data = response.data['data'] ?? [];
+
+        final items =
+            (data as List<dynamic>)
+                .map((json) => ControlCombustibleMaquinaMontacargaModel.fromJson(json))
+                .toList();
+
+        final entities = items.map((model) => model.toEntity()).toList();
+
+        return entities;
+      } else {
+        throw Exception(
+          'Error al obtener los bidones pendientes para la sucursal',
+        );
+      }
+    } on DioException catch (e) {
+      String errorMessage = 'Error de conexión: ${e.message}';
+      if (e.response != null && e.response!.data != null) {
+        errorMessage =
+            'Error del servidor: ${e.response!.statusCode} - ${e.response!.data.toString()}';
+      }
+      throw Exception(errorMessage);
+    } catch (e) {
+      throw Exception(
+        'Error desconocido en listBidonesPendientes: ${e.toString()}',
+      );
+    }
   }
 }

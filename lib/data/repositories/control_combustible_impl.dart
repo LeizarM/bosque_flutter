@@ -48,11 +48,14 @@ class ControlCombustibleImpl implements ControlCombustibleRepository {
       // El backend retorna: { message, data: [ ... ], status }
       if (response.statusCode == 200 && response.data != null) {
         final data = response.data['data'] ?? [];
+        
         final items = (data as List<dynamic>)
             .map((json) => CombustibleControlModel.fromJson(json))
             .toList();
-        debugPrint('Coches obtenidos: $items');
-        return items.map((model) => model.toEntity()).toList();
+        
+        final entities = items.map((model) => model.toEntity()).toList();
+        
+        return entities;
       } else {
         throw Exception('Error al obtener los coches');
       }
@@ -83,7 +86,6 @@ class ControlCombustibleImpl implements ControlCombustibleRepository {
         final items = (data as List<dynamic>)
             .map((json) => CombustibleControlModel.fromJson(json))
             .toList();
-        debugPrint('Coches obtenidos: $items');
         return items.map((model) => model.toEntity()).toList();
       } else {
         throw Exception('Error al obtener el kilometraje del coche');
@@ -102,5 +104,36 @@ class ControlCombustibleImpl implements ControlCombustibleRepository {
 
 
 
+  }
+  
+  @override
+  Future<List<CombustibleControlEntity>> listConsumo( double kilometraje, int idCoche ) async {
+    try {
+      final response = await _dio.post(AppConstants.listarObtenerConsumo, data: {
+        'kilometraje': kilometraje,
+        'idCoche': idCoche,
+      });
+
+      // El backend retorna: { message, data: [ ... ], status }
+      if (response.statusCode == 200 && response.data != null) {
+        final data = response.data['data'] ?? [];
+        final items = (data as List<dynamic>)
+            .map((json) => CombustibleControlModel.fromJson(json))
+            .toList();
+        return items.map((model) => model.toEntity()).toList();
+      } else {
+        throw Exception('Error al obtener el recorrido siguiente del coche');
+      }
+    } on DioException catch (e) {
+      // Manejar errores de red o del servidor
+      String errorMessage = 'Error de conexión: ${e.message}';
+      if (e.response != null && e.response!.data != null) {
+        errorMessage =
+            'Error del servidor: ${e.response!.statusCode} - ${e.response!.data.toString()}';
+      }
+      throw Exception(errorMessage);
+    } catch (e) {
+      throw Exception('Error desconocido: ${e.toString()}');
+    }
   }
 }

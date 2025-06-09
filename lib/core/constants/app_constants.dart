@@ -1,6 +1,6 @@
 class AppConstants {
-  static const String baseUrl = 'https://app.esppapel.com:8443';
-  //static const String baseUrl = 'http://192.168.3.107:9223';
+  //static const String baseUrl = 'https://app.esppapel.com:8443';
+  static const String baseUrl = 'http://192.168.3.107:9223';
   
   static const String APP_VERSION = "1.0.0";
 
@@ -19,6 +19,10 @@ class AppConstants {
   static const String registrarCombustibleEndPoint = '/gasolina/registrar-gasolina';
   static const String listarCoches = '/gasolina/lst-coches';
   static const String listarKilometrajeCoches = '/gasolina/lst-kilometraje';
+  static const String listar = '/gasolina/lst-combustibles';
+  static const String listarObtenerConsumo = '/gasolina/obtenerConsumo';
+
+
   
   //Endpoints para la gestion de bidones
   static const String registrarControlCombustibleMaqMont = '/gasolinaMaquina/registrarMaquina';
@@ -27,6 +31,7 @@ class AppConstants {
   static const String listarBidones = '/gasolinaMaquina/lstMovBidones';
   static const String listarBidonesXSucursales = '/gasolinaMaquina/lstSaldosBidones';
   static const String listarUltimosMovBidones = '/gasolinaMaquina/lstUltimoMovBidones';
+  static const String listarBidonesPendientes = '/gasolinaMaquina/lstBidonesPendientes';
   
 
   // Endpoints para la gestión de depósitos de cheques

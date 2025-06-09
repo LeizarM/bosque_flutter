@@ -25,6 +25,7 @@ class ControlCombustibleMaquinaMontacargaModel {
   final int codEmpleado;
   final String codAlmacen;
   final String obs;
+  final int estado;
   final String tipoTransaccion;
   final int audUsuario;
   final String whsCode;
@@ -54,6 +55,7 @@ class ControlCombustibleMaquinaMontacargaModel {
     required this.codAlmacen,
     required this.obs,
     required this.tipoTransaccion,
+    required this.estado,
     required this.audUsuario,
     required this.whsCode,
     required this.whsName,
@@ -85,6 +87,7 @@ class ControlCombustibleMaquinaMontacargaModel {
     codAlmacen: json["codAlmacen"] ?? '',
     obs: json["obs"] ?? '',
     tipoTransaccion: json["tipoTransaccion"] ?? '',
+    estado: json["estado"] ?? 0,
     audUsuario: json["audUsuario"] ?? 0,
     whsCode: json["whsCode"] ?? '',
     whsName: json["whsName"] ?? '',
@@ -110,6 +113,7 @@ class ControlCombustibleMaquinaMontacargaModel {
     "codEmpleado": codEmpleado,
     "codAlmacen": codAlmacen,
     "obs": obs,
+    "estado": estado, 
     "audUsuario": audUsuario,
     "tipoTransaccion": tipoTransaccion.isEmpty ? null : tipoTransaccion,
     "whsCode": whsCode.isEmpty ? null : whsCode,
@@ -141,6 +145,7 @@ class ControlCombustibleMaquinaMontacargaModel {
         codAlmacen: codAlmacen,
         obs: obs,
         tipoTransaccion: tipoTransaccion,
+        estado: estado,
         audUsuario: audUsuario,
         whsCode: whsCode,
         whsName: whsName,
@@ -173,6 +178,7 @@ class ControlCombustibleMaquinaMontacargaModel {
     codAlmacen: entity.codAlmacen,
     obs: entity.obs,
     tipoTransaccion: entity.tipoTransaccion,
+    estado: entity.estado,
     audUsuario: entity.audUsuario,
     whsCode: entity.whsCode,
     whsName: entity.whsName,

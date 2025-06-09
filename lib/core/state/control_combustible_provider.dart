@@ -18,6 +18,11 @@ final combustiblesPorCocheProvider = FutureProvider.family<List<CombustibleContr
   return await repo.getCombustiblesPorCoche(idCoche);
 });
 
+final listConsumoProvider = FutureProvider.family<List<CombustibleControlEntity>, Map<String, dynamic>>((ref, params) async {
+  final repo = ref.read(controlCombustibleRepositoryProvider);
+  return await repo.listConsumo(params['kilometraje'] as double, params['idCoche'] as int);
+});
+
 class ControlCombustibleNotifier extends StateNotifier<AsyncValue<bool>> {
   final ControlCombustibleRepository _repo;
   ControlCombustibleNotifier(this._repo) : super(const AsyncData(false));
@@ -29,6 +34,14 @@ class ControlCombustibleNotifier extends StateNotifier<AsyncValue<bool>> {
       state = AsyncData(result);
     } catch (e, st) {
       state = AsyncError(e, st);
+    }
+  }
+
+  Future<List<CombustibleControlEntity>> getConsumoData(double kilometraje, int idCoche) async {
+    try {
+      return await _repo.listConsumo(kilometraje, idCoche);
+    } catch (e) {
+      throw Exception('Error al obtener datos de consumo: $e');
     }
   }
 }

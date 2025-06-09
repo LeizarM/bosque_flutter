@@ -15,4 +15,6 @@ abstract class ControlCombustibleMaquinaMontacargaRepository {
 
   Future<List<ControlCombustibleMaquinaMontacargaEntity>> lstBidonesUltimosMov( );
 
+  Future<List<ControlCombustibleMaquinaMontacargaEntity>> listBidonesPendientes( int codSucursalMaqVehiDestino );
+
 }

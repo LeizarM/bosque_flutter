@@ -1118,12 +1118,51 @@ class _ActualizacionDepositoDialogState
   Future<void> _seleccionarImagen() async {
     final ImagePicker picker = ImagePicker();
     try {
-      final XFile? imagen = await picker.pickImage(
-        source: ImageSource.gallery,
-        maxWidth: 1800,
-        maxHeight: 1800,
-        imageQuality: 85,
-      );
+      XFile? imagen;
+      if (kIsWeb) {
+        // En web, solo galería
+        imagen = await picker.pickImage(
+          source: ImageSource.gallery,
+          maxWidth: 1800,
+          maxHeight: 1800,
+          imageQuality: 85,
+        );
+      } else {
+        // En móvil, mostrar opción de cámara o galería
+        final contextMenu = await showModalBottomSheet<ImageSource>(
+          context: context,
+          builder: (context) => SafeArea(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                ListTile(
+                  leading: const Icon(Icons.photo_library),
+                  title: const Text('Galería'),
+                  onTap: () => Navigator.pop(context, ImageSource.gallery),
+                ),
+                ListTile(
+                  leading: const Icon(Icons.camera_alt),
+                  title: const Text('Cámara'),
+                  onTap: () => Navigator.pop(context, ImageSource.camera),
+                ),
+                const SizedBox(height: 8),
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Cancelar'),
+                ),
+              ],
+            ),
+          ),
+        );
+        if (contextMenu != null) {
+          imagen = await picker.pickImage(
+            source: contextMenu,
+            maxWidth: 1800,
+            maxHeight: 1800,
+            imageQuality: 85,
+          );
+        }
+      }
 
       if (imagen != null) {
         setState(() {

@@ -59,27 +59,61 @@ class EntregasState {
   }
 }
 
-// Notifier para manejar la lógica de estado de entregas
+// Notifier para manejar la lógica de estado de entregas - OPTIMIZADO
 class EntregasNotifier extends StateNotifier<EntregasState> {
   final EntregasRepository _repository;
-  final SharedPreferences _prefs;
   final UserStateNotifier _userNotifier;
+  SharedPreferences? _prefs; // Nullable para carga lazy
+  bool _prefsInitialized = false;
 
-  EntregasNotifier(this._repository, this._prefs, this._userNotifier) : super(EntregasState()) {
-    _cargarEstadoGuardado();
+  EntregasNotifier(this._repository, this._userNotifier) : super(EntregasState()) {
+    _initializeAsync();
+  }
+
+  // Inicialización asíncrona que no bloquea el UI
+  Future<void> _initializeAsync() async {
+    try {
+      _prefs = await SharedPreferences.getInstance();
+      _prefsInitialized = true;
+      await _cargarEstadoGuardado();
+      debugPrint('✅ EntregasNotifier inicializado correctamente');
+    } catch (e) {
+      debugPrint('❌ Error inicializando EntregasNotifier: $e');
+      _prefsInitialized = false;
+    }
+  }
+
+  // Método helper para asegurar que SharedPreferences esté inicializado
+  Future<void> _ensurePrefsInitialized() async {
+    if (!_prefsInitialized || _prefs == null) {
+      try {
+        _prefs = await SharedPreferences.getInstance();
+        _prefsInitialized = true;
+      } catch (e) {
+        debugPrint('Error inicializando SharedPreferences: $e');
+        _prefsInitialized = false;
+      }
+    }
   }
 
   // Cargar estado guardado de la ruta desde SharedPreferences
   Future<void> _cargarEstadoGuardado() async {
-    final rutaIniciada = _prefs.getBool('ruta_iniciada') ?? false;
-    final fechaInicioStr = _prefs.getString('fecha_inicio');
-    final fechaInicio = fechaInicioStr != null ? DateTime.parse(fechaInicioStr) : null;
+    if (!_prefsInitialized || _prefs == null) return;
     
-    if (rutaIniciada) {
-      state = state.copyWith(
-        rutaIniciada: rutaIniciada,
-        fechaInicio: fechaInicio,
-      );
+    try {
+      final rutaIniciada = _prefs!.getBool('ruta_iniciada') ?? false;
+      final fechaInicioStr = _prefs!.getString('fecha_inicio');
+      final fechaInicio = fechaInicioStr != null ? DateTime.parse(fechaInicioStr) : null;
+      
+      if (rutaIniciada) {
+        state = state.copyWith(
+          rutaIniciada: rutaIniciada,
+          fechaInicio: fechaInicio,
+        );
+        debugPrint('📁 Estado de ruta cargado: iniciada=$rutaIniciada');
+      }
+    } catch (e) {
+      debugPrint('Error cargando estado guardado: $e');
     }
   }
 
@@ -92,7 +126,9 @@ class EntregasNotifier extends StateNotifier<EntregasState> {
         isLoading: false,
         entregas: entregas,
       );
+      debugPrint('📦 Entregas cargadas: ${entregas.length} elementos');
     } catch (e) {
+      debugPrint('❌ Error cargando entregas: $e');
       state = state.copyWith(
         isLoading: false,
         error: e.toString(),
@@ -110,6 +146,8 @@ class EntregasNotifier extends StateNotifier<EntregasState> {
         );
         return;
       }
+
+      debugPrint('🚀 Iniciando ruta de entregas...');
 
       // Obtener posición actual
       final posicion = await _obtenerPosicionActual();
@@ -146,9 +184,17 @@ class EntregasNotifier extends StateNotifier<EntregasState> {
         audUsuario: codUsuario,
       );
       
-      // Guardar estado en SharedPreferences
-      await _prefs.setBool('ruta_iniciada', true);
-      await _prefs.setString('fecha_inicio', ahora.toIso8601String());
+      // Guardar estado en SharedPreferences (solo si está disponible)
+      await _ensurePrefsInitialized();
+      if (_prefsInitialized && _prefs != null) {
+        try {
+          await _prefs!.setBool('ruta_iniciada', true);
+          await _prefs!.setString('fecha_inicio', ahora.toIso8601String());
+          debugPrint('💾 Estado de ruta guardado en SharedPreferences');
+        } catch (e) {
+          debugPrint('⚠️ Error guardando en SharedPreferences: $e');
+        }
+      }
       
       // Actualizar estado
       state = state.copyWith(
@@ -157,7 +203,10 @@ class EntregasNotifier extends StateNotifier<EntregasState> {
         posicionInicial: posicion,
         error: null,
       );
+      
+      debugPrint('✅ Ruta iniciada correctamente');
     } catch (e) {
+      debugPrint('❌ Error iniciando ruta: $e');
       state = state.copyWith(
         error: e.toString(),
       );
@@ -167,6 +216,8 @@ class EntregasNotifier extends StateNotifier<EntregasState> {
   // Finalizar la ruta de entregas
   Future<void> finalizarRuta() async {
     try {
+      debugPrint('🏁 Finalizando ruta de entregas...');
+      
       // Obtener posición actual
       final posicion = await _obtenerPosicionActual();
       final ahora = DateTime.now();
@@ -202,17 +253,22 @@ class EntregasNotifier extends StateNotifier<EntregasState> {
         audUsuario: codUsuario,
       );
       
-      // NO intentamos sincronizar aquí - esto está causando el error
-      // Simplemente finalizamos la ruta sin intentar sincronizar
-      
-      // Guardar estado en SharedPreferences
-      await _prefs.setBool('ruta_iniciada', false);
-      await _prefs.setString('fecha_fin', ahora.toIso8601String());
+      // Guardar estado en SharedPreferences (solo si está disponible)
+      await _ensurePrefsInitialized();
+      if (_prefsInitialized && _prefs != null) {
+        try {
+          await _prefs!.setBool('ruta_iniciada', false);
+          await _prefs!.setString('fecha_fin', ahora.toIso8601String());
+          debugPrint('💾 Estado de ruta finalizada guardado');
+        } catch (e) {
+          debugPrint('⚠️ Error guardando fin de ruta: $e');
+        }
+      }
       
       // Cargar nuevamente las entregas para refrescar el estado
       final entregas = await _repository.getEntregas(codEmpleado);
       
-      // Actualizar estado - simplemente finalizamos la ruta sin preocuparnos por la sincronización
+      // Actualizar estado
       state = state.copyWith(
         rutaIniciada: false,
         fechaFin: ahora,
@@ -223,7 +279,10 @@ class EntregasNotifier extends StateNotifier<EntregasState> {
               ? 'Hubo un problema al registrar el fin de entregas'
               : null,
       );
+      
+      debugPrint('✅ Ruta finalizada correctamente');
     } catch (e) {
+      debugPrint('❌ Error finalizando ruta: $e');
       state = state.copyWith(
         sincronizacionEnProceso: false,
         error: e.toString(),
@@ -240,6 +299,8 @@ class EntregasNotifier extends StateNotifier<EntregasState> {
         );
         return;
       }
+
+      debugPrint('📍 Marcando entrega completada: ID=$idEntrega');
 
       // Obtener posición actual
       final posicion = await _obtenerPosicionActual();
@@ -275,7 +336,6 @@ class EntregasNotifier extends StateNotifier<EntregasState> {
       
       // Marcar la entrega en el estado como en proceso de sincronización
       state = state.copyWith(sincronizacionEnProceso: true);
-      
       
       try {
         // Llamar al método que marca todo el documento de una vez
@@ -314,23 +374,23 @@ class EntregasNotifier extends StateNotifier<EntregasState> {
             error: null,
             sincronizacionEnProceso: false,
           );
-          debugPrint('Entrega marcada exitosamente');
+          debugPrint('✅ Entrega marcada exitosamente');
         } else {
-          debugPrint('Error: No se pudo marcar el documento como entregado');
+          debugPrint('❌ Error: No se pudo marcar el documento como entregado');
           state = state.copyWith(
             error: 'No se pudo marcar el documento como entregado. Intente nuevamente.',
             sincronizacionEnProceso: false,
           );
         }
       } catch (repoError) {
-        debugPrint('Error en la comunicación con el repositorio: ${repoError.toString()}');
+        debugPrint('❌ Error en la comunicación con el repositorio: ${repoError.toString()}');
         state = state.copyWith(
           error: 'Error de comunicación: ${repoError.toString()}',
           sincronizacionEnProceso: false,
         );
       }
     } catch (e) {
-      debugPrint('Error en marcarEntregaCompletada: ${e.toString()}');
+      debugPrint('❌ Error en marcarEntregaCompletada: ${e.toString()}');
       state = state.copyWith(
         error: e.toString(),
         sincronizacionEnProceso: false,
@@ -347,7 +407,9 @@ class EntregasNotifier extends StateNotifier<EntregasState> {
         isLoading: false,
         historialRuta: historialRuta,
       );
+      debugPrint('📚 Historial de ruta cargado: ${historialRuta.length} elementos');
     } catch (e) {
+      debugPrint('❌ Error cargando historial: $e');
       state = state.copyWith(
         isLoading: false,
         error: e.toString(),
@@ -356,7 +418,7 @@ class EntregasNotifier extends StateNotifier<EntregasState> {
   }
 
   // Ver extracto de rutas de choferes entre fechas osea sus rutas
-  Future<void> cargarExtractoChoferes( DateTime fechaInicio, DateTime fechaFin ) async {
+  Future<void> cargarExtractoChoferes(DateTime fechaInicio, DateTime fechaFin) async {
     debugPrint('⏳ Llamando a cargarExtractoChoferes con fechas: '
       'inicio=${fechaInicio.toIso8601String()}, fin=${fechaFin.toIso8601String()}');
     try {
@@ -381,6 +443,7 @@ class EntregasNotifier extends StateNotifier<EntregasState> {
     try {
       bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
       if (!serviceEnabled) {
+        debugPrint('⚠️ Servicios de localización deshabilitados');
         return false;
       }
 
@@ -388,17 +451,20 @@ class EntregasNotifier extends StateNotifier<EntregasState> {
       if (permission == LocationPermission.denied) {
         permission = await Geolocator.requestPermission();
         if (permission == LocationPermission.denied) {
+          debugPrint('⚠️ Permisos de localización denegados');
           return false;
         }
       }
       
       if (permission == LocationPermission.deniedForever) {
+        debugPrint('⚠️ Permisos de localización denegados permanentemente');
         return false;
       }
 
+      debugPrint('✅ Servicios de localización disponibles');
       return true;
     } catch (e) {
-      debugPrint('Error al verificar servicios de localización: ${e.toString()}');
+      debugPrint('❌ Error al verificar servicios de localización: ${e.toString()}');
       return false;
     }
   }
@@ -411,10 +477,12 @@ class EntregasNotifier extends StateNotifier<EntregasState> {
       throw Exception('Los servicios de ubicación no están disponibles o los permisos fueron denegados.');
     }
 
+    debugPrint('📍 Obteniendo posición actual...');
     // Si los servicios están disponibles, obtener la posición actual
-    return await Geolocator.getCurrentPosition();
+    final posicion = await Geolocator.getCurrentPosition();
+    debugPrint('📍 Posición obtenida: ${posicion.latitude}, ${posicion.longitude}');
+    return posicion;
   }
-
 }
 
 // Proveedor para el repositorio de entregas
@@ -422,15 +490,50 @@ final entregasRepositoryProvider = Provider<EntregasRepository>((ref) {
   throw UnimplementedError('Debe ser sobrescrito en el main.dart');
 });
 
-// Proveedor para SharedPreferences
-final sharedPreferencesProvider = Provider<SharedPreferences>((ref) {
-  throw UnimplementedError('Debe ser sobrescrito en el main.dart');
+// Proveedor LAZY para SharedPreferences - se carga cuando se necesita
+final sharedPreferencesProvider = FutureProvider<SharedPreferences>((ref) async {
+  debugPrint('🔄 Inicializando SharedPreferences...');
+  final prefs = await SharedPreferences.getInstance();
+  debugPrint('✅ SharedPreferences inicializado');
+  return prefs;
 });
 
-// Proveedor para el notificador de entregas
+// Proveedor síncrono para acceso rápido a SharedPreferences después de la primera carga
+final sharedPreferencesSyncProvider = StateProvider<SharedPreferences?>((ref) => null);
+
+// Provider que inicializa SharedPreferences en background y actualiza el provider síncrono
+final initSharedPrefsProvider = FutureProvider<void>((ref) async {
+  try {
+    final prefs = await ref.watch(sharedPreferencesProvider.future);
+    ref.read(sharedPreferencesSyncProvider.notifier).state = prefs;
+    debugPrint('✅ SharedPreferences sincronizado');
+  } catch (e) {
+    debugPrint('❌ Error sincronizando SharedPreferences: $e');
+  }
+});
+
+// Proveedor para el notificador de entregas - OPTIMIZADO
 final entregasNotifierProvider = StateNotifierProvider<EntregasNotifier, EntregasState>((ref) {
   final repository = ref.watch(entregasRepositoryProvider);
-  final prefs = ref.watch(sharedPreferencesProvider);
   final userNotifier = ref.watch(userProvider.notifier);
-  return EntregasNotifier(repository, prefs, userNotifier);
+  
+  // Inicializar SharedPreferences en background (no bloquea)
+  ref.read(initSharedPrefsProvider);
+  
+  // Crear el notifier sin esperar SharedPreferences
+  final notifier = EntregasNotifier(repository, userNotifier);
+  
+  debugPrint('🔧 EntregasNotifier creado');
+  return notifier;
+});
+
+// Provider helper para verificar si SharedPreferences está listo
+final isSharedPrefsReadyProvider = Provider<bool>((ref) {
+  final prefsSync = ref.watch(sharedPreferencesSyncProvider);
+  return prefsSync != null;
+});
+
+// Provider helper para obtener SharedPreferences de forma segura
+final safeSharedPreferencesProvider = Provider<SharedPreferences?>((ref) {
+  return ref.watch(sharedPreferencesSyncProvider);
 });

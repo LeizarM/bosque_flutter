@@ -10,4 +10,6 @@ abstract class ControlCombustibleRepository {
   
 
   Future<List<CombustibleControlEntity>> getCombustiblesPorCoche( int idCoche);
+
+  Future<List<CombustibleControlEntity>> listConsumo( double kilometraje, int idCoche );
 }

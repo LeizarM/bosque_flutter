@@ -21,19 +21,22 @@ GoRouter? _router;
 // Proveedor para el router que se crea una sola vez
 final routerProvider = Provider<GoRouter>((ref) {
   final shellNavigatorKey = GlobalKey<NavigatorState>();
-  
+
   // Observar el estado de autenticación sin leer directamente durante redirecciones
   ref.listen(authStateProvider, (_, __) {
     // Solo escuchar cambios, no hacer nada aquí
   });
-  
+
   // Crear el router si no existe
   if (_router == null) {
     _router = GoRouter(
       navigatorKey: _rootNavigatorKey,
-      initialLocation: '/dashboard',
-      debugLogDiagnostics: true, // Habilitar logs de diagnóstico para depuración
-      refreshListenable: GoRouterRefreshStream(ref.read(authStateProvider.notifier).stream),
+      initialLocation: '/login',
+      debugLogDiagnostics:
+          true, // Habilitar logs de diagnóstico para depuración
+      refreshListenable: GoRouterRefreshStream(
+        ref.read(authStateProvider.notifier).stream,
+      ),
       routes: [
         GoRoute(
           path: '/login',
@@ -59,10 +62,11 @@ final routerProvider = Provider<GoRouter>((ref) {
               name: 'ventas',
               builder: (context, state) => const VentasHomeScreen(),
             ),
-            // Entregas 
+            // Entregas
             GoRoute(
               path: '/dashboard/Revision',
-              name: 'revision',  // Cambié el nombre para que coincida mejor con la ruta
+              name:
+                  'revision', // Cambié el nombre para que coincida mejor con la ruta
               builder: (context, state) => const EntregasHomeScreen(),
             ),
             // Nueva ruta para trch_choferEntrega/Revision bajo dashboard
@@ -99,7 +103,9 @@ final routerProvider = Provider<GoRouter>((ref) {
             GoRoute(
               path: '/dashboard/tgas_ControlCombustibleMaqMont/Registro',
               name: 'tgas_ControlCombustibleMaqMont',
-              builder: (context, state) => const ControlCombustibleMaquinaMontacargaScreen(),
+              builder:
+                  (context, state) =>
+                      const ControlCombustibleMaquinaMontacargaScreen(),
             ),
             //Para ver el historial de bidones
             GoRoute(
@@ -123,13 +129,16 @@ final routerProvider = Provider<GoRouter>((ref) {
             GoRoute(
               path: '/dashboard/tdep_DepositoIde/Registro',
               name: 'tdep_DepositoIdeReg',
-              builder: (context, state) => const DepositoChequeIdentificarScreen(),
+              builder:
+                  (context, state) => const DepositoChequeIdentificarScreen(),
             ),
             //para ver depositos sin identificar
             GoRoute(
               path: '/dashboard/tdep_DepositoIde/View',
               name: 'tdep_DepositoIdeView',
-              builder: (context, state) => const DepositoChequeIdentificarViewScreen(),
+              builder:
+                  (context, state) =>
+                      const DepositoChequeIdentificarViewScreen(),
             ),
             //Para el prestamo de vehiculos
             GoRoute(
@@ -141,11 +150,10 @@ final routerProvider = Provider<GoRouter>((ref) {
               path: '/dashboard/tpre_Solicitud/VerSolicitud',
               name: 'tpre_SolicitudView',
               builder: (context, state) => const PrestamoViewScreen(),
-            )
-            
+            ),
           ],
         ),
-        
+
         // En caso de que vengan sin el parámetro
         GoRoute(
           path: '/tven_ventas',
@@ -153,11 +161,13 @@ final routerProvider = Provider<GoRouter>((ref) {
         ),
         GoRoute(
           path: '/trch_choferEntrega',
-          redirect: (context, state) => '/dashboard/trch_choferEntrega/Revision',
+          redirect:
+              (context, state) => '/dashboard/trch_choferEntrega/Revision',
         ),
         GoRoute(
           path: '/trch_choferEntrega/Revision',
-          redirect: (context, state) => '/dashboard/trch_choferEntrega/Revision',
+          redirect:
+              (context, state) => '/dashboard/trch_choferEntrega/Revision',
         ),
         GoRoute(
           path: '/trch_choferEntrega/Resumen',
@@ -169,19 +179,25 @@ final routerProvider = Provider<GoRouter>((ref) {
         ),
         GoRoute(
           path: '/tgas_ControlCombustible/Registro',
-          redirect: (context, state) => '/dashboard/tgas_ControlCombustible/Registro',
+          redirect:
+              (context, state) => '/dashboard/tgas_ControlCombustible/Registro',
         ),
         GoRoute(
           path: '/tgas_ControlCombustible/View',
-          redirect: (context, state) => '/dashboard/tgas_ControlCombustible/View',
+          redirect:
+              (context, state) => '/dashboard/tgas_ControlCombustible/View',
         ),
         GoRoute(
           path: '/tgas_ControlCombustibleMaqMont/Registro',
-          redirect: (context, state) => '/dashboard/tgas_ControlCombustibleMaqMont/Registro',
+          redirect:
+              (context, state) =>
+                  '/dashboard/tgas_ControlCombustibleMaqMont/Registro',
         ),
         GoRoute(
           path: '/tgas_ControlCombustibleMaqMont/View',
-          redirect: (context, state) => '/dashboard/tgas_ControlCombustibleMaqMont/View',
+          redirect:
+              (context, state) =>
+                  '/dashboard/tgas_ControlCombustibleMaqMont/View',
         ),
         GoRoute(
           path: '/tdep_Deposito/Registro',
@@ -207,12 +223,10 @@ final routerProvider = Provider<GoRouter>((ref) {
         //Para ver el prestamo de vehiculos
         GoRoute(
           path: '/tpre_Solicitud/VerSolicitud',
-          redirect: (context, state) => '/dashboard/tpre_Solicitud/VerSolicitud',
+          redirect:
+              (context, state) => '/dashboard/tpre_Solicitud/VerSolicitud',
         ),
 
-
-
-        
         GoRoute(
           path: '/change-password',
           name: 'change-password',
@@ -229,42 +243,43 @@ final routerProvider = Provider<GoRouter>((ref) {
           },
         ),
       ],
-      errorBuilder: (context, state) => Scaffold(
-        appBar: AppBar(
-          title: const Text('Página no encontrada'),
-        ),
-        body: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(Icons.error_outline, size: 48.0, color: Colors.red),
-              const SizedBox(height: 16.0),
-              Text('No se encontró la página: ${state.uri}', 
-                   style: const TextStyle(fontSize: 18.0)),
-              const SizedBox(height: 24.0),
-              ElevatedButton(
-                onPressed: () => context.go('/dashboard'),
-                child: const Text('Volver al dashboard'),
+      errorBuilder:
+          (context, state) => Scaffold(
+            appBar: AppBar(title: const Text('Página no encontrada')),
+            body: Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(
+                    Icons.error_outline,
+                    size: 48.0,
+                    color: Colors.red,
+                  ),
+                  const SizedBox(height: 16.0),
+                  Text(
+                    'No se encontró la página: ${state.uri}',
+                    style: const TextStyle(fontSize: 18.0),
+                  ),
+                  const SizedBox(height: 24.0),
+                  ElevatedButton(
+                    onPressed: () => context.go('/dashboard'),
+                    child: const Text('Volver al dashboard'),
+                  ),
+                ],
               ),
-            ],
+            ),
           ),
-        ),
-      ),
       redirect: (BuildContext context, GoRouterState state) async {
         // Validar usuario y versión usando asyncUserProvider
-        final container = ProviderContainer();
-        final asyncUser = await container.read(asyncUserProvider.future);
+
         final isOnLoginPage = state.uri.toString() == '/login';
-        if (asyncUser == null && !isOnLoginPage) {
+        if (state.fullPath == '/') {
           return '/login';
-        }
-        if (asyncUser != null && isOnLoginPage) {
-          return '/dashboard';
         }
         return null;
       },
     );
-    
+
     // Configurar el callback de error de autenticación para redireccionar
     // Usando una referencia al router
     DioClient.setAuthErrorCallback(() {
@@ -275,23 +290,23 @@ final routerProvider = Provider<GoRouter>((ref) {
       } finally {
         container.dispose();
       }
-      
+
       // Usar el router para navegar
       _router?.go('/login');
     });
-    
+
     // Inicializar el estado de autenticación
-    _initAuthState(ref);
+    //_initAuthState(ref);
   }
-  
+
   return _router!;
 });
 
 // Función para inicializar el estado de autenticación
-void _initAuthState(Ref ref) async {
+/*void _initAuthState(Ref ref) async {
   final secureStorage = SecureStorage();
   final isTokenExpired = await secureStorage.isTokenExpired();
-  
+
   if (!isTokenExpired) {
     // Solo marcar como autenticado si el token es válido
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -305,14 +320,12 @@ void _initAuthState(Ref ref) async {
     });
   }
 }
-
+*/
 // Clase para notificar cambios de estado de autenticación al router
 class GoRouterRefreshStream extends ChangeNotifier {
   GoRouterRefreshStream(Stream<bool> stream) {
     notifyListeners();
-    _subscription = stream.listen(
-      (dynamic _) => notifyListeners(),
-    );
+    _subscription = stream.listen((dynamic _) => notifyListeners());
   }
 
   late final StreamSubscription<dynamic> _subscription;
@@ -330,15 +343,16 @@ class AppRouter {
   static GoRouter getRouter({String? initialToken}) {
     // Create the shell branch
     final shellNavigatorKey = GlobalKey<NavigatorState>();
-    
+
     // Si ya tenemos un router global, usarlo
     if (_router != null) {
       return _router!;
     }
-    
+
     final router = GoRouter(
       initialLocation: initialToken != null ? '/dashboard' : '/login',
-      debugLogDiagnostics: true, // Habilitar logs de diagnóstico para depuración
+      debugLogDiagnostics:
+          true, // Habilitar logs de diagnóstico para depuración
       routes: [
         GoRoute(
           path: '/login',
@@ -377,61 +391,65 @@ class AppRouter {
                 }
                 return null; // No redireccionar si tenemos el objeto
               },
-              
             ),
             // Add more module routes here as needed
           ],
         ),
-        
+
         // En caso de que vengan sin el parámetro
         GoRoute(
           path: '/tven_ventas',
           redirect: (context, state) => '/dashboard/ventas',
         ),
       ],
-      errorBuilder: (context, state) => Scaffold(
-        appBar: AppBar(
-          title: const Text('Página no encontrada'),
-        ),
-        body: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(Icons.error_outline, size: 48.0, color: Colors.red),
-              const SizedBox(height: 16.0),
-              Text('No se encontró la página: ${state.uri}', 
-                   style: const TextStyle(fontSize: 18.0)),
-              const SizedBox(height: 24.0),
-              ElevatedButton(
-                onPressed: () => context.go('/dashboard'),
-                child: const Text('Volver al dashboard'),
+      errorBuilder:
+          (context, state) => Scaffold(
+            appBar: AppBar(title: const Text('Página no encontrada')),
+            body: Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(
+                    Icons.error_outline,
+                    size: 48.0,
+                    color: Colors.red,
+                  ),
+                  const SizedBox(height: 16.0),
+                  Text(
+                    'No se encontró la página: ${state.uri}',
+                    style: const TextStyle(fontSize: 18.0),
+                  ),
+                  const SizedBox(height: 24.0),
+                  ElevatedButton(
+                    onPressed: () => context.go('/dashboard'),
+                    child: const Text('Volver al dashboard'),
+                  ),
+                ],
               ),
-            ],
+            ),
           ),
-        ),
-      ),
       redirect: (BuildContext context, GoRouterState state) async {
         // Verificar si el token está expirado
         final secureStorage = SecureStorage();
         final isTokenExpired = await secureStorage.isTokenExpired();
-        
+
         // Si el token expiró, limpiar datos y redirigir al login
         if (isTokenExpired) {
           debugPrint('🔑 Token expirado detectado en AppRouter.getRouter');
           // Limpiar datos de sesión
           await secureStorage.clearSession();
-          
+
           // Solo redirigir si no estamos ya en el login
           if (state.uri.toString() != '/login') {
             return '/login';
           }
         }
-        
+
         // Usar Riverpod para verificar si hay un usuario logueado
         // Con un container propio para evitar dependencias
         final container = ProviderContainer();
         bool isLoggedIn;
-        
+
         try {
           final user = container.read(userProvider);
           final token = await SecureStorage().getToken();
@@ -450,10 +468,10 @@ class AppRouter {
         return null; // No redirigir si la ruta es correcta
       },
     );
-    
+
     // Guardar referencia global
     _router = router;
-    
+
     return router;
   }
 }

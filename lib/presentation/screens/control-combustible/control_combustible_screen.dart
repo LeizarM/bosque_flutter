@@ -2,7 +2,9 @@ import 'package:bosque_flutter/core/utils/responsive_utils_bosque.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:bosque_flutter/core/state/control_combustible_provider.dart';
+import 'package:bosque_flutter/core/state/control_combustible_maquina_montacarga_provider.dart';
 import 'package:bosque_flutter/domain/entities/control_combustible_entity.dart';
+
 import 'package:bosque_flutter/core/state/user_provider.dart';
 
 
@@ -45,6 +47,7 @@ class _ControlCombustibleScreenState
   int? _selectedCocheId;
   List<Map<String, dynamic>> _coches = [];
   bool _loadingCoches = true;
+  int? _selectedBidonIdCM;
 
   @override
   void initState() {
@@ -60,11 +63,15 @@ class _ControlCombustibleScreenState
       final ids = <int>{};
       final cochesList = coches
           .where((e) => ids.add(e.idCoche)) // solo ids únicos
-          .map((e) => {'id': e.idCoche, 'label': e.coche})
+          .map((e) => {
+                'id': e.idCoche, 
+                'label': e.coche,
+                'codSucursal': e.codSucursalCoche ?? 0,
+              })
           .toList();
+      
       setState(() {
         _coches = cochesList;
-        // Solo asignar si hay coches y el id existe
         _selectedCocheId = _coches.any((c) => c['id'] == _selectedCocheId)
             ? _selectedCocheId
             : (_coches.isNotEmpty ? _coches.first['id'] : null);
@@ -86,52 +93,562 @@ class _ControlCombustibleScreenState
     super.dispose();
   }
 
+  Future<int?> _confirmBidonSelection(dynamic bidon) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          title: Row(
+            children: [
+              Icon(
+                Icons.check_circle_outline,
+                color: Theme.of(context).primaryColor,
+                size: 28,
+              ),
+              const SizedBox(width: 12),
+              const Text('Confirmar selección'),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                '¿Está seguro de que desea seleccionar este bidón?',
+                style: TextStyle(fontSize: 16),
+              ),
+              const SizedBox(height: 16),
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade50,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.grey.shade200),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      bidon.codigoDestino ?? 'Sin código',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text('Fecha: ${_formatDate(bidon.fecha?.toString())}'),
+                    Text('Litros: ${bidon.litrosIngreso ?? 0} L'),
+                    Text('Origen: ${bidon.nombreMaquinaOrigen ?? 'N/A'}'),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.green.shade50,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.green.shade200),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.info_outline,
+                      color: Colors.green.shade700,
+                      size: 20,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Al confirmar, se usará este bidón y se procederá automáticamente con el registro de combustible.',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.green.shade700,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('Cancelar'),
+            ),
+            ElevatedButton.icon(
+              onPressed: () => Navigator.of(context).pop(true),
+              icon: const Icon(Icons.check, size: 18),
+              label: const Text('Confirmar y Registrar'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.green,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 12,
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+
+    // If confirmed, return the bidon ID
+    if (confirmed == true) {
+      return bidon.idCM;
+    }
+    return null;
+  }
+
+  Future<int?> _showBidonSelectionDialog() async {
+    final selectedCoche = _coches.firstWhere(
+      (c) => c['id'] == _selectedCocheId,
+      orElse: () => <String, Object>{'id': 0, 'label': '', 'codSucursal': 1},
+    );
+    
+    final codSucursalMaqVehiDestino = selectedCoche['codSucursal'] as int;
+
+    return showDialog<int?>(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Container(
+            constraints: const BoxConstraints(
+              maxWidth: 600,
+              maxHeight: 700,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Header
+                Container(
+                  padding: const EdgeInsets.all(24),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).primaryColor,
+                    borderRadius: const BorderRadius.only(
+                      topLeft: Radius.circular(20),
+                      topRight: Radius.circular(20),
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.local_gas_station,
+                        color: Colors.white,
+                        size: 28,
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          'Selección de Bidón',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                
+                // Content
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.all(24),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: Colors.orange.shade50,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: Colors.orange.shade200),
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.info_outline,
+                                color: Colors.orange.shade700,
+                                size: 24,
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Text(
+                                  'Debe seleccionar un bidón para justificar su bajo consumo.',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    color: Colors.orange.shade800,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        
+                        const SizedBox(height: 20),
+                        
+                        Text(
+                          'Bidones disponibles para sucursal: $codSucursalMaqVehiDestino',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.grey[600],
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        
+                        const SizedBox(height: 16),
+                        
+                        _BidonListWidget(
+                          codSucursalMaqVehiDestino: codSucursalMaqVehiDestino,
+                          onBidonSelected: _confirmBidonSelection,
+                          buildBidonInfo: _buildBidonInfo,
+                          formatDate: _formatDate,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                
+                // Footer
+                Container(
+                  padding: const EdgeInsets.all(24),
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade50,
+                    borderRadius: const BorderRadius.only(
+                      bottomLeft: Radius.circular(20),
+                      bottomRight: Radius.circular(20),
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      TextButton.icon(
+                        onPressed: () => Navigator.of(context).pop(null),
+                        icon: const Icon(Icons.close),
+                        label: const Text('Cancelar'),
+                        style: TextButton.styleFrom(
+                          foregroundColor: Colors.grey[600],
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 24,
+                            vertical: 12,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildBidonInfo(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 4),
+      child: Row(
+        children: [
+          Text(
+            '$label: ',
+            style: TextStyle(
+              fontSize: 13,
+              color: Colors.grey[600],
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          Expanded(
+            child: Text(
+              value,
+              style: const TextStyle(
+                fontSize: 13,
+                color: Colors.black87,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _formatDate(String? dateString) {
+    if (dateString == null || dateString.isEmpty || dateString == 'N/A') {
+      return 'N/A';
+    }
+    
+    try {
+      final DateTime date = DateTime.parse(dateString);
+      return '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}';
+    } catch (e) {
+      return dateString; // Return original if parsing fails
+    }
+  }
+
   void _registrarCombustible() async {
     if (!_formKey.currentState!.validate() ||
         _selectedFuelType == null ||
         _selectedCocheId == null)
       return;
-    final cocheLabel = (_coches.firstWhere(
-      (c) => c['id'] == _selectedCocheId,
-      orElse: () => <String, Object>{'label': ''},
-    )['label'] ?? '') as String;
-    final codEmpleado = await ref.read(userProvider.notifier).getCodEmpleado();
-    final codUsuario = await ref.read(userProvider.notifier).getCodUsuario();
-    final entity = CombustibleControlEntity(
-      idC: 0,
-      idCoche: _selectedCocheId!,
-      estacionServicio: _estacionController.text,
-      nroFactura: _nroFacturaController.text,
-      importe: double.tryParse(_importeController.text) ?? 0,
-      kilometraje: double.tryParse(_kilometrajeController.text) ?? 0,
-      codEmpleado: codEmpleado,
-      codSucursalCoche: 1, // Debes obtener el id real de la sucursal si aplica
-      obs: _obsController.text,
-      litros: double.tryParse(_litrosController.text) ?? 0,
-      tipoCombustible: _selectedFuelType!.toString().split('.').last,
-      audUsuario: codUsuario,
-      coche: cocheLabel,
+
+    try {
+      // Validar primero si se puede registrar verificando el consumo
+      final kilometraje = double.tryParse(_kilometrajeController.text) ?? 0;
+      final consumoData = await ref.read(listConsumoProvider({
+        'kilometraje': kilometraje,
+        'idCoche': _selectedCocheId!,
+      }).future);
+
+      int selectedIdCM = 0; // Valor por defecto
+
+      // Verificar si hay datos y si esMenor es 1
+      if (consumoData.isNotEmpty) {
+        final primerRegistro = consumoData.first;
+        if (primerRegistro.esMenor == 1) {
+          // Mostrar diálogo para seleccionar bidón
+          final selectedBidonIdCM = await _showBidonSelectionDialog();
+          
+          if (selectedBidonIdCM == null) {
+            // Usuario canceló la selección
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Debe seleccionar un bidón para continuar con el registro'),
+                  backgroundColor: Colors.orange,
+                ),
+              );
+            }
+            return;
+          }
+          
+          selectedIdCM = selectedBidonIdCM;
+          
+          // IMPORTANTE: Proceder inmediatamente con el registro
+          await _proceedWithRegistration(selectedIdCM, consumoData);
+          return;
+        }
+      }
+
+      // Si no necesita bidón, proceder directamente con el registro
+      await _proceedWithRegistration(selectedIdCM, consumoData);
       
-      fecha: DateTime.now(), //esto es solo para poner un dato
-      diferencia: 0,
-      kilometrajeAnterior: 0,
-    );
-    await ref
-        .read(controlCombustibleProvider.notifier)
-        .createControlCombustible(entity);
-    if (mounted) {
-      final result = ref.read(controlCombustibleProvider);
-      if (result is AsyncData && result.value == true) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('Registro exitoso')));
-        _formKey.currentState!.reset();
-      } else if (result is AsyncError) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Error: ${result.error}')));
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error al validar: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
       }
     }
+  }
+
+  Future<void> _proceedWithRegistration(int selectedIdCM, List<dynamic> consumoData) async {
+    if (!mounted) return;
+    
+    try {
+      // Mostrar mensaje de procesamiento
+      ScaffoldMessenger.of(context).clearSnackBars();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                ),
+              ),
+              const SizedBox(width: 16),
+              const Text('Registrando combustible...'),
+            ],
+          ),
+          backgroundColor: Colors.blue,
+          duration: const Duration(seconds: 5),
+        ),
+      );
+
+      // Preparar datos para el registro
+      final selectedCoche = _coches.firstWhere(
+        (c) => c['id'] == _selectedCocheId,
+        orElse: () => <String, Object>{'label': '', 'codSucursal': 1},
+      );
+      final cocheLabel = (selectedCoche['label'] ?? '') as String;
+      final codSucursalCoche = (selectedCoche['codSucursal'] ?? 1) as int;
+      
+      final codEmpleado = await ref.read(userProvider.notifier).getCodEmpleado();
+      final codUsuario = await ref.read(userProvider.notifier).getCodUsuario();
+      final kilometraje = double.tryParse(_kilometrajeController.text) ?? 0;
+      
+      final entity = CombustibleControlEntity(
+        idC: 0,
+        idCoche: _selectedCocheId!,
+        estacionServicio: _estacionController.text,
+        nroFactura: _nroFacturaController.text,
+        importe: double.tryParse(_importeController.text) ?? 0,
+        kilometraje: kilometraje,
+        codEmpleado: codEmpleado,
+        codSucursalCoche: codSucursalCoche,
+        obs: _obsController.text,
+        litros: double.tryParse(_litrosController.text) ?? 0,
+        tipoCombustible: _selectedFuelType!.toString().split('.').last,
+        audUsuario: codUsuario,
+        coche: cocheLabel,
+        fecha: DateTime.now(),
+        diferencia: 0,
+        kilometrajeAnterior: 0,
+        idCM: selectedIdCM,
+        esMenor: consumoData.isNotEmpty ? consumoData.first.esMenor ?? 0 : 0
+      );
+
+      // Realizar el registro
+      await ref
+          .read(controlCombustibleProvider.notifier)
+          .createControlCombustible(entity);
+      
+      if (!mounted) return;
+      
+      // Verificar el resultado
+      await Future.delayed(const Duration(milliseconds: 500)); // Esperar un poco para que se complete
+      final result = ref.read(controlCombustibleProvider);
+      
+      ScaffoldMessenger.of(context).clearSnackBars();
+      
+      if (result is AsyncData) {
+        if (result.value == true) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Row(
+                children: [
+                  Icon(
+                    Icons.check_circle,
+                    color: Colors.white,
+                    size: 24,
+                  ),
+                  const SizedBox(width: 16),
+                  const Expanded(
+                    child: Text(
+                      'Registro de combustible completado exitosamente',
+                      style: TextStyle(fontWeight: FontWeight.w500),
+                    ),
+                  ),
+                ],
+              ),
+              backgroundColor: Colors.green,
+              duration: const Duration(seconds: 3),
+            ),
+          );
+          
+          // Limpiar el formulario
+          _clearForm();
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Row(
+                children: [
+                  Icon(
+                    Icons.error,
+                    color: Colors.white,
+                    size: 24,
+                  ),
+                  const SizedBox(width: 16),
+                  const Expanded(
+                    child: Text('Error: No se pudo completar el registro'),
+                  ),
+                ],
+              ),
+              backgroundColor: Colors.red,
+              duration: const Duration(seconds: 4),
+            ),
+          );
+        }
+      } else if (result is AsyncError) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                Icon(
+                  Icons.error,
+                  color: Colors.white,
+                  size: 24,
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Text('Error en el registro: ${result.error}'),
+                ),
+              ],
+            ),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 4),
+          ),
+        );
+      } else {
+        // AsyncLoading o estado desconocido
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('El registro está siendo procesado...'),
+            backgroundColor: Colors.orange,
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
+      
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).clearSnackBars();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                Icon(
+                  Icons.error,
+                  color: Colors.white,
+                  size: 24,
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Text('Error durante el registro: $e'),
+                ),
+              ],
+            ),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 4),
+          ),
+        );
+      }
+    }
+  }
+
+  void _clearForm() {
+    _formKey.currentState!.reset();
+    // Limpiar controladores
+    _estacionController.clear();
+    _nroFacturaController.clear();
+    _importeController.clear();
+    _kilometrajeController.clear();
+    _litrosController.clear();
+    _obsController.clear();
+    setState(() {
+      _selectedFuelType = FuelType.gasolina;
+      _selectedCocheId = _coches.isNotEmpty ? _coches.first['id'] : null;
+      _selectedBidonIdCM = null;
+    });
   }
 
   @override
@@ -318,6 +835,232 @@ class _ControlCombustibleScreenState
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _BidonListWidget extends ConsumerWidget {
+  final int codSucursalMaqVehiDestino;
+  final Future<int?> Function(dynamic) onBidonSelected;
+  final Widget Function(String, String) buildBidonInfo;
+  final String Function(String?) formatDate;
+
+  const _BidonListWidget({
+    required this.codSucursalMaqVehiDestino,
+    required this.onBidonSelected,
+    required this.buildBidonInfo,
+    required this.formatDate,
+  });
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return Expanded(
+      child: FutureBuilder<List<dynamic>>(
+        // Crear nueva llamada cada vez - sin caché de estado
+        future: () async {
+          final repo = ref.read(controlCombustibleMaquinaMontacargaProvider);
+          return await repo.listBidonesPendientes(codSucursalMaqVehiDestino);
+        }(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  CircularProgressIndicator(
+                    strokeWidth: 3,
+                    color: Theme.of(context).primaryColor,
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Cargando bidones disponibles...',
+                    style: TextStyle(
+                      color: Colors.grey[600],
+                      fontSize: 14,
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }
+          
+          if (snapshot.hasError) {
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(32),
+                    decoration: BoxDecoration(
+                      color: Colors.red.shade50,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      Icons.error_outline,
+                      size: 64,
+                      color: Colors.red[400],
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  Text(
+                    'Error al cargar bidones',
+                    style: TextStyle(
+                      fontSize: 18,
+                      color: Colors.red[600],
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'No se pudieron cargar los bidones disponibles',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.red[400],
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
+              ),
+            );
+          }
+          
+          final bidones = snapshot.data ?? [];
+          
+          if (bidones.isEmpty) {
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(32),
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade100,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      Icons.inbox_outlined,
+                      size: 64,
+                      color: Colors.grey[400],
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  Text(
+                    'No hay bidones disponibles',
+                    style: TextStyle(
+                      fontSize: 18,
+                      color: Colors.grey[700],
+                      fontWeight: FontWeight.w600,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'No se encontraron bidones pendientes\npara esta sucursal',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.grey[500],
+                      height: 1.4,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
+              ),
+            );
+          }
+          
+          return ListView.builder(
+            itemCount: bidones.length,
+            itemBuilder: (context, index) {
+              final bidon = bidones[index];
+              return Container(
+                margin: const EdgeInsets.only(bottom: 12),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.grey.shade300),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.grey.shade100,
+                      blurRadius: 4,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: Material(
+                    color: Colors.white,
+                    child: InkWell(
+                      onTap: () async {
+                        final selectedBidonId = await onBidonSelected(bidon);
+                        if (selectedBidonId != null && context.mounted) {
+                          Navigator.of(context).pop(selectedBidonId);
+                        }
+                      },
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: Theme.of(context).primaryColor.withOpacity(0.1),
+                                shape: BoxShape.circle,
+                              ),
+                              child: Icon(
+                                Icons.local_gas_station,
+                                color: Theme.of(context).primaryColor,
+                                size: 24,
+                              ),
+                            ),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    bidon.codigoDestino ?? 'Sin código',
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: 16,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  buildBidonInfo('📅 Fecha', formatDate(bidon.fecha?.toString())),
+                                  buildBidonInfo('⛽ Litros', '${bidon.litrosIngreso ?? 0} L'),
+                                  buildBidonInfo('🚚 Origen', bidon.nombreMaquinaOrigen ?? 'N/A'),
+                                  buildBidonInfo('🏢 Sucursal', bidon.nombreSucursal ?? 'N/A'),
+                                ],
+                              ),
+                            ),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 8,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Theme.of(context).primaryColor,
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: Text(
+                                'Seleccionar',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              );
+            },
+          );
+        },
       ),
     );
   }

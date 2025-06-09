@@ -1036,6 +1036,11 @@ class DepositosChequesNotifier extends StateNotifier<DepositosChequesState> {
       obs: '',
     );
   }
+
+  // Agrega este método para permitir setear la imagen desde la UI
+  void setImagenDeposito(File? imagen) {
+    state = state.copyWith(imagenDeposito: imagen);
+  }
 }
 
 final depositosChequesProvider =

@@ -26,14 +26,16 @@ class RegistroState {
   final FetchStatus bidonesStatus;
   final FetchStatus reporteStatus;
   final FetchStatus bidonesSucursalStatus;
-  final FetchStatus ultimosMovimientosStatus; // Nuevo estado para últimos movimientos
+  final FetchStatus ultimosMovimientosStatus;
+  final FetchStatus bidonesPendientesStatus; // Nuevo estado para bidones pendientes
   final String? errorMessage;
   final List<ControlCombustibleMaquinaMontacargaEntity> almacenes;
   final List<MaquinaMontacargaEntity> maquinasMontacarga;
   final List<ControlCombustibleMaquinaMontacargaEntity> bidones;
   final List<ControlCombustibleMaquinaMontacargaEntity> reporteMovimientos;
   final List<ControlCombustibleMaquinaMontacargaEntity> bidonesSucursal;
-  final List<ControlCombustibleMaquinaMontacargaEntity> ultimosMovimientos; // Nueva lista para últimos movimientos
+  final List<ControlCombustibleMaquinaMontacargaEntity> ultimosMovimientos;
+  final List<ControlCombustibleMaquinaMontacargaEntity> bidonesPendientes; // Nueva lista para bidones pendientes
   
   RegistroState({
     required this.registroStatus,
@@ -43,6 +45,7 @@ class RegistroState {
     required this.reporteStatus,
     required this.bidonesSucursalStatus,
     required this.ultimosMovimientosStatus,
+    required this.bidonesPendientesStatus,
     this.errorMessage,
     required this.almacenes,
     required this.maquinasMontacarga,
@@ -50,6 +53,7 @@ class RegistroState {
     required this.reporteMovimientos,
     required this.bidonesSucursal,
     required this.ultimosMovimientos,
+    required this.bidonesPendientes,
   });
   
   RegistroState copyWith({
@@ -60,6 +64,7 @@ class RegistroState {
     FetchStatus? reporteStatus,
     FetchStatus? bidonesSucursalStatus,
     FetchStatus? ultimosMovimientosStatus,
+    FetchStatus? bidonesPendientesStatus,
     String? errorMessage,
     List<ControlCombustibleMaquinaMontacargaEntity>? almacenes,
     List<MaquinaMontacargaEntity>? maquinasMontacarga,
@@ -67,6 +72,7 @@ class RegistroState {
     List<ControlCombustibleMaquinaMontacargaEntity>? reporteMovimientos,
     List<ControlCombustibleMaquinaMontacargaEntity>? bidonesSucursal,
     List<ControlCombustibleMaquinaMontacargaEntity>? ultimosMovimientos,
+    List<ControlCombustibleMaquinaMontacargaEntity>? bidonesPendientes,
   }) {
     return RegistroState(
       registroStatus: registroStatus ?? this.registroStatus,
@@ -76,6 +82,7 @@ class RegistroState {
       reporteStatus: reporteStatus ?? this.reporteStatus,
       bidonesSucursalStatus: bidonesSucursalStatus ?? this.bidonesSucursalStatus,
       ultimosMovimientosStatus: ultimosMovimientosStatus ?? this.ultimosMovimientosStatus,
+      bidonesPendientesStatus: bidonesPendientesStatus ?? this.bidonesPendientesStatus,
       errorMessage: errorMessage ?? this.errorMessage,
       almacenes: almacenes ?? this.almacenes,
       maquinasMontacarga: maquinasMontacarga ?? this.maquinasMontacarga,
@@ -83,6 +90,7 @@ class RegistroState {
       reporteMovimientos: reporteMovimientos ?? this.reporteMovimientos,
       bidonesSucursal: bidonesSucursal ?? this.bidonesSucursal,
       ultimosMovimientos: ultimosMovimientos ?? this.ultimosMovimientos,
+      bidonesPendientes: bidonesPendientes ?? this.bidonesPendientes,
     );
   }
   
@@ -94,12 +102,14 @@ class RegistroState {
     reporteStatus: FetchStatus.initial,
     bidonesSucursalStatus: FetchStatus.initial,
     ultimosMovimientosStatus: FetchStatus.initial,
+    bidonesPendientesStatus: FetchStatus.initial,
     almacenes: [],
     maquinasMontacarga: [],
     bidones: [],
     reporteMovimientos: [],
     bidonesSucursal: [],
     ultimosMovimientos: [],
+    bidonesPendientes: [],
   );
 }
 
@@ -226,6 +236,25 @@ class ControlCombustibleMaquinaMontacargaNotifier extends StateNotifier<Registro
     }
   }
   
+  Future<void> cargarBidonesPendientes(int codSucursalMaqVehiDestino) async {
+    state = state.copyWith(bidonesPendientesStatus: FetchStatus.loading);
+    
+    try {
+      final bidonesPendientes = await _repository.listBidonesPendientes(codSucursalMaqVehiDestino);
+      
+      state = state.copyWith(
+        bidonesPendientesStatus: FetchStatus.success,
+        bidonesPendientes: bidonesPendientes,
+        errorMessage: null,
+      );
+    } catch (e) {
+      state = state.copyWith(
+        bidonesPendientesStatus: FetchStatus.error,
+        errorMessage: e.toString(),
+      );
+    }
+  }
+  
   void resetRegistroStatus() {
     state = state.copyWith(registroStatus: RegistroStatus.initial);
   }
@@ -268,4 +297,15 @@ final bidonesSucursalProvider = Provider<List<ControlCombustibleMaquinaMontacarg
 // Nuevo provider para acceder directamente a los últimos movimientos
 final ultimosMovimientosProvider = Provider<List<ControlCombustibleMaquinaMontacargaEntity>>((ref) {
   return ref.watch(controlCombustibleMaquinaMontacargaNotifierProvider).ultimosMovimientos;
+});
+
+// Provider para listBidonesPendientes usando FutureProvider.family
+final listBidonesPendientesProvider = FutureProvider.family<List<ControlCombustibleMaquinaMontacargaEntity>, int>((ref, codSucursalMaqVehiDestino) async {
+  final repo = ref.read(controlCombustibleMaquinaMontacargaProvider);
+  return await repo.listBidonesPendientes(codSucursalMaqVehiDestino);
+});
+
+// Nuevo provider para acceder directamente a los bidones pendientes desde el state
+final bidonesPendientesProvider = Provider<List<ControlCombustibleMaquinaMontacargaEntity>>((ref) {
+  return ref.watch(controlCombustibleMaquinaMontacargaNotifierProvider).bidonesPendientes;
 });

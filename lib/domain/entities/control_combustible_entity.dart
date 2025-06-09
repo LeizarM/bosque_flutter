@@ -12,9 +12,11 @@ class CombustibleControlEntity {
     final String obs;
     final double litros;
     final String tipoCombustible;
+    final int idCM;
     final int audUsuario;
     final String coche;
     final double kilometrajeAnterior;
+    final int esMenor;
 
     CombustibleControlEntity({
         required this.idC,
@@ -30,9 +32,11 @@ class CombustibleControlEntity {
         required this.obs,
         required this.litros,
         required this.tipoCombustible,
+        required this.idCM,
         required this.audUsuario,
         required this.coche,
         required this.kilometrajeAnterior,
+        required this.esMenor,
     });
 
 }

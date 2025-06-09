@@ -927,6 +927,7 @@ class _ControlCombustibleMaquinaMontacargaScreenState
       codAlmacen: _selectedAlmacen!,
       obs: _obsController.text,
       tipoTransaccion: '',
+      estado: 0,
       audUsuario: codUsuario,
       whsCode: _selectedAlmacen!,
       whsName: ref.read(controlCombustibleMaquinaMontacargaNotifierProvider)
@@ -941,7 +942,7 @@ class _ControlCombustibleMaquinaMontacargaScreenState
       nombreMaquinaDestino: '', 
       nombreSucursal: '', 
       fechaInicio: DateTime.now(), 
-      fechaFin: DateTime.now(),
+      fechaFin: DateTime.now() 
       
     );
 
