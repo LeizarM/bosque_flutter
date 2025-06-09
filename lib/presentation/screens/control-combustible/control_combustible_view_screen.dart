@@ -111,28 +111,67 @@ class _ControlCombustibleViewScreenState extends ConsumerState<ControlCombustibl
                             child: Column(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                Icon(
-                                  Icons.error_outline,
-                                  size: 48,
-                                  color: Colors.red[400],
+                                Container(
+                                  padding: const EdgeInsets.all(24),
+                                  decoration: BoxDecoration(
+                                    color: Colors.red.shade50,
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: Icon(
+                                    Icons.error_outline,
+                                    size: 48,
+                                    color: Colors.red[400],
+                                  ),
                                 ),
-                                const SizedBox(height: 16),
+                                const SizedBox(height: 20),
                                 Text(
-                                  'Error al cargar la información',
+                                  '¡Ups! Algo salió mal',
                                   style: TextStyle(
-                                    fontSize: 16,
+                                    fontSize: 18,
                                     fontWeight: FontWeight.bold,
                                     color: Colors.red[600],
                                   ),
-                                ),
-                                const SizedBox(height: 8),
-                                Text(
-                                  'Error: $error',
-                                  style: TextStyle(
-                                    color: Colors.red[400],
-                                    fontSize: 12,
-                                  ),
                                   textAlign: TextAlign.center,
+                                ),
+                                const SizedBox(height: 12),
+                                Container(
+                                  constraints: const BoxConstraints(maxWidth: 280),
+                                  child: Text(
+                                    'No pudimos cargar la información del bidón en este momento. Por favor, inténtelo nuevamente.',
+                                    style: TextStyle(
+                                      color: Colors.red[400],
+                                      fontSize: 14,
+                                      height: 1.4,
+                                    ),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                ),
+                                const SizedBox(height: 20),
+                                Container(
+                                  padding: const EdgeInsets.all(12),
+                                  decoration: BoxDecoration(
+                                    color: Colors.grey.shade50,
+                                    borderRadius: BorderRadius.circular(8),
+                                    border: Border.all(color: Colors.grey.shade200),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(
+                                        Icons.refresh,
+                                        color: Colors.grey[600],
+                                        size: 16,
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Text(
+                                        'Cierre y vuelva a abrir para reintentar',
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          color: Colors.grey[600],
+                                        ),
+                                      ),
+                                    ],
+                                  ),
                                 ),
                               ],
                             ),
@@ -146,27 +185,48 @@ class _ControlCombustibleViewScreenState extends ConsumerState<ControlCombustibl
                                 child: Column(
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
-                                    Icon(
-                                      Icons.inbox_outlined,
-                                      size: 48,
-                                      color: Colors.grey[400],
+                                    Container(
+                                      padding: const EdgeInsets.all(24),
+                                      decoration: BoxDecoration(
+                                        color: Colors.orange.shade50,
+                                        shape: BoxShape.circle,
+                                      ),
+                                      child: Icon(
+                                        Icons.search_off_outlined,
+                                        size: 48,
+                                        color: Colors.orange[400],
+                                      ),
+                                    ),
+                                    const SizedBox(height: 20),
+                                    Text(
+                                      'Información no disponible',
+                                      style: TextStyle(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.orange[700],
+                                      ),
+                                    ),
+                                    const SizedBox(height: 12),
+                                    Container(
+                                      constraints: const BoxConstraints(maxWidth: 280),
+                                      child: Text(
+                                        'No se encontraron detalles para este bidón. Es posible que haya sido eliminado o que no tenga permisos para verlo.',
+                                        style: TextStyle(
+                                          color: Colors.orange[600],
+                                          fontSize: 14,
+                                          height: 1.4,
+                                        ),
+                                        textAlign: TextAlign.center,
+                                      ),
                                     ),
                                     const SizedBox(height: 16),
                                     Text(
-                                      'No se encontró información',
-                                      style: TextStyle(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.bold,
-                                        color: Colors.grey[700],
-                                      ),
-                                    ),
-                                    const SizedBox(height: 8),
-                                    Text(
-                                      'No hay datos disponibles para este bidón',
+                                      'ID del bidón: $idCM',
                                       style: TextStyle(
                                         color: Colors.grey[500],
+                                        fontSize: 12,
+                                        fontFamily: 'monospace',
                                       ),
-                                      textAlign: TextAlign.center,
                                     ),
                                   ],
                                 ),

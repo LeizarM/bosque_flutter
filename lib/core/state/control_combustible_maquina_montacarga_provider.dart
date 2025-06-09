@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:bosque_flutter/data/repositories/control_combustible_maquina_montacarga_impl.dart';
 import 'package:bosque_flutter/domain/entities/control_combustible_maquina_montacarga_entity.dart';
 import 'package:bosque_flutter/domain/entities/maquina_montacarga_entity.dart';
+import 'package:bosque_flutter/domain/entities/sucursal_entity.dart';
 import 'package:bosque_flutter/domain/repositories/control_combustible_maquina_montacarga_repository.dart';
 
 enum RegistroStatus {
@@ -179,11 +180,11 @@ class ControlCombustibleMaquinaMontacargaNotifier extends StateNotifier<Registro
     }
   }
   
-  Future<void> cargarReporteMovimientos(DateTime fechaInicio, DateTime fechaFin) async {
+  Future<void> cargarReporteMovimientos(DateTime fechaInicio, DateTime fechaFin, int codSucursal) async {
     state = state.copyWith(reporteStatus: FetchStatus.loading);
     
     try {
-      final reporte = await _repository.lstRptMovBidonesXTipoTransaccion(fechaInicio, fechaFin);
+      final reporte = await _repository.lstRptMovBidonesXTipoTransaccion(fechaInicio, fechaFin, codSucursal);
       
       state = state.copyWith(
         reporteStatus: FetchStatus.success,
@@ -314,4 +315,10 @@ final bidonesPendientesProvider = Provider<List<ControlCombustibleMaquinaMontaca
 final listDetalleBidonProvider = FutureProvider.family<List<ControlCombustibleMaquinaMontacargaEntity>, dynamic>((ref, idCM) async {
   final repo = ref.read(controlCombustibleMaquinaMontacargaProvider);
   return await repo.listDetalleBidon(idCM);
+});
+
+// Provider para lstSucursal
+final sucursalesProvider = FutureProvider<List<SucursalEntity>>((ref) async {
+  final repo = ref.read(controlCombustibleMaquinaMontacargaProvider);
+  return await repo.lstSucursal();
 });

@@ -439,6 +439,8 @@ final sidebarMenuProvider = Provider<List<SidebarMenuItem>>((ref) {
       return Icons.account_balance;
     } else if (title.contains('combustible')) {
       return Icons.local_gas_station;
+    }else if (title.contains('bidon')) {
+      return Icons.local_gas_station;
     }
     
     return Icons.folder;

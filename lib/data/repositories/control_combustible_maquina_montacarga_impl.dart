@@ -1,13 +1,16 @@
+import 'package:bosque_flutter/data/models/sucursal_model.dart';
+import 'package:dio/dio.dart';
+import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:bosque_flutter/core/constants/app_constants.dart';
 import 'package:bosque_flutter/core/network/dio_client.dart';
 import 'package:bosque_flutter/data/models/control_combustible_maquina_montacarga_model.dart';
 import 'package:bosque_flutter/data/models/maquina_montacarga_model.dart';
 import 'package:bosque_flutter/domain/entities/control_combustible_maquina_montacarga_entity.dart';
 import 'package:bosque_flutter/domain/entities/maquina_montacarga_entity.dart';
+import 'package:bosque_flutter/domain/entities/sucursal_entity.dart';
 import 'package:bosque_flutter/domain/repositories/control_combustible_maquina_montacarga_repository.dart';
-import 'package:dio/dio.dart';
-import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
+
 
 class ControlCombustibleMaquinaMontacargaImpl
     implements ControlCombustibleMaquinaMontacargaRepository {
@@ -129,13 +132,15 @@ class ControlCombustibleMaquinaMontacargaImpl
   }
   
   @override
-  Future<List<ControlCombustibleMaquinaMontacargaEntity>> lstRptMovBidonesXTipoTransaccion(DateTime fechaInicio, DateTime fechaFin) async {
+  Future<List<ControlCombustibleMaquinaMontacargaEntity>> lstRptMovBidonesXTipoTransaccion(DateTime fechaInicio, DateTime fechaFin, int codSucursal) async {
     
     final data = {
       'fechaInicio': DateFormat('yyyy-MM-dd').format(fechaInicio),
       'fechaFin': DateFormat('yyyy-MM-dd').format(fechaFin),
+      'codSucursalMaqVehiDestino': codSucursal,
     };
 
+    debugPrint('Data para lstRptMovBidonesXTipoTransaccion: $data');
     try {
       final response = await _dio.post(
         AppConstants.listarBidones,
@@ -144,14 +149,23 @@ class ControlCombustibleMaquinaMontacargaImpl
 
       if (response.statusCode == 200 && response.data != null) {
         final data = response.data['data'] ?? [];
+        debugPrint('Raw data from API: $data'); // Debug
 
         final items =
             (data as List<dynamic>)
-                .map((json) => ControlCombustibleMaquinaMontacargaModel.fromJson(json))
+                .map((json) {
+                  debugPrint('Processing item: $json'); // Debug
+                  return ControlCombustibleMaquinaMontacargaModel.fromJson(json);
+                })
                 .toList();
 
-        final entities = items.map((model) => model.toEntity()).toList();
+        final entities = items.map((model) {
+          final entity = model.toEntity();
+          debugPrint('Entity created - tipoTransaccion: "${entity.tipoTransaccion}", nombreCompleto: "${entity.nombreCompleto}"'); // Debug
+          return entity;
+        }).toList();
 
+        debugPrint('Movimientos obtenidos: ${entities.length} registros');
         return entities;
       } else {
         throw Exception(
@@ -352,5 +366,51 @@ class ControlCombustibleMaquinaMontacargaImpl
         'Error desconocido en listDetalleBidon: ${e.toString()}',
       );
     }
+  }
+
+  @override
+  Future<List<SucursalEntity>> lstSucursal() async {
+
+    try {
+      final response = await _dio.post(
+        AppConstants.listarSucural,
+        data: {},
+      );
+
+      // Aceptar tanto 200 como 204. 204 significa que no hay contenido (no hay bidones)
+      if (response.statusCode == 200 || response.statusCode == 204) {
+        // Si es 204 o no hay datos, retornar lista vacía
+        if (response.statusCode == 204 || response.data == null) {
+          return [];
+        }
+        
+        final data = response.data['data'] ?? [];
+
+        final items =
+            (data as List<dynamic>)
+                .map((json) => SucursalModel.fromJson(json))
+                .toList();
+
+        final entities = items.map((model) => model.toEntity()).toList();
+
+        return entities;
+      } else {
+        throw Exception(
+          'Error al obtener las sucursales',
+        );
+      }
+    } on DioException catch (e) {
+      String errorMessage = 'Error de conexión: ${e.message}';
+      if (e.response != null && e.response!.data != null) {
+        errorMessage =
+            'Error del servidor: ${e.response!.statusCode} - ${e.response!.data.toString()}';
+      }
+      throw Exception(errorMessage);
+    } catch (e) {
+      throw Exception(
+        'Error desconocido en lstSucursal: ${e.toString()}',
+      );
+    }
+
   }
 }

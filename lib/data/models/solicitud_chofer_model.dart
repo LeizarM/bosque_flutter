@@ -118,4 +118,8 @@ class SolicitudChoferModel {
         codSucursal: entity.codSucursal,
         coche: entity.coche,
       );
+  
+  
+
+
 }

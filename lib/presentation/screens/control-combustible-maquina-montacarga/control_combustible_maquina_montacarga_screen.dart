@@ -67,7 +67,7 @@ class _ControlCombustibleMaquinaMontacargaScreenState
       backgroundColor: colorScheme.surface,
       appBar: AppBar(
         title: Text(
-          'Control Combustible Máquina',
+          'Registro de Entradas y Salidas de Combustible por Bidones',
           style: ResponsiveUtilsBosque.getTitleStyle(context),
         ),
         backgroundColor: colorScheme.primary,

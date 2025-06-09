@@ -419,80 +419,49 @@ class _AppSidebarState extends ConsumerState<AppSidebar> {
                 ),
               ),
               child: SafeArea(
-                child: Column(
+                child: Row(
                   children: [
-                    Row(
-                      children: [
-                        CircleAvatar(
-                          radius: 30,
-                          backgroundColor: Colors.white,
-                          child: Text(
-                            (user?.nombreCompleto?.isNotEmpty ?? false) 
-                                ? user!.nombreCompleto!.substring(0, 1).toUpperCase()
-                                : 'U',
-                            style: TextStyle(
-                              fontSize: 24,
-                              fontWeight: FontWeight.bold,
-                              color: primaryColor,
-                            ),
-                          ),
+                    CircleAvatar(
+                      radius: 30,
+                      backgroundColor: Colors.white,
+                      child: Text(
+                        (user?.nombreCompleto?.isNotEmpty ?? false) 
+                            ? user!.nombreCompleto!.substring(0, 1).toUpperCase()
+                            : 'U',
+                        style: TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                          color: primaryColor,
                         ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                user?.nombreCompleto ?? 'Usuario',
-                                style: const TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.white,
-                                ),
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                              const SizedBox(height: 4),
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                                decoration: BoxDecoration(
-                                  color: Colors.white.withOpacity(0.2),
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: Text(
-                                  user?.tipoUsuario ?? 'Sin usuario',
-                                  style: const TextStyle(
-                                    fontSize: 12,
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-                    Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(10),
                       ),
-                      child: Row(
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Icon(
-                            Icons.search_rounded,
-                            color: Colors.white.withOpacity(0.8),
-                            size: 20,
+                          Text(
+                            user?.nombreCompleto ?? 'Usuario',
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                            overflow: TextOverflow.ellipsis,
                           ),
-                          const SizedBox(width: 8),
-                          Expanded(
+                          const SizedBox(height: 4),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.2),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
                             child: Text(
-                              'Buscar opciones...',
-                              style: TextStyle(
-                                color: Colors.white.withOpacity(0.8),
-                                fontSize: 14,
+                              user?.tipoUsuario ?? 'Sin usuario',
+                              style: const TextStyle(
+                                fontSize: 12,
+                                color: Colors.white,
+                                fontWeight: FontWeight.w500,
                               ),
                             ),
                           ),
@@ -612,41 +581,6 @@ class _AppSidebarState extends ConsumerState<AppSidebar> {
                         fontSize: 12,
                         fontWeight: FontWeight.w500,
                       ),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  // Barra de búsqueda
-                  Container(
-                    height: 40,
-                    padding: const EdgeInsets.symmetric(horizontal: 12),
-                    decoration: BoxDecoration(
-                      color: isDarkMode
-                          ? Colors.grey.shade800.withOpacity(0.5)
-                          : Colors.grey.shade200.withOpacity(0.5),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(
-                          Icons.search_rounded,
-                          color: isDarkMode
-                              ? Colors.grey.shade400
-                              : Colors.grey.shade600,
-                          size: 20,
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            'Buscar opciones...',
-                            style: TextStyle(
-                              color: isDarkMode
-                                  ? Colors.grey.shade400
-                                  : Colors.grey.shade600,
-                              fontSize: 14,
-                            ),
-                          ),
-                        ),
-                      ],
                     ),
                   ),
                 ],

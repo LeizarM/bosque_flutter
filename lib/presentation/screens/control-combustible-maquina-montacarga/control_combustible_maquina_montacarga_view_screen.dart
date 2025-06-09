@@ -19,6 +19,7 @@ class _ControlCombustibleMaquinaMontaCargaViewScreenState
   DateTime _fechaInicio = DateTime.now().subtract(const Duration(days: 7));
   DateTime _fechaFin = DateTime.now();
   String _tipoTransaccionFiltro = 'TODOS';
+  int? _sucursalFiltro; // Nuevo filtro de sucursal
   bool _hasSearched = false;
 
   // Agregar controller para el scroll horizontal
@@ -27,7 +28,10 @@ class _ControlCombustibleMaquinaMontaCargaViewScreenState
   @override
   void initState() {
     super.initState();
-    // Remover la carga automática inicial
+    // Cargar sucursales al inicializar
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(sucursalesProvider);
+    });
   }
 
   @override
@@ -41,7 +45,7 @@ class _ControlCombustibleMaquinaMontaCargaViewScreenState
       _hasSearched = true;
     });
     ref.read(controlCombustibleMaquinaMontacargaNotifierProvider.notifier)
-        .cargarReporteMovimientos(_fechaInicio, _fechaFin);
+        .cargarReporteMovimientos(_fechaInicio, _fechaFin, _sucursalFiltro ?? 0);
   }
 
   @override
@@ -74,14 +78,15 @@ class _ControlCombustibleMaquinaMontaCargaViewScreenState
 
   Widget _buildFiltros(ColorScheme colorScheme) {
     final isDesktop = ResponsiveUtilsBosque.isDesktop(context);
-    
-    return Card(
-      margin: EdgeInsets.all(ResponsiveUtilsBosque.getHorizontalPadding(context)),
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          children: [
-            if (isDesktop)
+
+    if (isDesktop) {
+      // Desktop: filtros en fila
+      return Card(
+        margin: EdgeInsets.all(ResponsiveUtilsBosque.getHorizontalPadding(context)),
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            children: [
               Row(
                 children: [
                   Expanded(child: _buildDateField('Fecha Inicio', _fechaInicio, true, colorScheme)),
@@ -89,32 +94,74 @@ class _ControlCombustibleMaquinaMontaCargaViewScreenState
                   Expanded(child: _buildDateField('Fecha Fin', _fechaFin, false, colorScheme)),
                   const SizedBox(width: 16),
                   Expanded(child: _buildTipoTransaccionFilter(colorScheme)),
+                  const SizedBox(width: 16),
+                  Expanded(child: _buildSucursalFilter(colorScheme)),
                 ],
-              )
-            else ...[
-              _buildDateField('Fecha Inicio', _fechaInicio, true, colorScheme),
+              ),
               const SizedBox(height: 16),
-              _buildDateField('Fecha Fin', _fechaFin, false, colorScheme),
-              const SizedBox(height: 16),
-              _buildTipoTransaccionFilter(colorScheme),
-            ],
-            const SizedBox(height: 16),
-            SizedBox(
-              width: isDesktop ? 200 : double.infinity,
-              child: ElevatedButton.icon(
-                onPressed: _cargarDatos,
-                icon: const Icon(Icons.search),
-                label: const Text('Buscar'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: colorScheme.primary,
-                  foregroundColor: colorScheme.onPrimary,
+              SizedBox(
+                width: 200,
+                child: ElevatedButton.icon(
+                  onPressed: _cargarDatos,
+                  icon: const Icon(Icons.search),
+                  label: const Text('Buscar'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: colorScheme.primary,
+                    foregroundColor: colorScheme.onPrimary,
+                  ),
                 ),
+              ),
+            ],
+          ),
+        ),
+      );
+    } else {
+      // Móvil: filtros en columna y expansion
+      return Card(
+        margin: EdgeInsets.all(ResponsiveUtilsBosque.getHorizontalPadding(context)),
+        child: ExpansionTile(
+          initiallyExpanded: true,
+          tilePadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
+          title: Row(
+            children: [
+              Icon(Icons.filter_alt, color: colorScheme.primary),
+              const SizedBox(width: 8),
+              const Text('Filtros', style: TextStyle(fontWeight: FontWeight.bold)),
+            ],
+          ),
+          children: [
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  _buildDateField('Fecha Inicio', _fechaInicio, true, colorScheme),
+                  const SizedBox(height: 12),
+                  _buildDateField('Fecha Fin', _fechaFin, false, colorScheme),
+                  const SizedBox(height: 12),
+                  _buildTipoTransaccionFilter(colorScheme),
+                  const SizedBox(height: 12),
+                  _buildSucursalFilter(colorScheme),
+                  const SizedBox(height: 16),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      onPressed: _cargarDatos,
+                      icon: const Icon(Icons.search),
+                      label: const Text('Buscar'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: colorScheme.primary,
+                        foregroundColor: colorScheme.onPrimary,
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
           ],
         ),
-      ),
-    );
+      );
+    }
   }
 
   Widget _buildDateField(String label, DateTime fecha, bool isInicio, ColorScheme colorScheme) {
@@ -178,6 +225,122 @@ class _ControlCombustibleMaquinaMontaCargaViewScreenState
     );
   }
 
+  Widget _buildSucursalFilter(ColorScheme colorScheme) {
+    return Consumer(
+      builder: (context, ref, _) {
+        final asyncSucursales = ref.watch(sucursalesProvider);
+        
+        return asyncSucursales.when(
+          loading: () => Container(
+            height: 56,
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              border: Border.all(color: Colors.grey.shade300),
+              borderRadius: BorderRadius.circular(12),
+              color: colorScheme.surfaceVariant.withOpacity(0.3),
+            ),
+            child: Row(
+              children: [
+                SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: colorScheme.primary,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Text(
+                  'Cargando sucursales...',
+                  style: TextStyle(
+                    color: Colors.grey[600],
+                    fontSize: 14,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          error: (error, stackTrace) => Container(
+            height: 56,
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              border: Border.all(color: Colors.red.shade300),
+              borderRadius: BorderRadius.circular(12),
+              color: Colors.red.shade50,
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.error_outline,
+                  color: Colors.red[600],
+                  size: 20,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    'Error al cargar sucursales',
+                    style: TextStyle(
+                      color: Colors.red[600],
+                      fontSize: 14,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          data: (sucursales) {
+            // Filter out the "-- Defina Nueva Sucursal --" option
+            final validSucursales = sucursales.where((s) => s.codSucursal != -1).toList();
+            
+            return DropdownButtonFormField<int?>(
+              value: _sucursalFiltro,
+              decoration: InputDecoration(
+                labelText: 'Sucursal',
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                filled: true,
+                fillColor: colorScheme.surfaceVariant.withOpacity(0.3),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              ),
+              items: [
+                DropdownMenuItem<int?>(
+                  value: null,
+                  child: Text(
+                    'Todas las sucursales',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.grey[800],
+                    ),
+                  ),
+                ),
+                ...validSucursales.map((sucursal) => DropdownMenuItem<int?>(
+                  value: sucursal.codSucursal,
+                  child: Text(
+                    sucursal.nombre,
+                    style: const TextStyle(fontSize: 14),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                )).toList(),
+              ],
+              onChanged: (value) {
+                setState(() {
+                  _sucursalFiltro = value;
+                });
+              },
+              isExpanded: true,
+              icon: Icon(
+                Icons.arrow_drop_down,
+                color: colorScheme.primary,
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
   Widget _buildContent(RegistroState state, ColorScheme colorScheme) {
     // Si no se ha buscado, mostrar mensaje inicial
     if (!_hasSearched) {
@@ -220,17 +383,66 @@ class _ControlCombustibleMaquinaMontaCargaViewScreenState
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.error_outline, size: 64, color: colorScheme.error),
-            const SizedBox(height: 16),
-            Text(
-              'Error al cargar datos',
-              style: TextStyle(fontSize: 18, color: colorScheme.error),
+            Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: colorScheme.error.withOpacity(0.08),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(Icons.error_outline, size: 64, color: colorScheme.error),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 24),
             Text(
-              state.errorMessage ?? 'Error desconocido',
-              style: TextStyle(color: colorScheme.onSurfaceVariant),
+              'No se encontraron movimientos',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: colorScheme.error,
+              ),
               textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 12),
+            Text(
+              'No existen registros de movimientos de bidones para los filtros seleccionados.\n\n'
+              'Prueba ampliando el rango de fechas, seleccionando otra sucursal o cambiando el tipo de transacción.',
+              style: TextStyle(
+                fontSize: 14,
+                color: colorScheme.onSurfaceVariant.withOpacity(0.8),
+                height: 1.4,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 24),
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: colorScheme.surfaceVariant.withOpacity(0.3),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: colorScheme.outline.withOpacity(0.3),
+                ),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.lightbulb_outline,
+                    color: colorScheme.primary,
+                    size: 20,
+                  ),
+                  const SizedBox(width: 8),
+                  Flexible(
+                    child: Text(
+                      'Sugerencia: Ajusta los filtros para ver otros resultados.',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        color: colorScheme.primary,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ],
         ),
@@ -244,20 +456,84 @@ class _ControlCombustibleMaquinaMontaCargaViewScreenState
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.inbox_outlined, size: 64, color: colorScheme.onSurfaceVariant),
-            const SizedBox(height: 16),
-            Text(
-              'Sin registros encontrados',
-              style: TextStyle(fontSize: 18, color: colorScheme.onSurfaceVariant),
+            Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: colorScheme.primaryContainer.withOpacity(0.1),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                Icons.inventory_outlined, 
+                size: 64, 
+                color: colorScheme.primary.withOpacity(0.7),
+              ),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 24),
             Text(
-              'No hay movimientos para el rango de fechas seleccionado',
+              '¡No se encontraron movimientos!',
               style: TextStyle(
-                fontSize: 14, 
-                color: colorScheme.onSurfaceVariant.withOpacity(0.7)
+                fontSize: 20, 
+                fontWeight: FontWeight.bold,
+                color: colorScheme.onSurface,
               ),
               textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 12),
+            Container(
+              constraints: const BoxConstraints(maxWidth: 300),
+              child: Text(
+                _buildNoResultsMessage(),
+                style: TextStyle(
+                  fontSize: 14, 
+                  color: colorScheme.onSurfaceVariant.withOpacity(0.8),
+                  height: 1.4,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ),
+            const SizedBox(height: 24),
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: colorScheme.surfaceVariant.withOpacity(0.3),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: colorScheme.outline.withOpacity(0.3),
+                ),
+              ),
+              child: Column(
+                children: [
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.lightbulb_outline,
+                        color: colorScheme.primary,
+                        size: 20,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        'Sugerencias:',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w600,
+                          color: colorScheme.primary,
+                          fontSize: 14,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    '• Amplíe el rango de fechas\n• Seleccione "Todas las sucursales"\n• Cambie el tipo de transacción a "TODOS"',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: colorScheme.onSurfaceVariant,
+                      height: 1.4,
+                    ),
+                    textAlign: TextAlign.left,
+                  ),
+                ],
+              ),
             ),
           ],
         ),
@@ -269,12 +545,74 @@ class _ControlCombustibleMaquinaMontaCargaViewScreenState
         : _buildMobileList(movimientosFiltrados, colorScheme);
   }
 
+  String _buildNoResultsMessage() {
+    List<String> filters = [];
+    String sucursalNombre = '';
+    
+    // Agregar información sobre los filtros aplicados
+    if (_tipoTransaccionFiltro != 'TODOS') {
+      filters.add('tipo "${_tipoTransaccionFiltro}"');
+    }
+    
+    if (_sucursalFiltro != null) {
+      // Obtener el nombre de la sucursal seleccionada de forma sincrónica
+      final asyncSucursales = ref.read(sucursalesProvider);
+      asyncSucursales.whenData((sucursales) {
+        try {
+          final sucursal = sucursales.firstWhere(
+            (s) => s.codSucursal == _sucursalFiltro,
+            orElse: () => throw StateError('No encontrado'),
+          );
+          sucursalNombre = sucursal.nombre;
+        } catch (e) {
+          sucursalNombre = 'sucursal seleccionada';
+        }
+      });
+      
+      if (sucursalNombre.isNotEmpty) {
+        filters.add('sucursal "$sucursalNombre"');
+      } else {
+        filters.add('sucursal específica');
+      }
+    }
+    
+    String dateRange = '${_fechaInicio.day.toString().padLeft(2, '0')}/${_fechaInicio.month.toString().padLeft(2, '0')}/${_fechaInicio.year} - ${_fechaFin.day.toString().padLeft(2, '0')}/${_fechaFin.month.toString().padLeft(2, '0')}/${_fechaFin.year}';
+    
+    if (filters.isEmpty) {
+      return 'No hay movimientos de bidones registrados entre las fechas $dateRange.';
+    } else {
+      String filterText = filters.length == 1 ? filters.first : '${filters.sublist(0, filters.length - 1).join(', ')} y ${filters.last}';
+      return 'No se encontraron movimientos de bidones con $filterText entre las fechas $dateRange.';
+    }
+  }
+
   List<ControlCombustibleMaquinaMontacargaEntity> _filtrarMovimientos(
       List<ControlCombustibleMaquinaMontacargaEntity> movimientos) {
-    if (_tipoTransaccionFiltro == 'TODOS') {
-      return movimientos;
+    var movimientosFiltrados = movimientos;
+    
+    print('Movimientos antes del filtro: ${movimientos.length}'); // Debug
+    
+    // Filtrar por tipo de transacción
+    if (_tipoTransaccionFiltro != 'TODOS') {
+      movimientosFiltrados = movimientosFiltrados.where((m) {
+        final tipoTransaccion = m.tipoTransaccion.isEmpty ? 'TODOS' : m.tipoTransaccion;
+        return tipoTransaccion == _tipoTransaccionFiltro;
+      }).toList();
+      print('Después del filtro por tipo: ${movimientosFiltrados.length}'); // Debug
     }
-    return movimientos.where((m) => m.tipoTransaccion == _tipoTransaccionFiltro).toList();
+    
+    // Filtrar por sucursal - Solo si se ha seleccionado una sucursal específica en el UI
+    // No filtrar aquí por sucursal ya que el filtrado se hace en el backend
+    // if (_sucursalFiltro != null) {
+    //   movimientosFiltrados = movimientosFiltrados.where((m) => 
+    //     m.codSucursalMaqVehiDestino == _sucursalFiltro || 
+    //     m.codSucursalMaqVehiOrigen == _sucursalFiltro
+    //   ).toList();
+    //   print('Después del filtro por sucursal: ${movimientosFiltrados.length}'); // Debug
+    // }
+    
+    print('Movimientos finales: ${movimientosFiltrados.length}'); // Debug
+    return movimientosFiltrados;
   }
 
   Widget _buildDesktopTable(List<ControlCombustibleMaquinaMontacargaEntity> movimientos, ColorScheme colorScheme) {

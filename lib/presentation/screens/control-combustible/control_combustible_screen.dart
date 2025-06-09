@@ -904,7 +904,7 @@ class _ControlCombustibleScreenState
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
                         Text(
-                          'Registro de Combustible',
+                          'Registro Compra de Combustible',
                           style: ResponsiveUtilsBosque.getTitleStyle(context),
                           textAlign: isDesktop ? TextAlign.left : TextAlign.center,
                         ),
