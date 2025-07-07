@@ -5,10 +5,10 @@ class EntregasLocationBanner extends StatelessWidget {
   final VoidCallback onVerifyPermissions;
 
   const EntregasLocationBanner({
-    Key? key,
+    super.key,
     required this.isLocationEnabled,
     required this.onVerifyPermissions,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

@@ -4,9 +4,9 @@ class DireccionDialog extends StatefulWidget {
   final String direccionInicial;
 
   const DireccionDialog({
-    Key? key,
+    super.key,
     required this.direccionInicial,
-  }) : super(key: key);
+  });
 
   @override
   State<DireccionDialog> createState() => _DireccionDialogState();

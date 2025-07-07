@@ -8,7 +8,7 @@ import 'package:bosque_flutter/domain/entities/entregas_entity.dart';
 class EntregaDetalleScreen extends StatelessWidget {
   final EntregaEntity entrega;
 
-  const EntregaDetalleScreen({Key? key, required this.entrega}) : super(key: key);
+  const EntregaDetalleScreen({super.key, required this.entrega});
 
   @override
   Widget build(BuildContext context) {
@@ -28,7 +28,7 @@ class EntregaDetalleScreen extends StatelessWidget {
             _buildDetailItem('Fecha Nota', entrega.fechaNota.toString()),
           _buildDetailItem('Fecha Entrega', entrega.fechaEntrega.toString()),
           if ((entrega.direccionEntrega != null && entrega.direccionEntrega.isNotEmpty) ||
-              (entrega.addressEntregaFac != null && entrega.addressEntregaFac.isNotEmpty))
+              (entrega.addressEntregaFac.isNotEmpty))
             _buildDetailItem(
               'Dirección',
               entrega.direccionEntrega != null && entrega.direccionEntrega.isNotEmpty
@@ -37,7 +37,7 @@ class EntregaDetalleScreen extends StatelessWidget {
             ),
           if (entrega.obs != null && entrega.obs.isNotEmpty)
             _buildDetailItem('Observaciones', entrega.obs),
-          if (entrega.vendedor != null && entrega.vendedor.isNotEmpty)
+          if (entrega.vendedor.isNotEmpty)
             _buildDetailItem('Vendedor', entrega.vendedor),
           if (entrega.peso > 0)
             _buildDetailItem('Peso', '${entrega.peso.toStringAsFixed(2)} kg'),

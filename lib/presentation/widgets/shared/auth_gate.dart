@@ -5,7 +5,7 @@ import 'package:bosque_flutter/core/state/user_provider.dart';
 
 class AuthGate extends ConsumerWidget {
   final Widget child;
-  const AuthGate({Key? key, required this.child}) : super(key: key);
+  const AuthGate({super.key, required this.child});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {

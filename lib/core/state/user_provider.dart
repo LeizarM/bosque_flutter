@@ -160,7 +160,7 @@ class UserStateNotifier extends StateNotifier<LoginEntity?> {
 
   Future<String> getCargo() async {
     // First try to get cargo from state if available
-    if (state?.cargo?.isNotEmpty == true) {
+    if (state?.cargo.isNotEmpty == true) {
       return state!.cargo;
     }
     

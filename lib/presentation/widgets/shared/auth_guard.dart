@@ -13,10 +13,10 @@ class AuthGuard extends ConsumerStatefulWidget {
   final String redirectRoute;
   
   const AuthGuard({
-    Key? key,
+    super.key,
     required this.child,
     this.redirectRoute = '/login',
-  }) : super(key: key);
+  });
 
   @override
   ConsumerState<AuthGuard> createState() => _AuthGuardState();

@@ -6,7 +6,7 @@ import 'package:go_router/go_router.dart';
 
 class ChangePasswordScreen extends ConsumerStatefulWidget {
   final LoginEntity user;
-  const ChangePasswordScreen({Key? key, required this.user}) : super(key: key);
+  const ChangePasswordScreen({super.key, required this.user});
 
   @override
   ConsumerState<ChangePasswordScreen> createState() => _ChangePasswordScreenState();

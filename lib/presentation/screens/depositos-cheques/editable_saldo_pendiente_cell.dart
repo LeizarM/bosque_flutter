@@ -7,11 +7,11 @@ class EditableSaldoPendienteCell extends StatefulWidget {
   final Function(String, Function(bool)) onChanged;
 
   const EditableSaldoPendienteCell({
-    Key? key,
+    super.key,
     required this.valorOriginal,
     required this.valorActual,
     required this.onChanged,
-  }) : super(key: key);
+  });
 
   @override
   State<EditableSaldoPendienteCell> createState() => _EditableSaldoPendienteCellState();
@@ -20,7 +20,7 @@ class EditableSaldoPendienteCell extends StatefulWidget {
 class _EditableSaldoPendienteCellState extends State<EditableSaldoPendienteCell> {
   late TextEditingController _controller;
   bool _hasError = false;
-  FocusNode _focusNode = FocusNode();
+  final FocusNode _focusNode = FocusNode();
   bool _isEditing = false;
   bool _isHovering = false;
 
@@ -56,7 +56,7 @@ class _EditableSaldoPendienteCellState extends State<EditableSaldoPendienteCell>
     return MouseRegion(
       onEnter: (_) => setState(() => _isHovering = true),
       onExit: (_) => setState(() => _isHovering = false),
-      child: Container(
+      child: SizedBox(
         width: isDesktop ? 150 : (isMobile ? 100 : 120),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,

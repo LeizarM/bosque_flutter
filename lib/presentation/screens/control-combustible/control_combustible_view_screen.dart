@@ -609,7 +609,7 @@ class _ControlCombustibleViewScreenState extends ConsumerState<ControlCombustibl
                                                 ),
                                                 const SizedBox(height: 4),
                                                 Text(
-                                                  c.obs!,
+                                                  c.obs,
                                                   style: TextStyle(
                                                     color: colorScheme.onSurface.withOpacity(0.7),
                                                     fontSize: 13,
@@ -665,7 +665,7 @@ class _ControlCombustibleViewScreenState extends ConsumerState<ControlCombustibl
                                     constraints: BoxConstraints(minWidth: constraints.maxWidth),
                                     child: DataTable(
                                       columnSpacing: 24,
-                                      headingRowColor: MaterialStateProperty.resolveWith<Color?>(
+                                      headingRowColor: WidgetStateProperty.resolveWith<Color?>(
                                         (states) => colorScheme.primaryContainer,
                                       ),
                                       border: TableBorder.symmetric(inside: BorderSide(color: colorScheme.outline)),
@@ -686,9 +686,9 @@ class _ControlCombustibleViewScreenState extends ConsumerState<ControlCombustibl
                                       rows: List.generate(combustibles.length, (index) {
                                         final c = combustibles[index];
                                         return DataRow(
-                                          color: MaterialStateProperty.resolveWith<Color?>(
+                                          color: WidgetStateProperty.resolveWith<Color?>(
                                             (states) => index % 2 == 0
-                                              ? colorScheme.surfaceVariant
+                                              ? colorScheme.surfaceContainerHighest
                                               : colorScheme.surface,
                                           ),
                                           cells: [

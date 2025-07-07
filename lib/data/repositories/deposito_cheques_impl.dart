@@ -44,7 +44,7 @@ class DepositoChequesImpl implements DepositoChequesRepository {
         // Si el backend responde con error, retorna lista vacía en vez de lanzar excepción
         return [];
       }
-    } on DioException catch (e) {
+    } on DioException {
       // Si hay error de red o servidor, retorna lista vacía
       return [];
     } catch (e) {
@@ -106,7 +106,7 @@ class DepositoChequesImpl implements DepositoChequesRepository {
         // Si el backend responde con error, retorna lista vacía en vez de lanzar excepción
         return [];
       }
-    } on DioException catch (e) {
+    } on DioException {
       // Si hay error de red o servidor, retorna lista vacía
       return [];
     } catch (e) {
@@ -135,7 +135,7 @@ class DepositoChequesImpl implements DepositoChequesRepository {
         // Si el backend responde con error, retorna lista vacía en vez de lanzar excepción
         return [];
       }
-    } on DioException catch (e) {
+    } on DioException {
       // Si hay error de red o servidor, retorna lista vacía
       return [];
     } catch (e) {

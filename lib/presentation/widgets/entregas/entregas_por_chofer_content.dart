@@ -17,7 +17,7 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 
 class EntregasPorChoferContent extends ConsumerStatefulWidget {
-  const EntregasPorChoferContent({Key? key}) : super(key: key);
+  const EntregasPorChoferContent({super.key});
 
   @override
   ConsumerState<EntregasPorChoferContent> createState() =>
@@ -493,7 +493,7 @@ class _EntregasPorChoferContentState
       ),
     ];
     // Key única para forzar el rebuild del grid al cambiar de página o tamaño de página
-    final gridKey = ValueKey('plutoGrid_${_currentPage}_${_itemsPerPage}');
+    final gridKey = ValueKey('plutoGrid_${_currentPage}_$_itemsPerPage');
     return Column(
       children: [
         _createGridHeader(historialRuta.length),
@@ -649,7 +649,7 @@ class _EntregasPorChoferContentState
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      color: colorScheme.surfaceVariant,
+      color: colorScheme.surfaceContainerHighest,
       child: Row(
         children: [
           Text(

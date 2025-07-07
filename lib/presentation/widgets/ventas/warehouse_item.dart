@@ -6,9 +6,9 @@ class WarehouseItem extends StatelessWidget {
   final ArticulosxAlmacenEntity article;
 
   const WarehouseItem({
-    Key? key,
+    super.key,
     required this.article,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -61,7 +61,7 @@ class WarehouseItem extends StatelessWidget {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.surfaceVariant,
+                color: Theme.of(context).colorScheme.surfaceContainerHighest,
                 borderRadius: BorderRadius.circular(16),
               ),
               child: Text(

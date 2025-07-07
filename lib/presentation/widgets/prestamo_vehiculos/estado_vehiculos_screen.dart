@@ -100,7 +100,7 @@ class _EstadoVehiculosScreenState extends ConsumerState<EstadoVehiculosScreen> {
           borderRadius: BorderRadius.circular(12),
         ),
         filled: true,
-        fillColor: colorScheme.surfaceVariant.withOpacity(0.3),
+        fillColor: colorScheme.surfaceContainerHighest.withOpacity(0.3),
       ),
       items: const [
         DropdownMenuItem(value: 'TODOS', child: Text('TODOS')),
@@ -124,8 +124,8 @@ class _EstadoVehiculosScreenState extends ConsumerState<EstadoVehiculosScreen> {
         // Extraer sucursales únicas de los vehículos
         final sucursales = <String>{'TODAS'};
         for (final coche in coches) {
-          if (coche.coche != null && coche.coche!.isNotEmpty) {
-            final parts = coche.coche!.split(' - ');
+          if (coche.coche.isNotEmpty) {
+            final parts = coche.coche.split(' - ');
             if (parts.isNotEmpty) {
               sucursales.add(parts[0]);
             }
@@ -140,7 +140,7 @@ class _EstadoVehiculosScreenState extends ConsumerState<EstadoVehiculosScreen> {
               borderRadius: BorderRadius.circular(12),
             ),
             filled: true,
-            fillColor: colorScheme.surfaceVariant.withOpacity(0.3),
+            fillColor: colorScheme.surfaceContainerHighest.withOpacity(0.3),
           ),
           items: sucursales.map((sucursal) => 
             DropdownMenuItem(value: sucursal, child: Text(sucursal))
@@ -160,7 +160,7 @@ class _EstadoVehiculosScreenState extends ConsumerState<EstadoVehiculosScreen> {
             borderRadius: BorderRadius.circular(12),
           ),
           filled: true,
-          fillColor: colorScheme.surfaceVariant.withOpacity(0.3),
+          fillColor: colorScheme.surfaceContainerHighest.withOpacity(0.3),
         ),
         items: const [
           DropdownMenuItem(value: 'TODAS', child: Text('TODAS')),
@@ -175,7 +175,7 @@ class _EstadoVehiculosScreenState extends ConsumerState<EstadoVehiculosScreen> {
             borderRadius: BorderRadius.circular(12),
           ),
           filled: true,
-          fillColor: colorScheme.surfaceVariant.withOpacity(0.3),
+          fillColor: colorScheme.surfaceContainerHighest.withOpacity(0.3),
         ),
         items: const [
           DropdownMenuItem(value: 'TODAS', child: Text('TODAS')),
@@ -304,15 +304,15 @@ class _EstadoVehiculosScreenState extends ConsumerState<EstadoVehiculosScreen> {
     return coches.where((coche) {
       // Filtrar por estado
       bool pasaFiltroEstado = true;
-      if (_filtroEstado != 'TODOS' && coche.coche != null) {
-        final estado = _extraerEstado(coche.coche!);
+      if (_filtroEstado != 'TODOS') {
+        final estado = _extraerEstado(coche.coche);
         pasaFiltroEstado = estado.toLowerCase().contains(_filtroEstado.toLowerCase());
       }
 
       // Filtrar por sucursal
       bool pasaFiltroSucursal = true;
-      if (_filtroSucursal != 'TODAS' && coche.coche != null) {
-        final sucursal = _extraerSucursal(coche.coche!);
+      if (_filtroSucursal != 'TODAS') {
+        final sucursal = _extraerSucursal(coche.coche);
         pasaFiltroSucursal = sucursal == _filtroSucursal;
       }
 

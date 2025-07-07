@@ -12,7 +12,7 @@ class EntregaItem extends StatefulWidget {
   final bool algunoEntregado;
 
   const EntregaItem({
-    Key? key,
+    super.key,
     required this.entrega,
     this.productosAdicionalesEntrega = const [],
     required this.rutaIniciada,
@@ -20,7 +20,7 @@ class EntregaItem extends StatefulWidget {
     this.disabled = false,
     this.todosEntregados = false,
     this.algunoEntregado = false,
-  }) : super(key: key);
+  });
 
   @override
   State<EntregaItem> createState() => _EntregaItemState();
@@ -268,7 +268,7 @@ class _EntregaItemState extends State<EntregaItem> {
               const SizedBox(height: 12),
               
               // Observaciones
-              if (widget.entrega.obsF != null && widget.entrega.obsF.isNotEmpty)
+              if (widget.entrega.obsF.isNotEmpty)
                 _buildInfoSection(
                   context,
                   'Observaciones Nota:',
@@ -279,7 +279,7 @@ class _EntregaItemState extends State<EntregaItem> {
                   contentFontSize,
                 ),
                 
-              if (widget.entrega.obsF != null && widget.entrega.obsF.isNotEmpty)
+              if (widget.entrega.obsF.isNotEmpty)
                 const SizedBox(height: 12),
               
               // Panel expandible para productos
@@ -471,7 +471,7 @@ class _EntregaItemState extends State<EntregaItem> {
                 producto,
                 colorScheme,
                 contentSize,
-              )).toList(),
+              )),
             ],
           ),
           crossFadeState: _isProductosExpanded 

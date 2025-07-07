@@ -379,7 +379,7 @@ class _AppSidebarState extends ConsumerState<AppSidebar> {
       padding: const EdgeInsets.all(16),
       alignment: Alignment.center,
       child: Text(
-        '${user?.versionApp ?? 'v1.0.0'}',
+        user?.versionApp ?? 'v1.0.0',
         style: TextStyle(
           fontSize: 12,
           fontWeight: FontWeight.w500,
@@ -425,8 +425,8 @@ class _AppSidebarState extends ConsumerState<AppSidebar> {
                       radius: 30,
                       backgroundColor: Colors.white,
                       child: Text(
-                        (user?.nombreCompleto?.isNotEmpty ?? false) 
-                            ? user!.nombreCompleto!.substring(0, 1).toUpperCase()
+                        (user?.nombreCompleto.isNotEmpty ?? false) 
+                            ? user!.nombreCompleto.substring(0, 1).toUpperCase()
                             : 'U',
                         style: TextStyle(
                           fontSize: 24,

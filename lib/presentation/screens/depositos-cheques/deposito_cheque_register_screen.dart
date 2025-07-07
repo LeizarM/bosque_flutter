@@ -579,7 +579,7 @@ class _DepositoChequeRegisterScreenState
     );
 
     // Función para seleccionar/capturar imagen desde móvil o web
-    Future<void> _pickImage(ImageSource source) async {
+    Future<void> pickImage(ImageSource source) async {
       final picker = ImagePicker();
       final pickedFile = await picker.pickImage(source: source);
       if (pickedFile != null) {
@@ -595,7 +595,7 @@ class _DepositoChequeRegisterScreenState
     }
 
     // Función para mostrar el modal de selección de origen de imagen en móvil
-    void _showImageSourceActionSheet(BuildContext context) {
+    void showImageSourceActionSheet(BuildContext context) {
       showModalBottomSheet(
         context: context,
         shape: RoundedRectangleBorder(
@@ -621,7 +621,7 @@ class _DepositoChequeRegisterScreenState
                     title: const Text('Galería'),
                     onTap: () {
                       Navigator.pop(context);
-                      _pickImage(ImageSource.gallery);
+                      pickImage(ImageSource.gallery);
                     },
                   ),
                   ListTile(
@@ -629,7 +629,7 @@ class _DepositoChequeRegisterScreenState
                     title: const Text('Cámara'),
                     onTap: () {
                       Navigator.pop(context);
-                      _pickImage(ImageSource.camera);
+                      pickImage(ImageSource.camera);
                     },
                   ),
                 ],
@@ -644,10 +644,10 @@ class _DepositoChequeRegisterScreenState
       onTap: () {
         if (!kIsWeb && ResponsiveUtilsBosque.isMobile(context)) {
           // En móvil, mostramos el modal para elegir entre cámara y galería
-          _showImageSourceActionSheet(context);
+          showImageSourceActionSheet(context);
         } else {
           // En web o escritorio, solo permitimos seleccionar de la galería
-          _pickImage(ImageSource.gallery);
+          pickImage(ImageSource.gallery);
         }
       },
       child: DottedBorder(
@@ -1005,10 +1005,10 @@ class ClienteSearchDialog extends StatefulWidget {
   final Function(dynamic) onClienteSelected;
 
   const ClienteSearchDialog({
-    Key? key,
+    super.key,
     required this.clientes,
     required this.onClienteSelected,
-  }) : super(key: key);
+  });
 
   @override
   State<ClienteSearchDialog> createState() => _ClienteSearchDialogState();
@@ -1178,8 +1178,8 @@ class _EditableSaldoPendienteCell extends StatefulWidget {
     required this.valorOriginal,
     required this.valorActual,
     required this.onChanged,
-    Key? key,
-  }) : super(key: key);
+    super.key,
+  });
 
   @override
   State<_EditableSaldoPendienteCell> createState() => _EditableSaldoPendienteCellState();

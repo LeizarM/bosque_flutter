@@ -4,9 +4,9 @@ class ObservacionesDialog extends StatefulWidget {
   final String direccion;
 
   const ObservacionesDialog({
-    Key? key,
+    super.key,
     required this.direccion,
-  }) : super(key: key);
+  });
 
   @override
   State<ObservacionesDialog> createState() => _ObservacionesDialogState();

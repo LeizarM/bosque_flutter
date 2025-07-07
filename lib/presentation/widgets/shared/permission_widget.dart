@@ -10,11 +10,11 @@ class PermissionWidget extends ConsumerWidget {
   final Widget? placeholder;
 
   const PermissionWidget({
-    Key? key,
+    super.key,
     required this.buttonName,
     required this.child,
     this.placeholder,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {

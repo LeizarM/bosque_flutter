@@ -33,7 +33,7 @@ class EntregasDataTableSource extends DataTableSource {
         DataCell(Text(entregaPrimaria.factura.toString())),
         DataCell(Text(
           entregaPrimaria.fechaEntrega != null
-              ? '${entregaPrimaria.docDate.day.toString().padLeft(2, '0')}/${entregaPrimaria.docDate.month.toString().padLeft(2, '0')}/${entregaPrimaria.docDate!.year}'
+              ? '${entregaPrimaria.docDate.day.toString().padLeft(2, '0')}/${entregaPrimaria.docDate.month.toString().padLeft(2, '0')}/${entregaPrimaria.docDate.year}'
               : '',
         )),
         DataCell(

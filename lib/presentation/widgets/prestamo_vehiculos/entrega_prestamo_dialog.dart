@@ -209,7 +209,7 @@ class _EntregaPrestamoDialogState extends ConsumerState<EntregaPrestamoDialog> {
           borderRadius: BorderRadius.circular(12),
         ),
         filled: true,
-        fillColor: colorScheme.surfaceVariant.withOpacity(0.3),
+        fillColor: colorScheme.surfaceContainerHighest.withOpacity(0.3),
       ),
       isExpanded: true,
       items: state.choferes.map((chofer) {

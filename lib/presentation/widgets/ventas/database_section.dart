@@ -62,7 +62,7 @@ class DatabaseSection extends StatelessWidget {
             cityName: cityEntry.key,
             articles: cityEntry.value,
           );
-        }).toList(),
+        }),
 
         const SizedBox(height: 20),
       ],

@@ -7,7 +7,7 @@ import 'package:bosque_flutter/core/utils/responsive_utils_bosque.dart';
 import 'package:bosque_flutter/core/state/entregas_provider.dart';
 
 class EntregasDashboardContent extends ConsumerStatefulWidget {
-  const EntregasDashboardContent({Key? key}) : super(key: key);
+  const EntregasDashboardContent({super.key});
 
   @override
   ConsumerState<EntregasDashboardContent> createState() => _EntregasDashboardContentState();

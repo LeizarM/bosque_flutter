@@ -51,6 +51,7 @@ class _DepositoChequeIdentificarViewScreenState
   final TextEditingController _fechaDesdeController = TextEditingController();
   final TextEditingController _fechaHastaController = TextEditingController();
 
+  @override
   void initState() {
     super.initState();
     // Inicializar con fechas predeterminadas
@@ -307,7 +308,7 @@ class _DepositosIdentificarTable extends ConsumerWidget {
     final paged = depositos.skip(page * rowsPerPage).take(rowsPerPage).toList();
 
     // Función para mostrar el diálogo de asignar cliente
-    Future<void> _mostrarDialogoAsignarCliente(dynamic deposito) async {
+    Future<void> mostrarDialogoAsignarCliente(dynamic deposito) async {
       // Mapear los datos del depósito para pasarlos al diálogo
       final Map<String, dynamic> datosDeposito = {
         'id': deposito.idDeposito,
@@ -402,7 +403,7 @@ class _DepositosIdentificarTable extends ConsumerWidget {
                                   color: Colors.orange,
                                 ),
                                 tooltip: 'Asignar Cliente',
-                                onPressed: () => _mostrarDialogoAsignarCliente(d),
+                                onPressed: () => mostrarDialogoAsignarCliente(d),
                               ),
                             ],
                           ),
@@ -441,7 +442,7 @@ class _DepositosIdentificarTable extends ConsumerWidget {
                 child: _buildOptimizedScrollableTable(
                   paged,
                   constraints.maxWidth,
-                  _mostrarDialogoAsignarCliente,
+                  mostrarDialogoAsignarCliente,
                 ),
               ),
               SizedBox(
@@ -467,7 +468,7 @@ class _DepositosIdentificarTable extends ConsumerWidget {
                 child: _buildOptimizedScrollableTable(
                   paged,
                   constraints.maxWidth,
-                  _mostrarDialogoAsignarCliente,
+                  mostrarDialogoAsignarCliente,
                 ),
               ),
               SizedBox(
@@ -573,12 +574,12 @@ class _DepositosIdentificarTable extends ConsumerWidget {
 
   // Columna de DataTable con ancho controlado
   DataColumn _customDataColumn(String label, double width) {
-    return DataColumn(label: Container(width: width, child: Text(label)));
+    return DataColumn(label: SizedBox(width: width, child: Text(label)));
   }
 
   // Celda de DataTable con ancho controlado
   DataCell _customDataCell(Widget child, double width) {
-    return DataCell(Container(width: width, child: child));
+    return DataCell(SizedBox(width: width, child: child));
   }
 
   // Tabla para tablet (sin la columna de Observaciones)
@@ -865,8 +866,7 @@ class _EstadoChip extends StatelessWidget {
 class ActualizacionDepositoDialog extends ConsumerStatefulWidget {
   final Map<String, dynamic> deposito;
 
-  const ActualizacionDepositoDialog({Key? key, required this.deposito})
-    : super(key: key);
+  const ActualizacionDepositoDialog({super.key, required this.deposito});
 
   @override
   ConsumerState<ActualizacionDepositoDialog> createState() =>
@@ -1927,13 +1927,13 @@ class _ActualizacionDepositoDialogState
                           children: [
                             OutlinedButton(
                               onPressed: () => Navigator.pop(context),
-                              child: const Text('Cancelar'),
                               style: OutlinedButton.styleFrom(
                                 padding: const EdgeInsets.symmetric(
                                   horizontal: 16,
                                   vertical: 10,
                                 ),
                               ),
+                              child: const Text('Cancelar'),
                             ),
                             SizedBox(height: 8),
                             ElevatedButton(
@@ -1943,7 +1943,6 @@ class _ActualizacionDepositoDialogState
                                   _guardarDepositoYNotas();
                                 }
                               },
-                              child: const Text('Guardar'),
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: Colors.indigo,
                                 foregroundColor: Colors.white,
@@ -1952,6 +1951,7 @@ class _ActualizacionDepositoDialogState
                                   vertical: 12,
                                 ),
                               ),
+                              child: const Text('Guardar'),
                             ),
                           ],
                         )
@@ -1960,13 +1960,13 @@ class _ActualizacionDepositoDialogState
                           children: [
                             OutlinedButton(
                               onPressed: () => Navigator.pop(context),
-                              child: const Text('Cancelar'),
                               style: OutlinedButton.styleFrom(
                                 padding: const EdgeInsets.symmetric(
                                   horizontal: 20,
                                   vertical: 12,
                                 ),
                               ),
+                              child: const Text('Cancelar'),
                             ),
                             SizedBox(width: 16),
                             ElevatedButton(
@@ -1976,7 +1976,6 @@ class _ActualizacionDepositoDialogState
                                   _guardarDepositoYNotas();
                                 }
                               },
-                              child: const Text('Guardar'),
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: Colors.indigo,
                                 foregroundColor: Colors.white,
@@ -1985,6 +1984,7 @@ class _ActualizacionDepositoDialogState
                                   vertical: 14,
                                 ),
                               ),
+                              child: const Text('Guardar'),
                             ),
                           ],
                         ),
@@ -2255,7 +2255,7 @@ class _ActualizacionDepositoDialogState
                     headingRowHeight: 50,
                     dataRowHeight: 56,
                     dividerThickness: 1,
-                    headingRowColor: MaterialStateProperty.all(Colors.grey.shade100),
+                    headingRowColor: WidgetStateProperty.all(Colors.grey.shade100),
                     border: TableBorder(
                       top: BorderSide(width: 1, color: Colors.grey.shade300),
                       bottom: BorderSide(width: 1, color: Colors.grey.shade300),
@@ -2333,7 +2333,7 @@ class _ActualizacionDepositoDialogState
                         color: WidgetStateProperty.resolveWith<Color?>(
                           (Set<WidgetState> states) {
                             if (seleccionado) return Colors.teal.shade50;
-                            if (states.contains(MaterialState.hovered)) return Colors.grey.shade50;
+                            if (states.contains(WidgetState.hovered)) return Colors.grey.shade50;
                             return null;
                           },
                         ),
@@ -2376,7 +2376,7 @@ class _ActualizacionDepositoDialogState
                               ),
                               child: Text(
                                 doc.fecha != null
-                                    ? "${doc.fecha!.day.toString().padLeft(2, '0')}/${doc.fecha!.month.toString().padLeft(2, '0')}/${doc.fecha!.year}"
+                                    ? "${doc.fecha.day.toString().padLeft(2, '0')}/${doc.fecha.month.toString().padLeft(2, '0')}/${doc.fecha.year}"
                                     : '',
                                 style: TextStyle(
                                   color: Colors.blue.shade800,

@@ -13,14 +13,14 @@ class EntregasDesktopView extends StatelessWidget {
   final Function(int, bool) onSort;
 
   const EntregasDesktopView({
-    Key? key,
+    super.key,
     required this.filteredEntregas,
     required this.rutaIniciada,
     required this.onMarcarEntrega,
     required this.sortColumnIndex,
     required this.sortAscending,
     required this.onSort,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -92,11 +92,11 @@ class EntregasTabletView extends StatelessWidget {
   final Function(EntregaEntity) onMarcarEntrega;
 
   const EntregasTabletView({
-    Key? key,
+    super.key,
     required this.entregasAgrupadas,
     required this.rutaIniciada,
     required this.onMarcarEntrega,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -143,11 +143,11 @@ class EntregasMobileView extends StatelessWidget {
   final Function(EntregaEntity) onMarcarEntrega;
 
   const EntregasMobileView({
-    Key? key,
+    super.key,
     required this.entregasAgrupadas,
     required this.rutaIniciada,
     required this.onMarcarEntrega,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

@@ -11,7 +11,7 @@ class EntregasRouteStatusBar extends StatelessWidget {
   final VoidCallback onFinalizarRuta;
 
   const EntregasRouteStatusBar({
-    Key? key,
+    super.key,
     required this.rutaIniciada,
     this.fechaInicio,
     required this.isLocationEnabled,
@@ -19,7 +19,7 @@ class EntregasRouteStatusBar extends StatelessWidget {
     required this.entregasVacias,
     required this.onIniciarRuta,
     required this.onFinalizarRuta,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

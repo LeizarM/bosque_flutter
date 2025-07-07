@@ -11,10 +11,10 @@ class EntregasFilterUtils {
     var filtered = lista.where((entry) {
       final entrega = entry.value.first;
       final search = searchText.toLowerCase();
-      return entrega.cardName?.toLowerCase().contains(search) == true ||
+      return entrega.cardName.toLowerCase().contains(search) == true ||
              entrega.factura.toString().contains(search) ||
-             (entrega.addressEntregaFac?.toLowerCase().contains(search) ?? false) ||
-             (entrega.addressEntregaMat?.toLowerCase().contains(search) ?? false);
+             (entrega.addressEntregaFac.toLowerCase().contains(search) ?? false) ||
+             (entrega.addressEntregaMat.toLowerCase().contains(search) ?? false);
     }).toList();
 
     if (sortColumnIndex != null) {

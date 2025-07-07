@@ -8,12 +8,12 @@ class EntregaCardView extends StatelessWidget {
   final ColorScheme colorScheme;
 
   const EntregaCardView({
-    Key? key,
+    super.key,
     required this.entregasAgrupadas,
     required this.rutaIniciada,
     required this.onTapEntrega,
     required this.colorScheme,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -157,7 +157,7 @@ class EntregaCardView extends StatelessWidget {
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                         decoration: BoxDecoration(
-                          color: colorScheme.surfaceVariant.withOpacity(0.3),
+                          color: colorScheme.surfaceContainerHighest.withOpacity(0.3),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Text(
@@ -215,7 +215,7 @@ class EntregaCardView extends StatelessWidget {
                       decoration: BoxDecoration(
                         color: entregado
                             ? colorScheme.primaryContainer.withOpacity(0.1)
-                            : colorScheme.surfaceVariant.withOpacity(0.1),
+                            : colorScheme.surfaceContainerHighest.withOpacity(0.1),
                         borderRadius: BorderRadius.circular(8),
                         border: Border.all(
                           color: entregado

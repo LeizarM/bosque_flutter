@@ -112,7 +112,7 @@ class DepositoChequeIdentificarScreen extends ConsumerWidget {
                                       );
                                       return;
                                     }
-                                    if (state.monedaSeleccionada == null || state.monedaSeleccionada == '') {
+                                    if (state.monedaSeleccionada == '') {
                                       ScaffoldMessenger.of(context).showSnackBar(
                                         const SnackBar(content: Text('Debe seleccionar una moneda.')),
                                       );

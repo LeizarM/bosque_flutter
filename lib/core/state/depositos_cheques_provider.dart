@@ -367,7 +367,7 @@ class DepositosChequesNotifier extends StateNotifier<DepositosChequesState> {
       );
       return;
     }
-    if (cliente != null && state.empresaSeleccionada != null) {
+    if (state.empresaSeleccionada != null) {
       state = state.copyWith(clienteSeleccionado: cliente, cargando: true);
       final notas = await _repo.getNotasRemision(
         state.empresaSeleccionada!.codEmpresa,

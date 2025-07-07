@@ -141,7 +141,7 @@ class _PrestamoViewScreenState extends ConsumerState<PrestamoViewScreen> {
         ),
         contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         filled: true,
-        fillColor: colorScheme.surfaceVariant.withOpacity(0.3),
+        fillColor: colorScheme.surfaceContainerHighest.withOpacity(0.3),
         isDense: true,
       ),
       isExpanded: true,
@@ -936,7 +936,7 @@ class _PrestamoViewScreenState extends ConsumerState<PrestamoViewScreen> {
     return Container(
       padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
-        color: colorScheme.surfaceVariant,
+        color: colorScheme.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(8),
       ),
       child: const Text(

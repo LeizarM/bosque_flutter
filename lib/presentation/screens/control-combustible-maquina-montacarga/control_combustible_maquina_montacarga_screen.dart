@@ -365,7 +365,7 @@ class _ControlCombustibleMaquinaMontacargaScreenState
             decoration: BoxDecoration(
               border: Border.all(color: colorScheme.outline),
               borderRadius: BorderRadius.circular(12),
-              color: colorScheme.surfaceVariant.withOpacity(0.3),
+              color: colorScheme.surfaceContainerHighest.withOpacity(0.3),
             ),
             child: Row(
               children: [
@@ -479,7 +479,7 @@ class _ControlCombustibleMaquinaMontacargaScreenState
         suffixText: suffixText,
         labelStyle: TextStyle(color: colorScheme.onSurfaceVariant),
         filled: true,
-        fillColor: colorScheme.surfaceVariant.withOpacity(0.3),
+        fillColor: colorScheme.surfaceContainerHighest.withOpacity(0.3),
       ),
       readOnly: readOnly,
       onTap: onTap,
@@ -509,7 +509,7 @@ class _ControlCombustibleMaquinaMontacargaScreenState
         ),
         labelStyle: TextStyle(color: colorScheme.onSurfaceVariant),
         filled: true,
-        fillColor: colorScheme.surfaceVariant.withOpacity(0.3),
+        fillColor: colorScheme.surfaceContainerHighest.withOpacity(0.3),
       ),
       isExpanded: true,
       items: state.maquinasMontacarga.asMap().entries.map((entry) {
@@ -615,7 +615,7 @@ class _ControlCombustibleMaquinaMontacargaScreenState
         ),
         labelStyle: TextStyle(color: colorScheme.onSurfaceVariant),
         filled: true,
-        fillColor: colorScheme.surfaceVariant.withOpacity(0.3),
+        fillColor: colorScheme.surfaceContainerHighest.withOpacity(0.3),
         helperText: _selectedMaquinaOrigen == null 
             ? 'Seleccione primero la máquina origen' 
             : _esBidon(_selectedMaquinaOrigen!.split('_')[2])
@@ -683,7 +683,7 @@ class _ControlCombustibleMaquinaMontacargaScreenState
         ),
         labelStyle: TextStyle(color: colorScheme.onSurfaceVariant),
         filled: true,
-        fillColor: colorScheme.surfaceVariant.withOpacity(0.3),
+        fillColor: colorScheme.surfaceContainerHighest.withOpacity(0.3),
       ),
       isExpanded: true,
       items: state.almacenes.map((almacen) {

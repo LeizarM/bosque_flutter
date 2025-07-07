@@ -82,8 +82,8 @@ class _PrestamoDashboardScreenState extends ConsumerState<PrestamoDashboardScree
 // Nueva Solicitud Dialog Widget
 class NuevaSolicitudDialog extends ConsumerStatefulWidget {
   const NuevaSolicitudDialog({
-    Key? key,
-  }) : super(key: key);
+    super.key,
+  });
 
   @override
   ConsumerState<NuevaSolicitudDialog> createState() => _NuevaSolicitudDialogState();
@@ -92,7 +92,7 @@ class NuevaSolicitudDialog extends ConsumerStatefulWidget {
 class _NuevaSolicitudDialogState extends ConsumerState<NuevaSolicitudDialog> {
   final _formKey = GlobalKey<FormState>();
   final _motivoController = TextEditingController();
-  DateTime _fechaSolicitud = DateTime.now();
+  final DateTime _fechaSolicitud = DateTime.now();
   bool _requiereChofer = false;
   int? _tipoSolicitudSeleccionado;
   int? _cocheSeleccionado;

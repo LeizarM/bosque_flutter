@@ -801,14 +801,14 @@ class _VentasArticulosViewState extends ConsumerState<VentasArticulosView> {
                                       ],
                                     ),
                                   );
-                                }).toList(),
+                                }),
 
                                 // Separador entre bases de datos
                                 if (db != variantesPorDbYLista.keys.last)
                                   const Divider(height: 16),
                               ],
                             );
-                          }).toList(),
+                          }),
                         ],
                       ),
                     ),
@@ -1294,14 +1294,14 @@ class _VentasArticulosViewState extends ConsumerState<VentasArticulosView> {
                     ),
                   ),
                 );
-              }).toList(),
+              }),
 
               // Separador entre bases de datos
               if (dbEntry.key != variantesPorDbYLista.entries.last.key)
                 const Divider(height: 24),
             ],
           );
-        }).toList(),
+        }),
       ],
     );
   }
@@ -1429,7 +1429,7 @@ class _VentasArticulosViewState extends ConsumerState<VentasArticulosView> {
             dbName: dbName,
             articlesByCity: articlesByCity,
           );
-        }).toList(),
+        }),
       ],
     );
   }

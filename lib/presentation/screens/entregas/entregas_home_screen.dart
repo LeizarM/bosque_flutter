@@ -12,7 +12,7 @@ import 'package:bosque_flutter/presentation/widgets/entregas/entregas_filter_uti
 import 'package:bosque_flutter/presentation/widgets/entregas/entregas_responsive_views.dart';
 
 class EntregasHomeScreen extends ConsumerStatefulWidget {
-  const EntregasHomeScreen({Key? key}) : super(key: key);
+  const EntregasHomeScreen({super.key});
 
   @override
   ConsumerState<EntregasHomeScreen> createState() => _EntregasHomeScreenState();

@@ -218,7 +218,7 @@ class _RecepcionPrestamoDialogState extends ConsumerState<RecepcionPrestamoDialo
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: colorScheme.surfaceVariant.withOpacity(0.3),
+                  color: colorScheme.surfaceContainerHighest.withOpacity(0.3),
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(color: colorScheme.outline.withOpacity(0.2)),
                 ),

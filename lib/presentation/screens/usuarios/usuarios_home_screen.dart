@@ -108,7 +108,7 @@ class _UsuariosHomeScreenState extends ConsumerState<UsuariosHomeScreen> {
                 Expanded(
                   child: usersAsyncValue.when(
                     data: (users) {
-                      if (users == null || users.isEmpty) {
+                      if (users.isEmpty) {
                         return Center(
                           child: Text('No hay usuarios disponibles', style: theme.textTheme.bodyLarge),
                         );
@@ -131,7 +131,7 @@ class _UsuariosHomeScreenState extends ConsumerState<UsuariosHomeScreen> {
                           margin: const EdgeInsets.symmetric(vertical: 6),
                           child: ListTile(
                             leading: CircleAvatar(
-                              backgroundColor: colorScheme.surfaceVariant,
+                              backgroundColor: colorScheme.surfaceContainerHighest,
                               child: Text(
                                 (user.login != null && user.login.isNotEmpty) ? user.login[0].toUpperCase() : '?',
                                 style: TextStyle(color: colorScheme.primary),
@@ -236,7 +236,7 @@ class _UsuariosHomeScreenState extends ConsumerState<UsuariosHomeScreen> {
                                 child: SingleChildScrollView(
                                   scrollDirection: Axis.horizontal,
                                   child: DataTable(
-                                    headingRowColor: MaterialStateProperty.all(colorScheme.surfaceVariant),
+                                    headingRowColor: WidgetStateProperty.all(colorScheme.surfaceContainerHighest),
                                     headingTextStyle: theme.dataTableTheme.headingTextStyle,
                                     columns: [
                                       DataColumn(label: Text('#', style: theme.dataTableTheme.headingTextStyle)),

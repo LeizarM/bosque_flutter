@@ -174,7 +174,7 @@ class _ControlCombustibleMaquinaMontaCargaViewScreenState
         ),
         suffixIcon: Icon(Icons.calendar_today, color: colorScheme.primary),
         filled: true,
-        fillColor: colorScheme.surfaceVariant.withOpacity(0.3),
+        fillColor: colorScheme.surfaceContainerHighest.withOpacity(0.3),
       ),
       controller: TextEditingController(
         text: DateFormat('dd/MM/yyyy').format(fecha),
@@ -209,7 +209,7 @@ class _ControlCombustibleMaquinaMontaCargaViewScreenState
           borderRadius: BorderRadius.circular(12),
         ),
         filled: true,
-        fillColor: colorScheme.surfaceVariant.withOpacity(0.3),
+        fillColor: colorScheme.surfaceContainerHighest.withOpacity(0.3),
       ),
       items: const [
         DropdownMenuItem(value: 'TODOS', child: Text('TODOS')),
@@ -237,7 +237,7 @@ class _ControlCombustibleMaquinaMontaCargaViewScreenState
             decoration: BoxDecoration(
               border: Border.all(color: Colors.grey.shade300),
               borderRadius: BorderRadius.circular(12),
-              color: colorScheme.surfaceVariant.withOpacity(0.3),
+              color: colorScheme.surfaceContainerHighest.withOpacity(0.3),
             ),
             child: Row(
               children: [
@@ -301,7 +301,7 @@ class _ControlCombustibleMaquinaMontaCargaViewScreenState
                   borderRadius: BorderRadius.circular(12),
                 ),
                 filled: true,
-                fillColor: colorScheme.surfaceVariant.withOpacity(0.3),
+                fillColor: colorScheme.surfaceContainerHighest.withOpacity(0.3),
                 contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               ),
               items: [
@@ -322,7 +322,7 @@ class _ControlCombustibleMaquinaMontaCargaViewScreenState
                     style: const TextStyle(fontSize: 14),
                     overflow: TextOverflow.ellipsis,
                   ),
-                )).toList(),
+                )),
               ],
               onChanged: (value) {
                 setState(() {
@@ -416,7 +416,7 @@ class _ControlCombustibleMaquinaMontaCargaViewScreenState
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: colorScheme.surfaceVariant.withOpacity(0.3),
+                color: colorScheme.surfaceContainerHighest.withOpacity(0.3),
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
                   color: colorScheme.outline.withOpacity(0.3),
@@ -495,7 +495,7 @@ class _ControlCombustibleMaquinaMontaCargaViewScreenState
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: colorScheme.surfaceVariant.withOpacity(0.3),
+                color: colorScheme.surfaceContainerHighest.withOpacity(0.3),
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
                   color: colorScheme.outline.withOpacity(0.3),
@@ -551,7 +551,7 @@ class _ControlCombustibleMaquinaMontaCargaViewScreenState
     
     // Agregar información sobre los filtros aplicados
     if (_tipoTransaccionFiltro != 'TODOS') {
-      filters.add('tipo "${_tipoTransaccionFiltro}"');
+      filters.add('tipo "$_tipoTransaccionFiltro"');
     }
     
     if (_sucursalFiltro != null) {
@@ -889,7 +889,7 @@ class _ControlCombustibleMaquinaMontaCargaViewScreenState
                                               borderRadius: BorderRadius.circular(8),
                                             ),
                                             child: Text(
-                                              '${movimiento.litrosIngreso.toStringAsFixed(2)}',
+                                              movimiento.litrosIngreso.toStringAsFixed(2),
                                               style: TextStyle(
                                                 fontWeight: FontWeight.bold,
                                                 color: colorScheme.onSecondaryContainer,
@@ -1062,7 +1062,7 @@ class _ControlCombustibleMaquinaMontaCargaViewScreenState
                                 borderRadius: BorderRadius.circular(8),
                               ),
                               child: Text(
-                                '${movimiento.litrosIngreso.toStringAsFixed(2)}',
+                                movimiento.litrosIngreso.toStringAsFixed(2),
                                 style: TextStyle(
                                   fontWeight: FontWeight.bold,
                                   color: colorScheme.onSecondaryContainer,
