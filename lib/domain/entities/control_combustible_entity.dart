@@ -17,6 +17,7 @@ class CombustibleControlEntity {
     final String coche;
     final double kilometrajeAnterior;
     final int esMenor;
+    final String nombreCompleto;
 
     CombustibleControlEntity({
         required this.idC,
@@ -37,6 +38,7 @@ class CombustibleControlEntity {
         required this.coche,
         required this.kilometrajeAnterior,
         required this.esMenor,
+        required this.nombreCompleto,
     });
 
 }

@@ -25,6 +25,7 @@ class CombustibleControlModel {
     final String coche;
     final double kilometrajeAnterior;
     final int esMenor;
+    final String nombreCompleto;
 
     CombustibleControlModel({
         required this.idC,
@@ -45,6 +46,7 @@ class CombustibleControlModel {
         required this.coche,
         required this.kilometrajeAnterior,
         required this.esMenor,
+        required this.nombreCompleto,
     });
 
     factory CombustibleControlModel.fromJson(Map<String, dynamic> json) => CombustibleControlModel(
@@ -66,6 +68,7 @@ class CombustibleControlModel {
         coche: json["coche"] ?? '',
         kilometrajeAnterior: (json["kilometrajeAnterior"] ?? 0).toDouble(),
         esMenor: json["esMenor"] ?? 1,
+        nombreCompleto: json["nombreCompleto"]?? '',
     );
 
     Map<String, dynamic> toJson() => {
@@ -87,6 +90,7 @@ class CombustibleControlModel {
         "coche": coche,
         "kilometrajeAnterior": kilometrajeAnterior,
         "esMenor": esMenor,
+        "nombreCompleto": nombreCompleto,
     };
 
     //to Entity
@@ -109,6 +113,7 @@ class CombustibleControlModel {
       coche: coche,
       kilometrajeAnterior: kilometrajeAnterior,
       esMenor: esMenor,
+      nombreCompleto: nombreCompleto,
     );
 
   static fromEntity(CombustibleControlEntity data) {
@@ -131,6 +136,7 @@ class CombustibleControlModel {
       coche: data.coche,
       kilometrajeAnterior: data.kilometrajeAnterior,
       esMenor: data.esMenor,
+      nombreCompleto: data.nombreCompleto,
     );
   }
 }

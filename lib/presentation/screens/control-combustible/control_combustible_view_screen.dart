@@ -42,6 +42,14 @@ class _ControlCombustibleViewScreenState extends ConsumerState<ControlCombustibl
     }
   }
 
+  void _onVehicleChanged(int? newVehicleId) {
+    if (newVehicleId != null && newVehicleId != _selectedCocheId) {
+      setState(() => _selectedCocheId = newVehicleId);
+      // Invalidate the provider to force fresh data fetch from backend
+      ref.invalidate(combustiblesPorCocheProvider(newVehicleId));
+    }
+  }
+
   Future<void> _showIdCMReportDialog(int idCM) async {
     showDialog(
       context: context,
@@ -440,7 +448,7 @@ class _ControlCombustibleViewScreenState extends ConsumerState<ControlCombustibl
                                   child: Text(c['label'] ?? ''),
                                 ))
                             .toList(),
-                        onChanged: (v) => setState(() => _selectedCocheId = v),
+                        onChanged: (v) => _onVehicleChanged(v),
                       ),
                 if (_selectedCocheId == null)
                   Padding(
@@ -545,8 +553,42 @@ class _ControlCombustibleViewScreenState extends ConsumerState<ControlCombustibl
                                             Text('Recorrido: ${c.diferencia.toStringAsFixed(2)} km', style: TextStyle(color: colorScheme.onSurface)),
                                           ],
                                         ),
+                                        const SizedBox(height: 8),
+                                        Row(
+                                          children: [
+                                            Icon(Icons.receipt, size: 18, color: colorScheme.primary),
+                                            const SizedBox(width: 4),
+                                            Text('Factura: ${c.nroFactura}', style: TextStyle(color: colorScheme.onSurface)),
+                                          ],
+                                        ),
+                                        const SizedBox(height: 8),
+                                        Row(
+                                          children: [
+                                            Icon(Icons.local_gas_station_outlined, size: 18, color: colorScheme.secondary),
+                                            const SizedBox(width: 4),
+                                            Expanded(
+                                              child: Text('Estación: ${c.estacionServicio}', 
+                                                style: TextStyle(color: colorScheme.onSurface),
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                        const SizedBox(height: 8),
+                                        Row(
+                                          children: [
+                                            Icon(Icons.person, size: 18, color: colorScheme.tertiary),
+                                            const SizedBox(width: 4),
+                                            Expanded(
+                                              child: Text('Empleado: ${c.nombreCompleto}', 
+                                                style: TextStyle(color: colorScheme.onSurface),
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                        const SizedBox(height: 8),
                                         if ((c.obs ?? '').isNotEmpty) ...[
-                                          const SizedBox(height: 8),
                                           Container(
                                             width: double.infinity,
                                             padding: const EdgeInsets.all(8),
@@ -630,6 +672,9 @@ class _ControlCombustibleViewScreenState extends ConsumerState<ControlCombustibl
                                       columns: const [
                                         DataColumn(label: Text('#', style: TextStyle(fontWeight: FontWeight.bold))),
                                         DataColumn(label: Text('Fecha', style: TextStyle(fontWeight: FontWeight.bold))),
+                                        DataColumn(label: Text('Nro Factura', style: TextStyle(fontWeight: FontWeight.bold))),
+                                        DataColumn(label: Text('Estación', style: TextStyle(fontWeight: FontWeight.bold))),
+                                        DataColumn(label: Text('Empleado', style: TextStyle(fontWeight: FontWeight.bold))),
                                         DataColumn(label: Text('Importe', style: TextStyle(fontWeight: FontWeight.bold))),
                                         DataColumn(label: Text('Kilometraje', style: TextStyle(fontWeight: FontWeight.bold))),
                                         DataColumn(label: Text('Litros', style: TextStyle(fontWeight: FontWeight.bold))),
@@ -654,6 +699,30 @@ class _ControlCombustibleViewScreenState extends ConsumerState<ControlCombustibl
                                                 : '',
                                               style: TextStyle(color: colorScheme.onSurface),
                                             )),
+                                            DataCell(Text(c.nroFactura, style: TextStyle(color: colorScheme.onSurface))),
+                                            DataCell(
+                                              Container(
+                                                constraints: const BoxConstraints(maxWidth: 120),
+                                                child: Text(
+                                                  c.estacionServicio,
+                                                  style: TextStyle(color: colorScheme.onSurface),
+                                                  overflow: TextOverflow.ellipsis,
+                                                ),
+                                              ),
+                                            ),
+                                            DataCell(
+                                              Tooltip(
+                                                message: c.nombreCompleto,
+                                                child: Container(
+                                                  constraints: const BoxConstraints(maxWidth: 140),
+                                                  child: Text(
+                                                    c.nombreCompleto,
+                                                    style: TextStyle(color: colorScheme.onSurface),
+                                                    overflow: TextOverflow.ellipsis,
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
                                             DataCell(Text(c.importe.toStringAsFixed(2), style: TextStyle(color: colorScheme.onSurface))),
                                             DataCell(Text(c.kilometraje.toStringAsFixed(0), style: TextStyle(color: colorScheme.onSurface))),
                                             DataCell(Text(c.litros.toStringAsFixed(2), style: TextStyle(color: colorScheme.onSurface))),
@@ -713,7 +782,7 @@ class _ControlCombustibleViewScreenState extends ConsumerState<ControlCombustibl
             ),
           ),
         ),
-      ),
+      )
     );
   }
 }

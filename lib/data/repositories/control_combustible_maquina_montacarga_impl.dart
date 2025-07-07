@@ -161,9 +161,23 @@ class ControlCombustibleMaquinaMontacargaImpl
 
         final entities = items.map((model) {
           final entity = model.toEntity();
-          debugPrint('Entity created - tipoTransaccion: "${entity.tipoTransaccion}", nombreCompleto: "${entity.nombreCompleto}"'); // Debug
+          debugPrint('Entity created - tipoTransaccion: "${entity.tipoTransaccion}" (length: ${entity.tipoTransaccion.length}), nombreCompleto: "${entity.nombreCompleto}"'); // Debug
+          
+          // Debug adicional para TRASPASO específicamente
+          if (entity.tipoTransaccion.toUpperCase().contains('TRASPASO')) {
+            debugPrint('TRASPASO encontrado: "${entity.tipoTransaccion}"');
+          }
+          
           return entity;
         }).toList();
+
+        // Contar tipos de transacción
+        final tiposCounts = <String, int>{};
+        for (final entity in entities) {
+          final tipo = entity.tipoTransaccion.trim().toUpperCase();
+          tiposCounts[tipo] = (tiposCounts[tipo] ?? 0) + 1;
+        }
+        debugPrint('Tipos de transacción encontrados: $tiposCounts');
 
         debugPrint('Movimientos obtenidos: ${entities.length} registros');
         return entities;

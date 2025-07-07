@@ -23,6 +23,32 @@ extension FuelTypeExtension on FuelType {
         return 'Gas';
     }
   }
+
+  IconData get icon {
+    switch (this) {
+      case FuelType.gasolina:
+        return Icons.local_gas_station;
+      case FuelType.diesel:
+        return Icons.local_shipping;
+      case FuelType.electrico:
+        return Icons.electric_bolt;
+      case FuelType.gas:
+        return Icons.propane_tank;
+    }
+  }
+
+  MaterialColor get color {
+    switch (this) {
+      case FuelType.gasolina:
+        return Colors.red;
+      case FuelType.diesel:
+        return Colors.orange;
+      case FuelType.electrico:
+        return Colors.blue;
+      case FuelType.gas:
+        return Colors.purple;
+    }
+  }
 }
 
 class ControlCombustibleScreen extends ConsumerStatefulWidget {
@@ -623,7 +649,7 @@ class _ControlCombustibleScreenState
         diferencia: 0,
         kilometrajeAnterior: 0,
         idCM: selectedIdCM,
-        esMenor: consumoData.isNotEmpty ? consumoData.first.esMenor ?? 0 : 0
+        esMenor: consumoData.isNotEmpty ? consumoData.first.esMenor ?? 0 : 0, nombreCompleto: ''
       );
 
       // Realizar el registro
@@ -786,62 +812,37 @@ class _ControlCombustibleScreenState
                 decoration: const InputDecoration(labelText: 'Vehículo'),
                 validator: (v) => v == null ? 'Seleccione un vehículo' : null,
               ),
-        // Tipo de combustible
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Tipo de Combustible',
-              style: TextStyle(fontWeight: FontWeight.bold),
-            ),
-            ...FuelType.values.map(
-              (type) => RadioListTile<FuelType>(
-                title: Text(type.label),
-                value: type,
-                groupValue: _selectedFuelType,
-                onChanged: (value) {
-                  setState(() {
-                    _selectedFuelType = value;
-                  });
-                },
-                activeColor: colorScheme.primary,
-                contentPadding: EdgeInsets.zero,
-              ),
-            ),
-          ],
-        ),
-        // Estación de servicio
-        TextFormField(
+        _buildFuelTypeSelector(colorScheme),
+        _buildStyledTextField(
           controller: _estacionController,
-          decoration: const InputDecoration(
-            labelText: 'Estación de Servicio',
-          ),
+          label: 'Estación de Servicio',
+          icon: Icons.local_gas_station,
           validator: (v) => v == null || v.isEmpty ? 'Campo requerido' : null,
         ),
-        // Nro. Factura
-        TextFormField(
+        _buildStyledTextField(
           controller: _nroFacturaController,
-          decoration: const InputDecoration(labelText: 'Nro. Factura'),
+          label: 'Nro. Factura',
+          icon: Icons.confirmation_number,
           validator: (v) => v == null || v.isEmpty ? 'Campo requerido' : null,
         ),
-        // Importe
-        TextFormField(
+        _buildStyledTextField(
           controller: _importeController,
-          decoration: const InputDecoration(labelText: 'Importe'),
+          label: 'Importe',
+          icon: Icons.attach_money,
           keyboardType: TextInputType.number,
           validator: (v) => v == null || v.isEmpty ? 'Campo requerido' : null,
         ),
-        // Kilometraje
-        TextFormField(
+        _buildStyledTextField(
           controller: _kilometrajeController,
-          decoration: const InputDecoration(labelText: 'Kilometraje'),
+          label: 'Kilometraje',
+          icon: Icons.speed,
           keyboardType: TextInputType.number,
           validator: (v) => v == null || v.isEmpty ? 'Campo requerido' : null,
         ),
-        // Litros
-        TextFormField(
+        _buildStyledTextField(
           controller: _litrosController,
-          decoration: const InputDecoration(labelText: 'Litros'),
+          label: 'Litros',
+          icon: Icons.local_gas_station,
           keyboardType: TextInputType.number,
           validator: (v) => v == null || v.isEmpty ? 'Campo requerido' : null,
         ),
@@ -903,38 +904,56 @@ class _ControlCombustibleScreenState
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        Text(
-                          'Registro Compra de Combustible',
-                          style: ResponsiveUtilsBosque.getTitleStyle(context),
-                          textAlign: isDesktop ? TextAlign.left : TextAlign.center,
+                        Row(
+                          children: [
+                            Icon(Icons.local_gas_station, color: colorScheme.primary, size: 32),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Text(
+                                'Registro Compra de Combustible',
+                                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                      color: colorScheme.primary,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                              ),
+                            ),
+                          ],
                         ),
                         const SizedBox(height: 24),
                         formFields(),
                         const SizedBox(height: 16),
-                        TextFormField(
+                        _buildStyledTextField(
                           controller: _obsController,
-                          decoration: const InputDecoration(labelText: 'Observaciones'),
+                          label: 'Observaciones',
+                          icon: Icons.note_alt,
                           maxLines: 2,
                         ),
                         const SizedBox(height: 24),
-                        Align(
-                          alignment: isDesktop ? Alignment.centerRight : Alignment.center,
-                          child: SizedBox(
-                            width: isDesktop ? 220 : double.infinity,
-                            child: ElevatedButton(
-                              onPressed: isLoading ? null : _registrarCombustible,
-                              style: ElevatedButton.styleFrom(
-                                padding: EdgeInsets.symmetric(vertical: 18),
-                                textStyle: const TextStyle(fontSize: 18),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(isDesktop ? 16 : 8),
+                        AnimatedSwitcher(
+                          duration: const Duration(milliseconds: 300),
+                          child: isLoading
+                              ? Center(child: CircularProgressIndicator(key: ValueKey('loading')))
+                              : SizedBox(
+                                  width: double.infinity,
+                                  height: 52,
+                                  child: ElevatedButton.icon(
+                                    key: const ValueKey('button'),
+                                    onPressed: _registrarCombustible,
+                                    icon: const Icon(Icons.save),
+                                    label: const Text(
+                                      'Registrar',
+                                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                                    ),
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: colorScheme.primary,
+                                      foregroundColor: colorScheme.onPrimary,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(16),
+                                      ),
+                                      padding: const EdgeInsets.symmetric(vertical: 16),
+                                    ),
+                                  ),
                                 ),
-                              ),
-                              child: isLoading
-                                  ? const CircularProgressIndicator()
-                                  : const Text('Registrar'),
-                            ),
-                          ),
                         ),
                       ],
                     ),
@@ -944,6 +963,103 @@ class _ControlCombustibleScreenState
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  // Selector visual de tipo de combustible usando el theme
+  Widget _buildFuelTypeSelector(ColorScheme colorScheme) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+      children: FuelType.values.map((type) {
+        final isSelected = _selectedFuelType == type;
+        return GestureDetector(
+          onTap: () => setState(() => _selectedFuelType = type),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            decoration: BoxDecoration(
+              gradient: isSelected
+                  ? LinearGradient(
+                      colors: [
+                        colorScheme.primary.withOpacity(0.85),
+                        colorScheme.primaryContainer.withOpacity(0.85)
+                      ],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    )
+                  : null,
+              color: isSelected ? null : colorScheme.surfaceVariant,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: isSelected ? colorScheme.primary : colorScheme.outlineVariant,
+                width: 2,
+              ),
+              boxShadow: isSelected
+                  ? [
+                      BoxShadow(
+                        color: colorScheme.primary.withOpacity(0.18),
+                        blurRadius: 8,
+                        offset: const Offset(0, 4),
+                      ),
+                    ]
+                  : null,
+            ),
+            child: Row(
+              children: [
+                Icon(type.icon, color: isSelected ? colorScheme.onPrimary : colorScheme.primary, size: 20),
+                const SizedBox(width: 8),
+                Text(
+                  type.label,
+                  style: TextStyle(
+                    color: isSelected ? colorScheme.onPrimary : colorScheme.onSurface,
+                    fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      }).toList(),
+    );
+  }
+
+  // Campo de texto estilizado usando el theme
+  Widget _buildStyledTextField({
+    required TextEditingController controller,
+    required String label,
+    required IconData icon,
+    TextInputType? keyboardType,
+    String? Function(String?)? validator,
+    int maxLines = 1,
+  }) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      child: TextFormField(
+        controller: controller,
+        keyboardType: keyboardType,
+        validator: validator,
+        maxLines: maxLines,
+        decoration: InputDecoration(
+          labelText: label,
+          prefixIcon: Icon(icon, color: colorScheme.primary),
+          filled: true,
+          fillColor: colorScheme.surface,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide.none,
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide(color: colorScheme.outlineVariant),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide(color: colorScheme.primary, width: 2),
+          ),
+        ),
+        style: Theme.of(context).textTheme.bodyLarge,
       ),
     );
   }

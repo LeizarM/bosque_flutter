@@ -591,25 +591,34 @@ class _ControlCombustibleMaquinaMontaCargaViewScreenState
     var movimientosFiltrados = movimientos;
     
     print('Movimientos antes del filtro: ${movimientos.length}'); // Debug
+    print('Filtro seleccionado: $_tipoTransaccionFiltro'); // Debug
     
     // Filtrar por tipo de transacción
     if (_tipoTransaccionFiltro != 'TODOS') {
       movimientosFiltrados = movimientosFiltrados.where((m) {
-        final tipoTransaccion = m.tipoTransaccion.isEmpty ? 'TODOS' : m.tipoTransaccion;
-        return tipoTransaccion == _tipoTransaccionFiltro;
+        // Debug: imprimir el tipo de cada movimiento
+        print('Movimiento tipoTransaccion: "${m.tipoTransaccion}" (length: ${m.tipoTransaccion.length})');
+        
+        // Normalizar el tipo de transacción (trim y uppercase)
+        final tipoTransaccionNormalizado = m.tipoTransaccion.trim().toUpperCase();
+        final filtroNormalizado = _tipoTransaccionFiltro.trim().toUpperCase();
+        
+        print('Comparando: "$tipoTransaccionNormalizado" == "$filtroNormalizado"');
+        
+        // Si el tipo está vacío o es null, no lo incluimos en ningún filtro específico
+        if (tipoTransaccionNormalizado.isEmpty) {
+          print('Tipo vacío, excluido del filtro');
+          return false;
+        }
+        
+        final matches = tipoTransaccionNormalizado == filtroNormalizado;
+        print('Match: $matches');
+        
+        return matches;
       }).toList();
+      
       print('Después del filtro por tipo: ${movimientosFiltrados.length}'); // Debug
     }
-    
-    // Filtrar por sucursal - Solo si se ha seleccionado una sucursal específica en el UI
-    // No filtrar aquí por sucursal ya que el filtrado se hace en el backend
-    // if (_sucursalFiltro != null) {
-    //   movimientosFiltrados = movimientosFiltrados.where((m) => 
-    //     m.codSucursalMaqVehiDestino == _sucursalFiltro || 
-    //     m.codSucursalMaqVehiOrigen == _sucursalFiltro
-    //   ).toList();
-    //   print('Después del filtro por sucursal: ${movimientosFiltrados.length}'); // Debug
-    // }
     
     print('Movimientos finales: ${movimientosFiltrados.length}'); // Debug
     return movimientosFiltrados;
