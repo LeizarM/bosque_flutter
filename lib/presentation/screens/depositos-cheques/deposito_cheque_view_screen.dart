@@ -6,9 +6,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/state/depositos_cheques_provider.dart';
 import '../../../core/utils/responsive_utils_bosque.dart';
 
-final depositosChequesViewProvider = StateNotifierProvider<DepositosChequesNotifier, DepositosChequesState>(
-  (ref) => DepositosChequesNotifier(ref),
-);
+final depositosChequesViewProvider =
+    StateNotifierProvider<DepositosChequesNotifier, DepositosChequesState>(
+      (ref) => DepositosChequesNotifier(ref),
+    );
 
 class DepositoChequeViewScreen extends ConsumerWidget {
   const DepositoChequeViewScreen({super.key});
@@ -346,7 +347,11 @@ class DepositoChequeViewScreen extends ConsumerWidget {
     final clienteSeleccionado = state.clienteSeleccionado;
     return GestureDetector(
       onTap: () async {
-        final seleccionado = await _showClienteSearchDialog(context, state.clientes, clienteSeleccionado);
+        final seleccionado = await _showClienteSearchDialog(
+          context,
+          state.clientes,
+          clienteSeleccionado,
+        );
         if (seleccionado != null) {
           notifier.seleccionarCliente(seleccionado);
         }
@@ -366,7 +371,11 @@ class DepositoChequeViewScreen extends ConsumerWidget {
     );
   }
 
-  Future<dynamic> _showClienteSearchDialog(BuildContext context, List<dynamic> clientes, dynamic clienteSeleccionado) async {
+  Future<dynamic> _showClienteSearchDialog(
+    BuildContext context,
+    List<dynamic> clientes,
+    dynamic clienteSeleccionado,
+  ) async {
     TextEditingController searchController = TextEditingController();
     List<dynamic> filtered = List.from(clientes);
     return await showDialog(
@@ -389,7 +398,14 @@ class DepositoChequeViewScreen extends ConsumerWidget {
                       ),
                       onChanged: (value) {
                         setState(() {
-                          filtered = clientes.where((c) => (c.nombreCompleto ?? '').toLowerCase().contains(value.toLowerCase())).toList();
+                          filtered =
+                              clientes
+                                  .where(
+                                    (c) => (c.nombreCompleto ?? '')
+                                        .toLowerCase()
+                                        .contains(value.toLowerCase()),
+                                  )
+                                  .toList();
                         });
                       },
                     ),
@@ -402,7 +418,8 @@ class DepositoChequeViewScreen extends ConsumerWidget {
                           final c = filtered[index];
                           return ListTile(
                             title: Text(c.nombreCompleto ?? ''),
-                            selected: clienteSeleccionado?.codCliente == c.codCliente,
+                            selected:
+                                clienteSeleccionado?.codCliente == c.codCliente,
                             onTap: () => Navigator.of(context).pop(c),
                           );
                         },
@@ -697,7 +714,7 @@ class _DatePickerFieldState extends State<_DatePickerField> {
                     // Hacemos el DatePicker responsive
                     return Theme(
                       data: Theme.of(context).copyWith(
-                        dialogTheme: DialogTheme(
+                        dialogTheme: DialogThemeData(
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(16),
                           ),
@@ -729,7 +746,7 @@ class _DatePickerFieldState extends State<_DatePickerField> {
             // Hacemos el DatePicker responsive
             return Theme(
               data: Theme.of(context).copyWith(
-                dialogTheme: DialogTheme(
+                dialogTheme: DialogThemeData(
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(16),
                   ),
@@ -760,7 +777,7 @@ class _DepositosTableState extends ConsumerState<_DepositosTable> {
   void initState() {
     super.initState();
     horizontalController = ScrollController();
-    
+
     // Remover la lógica de clearState automática
     // ya que ahora manejamos esto específicamente en la otra pantalla
   }
@@ -1346,7 +1363,6 @@ class _DepositosTableState extends ConsumerState<_DepositosTable> {
     int end,
     int total,
   ) {
-    final isDesktop = ResponsiveUtilsBosque.isDesktop(context);
     final isMobile = ResponsiveUtilsBosque.isMobile(context);
 
     if (isMobile) {
@@ -1444,8 +1460,9 @@ class _DepositosTableState extends ConsumerState<_DepositosTable> {
               icon: const Icon(Icons.first_page),
               onPressed:
                   state.page > 0
-                      ? () =>
-                          ref.read(depositosChequesViewProvider.notifier).setPage(0)
+                      ? () => ref
+                          .read(depositosChequesViewProvider.notifier)
+                          .setPage(0)
                       : null,
             ),
             IconButton(

@@ -19,6 +19,7 @@ class MaquinaMontacargaModel {
   final String clase;
   final int anio;
   final String color;
+  final String descripcion;
   final int codSucursal;
   final int estado;
   final int audUsuario;
@@ -32,6 +33,7 @@ class MaquinaMontacargaModel {
     required this.clase,
     required this.anio,
     required this.color,
+    required this.descripcion,
     required this.codSucursal,
     required this.estado,
     required this.audUsuario,
@@ -47,11 +49,15 @@ class MaquinaMontacargaModel {
         clase: json["clase"] ?? '',
         anio: json["anio"] ?? 0,
         color: json["color"] ?? '',
+        descripcion: json["descripcion"] ?? '',
         codSucursal: json["codSucursal"] ?? 0,
         estado: json["estado"] ?? 0,
         audUsuario: json["audUsuario"] ?? 0,
         nombreSucursal: json["nombreSucursal"] ?? '',
-        maquinaOVehiculo: json["maquinaOVehiculo"] ?? json["maquinaOvehiculo"] ?? '', // Try both possible field names
+        maquinaOVehiculo:
+            json["maquinaOVehiculo"] ??
+            json["maquinaOvehiculo"] ??
+            '', // Try both possible field names
       );
 
   Map<String, dynamic> toJson() => {
@@ -61,6 +67,7 @@ class MaquinaMontacargaModel {
     "clase": clase,
     "anio": anio,
     "color": color,
+    "descripcion": descripcion,
     "codSucursal": codSucursal,
     "estado": estado,
     "audUsuario": audUsuario,
@@ -76,6 +83,7 @@ class MaquinaMontacargaModel {
     clase: clase,
     anio: anio,
     color: color,
+    descripcion: descripcion,
     codSucursal: codSucursal,
     estado: estado,
     audUsuario: audUsuario,
@@ -92,6 +100,7 @@ class MaquinaMontacargaModel {
         clase: entity.clase,
         anio: entity.anio,
         color: entity.color,
+        descripcion: entity.descripcion,
         codSucursal: entity.codSucursal,
         estado: entity.estado,
         audUsuario: entity.audUsuario,

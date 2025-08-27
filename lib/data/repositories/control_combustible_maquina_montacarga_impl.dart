@@ -1,4 +1,8 @@
+import 'package:bosque_flutter/data/models/contenedor_model.dart';
+import 'package:bosque_flutter/data/models/movimiento_model.dart';
 import 'package:bosque_flutter/data/models/sucursal_model.dart';
+import 'package:bosque_flutter/domain/entities/contenedor_entity.dart';
+import 'package:bosque_flutter/domain/entities/movimiento_entity.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -10,7 +14,6 @@ import 'package:bosque_flutter/domain/entities/control_combustible_maquina_monta
 import 'package:bosque_flutter/domain/entities/maquina_montacarga_entity.dart';
 import 'package:bosque_flutter/domain/entities/sucursal_entity.dart';
 import 'package:bosque_flutter/domain/repositories/control_combustible_maquina_montacarga_repository.dart';
-
 
 class ControlCombustibleMaquinaMontacargaImpl
     implements ControlCombustibleMaquinaMontacargaRepository {
@@ -26,21 +29,21 @@ class ControlCombustibleMaquinaMontacargaImpl
       // Create the data map to send to the backend
       final data = ControlCombustibleMaquinaMontacargaModel.fromEntity(mb);
       final jsonData = data.toJson();
-      
+
       final response = await _dio.post(
         AppConstants.registrarControlCombustibleMaqMont,
         data: jsonData,
       );
 
-
       if (response.statusCode == 200 || response.statusCode == 201) {
         // Check if response indicates success - accept both 200 and 201
-        if (response.data != null && 
-            (response.data['status'] == 200 || response.data['status'] == 201)) {
+        if (response.data != null &&
+            (response.data['status'] == 200 ||
+                response.data['status'] == 201)) {
           return true;
         }
       }
-      
+
       return false;
     } on DioException catch (e) {
       String errorMessage = 'Error de conexión: ${e.message}';
@@ -49,7 +52,8 @@ class ControlCombustibleMaquinaMontacargaImpl
         if (e.response!.data is Map && e.response!.data['message'] != null) {
           errorMessage = 'Error del servidor: ${e.response!.data['message']}';
         } else {
-          errorMessage = 'Error del servidor: ${e.response!.statusCode} - ${e.response!.data.toString()}';
+          errorMessage =
+              'Error del servidor: ${e.response!.statusCode} - ${e.response!.data.toString()}';
         }
       }
       throw Exception(errorMessage);
@@ -130,10 +134,14 @@ class ControlCombustibleMaquinaMontacargaImpl
       );
     }
   }
-  
+
   @override
-  Future<List<ControlCombustibleMaquinaMontacargaEntity>> lstRptMovBidonesXTipoTransaccion(DateTime fechaInicio, DateTime fechaFin, int codSucursal) async {
-    
+  Future<List<ControlCombustibleMaquinaMontacargaEntity>>
+  lstRptMovBidonesXTipoTransaccion(
+    DateTime fechaInicio,
+    DateTime fechaFin,
+    int codSucursal,
+  ) async {
     final data = {
       'fechaInicio': DateFormat('yyyy-MM-dd').format(fechaInicio),
       'fechaFin': DateFormat('yyyy-MM-dd').format(fechaFin),
@@ -142,34 +150,32 @@ class ControlCombustibleMaquinaMontacargaImpl
 
     debugPrint('Data para lstRptMovBidonesXTipoTransaccion: $data');
     try {
-      final response = await _dio.post(
-        AppConstants.listarBidones,
-        data: data,
-      );
+      final response = await _dio.post(AppConstants.listarBidones, data: data);
 
       if (response.statusCode == 200 && response.data != null) {
         final data = response.data['data'] ?? [];
         debugPrint('Raw data from API: $data'); // Debug
 
         final items =
-            (data as List<dynamic>)
-                .map((json) {
-                  debugPrint('Processing item: $json'); // Debug
-                  return ControlCombustibleMaquinaMontacargaModel.fromJson(json);
-                })
-                .toList();
+            (data as List<dynamic>).map((json) {
+              debugPrint('Processing item: $json'); // Debug
+              return ControlCombustibleMaquinaMontacargaModel.fromJson(json);
+            }).toList();
 
-        final entities = items.map((model) {
-          final entity = model.toEntity();
-          debugPrint('Entity created - tipoTransaccion: "${entity.tipoTransaccion}" (length: ${entity.tipoTransaccion.length}), nombreCompleto: "${entity.nombreCompleto}"'); // Debug
-          
-          // Debug adicional para TRASPASO específicamente
-          if (entity.tipoTransaccion.toUpperCase().contains('TRASPASO')) {
-            debugPrint('TRASPASO encontrado: "${entity.tipoTransaccion}"');
-          }
-          
-          return entity;
-        }).toList();
+        final entities =
+            items.map((model) {
+              final entity = model.toEntity();
+              debugPrint(
+                'Entity created - tipoTransaccion: "${entity.tipoTransaccion}" (length: ${entity.tipoTransaccion.length}), nombreCompleto: "${entity.nombreCompleto}"',
+              ); // Debug
+
+              // Debug adicional para TRASPASO específicamente
+              if (entity.tipoTransaccion.toUpperCase().contains('TRASPASO')) {
+                debugPrint('TRASPASO encontrado: "${entity.tipoTransaccion}"');
+              }
+
+              return entity;
+            }).toList();
 
         // Contar tipos de transacción
         final tiposCounts = <String, int>{};
@@ -198,11 +204,11 @@ class ControlCombustibleMaquinaMontacargaImpl
         'Error desconocido en lstRptMovBidonesXTipoTransaccion: ${e.toString()}',
       );
     }
-
   }
-  
+
   @override
-  Future<List<ControlCombustibleMaquinaMontacargaEntity>> lstBidonesXSucursal() async {
+  Future<List<ControlCombustibleMaquinaMontacargaEntity>>
+  lstBidonesXSucursal() async {
     try {
       final response = await _dio.post(
         AppConstants.listarBidonesXSucursales,
@@ -214,7 +220,10 @@ class ControlCombustibleMaquinaMontacargaImpl
 
         final items =
             (data as List<dynamic>)
-                .map((json) => ControlCombustibleMaquinaMontacargaModel.fromJson(json))
+                .map(
+                  (json) =>
+                      ControlCombustibleMaquinaMontacargaModel.fromJson(json),
+                )
                 .toList();
 
         final entities = items.map((model) => model.toEntity()).toList();
@@ -237,12 +246,11 @@ class ControlCombustibleMaquinaMontacargaImpl
         'Error desconocido en lstBidonesXSucursal: ${e.toString()}',
       );
     }
-
   }
-  
+
   @override
-  Future<List<ControlCombustibleMaquinaMontacargaEntity>> lstBidonesUltimosMov() async {
-    
+  Future<List<ControlCombustibleMaquinaMontacargaEntity>>
+  lstBidonesUltimosMov() async {
     try {
       final response = await _dio.post(
         AppConstants.listarUltimosMovBidones,
@@ -254,7 +262,10 @@ class ControlCombustibleMaquinaMontacargaImpl
 
         final items =
             (data as List<dynamic>)
-                .map((json) => ControlCombustibleMaquinaMontacargaModel.fromJson(json))
+                .map(
+                  (json) =>
+                      ControlCombustibleMaquinaMontacargaModel.fromJson(json),
+                )
                 .toList();
 
         final entities = items.map((model) => model.toEntity()).toList();
@@ -277,18 +288,15 @@ class ControlCombustibleMaquinaMontacargaImpl
         'Error desconocido en lstBidonesUltimosMov: ${e.toString()}',
       );
     }
-
-
-
   }
-  
+
   @override
-  Future<List<ControlCombustibleMaquinaMontacargaEntity>> listBidonesPendientes( int codSucursalMaqVehiDestino ) async {
+  Future<List<ControlCombustibleMaquinaMontacargaEntity>> listBidonesPendientes(
+    int codSucursalMaqVehiDestino,
+  ) async {
     final requestData = {
       'codSucursalMaqVehiDestino': codSucursalMaqVehiDestino,
     };
-
-    
 
     try {
       final response = await _dio.post(
@@ -302,12 +310,15 @@ class ControlCombustibleMaquinaMontacargaImpl
         if (response.statusCode == 204 || response.data == null) {
           return [];
         }
-        
+
         final data = response.data['data'] ?? [];
 
         final items =
             (data as List<dynamic>)
-                .map((json) => ControlCombustibleMaquinaMontacargaModel.fromJson(json))
+                .map(
+                  (json) =>
+                      ControlCombustibleMaquinaMontacargaModel.fromJson(json),
+                )
                 .toList();
 
         final entities = items.map((model) => model.toEntity()).toList();
@@ -331,14 +342,12 @@ class ControlCombustibleMaquinaMontacargaImpl
       );
     }
   }
-  
+
   @override
-  Future<List<ControlCombustibleMaquinaMontacargaEntity>> listDetalleBidon(idCM) async {
-    
-    
-    final requestData = {
-      'idCM': idCM,
-    };
+  Future<List<ControlCombustibleMaquinaMontacargaEntity>> listDetalleBidon(
+    idCM,
+  ) async {
+    final requestData = {'idCM': idCM};
 
     try {
       final response = await _dio.post(
@@ -352,21 +361,22 @@ class ControlCombustibleMaquinaMontacargaImpl
         if (response.statusCode == 204 || response.data == null) {
           return [];
         }
-        
+
         final data = response.data['data'] ?? [];
 
         final items =
             (data as List<dynamic>)
-                .map((json) => ControlCombustibleMaquinaMontacargaModel.fromJson(json))
+                .map(
+                  (json) =>
+                      ControlCombustibleMaquinaMontacargaModel.fromJson(json),
+                )
                 .toList();
 
         final entities = items.map((model) => model.toEntity()).toList();
 
         return entities;
       } else {
-        throw Exception(
-          'Error al obtener el detalle del bidón',
-        );
+        throw Exception('Error al obtener el detalle del bidón');
       }
     } on DioException catch (e) {
       String errorMessage = 'Error de conexión: ${e.message}';
@@ -376,20 +386,14 @@ class ControlCombustibleMaquinaMontacargaImpl
       }
       throw Exception(errorMessage);
     } catch (e) {
-      throw Exception(
-        'Error desconocido en listDetalleBidon: ${e.toString()}',
-      );
+      throw Exception('Error desconocido en listDetalleBidon: ${e.toString()}');
     }
   }
 
   @override
   Future<List<SucursalEntity>> lstSucursal() async {
-
     try {
-      final response = await _dio.post(
-        AppConstants.listarSucural,
-        data: {},
-      );
+      final response = await _dio.post(AppConstants.listarSucural, data: {});
 
       // Aceptar tanto 200 como 204. 204 significa que no hay contenido (no hay bidones)
       if (response.statusCode == 200 || response.statusCode == 204) {
@@ -397,7 +401,7 @@ class ControlCombustibleMaquinaMontacargaImpl
         if (response.statusCode == 204 || response.data == null) {
           return [];
         }
-        
+
         final data = response.data['data'] ?? [];
 
         final items =
@@ -409,9 +413,7 @@ class ControlCombustibleMaquinaMontacargaImpl
 
         return entities;
       } else {
-        throw Exception(
-          'Error al obtener las sucursales',
-        );
+        throw Exception('Error al obtener las sucursales');
       }
     } on DioException catch (e) {
       String errorMessage = 'Error de conexión: ${e.message}';
@@ -421,10 +423,89 @@ class ControlCombustibleMaquinaMontacargaImpl
       }
       throw Exception(errorMessage);
     } catch (e) {
-      throw Exception(
-        'Error desconocido en lstSucursal: ${e.toString()}',
-      );
+      throw Exception('Error desconocido en lstSucursal: ${e.toString()}');
     }
+  }
 
+  //===================================================
+  //  NUEVOS METODOS PARA REGISTRAR LOS BIDONES
+  //===================================================
+
+  ///Listara los contenedores
+  @override
+  Future<List<ContenedorEntity>> lstContenedores() async {
+    try {
+      final response = await _dio.post(AppConstants.lstContenedores, data: {});
+
+      // Aceptar tanto 200 como 204. 204 significa que no hay contenido (no hay bidones)
+      if (response.statusCode == 200 || response.statusCode == 204) {
+        // Si es 204 o no hay datos, retornar lista vacía
+        if (response.statusCode == 204 || response.data == null) {
+          return [];
+        }
+
+        final data = response.data['data'] ?? [];
+
+        final items =
+            (data as List<dynamic>)
+                .map((json) => ContenedorModel.fromJson(json))
+                .toList();
+
+        final entities = items.map((model) => model.toEntity()).toList();
+
+        return entities;
+      } else {
+        throw Exception('Error al obtener las sucursales');
+      }
+    } on DioException catch (e) {
+      String errorMessage = 'Error de conexión: ${e.message}';
+      if (e.response != null && e.response!.data != null) {
+        errorMessage =
+            'Error del servidor: ${e.response!.statusCode} - ${e.response!.data.toString()}';
+      }
+      throw Exception(errorMessage);
+    } catch (e) {
+      throw Exception('Error desconocido en lstSucursal: ${e.toString()}');
+    }
+  }
+
+  /// Para registrar el movimiento
+  @override
+  Future<bool> registerMovimiento(MovimientoEntity mb) async {
+    try {
+      // Create the data map to send to the backend
+      final data = MovimientoModel.fromEntity(mb);
+      final jsonData = data.toJson();
+
+      final response = await _dio.post(
+        AppConstants.registerMovimiento,
+        data: jsonData,
+      );
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        // Check if response indicates success - accept both 200 and 201
+        if (response.data != null &&
+            (response.data['status'] == 200 ||
+                response.data['status'] == 201)) {
+          return true;
+        }
+      }
+
+      return false;
+    } on DioException catch (e) {
+      String errorMessage = 'Error de conexión: ${e.message}';
+      if (e.response != null && e.response!.data != null) {
+        // Try to extract error message from response
+        if (e.response!.data is Map && e.response!.data['message'] != null) {
+          errorMessage = 'Error del servidor: ${e.response!.data['message']}';
+        } else {
+          errorMessage =
+              'Error del servidor: ${e.response!.statusCode} - ${e.response!.data.toString()}';
+        }
+      }
+      throw Exception(errorMessage);
+    } catch (e) {
+      throw Exception('Error desconocido: ${e.toString()}');
+    }
   }
 }

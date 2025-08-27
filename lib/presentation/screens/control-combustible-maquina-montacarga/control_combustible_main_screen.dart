@@ -1,15 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:bosque_flutter/presentation/screens/control-combustible-maquina-montacarga/control_combustible_dashboard_screen.dart';
-import 'package:bosque_flutter/presentation/screens/control-combustible-maquina-montacarga/control_combustible_maquina_montacarga_view_screen.dart';
+import 'package:bosque_flutter/presentation/screens/control-combustible-maquina-montacarga/control_combustible_maquina_montacarga_view_screen.dart.back';
 
 class ControlCombustibleMainScreen extends StatefulWidget {
   const ControlCombustibleMainScreen({super.key});
 
   @override
-  State<ControlCombustibleMainScreen> createState() => _ControlCombustibleMainScreenState();
+  State<ControlCombustibleMainScreen> createState() =>
+      _ControlCombustibleMainScreenState();
 }
 
-class _ControlCombustibleMainScreenState extends State<ControlCombustibleMainScreen> {
+class _ControlCombustibleMainScreenState
+    extends State<ControlCombustibleMainScreen> {
   int _selectedIndex = 0;
 
   // Lista de pantallas: Dashboard (0) y Reportes (1)
@@ -30,10 +32,7 @@ class _ControlCombustibleMainScreenState extends State<ControlCombustibleMainScr
     final colorScheme = theme.colorScheme;
 
     return Scaffold(
-      body: IndexedStack(
-        index: _selectedIndex,
-        children: _screens,
-      ),
+      body: IndexedStack(index: _selectedIndex, children: _screens),
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
           border: Border(

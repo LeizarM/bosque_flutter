@@ -105,7 +105,7 @@ final routerProvider = Provider<GoRouter>((ref) {
               name: 'tgas_ControlCombustibleMaqMont',
               builder:
                   (context, state) =>
-                      const ControlCombustibleMaquinaMontacargaScreen(),
+                      const ControlContenedoresCombustibleScreen(),
             ),
             //Para ver el historial de bidones
             GoRoute(
