@@ -10,6 +10,23 @@ class MovimientoBusinessLogic {
   static const String SALIDA = 'Salida';
   static const String TRASPASO = 'Traspaso';
 
+  /*
+  REGLAS DE NEGOCIO IMPLEMENTADAS:
+  
+  ✅ PERMITIDAS:
+  1. VEHICULO → CONTENEDOR = ENTRADA (Ingreso)
+  2. CONTENEDOR → VEHICULO/MAQUINA/MONTACARGA = SALIDA
+  3. CONTENEDOR → CONTENEDOR = TRASPASO (solo entre diferentes sucursales)
+  
+  ❌ NO PERMITIDAS:
+  4. VEHICULO → VEHICULO/MAQUINA/MONTACARGA
+  5. MAQUINA → cualquier destino
+  6. MONTACARGA → cualquier destino
+  
+  ℹ️ ADICIONAL:
+  7. Traspasos solo entre DIFERENTES sucursales (codSucursal)
+  */
+
   /// Determina automáticamente el tipo de movimiento basado en origen y destino
   static String determinarTipoMovimiento({
     required String claseOrigen,
@@ -20,14 +37,12 @@ class MovimientoBusinessLogic {
       return ENTRADA; // Por defecto
     }
 
-    // Reglas de negocio exactas según las restricciones:
-
-    // 1. De VEHICULO hacia CONTENEDOR = ENTRADA (Ingreso)
+    // Regla 1: VEHICULO → CONTENEDOR = ENTRADA (Ingreso)
     if (claseOrigen == VEHICULO && claseDestino == CONTENEDOR) {
       return ENTRADA;
     }
 
-    // 2. De CONTENEDOR hacia VEHICULO/MAQUINA/MONTACARGA = SALIDA
+    // Regla 2: CONTENEDOR → VEHICULO/MAQUINA/MONTACARGA = SALIDA
     if (claseOrigen == CONTENEDOR &&
         (claseDestino == VEHICULO ||
             claseDestino == MONTACARGA ||
@@ -35,7 +50,7 @@ class MovimientoBusinessLogic {
       return SALIDA;
     }
 
-    // 3. De CONTENEDOR hacia CONTENEDOR = TRASPASO
+    // Regla 3: CONTENEDOR → CONTENEDOR = TRASPASO
     if (claseOrigen == CONTENEDOR && claseDestino == CONTENEDOR) {
       return TRASPASO;
     }
@@ -57,44 +72,45 @@ class MovimientoBusinessLogic {
       return true; // Permitir sin destino para casos específicos
     }
 
-    // Aplicar las restricciones exactas:
+    // Regla 1: VEHICULO → CONTENEDOR = ENTRADA (Ingreso) ✅
+    if (claseOrigen == VEHICULO && claseDestino == CONTENEDOR) {
+      return true;
+    }
 
-    // 1. VEHICULO solo puede ir hacia CONTENEDOR (Ingreso)
-    if (claseOrigen == VEHICULO) {
-      if (claseDestino == CONTENEDOR) {
-        return true; // Válido: Vehiculo -> Contenedor = Ingreso
-      }
-      // No se puede de Vehiculo a Vehiculo/Maquina/Montacarga
+    // Regla 2: CONTENEDOR → VEHICULO/MAQUINA/MONTACARGA = SALIDA ✅
+    if (claseOrigen == CONTENEDOR &&
+        (claseDestino == VEHICULO ||
+            claseDestino == MAQUINA ||
+            claseDestino == MONTACARGA)) {
+      return true;
+    }
+
+    // Regla 3: CONTENEDOR → CONTENEDOR = TRASPASO ✅
+    if (claseOrigen == CONTENEDOR && claseDestino == CONTENEDOR) {
+      return esTraspasosValido(
+        sucursalOrigen: sucursalOrigen,
+        sucursalDestino: sucursalDestino,
+        unidadMedidaOrigen: unidadMedidaOrigen,
+        unidadMedidaDestino: unidadMedidaDestino,
+      );
+    }
+
+    // Regla 4: NO se puede VEHICULO → VEHICULO/MAQUINA/MONTACARGA ❌
+    if (claseOrigen == VEHICULO &&
+        (claseDestino == VEHICULO ||
+            claseDestino == MAQUINA ||
+            claseDestino == MONTACARGA)) {
       return false;
     }
 
-    // 2. CONTENEDOR puede ir hacia VEHICULO/MAQUINA/MONTACARGA (Salida) o CONTENEDOR (Traspaso)
-    if (claseOrigen == CONTENEDOR) {
-      if (claseDestino == VEHICULO ||
-          claseDestino == MAQUINA ||
-          claseDestino == MONTACARGA) {
-        return true; // Válido: Contenedor -> Vehiculo/Maquina/Montacarga = Salida
-      }
-      if (claseDestino == CONTENEDOR) {
-        // Validar restricciones específicas de traspaso
-        return esTraspasosValido(
-          sucursalOrigen: sucursalOrigen,
-          sucursalDestino: sucursalDestino,
-          unidadMedidaOrigen: unidadMedidaOrigen,
-          unidadMedidaDestino: unidadMedidaDestino,
-        );
-      }
-      return false;
-    }
-
-    // 3. MAQUINA no puede ir hacia ningún destino
+    // Regla 5: NO se puede MAQUINA → VEHICULO/MAQUINA/MONTACARGA ❌
     if (claseOrigen == MAQUINA) {
-      return false; // No se puede de Maquina a Vehiculo/Maquina/Montacarga
+      return false;
     }
 
-    // 4. MONTACARGA no puede ir hacia ningún destino
+    // Regla 6: NO se puede MONTACARGA → VEHICULO/MAQUINA/MONTACARGA ❌
     if (claseOrigen == MONTACARGA) {
-      return false; // No se puede de Montacarga a Vehiculo/Maquina/Montacarga
+      return false;
     }
 
     return false; // Por defecto, no permitir combinaciones no especificadas
@@ -107,13 +123,14 @@ class MovimientoBusinessLogic {
     String? unidadMedidaOrigen,
     String? unidadMedidaDestino,
   }) {
-    // Los traspasos solo son válidos entre contenedores de diferentes sucursales
+    // Regla 7: Traspasos entre contenedores de DIFERENTES sucursales
     if (sucursalOrigen == null || sucursalDestino == null) {
       return false; // Ambas sucursales deben estar definidas
     }
 
+    // SOLO permitir traspasos entre DIFERENTES sucursales
     if (sucursalOrigen == sucursalDestino) {
-      return false; // No hay traspasos dentro de la misma sucursal
+      return false; // NO se permiten traspasos dentro de la misma sucursal
     }
 
     // Las unidades de medida deben ser iguales
@@ -125,7 +142,7 @@ class MovimientoBusinessLogic {
       return false; // Las unidades de medida deben coincidir
     }
 
-    return true; // Traspaso válido
+    return true; // Traspaso válido entre diferentes sucursales
   }
 
   /// Obtiene la etiqueta del campo de cantidad según el tipo de movimiento y unidad
@@ -215,31 +232,32 @@ class MovimientoBusinessLogic {
   }) {
     if (claseDestino == null) return null;
 
-    // Validar restricciones específicas según tipo de origen
-
-    // 1. VEHICULO solo puede ir hacia CONTENEDOR
-    if (claseOrigen == VEHICULO && claseDestino != CONTENEDOR) {
-      return 'Los vehículos solo pueden realizar movimientos hacia contenedores (Ingreso)';
+    // Regla 4: NO se puede VEHICULO → VEHICULO/MAQUINA/MONTACARGA
+    if (claseOrigen == VEHICULO &&
+        (claseDestino == VEHICULO ||
+            claseDestino == MAQUINA ||
+            claseDestino == MONTACARGA)) {
+      return 'Los vehículos solo pueden realizar movimientos hacia contenedores (Regla 4)';
     }
 
-    // 2. MAQUINA no puede ser origen de movimientos
+    // Regla 5: NO se puede MAQUINA → cualquier destino
     if (claseOrigen == MAQUINA) {
-      return 'Las máquinas no pueden ser origen de movimientos';
+      return 'Las máquinas no pueden ser origen de movimientos (Regla 5)';
     }
 
-    // 3. MONTACARGA no puede ser origen de movimientos
+    // Regla 6: NO se puede MONTACARGA → cualquier destino
     if (claseOrigen == MONTACARGA) {
-      return 'Los montacargas no pueden ser origen de movimientos';
+      return 'Los montacargas no pueden ser origen de movimientos (Regla 6)';
     }
 
-    // 4. Validar traspasos entre contenedores
+    // Regla 7: Validar traspasos entre contenedores (solo diferentes sucursales)
     if (claseOrigen == CONTENEDOR && claseDestino == CONTENEDOR) {
       if (sucursalOrigen == null || sucursalDestino == null) {
         return 'Las sucursales de origen y destino deben estar definidas para traspasos';
       }
 
       if (sucursalOrigen == sucursalDestino) {
-        return 'No se pueden realizar traspasos dentro de la misma sucursal';
+        return 'Los traspasos solo se permiten entre DIFERENTES sucursales (Regla 7)';
       }
 
       if (unidadMedidaOrigen == null || unidadMedidaDestino == null) {
@@ -251,15 +269,15 @@ class MovimientoBusinessLogic {
       }
     }
 
-    // 5. CONTENEDOR hacia destinos no válidos
+    // Destinos no válidos en general
     if (claseOrigen == CONTENEDOR &&
         claseDestino != CONTENEDOR &&
         claseDestino != VEHICULO &&
         claseDestino != MAQUINA &&
         claseDestino != MONTACARGA) {
-      return 'Los contenedores solo pueden moverse hacia otros contenedores, vehículos, máquinas o montacargas';
+      return 'Destino no válido para contenedores';
     }
 
-    return null; // Sin errores
+    return null; // Sin errores - combinación válida
   }
 }

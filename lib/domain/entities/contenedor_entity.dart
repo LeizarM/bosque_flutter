@@ -7,6 +7,7 @@ class ContenedorEntity {
   String unidadMedida;
   int audUsuario;
   String clase;
+  double saldoActualCombustible;
 
   ContenedorEntity({
     required this.idContenedor,
@@ -17,5 +18,17 @@ class ContenedorEntity {
     required this.unidadMedida,
     required this.audUsuario,
     required this.clase,
+    required this.saldoActualCombustible,
   });
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is ContenedorEntity &&
+          runtimeType == other.runtimeType &&
+          idContenedor == other.idContenedor &&
+          codigo == other.codigo;
+
+  @override
+  int get hashCode => idContenedor.hashCode ^ codigo.hashCode;
 }

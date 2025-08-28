@@ -37,6 +37,109 @@ class _ControlContenedoresCombustibleScreenState
   // Opciones de tipo de movimiento
   final List<String> _tiposMovimiento = ['Entrada', 'Traspaso', 'Salida'];
 
+  // Método para filtrar contenedores por sucursal del usuario
+  List<ContenedorEntity> _filtrarContenedoresPorSucursal(
+    List<ContenedorEntity> contenedores,
+  ) {
+    // Mostrar todos los contenedores (sin filtro por sucursal para origen)
+    // La lógica de negocio se aplicará en el filtro de destino
+    final resultadoSinDuplicados = _eliminarContenedoresDuplicados(
+      contenedores,
+    );
+
+    // Validar que las selecciones actuales estén en la lista filtrada
+    if (_contenedorOrigenSeleccionado != null &&
+        !resultadoSinDuplicados.contains(_contenedorOrigenSeleccionado)) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        setState(() {
+          _contenedorOrigenSeleccionado = null;
+          _contenedorDestinoSeleccionado = null;
+          _tipoMovimientoSeleccionado = null;
+        });
+      });
+    }
+
+    if (_contenedorDestinoSeleccionado != null &&
+        !resultadoSinDuplicados.contains(_contenedorDestinoSeleccionado)) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        setState(() {
+          _contenedorDestinoSeleccionado = null;
+          _tipoMovimientoSeleccionado = null;
+        });
+      });
+    }
+
+    return resultadoSinDuplicados;
+  }
+
+  // Método auxiliar para eliminar duplicados basado en idContenedor + codigo
+  List<ContenedorEntity> _eliminarContenedoresDuplicados(
+    List<ContenedorEntity> contenedores,
+  ) {
+    final Map<String, ContenedorEntity> mapaUnico = {};
+
+    for (final contenedor in contenedores) {
+      // Crear clave única usando idContenedor + codigo
+      final claveUnica = '${contenedor.idContenedor}_${contenedor.codigo}';
+      mapaUnico[claveUnica] = contenedor;
+    }
+
+    return mapaUnico.values.toList();
+  }
+
+  // Método para filtrar contenedores de destino (permite traspasos entre sucursales)
+  List<ContenedorEntity> _filtrarContenedoresDestino(
+    List<ContenedorEntity> contenedores,
+  ) {
+    final user = ref.read(userProvider);
+    if (user == null) {
+      return _eliminarContenedoresDuplicados(
+        contenedores,
+      ); // Si no hay usuario, mostrar todos sin duplicados
+    }
+
+    List<ContenedorEntity> resultado = [];
+
+    // Aplicar reglas de negocio según el tipo de origen
+    if (_contenedorOrigenSeleccionado?.clase == 'CONTENEDOR') {
+      // REGLA 2: CONTENEDOR → VEHICULO/MAQUINA/MONTACARGA = SALIDA
+      // Mostrar vehículos, máquinas y montacargas de la misma sucursal
+      resultado.addAll(
+        contenedores.where(
+          (contenedor) =>
+              (contenedor.clase == 'VEHICULO' ||
+                  contenedor.clase == 'MAQUINA' ||
+                  contenedor.clase == 'MONTACARGA') &&
+              contenedor.codSucursal == user.codSucursal,
+        ),
+      );
+
+      // REGLA 3: CONTENEDOR → CONTENEDOR = TRASPASO (solo diferentes sucursales)
+      // Mostrar contenedores de OTRAS sucursales (no la misma)
+      resultado.addAll(
+        contenedores.where(
+          (contenedor) =>
+              contenedor.clase == 'CONTENEDOR' &&
+              contenedor.codSucursal != user.codSucursal,
+        ),
+      );
+    } else if (_contenedorOrigenSeleccionado?.clase == 'VEHICULO') {
+      // REGLA 1: VEHICULO → CONTENEDOR = ENTRADA
+      // Solo mostrar contenedores de la misma sucursal
+      resultado.addAll(
+        contenedores.where(
+          (contenedor) =>
+              contenedor.clase == 'CONTENEDOR' &&
+              contenedor.codSucursal == user.codSucursal,
+        ),
+      );
+    }
+    // REGLAS 5 y 6: MAQUINA y MONTACARGA no pueden ser origen (no agregamos nada)
+
+    // Eliminar duplicados basados en idContenedor + codigo
+    return _eliminarContenedoresDuplicados(resultado);
+  }
+
   // Método para determinar automáticamente el tipo de movimiento
   void _determinarTipoMovimiento() {
     if (_contenedorOrigenSeleccionado != null) {
@@ -222,9 +325,9 @@ class _ControlContenedoresCombustibleScreenState
                                 ),
                                 const SizedBox(height: 16),
 
-                                // Fecha de Movimiento
-                                _buildDateField(),
-                                const SizedBox(height: 16),
+                                // Fecha de Movimiento - Comentado, se manejará en el backend
+                                // _buildDateField(),
+                                // const SizedBox(height: 16),
 
                                 // Campos de valores responsivos
                                 _buildValoresSection(isMediumOrLarge),
@@ -362,13 +465,19 @@ class _ControlContenedoresCombustibleScreenState
   ) {
     return contenedoresAsync.when(
       data: (contenedores) {
+        // Filtrar contenedores según la preferencia del usuario
+        final contenedoresFiltrados = _filtrarContenedoresPorSucursal(
+          contenedores,
+        );
+
         // Debug detallado de todas las clases
         print('=== DEBUG CONTENEDORES DETALLADO ===');
-        print('Total elementos: ${contenedores.length}');
+        print('Total elementos originales: ${contenedores.length}');
+        print('Total elementos filtrados: ${contenedoresFiltrados.length}');
 
         // Agrupar por clase para ver qué hay
         Map<String, int> clasesCounts = {};
-        for (var contenedor in contenedores) {
+        for (var contenedor in contenedoresFiltrados) {
           clasesCounts[contenedor.clase] =
               (clasesCounts[contenedor.clase] ?? 0) + 1;
         }
@@ -380,7 +489,9 @@ class _ControlContenedoresCombustibleScreenState
 
         // Mostrar algunos ejemplos de cada clase
         for (var clase in clasesCounts.keys) {
-          var ejemplos = contenedores.where((c) => c.clase == clase).take(2);
+          var ejemplos = contenedoresFiltrados
+              .where((c) => c.clase == clase)
+              .take(2);
           print('Ejemplos de $clase:');
           for (var ejemplo in ejemplos) {
             print(
@@ -392,43 +503,62 @@ class _ControlContenedoresCombustibleScreenState
 
         return Column(
           children: [
+            // Información sobre el filtrado automático
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(12),
+              margin: const EdgeInsets.only(bottom: 16),
+              decoration: BoxDecoration(
+                color: Colors.blue.shade50,
+                border: Border.all(color: Colors.blue.shade200),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.info_outline,
+                    color: Colors.blue.shade700,
+                    size: 20,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Origen: Solo de su sucursal • Destino: Incluye otras sucursales para traspasos',
+                      style: TextStyle(
+                        color: Colors.blue.shade700,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
             // Contenedor Origen - Siempre visible
             DropdownButtonFormField<ContenedorEntity>(
               value: _contenedorOrigenSeleccionado,
               decoration: const InputDecoration(
-                labelText: 'Contenedor Origen',
+                labelText: 'Origen',
                 border: OutlineInputBorder(),
                 prefixIcon: Icon(Icons.inventory),
               ),
               isExpanded: true, // Resolver overflow
               items:
-                  contenedores
-                      .fold<Map<String, ContenedorEntity>>({}, (
-                        map,
-                        contenedor,
-                      ) {
-                        // Crear clave única combinando ID y código para mayor consistencia
-                        String claveUnica =
-                            '${contenedor.idContenedor}_${contenedor.codigo}';
-                        map[claveUnica] = contenedor;
-                        return map;
-                      })
-                      .values
-                      .map((ContenedorEntity contenedor) {
-                        return DropdownMenuItem<ContenedorEntity>(
-                          value: contenedor,
-                          child: Tooltip(
-                            message:
-                                '${contenedor.codigo} - ${contenedor.descripcion}',
-                            child: Text(
-                              contenedor.descripcion,
-                              overflow: TextOverflow.ellipsis,
-                              maxLines: 1,
-                            ),
-                          ),
-                        );
-                      })
-                      .toList(),
+                  contenedoresFiltrados.map((ContenedorEntity contenedor) {
+                    return DropdownMenuItem<ContenedorEntity>(
+                      value: contenedor,
+                      child: Tooltip(
+                        message:
+                            '${contenedor.codigo} - ${contenedor.descripcion}\nSaldo: ${contenedor.saldoActualCombustible} ${contenedor.unidadMedida}',
+                        child: Text(
+                          contenedor.descripcion,
+                          overflow: TextOverflow.ellipsis,
+                          maxLines: 1,
+                        ),
+                      ),
+                    );
+                  }).toList(),
               onChanged: (ContenedorEntity? newValue) {
                 setState(() {
                   _contenedorOrigenSeleccionado = newValue;
@@ -437,11 +567,44 @@ class _ControlContenedoresCombustibleScreenState
               },
               validator: (value) {
                 if (value == null) {
-                  return 'Por favor seleccione un contenedor origen';
+                  return 'Por favor seleccione un origen';
                 }
                 return null;
               },
             ),
+
+            // Mostrar saldo actual del origen si está seleccionado
+            if (_contenedorOrigenSeleccionado != null)
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(12),
+                margin: const EdgeInsets.only(top: 8),
+                decoration: BoxDecoration(
+                  color: Colors.green.shade50,
+                  border: Border.all(color: Colors.green.shade200),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.account_balance_wallet,
+                      color: Colors.green.shade700,
+                      size: 20,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Saldo Actual: ${_contenedorOrigenSeleccionado!.saldoActualCombustible} ${_contenedorOrigenSeleccionado!.unidadMedida}',
+                        style: TextStyle(
+                          color: Colors.green.shade700,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
 
             const SizedBox(height: 16),
 
@@ -449,40 +612,30 @@ class _ControlContenedoresCombustibleScreenState
             DropdownButtonFormField<ContenedorEntity>(
               value: _contenedorDestinoSeleccionado,
               decoration: const InputDecoration(
-                labelText: 'Contenedor Destino',
+                labelText: 'Destino',
                 border: OutlineInputBorder(),
                 prefixIcon: Icon(Icons.inventory_2),
               ),
               isExpanded: true, // Resolver overflow
               items:
-                  contenedores
-                      .where((c) => _esContenedorDestinoValido(c))
-                      .fold<Map<String, ContenedorEntity>>({}, (
-                        map,
-                        contenedor,
-                      ) {
-                        // Crear clave única combinando ID y código para mayor consistencia
-                        String claveUnica =
-                            '${contenedor.idContenedor}_${contenedor.codigo}';
-                        map[claveUnica] = contenedor;
-                        return map;
-                      })
-                      .values
-                      .map((ContenedorEntity contenedor) {
-                        return DropdownMenuItem<ContenedorEntity>(
-                          value: contenedor,
-                          child: Tooltip(
-                            message:
-                                '${contenedor.codigo} - ${contenedor.descripcion}',
-                            child: Text(
-                              contenedor.descripcion,
-                              overflow: TextOverflow.ellipsis,
-                              maxLines: 1,
-                            ),
-                          ),
-                        );
-                      })
-                      .toList(),
+                  _filtrarContenedoresDestino(
+                    contenedores,
+                  ).where((c) => _esContenedorDestinoValido(c)).map((
+                    ContenedorEntity contenedor,
+                  ) {
+                    return DropdownMenuItem<ContenedorEntity>(
+                      value: contenedor,
+                      child: Tooltip(
+                        message:
+                            '${contenedor.codigo} - ${contenedor.descripcion}\nSaldo: ${contenedor.saldoActualCombustible} ${contenedor.unidadMedida}',
+                        child: Text(
+                          contenedor.descripcion,
+                          overflow: TextOverflow.ellipsis,
+                          maxLines: 1,
+                        ),
+                      ),
+                    );
+                  }).toList(),
               onChanged: (ContenedorEntity? newValue) {
                 setState(() {
                   _contenedorDestinoSeleccionado = newValue;
@@ -493,11 +646,44 @@ class _ControlContenedoresCombustibleScreenState
                 // Solo requerido para traspaso
                 if (_tipoMovimientoSeleccionado == 'Traspaso' &&
                     value == null) {
-                  return 'Por favor seleccione un contenedor destino';
+                  return 'Por favor seleccione un destino';
                 }
                 return null;
               },
             ),
+
+            // Mostrar saldo actual del destino si está seleccionado
+            if (_contenedorDestinoSeleccionado != null)
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(12),
+                margin: const EdgeInsets.only(top: 8),
+                decoration: BoxDecoration(
+                  color: Colors.blue.shade50,
+                  border: Border.all(color: Colors.blue.shade200),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.account_balance_wallet,
+                      color: Colors.blue.shade700,
+                      size: 20,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Saldo Actual: ${_contenedorDestinoSeleccionado!.saldoActualCombustible} ${_contenedorDestinoSeleccionado!.unidadMedida}',
+                        style: TextStyle(
+                          color: Colors.blue.shade700,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
           ],
         );
       },
@@ -533,22 +719,6 @@ class _ControlContenedoresCombustibleScreenState
     );
   }
 
-  Widget _buildDateField() {
-    return InkWell(
-      onTap: () => _selectDate(context),
-      child: InputDecorator(
-        decoration: const InputDecoration(
-          labelText: 'Fecha de Movimiento',
-          border: OutlineInputBorder(),
-          prefixIcon: Icon(Icons.calendar_today),
-        ),
-        child: Text(
-          '${_fechaMovimiento.day.toString().padLeft(2, '0')}/${_fechaMovimiento.month.toString().padLeft(2, '0')}/${_fechaMovimiento.year}',
-        ),
-      ),
-    );
-  }
-
   Widget _buildValoresSection(bool isMediumScreen) {
     // Determinar qué campos mostrar según el tipo de movimiento
     List<Widget> campos = [];
@@ -557,30 +727,30 @@ class _ControlContenedoresCombustibleScreenState
     final unidadMedida =
         _contenedorOrigenSeleccionado?.unidadMedida ?? 'Litros';
 
-    // Campo Valor siempre visible
-    campos.add(
-      Expanded(
-        child: TextFormField(
-          controller: _valorController,
-          decoration: const InputDecoration(
-            labelText: 'Valor',
-            border: OutlineInputBorder(),
-            prefixIcon: Icon(Icons.attach_money),
-            suffixText: 'L',
-          ),
-          keyboardType: const TextInputType.numberWithOptions(decimal: true),
-          inputFormatters: [
-            FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,2}')),
-          ],
-          validator: (value) {
-            if (value == null || value.isEmpty) {
-              return 'Ingrese un valor';
-            }
-            return null;
-          },
-        ),
-      ),
-    );
+    // Campo Valor - Comentado, se calculará automáticamente en el backend
+    // campos.add(
+    //   Expanded(
+    //     child: TextFormField(
+    //       controller: _valorController,
+    //       decoration: const InputDecoration(
+    //         labelText: 'Valor',
+    //         border: OutlineInputBorder(),
+    //         prefixIcon: Icon(Icons.attach_money),
+    //         suffixText: 'L',
+    //       ),
+    //       keyboardType: const TextInputType.numberWithOptions(decimal: true),
+    //       inputFormatters: [
+    //         FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,2}')),
+    //       ],
+    //       validator: (value) {
+    //         if (value == null || value.isEmpty) {
+    //           return 'Ingrese un valor';
+    //         }
+    //         return null;
+    //       },
+    //     ),
+    //   ),
+    // );
 
     // Campos específicos según tipo de movimiento
     if (_tipoMovimientoSeleccionado != null) {
@@ -709,7 +879,7 @@ class _ControlContenedoresCombustibleScreenState
           SizedBox(
             width: 180,
             child: ElevatedButton(
-              onPressed: _isLoading ? null : _registrarMovimiento,
+              onPressed: _isLoading ? null : _mostrarConfirmacion,
               style: ElevatedButton.styleFrom(
                 backgroundColor: Theme.of(context).primaryColor,
                 foregroundColor: Colors.white,
@@ -746,7 +916,7 @@ class _ControlContenedoresCombustibleScreenState
         SizedBox(
           width: double.infinity,
           child: ElevatedButton(
-            onPressed: _isLoading ? null : _registrarMovimiento,
+            onPressed: _isLoading ? null : _mostrarConfirmacion,
             style: ElevatedButton.styleFrom(
               backgroundColor: Theme.of(context).primaryColor,
               foregroundColor: Colors.white,
@@ -769,20 +939,6 @@ class _ControlContenedoresCombustibleScreenState
     );
   }
 
-  Future<void> _selectDate(BuildContext context) async {
-    final DateTime? picked = await showDatePicker(
-      context: context,
-      initialDate: _fechaMovimiento,
-      firstDate: DateTime(2020),
-      lastDate: DateTime.now().add(const Duration(days: 365)),
-    );
-    if (picked != null && picked != _fechaMovimiento) {
-      setState(() {
-        _fechaMovimiento = picked;
-      });
-    }
-  }
-
   void _resetForm() {
     _formKey.currentState?.reset();
     setState(() {
@@ -798,6 +954,171 @@ class _ControlContenedoresCombustibleScreenState
     _obsController.clear();
   }
 
+  // Método para mostrar los datos preliminares antes de confirmar
+  void _mostrarConfirmacion() {
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
+
+    final user = ref.read(userProvider);
+
+    // Calcular valores según el tipo de movimiento
+    double valorEntrada = 0.0;
+    double valorSalida = 0.0;
+    double valorFinal = 0.0;
+
+    if (_tipoMovimientoSeleccionado == 'Entrada') {
+      valorEntrada = double.tryParse(_valorEntradaController.text) ?? 0.0;
+      valorSalida = 0.0;
+      valorFinal = valorEntrada;
+    } else if (_tipoMovimientoSeleccionado == 'Salida') {
+      valorEntrada = 0.0;
+      valorSalida = double.tryParse(_valorSalidaController.text) ?? 0.0;
+      valorFinal = valorSalida;
+    } else if (_tipoMovimientoSeleccionado == 'Traspaso') {
+      valorEntrada = double.tryParse(_valorEntradaController.text) ?? 0.0;
+      valorSalida = double.tryParse(_valorSalidaController.text) ?? 0.0;
+      valorFinal = valorSalida;
+    }
+
+    // Determinar unidad de medida
+    String unidadMedida = '';
+    if (_tipoMovimientoSeleccionado == 'Entrada') {
+      unidadMedida =
+          _contenedorDestinoSeleccionado?.unidadMedida ??
+          _contenedorOrigenSeleccionado!.unidadMedida;
+    } else {
+      unidadMedida = _contenedorOrigenSeleccionado!.unidadMedida;
+    }
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Confirmar Movimiento'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Datos del movimiento a registrar:',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 16),
+                _buildDatoConfirmacion(
+                  'Tipo de Movimiento',
+                  _tipoMovimientoSeleccionado ?? '',
+                ),
+                _buildDatoConfirmacion(
+                  'Origen',
+                  _contenedorOrigenSeleccionado?.descripcion ?? '',
+                ),
+                // Mostrar saldo actual del origen
+                _buildDatoConfirmacion(
+                  'Saldo Actual Origen',
+                  '${_contenedorOrigenSeleccionado?.saldoActualCombustible ?? 0.0} ${_contenedorOrigenSeleccionado?.unidadMedida ?? ''}',
+                ),
+                if (_contenedorDestinoSeleccionado != null)
+                  _buildDatoConfirmacion(
+                    'Destino',
+                    _contenedorDestinoSeleccionado!.descripcion,
+                  ),
+                // Mostrar saldo actual del destino si existe
+                if (_contenedorDestinoSeleccionado != null)
+                  _buildDatoConfirmacion(
+                    'Saldo Actual Destino',
+                    '${_contenedorDestinoSeleccionado!.saldoActualCombustible} ${_contenedorDestinoSeleccionado!.unidadMedida}',
+                  ),
+                _buildDatoConfirmacion('Valor', '$valorFinal $unidadMedida'),
+                if (valorEntrada > 0)
+                  _buildDatoConfirmacion(
+                    'Cantidad Entrada',
+                    '$valorEntrada $unidadMedida',
+                  ),
+                if (valorSalida > 0)
+                  _buildDatoConfirmacion(
+                    'Cantidad Salida',
+                    '$valorSalida $unidadMedida',
+                  ),
+                if (_obsController.text.isNotEmpty)
+                  _buildDatoConfirmacion('Observaciones', _obsController.text),
+                const SizedBox(height: 16),
+                const Text(
+                  'Datos técnicos:',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+                ),
+                _buildDatoConfirmacion(
+                  'Usuario',
+                  user?.nombreCompleto ?? 'N/A',
+                  isSmall: true,
+                ),
+                _buildDatoConfirmacion(
+                  'Sucursal Usuario',
+                  '${user?.codSucursal ?? 0}',
+                  isSmall: true,
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Cancelar'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                _registrarMovimiento();
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Theme.of(context).primaryColor,
+                foregroundColor: Colors.white,
+              ),
+              child: const Text('Confirmar Registro'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildDatoConfirmacion(
+    String label,
+    String value, {
+    bool isSmall = false,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8.0),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            flex: 2,
+            child: Text(
+              '$label:',
+              style: TextStyle(
+                fontWeight: FontWeight.w500,
+                fontSize: isSmall ? 11 : 14,
+                color: isSmall ? Colors.grey[600] : null,
+              ),
+            ),
+          ),
+          Expanded(
+            flex: 3,
+            child: Text(
+              value,
+              style: TextStyle(
+                fontSize: isSmall ? 11 : 14,
+                color: isSmall ? Colors.grey[600] : null,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Future<void> _registrarMovimiento() async {
     if (!_formKey.currentState!.validate()) {
       return;
@@ -810,6 +1131,55 @@ class _ControlContenedoresCombustibleScreenState
     try {
       final user = ref.read(userProvider);
 
+      // Determinar valorEntrada y valorSalida según el tipo de movimiento
+      double valorEntrada = 0.0;
+      double valorSalida = 0.0;
+      double valorFinal =
+          0.0; // Este será el valor que se asigna al campo "valor"
+
+      if (_tipoMovimientoSeleccionado == 'Entrada') {
+        valorEntrada = double.tryParse(_valorEntradaController.text) ?? 0.0;
+        valorSalida = 0.0;
+        valorFinal = valorEntrada; // En entrada, valor = valorEntrada
+      } else if (_tipoMovimientoSeleccionado == 'Salida') {
+        valorEntrada = 0.0;
+        valorSalida = double.tryParse(_valorSalidaController.text) ?? 0.0;
+        valorFinal = valorSalida; // En salida, valor = valorSalida
+      } else if (_tipoMovimientoSeleccionado == 'Traspaso') {
+        // Para traspaso usar los valores específicos de los campos
+        valorEntrada = double.tryParse(_valorEntradaController.text) ?? 0.0;
+        valorSalida = double.tryParse(_valorSalidaController.text) ?? 0.0;
+        valorFinal = valorSalida; // En traspaso, valor = valorSalida
+      }
+
+      // Determinar estado: 1 si es de vehículo a contenedor, 0 en otros casos
+      int estado = 0;
+      if (_contenedorOrigenSeleccionado?.clase == 'VEHICULO' &&
+          _contenedorDestinoSeleccionado?.clase == 'CONTENEDOR') {
+        estado = 1;
+      }
+
+      // Obtener codSucursal del usuario
+      final codSucursalUsuario = user?.codSucursal ?? 0;
+
+      // Determinar unidad de medida según el tipo de movimiento
+      String unidadMedida = '';
+      if (_tipoMovimientoSeleccionado == 'Entrada') {
+        // En caso de entrada/ingreso: unidad de medida del contenedor destino
+        unidadMedida =
+            _contenedorDestinoSeleccionado?.unidadMedida ??
+            _contenedorOrigenSeleccionado!.unidadMedida;
+      } else if (_tipoMovimientoSeleccionado == 'Salida') {
+        // En caso de salida: unidad de medida del contenedor origen (entrada)
+        unidadMedida = _contenedorOrigenSeleccionado!.unidadMedida;
+      } else if (_tipoMovimientoSeleccionado == 'Traspaso') {
+        // En caso de traspaso: unidad de medida del contenedor origen (salida)
+        unidadMedida = _contenedorOrigenSeleccionado!.unidadMedida;
+      } else {
+        // Por defecto usar el contenedor origen
+        unidadMedida = _contenedorOrigenSeleccionado!.unidadMedida;
+      }
+
       final movimiento = MovimientoEntity(
         idMovimiento: 0,
         tipoMovimiento: _tipoMovimientoSeleccionado!,
@@ -819,21 +1189,45 @@ class _ControlContenedoresCombustibleScreenState
         idDestino: _contenedorDestinoSeleccionado?.idContenedor ?? 0,
         codigoDestino: _contenedorDestinoSeleccionado?.codigo ?? '',
         sucursalDestino: _contenedorDestinoSeleccionado?.codSucursal ?? 0,
-        codSucursal: _contenedorOrigenSeleccionado!.codSucursal,
+        codSucursal: codSucursalUsuario, // codSucursal del usuario
         fechaMovimiento: _fechaMovimiento,
-        valor: double.tryParse(_valorController.text) ?? 0.0,
-        valorEntrada: double.tryParse(_valorEntradaController.text) ?? 0.0,
-        valorSalida: double.tryParse(_valorSalidaController.text) ?? 0.0,
-        valorSaldo: double.tryParse(_valorSaldoController.text) ?? 0.0,
-        unidadMedida: _contenedorOrigenSeleccionado!.unidadMedida,
-        estado: 1,
+        valor:
+            valorFinal, // Valor según tipo: valorEntrada (entrada), valorSalida (salida/traspaso)
+        valorEntrada: valorEntrada,
+        valorSalida: valorSalida,
+        valorSaldo: 0.0, // Se mejorará en el backend
+        unidadMedida: unidadMedida,
+        estado: estado,
         obs: _obsController.text,
         codEmpleado: user?.codEmpleado ?? 0,
-        idCompraGarrafa: 0,
+        idCompraGarrafa: 0, // En este caso es cero
         audUsuario: user?.codUsuario ?? 0,
       );
 
-      final result = await ref.read(
+      // Mostrar en consola para debug antes de enviar
+      print('=== MOVIMIENTO A REGISTRAR ===');
+      print('tipoMovimiento: ${movimiento.tipoMovimiento}');
+      print('idOrigen: ${movimiento.idOrigen}');
+      print('codigoOrigen: ${movimiento.codigoOrigen}');
+      print('sucursalOrigen: ${movimiento.sucursalOrigen}');
+      print('idDestino: ${movimiento.idDestino}');
+      print('codigoDestino: ${movimiento.codigoDestino}');
+      print('sucursalDestino: ${movimiento.sucursalDestino}');
+      print('codSucursal: ${movimiento.codSucursal}');
+      print('fechaMovimiento: ${movimiento.fechaMovimiento}');
+      print('valor: ${movimiento.valor}');
+      print('valorEntrada: ${movimiento.valorEntrada}');
+      print('valorSalida: ${movimiento.valorSalida}');
+      print('valorSaldo: ${movimiento.valorSaldo}');
+      print('unidadMedida: ${movimiento.unidadMedida}');
+      print('estado: ${movimiento.estado}');
+      print('obs: ${movimiento.obs}');
+      print('codEmpleado: ${movimiento.codEmpleado}');
+      print('idCompraGarrafa: ${movimiento.idCompraGarrafa}');
+      print('audUsuario: ${movimiento.audUsuario}');
+      print('===============================');
+
+      /* final result = await ref.read(
         registrarMovimientoProvider(movimiento).future,
       );
 
@@ -858,7 +1252,7 @@ class _ControlContenedoresCombustibleScreenState
             ),
           );
         }
-      }
+      } */
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

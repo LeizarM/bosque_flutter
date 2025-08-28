@@ -7,7 +7,6 @@ import 'package:bosque_flutter/domain/entities/control_combustible_entity.dart';
 
 import 'package:bosque_flutter/core/state/user_provider.dart';
 
-
 enum FuelType { gasolina, diesel, electrico, gas }
 
 extension FuelTypeExtension on FuelType {
@@ -87,20 +86,24 @@ class _ControlCombustibleScreenState
       final repo = ref.read(controlCombustibleRepositoryProvider);
       final coches = await repo.getCoches();
       final ids = <int>{};
-      final cochesList = coches
-          .where((e) => ids.add(e.idCoche)) // solo ids únicos
-          .map((e) => {
-                'id': e.idCoche, 
-                'label': e.coche,
-                'codSucursal': e.codSucursalCoche ?? 0,
-              })
-          .toList();
-      
+      final cochesList =
+          coches
+              .where((e) => ids.add(e.idCoche)) // solo ids únicos
+              .map(
+                (e) => {
+                  'id': e.idCoche,
+                  'label': e.coche,
+                  'codSucursal': e.codSucursalCoche ?? 0,
+                },
+              )
+              .toList();
+
       setState(() {
         _coches = cochesList;
-        _selectedCocheId = _coches.any((c) => c['id'] == _selectedCocheId)
-            ? _selectedCocheId
-            : (_coches.isNotEmpty ? _coches.first['id'] : null);
+        _selectedCocheId =
+            _coches.any((c) => c['id'] == _selectedCocheId)
+                ? _selectedCocheId
+                : (_coches.isNotEmpty ? _coches.first['id'] : null);
         _loadingCoches = false;
       });
     } catch (_) {
@@ -237,17 +240,19 @@ class _ControlCombustibleScreenState
       (c) => c['id'] == _selectedCocheId,
       orElse: () => <String, Object>{'id': 0, 'label': '', 'codSucursal': 1},
     );
-    
+
     final codSucursalMaqVehiDestino = selectedCoche['codSucursal'] as int;
 
     // Obtener los datos de consumo para mostrar la diferencia
     final kilometraje = double.tryParse(_kilometrajeController.text) ?? 0;
     List<dynamic> consumoData = [];
     try {
-      consumoData = await ref.read(listConsumoProvider({
-        'kilometraje': kilometraje,
-        'idCoche': _selectedCocheId!,
-      }).future);
+      consumoData = await ref.read(
+        listConsumoProvider({
+          'kilometraje': kilometraje,
+          'idCoche': _selectedCocheId!,
+        }).future,
+      );
     } catch (e) {
       // Si hay error, continuar sin datos de consumo
     }
@@ -264,10 +269,7 @@ class _ControlCombustibleScreenState
           child: Container(
             width: double.infinity,
             height: MediaQuery.of(context).size.height * 0.85,
-            constraints: const BoxConstraints(
-              maxWidth: 600,
-              minHeight: 400,
-            ),
+            constraints: const BoxConstraints(maxWidth: 600, minHeight: 400),
             child: Column(
               children: [
                 // Header
@@ -301,7 +303,7 @@ class _ControlCombustibleScreenState
                     ],
                   ),
                 ),
-                
+
                 // Content
                 Expanded(
                   child: SingleChildScrollView(
@@ -339,9 +341,9 @@ class _ControlCombustibleScreenState
                             ],
                           ),
                         ),
-                        
+
                         const SizedBox(height: 12),
-                        
+
                         // Mostrar información del recorrido/diferencia
                         if (consumoData.isNotEmpty) ...[
                           Container(
@@ -403,7 +405,7 @@ class _ControlCombustibleScreenState
                           ),
                           const SizedBox(height: 12),
                         ],
-                        
+
                         Text(
                           'Bidones disponibles (Sucursal: $codSucursalMaqVehiDestino)',
                           style: TextStyle(
@@ -412,14 +414,15 @@ class _ControlCombustibleScreenState
                             fontWeight: FontWeight.w500,
                           ),
                         ),
-                        
+
                         const SizedBox(height: 12),
-                        
+
                         // Container with fixed height for bidon list
-                        SizedBox(
+                        Container(
                           height: 300, // Fixed height to prevent overflow
                           child: _BidonListWidget(
-                            codSucursalMaqVehiDestino: codSucursalMaqVehiDestino,
+                            codSucursalMaqVehiDestino:
+                                codSucursalMaqVehiDestino,
                             onBidonSelected: _confirmBidonSelection,
                             buildBidonInfo: _buildBidonInfo,
                             formatDate: _formatDate,
@@ -429,7 +432,7 @@ class _ControlCombustibleScreenState
                     ),
                   ),
                 ),
-                
+
                 // Footer
                 Container(
                   padding: const EdgeInsets.all(16),
@@ -524,7 +527,7 @@ class _ControlCombustibleScreenState
 
   String _formatDate(String? dateString) {
     if (dateString == null) return 'N/A';
-    
+
     try {
       final date = DateTime.parse(dateString);
       return '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year} ${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
@@ -536,17 +539,18 @@ class _ControlCombustibleScreenState
   void _registrarCombustible() async {
     if (!_formKey.currentState!.validate() ||
         _selectedFuelType == null ||
-        _selectedCocheId == null) {
+        _selectedCocheId == null)
       return;
-    }
 
     try {
       // Validar primero si se puede registrar verificando el consumo
       final kilometraje = double.tryParse(_kilometrajeController.text) ?? 0;
-      final consumoData = await ref.read(listConsumoProvider({
-        'kilometraje': kilometraje,
-        'idCoche': _selectedCocheId!,
-      }).future);
+      final consumoData = await ref.read(
+        listConsumoProvider({
+          'kilometraje': kilometraje,
+          'idCoche': _selectedCocheId!,
+        }).future,
+      );
 
       int selectedIdCM = 0; // Valor por defecto
 
@@ -556,22 +560,24 @@ class _ControlCombustibleScreenState
         if (primerRegistro.esMenor == 1) {
           // Mostrar diálogo para seleccionar bidón
           final selectedBidonIdCM = await _showBidonSelectionDialog();
-          
+
           if (selectedBidonIdCM == null) {
             // Usuario canceló la selección
             if (mounted) {
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
-                  content: Text('Debe seleccionar un bidón para continuar con el registro'),
+                  content: Text(
+                    'Debe seleccionar un bidón para continuar con el registro',
+                  ),
                   backgroundColor: Colors.orange,
                 ),
               );
             }
             return;
           }
-          
+
           selectedIdCM = selectedBidonIdCM;
-          
+
           // IMPORTANTE: Proceder inmediatamente con el registro
           await _proceedWithRegistration(selectedIdCM, consumoData);
           return;
@@ -580,7 +586,6 @@ class _ControlCombustibleScreenState
 
       // Si no necesita bidón, proceder directamente con el registro
       await _proceedWithRegistration(selectedIdCM, consumoData);
-      
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -593,9 +598,12 @@ class _ControlCombustibleScreenState
     }
   }
 
-  Future<void> _proceedWithRegistration(int selectedIdCM, List<dynamic> consumoData) async {
+  Future<void> _proceedWithRegistration(
+    int selectedIdCM,
+    List<dynamic> consumoData,
+  ) async {
     if (!mounted) return;
-    
+
     try {
       // Mostrar mensaje de procesamiento
       ScaffoldMessenger.of(context).clearSnackBars();
@@ -627,11 +635,12 @@ class _ControlCombustibleScreenState
       );
       final cocheLabel = (selectedCoche['label'] ?? '') as String;
       final codSucursalCoche = (selectedCoche['codSucursal'] ?? 1) as int;
-      
-      final codEmpleado = await ref.read(userProvider.notifier).getCodEmpleado();
+
+      final codEmpleado =
+          await ref.read(userProvider.notifier).getCodEmpleado();
       final codUsuario = await ref.read(userProvider.notifier).getCodUsuario();
       final kilometraje = double.tryParse(_kilometrajeController.text) ?? 0;
-      
+
       final entity = CombustibleControlEntity(
         idC: 0,
         idCoche: _selectedCocheId!,
@@ -650,33 +659,32 @@ class _ControlCombustibleScreenState
         diferencia: 0,
         kilometrajeAnterior: 0,
         idCM: selectedIdCM,
-        esMenor: consumoData.isNotEmpty ? consumoData.first.esMenor ?? 0 : 0, nombreCompleto: ''
+        esMenor: consumoData.isNotEmpty ? consumoData.first.esMenor ?? 0 : 0,
+        nombreCompleto: '',
       );
 
       // Realizar el registro
       await ref
           .read(controlCombustibleProvider.notifier)
           .createControlCombustible(entity);
-      
+
       if (!mounted) return;
-      
+
       // Verificar el resultado
-      await Future.delayed(const Duration(milliseconds: 500)); // Esperar un poco para que se complete
+      await Future.delayed(
+        const Duration(milliseconds: 500),
+      ); // Esperar un poco para que se complete
       final result = ref.read(controlCombustibleProvider);
-      
+
       ScaffoldMessenger.of(context).clearSnackBars();
-      
+
       if (result is AsyncData) {
         if (result.value == true) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Row(
                 children: [
-                  Icon(
-                    Icons.check_circle,
-                    color: Colors.white,
-                    size: 24,
-                  ),
+                  Icon(Icons.check_circle, color: Colors.white, size: 24),
                   const SizedBox(width: 16),
                   const Expanded(
                     child: Text(
@@ -690,7 +698,7 @@ class _ControlCombustibleScreenState
               duration: const Duration(seconds: 3),
             ),
           );
-          
+
           // Limpiar el formulario
           _clearForm();
         } else {
@@ -698,11 +706,7 @@ class _ControlCombustibleScreenState
             SnackBar(
               content: Row(
                 children: [
-                  Icon(
-                    Icons.error,
-                    color: Colors.white,
-                    size: 24,
-                  ),
+                  Icon(Icons.error, color: Colors.white, size: 24),
                   const SizedBox(width: 16),
                   const Expanded(
                     child: Text('Error: No se pudo completar el registro'),
@@ -719,15 +723,9 @@ class _ControlCombustibleScreenState
           SnackBar(
             content: Row(
               children: [
-                Icon(
-                  Icons.error,
-                  color: Colors.white,
-                  size: 24,
-                ),
+                Icon(Icons.error, color: Colors.white, size: 24),
                 const SizedBox(width: 16),
-                Expanded(
-                  child: Text('Error en el registro: ${result.error}'),
-                ),
+                Expanded(child: Text('Error en el registro: ${result.error}')),
               ],
             ),
             backgroundColor: Colors.red,
@@ -744,7 +742,6 @@ class _ControlCombustibleScreenState
           ),
         );
       }
-      
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).clearSnackBars();
@@ -752,15 +749,9 @@ class _ControlCombustibleScreenState
           SnackBar(
             content: Row(
               children: [
-                Icon(
-                  Icons.error,
-                  color: Colors.white,
-                  size: 24,
-                ),
+                Icon(Icons.error, color: Colors.white, size: 24),
                 const SizedBox(width: 16),
-                Expanded(
-                  child: Text('Error durante el registro: $e'),
-                ),
+                Expanded(child: Text('Error durante el registro: $e')),
               ],
             ),
             backgroundColor: Colors.red,
@@ -792,7 +783,9 @@ class _ControlCombustibleScreenState
     final colorScheme = Theme.of(context).colorScheme;
     final isLoading = ref.watch(controlCombustibleProvider).isLoading;
     final isDesktop = ResponsiveUtilsBosque.isDesktop(context);
-    final horizontalPadding = ResponsiveUtilsBosque.getHorizontalPadding(context);
+    final horizontalPadding = ResponsiveUtilsBosque.getHorizontalPadding(
+      context,
+    );
     final verticalPadding = ResponsiveUtilsBosque.getVerticalPadding(context);
 
     Widget formFields() {
@@ -802,17 +795,23 @@ class _ControlCombustibleScreenState
         _loadingCoches
             ? const Center(child: CircularProgressIndicator())
             : DropdownButtonFormField<int>(
-                value: _coches.any((c) => c['id'] == _selectedCocheId) ? _selectedCocheId : null,
-                items: _coches
-                    .map((c) => DropdownMenuItem<int>(
+              value:
+                  _coches.any((c) => c['id'] == _selectedCocheId)
+                      ? _selectedCocheId
+                      : null,
+              items:
+                  _coches
+                      .map(
+                        (c) => DropdownMenuItem<int>(
                           value: c['id'],
                           child: Text(c['label'] ?? ''),
-                        ))
-                    .toList(),
-                onChanged: (v) => setState(() => _selectedCocheId = v),
-                decoration: const InputDecoration(labelText: 'Vehículo'),
-                validator: (v) => v == null ? 'Seleccione un vehículo' : null,
-              ),
+                        ),
+                      )
+                      .toList(),
+              onChanged: (v) => setState(() => _selectedCocheId = v),
+              decoration: const InputDecoration(labelText: 'Vehículo'),
+              validator: (v) => v == null ? 'Seleccione un vehículo' : null,
+            ),
         _buildFuelTypeSelector(colorScheme),
         _buildStyledTextField(
           controller: _estacionController,
@@ -856,17 +855,17 @@ class _ControlCombustibleScreenState
           children: [
             Expanded(
               child: Column(
+                children: fields.sublist(0, (fields.length / 2).ceil()),
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 mainAxisSize: MainAxisSize.min,
-                children: fields.sublist(0, (fields.length / 2).ceil()),
               ),
             ),
             const SizedBox(width: 32),
             Expanded(
               child: Column(
+                children: fields.sublist((fields.length / 2).ceil()),
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 mainAxisSize: MainAxisSize.min,
-                children: fields.sublist((fields.length / 2).ceil()),
               ),
             ),
           ],
@@ -874,8 +873,8 @@ class _ControlCombustibleScreenState
       } else {
         // Una columna en móvil/tablet
         return Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: fields,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
         );
       }
     }
@@ -892,9 +891,10 @@ class _ControlCombustibleScreenState
             child: Form(
               key: _formKey,
               child: ConstrainedBox(
-                constraints: isDesktop
-                    ? const BoxConstraints(maxWidth: 900)
-                    : const BoxConstraints(),
+                constraints:
+                    isDesktop
+                        ? const BoxConstraints(maxWidth: 900)
+                        : const BoxConstraints(),
                 child: Card(
                   elevation: isDesktop ? 6 : 2,
                   shape: RoundedRectangleBorder(
@@ -907,15 +907,21 @@ class _ControlCombustibleScreenState
                       children: [
                         Row(
                           children: [
-                            Icon(Icons.local_gas_station, color: colorScheme.primary, size: 32),
+                            Icon(
+                              Icons.local_gas_station,
+                              color: colorScheme.primary,
+                              size: 32,
+                            ),
                             const SizedBox(width: 12),
                             Expanded(
                               child: Text(
                                 'Registro Compra de Combustible',
-                                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                      color: colorScheme.primary,
-                                      fontWeight: FontWeight.bold,
-                                    ),
+                                style: Theme.of(
+                                  context,
+                                ).textTheme.titleMedium?.copyWith(
+                                  color: colorScheme.primary,
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
                             ),
                           ],
@@ -932,29 +938,41 @@ class _ControlCombustibleScreenState
                         const SizedBox(height: 24),
                         AnimatedSwitcher(
                           duration: const Duration(milliseconds: 300),
-                          child: isLoading
-                              ? Center(child: CircularProgressIndicator(key: ValueKey('loading')))
-                              : SizedBox(
-                                  width: double.infinity,
-                                  height: 52,
-                                  child: ElevatedButton.icon(
-                                    key: const ValueKey('button'),
-                                    onPressed: _registrarCombustible,
-                                    icon: const Icon(Icons.save),
-                                    label: const Text(
-                                      'Registrar',
-                                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                          child:
+                              isLoading
+                                  ? Center(
+                                    child: CircularProgressIndicator(
+                                      key: ValueKey('loading'),
                                     ),
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: colorScheme.primary,
-                                      foregroundColor: colorScheme.onPrimary,
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(16),
+                                  )
+                                  : SizedBox(
+                                    width: double.infinity,
+                                    height: 52,
+                                    child: ElevatedButton.icon(
+                                      key: const ValueKey('button'),
+                                      onPressed: _registrarCombustible,
+                                      icon: const Icon(Icons.save),
+                                      label: const Text(
+                                        'Registrar',
+                                        style: TextStyle(
+                                          fontSize: 18,
+                                          fontWeight: FontWeight.bold,
+                                        ),
                                       ),
-                                      padding: const EdgeInsets.symmetric(vertical: 16),
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: colorScheme.primary,
+                                        foregroundColor: colorScheme.onPrimary,
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(
+                                            16,
+                                          ),
+                                        ),
+                                        padding: const EdgeInsets.symmetric(
+                                          vertical: 16,
+                                        ),
+                                      ),
                                     ),
                                   ),
-                                ),
                         ),
                       ],
                     ),
@@ -970,58 +988,128 @@ class _ControlCombustibleScreenState
 
   // Selector visual de tipo de combustible usando el theme
   Widget _buildFuelTypeSelector(ColorScheme colorScheme) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-      children: FuelType.values.map((type) {
-        final isSelected = _selectedFuelType == type;
-        return GestureDetector(
-          onTap: () => setState(() => _selectedFuelType = type),
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 200),
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-            decoration: BoxDecoration(
-              gradient: isSelected
-                  ? LinearGradient(
-                      colors: [
-                        colorScheme.primary.withOpacity(0.85),
-                        colorScheme.primaryContainer.withOpacity(0.85)
-                      ],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    )
-                  : null,
-              color: isSelected ? null : colorScheme.surfaceContainerHighest,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(
-                color: isSelected ? colorScheme.primary : colorScheme.outlineVariant,
-                width: 2,
-              ),
-              boxShadow: isSelected
-                  ? [
-                      BoxShadow(
-                        color: colorScheme.primary.withOpacity(0.18),
-                        blurRadius: 8,
-                        offset: const Offset(0, 4),
-                      ),
-                    ]
-                  : null,
-            ),
-            child: Row(
-              children: [
-                Icon(type.icon, color: isSelected ? colorScheme.onPrimary : colorScheme.primary, size: 20),
-                const SizedBox(width: 8),
-                Text(
-                  type.label,
-                  style: TextStyle(
-                    color: isSelected ? colorScheme.onPrimary : colorScheme.onSurface,
-                    fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                  ),
-                ),
-              ],
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: colorScheme.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: colorScheme.outlineVariant.withOpacity(0.5)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Tipo de Combustible',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+              color: colorScheme.onSurface,
             ),
           ),
-        );
-      }).toList(),
+          const SizedBox(height: 16),
+          Wrap(
+            spacing: 12,
+            runSpacing: 12,
+            alignment: WrapAlignment.center,
+            children:
+                FuelType.values.map((type) {
+                  final isSelected = _selectedFuelType == type;
+                  return GestureDetector(
+                    onTap: () => setState(() => _selectedFuelType = type),
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 300),
+                      curve: Curves.easeInOut,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
+                      decoration: BoxDecoration(
+                        gradient:
+                            isSelected
+                                ? LinearGradient(
+                                  colors: [
+                                    colorScheme.primary,
+                                    colorScheme.primary.withOpacity(0.8),
+                                  ],
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
+                                )
+                                : null,
+                        color: isSelected ? null : colorScheme.surfaceVariant,
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(
+                          color:
+                              isSelected
+                                  ? colorScheme.primary
+                                  : colorScheme.outline.withOpacity(0.3),
+                          width: isSelected ? 2 : 1,
+                        ),
+                        boxShadow:
+                            isSelected
+                                ? [
+                                  BoxShadow(
+                                    color: colorScheme.primary.withOpacity(
+                                      0.25,
+                                    ),
+                                    blurRadius: 12,
+                                    offset: const Offset(0, 6),
+                                    spreadRadius: 1,
+                                  ),
+                                ]
+                                : [
+                                  BoxShadow(
+                                    color: Colors.black.withOpacity(0.05),
+                                    blurRadius: 4,
+                                    offset: const Offset(0, 2),
+                                  ),
+                                ],
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(4),
+                            decoration: BoxDecoration(
+                              color:
+                                  isSelected
+                                      ? colorScheme.onPrimary.withOpacity(0.2)
+                                      : colorScheme.primaryContainer
+                                          .withOpacity(0.3),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Icon(
+                              type.icon,
+                              color:
+                                  isSelected
+                                      ? colorScheme.onPrimary
+                                      : colorScheme.primary,
+                              size: 20,
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Text(
+                            type.label,
+                            style: TextStyle(
+                              color:
+                                  isSelected
+                                      ? colorScheme.onPrimary
+                                      : colorScheme.onSurface,
+                              fontWeight:
+                                  isSelected
+                                      ? FontWeight.bold
+                                      : FontWeight.w500,
+                              fontSize: 14,
+                              letterSpacing: 0.2,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                }).toList(),
+          ),
+        ],
+      ),
     );
   }
 
@@ -1084,7 +1172,7 @@ class _BidonListWidget extends ConsumerWidget {
     return FutureBuilder<List<dynamic>>(
       future: () async {
         final repo = ref.read(controlCombustibleMaquinaMontacargaProvider);
-        return await repo.listBidonesPendientes(codSucursalMaqVehiDestino );
+        return await repo.listBidonesPendientes(codSucursalMaqVehiDestino);
       }(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
@@ -1099,16 +1187,13 @@ class _BidonListWidget extends ConsumerWidget {
                 const SizedBox(height: 12),
                 Text(
                   'Cargando bidones...',
-                  style: TextStyle(
-                    color: Colors.grey[600],
-                    fontSize: 12,
-                  ),
+                  style: TextStyle(color: Colors.grey[600], fontSize: 12),
                 ),
               ],
             ),
           );
         }
-        
+
         if (snapshot.hasError) {
           return Center(
             child: Column(
@@ -1138,19 +1223,16 @@ class _BidonListWidget extends ConsumerWidget {
                 const SizedBox(height: 4),
                 Text(
                   'No se pudieron cargar los bidones',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.red[400],
-                  ),
+                  style: TextStyle(fontSize: 12, color: Colors.red[400]),
                   textAlign: TextAlign.center,
                 ),
               ],
             ),
           );
         }
-        
+
         final bidones = snapshot.data ?? [];
-        
+
         if (bidones.isEmpty) {
           return Center(
             child: Column(
@@ -1192,7 +1274,7 @@ class _BidonListWidget extends ConsumerWidget {
             ),
           );
         }
-        
+
         return ListView.builder(
           itemCount: bidones.length,
           padding: EdgeInsets.zero,
@@ -1229,7 +1311,9 @@ class _BidonListWidget extends ConsumerWidget {
                           Container(
                             padding: const EdgeInsets.all(6),
                             decoration: BoxDecoration(
-                              color: Theme.of(context).primaryColor.withOpacity(0.1),
+                              color: Theme.of(
+                                context,
+                              ).primaryColor.withOpacity(0.1),
                               shape: BoxShape.circle,
                             ),
                             child: Icon(
@@ -1254,9 +1338,18 @@ class _BidonListWidget extends ConsumerWidget {
                                   overflow: TextOverflow.ellipsis,
                                 ),
                                 const SizedBox(height: 4),
-                                buildBidonInfo('📅', formatDate(bidon.fecha?.toString())),
-                                buildBidonInfo('⛽', '${bidon.litrosIngreso ?? 0} L'),
-                                buildBidonInfo('🚚', bidon.nombreMaquinaOrigen ?? 'N/A'),
+                                buildBidonInfo(
+                                  '📅',
+                                  formatDate(bidon.fecha?.toString()),
+                                ),
+                                buildBidonInfo(
+                                  '⛽',
+                                  '${bidon.litrosIngreso ?? 0} L',
+                                ),
+                                buildBidonInfo(
+                                  '🚚',
+                                  bidon.nombreMaquinaOrigen ?? 'N/A',
+                                ),
                               ],
                             ),
                           ),
