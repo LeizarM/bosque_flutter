@@ -77,14 +77,29 @@ class _ControlContenedoresCombustibleScreenState
     List<ContenedorEntity> contenedores,
   ) {
     final Map<String, ContenedorEntity> mapaUnico = {};
+    final Set<String> clavesVistas = {};
 
     for (final contenedor in contenedores) {
       // Crear clave única usando idContenedor + codigo
       final claveUnica = '${contenedor.idContenedor}_${contenedor.codigo}';
-      mapaUnico[claveUnica] = contenedor;
+
+      // Solo agregar si no hemos visto esta clave antes
+      if (!clavesVistas.contains(claveUnica)) {
+        clavesVistas.add(claveUnica);
+        mapaUnico[claveUnica] = contenedor;
+      } else {
+        print(
+          'DEBUG: Duplicado ignorado - $claveUnica (${contenedor.descripcion})',
+        );
+      }
     }
 
-    return mapaUnico.values.toList();
+    final resultado = mapaUnico.values.toList();
+    print(
+      'DEBUG: Contenedores únicos después de filtrado: ${resultado.length}',
+    );
+
+    return resultado;
   }
 
   // Método para filtrar contenedores de destino (permite traspasos entre sucursales)
@@ -103,38 +118,53 @@ class _ControlContenedoresCombustibleScreenState
     // Aplicar reglas de negocio según el tipo de origen
     if (_contenedorOrigenSeleccionado?.clase == 'CONTENEDOR') {
       // REGLA 2: CONTENEDOR → VEHICULO/MAQUINA/MONTACARGA = SALIDA
-      // Mostrar vehículos, máquinas y montacargas de la misma sucursal
+      // Mostrar vehículos, máquinas y montacargas de la MISMA SUCURSAL QUE EL CONTENEDOR ORIGEN
       resultado.addAll(
         contenedores.where(
           (contenedor) =>
               (contenedor.clase == 'VEHICULO' ||
                   contenedor.clase == 'MAQUINA' ||
                   contenedor.clase == 'MONTACARGA') &&
-              contenedor.codSucursal == user.codSucursal,
+              contenedor.codSucursal ==
+                  _contenedorOrigenSeleccionado!.codSucursal,
         ),
       );
 
       // REGLA 3: CONTENEDOR → CONTENEDOR = TRASPASO (solo diferentes sucursales)
-      // Mostrar contenedores de OTRAS sucursales (no la misma)
+      // Mostrar contenedores de OTRAS sucursales (no la misma que el contenedor origen)
       resultado.addAll(
         contenedores.where(
           (contenedor) =>
               contenedor.clase == 'CONTENEDOR' &&
-              contenedor.codSucursal != user.codSucursal,
+              contenedor.codSucursal !=
+                  _contenedorOrigenSeleccionado!.codSucursal,
         ),
       );
     } else if (_contenedorOrigenSeleccionado?.clase == 'VEHICULO') {
       // REGLA 1: VEHICULO → CONTENEDOR = ENTRADA
-      // Solo mostrar contenedores de la misma sucursal
+      // Mostrar contenedores de la MISMA SUCURSAL QUE EL VEHICULO ORIGEN
       resultado.addAll(
         contenedores.where(
           (contenedor) =>
               contenedor.clase == 'CONTENEDOR' &&
-              contenedor.codSucursal == user.codSucursal,
+              contenedor.codSucursal ==
+                  _contenedorOrigenSeleccionado!.codSucursal,
+        ),
+      );
+    } else if (_contenedorOrigenSeleccionado?.clase == 'MAQUINA' ||
+        _contenedorOrigenSeleccionado?.clase == 'MONTACARGA') {
+      // REGLA ADICIONAL: MAQUINA/MONTACARGA → CONTENEDOR = ENTRADA
+      // Mostrar contenedores de la MISMA SUCURSAL QUE LA MAQUINA/MONTACARGA ORIGEN
+      resultado.addAll(
+        contenedores.where(
+          (contenedor) =>
+              contenedor.clase == 'CONTENEDOR' &&
+              contenedor.codSucursal ==
+                  _contenedorOrigenSeleccionado!.codSucursal,
         ),
       );
     }
-    // REGLAS 5 y 6: MAQUINA y MONTACARGA no pueden ser origen (no agregamos nada)
+    // Si hay otras clases de origen, no se muestran destinos
 
     // Eliminar duplicados basados en idContenedor + codigo
     return _eliminarContenedoresDuplicados(resultado);
@@ -536,33 +566,56 @@ class _ControlContenedoresCombustibleScreenState
             ),
 
             // Contenedor Origen - Siempre visible
-            DropdownButtonFormField<ContenedorEntity>(
-              value: _contenedorOrigenSeleccionado,
+            DropdownButtonFormField<String>(
+              value:
+                  _contenedorOrigenSeleccionado != null
+                      ? '${_contenedorOrigenSeleccionado!.idContenedor}_${_contenedorOrigenSeleccionado!.codigo}'
+                      : null,
               decoration: const InputDecoration(
                 labelText: 'Origen',
                 border: OutlineInputBorder(),
                 prefixIcon: Icon(Icons.inventory),
               ),
               isExpanded: true, // Resolver overflow
-              items:
-                  contenedoresFiltrados.map((ContenedorEntity contenedor) {
-                    return DropdownMenuItem<ContenedorEntity>(
-                      value: contenedor,
-                      child: Tooltip(
-                        message:
-                            '${contenedor.codigo} - ${contenedor.descripcion}\nSaldo: ${contenedor.saldoActualCombustible} ${contenedor.unidadMedida}',
-                        child: Text(
-                          contenedor.descripcion,
-                          overflow: TextOverflow.ellipsis,
-                          maxLines: 1,
-                        ),
+              items: () {
+                // Asegurar que no hay duplicados en el dropdown de origen
+                final contenedoresUnicos = _eliminarContenedoresDuplicados(
+                  contenedoresFiltrados,
+                );
+
+                return contenedoresUnicos.map((ContenedorEntity contenedor) {
+                  // Usar clave única como value
+                  final claveUnica =
+                      '${contenedor.idContenedor}_${contenedor.codigo}';
+                  return DropdownMenuItem<String>(
+                    value: claveUnica,
+                    child: Tooltip(
+                      message:
+                          '${contenedor.codigo} - ${contenedor.descripcion}\nSaldo: ${contenedor.saldoActualCombustible} ${contenedor.unidadMedida}',
+                      child: Text(
+                        contenedor.descripcion,
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 1,
                       ),
-                    );
-                  }).toList(),
-              onChanged: (ContenedorEntity? newValue) {
-                setState(() {
-                  _contenedorOrigenSeleccionado = newValue;
-                });
+                    ),
+                  );
+                }).toList();
+              }(),
+              onChanged: (String? newValue) {
+                if (newValue != null) {
+                  // Buscar el contenedor correspondiente a la clave única
+                  final contenedorSeleccionado = contenedoresFiltrados
+                      .firstWhere(
+                        (c) => '${c.idContenedor}_${c.codigo}' == newValue,
+                      );
+                  setState(() {
+                    _contenedorOrigenSeleccionado = contenedorSeleccionado;
+                  });
+                } else {
+                  setState(() {
+                    _contenedorOrigenSeleccionado = null;
+                  });
+                }
                 _determinarTipoMovimiento();
               },
               validator: (value) {
@@ -573,86 +626,199 @@ class _ControlContenedoresCombustibleScreenState
               },
             ),
 
-            // Mostrar saldo actual del origen si está seleccionado
-            if (_contenedorOrigenSeleccionado != null)
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(12),
-                margin: const EdgeInsets.only(top: 8),
-                decoration: BoxDecoration(
-                  color: Colors.green.shade50,
-                  border: Border.all(color: Colors.green.shade200),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.account_balance_wallet,
-                      color: Colors.green.shade700,
-                      size: 20,
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        'Saldo Actual: ${_contenedorOrigenSeleccionado!.saldoActualCombustible} ${_contenedorOrigenSeleccionado!.unidadMedida}',
-                        style: TextStyle(
-                          color: Colors.green.shade700,
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
             const SizedBox(height: 16),
 
             // Contenedor Destino - Siempre visible
-            DropdownButtonFormField<ContenedorEntity>(
-              value: _contenedorDestinoSeleccionado,
-              decoration: const InputDecoration(
-                labelText: 'Destino',
-                border: OutlineInputBorder(),
-                prefixIcon: Icon(Icons.inventory_2),
-              ),
-              isExpanded: true, // Resolver overflow
-              items:
-                  _filtrarContenedoresDestino(
-                    contenedores,
-                  ).where((c) => _esContenedorDestinoValido(c)).map((
-                    ContenedorEntity contenedor,
-                  ) {
-                    return DropdownMenuItem<ContenedorEntity>(
-                      value: contenedor,
-                      child: Tooltip(
-                        message:
-                            '${contenedor.codigo} - ${contenedor.descripcion}\nSaldo: ${contenedor.saldoActualCombustible} ${contenedor.unidadMedida}',
-                        child: Text(
-                          contenedor.descripcion,
-                          overflow: TextOverflow.ellipsis,
-                          maxLines: 1,
-                        ),
-                      ),
+            Builder(
+              builder: (context) {
+                // Calcular items disponibles
+                final itemsDisponibles =
+                    (() {
+                      try {
+                        // Aplicar todos los filtros y eliminar duplicados al final
+                        final contenedoresDestino = _filtrarContenedoresDestino(
+                          contenedores,
+                        );
+                        final contenedoresValidos =
+                            contenedoresDestino
+                                .where((c) => _esContenedorDestinoValido(c))
+                                .toList();
+
+                        // Eliminar duplicados finales basado en idContenedor + codigo
+                        final contenedoresUnicos =
+                            _eliminarContenedoresDuplicados(
+                              contenedoresValidos,
+                            );
+
+                        // Crear un mapa para garantizar valores únicos en el dropdown
+                        final Map<String, ContenedorEntity> itemsUnicos = {};
+                        final Set<String> clavesUsadas = {};
+
+                        for (var contenedor in contenedoresUnicos) {
+                          final claveUnica =
+                              '${contenedor.idContenedor}_${contenedor.codigo}';
+
+                          // Solo agregar si la clave no ha sido usada
+                          if (!clavesUsadas.contains(claveUnica)) {
+                            clavesUsadas.add(claveUnica);
+                            itemsUnicos[claveUnica] = contenedor;
+                          } else {
+                            print(
+                              'DUPLICADO ELIMINADO en dropdown: $claveUnica - ${contenedor.descripcion}',
+                            );
+                          }
+                        }
+
+                        print(
+                          'DEBUG: Items únicos para dropdown destino: ${itemsUnicos.length}',
+                        );
+                        print('DEBUG: Claves: ${itemsUnicos.keys.toList()}');
+
+                        return itemsUnicos.entries.map((entry) {
+                          final claveUnica = entry.key;
+                          final contenedor = entry.value;
+
+                          // Debug específico para ver saldos
+                          print(
+                            'CONTENEDOR DESTINO: ${contenedor.descripcion}',
+                          );
+                          print('  - Código: ${contenedor.codigo}');
+                          print('  - Sucursal: ${contenedor.codSucursal}');
+                          print(
+                            '  - Saldo: ${contenedor.saldoActualCombustible}',
+                          );
+                          print('  - Unidad: ${contenedor.unidadMedida}');
+
+                          return DropdownMenuItem<String>(
+                            value: claveUnica,
+                            child: Tooltip(
+                              message:
+                                  '${contenedor.codigo} - ${contenedor.descripcion}\nSucursal: ${contenedor.codSucursal}\nSaldo: ${contenedor.saldoActualCombustible} ${contenedor.unidadMedida}',
+                              child: Text(
+                                contenedor.descripcion,
+                                overflow: TextOverflow.ellipsis,
+                                maxLines: 1,
+                              ),
+                            ),
+                          );
+                        }).toList();
+                      } catch (e) {
+                        print('ERROR creando items dropdown destino: $e');
+                        return <DropdownMenuItem<String>>[];
+                      }
+                    })();
+
+                // Calcular valor actual válido
+                String? valorActual =
+                    _contenedorDestinoSeleccionado != null
+                        ? '${_contenedorDestinoSeleccionado!.idContenedor}_${_contenedorDestinoSeleccionado!.codigo}'
+                        : null;
+
+                // Verificar si el valor actual está en los items disponibles
+                if (valorActual != null) {
+                  final esValorValido = itemsDisponibles.any(
+                    (item) => item.value == valorActual,
+                  );
+                  if (!esValorValido) {
+                    print('VALOR INVÁLIDO detectado: $valorActual');
+                    print(
+                      'Items disponibles: ${itemsDisponibles.map((e) => e.value).toList()}',
                     );
-                  }).toList(),
-              onChanged: (ContenedorEntity? newValue) {
-                setState(() {
-                  _contenedorDestinoSeleccionado = newValue;
-                });
-                _determinarTipoMovimiento();
-              },
-              validator: (value) {
-                // Solo requerido para traspaso
-                if (_tipoMovimientoSeleccionado == 'Traspaso' &&
-                    value == null) {
-                  return 'Por favor seleccione un destino';
+                    // Limpiar selección si no está disponible
+                    valorActual = null;
+                    WidgetsBinding.instance.addPostFrameCallback((_) {
+                      if (mounted) {
+                        setState(() {
+                          _contenedorDestinoSeleccionado = null;
+                        });
+                      }
+                    });
+                  }
                 }
-                return null;
+
+                return DropdownButtonFormField<String>(
+                  value: valorActual,
+                  decoration: const InputDecoration(
+                    labelText: 'Destino',
+                    border: OutlineInputBorder(),
+                    prefixIcon: Icon(Icons.inventory_2),
+                  ),
+                  isExpanded: true, // Resolver overflow
+                  items: itemsDisponibles,
+                  onChanged: (String? newValue) {
+                    if (newValue != null) {
+                      try {
+                        // Buscar el contenedor en los datos originales
+                        ContenedorEntity? contenedorEncontrado;
+
+                        // Buscar primero en contenedores filtrados para destino
+                        final contenedoresDestino = _filtrarContenedoresDestino(
+                          contenedores,
+                        );
+
+                        try {
+                          contenedorEncontrado = contenedoresDestino.firstWhere(
+                            (c) => '${c.idContenedor}_${c.codigo}' == newValue,
+                          );
+                        } catch (e) {
+                          // Si no se encuentra, buscar en toda la lista
+                          print(
+                            'FALLBACK: Buscando en lista completa para clave: $newValue',
+                          );
+                          try {
+                            contenedorEncontrado = contenedores.firstWhere(
+                              (c) =>
+                                  '${c.idContenedor}_${c.codigo}' == newValue,
+                            );
+                            print(
+                              'ENCONTRADO en lista completa: ${contenedorEncontrado.descripcion}',
+                            );
+                          } catch (e2) {
+                            print(
+                              'ERROR: Contenedor no encontrado en ninguna lista: $newValue',
+                            );
+                            contenedorEncontrado = null;
+                          }
+                        }
+
+                        setState(() {
+                          _contenedorDestinoSeleccionado = contenedorEncontrado;
+                        });
+
+                        if (contenedorEncontrado != null) {
+                          print(
+                            'DESTINO SELECCIONADO: ${contenedorEncontrado.descripcion} (${contenedorEncontrado.idContenedor}_${contenedorEncontrado.codigo})',
+                          );
+                          print(
+                            'SALDO POR SUCURSAL: ${contenedorEncontrado.saldoActualCombustible} ${contenedorEncontrado.unidadMedida} - Sucursal: ${contenedorEncontrado.codSucursal}',
+                          );
+                        }
+                      } catch (e) {
+                        print('ERROR GENERAL en onChanged destino: $e');
+                        setState(() {
+                          _contenedorDestinoSeleccionado = null;
+                        });
+                      }
+                    } else {
+                      setState(() {
+                        _contenedorDestinoSeleccionado = null;
+                      });
+                    }
+                    _determinarTipoMovimiento();
+                  },
+                  validator: (value) {
+                    // Solo requerido para traspaso
+                    if (_tipoMovimientoSeleccionado == 'Traspaso' &&
+                        value == null) {
+                      return 'Por favor seleccione un destino';
+                    }
+                    return null;
+                  },
+                );
               },
             ),
 
-            // Mostrar saldo actual del destino si está seleccionado
+            // Mostrar saldo actual del destino debajo del dropdown
             if (_contenedorDestinoSeleccionado != null)
               Container(
                 width: double.infinity,
@@ -673,7 +839,7 @@ class _ControlContenedoresCombustibleScreenState
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        'Saldo Actual: ${_contenedorDestinoSeleccionado!.saldoActualCombustible} ${_contenedorDestinoSeleccionado!.unidadMedida}',
+                        'Saldo: ${_contenedorDestinoSeleccionado!.saldoActualCombustible} ${_contenedorDestinoSeleccionado!.unidadMedida} (Sucursal: ${_contenedorDestinoSeleccionado!.codSucursal})',
                         style: TextStyle(
                           color: Colors.blue.shade700,
                           fontSize: 14,
@@ -758,14 +924,21 @@ class _ControlContenedoresCombustibleScreenState
         tipoMovimiento: _tipoMovimientoSeleccionado!,
       );
 
+      print('DEBUG: Tipo movimiento: $_tipoMovimientoSeleccionado');
+      print('DEBUG: Campos habilitados: $camposHabilitados');
+
       // Campo de entrada
       if (camposHabilitados['valorEntrada'] == true) {
-        final etiquetaEntrada = MovimientoBusinessLogic.obtenerEtiquetaCantidad(
-          tipoMovimiento: _tipoMovimientoSeleccionado!,
-          unidadMedida: unidadMedida,
-        );
+        String etiquetaEntrada;
+        if (_tipoMovimientoSeleccionado == 'Traspaso') {
+          etiquetaEntrada = 'Cantidad a Recibir (Destino)';
+        } else {
+          etiquetaEntrada = MovimientoBusinessLogic.obtenerEtiquetaCantidad(
+            tipoMovimiento: _tipoMovimientoSeleccionado!,
+            unidadMedida: unidadMedida,
+          );
+        }
 
-        campos.add(const SizedBox(width: 16));
         campos.add(
           Expanded(
             child: TextFormField(
@@ -775,6 +948,10 @@ class _ControlContenedoresCombustibleScreenState
                 border: const OutlineInputBorder(),
                 prefixIcon: const Icon(Icons.input),
                 suffixText: unidadMedida.contains('Litro') ? 'L' : 'U',
+                helperText:
+                    _tipoMovimientoSeleccionado == 'Traspaso'
+                        ? 'Cantidad que ingresa al contenedor destino'
+                        : null,
               ),
               keyboardType: const TextInputType.numberWithOptions(
                 decimal: true,
@@ -796,12 +973,21 @@ class _ControlContenedoresCombustibleScreenState
 
       // Campo de salida
       if (camposHabilitados['valorSalida'] == true) {
-        final etiquetaSalida = MovimientoBusinessLogic.obtenerEtiquetaCantidad(
-          tipoMovimiento: _tipoMovimientoSeleccionado!,
-          unidadMedida: unidadMedida,
-        ).replaceAll('Entrada', 'Salida');
+        String etiquetaSalida;
+        if (_tipoMovimientoSeleccionado == 'Traspaso') {
+          etiquetaSalida = 'Cantidad a Enviar (Origen)';
+        } else {
+          etiquetaSalida = MovimientoBusinessLogic.obtenerEtiquetaCantidad(
+            tipoMovimiento: _tipoMovimientoSeleccionado!,
+            unidadMedida: unidadMedida,
+          ).replaceAll('Entrada', 'Salida');
+        }
 
-        campos.add(const SizedBox(width: 16));
+        // Agregar espaciado si ya hay campos
+        if (campos.isNotEmpty) {
+          campos.add(const SizedBox(width: 16));
+        }
+
         campos.add(
           Expanded(
             child: TextFormField(
@@ -811,6 +997,10 @@ class _ControlContenedoresCombustibleScreenState
                 border: const OutlineInputBorder(),
                 prefixIcon: const Icon(Icons.output),
                 suffixText: unidadMedida.contains('Litro') ? 'L' : 'U',
+                helperText:
+                    _tipoMovimientoSeleccionado == 'Traspaso'
+                        ? 'Cantidad que sale del contenedor origen'
+                        : null,
               ),
               keyboardType: const TextInputType.numberWithOptions(
                 decimal: true,
@@ -829,6 +1019,25 @@ class _ControlContenedoresCombustibleScreenState
           ),
         );
       }
+    }
+
+    print('DEBUG: Total campos creados: ${campos.length}');
+
+    // Si no hay campos, mostrar un mensaje informativo
+    if (campos.isEmpty) {
+      return Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.grey.shade100,
+          border: Border.all(color: Colors.grey.shade300),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: const Text(
+          'Seleccione origen y destino para habilitar campos de cantidad',
+          style: TextStyle(color: Colors.grey, fontStyle: FontStyle.italic),
+          textAlign: TextAlign.center,
+        ),
+      );
     }
 
     // En pantallas pequeñas, usar columna en lugar de fila
@@ -1159,8 +1368,12 @@ class _ControlContenedoresCombustibleScreenState
         estado = 1;
       }
 
-      // Obtener codSucursal del usuario
-      final codSucursalUsuario = user?.codSucursal ?? 0;
+      // Obtener codSucursal del usuario usando el método getCodSucursal
+      final userNotifier = ref.read(userProvider.notifier);
+      final codSucursalUsuario = await userNotifier.getCodSucursal();
+      print(
+        'DEBUG: codSucursal obtenido desde getCodSucursal(): $codSucursalUsuario',
+      );
 
       // Determinar unidad de medida según el tipo de movimiento
       String unidadMedida = '';
@@ -1227,7 +1440,7 @@ class _ControlContenedoresCombustibleScreenState
       print('audUsuario: ${movimiento.audUsuario}');
       print('===============================');
 
-      /* final result = await ref.read(
+      final result = await ref.read(
         registrarMovimientoProvider(movimiento).future,
       );
 
@@ -1252,7 +1465,7 @@ class _ControlContenedoresCombustibleScreenState
             ),
           );
         }
-      } */
+      }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
