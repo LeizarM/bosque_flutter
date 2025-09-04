@@ -99,20 +99,24 @@ final routerProvider = Provider<GoRouter>((ref) {
               name: 'tgas_ControlCombustibleView',
               builder: (context, state) => const ControlCombustibleViewScreen(),
             ),
+
             // Para el registro de bidones
             GoRoute(
               path: '/dashboard/tgas_ControlCombustibleMaqMont/Registro',
               name: 'tgas_ControlCombustibleMaqMont',
               builder:
                   (context, state) =>
-                      const ControlContenedoresCombustibleScreen(),
+                      const ControlCombustibleMaquinaMontacargaScreen(),
             ),
             //Para ver el historial de bidones
             GoRoute(
               path: '/dashboard/tgas_ControlCombustibleMaqMont/View',
               name: 'tgas_ControlCombustibleMaqMontView',
-              builder: (context, state) => const ControlCombustibleMainScreen(),
+              builder:
+                  (context, state) =>
+                      const ControlCombustibleMaquinaMontaCargaViewScreen(),
             ),
+
             //Para registrar los depositos
             GoRoute(
               path: '/dashboard/tdep_Deposito/Registro',
@@ -150,6 +154,11 @@ final routerProvider = Provider<GoRouter>((ref) {
               path: '/dashboard/tpre_Solicitud/VerSolicitud',
               name: 'tpre_SolicitudView',
               builder: (context, state) => const PrestamoViewScreen(),
+            ),
+            GoRoute(
+              path: '/dashboard/ted_EmpleadoDependiente/register',
+              name: 'ted_EmpleadoDependiente',
+              builder: (context, state) => const EmpleadosDependientesView(),
             ),
           ],
         ),
@@ -217,7 +226,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         ),
         // Ruta para prestamo de vehiculos
         GoRoute(
-          path: '/tpre_Solicitud/Solicitud',
+          path: '/tpre_Solicitud/Solicitud/Register',
           redirect: (context, state) => '/dashboard/tpre_Solicitud/Solicitud',
         ),
         //Para ver el prestamo de vehiculos
@@ -225,6 +234,12 @@ final routerProvider = Provider<GoRouter>((ref) {
           path: '/tpre_Solicitud/VerSolicitud',
           redirect:
               (context, state) => '/dashboard/tpre_Solicitud/VerSolicitud',
+        ),
+
+        GoRoute(
+          path: '/ted_EmpleadoDependiente/register',
+          redirect:
+              (context, state) => '/dashboard/ted_EmpleadoDependiente/register',
         ),
 
         GoRoute(

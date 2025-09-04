@@ -1,4 +1,6 @@
+import 'package:bosque_flutter/core/state/empleados_dependientes_provider.dart';
 import 'package:bosque_flutter/core/state/user_provider.dart';
+import 'package:bosque_flutter/presentation/widgets/dependientes/cumpleanios.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -8,7 +10,9 @@ class DashboardHomeContent extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+     ref.watch(cumpleMensajesInitProvider);
     final user = ref.watch(userProvider);
+    final cumpleMensajes = ref.watch(cumpleMensajesProvider);
 
     return Center(
       child: user != null
@@ -19,7 +23,11 @@ class DashboardHomeContent extends ConsumerWidget {
                   'Bienvenido, ${user.nombreCompleto}',
                   style: Theme.of(context).textTheme.headlineMedium,
                 ),
-                const SizedBox(height: 16)
+                const SizedBox(height: 16),
+                CumpleanosBanner(
+                  cumpleMensajes: cumpleMensajes,
+                  onClose: () => ref.read(cumpleMensajesProvider.notifier).state = [],
+                ),
               ],
             )
           : const Text('No hay datos de usuario disponibles'),

@@ -1,3 +1,5 @@
+//export 'package:bosque_flutter/presentation/screens/control-combustible-maquina-montacarga/control_contenedores_combustible_screen.dart';
+
 export 'package:bosque_flutter/presentation/screens/control-combustible-maquina-montacarga/control_contenedores_combustible_screen.dart';
 
 export 'package:bosque_flutter/presentation/screens/auth/change_password_screen.dart';
@@ -19,3 +21,7 @@ export 'package:bosque_flutter/presentation/screens/prestamo_vehiculos/prestamo_
 export 'package:bosque_flutter/presentation/screens/prestamo_vehiculos/prestamo_view_screen.dart';
 export 'package:bosque_flutter/presentation/screens/usuarios/usuarios_home_screen.dart';
 export 'package:bosque_flutter/presentation/screens/ventas/ventas_home_screen.dart';
+export 'package:bosque_flutter/presentation/screens/ficha-trabajador/empleado_dependiente_screen.dart';
+export 'package:bosque_flutter/presentation/screens/ficha-trabajador/dependiente_screen.dart';
+export 'package:bosque_flutter/presentation/screens/ficha-trabajador/empleado_informacion_screen.dart';
+export 'package:bosque_flutter/presentation/screens/control-combustible-maquina-montacarga/control_combustible_maquina_montacarga_screen.dart';

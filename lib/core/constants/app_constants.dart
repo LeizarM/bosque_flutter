@@ -1,6 +1,6 @@
 class AppConstants {
-  //static const String baseUrl = 'https://app.esppapel.com:8443';
-  static const String baseUrl = 'http://192.168.3.107:9223';
+  static const String baseUrl = 'https://app.esppapel.com:8444';
+  //static const String baseUrl = 'http://192.168.3.107:9223';
 
   static const String APP_VERSION = "1.0.0";
 
@@ -79,6 +79,68 @@ class AppConstants {
   static const String preActualizarSolicitud =
       '/prestamo-coches/actualizarSolicitud';
 
+  // Endpoints para la gestion de empleados y dependientes
+  static const String empListarEmpleadosDependientes =
+      '/fichaTrabajador/obtenerDep';
+  static const String empLstDependientes = '/fichaTrabajador/dependientes';
+  static const String depLstParentesco = '/fichaTrabajador/tiposParentesco';
+  static const String depLstActivo = '/fichaTrabajador/tipoActivo';
+  static const String perLstCiExpedido = '/rrhh/tiposCiExp';
+  static const String perLstEstadoCivil = '/rrhh/tiposEstCivil';
+  static const String perLstPais = '/rrhh/paises';
+  static const String perLstZona = '/rrhh/zonas';
+  static const String perLstGenero = '/rrhh/tiposSexo';
+  static const String perLstTelefono = '/rrhh/telfPersona';
+  static const String perObtenerPersona = '/rrhh/datosPersonales';
+  static const String depEliminarDependiente = '/fichaTrabajador/dependiente';
+  static const String depEditarDependiente =
+      '/fichaTrabajador/registrarDependiente';
+  static const String perLstCiudad = '/rrhh/ciudadxPais';
+  static const String perRegistrarPersona = '/rrhh/registroPersona';
+  static const String perObtenerTelefono = '/rrhh/telfPersona';
+  static const String perObtenerTipoTelefono = '/rrhh/tipoTelefono';
+  static const String perRegistrarTelefono = '/rrhh/registroTelefono';
+  static const String perEliminarTelefono = '/rrhh/telefono';
+  static const String perObtenerEmmail = '/rrhh/emailPersona';
+  static const String perRegistrarEmail = '/rrhh/registroEmail';
+  static const String perEliminarEmail = '/rrhh/correo';
+  static const String perObtenerFormacion = '/rrhh/formacionEmpleado';
+  static const String perRegistrarFormacion = '/rrhh/registrarFormacion';
+  static const String perEliminarFormacion = '/rrhh/formacion';
+  static const String perObtenerTipoFormacion = '/rrhh/tiposFormacion';
+  static const String perObtenerTipoDuracionFormacion =
+      '/rrhh/tiposDuracionFor';
+  static const String perObtenerExperienciaLaboral = '/rrhh/expLabEmpleado';
+  static const String perRegistrarExperienciaLaboral =
+      '/rrhh/registrarExpLaboral';
+  static const String perEliminarExperienciaLaboral = '/rrhh/expLaboral';
+  static const String empObtenerGaranteReferencia =
+      '/fichaTrabajador/garanteReferencia';
+  static const String empRegistrarGaranteReferencia =
+      '/fichaTrabajador/registrarGaranteReferencia';
+  static const String empEliminarGaranteReferencia = '/fichaTrabajador/garante';
+  static const String empObtenerTipoGaranteReferencia =
+      '/fichaTrabajador/tiposGarRef';
+  static const String perObtenerRelacionLaboral = '/rrhh/fechasBeneficio';
+  static const String empSubirImagen = '/fichaTrabajador/upload';
+  static const String empObtenerDatosEmpleado =
+      '/fichaTrabajador/obtenerDatosEmp';
+  static const String perObtenerLstPersonas = '/rrhh/obtenerListaPersonas';
+  static const String perRegistrarZona = '/rrhh/registroZona';
+  static const String perRegistrarCiudad = '/rrhh/registroCiudad';
+  static const String perRegistrarPais = '/rrhh/registroPais';
+  static const String empSubirDocs = '/fichaTrabajador/uploads/documentos';
+  static const String admLstDocs = '/fichaTrabajador/uploads/pendientes/all';
+  static const String admAprobarDcos =
+      '/fichaTrabajador/uploads/pendientes/aprobar';
+  static const String admRechazarDocs =
+      '/fichaTrabajador/uploads/pendientes/rechazar';
+  static const String empExportarPdf = '/fichaTrabajador/pdf';
+  static const String empObtenerCumpleanios = '/fichaTrabajador/cumples';
+  static const String ubBloquearUsuario = '/bloqueo/advertencia';
+  static const String ubDesbloquearUsuario = '/bloqueo/desbloqueo';
+  static const String ubVerUsuarioBloqueado = '/bloqueo/usuarioBloqueado';
+
   //Para cargar permisos de botones por usuario
   static const String ubtnPermisosBotones = '/view/vistaBtn';
 
@@ -92,4 +154,10 @@ class AppConstants {
       'https://www.google.com/maps/search/?api=1&query';
   static const String googleMapsOpenStreetMaps =
       'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
+
+  // Constante para la URL de las imágenes de los empleados
+  static const String getImageUrl = '/fichaTrabajador/uploads/img';
+  static const String getDocImageUrl = '/fichaTrabajador/uploads/documentos/';
+  static const String getDocPendienteImageUrl =
+      '/fichaTrabajador/uploads/pendientes/';
 }

@@ -82,7 +82,7 @@ class MenuNotifier extends StateNotifier<MenuState> {
         _refreshMenuFromServer(userId);
       } else {
         // Si no hay caché, cargar directamente desde el servidor
-        await _fetchAndSaveMenu(userId);
+        await fetchAndSaveMenu(userId);
       }
     } catch (e) {
       debugPrint('❌ Error cargando menú: $e');
@@ -94,7 +94,7 @@ class MenuNotifier extends StateNotifier<MenuState> {
   }
   
   // Método para obtener y guardar el menú desde el servidor
-  Future<void> _fetchAndSaveMenu(int userId) async {
+  Future<void> fetchAndSaveMenu(int userId) async {
     try {
       debugPrint('🔄 Solicitando menú al servidor para usuario $userId');
       final menuEntities = await _repository.getMenuItems(userId);

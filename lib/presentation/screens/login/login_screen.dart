@@ -1,4 +1,5 @@
 import 'package:bosque_flutter/core/constants/app_constants.dart';
+import 'package:bosque_flutter/core/state/menu_provider.dart';
 import 'package:bosque_flutter/core/state/theme_mode_provider.dart';
 import 'package:bosque_flutter/core/state/user_provider.dart';
 import 'package:bosque_flutter/data/repositories/auth_repository_impl.dart';
@@ -55,6 +56,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           }
           // Guardar los datos del usuario en el provider y en almacenamiento
           await ref.read(userProvider.notifier).setUser(loginEntity);
+          ref.invalidate(menuProvider);
           // Si la contraseña es la predeterminada, forzar cambio
           if (_passwordController.text == '123456789') {
             context.go('/change-password', extra: loginEntity);

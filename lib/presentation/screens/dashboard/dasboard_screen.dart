@@ -1,3 +1,4 @@
+import 'package:bosque_flutter/core/state/empleados_dependientes_provider.dart';
 import 'package:bosque_flutter/core/state/sidebar_state_provider.dart';
 import 'package:bosque_flutter/core/state/theme_mode_provider.dart';
 
@@ -23,7 +24,14 @@ class DashboardScreen extends ConsumerWidget {
     final isSmallScreen = ResponsiveBreakpoints.of(context).smallerThan(TABLET); 
     final sidebarVisible = ref.watch(sidebarVisibilityProvider);
     final themeMode = ref.watch(themeNotifierProvider);
-  
+
+    // ADVERTENCIA: lógica de bloqueo
+    final warningCount = ref.watch(warningCounterProvider);
+    final warningLimit = ref.watch(warningLimitProvider);
+    final currentRoute = GoRouterState.of(context).uri.toString();
+    final isBlocked = warningCount >= warningLimit;
+    final isOnRegister = currentRoute == '/dashboard/ted_EmpleadoDependiente/register';
+
     return AuthGate(
       child: Scaffold(  
         appBar: AppBar(  
@@ -36,19 +44,12 @@ class DashboardScreen extends ConsumerWidget {
             },
           ) : null,  
           actions: [
-            // Botón para cambiar el tema
             IconButton(
               icon: Icon(themeMode.isDarkMode ? Icons.light_mode : Icons.dark_mode),
               tooltip: themeMode.isDarkMode ? 'Modo claro' : 'Modo oscuro',
               onPressed: () {
-                // Guardar la ruta actual antes de cambiar el tema
                 final currentRoute = GoRouterState.of(context).uri.toString();
-                
-                // Cambiar el tema
                 ref.read(themeNotifierProvider.notifier).toggleDarkMode();
-                
-                // Si la ruta actual ya no es la misma después de cambiar el tema,
-                // restaurar la ruta anterior (esto evita redirecciones no deseadas)
                 WidgetsBinding.instance.addPostFrameCallback((_) {
                   final newRoute = GoRouterState.of(context).uri.toString();
                   if (newRoute != currentRoute && currentRoute.startsWith('/dashboard')) {
@@ -67,19 +68,44 @@ class DashboardScreen extends ConsumerWidget {
             ),
           ],
         ),
-        
         drawer: isSmallScreen ? const AppSidebar() : null,  
-        body: Row(  
-          children: [  
-            // El sidebar siempre visible en pantallas grandes si sidebarVisible es true
-            if (!isSmallScreen && sidebarVisible) const AppSidebar(),  
-            
-            // Área principal que contendrá el contenido hijo proporcionado por el router
-            Expanded(
-              child: child, // Usar directamente el widget hijo proporcionado por ShellRoute
-            ),
-          ],  
-        ),  
+        body: isBlocked && !isOnRegister
+            ? Center(
+                child: Card(
+                  margin: const EdgeInsets.all(32),
+                  color: Colors.red[50],
+                  child: Padding(
+                    padding: const EdgeInsets.all(32),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.warning, color: Colors.red, size: 48),
+                        const SizedBox(height: 16),
+                        const Text(
+                          '¡Debes actualizar tus datos personales!',
+                          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.red),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 16),
+                        ElevatedButton.icon(
+                          icon: const Icon(Icons.edit),
+                          label: const Text('Actualizar ahora'),
+                          style: ElevatedButton.styleFrom(backgroundColor: Colors.orange),
+                          onPressed: () {
+                            context.go('/dashboard/ted_EmpleadoDependiente/register');
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              )
+            : Row(  
+                children: [  
+                  if (!isSmallScreen && sidebarVisible) const AppSidebar(),  
+                  Expanded(child: child),
+                ],  
+              ),
       ),
     );
   }
