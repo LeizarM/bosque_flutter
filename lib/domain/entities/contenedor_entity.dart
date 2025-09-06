@@ -8,6 +8,7 @@ class ContenedorEntity {
   int audUsuario;
   String clase;
   double saldoActualCombustible;
+  String nombreSucursal;
 
   ContenedorEntity({
     required this.idContenedor,
@@ -19,6 +20,7 @@ class ContenedorEntity {
     required this.audUsuario,
     required this.clase,
     required this.saldoActualCombustible,
+    required this.nombreSucursal,
   });
 
   @override

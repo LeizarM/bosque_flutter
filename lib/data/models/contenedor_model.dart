@@ -21,6 +21,7 @@ class ContenedorModel {
   int audUsuario;
   String clase;
   double saldoActualCombustible;
+  String nombreSucursal;
 
   ContenedorModel({
     required this.idContenedor,
@@ -32,6 +33,7 @@ class ContenedorModel {
     required this.audUsuario,
     required this.clase,
     required this.saldoActualCombustible,
+    required this.nombreSucursal,
   });
 
   factory ContenedorModel.fromJson(Map<String, dynamic> json) =>
@@ -45,6 +47,7 @@ class ContenedorModel {
         audUsuario: json["audUsuario"],
         clase: json["clase"],
         saldoActualCombustible: json["saldoActualCombustible"],
+        nombreSucursal: json["nombreSucursal"],
       );
 
   Map<String, dynamic> toJson() => {
@@ -57,6 +60,7 @@ class ContenedorModel {
     "audUsuario": audUsuario,
     "clase": clase,
     "saldoActualCombustible": saldoActualCombustible,
+    "nombreSucursal": nombreSucursal,
   };
 
   // Método para convertir de Model a Entity
@@ -70,6 +74,7 @@ class ContenedorModel {
     audUsuario: audUsuario,
     clase: clase,
     saldoActualCombustible: saldoActualCombustible,
+    nombreSucursal: nombreSucursal,
   );
 
   // Método factory para convertir de Entity a Model
@@ -84,5 +89,6 @@ class ContenedorModel {
         audUsuario: entity.audUsuario,
         clase: entity.clase,
         saldoActualCombustible: entity.saldoActualCombustible,
+        nombreSucursal: entity.nombreSucursal,
       );
 }

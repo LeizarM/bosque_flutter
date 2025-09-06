@@ -264,6 +264,171 @@ class _ControlContenedoresCombustibleScreenState
     super.dispose();
   }
 
+  // Método para construir widgets de saldo según tipo de movimiento
+  List<Widget> _buildSaldosContenedores() {
+    List<Widget> widgets = [];
+
+    if (_tipoMovimientoSeleccionado == null) {
+      return widgets;
+    }
+
+    // Entrada/Ingreso: Mostrar saldo del destino
+    if (_tipoMovimientoSeleccionado == 'Entrada' &&
+        _contenedorDestinoSeleccionado != null) {
+      widgets.add(
+        _buildSaldoWidget(
+          contenedor: _contenedorDestinoSeleccionado!,
+          titulo: 'INGRESO a ${_contenedorDestinoSeleccionado!.nombreSucursal}',
+          descripcion: 'Se está realizando un ingreso de combustible',
+          color: Colors.green,
+          icono: Icons.input,
+        ),
+      );
+    }
+    // Salida: Mostrar saldo del origen
+    else if (_tipoMovimientoSeleccionado == 'Salida' &&
+        _contenedorOrigenSeleccionado != null) {
+      widgets.add(
+        _buildSaldoWidget(
+          contenedor: _contenedorOrigenSeleccionado!,
+          titulo: 'SALIDA de ${_contenedorOrigenSeleccionado!.nombreSucursal}',
+          descripcion: 'Se está realizando una salida de combustible',
+          color: Colors.orange,
+          icono: Icons.output,
+        ),
+      );
+    }
+    // Traspaso: Mostrar saldo de origen y destino
+    else if (_tipoMovimientoSeleccionado == 'Traspaso') {
+      // Mensaje descriptivo del traspaso
+      if (_contenedorOrigenSeleccionado != null &&
+          _contenedorDestinoSeleccionado != null) {
+        widgets.add(
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(12),
+            margin: const EdgeInsets.only(top: 8),
+            decoration: BoxDecoration(
+              color: Colors.purple.shade50,
+              border: Border.all(color: Colors.purple.shade200),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Row(
+              children: [
+                Icon(Icons.swap_horiz, color: Colors.purple.shade700, size: 20),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'TRASPASO: ${_contenedorOrigenSeleccionado!.nombreSucursal} → ${_contenedorDestinoSeleccionado!.nombreSucursal}',
+                    style: TextStyle(
+                      color: Colors.purple.shade700,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      }
+
+      if (_contenedorOrigenSeleccionado != null) {
+        widgets.add(
+          _buildSaldoWidget(
+            contenedor: _contenedorOrigenSeleccionado!,
+            titulo: 'Saldo Origen',
+            descripcion:
+                'Sucursal: ${_contenedorOrigenSeleccionado!.nombreSucursal}',
+            color: Colors.red,
+            icono: Icons.call_made,
+          ),
+        );
+      }
+
+      if (_contenedorDestinoSeleccionado != null) {
+        widgets.add(const SizedBox(height: 8));
+        widgets.add(
+          _buildSaldoWidget(
+            contenedor: _contenedorDestinoSeleccionado!,
+            titulo: 'Saldo Destino',
+            descripcion:
+                'Sucursal: ${_contenedorDestinoSeleccionado!.nombreSucursal}',
+            color: Colors.blue,
+            icono: Icons.call_received,
+          ),
+        );
+      }
+    }
+
+    return widgets;
+  }
+
+  // Widget auxiliar para construir el contenedor de saldo
+  Widget _buildSaldoWidget({
+    required ContenedorEntity contenedor,
+    required String titulo,
+    required String descripcion,
+    required MaterialColor color,
+    required IconData icono,
+  }) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(12),
+      margin: const EdgeInsets.only(top: 8),
+      decoration: BoxDecoration(
+        color: color.shade50,
+        border: Border.all(color: color.shade200),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        children: [
+          Icon(icono, color: color.shade700, size: 20),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  titulo,
+                  style: TextStyle(
+                    color: color.shade700,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                Text(
+                  descripcion,
+                  style: TextStyle(
+                    color: color.shade600,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w400,
+                  ),
+                ),
+                Text(
+                  'Saldo: ${contenedor.saldoActualCombustible} ${contenedor.unidadMedida}',
+                  style: TextStyle(
+                    color: color.shade700,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                Text(
+                  'Tipo: ${contenedor.idTipo}',
+                  style: TextStyle(
+                    color: color.shade600,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w400,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final contenedoresAsync = ref.watch(contenedoresProvider);
@@ -693,7 +858,7 @@ class _ControlContenedoresCombustibleScreenState
                             value: claveUnica,
                             child: Tooltip(
                               message:
-                                  '${contenedor.codigo} - ${contenedor.descripcion}\nSucursal: ${contenedor.codSucursal}\nSaldo: ${contenedor.saldoActualCombustible} ${contenedor.unidadMedida}',
+                                  '${contenedor.codigo} - ${contenedor.descripcion}\nSucursal: ${contenedor.nombreSucursal}\nSaldo: ${contenedor.saldoActualCombustible} ${contenedor.unidadMedida}',
                               child: Text(
                                 contenedor.descripcion,
                                 overflow: TextOverflow.ellipsis,
@@ -818,38 +983,8 @@ class _ControlContenedoresCombustibleScreenState
               },
             ),
 
-            // Mostrar saldo actual del destino debajo del dropdown
-            if (_contenedorDestinoSeleccionado != null)
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(12),
-                margin: const EdgeInsets.only(top: 8),
-                decoration: BoxDecoration(
-                  color: Colors.blue.shade50,
-                  border: Border.all(color: Colors.blue.shade200),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.account_balance_wallet,
-                      color: Colors.blue.shade700,
-                      size: 20,
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        'Saldo: ${_contenedorDestinoSeleccionado!.saldoActualCombustible} ${_contenedorDestinoSeleccionado!.unidadMedida} (Sucursal: ${_contenedorDestinoSeleccionado!.codSucursal})',
-                        style: TextStyle(
-                          color: Colors.blue.shade700,
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+            // Mostrar saldos según tipo de movimiento
+            ..._buildSaldosContenedores(),
           ],
         );
       },

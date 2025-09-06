@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:bosque_flutter/presentation/screens/control-combustible-maquina-montacarga/control_combustible_dashboard_screen.dart';
-import 'package:bosque_flutter/presentation/screens/control-combustible-maquina-montacarga/control_combustible_maquina_montacarga_view_screen.dart.back';
+import 'package:bosque_flutter/presentation/screens/control-combustible-maquina-montacarga/control_combustible_maquina_montacarga_view_screen.dart';
 
 class ControlCombustibleMainScreen extends StatefulWidget {
   const ControlCombustibleMainScreen({super.key});
