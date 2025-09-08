@@ -1,6 +1,8 @@
+import 'package:bosque_flutter/data/models/compra_garrafa_model.dart';
 import 'package:bosque_flutter/data/models/contenedor_model.dart';
 import 'package:bosque_flutter/data/models/movimiento_model.dart';
 import 'package:bosque_flutter/data/models/sucursal_model.dart';
+import 'package:bosque_flutter/domain/entities/compra_garrafa_entity.dart';
 import 'package:bosque_flutter/domain/entities/contenedor_entity.dart';
 import 'package:bosque_flutter/domain/entities/movimiento_entity.dart';
 import 'package:dio/dio.dart';
@@ -479,6 +481,45 @@ class ControlCombustibleMaquinaMontacargaImpl
 
       final response = await _dio.post(
         AppConstants.registerMovimiento,
+        data: jsonData,
+      );
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        // Check if response indicates success - accept both 200 and 201
+        if (response.data != null &&
+            (response.data['status'] == 200 ||
+                response.data['status'] == 201)) {
+          return true;
+        }
+      }
+
+      return false;
+    } on DioException catch (e) {
+      String errorMessage = 'Error de conexión: ${e.message}';
+      if (e.response != null && e.response!.data != null) {
+        // Try to extract error message from response
+        if (e.response!.data is Map && e.response!.data['message'] != null) {
+          errorMessage = 'Error del servidor: ${e.response!.data['message']}';
+        } else {
+          errorMessage =
+              'Error del servidor: ${e.response!.statusCode} - ${e.response!.data.toString()}';
+        }
+      }
+      throw Exception(errorMessage);
+    } catch (e) {
+      throw Exception('Error desconocido: ${e.toString()}');
+    }
+  }
+
+  @override
+  Future<bool> registerCompraGarrafa(CompraGarrafaEntity garrafa) async {
+    try {
+      // Create the data map to send to the backend
+      final data = CompraGarrafaModel.fromEntity(garrafa);
+      final jsonData = data.toJson();
+
+      final response = await _dio.post(
+        AppConstants.registerCompraGarrafa,
         data: jsonData,
       );
 

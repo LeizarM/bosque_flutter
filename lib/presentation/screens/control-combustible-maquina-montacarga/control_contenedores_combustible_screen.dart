@@ -142,25 +142,29 @@ class _ControlContenedoresCombustibleScreenState
       );
     } else if (_contenedorOrigenSeleccionado?.clase == 'VEHICULO') {
       // REGLA 1: VEHICULO → CONTENEDOR = ENTRADA
-      // Mostrar contenedores de la MISMA SUCURSAL QUE EL VEHICULO ORIGEN
+      // ⚠️ RESTRICCIÓN: NO permitir entradas de garrafas (unidades)
+      // Las entradas de garrafas solo se permiten desde control_garrafas_registro_screen.dart
       resultado.addAll(
         contenedores.where(
           (contenedor) =>
               contenedor.clase == 'CONTENEDOR' &&
               contenedor.codSucursal ==
-                  _contenedorOrigenSeleccionado!.codSucursal,
+                  _contenedorOrigenSeleccionado!.codSucursal &&
+              !_esGarrafa(contenedor), // BLOQUEAR garrafas
         ),
       );
     } else if (_contenedorOrigenSeleccionado?.clase == 'MAQUINA' ||
         _contenedorOrigenSeleccionado?.clase == 'MONTACARGA') {
       // REGLA ADICIONAL: MAQUINA/MONTACARGA → CONTENEDOR = ENTRADA
-      // Mostrar contenedores de la MISMA SUCURSAL QUE LA MAQUINA/MONTACARGA ORIGEN
+      // ⚠️ RESTRICCIÓN: NO permitir entradas de garrafas (unidades)
+      // Las entradas de garrafas solo se permiten desde control_garrafas_registro_screen.dart
       resultado.addAll(
         contenedores.where(
           (contenedor) =>
               contenedor.clase == 'CONTENEDOR' &&
               contenedor.codSucursal ==
-                  _contenedorOrigenSeleccionado!.codSucursal,
+                  _contenedorOrigenSeleccionado!.codSucursal &&
+              !_esGarrafa(contenedor), // BLOQUEAR garrafas
         ),
       );
     }
@@ -262,6 +266,12 @@ class _ControlContenedoresCombustibleScreenState
     _valorSaldoController.dispose();
     _obsController.dispose();
     super.dispose();
+  }
+
+  /// Método para determinar si un contenedor es una garrafa
+  /// Las garrafas se identifican por tener unidadMedida que contiene "unidad" o "Unidad"
+  bool _esGarrafa(ContenedorEntity contenedor) {
+    return MovimientoBusinessLogic.esGarrafa(contenedor.unidadMedida);
   }
 
   // Método para construir widgets de saldo según tipo de movimiento
@@ -427,6 +437,72 @@ class _ControlContenedoresCombustibleScreenState
         ],
       ),
     );
+  }
+
+  /// Construye mensajes informativos sobre restricciones de garrafas
+  List<Widget> _buildMensajeRestriccionGarrafas() {
+    // Solo mostrar el mensaje cuando hay un origen seleccionado que podría generar entradas
+    if (_contenedorOrigenSeleccionado?.clase == 'VEHICULO' ||
+        _contenedorOrigenSeleccionado?.clase == 'MAQUINA' ||
+        _contenedorOrigenSeleccionado?.clase == 'MONTACARGA') {
+      // Verificar si el contenedor destino filtrado está vacío debido a restricciones de garrafas
+      final contenedoresAsync = ref.read(contenedoresProvider);
+      return contenedoresAsync.when(
+        data: (contenedores) {
+          final contenedoresDestino = _filtrarContenedoresDestino(contenedores);
+
+          // Verificar si hay contenedores de garrafas que fueron filtrados
+          final garrafasDisponibles =
+              contenedores
+                  .where(
+                    (c) =>
+                        c.clase == 'CONTENEDOR' &&
+                        c.codSucursal ==
+                            _contenedorOrigenSeleccionado!.codSucursal &&
+                        _esGarrafa(c),
+                  )
+                  .toList();
+
+          if (contenedoresDestino.isEmpty && garrafasDisponibles.isNotEmpty) {
+            return [
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.orange.shade50,
+                  border: Border.all(color: Colors.orange.shade300),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.info_outline,
+                      color: Colors.orange.shade700,
+                      size: 20,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Las entradas de garrafas (unidades) solo se pueden registrar desde el formulario específico de registro de garrafas.',
+                        style: TextStyle(
+                          color: Colors.orange.shade800,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ];
+          }
+          return [];
+        },
+        loading: () => [],
+        error: (_, __) => [],
+      );
+    }
+    return [];
   }
 
   @override
@@ -985,6 +1061,9 @@ class _ControlContenedoresCombustibleScreenState
 
             // Mostrar saldos según tipo de movimiento
             ..._buildSaldosContenedores(),
+
+            // Mostrar mensaje informativo sobre restricciones de garrafas
+            ..._buildMensajeRestriccionGarrafas(),
           ],
         );
       },
@@ -1099,6 +1178,23 @@ class _ControlContenedoresCombustibleScreenState
                     (value == null || value.isEmpty)) {
                   return 'Ingrese ${etiquetaEntrada.toLowerCase()}';
                 }
+
+                // Validación de saldo para entrada en traspasos
+                if (camposHabilitados['valorEntrada'] == true &&
+                    value != null &&
+                    value.isNotEmpty &&
+                    _tipoMovimientoSeleccionado == 'Traspaso' &&
+                    _contenedorOrigenSeleccionado != null) {
+                  double? cantidad = double.tryParse(value);
+                  if (cantidad != null && cantidad > 0) {
+                    double saldoOrigen =
+                        _contenedorOrigenSeleccionado!.saldoActualCombustible;
+                    if (cantidad > saldoOrigen) {
+                      return 'No puede exceder el saldo disponible ($saldoOrigen)';
+                    }
+                  }
+                }
+
                 return null;
               },
             ),
@@ -1148,6 +1244,24 @@ class _ControlContenedoresCombustibleScreenState
                     (value == null || value.isEmpty)) {
                   return 'Ingrese ${etiquetaSalida.toLowerCase()}';
                 }
+
+                // Validación de saldo para salidas y traspasos
+                if (camposHabilitados['valorSalida'] == true &&
+                    value != null &&
+                    value.isNotEmpty &&
+                    (_tipoMovimientoSeleccionado == 'Salida' ||
+                        _tipoMovimientoSeleccionado == 'Traspaso') &&
+                    _contenedorOrigenSeleccionado != null) {
+                  double? cantidad = double.tryParse(value);
+                  if (cantidad != null && cantidad > 0) {
+                    double saldoOrigen =
+                        _contenedorOrigenSeleccionado!.saldoActualCombustible;
+                    if (cantidad > saldoOrigen) {
+                      return 'No puede exceder el saldo disponible ($saldoOrigen)';
+                    }
+                  }
+                }
+
                 return null;
               },
             ),
@@ -1325,6 +1439,52 @@ class _ControlContenedoresCombustibleScreenState
       valorFinal = valorSalida;
     }
 
+    // VALIDACIONES DE SALDO: Verificar que no se excedan los saldos disponibles
+    String? mensajeErrorSaldo =
+        MovimientoBusinessLogic.validarSaldosSuficientes(
+          tipoMovimiento: _tipoMovimientoSeleccionado!,
+          cantidad: valorFinal,
+          saldoOrigen:
+              _contenedorOrigenSeleccionado?.saldoActualCombustible ?? 0.0,
+          saldoDestino: _contenedorDestinoSeleccionado?.saldoActualCombustible,
+        );
+
+    // Si hay error de saldo, mostrar mensaje y cancelar operación
+    if (mensajeErrorSaldo != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(mensajeErrorSaldo),
+          backgroundColor: Colors.red,
+          duration: const Duration(seconds: 4),
+        ),
+      );
+      return;
+    }
+
+    // VALIDACIÓN ESPECIAL: Bloquear entradas de garrafas
+    if (_tipoMovimientoSeleccionado == 'Entrada' &&
+        _contenedorDestinoSeleccionado != null &&
+        _esGarrafa(_contenedorDestinoSeleccionado!)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              const Icon(Icons.block, color: Colors.white),
+              const SizedBox(width: 8),
+              const Expanded(
+                child: Text(
+                  'Las entradas de garrafas (unidades) solo se pueden registrar desde el formulario específico de registro de garrafas.',
+                ),
+              ),
+            ],
+          ),
+          backgroundColor: Colors.red,
+          duration: const Duration(seconds: 5),
+        ),
+      );
+      return;
+    }
+
     // Determinar unidad de medida
     String unidadMedida = '';
     if (_tipoMovimientoSeleccionado == 'Entrada') {
@@ -1496,6 +1656,61 @@ class _ControlContenedoresCombustibleScreenState
         valorFinal = valorSalida; // En traspaso, valor = valorSalida
       }
 
+      // VALIDACIÓN FINAL DE SALDO: Verificar nuevamente antes de registrar
+      String? mensajeErrorSaldo =
+          MovimientoBusinessLogic.validarSaldosSuficientes(
+            tipoMovimiento: _tipoMovimientoSeleccionado!,
+            cantidad: valorFinal,
+            saldoOrigen:
+                _contenedorOrigenSeleccionado?.saldoActualCombustible ?? 0.0,
+            saldoDestino:
+                _contenedorDestinoSeleccionado?.saldoActualCombustible,
+          );
+
+      // Si hay error de saldo, mostrar mensaje y cancelar operación
+      if (mensajeErrorSaldo != null) {
+        setState(() {
+          _isLoading = false;
+        });
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(mensajeErrorSaldo),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 4),
+          ),
+        );
+        return;
+      }
+
+      // VALIDACIÓN FINAL: Bloquear entradas de garrafas (doble verificación)
+      if (_tipoMovimientoSeleccionado == 'Entrada' &&
+          _contenedorDestinoSeleccionado != null &&
+          _esGarrafa(_contenedorDestinoSeleccionado!)) {
+        setState(() {
+          _isLoading = false;
+        });
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Row(
+              children: [
+                Icon(Icons.block, color: Colors.white),
+                SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'ERROR CRÍTICO: Intento de entrada de garrafa detectado. Las entradas de garrafas solo se permiten desde el formulario específico.',
+                  ),
+                ),
+              ],
+            ),
+            backgroundColor: Colors.red.shade800,
+            duration: const Duration(seconds: 6),
+          ),
+        );
+        return;
+      }
+
       // Determinar estado: 1 si es de vehículo a contenedor, 0 en otros casos
       int estado = 0;
       if (_contenedorOrigenSeleccionado?.clase == 'VEHICULO' &&
@@ -1581,6 +1796,11 @@ class _ControlContenedoresCombustibleScreenState
 
       if (result) {
         if (mounted) {
+          // RECARGAR DATOS: Invalidar el provider para actualizar los saldos actuales
+          // Esto es crucial porque después de un movimiento, los saldos de los contenedores cambian
+          // y necesitamos mostrar la información actualizada en los dropdowns
+          ref.invalidate(contenedoresProvider);
+
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
               content: Text('Movimiento registrado exitosamente'),
@@ -1588,6 +1808,8 @@ class _ControlContenedoresCombustibleScreenState
               behavior: SnackBarBehavior.floating,
             ),
           );
+
+          // Limpiar formulario para permitir nuevos movimientos con datos frescos
           _resetForm();
         }
       } else {

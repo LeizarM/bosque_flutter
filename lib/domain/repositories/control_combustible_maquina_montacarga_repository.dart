@@ -1,3 +1,4 @@
+import 'package:bosque_flutter/domain/entities/compra_garrafa_entity.dart';
 import 'package:bosque_flutter/domain/entities/contenedor_entity.dart';
 import 'package:bosque_flutter/domain/entities/control_combustible_maquina_montacarga_entity.dart';
 import 'package:bosque_flutter/domain/entities/maquina_montacarga_entity.dart';
@@ -33,8 +34,6 @@ abstract class ControlCombustibleMaquinaMontacargaRepository {
     dynamic idCM,
   );
 
-  Future<List<SucursalEntity>> lstSucursal();
-
   /// ==============================
   /// ======= NUEVOS METODOS PARA REGISTRAR LOS BIDONES
   /// ==============================
@@ -42,4 +41,8 @@ abstract class ControlCombustibleMaquinaMontacargaRepository {
   Future<List<ContenedorEntity>> lstContenedores();
 
   Future<bool> registerMovimiento(MovimientoEntity mb);
+
+  Future<List<SucursalEntity>> lstSucursal();
+
+  Future<bool> registerCompraGarrafa(CompraGarrafaEntity garrafa);
 }

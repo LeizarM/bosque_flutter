@@ -14,7 +14,7 @@ class MovimientoBusinessLogic {
   REGLAS DE NEGOCIO IMPLEMENTADAS:
   
   ✅ PERMITIDAS:
-  1. VEHICULO → CONTENEDOR = ENTRADA (Ingreso)
+  1. VEHICULO → CONTENEDOR = ENTRADA (Ingreso) - SOLO para combustibles líquidos (Litros)
   2. CONTENEDOR → VEHICULO/MAQUINA/MONTACARGA = SALIDA
   3. CONTENEDOR → CONTENEDOR = TRASPASO (solo entre diferentes sucursales)
   
@@ -22,9 +22,13 @@ class MovimientoBusinessLogic {
   4. VEHICULO → VEHICULO/MAQUINA/MONTACARGA
   5. MAQUINA → cualquier destino
   6. MONTACARGA → cualquier destino
+  7. VEHICULO/MAQUINA/MONTACARGA → CONTENEDOR de GARRAFAS (Unidades)
   
-  ℹ️ ADICIONAL:
-  7. Traspasos solo entre DIFERENTES sucursales (codSucursal)
+  ℹ️ RESTRICCIONES ADICIONALES:
+  8. Traspasos solo entre DIFERENTES sucursales (codSucursal)
+  9. SALIDAS: No pueden exceder el saldo disponible del contenedor origen
+  10. TRASPASOS: No pueden exceder el saldo disponible del contenedor origen
+  11. ENTRADAS DE GARRAFAS: Solo permitidas desde control_garrafas_registro_screen.dart
   */
 
   /// Determina automáticamente el tipo de movimiento basado en origen y destino
@@ -219,6 +223,40 @@ class MovimientoBusinessLogic {
     }
 
     return '$accion: ${claseOrigen.toLowerCase()} → ${claseDestino.toLowerCase()}';
+  }
+
+  /// Determina si un contenedor es una garrafa basándose en su unidad de medida
+  static bool esGarrafa(String unidadMedida) {
+    final unidad = unidadMedida.toLowerCase();
+    return unidad.contains('unidad') ||
+        unidad.contains('und') ||
+        unidad.contains('pza') ||
+        unidad.contains('pieza') ||
+        unidad.contains('u');
+  }
+
+  /// Valida que las cantidades no excedan los saldos disponibles
+  static String? validarSaldosSuficientes({
+    required String tipoMovimiento,
+    required double cantidad,
+    required double saldoOrigen,
+    double? saldoDestino,
+  }) {
+    // Validar SALIDA: no puede exceder el saldo del contenedor origen
+    if (tipoMovimiento == SALIDA) {
+      if (cantidad > saldoOrigen) {
+        return 'La cantidad de salida ($cantidad) no puede ser mayor al saldo disponible ($saldoOrigen)';
+      }
+    }
+
+    // Validar TRASPASO: no puede exceder el saldo del contenedor origen
+    if (tipoMovimiento == TRASPASO) {
+      if (cantidad > saldoOrigen) {
+        return 'La cantidad a traspasar ($cantidad) no puede ser mayor al saldo disponible en origen ($saldoOrigen)';
+      }
+    }
+
+    return null; // Sin errores - saldos suficientes
   }
 
   /// Obtiene el mensaje de error específico para validaciones fallidas

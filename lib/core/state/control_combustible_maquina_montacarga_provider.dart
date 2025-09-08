@@ -1,6 +1,7 @@
 // control_combustible_maquina_montacarga_notifier.dart
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:bosque_flutter/data/repositories/control_combustible_maquina_montacarga_impl.dart';
+import 'package:bosque_flutter/domain/entities/compra_garrafa_entity.dart';
 import 'package:bosque_flutter/domain/entities/control_combustible_maquina_montacarga_entity.dart';
 import 'package:bosque_flutter/domain/entities/maquina_montacarga_entity.dart';
 import 'package:bosque_flutter/domain/entities/sucursal_entity.dart';
@@ -381,4 +382,11 @@ final registrarMovimientoProvider =
     FutureProvider.family<bool, MovimientoEntity>((ref, movimiento) async {
       final repo = ref.read(controlCombustibleMaquinaMontacargaProvider);
       return await repo.registerMovimiento(movimiento);
+    });
+
+// Provider para registrar garrafa
+final registrarGarrafaProvider =
+    FutureProvider.family<bool, CompraGarrafaEntity>((ref, garrafa) async {
+      final repo = ref.read(controlCombustibleMaquinaMontacargaProvider);
+      return await repo.registerCompraGarrafa(garrafa);
     });

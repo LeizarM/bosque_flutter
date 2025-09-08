@@ -46,6 +46,8 @@ class AppConstants {
   static const String lstContenedores = '/gasolinaMaquina/lstContenedores';
   static const String registerMovimiento =
       '/gasolinaMaquina/registrarMovimiento';
+  static const String registerCompraGarrafa =
+      '/gasolinaMaquina/registrarGarrafa';
 
   // Endpoints para la gestión de depósitos de cheques
   static const String deplstEmpresas = '/deposito-cheque/lst-empresas';

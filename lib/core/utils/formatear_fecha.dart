@@ -1,4 +1,3 @@
-import 'package:bosque_flutter/core/utils/validators.dart';
 import 'package:flutter/material.dart';
 
 class DatePickerField extends StatelessWidget {
@@ -25,7 +24,7 @@ class DatePickerField extends StatelessWidget {
       controller: controller,
       decoration: InputDecoration(
         labelText: labelText,
-        border:OutlineInputBorder(),
+        border: OutlineInputBorder(),
         suffixIcon: const Icon(Icons.calendar_today),
       ),
       readOnly: true,
@@ -36,19 +35,21 @@ class DatePickerField extends StatelessWidget {
           firstDate: DateTime(1960),
           lastDate: DateTime(2050),
         );
-        
+
         if (picked != null) {
           controller.text = _formatDate(picked);
         }
       },
-      validator: validator ?? 
+      validator:
+          validator ??
           (value) => FormatearFecha.validarFecha(
-            value, 
-            permitirFechaFutura: permitirFechaFutura
+            value,
+            permitirFechaFutura: permitirFechaFutura,
           ),
     );
   }
 }
+
 class FormatearFecha {
   static DateTime parseFecha(String fecha) {
     List<String> partes = fecha.split('/');
@@ -62,6 +63,7 @@ class FormatearFecha {
   static String formatearFecha(DateTime fecha) {
     return "${fecha.day.toString().padLeft(2, '0')}/${fecha.month.toString().padLeft(2, '0')}/${fecha.year}";
   }
+
   static String? validarFecha(
     String? value, {
     bool permitirFechaFutura = false,
@@ -82,7 +84,8 @@ class FormatearFecha {
       // Validar que la fecha esté dentro del rango permitido
       DateTime fechaMinima = DateTime(1960);
       DateTime fechaMaxima = DateTime(2050);
-      if (fechaIngresada.isBefore(fechaMinima) || fechaIngresada.isAfter(fechaMaxima)) {
+      if (fechaIngresada.isBefore(fechaMinima) ||
+          fechaIngresada.isAfter(fechaMaxima)) {
         return 'La fecha debe estar entre ${formatearFecha(fechaMinima)} y ${formatearFecha(fechaMaxima)}';
       }
     } catch (e) {
