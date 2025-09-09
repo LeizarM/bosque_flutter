@@ -32,6 +32,17 @@ class MovimientoModel {
   int idCompraGarrafa;
   int audUsuario;
 
+  String fechaMovimientoString;
+  String origen;
+  String destino;
+  String nombreCompleto;
+
+  DateTime fechaInicio;
+  DateTime fechaFin;
+  int idTipo;
+  String nombreSucursal;
+  String tipo;
+
   MovimientoModel({
     required this.idMovimiento,
     required this.tipoMovimiento,
@@ -53,30 +64,61 @@ class MovimientoModel {
     required this.codEmpleado,
     required this.idCompraGarrafa,
     required this.audUsuario,
+
+    required this.fechaMovimientoString,
+    required this.origen,
+    required this.destino,
+    required this.nombreCompleto,
+
+    required this.fechaInicio,
+    required this.fechaFin,
+    required this.idTipo,
+    required this.nombreSucursal,
+    required this.tipo,
   });
 
   factory MovimientoModel.fromJson(Map<String, dynamic> json) =>
       MovimientoModel(
-        idMovimiento: json["idMovimiento"],
-        tipoMovimiento: json["tipoMovimiento"],
-        idOrigen: json["idOrigen"],
-        codigoOrigen: json["codigoOrigen"],
-        sucursalOrigen: json["sucursalOrigen"],
-        idDestino: json["idDestino"],
-        codigoDestino: json["codigoDestino"],
-        sucursalDestino: json["sucursalDestino"],
-        codSucursal: json["codSucursal"],
-        fechaMovimiento: DateTime.parse(json["fechaMovimiento"]),
-        valor: json["valor"]?.toDouble(),
-        valorEntrada: json["valorEntrada"]?.toDouble(),
-        valorSalida: json["valorSalida"]?.toDouble(),
-        valorSaldo: json["valorSaldo"]?.toDouble(),
-        unidadMedida: json["unidadMedida"],
-        estado: json["estado"],
-        obs: json["obs"],
-        codEmpleado: json["codEmpleado"],
-        idCompraGarrafa: json["idCompraGarrafa"],
-        audUsuario: json["audUsuario"],
+        idMovimiento: json["idMovimiento"] ?? 0,
+        tipoMovimiento: json["tipoMovimiento"] ?? '',
+        idOrigen: json["idOrigen"] ?? 0,
+        codigoOrigen: json["codigoOrigen"] ?? '',
+        sucursalOrigen: json["sucursalOrigen"] ?? 0,
+        idDestino: json["idDestino"] ?? 0,
+        codigoDestino: json["codigoDestino"] ?? '',
+        sucursalDestino: json["sucursalDestino"] ?? 0,
+        codSucursal: json["codSucursal"] ?? 0,
+        fechaMovimiento:
+            json["fechaMovimiento"] != null
+                ? DateTime.parse(json["fechaMovimiento"])
+                : DateTime.now(),
+        valor: json["valor"]?.toDouble() ?? 0.0,
+        valorEntrada: json["valorEntrada"]?.toDouble() ?? 0.0,
+        valorSalida: json["valorSalida"]?.toDouble() ?? 0.0,
+        valorSaldo: json["valorSaldo"]?.toDouble() ?? 0.0,
+        unidadMedida: json["unidadMedida"] ?? '',
+        estado: json["estado"] ?? 0,
+        obs: json["obs"] ?? '',
+        codEmpleado: json["codEmpleado"] ?? 0,
+        idCompraGarrafa: json["idCompraGarrafa"] ?? 0,
+        audUsuario: json["audUsuario"] ?? 0,
+
+        fechaMovimientoString: json["fechaMovimientoString"] ?? '',
+        origen: json["origen"] ?? '',
+        destino: json["destino"] ?? '',
+        nombreCompleto: json["nombreCompleto"] ?? '',
+
+        fechaInicio:
+            json["fechaInicio"] != null
+                ? DateTime.parse(json["fechaInicio"])
+                : DateTime.now(),
+        fechaFin:
+            json["fechaFin"] != null
+                ? DateTime.parse(json["fechaFin"])
+                : DateTime.now(),
+        idTipo: json["idTipo"] ?? 0,
+        nombreSucursal: json["nombreSucursal"] ?? '',
+        tipo: json["tipo"] ?? '',
       );
 
   Map<String, dynamic> toJson() => {
@@ -100,6 +142,15 @@ class MovimientoModel {
     "codEmpleado": codEmpleado,
     "idCompraGarrafa": idCompraGarrafa,
     "audUsuario": audUsuario,
+    "fechaMovimientoString": fechaMovimientoString,
+    "origen": origen,
+    "destino": destino,
+    "nombreCompleto": nombreCompleto,
+    "fechaInicio": fechaInicio.toIso8601String(),
+    "fechaFin": fechaFin.toIso8601String(),
+    "idTipo": idTipo,
+    "nombreSucursal": nombreSucursal,
+    "tipo": tipo,
   };
 
   // Método para convertir de Model a Entity
@@ -124,6 +175,16 @@ class MovimientoModel {
     codEmpleado: codEmpleado,
     idCompraGarrafa: idCompraGarrafa,
     audUsuario: audUsuario,
+
+    fechaMovimientoString: fechaMovimientoString,
+    origen: origen,
+    destino: destino,
+    nombreCompleto: nombreCompleto,
+    fechaInicio: fechaInicio,
+    fechaFin: fechaFin,
+    idTipo: idTipo,
+    nombreSucursal: nombreSucursal,
+    tipo: tipo,
   );
 
   // Método factory para convertir de Entity a Model
@@ -149,5 +210,16 @@ class MovimientoModel {
         codEmpleado: entity.codEmpleado,
         idCompraGarrafa: entity.idCompraGarrafa,
         audUsuario: entity.audUsuario,
+
+        fechaMovimientoString: entity.fechaMovimientoString,
+        origen: entity.origen,
+        destino: entity.destino,
+        nombreCompleto: entity.nombreCompleto,
+
+        fechaInicio: entity.fechaInicio,
+        fechaFin: entity.fechaFin,
+        idTipo: entity.idTipo,
+        nombreSucursal: entity.nombreSucursal,
+        tipo: entity.tipo,
       );
 }

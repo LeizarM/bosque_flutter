@@ -2,9 +2,11 @@ import 'package:bosque_flutter/data/models/compra_garrafa_model.dart';
 import 'package:bosque_flutter/data/models/contenedor_model.dart';
 import 'package:bosque_flutter/data/models/movimiento_model.dart';
 import 'package:bosque_flutter/data/models/sucursal_model.dart';
+import 'package:bosque_flutter/data/models/tipo_contenedor_model.dart';
 import 'package:bosque_flutter/domain/entities/compra_garrafa_entity.dart';
 import 'package:bosque_flutter/domain/entities/contenedor_entity.dart';
 import 'package:bosque_flutter/domain/entities/movimiento_entity.dart';
+import 'package:bosque_flutter/domain/entities/tipo_contenedor_entity.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -392,43 +394,6 @@ class ControlCombustibleMaquinaMontacargaImpl
     }
   }
 
-  @override
-  Future<List<SucursalEntity>> lstSucursal() async {
-    try {
-      final response = await _dio.post(AppConstants.listarSucural, data: {});
-
-      // Aceptar tanto 200 como 204. 204 significa que no hay contenido (no hay bidones)
-      if (response.statusCode == 200 || response.statusCode == 204) {
-        // Si es 204 o no hay datos, retornar lista vacía
-        if (response.statusCode == 204 || response.data == null) {
-          return [];
-        }
-
-        final data = response.data['data'] ?? [];
-
-        final items =
-            (data as List<dynamic>)
-                .map((json) => SucursalModel.fromJson(json))
-                .toList();
-
-        final entities = items.map((model) => model.toEntity()).toList();
-
-        return entities;
-      } else {
-        throw Exception('Error al obtener las sucursales');
-      }
-    } on DioException catch (e) {
-      String errorMessage = 'Error de conexión: ${e.message}';
-      if (e.response != null && e.response!.data != null) {
-        errorMessage =
-            'Error del servidor: ${e.response!.statusCode} - ${e.response!.data.toString()}';
-      }
-      throw Exception(errorMessage);
-    } catch (e) {
-      throw Exception('Error desconocido en lstSucursal: ${e.toString()}');
-    }
-  }
-
   //===================================================
   //  NUEVOS METODOS PARA REGISTRAR LOS BIDONES
   //===================================================
@@ -547,6 +512,177 @@ class ControlCombustibleMaquinaMontacargaImpl
       throw Exception(errorMessage);
     } catch (e) {
       throw Exception('Error desconocido: ${e.toString()}');
+    }
+  }
+
+  @override
+  Future<List<SucursalEntity>> lstSucursal() async {
+    try {
+      final response = await _dio.post(AppConstants.listarSucural, data: {});
+
+      // Aceptar tanto 200 como 204. 204 significa que no hay contenido (no hay bidones)
+      if (response.statusCode == 200 || response.statusCode == 204) {
+        // Si es 204 o no hay datos, retornar lista vacía
+        if (response.statusCode == 204 || response.data == null) {
+          return [];
+        }
+
+        final data = response.data['data'] ?? [];
+
+        final items =
+            (data as List<dynamic>)
+                .map((json) => SucursalModel.fromJson(json))
+                .toList();
+
+        final entities = items.map((model) => model.toEntity()).toList();
+
+        return entities;
+      } else {
+        throw Exception('Error al obtener las sucursales');
+      }
+    } on DioException catch (e) {
+      String errorMessage = 'Error de conexión: ${e.message}';
+      if (e.response != null && e.response!.data != null) {
+        errorMessage =
+            'Error del servidor: ${e.response!.statusCode} - ${e.response!.data.toString()}';
+      }
+      throw Exception(errorMessage);
+    } catch (e) {
+      throw Exception('Error desconocido en lstSucursal: ${e.toString()}');
+    }
+  }
+
+  @override
+  Future<List<TipoContenedorEntity>> lstTipoContenedor() async {
+    try {
+      final response = await _dio.post(
+        AppConstants.lstTipoContenedor,
+        data: {},
+      );
+
+      // Aceptar tanto 200 como 204. 204 significa que no hay contenido (no hay bidones)
+      if (response.statusCode == 200 || response.statusCode == 204) {
+        // Si es 204 o no hay datos, retornar lista vacía
+        if (response.statusCode == 204 || response.data == null) {
+          return [];
+        }
+
+        final data = response.data['data'] ?? [];
+
+        final items =
+            (data as List<dynamic>)
+                .map((json) => TipoContenedorModel.fromJson(json))
+                .toList();
+
+        final entities = items.map((model) => model.toEntity()).toList();
+
+        return entities;
+      } else {
+        throw Exception('Error al obtener los tipos de contenedor');
+      }
+    } on DioException catch (e) {
+      String errorMessage = 'Error de conexión: ${e.message}';
+      if (e.response != null && e.response!.data != null) {
+        errorMessage =
+            'Error del servidor: ${e.response!.statusCode} - ${e.response!.data.toString()}';
+      }
+      throw Exception(errorMessage);
+    } catch (e) {
+      throw Exception(
+        'Error desconocido en lstTipoContenedor: ${e.toString()}',
+      );
+    }
+  }
+
+  @override
+  Future<List<MovimientoEntity>> lstMovimientos(
+    DateTime fechaInicio,
+    DateTime fechaFin,
+    int codSucursal,
+    int idTipo,
+  ) async {
+    final data = {
+      'fechaInicio': DateFormat('yyyy-MM-dd').format(fechaInicio),
+      'fechaFin': DateFormat('yyyy-MM-dd').format(fechaFin),
+      'codSucursal': codSucursal,
+      'idTipo': idTipo,
+    };
+
+    try {
+      final response = await _dio.post(AppConstants.lstMovimientos, data: data);
+
+      if (response.statusCode == 200 && response.data != null) {
+        final data = response.data['data'] ?? [];
+
+        final items =
+            (data as List<dynamic>).map((json) {
+              return MovimientoModel.fromJson(json);
+            }).toList();
+
+        final entities =
+            items.map((model) {
+              final entity = model.toEntity();
+
+              return entity;
+            }).toList();
+
+        return entities;
+      } else {
+        throw Exception(
+          'Error al obtener los movimientos de los bidones por tipo de transacción',
+        );
+      }
+    } on DioException catch (e) {
+      String errorMessage = 'Error de conexión: ${e.message}';
+      if (e.response != null && e.response!.data != null) {
+        errorMessage =
+            'Error del servidor: ${e.response!.statusCode} - ${e.response!.data.toString()}';
+      }
+      throw Exception(errorMessage);
+    } catch (e) {
+      throw Exception('Error desconocido en lstMovimientos: ${e.toString()}');
+    }
+  }
+
+  @override
+  Future<List<MovimientoEntity>> lstSaldosActuales() async {
+    try {
+      final response = await _dio.post(
+        AppConstants.lstSaldosActuales,
+        data: {},
+      );
+
+      // Aceptar tanto 200 como 204. 204 significa que no hay contenido (no hay bidones)
+      if (response.statusCode == 200 || response.statusCode == 204) {
+        // Si es 204 o no hay datos, retornar lista vacía
+        if (response.statusCode == 204 || response.data == null) {
+          return [];
+        }
+
+        final data = response.data['data'] ?? [];
+
+        final items =
+            (data as List<dynamic>)
+                .map((json) => MovimientoModel.fromJson(json))
+                .toList();
+
+        final entities = items.map((model) => model.toEntity()).toList();
+
+        return entities;
+      } else {
+        throw Exception('Error al obtener los saldos actuales');
+      }
+    } on DioException catch (e) {
+      String errorMessage = 'Error de conexión: ${e.message}';
+      if (e.response != null && e.response!.data != null) {
+        errorMessage =
+            'Error del servidor: ${e.response!.statusCode} - ${e.response!.data.toString()}';
+      }
+      throw Exception(errorMessage);
+    } catch (e) {
+      throw Exception(
+        'Error desconocido en lstSaldosActuales: ${e.toString()}',
+      );
     }
   }
 }

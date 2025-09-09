@@ -4,6 +4,7 @@ import 'package:bosque_flutter/domain/entities/control_combustible_maquina_monta
 import 'package:bosque_flutter/domain/entities/maquina_montacarga_entity.dart';
 import 'package:bosque_flutter/domain/entities/movimiento_entity.dart';
 import 'package:bosque_flutter/domain/entities/sucursal_entity.dart';
+import 'package:bosque_flutter/domain/entities/tipo_contenedor_entity.dart';
 
 abstract class ControlCombustibleMaquinaMontacargaRepository {
   Future<bool> registerControlCombustibleMaquinaMontacarga(
@@ -45,4 +46,15 @@ abstract class ControlCombustibleMaquinaMontacargaRepository {
   Future<List<SucursalEntity>> lstSucursal();
 
   Future<bool> registerCompraGarrafa(CompraGarrafaEntity garrafa);
+
+  Future<List<TipoContenedorEntity>> lstTipoContenedor();
+
+  Future<List<MovimientoEntity>> lstMovimientos(
+    DateTime fechaInicio,
+    DateTime fechaFin,
+    int codSucursal,
+    int idTipo,
+  );
+
+  Future<List<MovimientoEntity>> lstSaldosActuales();
 }

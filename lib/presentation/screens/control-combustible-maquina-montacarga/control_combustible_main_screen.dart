@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:bosque_flutter/presentation/screens/control-combustible-maquina-montacarga/control_combustible_dashboard_screen.dart';
-import 'package:bosque_flutter/presentation/screens/control-combustible-maquina-montacarga/control_combustible_maquina_montacarga_view_screen.dart';
+import 'package:bosque_flutter/presentation/screens/control-combustible-maquina-montacarga/control_combustible_reportes_screen.dart';
 
 class ControlCombustibleMainScreen extends StatefulWidget {
   const ControlCombustibleMainScreen({super.key});
@@ -15,9 +15,9 @@ class _ControlCombustibleMainScreenState
   int _selectedIndex = 0;
 
   // Lista de pantallas: Dashboard (0) y Reportes (1)
-  final List<Widget> _screens = const [
-    ControlCombustibleDashboardScreen(),
-    ControlCombustibleMaquinaMontaCargaViewScreen(),
+  final List<Widget> _screens = [
+    const ControlCombustibleDashboardScreen(),
+    const ControlCombustibleReportesScreen(),
   ];
 
   void _onItemTapped(int index) {

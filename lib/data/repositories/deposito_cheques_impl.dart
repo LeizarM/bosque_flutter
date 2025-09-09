@@ -4,7 +4,6 @@ import 'dart:typed_data';
 import 'package:bosque_flutter/data/models/deposito_cheque_model.dart';
 import 'package:bosque_flutter/data/models/nota_remision_model.dart';
 import 'package:dio/dio.dart';
-import 'package:flutter/material.dart';
 import 'package:http_parser/http_parser.dart';
 import 'package:bosque_flutter/core/constants/app_constants.dart';
 import 'package:bosque_flutter/data/models/banco_cuenta_model.dart';
@@ -18,10 +17,8 @@ import 'package:bosque_flutter/domain/entities/nota_remision_entity.dart';
 import 'package:bosque_flutter/domain/entities/socio_negocio_entity.dart';
 import 'package:bosque_flutter/domain/repositories/deposito_cheques_repository.dart';
 import 'package:intl/intl.dart';
-import 'package:logger/logger.dart';
 
 class DepositoChequesImpl implements DepositoChequesRepository {
-  
   final Dio _dio = DioClient.getInstance();
 
   @override
@@ -145,56 +142,59 @@ class DepositoChequesImpl implements DepositoChequesRepository {
   }
 
   @override
-  Future<bool> registrarDeposito(  DepositoChequeEntity deposito,  dynamic imagen) async {
-  final model = DepositoChequeModel.fromEntity(deposito);
-  
-  try {
-    // Convertir el modelo a JSON y luego a String
-    final depositoChequeJson = jsonEncode(model.toJson());
-    // Crear FormData con el campo 'depositoCheque' como String
-    FormData formData = FormData();
-    // Añadir el campo depositoCheque como un campo normal, no como parte de un objeto
-    formData.fields.add(MapEntry('depositoCheque', depositoChequeJson));
-    // Añadir la imagen si existe
-    if (imagen != null) {
-      MultipartFile multipartFile;
-      if (imagen is Uint8List) {
-        multipartFile = MultipartFile.fromBytes(
-          imagen,
-          filename: "imagen.jpg",
-          contentType: MediaType('image', 'jpeg'),
-        );
-      } else if (imagen is File) {
-        multipartFile = await MultipartFile.fromFile(
-          imagen.path,
-          filename: "imagen.jpg",
-          contentType: MediaType('image', 'jpeg'),
-        );
-      } else {
-        throw Exception('Formato de imagen no soportado');
+  Future<bool> registrarDeposito(
+    DepositoChequeEntity deposito,
+    dynamic imagen,
+  ) async {
+    final model = DepositoChequeModel.fromEntity(deposito);
+
+    try {
+      // Convertir el modelo a JSON y luego a String
+      final depositoChequeJson = jsonEncode(model.toJson());
+      // Crear FormData con el campo 'depositoCheque' como String
+      FormData formData = FormData();
+      // Añadir el campo depositoCheque como un campo normal, no como parte de un objeto
+      formData.fields.add(MapEntry('depositoCheque', depositoChequeJson));
+      // Añadir la imagen si existe
+      if (imagen != null) {
+        MultipartFile multipartFile;
+        if (imagen is Uint8List) {
+          multipartFile = MultipartFile.fromBytes(
+            imagen,
+            filename: "imagen.jpg",
+            contentType: MediaType('image', 'jpeg'),
+          );
+        } else if (imagen is File) {
+          multipartFile = await MultipartFile.fromFile(
+            imagen.path,
+            filename: "imagen.jpg",
+            contentType: MediaType('image', 'jpeg'),
+          );
+        } else {
+          throw Exception('Formato de imagen no soportado');
+        }
+        // Añadir la imagen como un archivo
+        formData.files.add(MapEntry('file', multipartFile));
       }
-      // Añadir la imagen como un archivo
-      formData.files.add(MapEntry('file', multipartFile));
+
+      // Realizar la solicitud POST
+      final response = await _dio.post(
+        AppConstants.depRegister,
+        data: formData,
+      );
+
+      return response.statusCode == 200 || response.statusCode == 201;
+    } on DioException catch (e) {
+      String errorMessage = 'Error de conexión: ${e.message}';
+      if (e.response != null && e.response!.data != null) {
+        errorMessage =
+            'Error del servidor: ${e.response!.statusCode} - ${e.response!.data.toString()}';
+      }
+      throw Exception(errorMessage);
+    } catch (e) {
+      throw Exception('Error desconocido registrarDeposito: ${e.toString()}');
     }
-   
-    // Realizar la solicitud POST
-    final response = await _dio.post(
-      AppConstants.depRegister,
-      data: formData,
-    );
-   
-    return response.statusCode == 200 || response.statusCode == 201;
-  } on DioException catch (e) {
-    String errorMessage = 'Error de conexión: ${e.message}';
-    if (e.response != null && e.response!.data != null) {
-      errorMessage = 'Error del servidor: ${e.response!.statusCode} - ${e.response!.data.toString()}';
-    }
-    throw Exception(errorMessage);
-  } catch (e) {
-    
-    throw Exception('Error desconocido registrarDeposito: ${e.toString()}');
   }
-}
 
   @override
   Future<bool> guardarNotaRemision(NotaRemisionEntity notaRemision) async {
@@ -258,7 +258,7 @@ class DepositoChequesImpl implements DepositoChequesRepository {
             (data as List<dynamic>)
                 .map((json) => DepositoChequeModel.fromJson(json))
                 .toList();
-       
+
         return items.map((model) => model.toEntity()).toList();
       } else {
         return [];
@@ -277,7 +277,6 @@ class DepositoChequesImpl implements DepositoChequesRepository {
     DateTime? fechaFin,
     String codCliente,
   ) async {
-    
     final Map<String, dynamic> data = {
       'idBxC': idBxC,
       'fechaInicio': fechaInicio,
@@ -306,7 +305,7 @@ class DepositoChequesImpl implements DepositoChequesRepository {
             (data as List<dynamic>)
                 .map((json) => DepositoChequeModel.fromJson(json))
                 .toList();
-       
+
         return items.map((model) => model.toEntity()).toList();
       } else {
         return [];
@@ -330,12 +329,13 @@ class DepositoChequesImpl implements DepositoChequesRepository {
         AppConstants.depGenPdfDeposito + idDeposito.toString(),
         data: model.toJson(),
         options: Options(
-        responseType: ResponseType.bytes,  // Crucial para recibir datos binarios
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/pdf',
-        },
-      ),
+          responseType:
+              ResponseType.bytes, // Crucial para recibir datos binarios
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/pdf',
+          },
+        ),
       );
 
       if (response.statusCode == 200) {
@@ -359,55 +359,51 @@ class DepositoChequesImpl implements DepositoChequesRepository {
       throw Exception('Error en la solicitud: $e');
     }
   }
-  
-  @override
-  Future<Uint8List> obtenerImagenDeposito( int idDeposito ) async {
-    
-    try {
-    final response = await _dio.get(
-      AppConstants.depObtImagen + idDeposito.toString(),
-      options: Options(
-        responseType: ResponseType.bytes,
-        headers: {
-          'Accept': '*/*',  // Aceptar cualquier tipo de contenido
-        },
-      ),
-    );
 
-    if (response.statusCode == 200) {
-      if (response.data is List<int>) {
-        final bytes = Uint8List.fromList(response.data);
-        
-        // Verificar que tenemos datos
-        if (bytes.isNotEmpty) {
-         
-          return bytes;
+  @override
+  Future<Uint8List> obtenerImagenDeposito(int idDeposito) async {
+    try {
+      final response = await _dio.get(
+        AppConstants.depObtImagen + idDeposito.toString(),
+        options: Options(
+          responseType: ResponseType.bytes,
+          headers: {
+            'Accept': '*/*', // Aceptar cualquier tipo de contenido
+          },
+        ),
+      );
+
+      if (response.statusCode == 200) {
+        if (response.data is List<int>) {
+          final bytes = Uint8List.fromList(response.data);
+
+          // Verificar que tenemos datos
+          if (bytes.isNotEmpty) {
+            return bytes;
+          } else {
+            throw Exception('La imagen recibida está vacía');
+          }
         } else {
-          throw Exception('La imagen recibida está vacía');
+          throw Exception('Formato inesperado: ${response.data.runtimeType}');
         }
       } else {
-        throw Exception('Formato inesperado: ${response.data.runtimeType}');
+        throw Exception('Error obteniendo imagen: ${response.statusCode}');
       }
-    } else {
-      throw Exception('Error obteniendo imagen: ${response.statusCode}');
+    } catch (e) {
+      throw Exception('Error en la solicitud: $e');
     }
-  } catch (e) {
-    throw Exception('Error en la solicitud: $e');
   }
 
-
-  }
-  
   @override
-  Future<bool> actualizarNroTransaccion( DepositoChequeEntity deposito ) async {
-    
+  Future<bool> actualizarNroTransaccion(DepositoChequeEntity deposito) async {
     final model = DepositoChequeModel.fromEntity(deposito);
 
     try {
       final response = await _dio.post(
         AppConstants.depActualizarNotaRemision,
         data:
-            model.toJson(), // Asegúrate de que EntregaEntity tenga un método toJson()
+            model
+                .toJson(), // Asegúrate de que EntregaEntity tenga un método toJson()
       );
 
       return response.statusCode == 200 || response.statusCode == 201;
@@ -422,19 +418,18 @@ class DepositoChequesImpl implements DepositoChequesRepository {
     } catch (e) {
       throw Exception('Error desconocido: ${e.toString()}');
     }
-
   }
-  
+
   @override
-  Future<bool> rechazarNotaRemision( DepositoChequeEntity deposito ) async {
-    
+  Future<bool> rechazarNotaRemision(DepositoChequeEntity deposito) async {
     final model = DepositoChequeModel.fromEntity(deposito);
 
     try {
       final response = await _dio.post(
         AppConstants.depRechazarNotaRemision,
         data:
-            model.toJson(), // Asegúrate de que EntregaEntity tenga un método toJson()
+            model
+                .toJson(), // Asegúrate de que EntregaEntity tenga un método toJson()
       );
 
       return response.statusCode == 200 || response.statusCode == 201;
@@ -449,7 +444,5 @@ class DepositoChequesImpl implements DepositoChequesRepository {
     } catch (e) {
       throw Exception('Error desconocido: ${e.toString()}');
     }
-
-
   }
 }

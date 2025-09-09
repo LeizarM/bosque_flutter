@@ -1765,6 +1765,15 @@ class _ControlContenedoresCombustibleScreenState
         codEmpleado: user?.codEmpleado ?? 0,
         idCompraGarrafa: 0, // En este caso es cero
         audUsuario: user?.codUsuario ?? 0,
+        fechaMovimientoString: '',
+        origen: '',
+        destino: '',
+        nombreCompleto: '',
+        fechaInicio: DateTime.now(),
+        fechaFin: DateTime.now(),
+        idTipo: 0,
+        nombreSucursal: '',
+        tipo: '',
       );
 
       // Mostrar en consola para debug antes de enviar

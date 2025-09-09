@@ -40,7 +40,6 @@ class AppConstants {
   static const String listarBidonesPendientes =
       '/gasolinaMaquina/lstBidonesPendientes';
   static const String listarDetalleBidon = '/gasolinaMaquina/lstDetalleBidon';
-  static const String listarSucural = '/gasolinaMaquina/lstSucursal';
 
   //***********Endpoints para la gestion de bidones segunda parte
   static const String lstContenedores = '/gasolinaMaquina/lstContenedores';
@@ -48,6 +47,10 @@ class AppConstants {
       '/gasolinaMaquina/registrarMovimiento';
   static const String registerCompraGarrafa =
       '/gasolinaMaquina/registrarGarrafa';
+  static const String listarSucural = '/gasolinaMaquina/lstSucursal';
+  static const String lstTipoContenedor = '/gasolinaMaquina/lstTipoContenedor';
+  static const String lstMovimientos = '/gasolinaMaquina/lstMovimientos';
+  static const String lstSaldosActuales = '/gasolinaMaquina/lstSaldoActuales';
 
   // Endpoints para la gestión de depósitos de cheques
   static const String deplstEmpresas = '/deposito-cheque/lst-empresas';

@@ -7,6 +7,7 @@ import 'package:bosque_flutter/domain/entities/maquina_montacarga_entity.dart';
 import 'package:bosque_flutter/domain/entities/sucursal_entity.dart';
 import 'package:bosque_flutter/domain/entities/contenedor_entity.dart';
 import 'package:bosque_flutter/domain/entities/movimiento_entity.dart';
+import 'package:bosque_flutter/domain/entities/tipo_contenedor_entity.dart';
 import 'package:bosque_flutter/domain/repositories/control_combustible_maquina_montacarga_repository.dart';
 
 enum RegistroStatus { initial, loading, success, error }
@@ -23,6 +24,8 @@ class RegistroState {
   final FetchStatus ultimosMovimientosStatus;
   final FetchStatus
   bidonesPendientesStatus; // Nuevo estado para bidones pendientes
+  final FetchStatus movimientosStatus; // Estado para movimientos
+  final FetchStatus saldosStatus; // Estado para saldos actuales
   final String? errorMessage;
   final List<ControlCombustibleMaquinaMontacargaEntity> almacenes;
   final List<MaquinaMontacargaEntity> maquinasMontacarga;
@@ -32,6 +35,8 @@ class RegistroState {
   final List<ControlCombustibleMaquinaMontacargaEntity> ultimosMovimientos;
   final List<ControlCombustibleMaquinaMontacargaEntity>
   bidonesPendientes; // Nueva lista para bidones pendientes
+  final List<MovimientoEntity> movimientos; // Lista de movimientos
+  final List<MovimientoEntity> saldosActuales; // Lista de saldos actuales
 
   RegistroState({
     required this.registroStatus,
@@ -42,6 +47,8 @@ class RegistroState {
     required this.bidonesSucursalStatus,
     required this.ultimosMovimientosStatus,
     required this.bidonesPendientesStatus,
+    required this.movimientosStatus,
+    required this.saldosStatus,
     this.errorMessage,
     required this.almacenes,
     required this.maquinasMontacarga,
@@ -50,6 +57,8 @@ class RegistroState {
     required this.bidonesSucursal,
     required this.ultimosMovimientos,
     required this.bidonesPendientes,
+    required this.movimientos,
+    required this.saldosActuales,
   });
 
   RegistroState copyWith({
@@ -61,6 +70,8 @@ class RegistroState {
     FetchStatus? bidonesSucursalStatus,
     FetchStatus? ultimosMovimientosStatus,
     FetchStatus? bidonesPendientesStatus,
+    FetchStatus? movimientosStatus,
+    FetchStatus? saldosStatus,
     String? errorMessage,
     List<ControlCombustibleMaquinaMontacargaEntity>? almacenes,
     List<MaquinaMontacargaEntity>? maquinasMontacarga,
@@ -69,6 +80,8 @@ class RegistroState {
     List<ControlCombustibleMaquinaMontacargaEntity>? bidonesSucursal,
     List<ControlCombustibleMaquinaMontacargaEntity>? ultimosMovimientos,
     List<ControlCombustibleMaquinaMontacargaEntity>? bidonesPendientes,
+    List<MovimientoEntity>? movimientos,
+    List<MovimientoEntity>? saldosActuales,
   }) {
     return RegistroState(
       registroStatus: registroStatus ?? this.registroStatus,
@@ -82,6 +95,8 @@ class RegistroState {
           ultimosMovimientosStatus ?? this.ultimosMovimientosStatus,
       bidonesPendientesStatus:
           bidonesPendientesStatus ?? this.bidonesPendientesStatus,
+      movimientosStatus: movimientosStatus ?? this.movimientosStatus,
+      saldosStatus: saldosStatus ?? this.saldosStatus,
       errorMessage: errorMessage ?? this.errorMessage,
       almacenes: almacenes ?? this.almacenes,
       maquinasMontacarga: maquinasMontacarga ?? this.maquinasMontacarga,
@@ -90,6 +105,8 @@ class RegistroState {
       bidonesSucursal: bidonesSucursal ?? this.bidonesSucursal,
       ultimosMovimientos: ultimosMovimientos ?? this.ultimosMovimientos,
       bidonesPendientes: bidonesPendientes ?? this.bidonesPendientes,
+      movimientos: movimientos ?? this.movimientos,
+      saldosActuales: saldosActuales ?? this.saldosActuales,
     );
   }
 
@@ -102,6 +119,8 @@ class RegistroState {
     bidonesSucursalStatus: FetchStatus.initial,
     ultimosMovimientosStatus: FetchStatus.initial,
     bidonesPendientesStatus: FetchStatus.initial,
+    movimientosStatus: FetchStatus.initial,
+    saldosStatus: FetchStatus.initial,
     almacenes: [],
     maquinasMontacarga: [],
     bidones: [],
@@ -109,6 +128,8 @@ class RegistroState {
     bidonesSucursal: [],
     ultimosMovimientos: [],
     bidonesPendientes: [],
+    movimientos: [],
+    saldosActuales: [],
   );
 }
 
@@ -269,6 +290,54 @@ class ControlCombustibleMaquinaMontacargaNotifier
     }
   }
 
+  Future<void> cargarSaldosActuales() async {
+    state = state.copyWith(saldosStatus: FetchStatus.loading);
+
+    try {
+      final saldosActuales = await _repository.lstSaldosActuales();
+
+      state = state.copyWith(
+        saldosStatus: FetchStatus.success,
+        saldosActuales: saldosActuales,
+        errorMessage: null,
+      );
+    } catch (e) {
+      state = state.copyWith(
+        saldosStatus: FetchStatus.error,
+        errorMessage: e.toString(),
+      );
+    }
+  }
+
+  Future<void> cargarMovimientos(
+    DateTime fechaInicio,
+    DateTime fechaFin,
+    int codSucursal,
+    int codTipoContenedor,
+  ) async {
+    state = state.copyWith(movimientosStatus: FetchStatus.loading);
+
+    try {
+      final movimientos = await _repository.lstMovimientos(
+        fechaInicio,
+        fechaFin,
+        codSucursal,
+        codTipoContenedor,
+      );
+
+      state = state.copyWith(
+        movimientosStatus: FetchStatus.success,
+        movimientos: movimientos,
+        errorMessage: null,
+      );
+    } catch (e) {
+      state = state.copyWith(
+        movimientosStatus: FetchStatus.error,
+        errorMessage: e.toString(),
+      );
+    }
+  }
+
   void resetRegistroStatus() {
     state = state.copyWith(registroStatus: RegistroStatus.initial);
   }
@@ -389,4 +458,27 @@ final registrarGarrafaProvider =
     FutureProvider.family<bool, CompraGarrafaEntity>((ref, garrafa) async {
       final repo = ref.read(controlCombustibleMaquinaMontacargaProvider);
       return await repo.registerCompraGarrafa(garrafa);
+    });
+
+// Provider para lstTipoContenedor
+final tipoContenedorProvider = FutureProvider<List<TipoContenedorEntity>>((
+  ref,
+) async {
+  final repo = ref.read(controlCombustibleMaquinaMontacargaProvider);
+  return await repo.lstTipoContenedor();
+});
+
+// Provider para lstSaldosActuales
+final saldosActualesProvider = Provider<List<MovimientoEntity>>((ref) {
+  return ref
+      .watch(controlCombustibleMaquinaMontacargaNotifierProvider)
+      .saldosActuales;
+});
+
+// Provider para reporteMovimientos
+final reporteMovimientosDirectProvider =
+    Provider<List<ControlCombustibleMaquinaMontacargaEntity>>((ref) {
+      return ref
+          .watch(controlCombustibleMaquinaMontacargaNotifierProvider)
+          .reporteMovimientos;
     });

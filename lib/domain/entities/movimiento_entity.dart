@@ -20,6 +20,17 @@ class MovimientoEntity {
   int idCompraGarrafa;
   int audUsuario;
 
+  String fechaMovimientoString;
+  String origen;
+  String destino;
+  String nombreCompleto;
+
+  DateTime fechaInicio;
+  DateTime fechaFin;
+  int idTipo;
+  String nombreSucursal;
+  String tipo;
+
   MovimientoEntity({
     required this.idMovimiento,
     required this.tipoMovimiento,
@@ -41,5 +52,16 @@ class MovimientoEntity {
     required this.codEmpleado,
     required this.idCompraGarrafa,
     required this.audUsuario,
+
+    required this.fechaMovimientoString,
+    required this.origen,
+    required this.destino,
+    required this.nombreCompleto,
+
+    required this.fechaInicio,
+    required this.fechaFin,
+    required this.idTipo,
+    required this.nombreSucursal,
+    required this.tipo,
   });
 }
