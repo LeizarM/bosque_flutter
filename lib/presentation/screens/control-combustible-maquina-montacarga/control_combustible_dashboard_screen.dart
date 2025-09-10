@@ -14,6 +14,8 @@ class ControlCombustibleDashboardScreen extends ConsumerStatefulWidget {
 
 class _ControlCombustibleDashboardScreenState
     extends ConsumerState<ControlCombustibleDashboardScreen> {
+  bool _isStatsExpanded = true; // Estado para expandir/colapsar estadísticas
+
   @override
   void initState() {
     super.initState();
@@ -207,114 +209,135 @@ class _ControlCombustibleDashboardScreenState
     ColorScheme colorScheme,
     bool isDesktop,
   ) {
-    final totalSucursales = saldosPorSucursal.keys.length;
-    final totalTipos = saldos.map((s) => s.tipo).toSet().length;
-    final totalSaldo = saldos.fold<double>(0, (sum, s) => sum + s.valorSaldo);
+    // Agrupar y sumar por tipo de combustible
+    final saldosPorTipo = <String, double>{};
+    for (final saldo in saldos) {
+      final tipo = saldo.tipo;
+      saldosPorTipo[tipo] = (saldosPorTipo[tipo] ?? 0) + saldo.valorSaldo;
+    }
+
+    // Ordenar por cantidad descendente
+    final tiposOrdenados =
+        saldosPorTipo.entries.toList()
+          ..sort((a, b) => b.value.compareTo(a.value));
 
     return Container(
       padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'Resumen General',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: colorScheme.onSurface,
-            ),
-          ),
-          const SizedBox(height: 12),
-          isDesktop
-              ? Row(
+          // Header con botón de expandir/colapsar
+          InkWell(
+            onTap: () {
+              setState(() {
+                _isStatsExpanded = !_isStatsExpanded;
+              });
+            },
+            borderRadius: BorderRadius.circular(8),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              child: Row(
                 children: [
-                  Expanded(
-                    child: _buildStatCard(
-                      'Sucursales',
-                      totalSucursales.toString(),
-                      Icons.location_on,
-                      colorScheme,
+                  Text(
+                    'Totales por Tipo de Combustible',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: colorScheme.onSurface,
                     ),
                   ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: _buildStatCard(
-                      'Tipos de Combustible',
-                      totalTipos.toString(),
-                      Icons.local_gas_station,
-                      colorScheme,
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: _buildStatCard(
-                      'Saldo Total',
-                      '${totalSaldo.toStringAsFixed(1)} L',
-                      Icons.inventory,
-                      colorScheme,
-                    ),
-                  ),
-                ],
-              )
-              : Column(
-                children: [
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _buildStatCard(
-                          'Sucursales',
-                          totalSucursales.toString(),
-                          Icons.location_on,
-                          colorScheme,
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: _buildStatCard(
-                          'Tipos',
-                          totalTipos.toString(),
-                          Icons.local_gas_station,
-                          colorScheme,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  _buildStatCard(
-                    'Saldo Total',
-                    '${totalSaldo.toStringAsFixed(1)} L',
-                    Icons.inventory,
-                    colorScheme,
+                  const Spacer(),
+                  Icon(
+                    _isStatsExpanded ? Icons.expand_less : Icons.expand_more,
+                    color: colorScheme.primary,
                   ),
                 ],
               ),
+            ),
+          ),
+
+          // Contenido expandible
+          if (_isStatsExpanded) ...[
+            const SizedBox(height: 12),
+            isDesktop
+                ? Row(
+                  children:
+                      tiposOrdenados
+                          .map(
+                            (entry) => Expanded(
+                              child: Padding(
+                                padding: const EdgeInsets.only(
+                                  right: 8,
+                                ), // Reducido de 16 a 8
+                                child: _buildTipoStatCard(
+                                  entry.key,
+                                  '${entry.value.toStringAsFixed(1)} ${_getUnidadMedida(entry.key)}',
+                                  _getCombustibleIcon(entry.key),
+                                  _getCombustibleColor(entry.key),
+                                  colorScheme,
+                                ),
+                              ),
+                            ),
+                          )
+                          .toList(),
+                )
+                : Column(
+                  children:
+                      tiposOrdenados
+                          .map(
+                            (entry) => Padding(
+                              padding: const EdgeInsets.only(bottom: 12),
+                              child: _buildTipoStatCard(
+                                entry.key,
+                                '${entry.value.toStringAsFixed(1)} ${_getUnidadMedida(entry.key)}',
+                                _getCombustibleIcon(entry.key),
+                                _getCombustibleColor(entry.key),
+                                colorScheme,
+                              ),
+                            ),
+                          )
+                          .toList(),
+                ),
+          ],
         ],
       ),
     );
   }
 
-  Widget _buildStatCard(
-    String title,
+  Widget _buildTipoStatCard(
+    String tipo,
     String value,
     IconData icon,
+    Color iconColor,
     ColorScheme colorScheme,
   ) {
     return Card(
       elevation: 2,
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(10), // Reducido de 12 a 10
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               children: [
-                Icon(icon, color: colorScheme.primary, size: 20),
-                const SizedBox(width: 8),
+                Container(
+                  padding: const EdgeInsets.all(5), // Reducido de 6 a 5
+                  decoration: BoxDecoration(
+                    color: iconColor.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(5), // Reducido de 6 a 5
+                  ),
+                  child: Icon(
+                    icon,
+                    color: iconColor,
+                    size: 18, // Reducido de 20 a 18
+                  ),
+                ),
+                const SizedBox(width: 6), // Reducido de 8 a 6
                 Expanded(
                   child: Text(
-                    title,
+                    tipo,
                     style: TextStyle(
-                      fontSize: 12,
+                      fontSize: 13, // Aumentado de 12 a 13
                       color: colorScheme.onSurfaceVariant,
                       fontWeight: FontWeight.w500,
                     ),
@@ -322,11 +345,11 @@ class _ControlCombustibleDashboardScreenState
                 ),
               ],
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 6), // Reducido de 8 a 6
             Text(
               value,
               style: TextStyle(
-                fontSize: 18,
+                fontSize: 18, // Aumentado de 16 a 18
                 fontWeight: FontWeight.bold,
                 color: colorScheme.onSurface,
               ),
@@ -345,10 +368,11 @@ class _ControlCombustibleDashboardScreenState
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: GridView.builder(
         gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 2,
-          crossAxisSpacing: 16,
-          mainAxisSpacing: 16,
-          childAspectRatio: 1.5,
+          crossAxisCount: 4, // Aumentado de 3 a 4 para cards más pequeños
+          crossAxisSpacing: 8, // Reducido de 12 a 8
+          mainAxisSpacing: 8, // Reducido de 12 a 8
+          childAspectRatio:
+              1.1, // Reducido de 1.3 a 1.1 para cards más compactos
         ),
         itemCount: saldosPorSucursal.keys.length,
         itemBuilder: (context, index) {
@@ -384,54 +408,85 @@ class _ControlCombustibleDashboardScreenState
     ColorScheme colorScheme,
     bool isDesktop,
   ) {
-    final totalSaldo = saldos.fold<double>(0, (sum, s) => sum + s.valorSaldo);
+    // Agrupar saldos por tipo para evitar sumar unidades incompatibles
+    final saldosPorTipo = <String, double>{};
+    for (final saldo in saldos) {
+      final tipo = saldo.tipo;
+      saldosPorTipo[tipo] = (saldosPorTipo[tipo] ?? 0) + saldo.valorSaldo;
+    }
+
+    // Crear texto de resumen para mostrar en lugar de total incorrecto
+    final resumenTexto = saldosPorTipo.entries
+        .map(
+          (entry) =>
+              '${entry.value.toStringAsFixed(1)} ${_getUnidadMedida(entry.key)} ${entry.key}',
+        )
+        .join(' • ');
 
     return Card(
-      elevation: 3,
+      elevation: isDesktop ? 2 : 3, // Menor elevación en desktop
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: EdgeInsets.all(
+          isDesktop ? 8 : 16,
+        ), // Reducido de 12 a 8 en desktop para cards más pequeños
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Header de la sucursal
             Row(
               children: [
-                Icon(Icons.location_on, color: colorScheme.primary, size: 20),
-                const SizedBox(width: 8),
+                Icon(
+                  Icons.location_on,
+                  color: colorScheme.primary,
+                  size: isDesktop ? 16 : 20,
+                ),
+                SizedBox(width: isDesktop ? 4 : 8),
                 Expanded(
                   child: Text(
                     sucursal,
                     style: TextStyle(
-                      fontSize: 16,
+                      fontSize:
+                          isDesktop
+                              ? 16
+                              : 16, // Aumentado de 14 a 16 en desktop
                       fontWeight: FontWeight.bold,
                       color: colorScheme.onSurface,
                     ),
                   ),
                 ),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 4,
-                  ),
-                  decoration: BoxDecoration(
-                    color: colorScheme.primaryContainer,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Text(
-                    '${totalSaldo.toStringAsFixed(1)} L',
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                      color: colorScheme.onPrimaryContainer,
+                Flexible(
+                  child: Container(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: isDesktop ? 4 : 8,
+                      vertical: isDesktop ? 1 : 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: colorScheme.primaryContainer,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(
+                      resumenTexto.isNotEmpty ? resumenTexto : 'Sin saldos',
+                      style: TextStyle(
+                        fontSize:
+                            isDesktop
+                                ? 9
+                                : 12, // Ligeramente reducido para que quepa
+                        fontWeight: FontWeight.bold,
+                        color: colorScheme.onPrimaryContainer,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                      maxLines: 2,
                     ),
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 12),
+            SizedBox(height: isDesktop ? 6 : 12),
 
             // Lista de combustibles
-            ...saldos.map((saldo) => _buildCombustibleItem(saldo, colorScheme)),
+            ...saldos.map(
+              (saldo) => _buildCombustibleItem(saldo, colorScheme, isDesktop),
+            ),
           ],
         ),
       ),
@@ -441,23 +496,24 @@ class _ControlCombustibleDashboardScreenState
   Widget _buildCombustibleItem(
     MovimientoEntity saldo,
     ColorScheme colorScheme,
+    bool isDesktop,
   ) {
     final icon = _getCombustibleIcon(saldo.tipo);
     final color = _getCombustibleColor(saldo.tipo);
 
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6),
+      padding: EdgeInsets.symmetric(vertical: isDesktop ? 3 : 6),
       child: Row(
         children: [
           Container(
-            padding: const EdgeInsets.all(8),
+            padding: EdgeInsets.all(isDesktop ? 4 : 8),
             decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(8),
+              color: color.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(isDesktop ? 4 : 8),
             ),
-            child: Icon(icon, color: color, size: 16),
+            child: Icon(icon, color: color, size: isDesktop ? 12 : 16),
           ),
-          const SizedBox(width: 12),
+          SizedBox(width: isDesktop ? 6 : 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -465,7 +521,8 @@ class _ControlCombustibleDashboardScreenState
                 Text(
                   saldo.tipo,
                   style: TextStyle(
-                    fontSize: 14,
+                    fontSize:
+                        isDesktop ? 14 : 14, // Aumentado de 12 a 14 en desktop
                     fontWeight: FontWeight.w500,
                     color: colorScheme.onSurface,
                   ),
@@ -474,7 +531,8 @@ class _ControlCombustibleDashboardScreenState
                   Text(
                     'Último mov: ${saldo.fechaMovimientoString}',
                     style: TextStyle(
-                      fontSize: 11,
+                      fontSize:
+                          isDesktop ? 10 : 11, // Aumentado de 9 a 10 en desktop
                       color: colorScheme.onSurfaceVariant,
                     ),
                   ),
@@ -482,9 +540,9 @@ class _ControlCombustibleDashboardScreenState
             ),
           ),
           Text(
-            '${saldo.valorSaldo.toStringAsFixed(1)} L',
+            '${saldo.valorSaldo.toStringAsFixed(1)} ${_getUnidadMedida(saldo.tipo)}',
             style: TextStyle(
-              fontSize: 14,
+              fontSize: isDesktop ? 14 : 14, // Aumentado de 12 a 14 en desktop
               fontWeight: FontWeight.bold,
               color: _getSaldoColor(saldo.valorSaldo, colorScheme),
             ),
@@ -492,6 +550,15 @@ class _ControlCombustibleDashboardScreenState
         ],
       ),
     );
+  }
+
+  String _getUnidadMedida(String tipo) {
+    switch (tipo.toLowerCase()) {
+      case 'garrafa':
+        return 'U';
+      default:
+        return 'L';
+    }
   }
 
   IconData _getCombustibleIcon(String tipo) {
