@@ -1774,6 +1774,7 @@ class _ControlContenedoresCombustibleScreenState
         idTipo: 0,
         nombreSucursal: '',
         tipo: '',
+        nombreCoche: '',
       );
 
       // Mostrar en consola para debug antes de enviar

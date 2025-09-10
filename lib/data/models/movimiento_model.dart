@@ -42,6 +42,7 @@ class MovimientoModel {
   int idTipo;
   String nombreSucursal;
   String tipo;
+  String nombreCoche;
 
   MovimientoModel({
     required this.idMovimiento,
@@ -75,6 +76,7 @@ class MovimientoModel {
     required this.idTipo,
     required this.nombreSucursal,
     required this.tipo,
+    required this.nombreCoche,
   });
 
   factory MovimientoModel.fromJson(Map<String, dynamic> json) =>
@@ -119,6 +121,7 @@ class MovimientoModel {
         idTipo: json["idTipo"] ?? 0,
         nombreSucursal: json["nombreSucursal"] ?? '',
         tipo: json["tipo"] ?? '',
+        nombreCoche: json["nombreCoche"] ?? '',
       );
 
   Map<String, dynamic> toJson() => {
@@ -151,6 +154,7 @@ class MovimientoModel {
     "idTipo": idTipo,
     "nombreSucursal": nombreSucursal,
     "tipo": tipo,
+    "nombreCoche": nombreCoche,
   };
 
   // Método para convertir de Model a Entity
@@ -185,6 +189,7 @@ class MovimientoModel {
     idTipo: idTipo,
     nombreSucursal: nombreSucursal,
     tipo: tipo,
+    nombreCoche: nombreCoche,
   );
 
   // Método factory para convertir de Entity a Model
@@ -221,5 +226,6 @@ class MovimientoModel {
         idTipo: entity.idTipo,
         nombreSucursal: entity.nombreSucursal,
         tipo: entity.tipo,
+        nombreCoche: entity.nombreCoche,
       );
 }

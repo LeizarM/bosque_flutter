@@ -30,6 +30,7 @@ class MovimientoEntity {
   int idTipo;
   String nombreSucursal;
   String tipo;
+  String nombreCoche;
 
   MovimientoEntity({
     required this.idMovimiento,
@@ -63,5 +64,6 @@ class MovimientoEntity {
     required this.idTipo,
     required this.nombreSucursal,
     required this.tipo,
+    required this.nombreCoche,
   });
 }

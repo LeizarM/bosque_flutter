@@ -27,14 +27,6 @@ abstract class ControlCombustibleMaquinaMontacargaRepository {
   Future<List<ControlCombustibleMaquinaMontacargaEntity>>
   lstBidonesUltimosMov();
 
-  Future<List<ControlCombustibleMaquinaMontacargaEntity>> listBidonesPendientes(
-    int codSucursalMaqVehiDestino,
-  );
-
-  Future<List<ControlCombustibleMaquinaMontacargaEntity>> listDetalleBidon(
-    dynamic idCM,
-  );
-
   /// ==============================
   /// ======= NUEVOS METODOS PARA REGISTRAR LOS BIDONES
   /// ==============================
@@ -57,4 +49,8 @@ abstract class ControlCombustibleMaquinaMontacargaRepository {
   );
 
   Future<List<MovimientoEntity>> lstSaldosActuales();
+
+  Future<List<MovimientoEntity>> listBidonesPendientes(int sucursalDestino);
+
+  Future<List<MovimientoEntity>> listDetalleBidon(dynamic idMovimiento);
 }

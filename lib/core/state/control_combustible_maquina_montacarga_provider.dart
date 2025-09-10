@@ -33,7 +33,7 @@ class RegistroState {
   final List<ControlCombustibleMaquinaMontacargaEntity> reporteMovimientos;
   final List<ControlCombustibleMaquinaMontacargaEntity> bidonesSucursal;
   final List<ControlCombustibleMaquinaMontacargaEntity> ultimosMovimientos;
-  final List<ControlCombustibleMaquinaMontacargaEntity>
+  final List<MovimientoEntity>
   bidonesPendientes; // Nueva lista para bidones pendientes
   final List<MovimientoEntity> movimientos; // Lista de movimientos
   final List<MovimientoEntity> saldosActuales; // Lista de saldos actuales
@@ -79,7 +79,7 @@ class RegistroState {
     List<ControlCombustibleMaquinaMontacargaEntity>? reporteMovimientos,
     List<ControlCombustibleMaquinaMontacargaEntity>? bidonesSucursal,
     List<ControlCombustibleMaquinaMontacargaEntity>? ultimosMovimientos,
-    List<ControlCombustibleMaquinaMontacargaEntity>? bidonesPendientes,
+    List<MovimientoEntity>? bidonesPendientes,
     List<MovimientoEntity>? movimientos,
     List<MovimientoEntity>? saldosActuales,
   }) {
@@ -269,12 +269,12 @@ class ControlCombustibleMaquinaMontacargaNotifier
     }
   }
 
-  Future<void> cargarBidonesPendientes(int codSucursalMaqVehiDestino) async {
+  Future<void> cargarBidonesPendientes(int sucursalDestino) async {
     state = state.copyWith(bidonesPendientesStatus: FetchStatus.loading);
 
     try {
       final bidonesPendientes = await _repository.listBidonesPendientes(
-        codSucursalMaqVehiDestino,
+        sucursalDestino,
       );
 
       state = state.copyWith(
@@ -408,29 +408,27 @@ final ultimosMovimientosProvider =
 
 // Provider para listBidonesPendientes usando FutureProvider.family
 final listBidonesPendientesProvider =
-    FutureProvider.family<List<ControlCombustibleMaquinaMontacargaEntity>, int>(
-      (ref, codSucursalMaqVehiDestino) async {
-        final repo = ref.read(controlCombustibleMaquinaMontacargaProvider);
-        return await repo.listBidonesPendientes(codSucursalMaqVehiDestino);
-      },
-    );
-
-// Nuevo provider para acceder directamente a los bidones pendientes desde el state
-final bidonesPendientesProvider =
-    Provider<List<ControlCombustibleMaquinaMontacargaEntity>>((ref) {
-      return ref
-          .watch(controlCombustibleMaquinaMontacargaNotifierProvider)
-          .bidonesPendientes;
+    FutureProvider.family<List<MovimientoEntity>, int>((
+      ref,
+      codSucursalMaqVehiDestino,
+    ) async {
+      final repo = ref.read(controlCombustibleMaquinaMontacargaProvider);
+      return await repo.listBidonesPendientes(codSucursalMaqVehiDestino);
     });
 
-// Provider para listDetalleBidon usando FutureProvider.family
-final listDetalleBidonProvider = FutureProvider.family<
-  List<ControlCombustibleMaquinaMontacargaEntity>,
-  dynamic
->((ref, idCM) async {
-  final repo = ref.read(controlCombustibleMaquinaMontacargaProvider);
-  return await repo.listDetalleBidon(idCM);
+// Nuevo provider para acceder directamente a los bidones pendientes desde el state
+final bidonesPendientesProvider = Provider<List<MovimientoEntity>>((ref) {
+  return ref
+      .watch(controlCombustibleMaquinaMontacargaNotifierProvider)
+      .bidonesPendientes;
 });
+
+// Provider para listDetalleBidon usando FutureProvider.family
+final listDetalleBidonProvider =
+    FutureProvider.family<List<MovimientoEntity>, dynamic>((ref, idCM) async {
+      final repo = ref.read(controlCombustibleMaquinaMontacargaProvider);
+      return await repo.listDetalleBidon(idCM);
+    });
 
 // Provider para lstSucursal
 final sucursalesProvider = FutureProvider<List<SucursalEntity>>((ref) async {

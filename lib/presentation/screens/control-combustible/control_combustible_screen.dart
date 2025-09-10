@@ -72,7 +72,6 @@ class _ControlCombustibleScreenState
   int? _selectedCocheId;
   List<Map<String, dynamic>> _coches = [];
   bool _loadingCoches = true;
-  int? _selectedBidonIdCM;
 
   @override
   void initState() {
@@ -93,7 +92,7 @@ class _ControlCombustibleScreenState
                 (e) => {
                   'id': e.idCoche,
                   'label': e.coche,
-                  'codSucursal': e.codSucursalCoche ?? 0,
+                  'codSucursal': e.codSucursalCoche,
                 },
               )
               .toList();
@@ -169,9 +168,11 @@ class _ControlCombustibleScreenState
                       ),
                     ),
                     const SizedBox(height: 8),
-                    Text('Fecha: ${_formatDate(bidon.fecha?.toString())}'),
-                    Text('Litros: ${bidon.litrosIngreso ?? 0} L'),
-                    Text('Origen: ${bidon.nombreMaquinaOrigen ?? 'N/A'}'),
+                    Text(
+                      'Fecha: ${_formatDate(bidon.fechaMovimiento?.toString())}',
+                    ),
+                    Text('Litros: ${bidon.valorEntrada ?? 0} L'),
+                    Text('Origen: ${bidon.nombreCoche ?? 'N/A'}'),
                   ],
                 ),
               ),
@@ -230,7 +231,7 @@ class _ControlCombustibleScreenState
 
     // If confirmed, return the bidon ID
     if (confirmed == true) {
-      return bidon.idCM;
+      return bidon.idMovimiento;
     }
     return null;
   }
@@ -552,16 +553,16 @@ class _ControlCombustibleScreenState
         }).future,
       );
 
-      int selectedIdCM = 0; // Valor por defecto
+      int selectedMovimiento = 0; // Valor por defecto
 
       // Verificar si hay datos y si esMenor es 1
       if (consumoData.isNotEmpty) {
         final primerRegistro = consumoData.first;
         if (primerRegistro.esMenor == 1) {
           // Mostrar diálogo para seleccionar bidón
-          final selectedBidonIdCM = await _showBidonSelectionDialog();
+          final selectedBidonIdMovimiento = await _showBidonSelectionDialog();
 
-          if (selectedBidonIdCM == null) {
+          if (selectedBidonIdMovimiento == null) {
             // Usuario canceló la selección
             if (mounted) {
               ScaffoldMessenger.of(context).showSnackBar(
@@ -576,16 +577,16 @@ class _ControlCombustibleScreenState
             return;
           }
 
-          selectedIdCM = selectedBidonIdCM;
+          selectedMovimiento = selectedMovimiento;
 
           // IMPORTANTE: Proceder inmediatamente con el registro
-          await _proceedWithRegistration(selectedIdCM, consumoData);
+          await _proceedWithRegistration(selectedMovimiento, consumoData);
           return;
         }
       }
 
       // Si no necesita bidón, proceder directamente con el registro
-      await _proceedWithRegistration(selectedIdCM, consumoData);
+      await _proceedWithRegistration(selectedMovimiento, consumoData);
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -599,7 +600,7 @@ class _ControlCombustibleScreenState
   }
 
   Future<void> _proceedWithRegistration(
-    int selectedIdCM,
+    int selectedIdMovimiento,
     List<dynamic> consumoData,
   ) async {
     if (!mounted) return;
@@ -658,7 +659,7 @@ class _ControlCombustibleScreenState
         fecha: DateTime.now(),
         diferencia: 0,
         kilometrajeAnterior: 0,
-        idCM: selectedIdCM,
+        idMovimiento: selectedIdMovimiento,
         esMenor: consumoData.isNotEmpty ? consumoData.first.esMenor ?? 0 : 0,
         nombreCompleto: '',
       );
@@ -774,7 +775,6 @@ class _ControlCombustibleScreenState
     setState(() {
       _selectedFuelType = FuelType.gasolina;
       _selectedCocheId = _coches.isNotEmpty ? _coches.first['id'] : null;
-      _selectedBidonIdCM = null;
     });
   }
 
@@ -1340,15 +1340,15 @@ class _BidonListWidget extends ConsumerWidget {
                                 const SizedBox(height: 4),
                                 buildBidonInfo(
                                   '📅',
-                                  formatDate(bidon.fecha?.toString()),
+                                  formatDate(bidon.fechaMovimiento.toString()),
                                 ),
                                 buildBidonInfo(
                                   '⛽',
-                                  '${bidon.litrosIngreso ?? 0} L',
+                                  '${bidon.valorEntrada ?? 0} L / U',
                                 ),
                                 buildBidonInfo(
                                   '🚚',
-                                  bidon.nombreMaquinaOrigen ?? 'N/A',
+                                  bidon.nombreCoche ?? 'N/A',
                                 ),
                               ],
                             ),

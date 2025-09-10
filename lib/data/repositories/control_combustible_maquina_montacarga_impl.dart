@@ -294,106 +294,6 @@ class ControlCombustibleMaquinaMontacargaImpl
     }
   }
 
-  @override
-  Future<List<ControlCombustibleMaquinaMontacargaEntity>> listBidonesPendientes(
-    int codSucursalMaqVehiDestino,
-  ) async {
-    final requestData = {
-      'codSucursalMaqVehiDestino': codSucursalMaqVehiDestino,
-    };
-
-    try {
-      final response = await _dio.post(
-        AppConstants.listarBidonesPendientes,
-        data: requestData,
-      );
-
-      // Aceptar tanto 200 como 204. 204 significa que no hay contenido (no hay bidones)
-      if (response.statusCode == 200 || response.statusCode == 204) {
-        // Si es 204 o no hay datos, retornar lista vacía
-        if (response.statusCode == 204 || response.data == null) {
-          return [];
-        }
-
-        final data = response.data['data'] ?? [];
-
-        final items =
-            (data as List<dynamic>)
-                .map(
-                  (json) =>
-                      ControlCombustibleMaquinaMontacargaModel.fromJson(json),
-                )
-                .toList();
-
-        final entities = items.map((model) => model.toEntity()).toList();
-
-        return entities;
-      } else {
-        throw Exception(
-          'Error al obtener los bidones pendientes para la sucursal',
-        );
-      }
-    } on DioException catch (e) {
-      String errorMessage = 'Error de conexión: ${e.message}';
-      if (e.response != null && e.response!.data != null) {
-        errorMessage =
-            'Error del servidor: ${e.response!.statusCode} - ${e.response!.data.toString()}';
-      }
-      throw Exception(errorMessage);
-    } catch (e) {
-      throw Exception(
-        'Error desconocido en listBidonesPendientes: ${e.toString()}',
-      );
-    }
-  }
-
-  @override
-  Future<List<ControlCombustibleMaquinaMontacargaEntity>> listDetalleBidon(
-    idCM,
-  ) async {
-    final requestData = {'idCM': idCM};
-
-    try {
-      final response = await _dio.post(
-        AppConstants.listarDetalleBidon,
-        data: requestData,
-      );
-
-      // Aceptar tanto 200 como 204. 204 significa que no hay contenido (no hay bidones)
-      if (response.statusCode == 200 || response.statusCode == 204) {
-        // Si es 204 o no hay datos, retornar lista vacía
-        if (response.statusCode == 204 || response.data == null) {
-          return [];
-        }
-
-        final data = response.data['data'] ?? [];
-
-        final items =
-            (data as List<dynamic>)
-                .map(
-                  (json) =>
-                      ControlCombustibleMaquinaMontacargaModel.fromJson(json),
-                )
-                .toList();
-
-        final entities = items.map((model) => model.toEntity()).toList();
-
-        return entities;
-      } else {
-        throw Exception('Error al obtener el detalle del bidón');
-      }
-    } on DioException catch (e) {
-      String errorMessage = 'Error de conexión: ${e.message}';
-      if (e.response != null && e.response!.data != null) {
-        errorMessage =
-            'Error del servidor: ${e.response!.statusCode} - ${e.response!.data.toString()}';
-      }
-      throw Exception(errorMessage);
-    } catch (e) {
-      throw Exception('Error desconocido en listDetalleBidon: ${e.toString()}');
-    }
-  }
-
   //===================================================
   //  NUEVOS METODOS PARA REGISTRAR LOS BIDONES
   //===================================================
@@ -683,6 +583,96 @@ class ControlCombustibleMaquinaMontacargaImpl
       throw Exception(
         'Error desconocido en lstSaldosActuales: ${e.toString()}',
       );
+    }
+  }
+
+  @override
+  Future<List<MovimientoEntity>> listBidonesPendientes(
+    int sucursalDestino,
+  ) async {
+    final requestData = {'sucursalDestino': sucursalDestino};
+
+    try {
+      final response = await _dio.post(
+        AppConstants.listarBidonesPendientes,
+        data: requestData,
+      );
+
+      // Aceptar tanto 200 como 204. 204 significa que no hay contenido (no hay bidones)
+      if (response.statusCode == 200 || response.statusCode == 204) {
+        // Si es 204 o no hay datos, retornar lista vacía
+        if (response.statusCode == 204 || response.data == null) {
+          return [];
+        }
+
+        final data = response.data['data'] ?? [];
+
+        final items =
+            (data as List<dynamic>)
+                .map((json) => MovimientoModel.fromJson(json))
+                .toList();
+
+        final entities = items.map((model) => model.toEntity()).toList();
+
+        return entities;
+      } else {
+        throw Exception(
+          'Error al obtener los bidones pendientes para la sucursal',
+        );
+      }
+    } on DioException catch (e) {
+      String errorMessage = 'Error de conexión: ${e.message}';
+      if (e.response != null && e.response!.data != null) {
+        errorMessage =
+            'Error del servidor: ${e.response!.statusCode} - ${e.response!.data.toString()}';
+      }
+      throw Exception(errorMessage);
+    } catch (e) {
+      throw Exception(
+        'Error desconocido en listBidonesPendientes: ${e.toString()}',
+      );
+    }
+  }
+
+  @override
+  Future<List<MovimientoEntity>> listDetalleBidon(idMovimiento) async {
+    final requestData = {'idMovimiento': idMovimiento};
+
+    try {
+      final response = await _dio.post(
+        AppConstants.listarDetalleBidon,
+        data: requestData,
+      );
+
+      // Aceptar tanto 200 como 204. 204 significa que no hay contenido (no hay bidones)
+      if (response.statusCode == 200 || response.statusCode == 204) {
+        // Si es 204 o no hay datos, retornar lista vacía
+        if (response.statusCode == 204 || response.data == null) {
+          return [];
+        }
+
+        final data = response.data['data'] ?? [];
+
+        final items =
+            (data as List<dynamic>)
+                .map((json) => MovimientoModel.fromJson(json))
+                .toList();
+
+        final entities = items.map((model) => model.toEntity()).toList();
+
+        return entities;
+      } else {
+        throw Exception('Error al obtener el detalle del bidón');
+      }
+    } on DioException catch (e) {
+      String errorMessage = 'Error de conexión: ${e.message}';
+      if (e.response != null && e.response!.data != null) {
+        errorMessage =
+            'Error del servidor: ${e.response!.statusCode} - ${e.response!.data.toString()}';
+      }
+      throw Exception(errorMessage);
+    } catch (e) {
+      throw Exception('Error desconocido en listDetalleBidon: ${e.toString()}');
     }
   }
 }
