@@ -1082,11 +1082,9 @@ class _ControlCombustibleViewScreenState
                                                   style: TextStyle(
                                                     color:
                                                         (c.obs ?? '').isEmpty
-                                                            ? colorScheme
-                                                                .onSurface
-                                                                .withOpacity(
-                                                                  0.5,
-                                                                )
+                                                            ? colorScheme.onSurface
+                                                            // ignore: deprecated_member_use
+                                                            .withOpacity(0.5)
                                                             : colorScheme
                                                                 .onSurface
                                                                 .withOpacity(

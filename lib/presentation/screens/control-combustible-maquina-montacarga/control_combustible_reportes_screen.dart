@@ -619,7 +619,7 @@ class _ControlCombustibleReportesScreenState
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Tipo de Contenedor',
+          'Tipo de Combustible',
           style: TextStyle(
             fontWeight: FontWeight.w500,
             color: colorScheme.onSurfaceVariant,
@@ -640,7 +640,7 @@ class _ControlCombustibleReportesScreenState
                     vertical: 8,
                   ),
                 ),
-                hint: const Text('Seleccione tipo de contenedor'),
+                hint: const Text('Seleccione tipo de combustible'),
                 items: [
                   const DropdownMenuItem<int>(
                     value: null,
@@ -717,17 +717,6 @@ class _ControlCombustibleReportesScreenState
                   fontSize: 16,
                 ),
               ),
-              const Spacer(),
-              IconButton(
-                onPressed: () {
-                  // Aquí puedes agregar funcionalidad de exportar
-                },
-                icon: Icon(
-                  Icons.download,
-                  color: colorScheme.onPrimaryContainer,
-                ),
-                tooltip: 'Exportar datos',
-              ),
             ],
           ),
         ),
@@ -740,8 +729,8 @@ class _ControlCombustibleReportesScreenState
             ),
             child: Scrollbar(
               child: SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
                 child: SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
                   child: DataTable(
                     columnSpacing: 24,
                     horizontalMargin: 16,

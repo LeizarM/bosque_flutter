@@ -14,6 +14,49 @@ class MovimientoBusinessLogic {
   REGLAS DE NEGOCIO IMPLEMENTADAS:
   
   ✅ PERMITIDAS:
+  1. VEHICULO → CONTENEDOR = ENTRADA (Ingreso) - SOLO para combustibles líquidos (Litros) - MISMA CIUDAD
+  2. CONTENEDOR → VEHICULO/MAQUINA/MONTACARGA = SALIDA - MISMA CIUDAD
+  3. CONTENEDOR → CONTENEDOR = TRASPASO (cualquier ciudad - sin restricción geográfica)
+  
+  ❌ NO PERMITIDAS:
+  4. VEHICULO → VEHICULO/MAQUINA/MONTACARGA
+  5. MAQUINA → cualquier destino
+  6. MONTACARGA → cualquier destino
+  7. VEHICULO/MAQUINA/MONTACARGA → CONTENEDOR de GARRAFAS (Unidades)
+  
+  ℹ️ RESTRICCIONES ADICIONALES:
+  8. ENTRADAS/SALIDAS: Solo entre contenedores de la MISMA ciudad (codCiudad)
+  9. TRASPASOS: Sin restricción geográfica - pueden realizarse entre cualquier ciudad
+  10. SALIDAS: No pueden exceder el saldo disponible del contenedor origen
+  11. TRASPASOS: No pueden exceder el saldo disponible del contenedor origen
+  12. ENTRADAS DE GARRAFAS: Solo permitidas desde control_garrafas_registro_screen.dart
+  */
+
+  /*
+  REGLAS DE NEGOCIO IMPLEMENTADAS:
+  
+  ✅ PERMITIDAS:
+  1. VEHICULO → CONTENEDOR = ENTRADA (Ingreso) - SOLO para combustibles líquidos (Litros)
+  2. CONTENEDOR → VEHICULO/MAQUINA/MONTACARGA = SALIDA
+  3. CONTENEDOR → CONTENEDOR = TRASPASO (solo entre contenedores de la MISMA ciudad)
+  
+  ❌ NO PERMITIDAS:
+  4. VEHICULO → VEHICULO/MAQUINA/MONTACARGA
+  5. MAQUINA → cualquier destino
+  6. MONTACARGA → cualquier destino
+  7. VEHICULO/MAQUINA/MONTACARGA → CONTENEDOR de GARRAFAS (Unidades)
+  
+  ℹ️ RESTRICCIONES ADICIONALES:
+  8. Traspasos solo entre contenedores de la MISMA ciudad (codCiudad)
+  9. SALIDAS: No pueden exceder el saldo disponible del contenedor origen
+  10. TRASPASOS: No pueden exceder el saldo disponible del contenedor origen
+  11. ENTRADAS DE GARRAFAS: Solo permitidas desde control_garrafas_registro_screen.dart
+  */
+
+  /*
+  REGLAS DE NEGOCIO IMPLEMENTADAS:
+  
+  ✅ PERMITIDAS:
   1. VEHICULO → CONTENEDOR = ENTRADA (Ingreso) - SOLO para combustibles líquidos (Litros)
   2. CONTENEDOR → VEHICULO/MAQUINA/MONTACARGA = SALIDA
   3. CONTENEDOR → CONTENEDOR = TRASPASO (solo entre diferentes sucursales)
@@ -69,6 +112,8 @@ class MovimientoBusinessLogic {
     required String? claseDestino,
     int? sucursalOrigen,
     int? sucursalDestino,
+    int? ciudadOrigen,
+    int? ciudadDestino,
     String? unidadMedidaOrigen,
     String? unidadMedidaDestino,
   }) {
@@ -94,6 +139,8 @@ class MovimientoBusinessLogic {
       return esTraspasosValido(
         sucursalOrigen: sucursalOrigen,
         sucursalDestino: sucursalDestino,
+        ciudadOrigen: ciudadOrigen,
+        ciudadDestino: ciudadDestino,
         unidadMedidaOrigen: unidadMedidaOrigen,
         unidadMedidaDestino: unidadMedidaDestino,
       );
@@ -124,18 +171,19 @@ class MovimientoBusinessLogic {
   static bool esTraspasosValido({
     int? sucursalOrigen,
     int? sucursalDestino,
+    int? ciudadOrigen,
+    int? ciudadDestino,
     String? unidadMedidaOrigen,
     String? unidadMedidaDestino,
   }) {
-    // Regla 7: Traspasos entre contenedores de DIFERENTES sucursales
-    if (sucursalOrigen == null || sucursalDestino == null) {
-      return false; // Ambas sucursales deben estar definidas
+    // Verificar que las ciudades estén definidas
+    if (ciudadOrigen == null || ciudadDestino == null) {
+      return false; // Ambas ciudades deben estar definidas
     }
 
-    // SOLO permitir traspasos entre DIFERENTES sucursales
-    if (sucursalOrigen == sucursalDestino) {
-      return false; // NO se permiten traspasos dentro de la misma sucursal
-    }
+    // NUEVA REGLA: Permitir traspasos entre CUALQUIER ciudad
+    // Los contenedores pueden transferirse libremente entre ciudades
+    // (sin restricción geográfica para traspasos)
 
     // Las unidades de medida deben ser iguales
     if (unidadMedidaOrigen == null || unidadMedidaDestino == null) {
@@ -146,7 +194,10 @@ class MovimientoBusinessLogic {
       return false; // Las unidades de medida deben coincidir
     }
 
-    return true; // Traspaso válido entre diferentes sucursales
+    // Verificar que no sea el mismo contenedor (mismo idContenedor + codigo)
+    // Esta verificación se hará en el formulario con la llave compuesta
+
+    return true; // Traspaso válido dentro de la misma ciudad
   }
 
   /// Obtiene la etiqueta del campo de cantidad según el tipo de movimiento y unidad
@@ -265,6 +316,8 @@ class MovimientoBusinessLogic {
     required String? claseDestino,
     int? sucursalOrigen,
     int? sucursalDestino,
+    int? ciudadOrigen,
+    int? ciudadDestino,
     String? unidadMedidaOrigen,
     String? unidadMedidaDestino,
   }) {
@@ -288,14 +341,14 @@ class MovimientoBusinessLogic {
       return 'Los montacargas no pueden ser origen de movimientos (Regla 6)';
     }
 
-    // Regla 7: Validar traspasos entre contenedores (solo diferentes sucursales)
+    // Regla 7: Validar traspasos entre contenedores (solo misma ciudad)
     if (claseOrigen == CONTENEDOR && claseDestino == CONTENEDOR) {
-      if (sucursalOrigen == null || sucursalDestino == null) {
-        return 'Las sucursales de origen y destino deben estar definidas para traspasos';
+      if (ciudadOrigen == null || ciudadDestino == null) {
+        return 'Las ciudades de origen y destino deben estar definidas para traspasos';
       }
 
-      if (sucursalOrigen == sucursalDestino) {
-        return 'Los traspasos solo se permiten entre DIFERENTES sucursales (Regla 7)';
+      if (ciudadOrigen != ciudadDestino) {
+        return 'Los traspasos solo se permiten entre contenedores de la MISMA ciudad (Regla 7)';
       }
 
       if (unidadMedidaOrigen == null || unidadMedidaDestino == null) {

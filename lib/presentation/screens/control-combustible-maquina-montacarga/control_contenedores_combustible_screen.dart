@@ -118,26 +118,27 @@ class _ControlContenedoresCombustibleScreenState
     // Aplicar reglas de negocio según el tipo de origen
     if (_contenedorOrigenSeleccionado?.clase == 'CONTENEDOR') {
       // REGLA 2: CONTENEDOR → VEHICULO/MAQUINA/MONTACARGA = SALIDA
-      // Mostrar vehículos, máquinas y montacargas de la MISMA SUCURSAL QUE EL CONTENEDOR ORIGEN
+      // Mostrar vehículos, máquinas y montacargas de la MISMA CIUDAD QUE EL CONTENEDOR ORIGEN
       resultado.addAll(
         contenedores.where(
           (contenedor) =>
               (contenedor.clase == 'VEHICULO' ||
                   contenedor.clase == 'MAQUINA' ||
                   contenedor.clase == 'MONTACARGA') &&
-              contenedor.codSucursal ==
-                  _contenedorOrigenSeleccionado!.codSucursal,
+              contenedor.codCiudad == _contenedorOrigenSeleccionado!.codCiudad,
         ),
       );
 
-      // REGLA 3: CONTENEDOR → CONTENEDOR = TRASPASO (solo diferentes sucursales)
-      // Mostrar contenedores de OTRAS sucursales (no la misma que el contenedor origen)
+      // REGLA 3: CONTENEDOR → CONTENEDOR = TRASPASO (cualquier ciudad)
+      // Mostrar TODOS los contenedores, independientemente de la ciudad
       resultado.addAll(
         contenedores.where(
           (contenedor) =>
               contenedor.clase == 'CONTENEDOR' &&
-              contenedor.codSucursal !=
-                  _contenedorOrigenSeleccionado!.codSucursal,
+              // Excluir el mismo contenedor (mismo ID + código)
+              !(contenedor.idContenedor ==
+                      _contenedorOrigenSeleccionado!.idContenedor &&
+                  contenedor.codigo == _contenedorOrigenSeleccionado!.codigo),
         ),
       );
     } else if (_contenedorOrigenSeleccionado?.clase == 'VEHICULO') {
@@ -148,8 +149,8 @@ class _ControlContenedoresCombustibleScreenState
         contenedores.where(
           (contenedor) =>
               contenedor.clase == 'CONTENEDOR' &&
-              contenedor.codSucursal ==
-                  _contenedorOrigenSeleccionado!.codSucursal &&
+              contenedor.codCiudad ==
+                  _contenedorOrigenSeleccionado!.codCiudad &&
               !_esGarrafa(contenedor), // BLOQUEAR garrafas
         ),
       );
@@ -162,8 +163,8 @@ class _ControlContenedoresCombustibleScreenState
         contenedores.where(
           (contenedor) =>
               contenedor.clase == 'CONTENEDOR' &&
-              contenedor.codSucursal ==
-                  _contenedorOrigenSeleccionado!.codSucursal &&
+              contenedor.codCiudad ==
+                  _contenedorOrigenSeleccionado!.codCiudad &&
               !_esGarrafa(contenedor), // BLOQUEAR garrafas
         ),
       );
@@ -183,6 +184,8 @@ class _ControlContenedoresCombustibleScreenState
         claseDestino: _contenedorDestinoSeleccionado?.clase,
         sucursalOrigen: _contenedorOrigenSeleccionado!.codSucursal,
         sucursalDestino: _contenedorDestinoSeleccionado?.codSucursal,
+        ciudadOrigen: _contenedorOrigenSeleccionado!.codCiudad,
+        ciudadDestino: _contenedorDestinoSeleccionado?.codCiudad,
         unidadMedidaOrigen: _contenedorOrigenSeleccionado!.unidadMedida,
         unidadMedidaDestino: _contenedorDestinoSeleccionado?.unidadMedida,
       );
@@ -194,6 +197,8 @@ class _ControlContenedoresCombustibleScreenState
           claseDestino: _contenedorDestinoSeleccionado?.clase,
           sucursalOrigen: _contenedorOrigenSeleccionado!.codSucursal,
           sucursalDestino: _contenedorDestinoSeleccionado?.codSucursal,
+          ciudadOrigen: _contenedorOrigenSeleccionado!.codCiudad,
+          ciudadDestino: _contenedorDestinoSeleccionado?.codCiudad,
           unidadMedidaOrigen: _contenedorOrigenSeleccionado!.unidadMedida,
           unidadMedidaDestino: _contenedorDestinoSeleccionado?.unidadMedida,
         );
@@ -253,6 +258,8 @@ class _ControlContenedoresCombustibleScreenState
       claseDestino: contenedor.clase,
       sucursalOrigen: _contenedorOrigenSeleccionado!.codSucursal,
       sucursalDestino: contenedor.codSucursal,
+      ciudadOrigen: _contenedorOrigenSeleccionado!.codCiudad,
+      ciudadDestino: contenedor.codCiudad,
       unidadMedidaOrigen: _contenedorOrigenSeleccionado!.unidadMedida,
       unidadMedidaDestino: contenedor.unidadMedida,
     );
@@ -515,7 +522,7 @@ class _ControlContenedoresCombustibleScreenState
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          'Control de Contenedores',
+          'Control de Registro de Movimiento de Bidones',
           style: ResponsiveUtilsBosque.getTitleStyle(context),
         ),
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
