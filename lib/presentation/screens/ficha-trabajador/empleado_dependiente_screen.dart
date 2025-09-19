@@ -79,18 +79,7 @@ void initState() {
         centerTitle: true,
         elevation: 2,
         actions: [
-  FutureBuilder<String>(
-    future: ref.read(userProvider.notifier).getTipoUsuario(),
-    builder: (context, snapshot) {
-      if (snapshot.connectionState == ConnectionState.waiting) {
-        return const SizedBox.shrink();
-      }
-      if (snapshot.hasData && snapshot.data!.toUpperCase() == 'ROLE_ADM') {
-        return _buildNotificacionesDropdown();
-      }
-      return const SizedBox.shrink();
-    },
-  ),
+  _buildNotificacionesDropdown(), 
   IconButton(
     icon: const Icon(Icons.refresh),
     tooltip: 'Refrescar',
@@ -1194,233 +1183,227 @@ Widget _buildReferenciasButton(int codEmpleado, int totalReferencias) {
   final pendientesAsync = ref.watch(documentosPendientesProvider);
   final repo = FichaTrabajadorImpl();
 
-  return pendientesAsync.when(
-    loading: () => PermissionWidget(
-      buttonName: 'btnDocumentosPendientes', // Usa el nombre exacto de tu BD
-      child: IconButton(
+  return PermissionWidget(
+    buttonName: 'btnDocumentosPendientes',
+    child: pendientesAsync.when(
+      loading: () => IconButton(
         icon: const Icon(Icons.notifications, color: Colors.orange),
         onPressed: null,
       ),
-    ),
-    error: (e, _) => PermissionWidget(
-      buttonName: 'btnDocumentosPendientes',
-      child: IconButton(
+      error: (e, _) => IconButton(
         icon: const Icon(Icons.notifications_off, color: Colors.red),
         onPressed: null,
       ),
-    ),
-    data: (docs) {
-      return PermissionWidget(
-        buttonName: 'btnDocumentosPendientes',
-        child: IconButton(
-          icon: Stack(
-            children: [
-              const Icon(Icons.notifications, color: Colors.orange, size: 28),
-              if (docs.isNotEmpty)
-                Positioned(
-                  right: 0,
-                  top: 0,
-                  child: Container(
-                    padding: const EdgeInsets.all(2),
-                    decoration: BoxDecoration(
-                      color: Colors.red,
-                      shape: BoxShape.circle,
-                      border: Border.all(color: Colors.white, width: 1.5),
+      data: (docs) => IconButton(
+        icon: Stack(
+          children: [
+            const Icon(Icons.notifications, color: Colors.orange, size: 28),
+            if (docs.isNotEmpty)
+              Positioned(
+                right: 0,
+                top: 0,
+                child: Container(
+                  padding: const EdgeInsets.all(2),
+                  decoration: BoxDecoration(
+                    color: Colors.red,
+                    shape: BoxShape.circle,
+                    border: Border.all(color: Colors.white, width: 1.5),
+                  ),
+                  constraints: const BoxConstraints(minWidth: 18, minHeight: 18),
+                  child: Text(
+                    '${docs.length}',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
                     ),
-                    constraints: const BoxConstraints(minWidth: 18, minHeight: 18),
-                    child: Text(
-                      '${docs.length}',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 11,
-                        fontWeight: FontWeight.bold,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
+                    textAlign: TextAlign.center,
                   ),
                 ),
-            ],
-          ),
-          tooltip: 'Documentos pendientes',
-          onPressed: () {
-            showDialog(
-              context: context,
-              barrierDismissible: false,
-              builder: (ctx) {
-                return Consumer(
-                  builder: (context, ref, _) {
-                    final docs = ref.watch(documentosPendientesProvider).maybeWhen(
-                      data: (d) => d,
-                      orElse: () => [],
-                    );
-                    return AlertDialog(
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                      title: Row(
-                        children: [
-                          const Icon(Icons.notifications_active, color: Colors.orange, size: 22),
-                          const SizedBox(width: 10),
-                          Text(
-                            'Documentos pendientes',
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 16,
-                              color: Colors.orange.shade800,
-                            ),
+              ),
+          ],
+        ),
+        tooltip: 'Documentos pendientes',
+        onPressed: docs.isEmpty
+            ? null
+            : () {
+                showDialog(
+                  context: context,
+                  barrierDismissible: false,
+                  builder: (ctx) {
+                    return Consumer(
+                      builder: (context, ref, _) {
+                        final docs = ref.watch(documentosPendientesProvider).maybeWhen(
+                          data: (d) => d,
+                          orElse: () => [],
+                        );
+                        return AlertDialog(
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                          title: Row(
+                            children: [
+                              const Icon(Icons.notifications_active, color: Colors.orange, size: 22),
+                              const SizedBox(width: 10),
+                              Text(
+                                'Documentos pendientes',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16,
+                                  color: Colors.orange.shade800,
+                                ),
+                              ),
+                            ],
                           ),
-                        ],
-                      ),
-                      content: SizedBox(
-                        width: 380,
-                        height: 420,
-                        child: docs.isEmpty
-                            ? const Center(child: Text('No hay documentos pendientes'))
-                            : Scrollbar(
-                                thumbVisibility: true,
-                                radius: const Radius.circular(8),
-                                thickness: 6,
-                                child: ListView.separated(
-                                  padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 0),
-                                  itemCount: docs.length,
-                                  separatorBuilder: (_, __) => Divider(height: 18, color: Colors.grey[200]),
-                                  itemBuilder: (context, i) {
-                                    final doc = docs[i];
-                                    return Padding(
-                                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 2),
-                                      child: Material(
-                                        color: Colors.transparent,
-                                        borderRadius: BorderRadius.circular(10),
-                                        child: InkWell(
-                                          borderRadius: BorderRadius.circular(10),
-                                          onTap: () {},
-                                          child: Row(
-                                            crossAxisAlignment: CrossAxisAlignment.start,
-                                            children: [
-                                              GestureDetector(
-                                                onTap: () {
-                                                  showDialog(
-                                                    context: context,
-                                                    builder: (ctx) => Dialog(
-                                                      backgroundColor: Colors.transparent,
-                                                      child: InteractiveViewer(
-                                                        child: Image.network(
-                                                          '${AppConstants.baseUrl}${AppConstants.getDocPendienteImageUrl}${doc['codEmpleado']}/${doc['tipoDocumento']}/${doc['nombreArchivo']}',
-                                                          fit: BoxFit.contain,
+                          content: SizedBox(
+                            width: 380,
+                            height: 420,
+                            child: docs.isEmpty
+                                ? const Center(child: Text('No hay documentos pendientes'))
+                                : Scrollbar(
+                                    thumbVisibility: true,
+                                    radius: const Radius.circular(8),
+                                    thickness: 6,
+                                    child: ListView.separated(
+                                      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 0),
+                                      itemCount: docs.length,
+                                      separatorBuilder: (_, __) => Divider(height: 18, color: Colors.grey[200]),
+                                      itemBuilder: (context, i) {
+                                        final doc = docs[i];
+                                        return Padding(
+                                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 2),
+                                          child: Material(
+                                            color: Colors.transparent,
+                                            borderRadius: BorderRadius.circular(10),
+                                            child: InkWell(
+                                              borderRadius: BorderRadius.circular(10),
+                                              onTap: () {},
+                                              child: Row(
+                                                crossAxisAlignment: CrossAxisAlignment.start,
+                                                children: [
+                                                  GestureDetector(
+                                                    onTap: () {
+                                                      showDialog(
+                                                        context: context,
+                                                        builder: (ctx) => Dialog(
+                                                          backgroundColor: Colors.transparent,
+                                                          child: InteractiveViewer(
+                                                            child: Image.network(
+                                                              '${AppConstants.baseUrl}${AppConstants.getDocPendienteImageUrl}${doc['codEmpleado']}/${doc['tipoDocumento']}/${doc['nombreArchivo']}',
+                                                              fit: BoxFit.contain,
+                                                            ),
+                                                          ),
                                                         ),
+                                                      );
+                                                    },
+                                                    child: ClipRRect(
+                                                      borderRadius: BorderRadius.circular(8),
+                                                      child: Image.network(
+                                                        '${AppConstants.baseUrl}${AppConstants.getDocPendienteImageUrl}${doc['codEmpleado']}/${doc['tipoDocumento']}/${doc['nombreArchivo']}',
+                                                        width: 54,
+                                                        height: 54,
+                                                        fit: BoxFit.cover,
                                                       ),
                                                     ),
-                                                  );
-                                                },
-                                                child: ClipRRect(
-                                                  borderRadius: BorderRadius.circular(8),
-                                                  child: Image.network(
-                                                    '${AppConstants.baseUrl}${AppConstants.getDocPendienteImageUrl}${doc['codEmpleado']}/${doc['tipoDocumento']}/${doc['nombreArchivo']}',
-                                                    width: 54,
-                                                    height: 54,
-                                                    fit: BoxFit.cover,
                                                   ),
-                                                ),
-                                              ),
-                                              const SizedBox(width: 14),
-                                              Expanded(
-                                                child: Column(
-                                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                                  children: [
-                                                    Text(
-                                                      doc['nombreCompleto'] ?? 'Empleado ${doc['codEmpleado']}',
-                                                      style: const TextStyle(
-                                                        fontWeight: FontWeight.w700,
-                                                        fontSize: 14,
-                                                        color: Colors.black87,
-                                                      ),
-                                                      overflow: TextOverflow.ellipsis,
-                                                    ),
-                                                    const SizedBox(height: 2),
-                                                    Text(
-                                                      '${doc['tipoDocumento']} - ${doc['nombreArchivo']}',
-                                                      style: const TextStyle(
-                                                        fontSize: 12,
-                                                        color: Colors.black54,
-                                                      ),
-                                                      overflow: TextOverflow.ellipsis,
-                                                    ),
-                                                    const SizedBox(height: 4),
-                                                    Row(
+                                                  const SizedBox(width: 14),
+                                                  Expanded(
+                                                    child: Column(
+                                                      crossAxisAlignment: CrossAxisAlignment.start,
                                                       children: [
-                                                        Tooltip(
-                                                          message: 'Aprobar',
-                                                          child: IconButton(
-                                                            icon: const Icon(Icons.check_circle, color: Colors.green, size: 22),
-                                                            onPressed: () async {
-                                                              await repo.aprobarDocumentoPendiente(doc);
-                                                              ref.invalidate(documentosPendientesProvider);
-                                                              ScaffoldMessenger.of(context).showSnackBar(
-                                                                const SnackBar(content: Text('Documento aprobado')),
-                                                              );
-                                                            },
+                                                        Text(
+                                                          doc['nombreCompleto'] ?? 'Empleado ${doc['codEmpleado']}',
+                                                          style: const TextStyle(
+                                                            fontWeight: FontWeight.w700,
+                                                            fontSize: 14,
+                                                            color: Colors.black87,
                                                           ),
+                                                          overflow: TextOverflow.ellipsis,
                                                         ),
-                                                        Tooltip(
-                                                          message: 'Rechazar',
-                                                          child: IconButton(
-                                                            icon: const Icon(Icons.cancel, color: Colors.red, size: 22),
-                                                            onPressed: () async {
-                                                              final confirm = await showDialog<bool>(
-                                                                context: context,
-                                                                builder: (ctx) => AlertDialog(
-                                                                  title: const Text('Rechazar documento'),
-                                                                  content: const Text('¿Estás seguro de rechazar este documento?'),
-                                                                  actions: [
-                                                                    TextButton(
-                                                                      child: const Text('Cancelar'),
-                                                                      onPressed: () => Navigator.pop(ctx, false),
-                                                                    ),
-                                                                    ElevatedButton(
-                                                                      child: const Text('Rechazar'),
-                                                                      style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-                                                                      onPressed: () => Navigator.pop(ctx, true),
-                                                                    ),
-                                                                  ],
-                                                                ),
-                                                              );
-                                                              if (confirm == true) {
-                                                                await repo.rechazarDocumentoPendiente(doc);
-                                                                ref.invalidate(documentosPendientesProvider);
-                                                                ScaffoldMessenger.of(context).showSnackBar(
-                                                                  const SnackBar(content: Text('Documento rechazado')),
-                                                                );
-                                                              }
-                                                            },
+                                                        const SizedBox(height: 2),
+                                                        Text(
+                                                          '${doc['tipoDocumento']} - ${doc['nombreArchivo']}',
+                                                          style: const TextStyle(
+                                                            fontSize: 12,
+                                                            color: Colors.black54,
                                                           ),
+                                                          overflow: TextOverflow.ellipsis,
+                                                        ),
+                                                        const SizedBox(height: 4),
+                                                        Row(
+                                                          children: [
+                                                            Tooltip(
+                                                              message: 'Aprobar',
+                                                              child: IconButton(
+                                                                icon: const Icon(Icons.check_circle, color: Colors.green, size: 22),
+                                                                onPressed: () async {
+                                                                  await repo.aprobarDocumentoPendiente(doc);
+                                                                  ref.invalidate(documentosPendientesProvider);
+                                                                  ScaffoldMessenger.of(context).showSnackBar(
+                                                                    const SnackBar(content: Text('Documento aprobado')),
+                                                                  );
+                                                                },
+                                                              ),
+                                                            ),
+                                                            Tooltip(
+                                                              message: 'Rechazar',
+                                                              child: IconButton(
+                                                                icon: const Icon(Icons.cancel, color: Colors.red, size: 22),
+                                                                onPressed: () async {
+                                                                  final confirm = await showDialog<bool>(
+                                                                    context: context,
+                                                                    builder: (ctx) => AlertDialog(
+                                                                      title: const Text('Rechazar documento'),
+                                                                      content: const Text('¿Estás seguro de rechazar este documento?'),
+                                                                      actions: [
+                                                                        TextButton(
+                                                                          child: const Text('Cancelar'),
+                                                                          onPressed: () => Navigator.pop(ctx, false),
+                                                                        ),
+                                                                        ElevatedButton(
+                                                                          child: const Text('Rechazar'),
+                                                                          style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+                                                                          onPressed: () => Navigator.pop(ctx, true),
+                                                                        ),
+                                                                      ],
+                                                                    ),
+                                                                  );
+                                                                  if (confirm == true) {
+                                                                    await repo.rechazarDocumentoPendiente(doc);
+                                                                    ref.invalidate(documentosPendientesProvider);
+                                                                    ScaffoldMessenger.of(context).showSnackBar(
+                                                                      const SnackBar(content: Text('Documento rechazado')),
+                                                                    );
+                                                                  }
+                                                                },
+                                                              ),
+                                                            ),
+                                                          ],
                                                         ),
                                                       ],
                                                     ),
-                                                  ],
-                                                ),
+                                                  ),
+                                                ],
                                               ),
-                                            ],
+                                            ),
                                           ),
-                                        ),
-                                      ),
-                                    );
-                                  },
-                                ),
-                              ),
-                      ),
-                      actions: [
-                        TextButton(
-                          child: const Text('Cerrar'),
-                          onPressed: () => Navigator.pop(ctx),
-                        ),
-                      ],
+                                        );
+                                      },
+                                    ),
+                                  ),
+                          ),
+                          actions: [
+                            TextButton(
+                              child: const Text('Cerrar'),
+                              onPressed: () => Navigator.pop(ctx),
+                            ),
+                          ],
+                        );
+                      },
                     );
                   },
                 );
               },
-            );
-          },
-        ),
-      );
-    },
+      ),
+    ),
   );
 }
 
