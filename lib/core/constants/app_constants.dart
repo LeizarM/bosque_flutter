@@ -84,6 +84,14 @@ class AppConstants {
   static const String preActualizarSolicitud =
       '/prestamo-coches/actualizarSolicitud';
 
+  // = = = = = = = = = = = = = = = = = = = = = = = = = Endpoints para la gestion de RRHH = = = = = = = = = = = = = = = = = =
+
+  //  **** Para la estructura organizacional *********/
+  static const String lstEmpresa = '/rrhh/lst-empresas';
+  static const String lstCargos = '/rrhh/lst-cargos';
+  static const String lstSucursales = '/rrhh/lst-sucursales';
+  static const String lstCargosXEmpresaNew = '/rrhh/lstOrganigramaNew';
+
   // Endpoints para la gestion de empleados y dependientes
   static const String empListarEmpleadosDependientes =
       '/fichaTrabajador/obtenerDep';

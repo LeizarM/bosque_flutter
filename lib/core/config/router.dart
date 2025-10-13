@@ -162,9 +162,12 @@ final routerProvider = Provider<GoRouter>((ref) {
               builder: (context, state) => const PrestamoViewScreen(),
             ),
             GoRoute(
-              path: '/dashboard/ted_EmpleadoDependiente/register',
-              name: 'ted_EmpleadoDependiente',
-              builder: (context, state) => const EmpleadosDependientesView(),
+              path:
+                  '/dashboard/trhEstructuraOrganizacional/estructuraOrganizacional',
+              name: 'trh_EstructuraOrganizacional',
+              builder:
+                  (context, state) =>
+                      const EstructuraOrganizacionalEmpresaScreen(),
             ),
           ],
         ),
@@ -254,6 +257,13 @@ final routerProvider = Provider<GoRouter>((ref) {
           path: '/ted_EmpleadoDependiente/register',
           redirect:
               (context, state) => '/dashboard/ted_EmpleadoDependiente/register',
+        ),
+        // Ruta para la estructura organizacional y creacion de empresas
+        GoRoute(
+          path: '/trhEstructuraOrganizacional/estructuraOrganizacional',
+          redirect:
+              (context, state) =>
+                  '/dashboard/trhEstructuraOrganizacional/estructuraOrganizacional',
         ),
 
         GoRoute(

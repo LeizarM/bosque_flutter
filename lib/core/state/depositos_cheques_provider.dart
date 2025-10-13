@@ -394,11 +394,15 @@ class DepositosChequesNotifier extends StateNotifier<DepositosChequesState> {
 
   void seleccionarNota(int docNum, bool selected) {
     debugPrint('⭐ INICIO seleccionarNota: docNum=$docNum, selected=$selected');
-    debugPrint('  Estado ANTES: notasSeleccionadas=${state.notasSeleccionadas}');
-    
+    debugPrint(
+      '  Estado ANTES: notasSeleccionadas=${state.notasSeleccionadas}',
+    );
+
     // Crear una nueva lista para evitar problemas de mutación
-    final List<int> nuevasSeleccionadas = List<int>.from(state.notasSeleccionadas);
-    
+    final List<int> nuevasSeleccionadas = List<int>.from(
+      state.notasSeleccionadas,
+    );
+
     if (selected) {
       if (!nuevasSeleccionadas.contains(docNum)) {
         nuevasSeleccionadas.add(docNum);
@@ -414,7 +418,7 @@ class DepositosChequesNotifier extends StateNotifier<DepositosChequesState> {
         debugPrint('  ⚠️ El docNum $docNum no estaba en la lista');
       }
     }
-    
+
     // Calcular nuevo importe total
     final nuevoImporteTotal = _calcularImporteTotal(
       nuevasSeleccionadas,
@@ -422,14 +426,12 @@ class DepositosChequesNotifier extends StateNotifier<DepositosChequesState> {
       state.notasRemision,
       state.aCuenta,
     );
-    
+
     // Actualizar el estado con nueva copia de la lista
     state = state.copyWith(
       notasSeleccionadas: nuevasSeleccionadas,
       importeTotal: nuevoImporteTotal,
     );
-    
-   
   }
 
   void editarSaldoPendiente(int docNum, double nuevoSaldo) {
@@ -529,14 +531,15 @@ class DepositosChequesNotifier extends StateNotifier<DepositosChequesState> {
         totalMontos: '',
         estadoFiltro: '',
       );
-      
+
       bool result = false;
-     
+
       try {
         result = await _repo.registrarDeposito(deposito, imagen);
-       
       } catch (e, st) {
-        debugPrint('[DEBUG][provider] Error al registrar depósito: $e; ${st.toString()}');
+        debugPrint(
+          '[DEBUG][provider] Error al registrar depósito: $e; ${st.toString()}',
+        );
       }
       state = state.copyWith(cargando: false);
       return result;
@@ -549,29 +552,24 @@ class DepositosChequesNotifier extends StateNotifier<DepositosChequesState> {
 
   /// Útil para mantener las selecciones hechas en el modal
   void sincronizarClienteSeleccionado(SocioNegocioEntity? cliente) {
-    
     state = state.copyWith(clienteSeleccionado: cliente);
   }
 
   /// Sincroniza la empresa seleccionada sin recargar clientes/bancos
   /// Útil para mantener las selecciones hechas en el modal
   void sincronizarEmpresaSeleccionada(EmpresaEntity? empresa) {
-    
     state = state.copyWith(empresaSeleccionada: empresa);
   }
 
   /// Sincroniza el banco seleccionado
   void sincronizarBancoSeleccionado(BancoXCuentaEntity? banco) {
-    
     state = state.copyWith(bancoSeleccionado: banco);
   }
 
   /// Método para verificar el estado de las notas seleccionadas (debug)
   void mostrarEstadoNotasSeleccionadas() {
-    
-
     for (final docNum in state.notasSeleccionadas) {
-      final nota = state.notasRemision.firstWhere(
+      state.notasRemision.firstWhere(
         (n) => n.docNum == docNum,
         orElse:
             () => NotaRemisionEntity(
@@ -589,8 +587,6 @@ class DepositosChequesNotifier extends StateNotifier<DepositosChequesState> {
               numFact: 0,
             ),
       );
-
-      
     }
   }
 
@@ -619,11 +615,13 @@ class DepositosChequesNotifier extends StateNotifier<DepositosChequesState> {
             },
           );
 
-          final saldoEditado = state.saldosEditados[docNum] ?? nota.saldoPendiente;
+          final saldoEditado =
+              state.saldosEditados[docNum] ?? nota.saldoPendiente;
 
           final notaEditada = NotaRemisionEntity(
             idNr: nota.idNr,
-            idDeposito: idDepositoParaNotas ?? nota.idDeposito, // USAR EL ID CORRECTO
+            idDeposito:
+                idDepositoParaNotas ?? nota.idDeposito, // USAR EL ID CORRECTO
             docNum: nota.docNum,
             fecha: nota.fecha,
             numFact: nota.numFact,
@@ -650,7 +648,6 @@ class DepositosChequesNotifier extends StateNotifier<DepositosChequesState> {
 
       state = state.copyWith(cargando: false);
       return allOk;
-
     } catch (e) {
       state = state.copyWith(cargando: false);
       rethrow;
