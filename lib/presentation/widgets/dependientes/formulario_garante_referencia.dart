@@ -9,7 +9,6 @@ import 'package:bosque_flutter/domain/entities/persona_entity.dart';
 import 'package:bosque_flutter/presentation/widgets/dependientes/confirm_dialogs.dart';
 import 'package:bosque_flutter/presentation/widgets/dependientes/formulario_persona.dart';
 import 'package:dropdown_search/dropdown_search.dart';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -47,6 +46,7 @@ class _FormularioGaranteReferenciaState
   final _observacionController = TextEditingController();
   String? _tipoGaranteSeleccionado;
   PersonaEntity? _personaSeleccionada;
+  String? _mensajeNuevaPersona;
 
   @override
   void initState() {
@@ -87,12 +87,25 @@ class _FormularioGaranteReferenciaState
   }
 
   void _handleSubmit() async {
+    // AÑADIDO: Validación de persona seleccionada
+    if (_personaSeleccionada == null) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Debe seleccionar o registrar una persona.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
     if (_formKey.currentState?.validate() ?? false) {
       final codEmpleado = widget.codEmpleado;
       final garantesReferencias = await ref.read(
         obtenerGaranteReferenciaProvider(codEmpleado).future,
       );
-      // Validación de cantidad máxima
+      
+      // Validación de cantidad máxima (Mantenido)
       const int maxGarantes = 4;
       if (!widget.isEditing && garantesReferencias.length >= maxGarantes) {
         if (!mounted) return;
@@ -106,20 +119,21 @@ class _FormularioGaranteReferenciaState
         );
         return;
       }
-      //Validacion de duplicados
+      
+      // Validacion de duplicados (Ajustado para usar _personaSeleccionada)
       final existeDuplicado =
-  widget.isEditing
-    ? garantesReferencias.any(
-        (g) =>
-          g.codPersona == _personaSeleccionada?.codPersona &&
-          g.tipo == _tipoGaranteSeleccionado &&
-          g.codGarante != widget.garanteReferencia?.codGarante,
-      )
-    : garantesReferencias.any(
-        (g) =>
-          g.codPersona == _personaSeleccionada?.codPersona &&
-          g.tipo == _tipoGaranteSeleccionado,
-      );
+          widget.isEditing
+              ? garantesReferencias.any(
+                  (g) =>
+                      g.codPersona == _personaSeleccionada?.codPersona &&
+                      g.tipo == _tipoGaranteSeleccionado &&
+                      g.codGarante != widget.garanteReferencia?.codGarante,
+                )
+              : garantesReferencias.any(
+                  (g) =>
+                      g.codPersona == _personaSeleccionada?.codPersona &&
+                      g.tipo == _tipoGaranteSeleccionado,
+                );
 
       if (existeDuplicado) {
         if (!mounted) return;
@@ -135,77 +149,123 @@ class _FormularioGaranteReferenciaState
         );
         return;
       }
+      
       try {
+        // La PersonaEntity ya fue guardada/actualizada en el diálogo modal si fue necesario
         final garamteReferencia =
             widget.isEditing && widget.garanteReferencia != null
                 ? widget.garanteReferencia!.copyWith(
-                  codGarante:
-                      widget
-                          .garanteReferencia!
-                          .codGarante, // Mantener el código existente
-                  codPersona: _personaSeleccionada?.codPersona?? widget.garanteReferencia!.codPersona,
-                  codEmpleado: widget.codEmpleado,
-                  direccionTrabajo: _direccionTrabajoController.text,
-                  empresaTrabajo: _empresaTrabajoController.text,
-                  tipo: _tipoGaranteSeleccionado ?? _tipoGaranteController.text,
-                  observacion: _observacionController.text,
-                  audUsuario: await getCodUsuario(),
-                )
+                    codGarante: widget.garanteReferencia!.codGarante,
+                    // Usamos el codPersona de la persona seleccionada/creada
+                    codPersona: _personaSeleccionada!.codPersona, 
+                    codEmpleado: widget.codEmpleado,
+                    direccionTrabajo: _direccionTrabajoController.text,
+                    empresaTrabajo: _empresaTrabajoController.text,
+                    tipo: _tipoGaranteSeleccionado ?? _tipoGaranteController.text,
+                    observacion: _observacionController.text,
+                    audUsuario: await getCodUsuario(),
+                  )
                 : GaranteReferenciaEntity(
-                  codGarante: 0, // Se asigna 0 para nuevo registro
-                  codPersona: _personaSeleccionada!.codPersona,
-                  codEmpleado: widget.codEmpleado,
-                  direccionTrabajo: _direccionTrabajoController.text,
-                  empresaTrabajo: _empresaTrabajoController.text,
-                  tipo: _tipoGaranteSeleccionado ?? _tipoGaranteController.text,
-                  observacion: _observacionController.text,
-                  audUsuario: await getCodUsuario(),
-                );
-        widget.onSave(garamteReferencia);
-       // Usar los nuevos SnackBars personalizados
-      /*if (context.mounted) {
-        if (widget.isEditing) {
-          AppSnackbarCustom.showEdit(
-            context, 
-            'Garante/Referencia actualizado correctamente'
-          );
-        } else {
-          AppSnackbarCustom.showAdd(
-            context, 
-            'Garante/Referencia agregado correctamente'
-          );
+                    codGarante: 0, 
+                    codPersona: _personaSeleccionada!.codPersona,
+                    codEmpleado: widget.codEmpleado,
+                    direccionTrabajo: _direccionTrabajoController.text,
+                    empresaTrabajo: _empresaTrabajoController.text,
+                    tipo: _tipoGaranteSeleccionado ?? _tipoGaranteController.text,
+                    observacion: _observacionController.text,
+                    audUsuario: await getCodUsuario(),
+                  );
+                  
+        // Se llama a onSave solo con GaranteReferenciaEntity
+        widget.onSave(garamteReferencia); 
+
+        if (context.mounted) {
+          if (widget.isEditing) {
+            AppSnackbarCustom.showEdit(
+              context, 
+              'Garante/Referencia actualizado correctamente'
+            );
+          } else {
+            AppSnackbarCustom.showAdd(
+              context, 
+              'Garante/Referencia agregado correctamente'
+            );
+          }
+          if (Navigator.of(context).canPop() && !(ModalRoute.of(context)?.isFirst ?? false)) {
+            Navigator.of(context).pop();
+          }
         }
-        Navigator.of(context).pop();
-      }*/
-      if (context.mounted) {
-  if (widget.isEditing) {
-    AppSnackbarCustom.showEdit(
-      context, 
-      'Garante/Referencia actualizado correctamente'
-    );
-  } else {
-    AppSnackbarCustom.showAdd(
-      context, 
-      'Garante/Referencia agregado correctamente'
-    );
-  }
- if (Navigator.of(context).canPop() && !(ModalRoute.of(context)?.isFirst ?? false)) {
-  Navigator.of(context).pop();
-}
-}
-
-
-        
       } catch (e) {
         // Mostrar SnackBar de error
-      if (context.mounted) {
-        AppSnackbar.showError(
-          context, 
-          'Error al ${widget.isEditing ? 'actualizar' : 'agregar'} Garante/Referencia'
-        );
-      }
+        if (context.mounted) {
+          AppSnackbar.showError(
+            context, 
+            'Error al ${widget.isEditing ? 'actualizar' : 'agregar'} Garante/Referencia'
+          );
+        }
       }
     }
+  }
+  Future<void> _mostrarDialogoEditarPersona(PersonaEntity persona) async {
+    await showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return Dialog(
+          backgroundColor: Colors.transparent,
+          insetPadding: EdgeInsets.zero,
+          child: FormularioPersona(
+            title: 'Editar Datos de Persona',
+            isEditing: true,
+            codPersona: persona.codPersona,
+            persona: persona,
+            onCancel: () => Navigator.pop(context),
+            onSave: (personaEditada) async {
+              try {
+                // Guardar/Actualizar la Persona
+                final updatedPersona = await ref.read(registrarPersonaProvider(personaEditada).future);
+                
+                // Invalidar el cache del provider de personas
+                ref.invalidate(personaLstProvider);
+                
+                if (!mounted) return;
+                Navigator.pop(context);
+                
+                // Actualizar el estado del Garante con la persona editada
+                setState(() {
+                  _personaSeleccionada = updatedPersona;
+                });
+
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Datos de persona actualizados correctamente'),
+                    backgroundColor: Colors.green,
+                  ),
+                );
+              } catch (e) {
+                if (!mounted) return;
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Error al actualizar: $e'),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+              }
+            },
+          ),
+        );
+      },
+    );
+    Widget _buildEditPersonaButton() {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12.0),
+      child: OutlinedButton.icon(
+        icon: const Icon(Icons.person_pin_circle_outlined, size: 20),
+        label: const Text('EDITAR DATOS DE LA PERSONA SELECCIONADA'),
+        onPressed: () => _mostrarDialogoEditarPersona(_personaSeleccionada!),
+      ),
+    );
+  }
   }
   Future<void> _mostrarDialogoNuevaPersona() async {
   await showDialog(
@@ -233,6 +293,8 @@ class _FormularioGaranteReferenciaState
               // Actualizar el dropdown con la nueva persona
               setState(() {
                 _personaSeleccionada = newPersona;
+                  _mensajeNuevaPersona = 'persona registrada correctamente. Por favor, complete los demas campos.';
+
               });
 
               ScaffoldMessenger.of(context).showSnackBar(
@@ -331,64 +393,84 @@ class _FormularioGaranteReferenciaState
   }
 
   Widget _buildPersonaSelector() {
-    return Row(
-      children: [
-        Expanded(
-          child: DropdownSearch<PersonaEntity>(
-            dropdownDecoratorProps: DropDownDecoratorProps(
-              dropdownSearchDecoration: InputDecoration(
-  label: FittedBox(
-    fit: BoxFit.scaleDown,
-    alignment: Alignment.centerLeft,
-    child: Text(
-      "SELECCIONAR PERSONA",
-      style: TextStyle(fontSize: 16),
-    ),
-  ),
-  border: const OutlineInputBorder(),
-  contentPadding: EdgeInsets.symmetric(
-    horizontal: 16,
-    vertical: ResponsiveUtilsBosque.getVerticalPadding(context),
-  ),
-),
-            ),
-            asyncItems: (String filter) async {
-              final personas = await ref.read(personaLstProvider.future);
-              if (filter.isEmpty) return personas;
-              return personas
-                  .where((persona) => persona.datoPersona!.toLowerCase()
-                      .contains(filter.toLowerCase()))
-                  .toList();
-            },
-            itemAsString: (PersonaEntity? p) => p?.datoPersona ?? '',
-            selectedItem: _personaSeleccionada,
-            onChanged: (PersonaEntity? persona) {
-              setState(() => _personaSeleccionada = persona);
-            },
-            validator: (value) => value == null ? 'Seleccione una persona' : null,
-            popupProps: PopupProps.menu(
-              showSearchBox: true,
-              searchFieldProps: const TextFieldProps(
-                decoration: InputDecoration(
-                  labelText: 'BUSCAR PERSONA',
-                  border: OutlineInputBorder(),
+  return Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Row(
+        children: [
+          Expanded(
+            child: DropdownSearch<PersonaEntity>(
+              dropdownDecoratorProps: DropDownDecoratorProps(
+                dropdownSearchDecoration: InputDecoration(
+                  label: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      "SELECCIONAR PERSONA",
+                      style: TextStyle(fontSize: 16),
+                    ),
+                  ),
+                  border: const OutlineInputBorder(),
+                  contentPadding: EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: ResponsiveUtilsBosque.getVerticalPadding(context),
+                  ),
                 ),
               ),
-              constraints: BoxConstraints(
-                maxHeight: MediaQuery.of(context).size.height * 0.5,
+              asyncItems: (String filter) async {
+                final personas = await ref.read(personaLstProvider.future);
+                if (filter.isEmpty) return personas;
+                return personas
+                    .where((persona) => persona.datoPersona!.toLowerCase()
+                        .contains(filter.toLowerCase()))
+                    .toList();
+              },
+              itemAsString: (PersonaEntity? p) => p?.datoPersona ?? '',
+              selectedItem: _personaSeleccionada,
+              onChanged: (PersonaEntity? persona) {
+                setState(() {
+                  _personaSeleccionada = persona;
+                  _mensajeNuevaPersona = null; // Oculta el mensaje si elige otra persona
+                });
+              },
+              validator: (value) => value == null ? 'Seleccione una persona' : null,
+              popupProps: PopupProps.menu(
+                showSearchBox: true,
+                searchFieldProps: const TextFieldProps(
+                  decoration: InputDecoration(
+                    labelText: 'BUSCAR PERSONA',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                constraints: BoxConstraints(
+                  maxHeight: MediaQuery.of(context).size.height * 0.5,
+                ),
               ),
             ),
           ),
+          const SizedBox(width: 8),
+          IconButton(
+            onPressed: _mostrarDialogoNuevaPersona,
+            icon: const Icon(Icons.person_add),
+            tooltip: 'Agregar nueva persona',
+          ),
+        ],
+      ),
+      if (_mensajeNuevaPersona != null)
+        Padding(
+          padding: const EdgeInsets.only(top: 6.0, left: 4.0),
+          child: Text(
+            _mensajeNuevaPersona!,
+            style: const TextStyle(
+              color: Colors.blue,
+              fontWeight: FontWeight.bold,
+              fontSize: 14,
+            ),
+          ),
         ),
-        const SizedBox(width: 8),
-        IconButton(
-          onPressed: _mostrarDialogoNuevaPersona,
-          icon: const Icon(Icons.person_add),
-          tooltip: 'Agregar nueva persona',
-        ),
-      ],
-    );
-  }
+    ],
+  );
+}
 
   Widget _buildInputField({
     required TextEditingController controller,

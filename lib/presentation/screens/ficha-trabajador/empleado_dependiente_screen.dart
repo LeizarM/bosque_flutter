@@ -40,7 +40,9 @@ int? _codEmpleadoUsuario;
     if (!_didRefresh) {
       _didRefresh = true;
       Future.microtask(() {
-        ref.refresh(empleadosDependientesProvider);
+        if (_codEmpleadoUsuario != null) {
+  ref.refresh(empleadosDependientesProvider(_codEmpleadoUsuario!));
+}
         ref.read(imageVersionProvider.notifier).state++;
       });
     }
@@ -59,8 +61,10 @@ void initState() {
  
   @override
   Widget build(BuildContext context) {
-   
-    final empleadosAsync = ref.watch(empleadosDependientesProvider);
+    final codEmpleado =  ref.read(userProvider.notifier).getCodEmpleado();
+    final empleadosAsync = _codEmpleadoUsuario == null
+    ? const AsyncValue.loading()
+    : ref.watch(empleadosDependientesProvider(_codEmpleadoUsuario!));
     final screenWidth = MediaQuery.of(context).size.width;
     final isDesktop = ResponsiveUtilsBosque.isDesktop(context);
     final isTablet = ResponsiveUtilsBosque.isTablet(context);
@@ -87,6 +91,7 @@ void initState() {
       ref.invalidate(empleadosDependientesProvider);
       ref.read(imageVersionProvider.notifier).state++;
       ref.invalidate(documentosPendientesProvider);
+      
      
     },
   ),
@@ -882,67 +887,6 @@ Widget _buildReferenciasButton(int codEmpleado, int totalReferencias) {
 }
  
 
-   Widget _buildDependientesCount(int codEmpleado, bool isDesktop) {
-  return Consumer(
-    builder: (context, ref, _) {
-      final user = ref.watch(userProvider);
-      final codEmpleadoActual = user?.codEmpleado;
-      final dependientesAsync = ref.watch(dependientesProvider(codEmpleado));
-      final garantesRefAsync = ref.watch(obtenerGaranteReferenciaProvider(codEmpleado));
-
-      // Espera ambos providers
-      return dependientesAsync.when(
-        data: (dependientes) {
-          return garantesRefAsync.when(
-            data: (garantesReferencias) {
-              final total = dependientes.length + garantesReferencias.length;
-              final tieneDatos = total > 0;
-              final esUsuarioActual = codEmpleadoActual != null && codEmpleado == codEmpleadoActual;
-              final bool habilitado = tieneDatos || esUsuarioActual;
-              final Color textoColor = habilitado ? Colors.teal : Colors.grey;
-
-              return TextButton.icon(
-                onPressed: habilitado
-                    ? () => _navigateToDependientes(codEmpleado)
-                    : null,
-                icon: Icon(Icons.people, color: textoColor),
-                label: Text(
-                  'Referencias: $total',
-                  style: TextStyle(
-                    color: textoColor,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                style: TextButton.styleFrom(
-                  foregroundColor: textoColor,
-                  backgroundColor: Colors.teal.withOpacity(0.08),
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  textStyle: const TextStyle(fontWeight: FontWeight.w600),
-                ),
-              );
-            },
-            loading: () => const SizedBox(
-              width: 32,
-              height: 32,
-              child: CircularProgressIndicator(strokeWidth: 2),
-            ),
-            error: (_, __) => const Icon(Icons.error, color: Colors.red),
-          );
-        },
-        loading: () => const SizedBox(
-          width: 32,
-          height: 32,
-          child: CircularProgressIndicator(strokeWidth: 2),
-        ),
-        error: (_, __) => const Icon(Icons.error, color: Colors.red),
-      );
-    },
-  );
-}
-
   // Navigation methods
  void _navigateToDetails(int codEmpleado) async {
   if (!mounted) return;
@@ -953,7 +897,9 @@ Widget _buildReferenciasButton(int codEmpleado, int totalReferencias) {
     ),
   );
   // Al volver, refresca empleados y la imagen
-  ref.refresh(empleadosDependientesProvider);
+  if (_codEmpleadoUsuario != null) {
+  ref.refresh(empleadosDependientesProvider(_codEmpleadoUsuario!));
+}
   ref.read(imageVersionProvider.notifier).state++;
 }
 
@@ -1122,10 +1068,18 @@ Widget _buildReferenciasButton(int codEmpleado, int totalReferencias) {
     return Row(
       children: [
         const Text('Ver empleados: ', style: TextStyle(fontWeight: FontWeight.w600)),
-        ChoiceChip(
+        /*ChoiceChip(
           label: const Text('Todos'),
           selected: _filtroActivo == 0,
           onSelected: (_) => setState(() => _filtroActivo = 0),
+        ),*/
+        PermissionWidget(
+          buttonName: 'btnVerTodosEmpleados',
+           child: ChoiceChip(
+            label: const Text ('Todos'),
+            selected: _filtroActivo == 0,
+            onSelected: (_)=> setState (()=> _filtroActivo = 0),
+           ),
         ),
         const SizedBox(width: 8),
         ChoiceChip(
@@ -1133,12 +1087,22 @@ Widget _buildReferenciasButton(int codEmpleado, int totalReferencias) {
           selected: _filtroActivo == 1,
           onSelected: (_) => setState(() => _filtroActivo = 1),
         ),
-        const SizedBox(width: 8),
+       /* const SizedBox(width: 8),
         ChoiceChip(
           label: const Text('Inactivos'),
           selected: _filtroActivo == 2,
           onSelected: (_) => setState(() => _filtroActivo = 2),
-        ),
+        ),*/
+        //envolver choicechip en PermissionWidget
+        const SizedBox(width: 8),
+        PermissionWidget(
+          buttonName: 'btnVerEmpleadosInactivos',
+           child: ChoiceChip(
+            label: const Text ('Inactivos'),
+            selected: _filtroActivo == 2,
+            onSelected: (_)=> setState (()=> _filtroActivo = 2),
+           ),
+        )
       ],
     );
   } else {
@@ -1182,6 +1146,7 @@ Widget _buildReferenciasButton(int codEmpleado, int totalReferencias) {
   Widget _buildNotificacionesDropdown() {
   final pendientesAsync = ref.watch(documentosPendientesProvider);
   final repo = FichaTrabajadorImpl();
+  final imageVersion = ref.watch(imageVersionProvider);
 
   return PermissionWidget(
     buttonName: 'btnDocumentosPendientes',
@@ -1287,7 +1252,7 @@ Widget _buildReferenciasButton(int codEmpleado, int totalReferencias) {
                                                           backgroundColor: Colors.transparent,
                                                           child: InteractiveViewer(
                                                             child: Image.network(
-                                                              '${AppConstants.baseUrl}${AppConstants.getDocPendienteImageUrl}${doc['codEmpleado']}/${doc['tipoDocumento']}/${doc['nombreArchivo']}',
+                                                              '${AppConstants.baseUrl}${AppConstants.getDocPendienteImageUrl}${doc['codEmpleado']}/${doc['tipoDocumento']}/${doc['nombreArchivo']}?v=$imageVersion',
                                                               fit: BoxFit.contain,
                                                             ),
                                                           ),
@@ -1297,7 +1262,7 @@ Widget _buildReferenciasButton(int codEmpleado, int totalReferencias) {
                                                     child: ClipRRect(
                                                       borderRadius: BorderRadius.circular(8),
                                                       child: Image.network(
-                                                        '${AppConstants.baseUrl}${AppConstants.getDocPendienteImageUrl}${doc['codEmpleado']}/${doc['tipoDocumento']}/${doc['nombreArchivo']}',
+                                                        '${AppConstants.baseUrl}${AppConstants.getDocPendienteImageUrl}${doc['codEmpleado']}/${doc['tipoDocumento']}/${doc['nombreArchivo']}?v=$imageVersion',
                                                         width: 54,
                                                         height: 54,
                                                         fit: BoxFit.cover,
@@ -1320,7 +1285,7 @@ Widget _buildReferenciasButton(int codEmpleado, int totalReferencias) {
                                                         ),
                                                         const SizedBox(height: 2),
                                                         Text(
-                                                          '${doc['tipoDocumento']} - ${doc['nombreArchivo']}',
+                                                          '${doc['tipoDocumento']}',
                                                           style: const TextStyle(
                                                             fontSize: 12,
                                                             color: Colors.black54,
@@ -1337,6 +1302,8 @@ Widget _buildReferenciasButton(int codEmpleado, int totalReferencias) {
                                                                 onPressed: () async {
                                                                   await repo.aprobarDocumentoPendiente(doc);
                                                                   ref.invalidate(documentosPendientesProvider);
+                                                                  //refresr fotos de perfil
+                                                                  ref.read(imageVersionProvider.notifier).state++;
                                                                   ScaffoldMessenger.of(context).showSnackBar(
                                                                     const SnackBar(content: Text('Documento aprobado')),
                                                                   );

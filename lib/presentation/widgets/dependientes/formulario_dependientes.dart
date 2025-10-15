@@ -204,19 +204,22 @@ double? _currentLat;
   }
 
   Widget _buildActionButtons() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.end,
-      children: [
-        TextButton(
-            onPressed: widget.onCancel, child: const Text('Cancelar')),
-        const SizedBox(width: 16),
-        ElevatedButton(
-          onPressed: _handleSubmit,
-          child: const Text('Guardar'),
-        ),
-      ],
-    );
-  }
+  return Row(
+    mainAxisAlignment: MainAxisAlignment.end,
+    children: [
+      TextButton(
+        onPressed: widget.onCancel,
+        child: const Text('Cancelar'),
+      ),
+      const SizedBox(width: 16),
+      ElevatedButton(
+        onPressed: _handleSubmit, // Botón normal con validación
+        child: const Text('Guardar'),
+      ),
+      
+    ],
+  );
+}
 
 void _handleSubmit() async {
   final personaState = _personaKey.currentState;
@@ -255,34 +258,34 @@ void _handleSubmit() async {
 
   if (confirmed != true) return;
   try {
-    final personaGuardada = await ref.read(
+    /*final personaGuardada = await ref.read(
       registrarPersonaProvider(persona).future,
-    );
+    );*/
 
-    final nombreCompleto =
-        '${personaGuardada.nombres} ${personaGuardada.apPaterno} ${personaGuardada.apMaterno}'.trim();
+   // final nombreCompleto =
+       // '${personaGuardada.nombres} ${personaGuardada.apPaterno} ${personaGuardada.apMaterno}'.trim();
 
     final dependiente = widget.isEditing
         ? widget.dependiente!.copyWith(
             codEmpleado: widget.codEmpleado,
-            codPersona: personaGuardada.codPersona,
+            codPersona: persona.codPersona,
             parentesco: _parentescoSeleccionado ?? widget.dependiente!.parentesco,
             esActivo: _esActivoSeleccionado ?? widget.dependiente!.esActivo,
-            nombreCompleto: nombreCompleto,
+            nombreCompleto: '',
           )
         : DependienteEntity(
             codEmpleado: widget.codEmpleado,
             codDependiente: 0,
-            codPersona: personaGuardada.codPersona,
+            codPersona: persona.codPersona,
             parentesco: _parentescoSeleccionado!,
             esActivo: _esActivoSeleccionado!,
-            nombreCompleto: nombreCompleto,
-            audUsuario: 0,
+            nombreCompleto: '',
+            audUsuario: await getCodUsuario(),
             descripcion: '',
             edad: 0,
           );
 
-    await widget.onSave(dependiente, personaGuardada);
+    await widget.onSave(dependiente, persona);
 
     if (mounted) {
       AppSnackbarCustom.showSuccess(

@@ -145,26 +145,40 @@ Future<void> _revisarFotoYAdvertir() async {
   }
 
   Future<void> _uploadImage() async {
-    if (_imageBytes == null) {
-      _showMessage('Seleccione una imagen primero');
-      return;
-    }
-
-    try {
-      await ref.read(subirFotoProvider((widget.codEmpleado, _imageBytes!)).future);
-
-      setState(() {
-        _imageTimestamp = DateTime.now().millisecondsSinceEpoch;
-        _imageBytes = null;
-      });
-      ref.read(imageVersionProvider.notifier).state++;
-
-      if (!mounted) return;
-      _showMessage('Imagen subida exitosamente', isError: false);
-    } catch (e) {
-      _showMessage('Error al subir la imagen: $e');
-    }
+  if (_imageBytes == null) {
+    _showMessage('Seleccione una imagen primero');
+    return;
   }
+
+  try {
+    // 1. Llamada a la subida (espera 200, 201, o 202)
+    await ref.read(subirFotoProvider((widget.codEmpleado, _imageBytes!)).future);
+
+    setState(() {
+      // 2. Limpiar el estado local (la imagen pendiente desaparece de la vista previa)
+      _imageTimestamp = DateTime.now().millisecondsSinceEpoch;
+      _imageBytes = null;
+      _webImageBytes = null; // También limpia el webImageBytes
+      imagenSeleccionada = null;
+    });
+
+    // 3. MUY IMPORTANTE: COMENTAR o ELIMINAR esta línea para la aprobación
+    // Si la imagen está pendiente, NO se debe incrementar el versionProvider,
+    // ya que esto forzaría a cargar la foto final que aún no existe.
+    // ref.read(imageVersionProvider.notifier).state++; 
+    ref.invalidate(documentosPendientesProvider);
+    if (!mounted) return;
+    
+    // 4. MOSTRAR EL MENSAJE CLAVE
+    _showMessage(
+      'Imagen subida correctamente, espere aprobación.', 
+      isError: false // Muestra el mensaje con estilo de éxito
+    );
+
+  } catch (e) {
+    _showMessage('Error al subir la imagen: $e');
+  }
+}
 
   void _showMessage(String message, {bool isError = true}) {
     if (!mounted) return;

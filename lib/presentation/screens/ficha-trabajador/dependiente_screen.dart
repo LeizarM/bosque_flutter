@@ -2,6 +2,7 @@ import 'package:bosque_flutter/core/constants/app_constants.dart';
 import 'package:bosque_flutter/core/state/empleados_dependientes_provider.dart';
 import 'package:bosque_flutter/core/state/notifiers/dependientes_notifier.dart';
 import 'package:bosque_flutter/core/state/user_provider.dart';
+import 'package:bosque_flutter/core/utils/descargar_reportes_jasper.dart';
 import 'package:bosque_flutter/core/utils/responsive_utils_bosque.dart';
 import 'package:bosque_flutter/domain/entities/Ciudad_entity.dart';
 import 'package:bosque_flutter/domain/entities/persona_entity.dart';
@@ -136,7 +137,7 @@ void dispose() {
 
       // Cargar empleado actual
       final empleadosAsync = await ref.read(
-        empleadosDependientesProvider.future,
+        empleadosDependientesProvider(_codEmpleado).future,
       );
       final empleadoActual = empleadosAsync.firstWhere(
         (emp) => emp.codEmpleado == _codEmpleado,
@@ -240,6 +241,9 @@ String _getParentesco(WidgetRef ref, DependienteEntity dependiente) {
         ref.invalidate(parentescosProvider);
       },
     ),
+    _buildReportesDropdown(context, ref)
+    
+    
   ],
 ),
       body: Column(
@@ -516,35 +520,33 @@ String _getParentesco(WidgetRef ref, DependienteEntity dependiente) {
     context: context,
     barrierDismissible: false,
     builder: (context) => Dialog(
-      // Elimina cualquier Container extra aquí
       child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 600), // igual que persona
-        child: DependienteForm(
-          title: 'Nuevo Dependiente',
-          codEmpleado: widget.codEmpleado,
-          isEditing: false,
-          dependiente: null,
-          persona: null,
-          onSave: (newDependiente, newPersona) async {
+        constraints: const BoxConstraints(maxWidth: 600),
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              DependienteForm(
+                title: 'Nuevo Dependiente',
+                codEmpleado: widget.codEmpleado,
+                isEditing: false,
+                dependiente: null,
+                persona: null,
+                onSave: (newDependiente, newPersona) async {
                   try {
-                    // Primero registrar la persona
                     final personaRegistrada = await ref.read(
                       registrarPersonaProvider(newPersona).future,
                     );
-
-                    // Luego registrar el dependiente
                     final dependienteConPersona = newDependiente.copyWith(
                       codPersona: personaRegistrada.codPersona,
                     );
-
                     await ref.read(
                       editarDepProvider(dependienteConPersona).future,
                     );
-
-                    // Invalidar cache para actualizar la lista
                     ref.invalidate(dependientesProvider(widget.codEmpleado));
-                    // Invalidar el empleadosDependientesProvider para actualizar la lista principal
-              ref.invalidate(empleadosDependientesProvider);
+                    ref.invalidate(empleadosDependientesProvider);
+                    //Navigator.of(context).pop();
                   } catch (e) {
                     AppSnackbar.showError(
                       context,
@@ -552,14 +554,18 @@ String _getParentesco(WidgetRef ref, DependienteEntity dependiente) {
                     );
                   }
                 },
-          onCancel: () => Navigator.of(context).pop(),
+                onCancel: () => Navigator.of(context).pop(),
+              ),
+              const SizedBox(height: 16),
+            
+              const SizedBox(height: 8),
+            ],
+          ),
         ),
       ),
     ),
   );
 }
- 
- 
 
   void _mostrarDialogoAgregarTelefono(DependienteEntity dependiente) {
     showDialog(
@@ -1375,4 +1381,164 @@ Widget _buildDependientesWebView(
     ),
   );
 }
+//boton para reportes
+Widget _buildReporteDependientesXEdadBtn(BuildContext context, WidgetRef ref) {
+    
+    // 1. Define la función de descarga que encapsula la lógica de Riverpod
+    Future<Uint8List> downloadFunction() async {
+      // Invalida el provider para asegurar la nueva descarga
+      ref.invalidate(jasperPdfDependientesXEdad); 
+      
+      // Lee y espera el resultado del provider
+      return ref.read(jasperPdfDependientesXEdad.future);
+    }
+    
+    // 2. RETORNA EL WIDGET DE PERMISOS que envuelve el botón
+    return PermissionWidget(
+      // Este nombre debe coincidir exactamente con el permiso en tu backend/provider
+      buttonName: 'btnRptDepXEDAD', // Ejemplo, usa el nombre real
+      
+      // El 'child' es el IconButton que solo se mostrará si tiene permiso
+      child: IconButton(
+        icon: const Icon(Icons.picture_as_pdf, color: Colors.red),
+        tooltip: 'Generar Reporte Dependientes por Edad',
+        onPressed: () async {
+          await mostrarReportePdf(
+            context: context,
+            downloadFunction: downloadFunction, 
+            filename: 'RptDependientesPorEdad.pdf', 
+          );
+        },
+      ),
+      
+      // Opcional: Define qué mostrar si NO tiene permiso (por defecto es SizedBox.shrink)
+      // placeholder: const Opacity(opacity: 0.5, child: Icon(Icons.picture_as_pdf)), 
+    );
+  }
+  //dropdown para seleccionar el tipo de reporte
+    Widget _buildReportesDropdown(BuildContext context, WidgetRef ref) {
+    
+    // 1. Definir los datos de los reportes (usando _ReporteOption)
+    final List<_ReporteOption> reportOptions = [
+        _ReporteOption(
+            title: 'Dependientes por Edad',
+            filename: 'RptDependientesPorEdad.pdf',
+            permissionName: 'btnRptDepXEDAD',
+            provider: jasperPdfDependientesXEdad, 
+        ),
+        _ReporteOption(
+            title: 'Dependientes hijos en general',
+            filename: 'RptDependientesHijos.pdf',
+            permissionName: 'btnRptConsumoTigo',
+            provider: jasperPdfDependientesHijos, 
+        ),
+        // ¡Agrega más reportes aquí!
+    ];
+
+    // 2. Filtrar las opciones por permiso
+    // (Asume que PermissionWidget.build regresa !SizedBox si hay permiso)
+    final allowedOptions = reportOptions.where((option) {
+        return PermissionWidget(
+            buttonName: option.permissionName,
+            child: const Text(''), 
+        ).build(context, ref) is! SizedBox; 
+    }).toList();
+
+    // 3. Manejo de caso: 0 o 1 opción permitida
+    if (allowedOptions.length <= 1) {
+        if (allowedOptions.isEmpty) {
+            return const SizedBox.shrink();
+        }
+        final option = allowedOptions.first;
+        // Retorna un IconButton simple
+        return _buildSingleReportButton(context, ref, option); 
+    }
+
+    // 4. Si hay más de una opción, mostramos el botón de menú (PopupMenuButton)
+    return PermissionWidget(
+        buttonName: 'BTN_GRUPO_REPORTES', // Permiso para ver el grupo
+        
+        // El PopupMenuButton encapsula la funcionalidad del menú
+        child: PopupMenuButton<_ReporteOption>(
+            
+            // EL CHILD es el botón completo (TextButton.icon con texto e ícono)
+            offset: const Offset(0, 40), 
+
+            // Construcción de los elementos del menú
+            itemBuilder: (BuildContext context) {
+                return allowedOptions.map((option) {
+                    return PopupMenuItem<_ReporteOption>(
+                        value: option, 
+                        child: Text(option.title),
+                    );
+                }).toList();
+            },
+            
+            // Acción al seleccionar un reporte del menú
+            onSelected: (_ReporteOption selectedOption) {
+                _executeReportDownload(context, ref, selectedOption);
+            },
+            
+            // EL CHILD es el botón completo (TextButton.icon con texto e ícono)
+            child: TextButton.icon(
+                // Estilo (cambia foregroundColor a Colors.blue o al color de tu tema)
+                style: TextButton.styleFrom(
+                    foregroundColor: Colors.black, // Color del texto e ícono
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                ),
+                // CRUCIAL: 'onPressed: null' permite que el toque se propague al PopupMenuButton padre
+                onPressed: null, 
+                
+                // Icono y Texto (propiedades de contenido, deben ir después de las propiedades de estilo/comportamiento)
+                icon: const Icon(Icons.picture_as_pdf, color: Colors.red), 
+                label: const Text(
+                    'Reportes', 
+                    style: TextStyle(fontWeight: FontWeight.bold)
+                ), 
+            ),
+        ),
+    );
+}
+// --- Métodos Auxiliares para Reutilización ---
+
+// Método que ejecuta la descarga (simplifica el onPressed)
+void _executeReportDownload(BuildContext context, WidgetRef ref, _ReporteOption option) async {
+  Future<Uint8List> downloadFunction() async {
+    ref.invalidate(option.provider); 
+    return ref.read(option.provider.future);
+  }
+  
+  await mostrarReportePdf(
+    context: context,
+    downloadFunction: downloadFunction, 
+    filename: option.filename, 
+  );
+}
+
+// Método para mostrar el botón individual si solo queda uno
+Widget _buildSingleReportButton(BuildContext context, WidgetRef ref, _ReporteOption option) {
+  return PermissionWidget(
+    buttonName: option.permissionName,
+    child: IconButton(
+      icon: const Icon(Icons.picture_as_pdf, color: Colors.red),
+      tooltip: 'Generar ${option.title}',
+      onPressed: () => _executeReportDownload(context, ref, option),
+    ),
+  );
+} 
+
+}
+class _ReporteOption {
+  // Eliminamos la propiedad 'type' que dependía del Enum
+  final String title;
+  final String filename;
+  final String permissionName;
+  final FutureProvider<Uint8List> provider;
+
+  _ReporteOption({
+    required this.title,
+    required this.filename,
+    required this.permissionName,
+    required this.provider,
+  });
 }

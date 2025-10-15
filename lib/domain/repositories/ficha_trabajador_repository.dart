@@ -22,7 +22,7 @@ import 'package:bosque_flutter/domain/entities/usuario_bloqueado_entity.dart';
 import 'package:bosque_flutter/domain/entities/zona_entity.dart';
 
 abstract class FichaTrabajadorRepository{
-  Future<List<EmpleadoEntity>>obtenerListaEmpleadoyDependientes(); 
+  Future<List<EmpleadoEntity>>obtenerListaEmpleadoyDependientes(int codEmpleado); 
   
   Future<List<DependienteEntity>>getDependientes(int codEmpleado);
   Future<List<DependienteEntity>>editarDep(DependienteEntity dep);

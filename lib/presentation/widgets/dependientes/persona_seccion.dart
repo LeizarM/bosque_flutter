@@ -415,18 +415,37 @@ if (warningCount < warningLimit) {
                       Row(
                         children: [
                          if(widget.habilitarEdicion)
-                          IconButton(
-                            tooltip: 'Ver documentos adjuntos',
-                            icon: Icon(
-                              Icons.folder_shared_rounded,
-                              color: theme.colorScheme.primary,
-                            ),
-                            onPressed:
-                                () => _mostrarGaleriaTodosDocumentos(
-                                  context,
-                                  widget.codEmpleado,
-                                ),
-                          ),
+                          if (isDesktop)
+  TextButton.icon(
+    icon: Icon(
+      Icons.folder_shared_rounded,
+      color: theme.colorScheme.primary,
+      size: 20,
+    ),
+    label: Text(
+      'Ver Documentos',
+      style: TextStyle(
+        color: theme.colorScheme.primary,
+        fontWeight: FontWeight.w600,
+      ),
+    ),
+    onPressed: () => _mostrarGaleriaTodosDocumentos(
+      context,
+      widget.codEmpleado,
+    ),
+  )
+else // Si es móvil (isDesktop: false), usa IconButton con tooltip
+  IconButton(
+    tooltip: 'Ver documentos adjuntos',
+    icon: Icon(
+      Icons.folder_shared_rounded,
+      color: theme.colorScheme.primary,
+    ),
+    onPressed: () => _mostrarGaleriaTodosDocumentos(
+      context,
+      widget.codEmpleado,
+    ),
+  ),
                           CustomSpeedDial(
                             visible: widget.habilitarEdicion,
                             nombreSeccion: 'persona',
@@ -731,146 +750,109 @@ if (warningCount < warningLimit) {
   }
 
   void _mostrarGaleriaTodosDocumentos(BuildContext context, int codEmpleado) async {
-  final isMobile = ResponsiveUtilsBosque.isMobile(context);
-  final userNotifier = ref.read(userProvider.notifier);
-  final cargo = (await userNotifier.getCargo()).toLowerCase();
+    final isMobile = ResponsiveUtilsBosque.isMobile(context);
+    final userNotifier = ref.read(userProvider.notifier);
+    final cargo = (await userNotifier.getCargo()).toLowerCase();
+    
+    String? advertenciaMensaje;
+    Color? advertenciaColor;
+    IconData? advertenciaIcon;
 
-  final docsAsync = await ref.read(todosLosDocumentosProvider(codEmpleado).future);
-
-  // Validación especial para chofer
-  /*if (cargo.contains('chofer')) {
-    final tieneLicencia = docsAsync['Licencia de Conducir'] != null && docsAsync['Licencia de Conducir']!.isNotEmpty;
-    if (!tieneLicencia && mounted) {
-      setState(() {
-        _advertenciaMensaje = 'Para el cargo CHOFER es obligatorio adjuntar la Licencia de Conducir.';
-        _advertenciaColor = Colors.red;
-        _advertenciaIcon = Icons.warning;
-      });
+    try {
+      final docsData = await ref.read(todosLosDocumentosProvider(codEmpleado).future);
+      if (cargo.contains('chofer')) {
+        final tieneLicencia = docsData['LICENCIA'] != null && docsData['LICENCIA']!.isNotEmpty;
+        if (!tieneLicencia) {
+          advertenciaMensaje = 'Para el cargo CHOFER es obligatorio adjuntar la Licencia de Conducir.';
+          advertenciaColor = Colors.red;
+          advertenciaIcon = Icons.warning;
+        }
+      }
+    } catch (e) {
+      debugPrint("Error al verificar documentos para advertencia: $e");
     }
-  }*/
-  String? advertenciaMensaje;
-Color? advertenciaColor;
-IconData? advertenciaIcon;
 
-if (cargo.contains('chofer')) {
-  final tieneLicencia = docsAsync['Licencia de Conducir'] != null && docsAsync['Licencia de Conducir']!.isNotEmpty;
-  if (!tieneLicencia) {
-    advertenciaMensaje = 'Para el cargo CHOFER es obligatorio adjuntar la Licencia de Conducir.';
-    advertenciaColor = Colors.red;
-    advertenciaIcon = Icons.warning;
-  }
-}
-
-  showDialog(
-    context: context,
-    barrierDismissible: false,
-    builder: (context) {
-      return Consumer(
-        builder: (context, ref, _) {
-          final docsAsync = ref.watch(todosLosDocumentosProvider(codEmpleado));
-          return Dialog(
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(18),
-            ),
-            insetPadding: EdgeInsets.symmetric(
-              horizontal: isMobile ? 8 : 48,
-              vertical: isMobile ? 12 : 48,
-            ),
-            child: Container(
-              width: isMobile ? double.infinity : 540,
-              height: isMobile
-                  ? MediaQuery.of(context).size.height * 0.85
-                  : 650,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(18),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black12,
-                    blurRadius: 16,
-                    offset: Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: Column(
-                children: [
-                  // Encabezado visual
-                  if (advertenciaMensaje != null)
-  BannerCustom(
-    message: advertenciaMensaje,
-    color: advertenciaColor ?? Colors.red,
-    icon: advertenciaIcon ?? Icons.warning,
-    maxLines: 2,
-  ),
-                  Container(
-                    padding: EdgeInsets.symmetric(horizontal: 18, vertical: 14),
-                    decoration: BoxDecoration(
-                      color: Colors.blue[50],
-                      borderRadius: const BorderRadius.vertical(top: Radius.circular(18)),
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(Icons.folder_shared_rounded, color: Colors.blue[700], size: 28),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: Text(
-                            'Documentos adjuntos',
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: isMobile ? 17 : 20,
-                              color: Colors.blue[700],
+    // Se muestra el diálogo de la galería.
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      // Usamos el context del builder para el nuevo diálogo, que es seguro.
+      builder: (galleryDialogContext) {
+        return Consumer(
+          builder: (context, ref, _) {
+            final docsAsync = ref.watch(todosLosDocumentosProvider(codEmpleado));
+            return Dialog(
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+              insetPadding: EdgeInsets.symmetric(horizontal: isMobile ? 8 : 48, vertical: isMobile ? 12 : 48),
+              child: Container(
+                width: isMobile ? double.infinity : 540,
+                height: isMobile ? MediaQuery.of(context).size.height * 0.85 : 650,
+                decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(18)),
+                child: Column(
+                  children: [
+                    if (advertenciaMensaje != null)
+                      BannerCustom(
+                        message: advertenciaMensaje,
+                        color: advertenciaColor ?? Colors.red,
+                        icon: advertenciaIcon ?? Icons.warning,
+                        maxLines: 3,
+                      ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+                      decoration: BoxDecoration(
+                        color: Colors.blue[50],
+                        borderRadius: advertenciaMensaje == null
+                            ? const BorderRadius.vertical(top: Radius.circular(18))
+                            : null,
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(Icons.folder_shared_rounded, color: Colors.blue[700], size: 28),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              'Documentos adjuntos',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: isMobile ? 17 : 20,
+                                color: Colors.blue[700],
+                              ),
                             ),
                           ),
-                        ),
-                        if (widget.habilitarEdicion)
                           IconButton(
-                            tooltip: 'Subir documento',
-                            icon: const Icon(Icons.upload_file, color: Colors.blue),
-                            onPressed: () {
-                              showDialog(
-                                context: context,
-                                builder: (context) => Dialog(
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(16),
-                                  ),
-                                  child: Padding(
-                                    padding: const EdgeInsets.all(24),
-                                    child: SizedBox(
-                                      width: isMobile ? double.infinity : 400,
-                                      child: SeccionFotoDocsDropdown(
-                                        habilitarEdicion: true,
-                                        codEmpleado: codEmpleado,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              );
-                            },
+                            tooltip: 'Cerrar',
+                            icon: const Icon(Icons.close, color: Colors.red),
+                            onPressed: () => Navigator.of(galleryDialogContext).pop(),
                           ),
-                        IconButton(
-                          tooltip: 'Cerrar',
-                          icon: const Icon(Icons.close, color: Colors.red),
-                          onPressed: () => Navigator.of(context).pop(),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
-                  ),
-                  const Divider(height: 1),
-                  // Contenido scrollable y responsivo
-                  Expanded(
-                    child: Padding(
-                      padding: EdgeInsets.all(isMobile ? 10 : 18),
-                      child: docsAsync.when(
-                        data: (mapa) => SingleChildScrollView(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: mapa.entries.map((entry) {
-                              final tipo = entry.key;
-                              final archivos = entry.value;
+                    const Divider(height: 1),
+                    Expanded(
+                      child: Padding(
+                        padding: EdgeInsets.all(isMobile ? 10 : 18),
+                        child: docsAsync.when(
+                          data: (mapaDeDocumentos) {
+                            // Mapa con todos los tipos de documentos que queremos mostrar.
+                            final Map<String, String> todosLosTipos = {
+                              'carnet': 'Carnet de Identidad',
+                              'pasaporte': 'Pasaporte',
+                              'licencia': 'Licencia de Conducir',
+                            };
+
+                            // Creamos la lista de widgets iterando sobre TODOS los tipos posibles.
+                            final widgetsDeDocumentos = todosLosTipos.entries.map((entry) {
+                              final tipoClave = entry.key;
+                              final tipoDisplay = entry.value;
+                              
+                              // Obtenemos los archivos para este tipo, o una lista vacía si no existen.
+                              final archivos = mapaDeDocumentos[tipoClave] ?? [];
+                              final tieneArchivos = archivos.isNotEmpty;
+
                               return Column(
+                                key: ValueKey(tipoClave), // Key para evitar problemas de estado
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  // Título de tipo de documento con separador
                                   Padding(
                                     padding: const EdgeInsets.symmetric(vertical: 10),
                                     child: Row(
@@ -878,7 +860,7 @@ if (cargo.contains('chofer')) {
                                         Icon(Icons.label_important, color: Colors.blue[400], size: 20),
                                         const SizedBox(width: 6),
                                         Text(
-                                          tipo.toUpperCase(),
+                                          tipoDisplay.toUpperCase(),
                                           style: TextStyle(
                                             fontWeight: FontWeight.bold,
                                             fontSize: isMobile ? 15 : 17,
@@ -888,115 +870,121 @@ if (cargo.contains('chofer')) {
                                       ],
                                     ),
                                   ),
-                                  archivos.isEmpty
-                                      ? Padding(
-                                          padding: const EdgeInsets.only(left: 26, bottom: 12),
-                                          child: Text('No hay documentos.', style: TextStyle(color: Colors.grey[600])),
-                                        )
-                                      : GridView.builder(
-                                          shrinkWrap: true,
-                                          physics: const NeverScrollableScrollPhysics(),
-                                          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                                            crossAxisCount: isMobile ? 1 : 2,
-                                            mainAxisSpacing: 14,
-                                            crossAxisSpacing: 14,
-                                            childAspectRatio: isMobile ? 2.2 : 1.2,
-                                          ),
-                                          itemCount: archivos.length,
-                                          itemBuilder: (context, index) {
-                                            final nombreArchivo = archivos[index];
-                                            final url =
-                                                '${AppConstants.baseUrl}${AppConstants.getDocImageUrl}$codEmpleado/$tipo/$nombreArchivo?ts=${DateTime.now().millisecondsSinceEpoch}';
-                                            final isImage = nombreArchivo.endsWith('.jpg') || nombreArchivo.endsWith('.png');
-                                            return Card(
-                                              elevation: 3,
-                                              shape: RoundedRectangleBorder(
-                                                borderRadius: BorderRadius.circular(12),
+                                  if (!tieneArchivos)
+                                    Padding(
+                                      padding: const EdgeInsets.only(left: 26, bottom: 12),
+                                      child: Text('No hay documentos.', style: TextStyle(color: Colors.grey[600])),
+                                    )
+                                  else
+                                    GridView.builder(
+                                      shrinkWrap: true,
+                                      physics: const NeverScrollableScrollPhysics(),
+                                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                                        crossAxisCount: isMobile ? 2 : 3,
+                                        mainAxisSpacing: 10,
+                                        crossAxisSpacing: 10,
+                                        childAspectRatio: 0.9,
+                                      ),
+                                      itemCount: archivos.length,
+                                      itemBuilder: (context, index) {
+                                        final nombreArchivo = archivos[index];
+                                        final url = '${AppConstants.baseUrl}${AppConstants.getDocImageUrl}$codEmpleado/$tipoClave/$nombreArchivo?ts=${DateTime.now().millisecondsSinceEpoch}';
+                                        final lado = (archivos.length > 1) ? (index == 0 ? 'Anverso' : 'Reverso') : 'Documento';
+                                        return _buildDocumentoItem(context, url, nombreArchivo, lado);
+                                      },
+                                    ),
+                                  const SizedBox(height: 12),
+                                  Center(
+                                    child: ElevatedButton.icon(
+                                      icon: const Icon(Icons.add_photo_alternate_outlined, size: 20),
+                                      label: Text(tieneArchivos ? 'Añadir o Reemplazar' : 'Subir $tipoDisplay'),
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: tieneArchivos ? Colors.green[700] : Colors.blue[600],
+                                        foregroundColor: Colors.white,
+                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                      ),
+                                      onPressed: () {
+                                        // 1. Cierra el diálogo de la galería.
+                                        Navigator.of(galleryDialogContext).pop();
+                                        
+                                        // 2. Inmediatamente abre el diálogo de carga de archivos.
+                                        // Usamos el 'context' principal que es seguro.
+                                        showDialog(
+                                          context: context,
+                                          builder: (uploadDialogContext) => Dialog(
+                                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                                            child: Padding(
+                                              padding: const EdgeInsets.all(24),
+                                              child: SizedBox(
+                                                width: isMobile ? double.infinity : 400,
+                                                child: SeccionFotoDocsDropdown(
+                                                  habilitarEdicion: true,
+                                                  codEmpleado: codEmpleado,
+                                                  tipoDocumentoPreseleccionado: tipoDisplay,
+                                                ),
                                               ),
-                                              child: isImage
-                                                  ? GestureDetector(
-                                                      onTap: () {
-                                                        _mostrarImagenCompletaGaleria(
-                                                          context,
-                                                          url,
-                                                          nombreArchivo,
-                                                        );
-                                                      },
-                                                      child: Hero(
-                                                        tag: nombreArchivo,
-                                                        child: ClipRRect(
-                                                          borderRadius: BorderRadius.circular(12),
-                                                          child: Image.network(
-                                                            url,
-                                                            fit: BoxFit.cover,
-                                                            width: double.infinity,
-                                                            height: 120,
-                                                          ),
-                                                        ),
-                                                      ),
-                                                    )
-                                                  : Column(
-                                                      mainAxisAlignment: MainAxisAlignment.center,
-                                                      children: [
-                                                        Icon(Icons.picture_as_pdf, size: 48, color: Colors.red),
-                                                        Padding(
-                                                          padding: const EdgeInsets.symmetric(vertical: 4),
-                                                          child: Text(
-                                                            nombreArchivo,
-                                                            maxLines: 2,
-                                                            overflow: TextOverflow.ellipsis,
-                                                            style: TextStyle(fontWeight: FontWeight.w500),
-                                                          ),
-                                                        ),
-                                                        ElevatedButton.icon(
-                                                          style: ElevatedButton.styleFrom(
-                                                            backgroundColor: Colors.red[400],
-                                                            minimumSize: Size(120, 36),
-                                                            shape: RoundedRectangleBorder(
-                                                              borderRadius: BorderRadius.circular(8),
-                                                            ),
-                                                          ),
-                                                          icon: const Icon(Icons.download, size: 18),
-                                                          label: const Text('Descargar'),
-                                                          onPressed: () async {
-                                                            // Abrir el PDF en navegador o descargar
-                                                            final uri = Uri.parse(url);
-                                                            if (await canLaunchUrl(uri)) {
-                                                              await launchUrl(uri, mode: LaunchMode.externalApplication);
-                                                            }
-                                                          },
-                                                        ),
-                                                      ],
-                                                    ),
-                                            );
-                                          },
-                                        ),
+                                            ),
+                                          ),
+                                        );
+                                      },
+                                    ),
+                                  ),
                                   const Divider(height: 24, thickness: 1),
                                 ],
                               );
-                            }).toList(),
-                          ),
+                            }).toList();
+
+                            return SingleChildScrollView(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: widgetsDeDocumentos,
+                              ),
+                            );
+                          },
+                          loading: () => const Center(child: CircularProgressIndicator()),
+                          error: (e, _) => Center(child: Text('Error: $e')),
                         ),
-                        loading: () => const Center(child: CircularProgressIndicator()),
-                        error: (e, _) => Center(child: Text('Error: $e')),
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-          );
-        },
-      );
-    },
-  );
-}
+            );
+          },
+        );
+      },
+    );
+  }
 
-  void _mostrarImagenCompletaGaleria(
-    BuildContext context,
-    String url,
-    String tag,
-  ) {
+  Widget _buildDocumentoItem(BuildContext context, String url, String tag, String lado) {
+   return GestureDetector(
+     onTap: () => _mostrarImagenCompletaGaleria(context, url, tag),
+     child: Card(
+       clipBehavior: Clip.antiAlias,
+       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+       elevation: 3,
+       child: GridTile( // Eliminamos la propiedad 'footer' para quitar la etiqueta.
+         child: Hero(
+           tag: tag,
+           child: Image.network(
+             url,
+             fit: BoxFit.cover,
+             loadingBuilder: (context, child, progress) {
+               return progress == null ? child : const Center(child: CircularProgressIndicator());
+             },
+             errorBuilder: (context, error, stackTrace) {
+               // ignore: avoid_print
+               print('Error al cargar imagen: $url, Error: $error');
+               return const Icon(Icons.broken_image, size: 40, color: Colors.grey);
+             },
+           ),
+         ),
+       ),
+     ),
+   );
+ }
+
+  void _mostrarImagenCompletaGaleria(BuildContext context, String url, String tag) {
     showDialog(
       context: context,
       barrierDismissible: true,

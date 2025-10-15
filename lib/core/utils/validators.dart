@@ -14,7 +14,7 @@ String? validarTextoOpcional(String? value, {bool esObligatorio = false}) {
   if(trimmed.isNotEmpty){
     if (trimmed.length < 2) {
       return 'Debe tener al menos 2 caracteres';
-    } else if (trimmed.length > 30) {
+    } else if (trimmed.length > 50) {
       return 'Debe tener menos de 30 caracteres';
     } else if (!RegExp(r'^[a-zA-ZáéíóúÁÉÍÓÚñÑ ]+$').hasMatch(trimmed)) {
       return 'Solo se permiten letras';

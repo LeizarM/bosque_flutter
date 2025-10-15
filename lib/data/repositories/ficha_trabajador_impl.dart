@@ -4,7 +4,6 @@ import 'dart:typed_data';
 
 import 'package:bosque_flutter/core/constants/app_constants.dart';
 import 'package:bosque_flutter/core/network/dio_client.dart';
-import 'package:bosque_flutter/core/state/empleados_dependientes_provider.dart';
 import 'package:bosque_flutter/data/models/Persona_model.dart';
 import 'package:bosque_flutter/data/models/ciExpedido_model.dart';
 import 'package:bosque_flutter/data/models/ciudad_model.dart';
@@ -60,9 +59,10 @@ class FichaTrabajadorImpl implements FichaTrabajadorRepository {
   final Dio _dio = DioClient.getInstance();
 
 @override
-Future<List<EmpleadoEntity>> obtenerListaEmpleadoyDependientes() async {
+Future<List<EmpleadoEntity>> obtenerListaEmpleadoyDependientes(int codEmpleado) async {
   try {
-    final response = await _dio.post(AppConstants.empListarEmpleadosDependientes);
+    final response = await _dio.post(AppConstants.empListarEmpleadosDependientes
+      , data: {'codEmpleado': codEmpleado});
     
     if (response.statusCode == 200 && response.data != null) {
       final data = response.data ?? [];
@@ -967,17 +967,19 @@ final response = await _dio.post(
 
   
 
- @override
+  @override
 Future<bool> uploadImg(int codEmpleado, dynamic imagen) async {
+  // Asegúrate de que '_dio' esté inicializado en tu clase (ej. final _dio = Dio();)
+  
   try {
     final fileName = "$codEmpleado.jpg";
     MultipartFile multipartFile;
 
-   if (imagen is Uint8List) {
+    if (imagen is Uint8List) {
       multipartFile = MultipartFile.fromBytes(
         imagen,
         filename: fileName,
-        contentType: MediaType('image', 'jpeg'), // Ahora MediaType está disponible
+        contentType: MediaType('image', 'jpeg'),
       );
     } else if (imagen is File) {
       multipartFile = await MultipartFile.fromFile(
@@ -999,12 +1001,15 @@ Future<bool> uploadImg(int codEmpleado, dynamic imagen) async {
       data: formData,
       options: Options(
         headers: {
-          'Content-Type': 'multipart/form-data',
+          // Aunque Dio suele manejarlo, es buena práctica mantenerlo si usas Options
+          'Content-Type': 'multipart/form-data', 
         },
-        validateStatus: (status) => status! < 500,
+        // Mantenemos la validación para capturar errores 4xx (como 400, 404)
+        validateStatus: (status) => status! < 500, 
       ),
     );
 
+    // Manejo específico para el código 409 (Conflicto/Validación)
     if (response.statusCode == 409) {
       throw DioException(
         requestOptions: response.requestOptions,
@@ -1014,16 +1019,25 @@ Future<bool> uploadImg(int codEmpleado, dynamic imagen) async {
       );
     }
 
-    if (response.statusCode != 200 && response.statusCode != 201) {
+    // *** CORRECCIÓN CLAVE: INCLUIR 202 (Accepted) COMO CÓDIGO DE ÉXITO ***
+    // 200 (OK) o 201 (Created) o 202 (Accepted - Pendiente de Aprobación)
+    if (response.statusCode != 200 && 
+        response.statusCode != 201 && 
+        response.statusCode != 202) 
+    {
       throw Exception('Error al subir imagen: ${response.statusCode}');
     }
 
-    return true;
+    // Si el código es 200, 201 o 202, se considera una operación exitosa.
+    return true; 
+
   } on DioException catch (e) {
     print('Error DioException al subir imagen: ${e.message}');
-    throw Exception('Error de conexión: ${e.message}');
+    // Propagar un mensaje de error más amigable para el usuario
+    throw Exception('Error de conexión o configuración: ${e.message}');
   } catch (e) {
     print('Error al subir imagen: $e');
+    // Asegurarse de que la excepción sea del tipo que el FutureProvider puede manejar
     throw Exception('Error inesperado: $e');
   }
 }
@@ -1364,6 +1378,21 @@ Future<UsuarioBloqueadoEntity> obtenerUsuarioBloqueado(int codUsuario) async {
     print('Error al obtener usuario bloqueado: $e');
      throw Exception('Error al obtener usuario-bloqueado: $e');
   }
+}
+//reportes
+Future<Uint8List> descargarRptDependientesXEdad() async {
+    // Llama al método estático general y solo le pasas la URL.
+     
+    return DioClient.descargarReportePdf(
+      endpoint: AppConstants.depExportarPdfDependientes,
+      // No se envía el parámetro 'data' porque este reporte no lo necesita.
+    );
+  }
+//REPORTE DEPENDIENTES SOLO HIJOS
+Future<Uint8List>descargarRptDependientesHijos()async{
+  return DioClient.descargarReportePdf(
+    endpoint: AppConstants.depExportarPdfDependientesHijos,
+  );
 }
 
 

@@ -221,6 +221,7 @@ class _InfoEmpleadoScreenState extends ConsumerState<InfoEmpleadoScreen> {
                       ref.invalidate(relacionLaboralProvider(widget.codEmpleado));
                       ref.read(imageVersionProvider.notifier).state++;
                       ref.invalidate(todosLosDocumentosProvider(widget.codEmpleado));
+                      ref.invalidate(jasperPdfProvider(widget.codEmpleado));
                     },
                   ),
                   FutureBuilder<String>(
@@ -639,10 +640,12 @@ ref.invalidate(usuarioBloqueadoProvider(codUsuario));
             ref.invalidate(obtenerGaranteReferenciaProvider(widget.codEmpleado));
             ref.invalidate(relacionLaboralProvider(widget.codEmpleado));
              ref.invalidate(todosLosDocumentosProvider(widget.codEmpleado));
+             ref.read(imageVersionProvider.notifier).state++;
             if (_ultimoCodPersona != null) {
               ref.invalidate(obtenerPersonaProvider(_ultimoCodPersona!));
               ref.invalidate(telefonoProvider(_ultimoCodPersona!));
               ref.invalidate(emailProvider(_ultimoCodPersona!));
+              ref.invalidate(jasperPdfProvider(widget.codEmpleado));
             }
           },
         ),

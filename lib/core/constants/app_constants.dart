@@ -1,8 +1,8 @@
 class AppConstants {
-  //static const String baseUrl = 'https://app.esppapel.com:8443';
-  static const String baseUrl = 'http://192.168.3.107:9223';
+  static const String baseUrl = 'https://app.esppapel.com:8443';
+  //static const String baseUrl = 'http://192.168.3.107:9223';
 
-  static const String APP_VERSION = "1.0.0";
+  static const String APP_VERSION = "1.0.1";
 
   static const String loginEndpoint = '/auth/login';
   static const String menuEndpoint = '/view/vistaDinamica';
@@ -84,14 +84,6 @@ class AppConstants {
   static const String preActualizarSolicitud =
       '/prestamo-coches/actualizarSolicitud';
 
-  // = = = = = = = = = = = = = = = = = = = = = = = = = Endpoints para la gestion de RRHH = = = = = = = = = = = = = = = = = =
-
-  //  **** Para la estructura organizacional *********/
-  static const String lstEmpresa = '/rrhh/lst-empresas';
-  static const String lstCargos = '/rrhh/lst-cargos';
-  static const String lstSucursales = '/rrhh/lst-sucursales';
-  static const String lstCargosXEmpresaNew = '/rrhh/lstOrganigramaNew';
-
   // Endpoints para la gestion de empleados y dependientes
   static const String empListarEmpleadosDependientes =
       '/fichaTrabajador/obtenerDep';
@@ -153,6 +145,34 @@ class AppConstants {
   static const String ubBloquearUsuario = '/bloqueo/advertencia';
   static const String ubDesbloquearUsuario = '/bloqueo/desbloqueo';
   static const String ubVerUsuarioBloqueado = '/bloqueo/usuarioBloqueado';
+  static const String depExportarPdfDependientes = '/rrhh/pdfDependientes';
+  static const String depExportarPdfDependientesHijos =
+      '/rrhh/pdfDependientesHijos';
+
+  // = = = = = = = = = = = = = = = = = = = = = = = = = Endpoints para la gestion de RRHH = = = = = = = = = = = = = = = = = =
+
+  //  **** Para la estructura organizacional *********/
+  static const String lstEmpresa = '/rrhh/lst-empresas';
+  static const String lstCargos = '/rrhh/lst-cargos';
+  static const String lstSucursales = '/rrhh/lst-sucursales';
+  static const String lstCargosXEmpresaNew = '/rrhh/lstOrganigramaNew';
+
+  //endpoints para la gestion de facturas TIGO
+  static const String tigoCargarFacturas = '/tigo/SubirExcel';
+  static const String tigoVerFactura = '/tigo/obtenerDetalleDeudaTigo';
+  static const String tigoCargarSocios = '/tigo/registroSocioTigo';
+  static const String tigoVerSocios = '/tigo/obtenerSociosTigo';
+  static const String tigoTotalXCuenta = '/tigo/obtenerTotalCobradoXCuenta';
+  static const String tigoResumenCuentas = '/tigo/obtenerResumenCuentas';
+  static const String tigoResumenDetallado = '/tigo/obtenerResumenDetallado';
+  static const String tigoInsertarAnticipo = '/tigo/generarAnticiposTigo';
+  static const String tigoExportarPdf = '/tigo/pdfTigo';
+  static const String tigoObtenerGrupos = '/tigo/obtenerListaGruposTigo';
+  static const String tigoEliminarGrupo = '/tigo/grupo';
+  static const String tigoEjecutarTigo = '/tigo/ejecutarTigo';
+  static const String tigoObtenerEjecutado = '/tigo/obtenerTigoEjecutado';
+  static const String tigoObtenerNrosSinAsignar = '/tigo/obtenerNroSinAsignar';
+  static const String tigoObtenerArbolDetallado = '/tigo/obtenerArboldetallado';
 
   //Para cargar permisos de botones por usuario
   static const String ubtnPermisosBotones = '/view/vistaBtn';

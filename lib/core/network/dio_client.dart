@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:bosque_flutter/core/constants/app_constants.dart';
 import 'package:bosque_flutter/core/utils/secure_storage.dart';
 import 'package:dio/dio.dart';
@@ -55,5 +57,29 @@ class DioClient {
     );
 
     return dio;
+  }
+   //FUNCION PARA DESCARGAR EL PDF
+  static Future<Uint8List> descargarReportePdf({
+    required String endpoint, // URL específica del reporte
+    Map<String, dynamic>? data, // Opcional: parámetros para el body
+  }) async {
+    // 1. Obtenemos la instancia de Dio para asegurar que se usen los interceptores
+    final dio = getInstance(); 
+    
+    final response = await dio.post(
+      endpoint, 
+      data: data,
+      options: Options(
+        headers: {'Content-Type': 'application/json'},
+        responseType: ResponseType.bytes, // Esencial para recibir el archivo
+      ),
+    );
+
+    if (response.statusCode == 200) {
+      // El cast es seguro si responseType es bytes
+      return response.data as Uint8List; 
+    } else {
+      throw Exception('No se pudo descargar el PDF desde $endpoint. Código: ${response.statusCode}');
+    }
   }
 }

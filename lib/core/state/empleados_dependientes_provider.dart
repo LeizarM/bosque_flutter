@@ -1,11 +1,9 @@
 import 'dart:typed_data';
 
-import 'package:bosque_flutter/core/state/entregas_provider.dart';
 import 'package:bosque_flutter/core/state/notifiers/dependientes_notifier.dart';
 import 'package:bosque_flutter/core/state/user_provider.dart';
 import 'package:bosque_flutter/core/utils/permisos_edicion.dart';
 import 'package:bosque_flutter/data/models/Persona_model.dart';
-import 'package:bosque_flutter/data/models/telefono_model.dart';
 import 'package:bosque_flutter/data/repositories/ficha_trabajador_impl.dart';
 import 'package:bosque_flutter/domain/entities/Ciudad_entity.dart';
 import 'package:bosque_flutter/domain/entities/ciExpedido_entity.dart';
@@ -30,18 +28,18 @@ import 'package:bosque_flutter/domain/entities/tipo_telefono_entity.dart';
 import 'package:bosque_flutter/domain/entities/usuario_bloqueado_entity.dart';
 import 'package:bosque_flutter/domain/entities/zona_entity.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 
 
-final empleadosDependientesProvider = FutureProvider<List<EmpleadoEntity>>((ref) async {
+
+final empleadosDependientesProvider = FutureProvider.family<List<EmpleadoEntity>,int>((ref,codEmpleado) async {
   final repo = FichaTrabajadorImpl();
-  final empleados = await repo.obtenerListaEmpleadoyDependientes();
+  final empleados = await repo.obtenerListaEmpleadoyDependientes(codEmpleado);
   return empleados;
   
 });
 final empleadoProvider = FutureProvider.family<EmpleadoEntity, int>((ref, codEmpleado) async {
-  final empleados = await ref.watch(empleadosDependientesProvider.future);
+  final empleados = await ref.watch(empleadosDependientesProvider(codEmpleado).future);
   return empleados.firstWhere(
     (emp) => emp.codEmpleado == codEmpleado,
     orElse: () => throw Exception('Empleado no encontrado'),
@@ -273,7 +271,7 @@ final empObtenerDatosEmpleados = FutureProvider.family<int, int>((ref, codEmplea
   final codPersona = empleado.first.codPersona;
   print('⭐ Provider empObtenerDatosEmpleados - codPersona obtenido: $codPersona');
   
-  return codPersona;
+  return codPersona ?? (throw Exception('El empleado no tiene código de persona asociado'));
 });
 //provider para manejar foto del empleado
 // Provider para manejar fotos
@@ -333,7 +331,7 @@ final documentosPendientesProvider = FutureProvider<List<Map<String, dynamic>>>(
   final repo = FichaTrabajadorImpl();
   return await repo.obtenerDocumentosPendientes();
 });
-//para manejar advertencias
+
 class WarningCounterNotifier extends StateNotifier<int> {
   final int codEmpleado;
 
@@ -356,6 +354,7 @@ final warningCounterProvider = StateNotifierProvider<WarningCounterNotifier, int
   final initial = 0; 
   return WarningCounterNotifier(codEmpleado, initial);
 });
+
 
 final warningLimitProvider = Provider<int>((ref) => 5);
 final warningCounterInitialProvider = Provider<int>((ref) => 0);
@@ -413,4 +412,14 @@ final desbloquearUsuarioProvider = FutureProvider.family<bool, int>((ref, codUsu
 final usuarioBloqueadoProvider = FutureProvider.family<UsuarioBloqueadoEntity, int>((ref, codUsuario) async {
   final repo = FichaTrabajadorImpl();
   return await repo.obtenerUsuarioBloqueado(codUsuario);
+});
+//Reporte de los dependientes
+final jasperPdfDependientesXEdad = FutureProvider<Uint8List>((ref) async {
+  final repo = FichaTrabajadorImpl();
+  return await repo.descargarRptDependientesXEdad();
+});
+//REPORTE DEPENDIENTES SOLO HIJOS
+final jasperPdfDependientesHijos = FutureProvider<Uint8List>((ref) async {
+  final repo = FichaTrabajadorImpl();
+  return await repo.descargarRptDependientesHijos();
 });

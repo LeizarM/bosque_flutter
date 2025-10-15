@@ -161,6 +161,13 @@ final routerProvider = Provider<GoRouter>((ref) {
               name: 'tpre_SolicitudView',
               builder: (context, state) => const PrestamoViewScreen(),
             ),
+            // Para la gestion de empleados y dependientes
+            GoRoute(
+              path: '/dashboard/ted_EmpleadoDependiente/register',
+              name: 'ted_EmpleadoDependienteRegister',
+              builder: (context, state) => const EmpleadosDependientesView(),
+            ),
+
             GoRoute(
               path:
                   '/dashboard/trhEstructuraOrganizacional/estructuraOrganizacional',
@@ -243,7 +250,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         ),
         // Ruta para prestamo de vehiculos
         GoRoute(
-          path: '/tpre_Solicitud/Solicitud/Register',
+          path: '/tpre_Solicitud/Solicitud',
           redirect: (context, state) => '/dashboard/tpre_Solicitud/Solicitud',
         ),
         //Para ver el prestamo de vehiculos
