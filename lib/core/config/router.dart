@@ -176,6 +176,12 @@ final routerProvider = Provider<GoRouter>((ref) {
                   (context, state) =>
                       const EstructuraOrganizacionalEmpresaScreen(),
             ),
+
+            GoRoute(
+              path: '/dashboard/tb_facturasTigo',
+              name: 'tb_facturasTigo',
+              builder: (context, state) => const FacturasEjecutadasView(),
+            ),
           ],
         ),
 
@@ -271,6 +277,11 @@ final routerProvider = Provider<GoRouter>((ref) {
           redirect:
               (context, state) =>
                   '/dashboard/trhEstructuraOrganizacional/estructuraOrganizacional',
+        ),
+
+        GoRoute(
+          path: '/tb_facturasTigo',
+          redirect: (context, state) => '/dashboard/tb_facturasTigo',
         ),
 
         GoRoute(
