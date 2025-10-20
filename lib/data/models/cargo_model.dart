@@ -37,6 +37,7 @@ class CargoModel {
   int numHijosTotal;
   String resumenCompleto;
   String estadoPadre;
+  int esVisible;
 
   List<CargoModel>? items;
 
@@ -71,6 +72,7 @@ class CargoModel {
     required this.numHijosTotal,
     required this.resumenCompleto,
     required this.estadoPadre,
+    required this.esVisible,
     required this.items,
   });
 
@@ -104,6 +106,7 @@ class CargoModel {
     numHijosTotal: json["numHijosTotal"] ?? 0,
     resumenCompleto: json["resumenCompleto"] ?? '',
     estadoPadre: json["estadoPadre"] ?? '',
+    esVisible: json["esVisible"] ?? 1,
 
     items:
         json['items'] != null
@@ -143,6 +146,7 @@ class CargoModel {
     "numHijosTotal": numHijosTotal,
     "resumenCompleto": resumenCompleto,
     "estadoPadre": estadoPadre,
+    "esVisible": esVisible,
     "items":
         items != null ? items!.map((item) => item.toJson()).toList() : null,
   };
@@ -177,7 +181,9 @@ class CargoModel {
     numHijosTotal: numHijosTotal,
     resumenCompleto: resumenCompleto,
     estadoPadre: estadoPadre,
-    items: items!.map((model) => model.toEntity()).toList(),
+    esVisible: esVisible,
+    items:
+        items != null ? items!.map((model) => model.toEntity()).toList() : [],
   );
 
   // Método factory para convertir de Entity a Model
@@ -211,6 +217,7 @@ class CargoModel {
     numHijosTotal: entity.numHijosTotal,
     resumenCompleto: entity.resumenCompleto,
     estadoPadre: entity.estadoPadre,
+    esVisible: entity.esVisible,
     items: entity.items.map((e) => CargoModel.fromEntity(e)).toList(),
   );
 }

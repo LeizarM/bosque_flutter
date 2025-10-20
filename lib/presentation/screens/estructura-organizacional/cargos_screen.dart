@@ -118,42 +118,7 @@ class _CargosScreenState extends ConsumerState<CargosScreen> {
               ref.read(viewModeProvider.notifier).state = !isOrganigramaMode;
             },
           ),
-          // Ya no necesitamos controles de zoom de GraphView
-          /*
-          if (isOrganigramaMode) ...[
-            IconButton(
-              icon: Icon(useSugiyama ? Icons.account_tree : Icons.device_hub),
-              tooltip: useSugiyama ? 'Cambiar a layout de árbol' : 'Cambiar a layout por niveles',
-              onPressed: () {
-                setState(() {
-                  useSugiyama = !useSugiyama;
-                });
-              },
-            ),
-            IconButton(
-              icon: const Icon(Icons.zoom_in),
-              onPressed: () {
-                _transformationController.value = Matrix4.identity()..scale(
-                  _transformationController.value.getMaxScaleOnAxis() * 1.2,
-                );
-              },
-            ),
-            IconButton(
-              icon: const Icon(Icons.zoom_out),
-              onPressed: () {
-                _transformationController.value = Matrix4.identity()..scale(
-                  _transformationController.value.getMaxScaleOnAxis() * 0.8,
-                );
-              },
-            ),
-            IconButton(
-              icon: const Icon(Icons.center_focus_strong),
-              onPressed: () {
-                _transformationController.value = Matrix4.identity();
-              },
-            ),
-          ],
-          */
+
           IconButton(
             icon: const Icon(Icons.refresh),
             onPressed: () {
@@ -194,6 +159,9 @@ class _CargosScreenState extends ConsumerState<CargosScreen> {
 
   // Vista de organigrama
   Widget _buildOrganigramaView(List<CargoEntity> cargos) {
+    print('=== CargosScreen _buildOrganigramaView ===');
+    print('Total cargos recibidos: ${cargos.length}');
+
     if (cargos.isEmpty) {
       return const Center(
         child: Column(
@@ -206,6 +174,9 @@ class _CargosScreenState extends ConsumerState<CargosScreen> {
         ),
       );
     }
+
+    print('Primer cargo: ${cargos.first.descripcion}');
+    print('Primer cargo tiene items: ${cargos.first.items.length}');
 
     // Ya no necesitamos _buildGraph porque usamos posicionamiento manual
     // _buildGraph(cargos);

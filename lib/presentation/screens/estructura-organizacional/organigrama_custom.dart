@@ -112,16 +112,17 @@ class _OrganigramaCustomState extends State<OrganigramaCustom> {
   }
 
   Widget _buildNodeWidget(CargoEntity cargo) {
+    // Si esVisible == 0, hacer el nodo completamente transparente
+    if (cargo.esVisible == 0) {
+      return Container(width: 180, height: 95, color: Colors.transparent);
+    }
+
     final isInactive = cargo.estado == 0;
-    final isFicticio = cargo.codCargo < 0;
 
     Color backgroundColor;
     Color borderColor;
 
-    if (isFicticio) {
-      backgroundColor = Colors.grey.shade300;
-      borderColor = Colors.orange.shade700;
-    } else if (isInactive) {
+    if (isInactive) {
       backgroundColor = Colors.red.shade100;
       borderColor = Colors.red;
     } else {
@@ -138,95 +139,76 @@ class _OrganigramaCustomState extends State<OrganigramaCustom> {
         decoration: BoxDecoration(
           color: backgroundColor,
           borderRadius: BorderRadius.circular(8),
-          border: Border.all(
-            color: borderColor,
-            width: isFicticio ? 3 : (isInactive ? 2 : 1),
-            style: isFicticio ? BorderStyle.solid : BorderStyle.solid,
-          ),
+          border: Border.all(color: borderColor, width: isInactive ? 2 : 1),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(isFicticio ? 0.2 : 0.1),
+              color: Colors.black.withOpacity(0.1),
               blurRadius: 4,
               offset: const Offset(0, 2),
             ),
           ],
         ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            if (isFicticio)
-              Icon(
-                Icons.report_problem_outlined,
-                color: Colors.orange.shade700,
-                size: 16,
-              ),
-            Text(
-              cargo.descripcion,
-              style: TextStyle(
-                fontSize: isFicticio ? 10 : 11,
-                fontWeight: isFicticio ? FontWeight.normal : FontWeight.bold,
-                color:
-                    isFicticio
-                        ? Colors.orange.shade900
-                        : (isInactive ? Colors.red.shade900 : Colors.black87),
-                fontStyle: isFicticio ? FontStyle.italic : FontStyle.normal,
-              ),
-              textAlign: TextAlign.center,
-              maxLines: 3,
-              overflow: TextOverflow.ellipsis,
-            ),
-            const SizedBox(height: 4),
-            Text(
-              'Nivel: ${cargo.nivel} | Pos: ${cargo.posicion}',
-              style: TextStyle(
-                fontSize: 9,
-                color:
-                    isFicticio ? Colors.orange.shade700 : Colors.grey.shade600,
-                fontWeight: isFicticio ? FontWeight.bold : FontWeight.normal,
-              ),
-            ),
-            if (cargo.tieneEmpleadosActivos > 0)
-              Text(
-                '👤 ${cargo.tieneEmpleadosActivos}',
-                style: const TextStyle(fontSize: 9),
-              ),
-            if (isFicticio)
-              Text(
-                'FICTICIO',
-                style: TextStyle(
-                  fontSize: 8,
-                  color: Colors.orange.shade700,
-                  fontWeight: FontWeight.bold,
+        child: ClipRect(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Flexible(
+                child: Text(
+                  cargo.descripcion,
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.bold,
+                    color: isInactive ? Colors.red.shade900 : Colors.black87,
+                    height: 1.2,
+                  ),
+                  textAlign: TextAlign.center,
+                  maxLines: 3,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
-          ],
+              const SizedBox(height: 4),
+              Text(
+                'Nivel: ${cargo.nivel} | Pos: ${cargo.posicion}',
+                style: TextStyle(fontSize: 9, color: Colors.grey.shade600),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+              if (cargo.tieneEmpleadosActivos > 0)
+                Text(
+                  '👤 ${cargo.tieneEmpleadosActivos}',
+                  style: const TextStyle(fontSize: 9),
+                ),
+            ],
+          ),
         ),
       ),
     );
   }
 
   Color _getNodeColor(CargoEntity cargo) {
-    if (cargo.codCargo >= 130 && cargo.codCargo <= 175) {
-      final Map<int, Color> coloresPrincipales = {
-        130: Colors.red.shade700,
-        131: Colors.blue.shade700,
-        132: Colors.green.shade700,
-        133: Colors.purple.shade700,
-        134: Colors.orange.shade700,
-      };
-      if (coloresPrincipales.containsKey(cargo.codCargo)) {
-        return coloresPrincipales[cargo.codCargo]!;
-      }
-    }
-
-    final colores = [
-      Colors.blue.shade600,
-      Colors.green.shade600,
-      Colors.orange.shade600,
-      Colors.purple.shade600,
-      Colors.teal.shade600,
+    // Paleta de colores variada para diferentes niveles jerárquicos
+    final coloresPorNivel = [
+      Colors.red.shade300, // Nivel 0
+      Colors.orange.shade300, // Nivel 1
+      Colors.amber.shade300, // Nivel 2
+      Colors.yellow.shade300, // Nivel 3
+      Colors.lime.shade300, // Nivel 4
+      Colors.lightGreen.shade300, // Nivel 5
+      Colors.green.shade300, // Nivel 6
+      Colors.teal.shade300, // Nivel 7
+      Colors.cyan.shade300, // Nivel 8
+      Colors.lightBlue.shade300, // Nivel 9
+      Colors.blue.shade300, // Nivel 10
+      Colors.indigo.shade300, // Nivel 11
+      Colors.purple.shade300, // Nivel 12
+      Colors.deepPurple.shade300, // Nivel 13
+      Colors.pink.shade300, // Nivel 14
+      Colors.blueGrey.shade300, // Nivel 15
     ];
-    return colores[cargo.codCargo % colores.length];
+
+    // Usar el nivel para determinar el color (con ciclo para N niveles)
+    return coloresPorNivel[cargo.nivel % coloresPorNivel.length];
   }
 
   @override

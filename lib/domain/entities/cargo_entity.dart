@@ -29,6 +29,7 @@ class CargoEntity {
   int numHijosTotal;
   String resumenCompleto;
   String estadoPadre;
+  int esVisible;
 
   List<CargoEntity> items;
 
@@ -63,6 +64,7 @@ class CargoEntity {
     required this.numHijosTotal,
     required this.resumenCompleto,
     required this.estadoPadre,
+    required this.esVisible,
     required this.items,
   });
 }
