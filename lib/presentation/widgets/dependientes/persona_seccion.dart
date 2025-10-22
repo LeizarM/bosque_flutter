@@ -52,6 +52,13 @@ class _PersonaSectionState extends ConsumerState<PersonaSection> {
   Color? _advertenciaColor;
   IconData? _advertenciaIcon;
    bool _habilitarEdicion = false;
+   final Set<int> _docsAllowedEmployees = {
+    2, 
+    218,
+    21,
+    50,
+    47
+  };
   //checkpoint
   String _capitalize(String text) {
     if (text.isEmpty) return text;
@@ -117,6 +124,9 @@ Future<void> limpiarFechaAdvertencia() async {
     final theme = Theme.of(context);
     final isDesktop = ResponsiveUtilsBosque.isDesktop(context);
     final personaAsync = ref.watch(obtenerPersonaProvider(widget.codPersona));
+    final currentUser = ref.watch(userProvider);
+   final bool canSeeDocs = widget.habilitarEdicion ||
+        (currentUser != null && _docsAllowedEmployees.contains(currentUser.codEmpleado));
     
 final warningCount = ref.watch(warningCounterProvider);
 final warningLimit = ref.watch(warningLimitProvider);
@@ -414,7 +424,8 @@ if (warningCount < warningLimit) {
                       ),
                       Row(
                         children: [
-                         if(widget.habilitarEdicion)
+                         //if(widget.habilitarEdicion)
+                         if (canSeeDocs)
                           if (isDesktop)
   TextButton.icon(
     icon: Icon(

@@ -38,6 +38,17 @@ class _InfoEmpleadoScreenState extends ConsumerState<InfoEmpleadoScreen> {
   bool _mostrarHintPullToRefresh = true;
    int? _lastCodPersona; 
 
+   //EMPELADOS QUE PUEDEN VER REPORTES F.T
+   final Set<int> _reportAllowedEmployees = {
+    2, // ejemplo: gerente
+    218,
+    21,
+    50,
+    47
+     // ejemplo: auditor
+    // agregar más codigos según necesidad
+  };
+
   Map<String, bool> estadoExpandido = {
     'empleado': true,
     'persona': true,
@@ -131,6 +142,10 @@ class _InfoEmpleadoScreenState extends ConsumerState<InfoEmpleadoScreen> {
   @override
   Widget build(BuildContext context) {
     final isDesktop = ResponsiveUtilsBosque.isDesktop(context);
+    final currentUser = ref.watch(userProvider);
+    // Decisión unificada para mostrar el botón de reporte:
+    final bool canSeeReport = _habilitarEdicion ||
+        (currentUser != null && _reportAllowedEmployees.contains(currentUser.codEmpleado));
     ref.listen<int>(warningCounterProvider, (prev, next) async {
     final user = ref.read(userProvider);
     if (user != null && user.codEmpleado == widget.codEmpleado) {
@@ -148,10 +163,10 @@ class _InfoEmpleadoScreenState extends ConsumerState<InfoEmpleadoScreen> {
       }
     }
   });
-    return isDesktop ? _buildDesktopLayout() : _buildMobileLayout();
+    return isDesktop ? _buildDesktopLayout(canSeeReport) : _buildMobileLayout(canSeeReport);
   }
 
- Widget _buildDesktopLayout() {
+ Widget _buildDesktopLayout(canSeeReport) {
   final theme = Theme.of(context);
   final isDark = theme.brightness == Brightness.dark;
   final size = MediaQuery.of(context).size;
@@ -188,7 +203,7 @@ class _InfoEmpleadoScreenState extends ConsumerState<InfoEmpleadoScreen> {
                 //  _buildDesktopTab('Referencias', 3, Icons.people, codPersona),
                   // ...agrega más tabs si tienes...
                   const Spacer(),
-                  if (_habilitarEdicion)
+                  if (canSeeReport)
                   IconButton(
   icon: const Icon(Icons.picture_as_pdf, color: Colors.white),
   tooltip: 'Exportar PDF',
@@ -594,7 +609,7 @@ ref.invalidate(usuarioBloqueadoProvider(codUsuario));
       return const Center(child: Text('Sección no implementada'));
   }
 }
-  Widget _buildMobileLayout() {
+  Widget _buildMobileLayout(canSeeReport) {
   final theme = Theme.of(context);
   final isDark = theme.brightness == Brightness.dark;
 
@@ -611,7 +626,7 @@ ref.invalidate(usuarioBloqueadoProvider(codUsuario));
         ),
       ),
       actions: [
-        if (_habilitarEdicion)
+        if (canSeeReport)
         IconButton(
     icon: const Icon(Icons.picture_as_pdf, color: Colors.white),
     tooltip: 'Exportar PDF Jasper',

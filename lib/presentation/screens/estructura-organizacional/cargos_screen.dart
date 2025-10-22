@@ -241,7 +241,7 @@ class _CargosScreenState extends ConsumerState<CargosScreen> {
     );
   }
 
-  // Vista de lista
+  // Vista de lista en forma de árbol
   Widget _buildListView(List<CargoEntity> cargos) {
     if (cargos.isEmpty) {
       return const Center(
@@ -256,52 +256,105 @@ class _CargosScreenState extends ConsumerState<CargosScreen> {
       );
     }
 
-    return ListView.builder(
+    return ListView(
       padding: const EdgeInsets.all(16),
-      itemCount: cargos.length,
-      itemBuilder: (context, index) {
-        final cargo = cargos[index];
-        return Card(
-          margin: const EdgeInsets.only(bottom: 12),
-          child: ListTile(
-            leading: CircleAvatar(
-              backgroundColor: _getNodeColor(cargo),
-              child: Icon(_getStatusIcon(cargo), size: 20),
-            ),
-            title: Text(
-              cargo.descripcion,
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                color: cargo.estado == 0 ? Colors.grey : null,
-                decoration:
-                    cargo.estado == 0 ? TextDecoration.lineThrough : null,
-              ),
-            ),
-            subtitle: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('Nivel: ${cargo.codNivel}'),
-                if (cargo.tieneEmpleadosActivos > 0)
-                  Text(
-                    '${cargo.tieneEmpleadosActivos} empleado(s) activo(s)',
-                    style: TextStyle(color: Colors.green.shade700),
-                  ),
-                if (cargo.numHijosActivos > 0)
-                  Text(
-                    '${cargo.numHijosActivos} hijo(s) activo(s)',
-                    style: TextStyle(color: Colors.blue.shade700),
-                  ),
-              ],
-            ),
-            trailing:
-                cargo.estado == 1
-                    ? const Icon(Icons.check_circle, color: Colors.green)
-                    : const Icon(Icons.cancel, color: Colors.red),
-            onTap: () => _showCargoActions(cargo),
-          ),
-        );
-      },
+      children: _buildTreeNodes(cargos, 0),
     );
+  }
+
+  // Construir nodos del árbol recursivamente
+  List<Widget> _buildTreeNodes(List<CargoEntity> cargos, int nivel) {
+    List<Widget> widgets = [];
+
+    for (var cargo in cargos) {
+      // Saltar nodos ficticios (esVisible == 0)
+      if (cargo.esVisible == 0) {
+        // Pero procesamos sus hijos
+        if (cargo.items.isNotEmpty) {
+          widgets.addAll(_buildTreeNodes(cargo.items, nivel));
+        }
+        continue;
+      }
+
+      // Agregar el nodo actual (visible)
+      widgets.add(
+        Padding(
+          padding: EdgeInsets.only(left: nivel * 20.0),
+          child: Card(
+            margin: const EdgeInsets.only(bottom: 8),
+            child: ListTile(
+              leading: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Línea indicadora de nivel
+                  if (nivel > 0)
+                    Container(
+                      width: 3,
+                      height: 40,
+                      color: _getNodeColor(cargo),
+                      margin: const EdgeInsets.only(right: 8),
+                    ),
+                  // Icono del cargo
+                  CircleAvatar(
+                    backgroundColor: _getNodeColor(cargo),
+                    radius: 18,
+                    child: Icon(_getStatusIcon(cargo), size: 18),
+                  ),
+                ],
+              ),
+              title: Text(
+                cargo.descripcion,
+                style: TextStyle(
+                  fontWeight: nivel == 0 ? FontWeight.bold : FontWeight.normal,
+                  fontSize: nivel == 0 ? 15 : 14,
+                  color: cargo.estado == 0 ? Colors.grey : null,
+                  decoration:
+                      cargo.estado == 0 ? TextDecoration.lineThrough : null,
+                ),
+              ),
+              subtitle: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const SizedBox(height: 4),
+                  Text(
+                    'Nivel: ${cargo.nivel} | Pos: ${cargo.posicion}',
+                    style: const TextStyle(fontSize: 12),
+                  ),
+                  if (cargo.tieneEmpleadosActivos > 0)
+                    Text(
+                      '👤 ${cargo.tieneEmpleadosActivos} empleado${cargo.tieneEmpleadosActivos > 1 ? 's' : ''}',
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: Colors.green.shade700,
+                      ),
+                    ),
+                  if (cargo.numHijosActivos > 0)
+                    Text(
+                      '📊 ${cargo.numHijosActivos} cargo${cargo.numHijosActivos > 1 ? 's' : ''} subordinado${cargo.numHijosActivos > 1 ? 's' : ''}',
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: Colors.blue.shade700,
+                      ),
+                    ),
+                ],
+              ),
+              trailing:
+                  cargo.estado == 1
+                      ? const Icon(Icons.check_circle, color: Colors.green)
+                      : const Icon(Icons.cancel, color: Colors.red),
+              onTap: () => _showCargoActions(cargo),
+            ),
+          ),
+        ),
+      );
+
+      // Agregar hijos recursivamente
+      if (cargo.items.isNotEmpty) {
+        widgets.addAll(_buildTreeNodes(cargo.items, nivel + 1));
+      }
+    }
+
+    return widgets;
   }
 
   Widget _buildLegendItem(IconData icon, String label, Color color) {
@@ -429,11 +482,48 @@ class _CargosScreenState extends ConsumerState<CargosScreen> {
                 },
               ),
 
-              // Reparentar (cambiar padre)
-              if (cargo.canDeactivate == 1 && cargo.estado == 1) ...[
+              // Duplicar cargo
+              ListTile(
+                leading: const Icon(Icons.content_copy, color: Colors.blue),
+                title: const Text('Duplicar cargo'),
+                subtitle: const Text(
+                  'Crear nuevo cargo con las mismas configuraciones',
+                  style: TextStyle(fontSize: 11),
+                ),
+                trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+                onTap: () {
+                  Navigator.of(context).pop();
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Función no implementada aún'),
+                      backgroundColor: Colors.orange,
+                    ),
+                  );
+                },
+              ),
+
+              const Divider(height: 8),
+
+              // Reparentar (cambiar padre) - Siempre disponible para cargos activos
+              if (cargo.estado == 1) ...[
                 ListTile(
-                  leading: const Icon(Icons.switch_access_shortcut),
-                  title: const Text('Reparentar (Cambiar padre)'),
+                  leading: Icon(
+                    Icons.switch_access_shortcut,
+                    color: cargo.canDeactivate == 0 ? Colors.orange : null,
+                  ),
+                  title: Row(
+                    children: [
+                      const Text('Reparentar (Cambiar padre)'),
+                      if (cargo.canDeactivate == 0) ...[
+                        const SizedBox(width: 8),
+                        Icon(
+                          Icons.warning_amber,
+                          size: 16,
+                          color: Colors.orange.shade700,
+                        ),
+                      ],
+                    ],
+                  ),
                   trailing: const Icon(Icons.arrow_forward_ios, size: 16),
                   onTap: () {
                     Navigator.of(context).pop();
@@ -442,51 +532,118 @@ class _CargosScreenState extends ConsumerState<CargosScreen> {
                 ),
               ],
 
-              // Inactivar cargo
-              if (cargo.canDeactivate == 1 && cargo.estado == 1) ...[
-                const Divider(height: 8),
+              // Cambiar posición - Siempre disponible para cargos activos
+              if (cargo.estado == 1) ...[
                 ListTile(
-                  leading: const Icon(Icons.block, color: Colors.red),
-                  title: const Text(
-                    'Inactivar cargo',
-                    style: TextStyle(color: Colors.red),
+                  leading: Icon(
+                    Icons.format_list_numbered,
+                    color: cargo.canDeactivate == 0 ? Colors.orange : null,
+                  ),
+                  title: Row(
+                    children: [
+                      const Text('Cambiar posición'),
+                      if (cargo.canDeactivate == 0) ...[
+                        const SizedBox(width: 8),
+                        Icon(
+                          Icons.warning_amber,
+                          size: 16,
+                          color: Colors.orange.shade700,
+                        ),
+                      ],
+                    ],
                   ),
                   trailing: const Icon(Icons.arrow_forward_ios, size: 16),
                   onTap: () {
                     Navigator.of(context).pop();
-                    _showInactivateConfirmation(cargo);
+                    _showCambiarPosicionDialog(cargo);
                   },
                 ),
               ],
 
-              // Mensaje si no se puede inactivar
-              if (cargo.canDeactivate == 0) ...[
-                const Divider(height: 8),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  child: Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: Colors.orange.shade50,
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: Colors.orange.shade200),
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(Icons.warning, color: Colors.orange.shade700),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Text(
-                            'Este cargo no puede ser inactivado o modificado debido a sus dependencias.',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.orange.shade900,
-                            ),
-                          ),
+              // Reasignar a otra rama - Siempre disponible para cargos activos
+              if (cargo.estado == 1) ...[
+                ListTile(
+                  leading: Icon(
+                    Icons.call_split,
+                    color:
+                        cargo.canDeactivate == 0
+                            ? Colors.purple
+                            : Colors.deepPurple,
+                  ),
+                  title: Row(
+                    children: [
+                      const Text('Reasignar a otra rama'),
+                      if (cargo.canDeactivate == 0) ...[
+                        const SizedBox(width: 8),
+                        Icon(
+                          Icons.warning_amber,
+                          size: 16,
+                          color: Colors.orange.shade700,
                         ),
                       ],
-                    ),
+                    ],
                   ),
+                  subtitle: const Text(
+                    'Mover cargo a otra rama del organigrama',
+                    style: TextStyle(fontSize: 11),
+                  ),
+                  trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+                  onTap: () {
+                    Navigator.of(context).pop();
+                    _showReasignarRamaDialog(cargo);
+                  },
+                ),
+              ],
+
+              const Divider(height: 8),
+
+              // Activar o Inactivar cargo - Siempre visible
+              if (cargo.estado == 1) ...[
+                // Cargo activo - Opción para inactivar
+                if (cargo.canDeactivate == 1)
+                  ListTile(
+                    leading: const Icon(Icons.block, color: Colors.red),
+                    title: const Text(
+                      'Desactivar cargo',
+                      style: TextStyle(color: Colors.red),
+                    ),
+                    trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+                    onTap: () {
+                      Navigator.of(context).pop();
+                      _showInactivateConfirmation(cargo);
+                    },
+                  )
+                else
+                  ListTile(
+                    leading: Icon(Icons.block, color: Colors.grey.shade400),
+                    title: Text(
+                      'Desactivar cargo',
+                      style: TextStyle(color: Colors.grey.shade600),
+                    ),
+                    subtitle: const Text(
+                      'No disponible: tiene dependencias activas',
+                      style: TextStyle(fontSize: 11),
+                    ),
+                    trailing: Icon(
+                      Icons.warning_amber,
+                      color: Colors.orange.shade700,
+                      size: 20,
+                    ),
+                    enabled: false,
+                  ),
+              ] else ...[
+                // Cargo inactivo - Opción para activar
+                ListTile(
+                  leading: const Icon(Icons.check_circle, color: Colors.green),
+                  title: const Text(
+                    'Activar cargo',
+                    style: TextStyle(color: Colors.green),
+                  ),
+                  trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+                  onTap: () {
+                    Navigator.of(context).pop();
+                    _showActivateConfirmation(cargo);
+                  },
                 ),
               ],
             ],
@@ -601,68 +758,218 @@ class _CargosScreenState extends ConsumerState<CargosScreen> {
     );
   }
 
-  // Diálogo para reparentar
+  // Método auxiliar para aplanar la estructura jerárquica de cargos
+  List<CargoEntity> _aplanarCargos(List<CargoEntity> cargosJerarquicos) {
+    List<CargoEntity> listaPlana = [];
+
+    void agregarRecursivo(List<CargoEntity> cargos) {
+      for (var cargo in cargos) {
+        listaPlana.add(cargo);
+        if (cargo.items.isNotEmpty) {
+          agregarRecursivo(cargo.items);
+        }
+      }
+    }
+
+    agregarRecursivo(cargosJerarquicos);
+    return listaPlana;
+  }
+
+  // Diálogo para reparentar - Muestra TODOS los cargos disponibles
   void _showReparentarDialog(CargoEntity cargo) {
     final cargosAsync = ref.read(cargosXEmpresaProvider(widget.codEmpresa));
     final cargos = cargosAsync.value ?? [];
 
-    // Filtrar posibles padres (excluir el mismo cargo y sus descendientes)
+    // SIMPLIFICADO: Mostrar TODOS los cargos excepto el mismo cargo
+    // El usuario puede elegir cualquier cargo como padre, incluso si crea ciclos
+    // (el backend debería validar esto)
     final posiblesPadres =
         cargos.where((c) {
-          return c.codCargo != cargo.codCargo &&
-              c.estado == 1 &&
-              c.codCargo != cargo.codCargoPadre;
+          return c.codCargo !=
+                  cargo.codCargo && // No puede ser padre de sí mismo
+              c.estado == 1 && // Solo cargos activos
+              c.esVisible == 1; // Solo cargos visibles (no ficticios)
         }).toList();
+
+    // Ordenar por nivel y luego por posición para mejor visualización
+    posiblesPadres.sort((a, b) {
+      if (a.nivel != b.nivel) return a.nivel.compareTo(b.nivel);
+      return a.posicion.compareTo(b.posicion);
+    });
 
     showDialog(
       context: context,
       builder:
           (context) => AlertDialog(
-            title: const Text('Reparentar Cargo'),
+            title: Row(
+              children: [
+                const Icon(Icons.account_tree),
+                const SizedBox(width: 8),
+                const Expanded(child: Text('Reparentar Cargo')),
+              ],
+            ),
             content: SizedBox(
               width: double.maxFinite,
+              height: MediaQuery.of(context).size.height * 0.6,
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    'Cargo: ${cargo.descripcion}',
-                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  // Info del cargo a reparentar
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.blue.shade50,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.blue.shade200),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Cargo a mover:',
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          cargo.descripcion,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Padre actual: ${cargo.estadoPadre}',
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: Colors.grey.shade700,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  const Text(
+                    'Selecciona el nuevo cargo padre (todas las ramas):',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
                   ),
                   const SizedBox(height: 8),
-                  Text(
-                    'Padre actual: ${cargo.estadoPadre}',
-                    style: TextStyle(fontSize: 12, color: Colors.grey.shade700),
+
+                  // Lista de todos los posibles padres
+                  Expanded(
+                    child:
+                        posiblesPadres.isEmpty
+                            ? Center(
+                              child: Text(
+                                'No hay otros cargos disponibles',
+                                style: TextStyle(color: Colors.grey.shade600),
+                              ),
+                            )
+                            : ListView.builder(
+                              shrinkWrap: true,
+                              itemCount: posiblesPadres.length,
+                              itemBuilder: (context, index) {
+                                final padre = posiblesPadres[index];
+                                final esPadreActual =
+                                    padre.codCargo == cargo.codCargoPadre;
+
+                                return Card(
+                                  margin: const EdgeInsets.symmetric(
+                                    vertical: 2,
+                                  ),
+                                  elevation: esPadreActual ? 2 : 0,
+                                  color:
+                                      esPadreActual
+                                          ? Colors.blue.shade50
+                                          : null,
+                                  child: ListTile(
+                                    dense: true,
+                                    leading: Container(
+                                      width: 40,
+                                      height: 40,
+                                      decoration: BoxDecoration(
+                                        color: _getNodeColor(padre),
+                                        shape: BoxShape.circle,
+                                      ),
+                                      child: Center(
+                                        child: Text(
+                                          'N${padre.nivel}',
+                                          style: const TextStyle(
+                                            fontSize: 11,
+                                            fontWeight: FontWeight.bold,
+                                            color: Colors.white,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                    title: Text(
+                                      padre.descripcion,
+                                      style: TextStyle(
+                                        fontSize: 13,
+                                        fontWeight:
+                                            esPadreActual
+                                                ? FontWeight.bold
+                                                : FontWeight.normal,
+                                      ),
+                                    ),
+                                    subtitle: Text(
+                                      'Nivel: ${padre.nivel} | Posición: ${padre.posicion} | Código: ${padre.codCargo}',
+                                      style: const TextStyle(fontSize: 11),
+                                    ),
+                                    trailing:
+                                        esPadreActual
+                                            ? Chip(
+                                              label: const Text(
+                                                'Actual',
+                                                style: TextStyle(fontSize: 10),
+                                              ),
+                                              backgroundColor:
+                                                  Colors.blue.shade100,
+                                              padding: EdgeInsets.zero,
+                                            )
+                                            : const Icon(
+                                              Icons.arrow_forward,
+                                              size: 18,
+                                            ),
+                                    onTap: () {
+                                      Navigator.of(context).pop();
+                                      _confirmReparentar(cargo, padre);
+                                    },
+                                  ),
+                                );
+                              },
+                            ),
                   ),
-                  const Divider(height: 24),
-                  const Text(
-                    'Selecciona el nuevo cargo padre:',
-                    style: TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 12),
-                  Flexible(
-                    child: ListView.builder(
-                      shrinkWrap: true,
-                      itemCount: posiblesPadres.length,
-                      itemBuilder: (context, index) {
-                        final padre = posiblesPadres[index];
-                        return ListTile(
-                          leading: CircleAvatar(
-                            backgroundColor: _getNodeColor(padre),
-                            radius: 20,
-                            child: Text(
-                              '${padre.codNivel}',
-                              style: const TextStyle(fontSize: 12),
+                  const SizedBox(height: 8),
+                  // Leyenda
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade100,
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.info_outline,
+                          size: 14,
+                          color: Colors.grey.shade700,
+                        ),
+                        const SizedBox(width: 4),
+                        Expanded(
+                          child: Text(
+                            'Mostrando ${posiblesPadres.length} cargo(s) disponible(s). Puedes mover a cualquier cargo activo.',
+                            style: TextStyle(
+                              fontSize: 10,
+                              color: Colors.grey.shade700,
                             ),
                           ),
-                          title: Text(padre.descripcion),
-                          subtitle: Text('Nivel: ${padre.codNivel}'),
-                          onTap: () {
-                            Navigator.of(context).pop();
-                            _confirmReparentar(cargo, padre);
-                          },
-                        );
-                      },
+                        ),
+                      ],
                     ),
                   ),
                 ],
@@ -678,43 +985,839 @@ class _CargosScreenState extends ConsumerState<CargosScreen> {
     );
   }
 
-  // Confirmar reparentar
-  void _confirmReparentar(CargoEntity cargo, CargoEntity nuevoPadre) {
+  // Diálogo para reasignar a otra rama
+  void _showReasignarRamaDialog(CargoEntity cargo) {
+    final cargosAsync = ref.read(cargosXEmpresaProvider(widget.codEmpresa));
+    final cargosJerarquicos = cargosAsync.value ?? [];
+
+    // IMPORTANTE: Aplanar la lista jerárquica a una lista plana
+    final todosCargos = _aplanarCargos(cargosJerarquicos);
+
+    // Obtener las ramas principales (solo nivel 0 y 1) - INCLUYE INACTIVOS
+    final ramasPrincipales =
+        todosCargos
+            .where(
+              (c) => c.nivel <= 1 && c.esVisible == 1,
+            ) // Sin filtrar por estado
+            .toList()
+          ..sort((a, b) {
+            if (a.nivel != b.nivel) return a.nivel.compareTo(b.nivel);
+            return a.posicion.compareTo(b.posicion);
+          });
+
     showDialog(
       context: context,
       builder:
           (context) => AlertDialog(
-            title: const Text('Confirmar Reparentar'),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
+            title: Row(
               children: [
-                const Text('¿Estás seguro de cambiar el padre?'),
-                const SizedBox(height: 16),
-                Text('Cargo: ${cargo.descripcion}'),
-                const SizedBox(height: 8),
-                Text('Nuevo padre: ${nuevoPadre.descripcion}'),
-                const SizedBox(height: 16),
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: Colors.orange.shade50,
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(Icons.info, color: Colors.orange.shade700, size: 20),
-                      const SizedBox(width: 8),
-                      const Expanded(
-                        child: Text(
-                          'Esta acción modificará la estructura organizacional.',
-                          style: TextStyle(fontSize: 12),
+                const Icon(Icons.call_split, color: Colors.deepPurple),
+                const SizedBox(width: 8),
+                const Expanded(child: Text('Reasignar a Otra Rama')),
+              ],
+            ),
+            content: SizedBox(
+              width: double.maxFinite,
+              height: MediaQuery.of(context).size.height * 0.6,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Info del cargo a reasignar
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.purple.shade50,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.purple.shade200),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.move_up,
+                              color: Colors.purple.shade700,
+                              size: 20,
+                            ),
+                            const SizedBox(width: 8),
+                            const Text(
+                              'Cargo a reasignar:',
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
                         ),
-                      ),
-                    ],
+                        const SizedBox(height: 6),
+                        Text(
+                          cargo.descripcion,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Rama actual: ${cargo.estadoPadre}',
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: Colors.grey.shade700,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Nivel: ${cargo.nivel} | Posición: ${cargo.posicion}',
+                          style: TextStyle(
+                            fontSize: 10,
+                            color: Colors.grey.shade600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Advertencia sobre el movimiento
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: Colors.amber.shade50,
+                      borderRadius: BorderRadius.circular(6),
+                      border: Border.all(color: Colors.amber.shade300),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.info,
+                          color: Colors.amber.shade700,
+                          size: 18,
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'El cargo y toda su sub-jerarquía se moverán a la rama seleccionada.',
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: Colors.amber.shade900,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+
+                  const Text(
+                    'Selecciona la rama destino:',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                  ),
+                  const SizedBox(height: 8),
+
+                  // Lista de ramas disponibles
+                  Expanded(
+                    child:
+                        ramasPrincipales.isEmpty
+                            ? Center(
+                              child: Text(
+                                'No hay otras ramas disponibles',
+                                style: TextStyle(color: Colors.grey.shade600),
+                              ),
+                            )
+                            : ListView.builder(
+                              shrinkWrap: true,
+                              itemCount: ramasPrincipales.length,
+                              itemBuilder: (context, index) {
+                                final rama = ramasPrincipales[index];
+                                final esInactivo = rama.estado == 0;
+
+                                return Card(
+                                  margin: const EdgeInsets.symmetric(
+                                    vertical: 2,
+                                  ),
+                                  elevation: 0,
+                                  color:
+                                      esInactivo ? Colors.grey.shade100 : null,
+                                  child: ExpansionTile(
+                                    leading: Stack(
+                                      children: [
+                                        Container(
+                                          width: 45,
+                                          height: 45,
+                                          decoration: BoxDecoration(
+                                            color:
+                                                esInactivo
+                                                    ? Colors.grey.shade400
+                                                    : _getNodeColor(rama),
+                                            shape: BoxShape.circle,
+                                            border: Border.all(
+                                              color:
+                                                  esInactivo
+                                                      ? Colors.red
+                                                      : Colors.grey.shade400,
+                                              width: esInactivo ? 2 : 1,
+                                            ),
+                                          ),
+                                          child: const Center(
+                                            child: Icon(
+                                              Icons.account_tree,
+                                              color: Colors.white,
+                                              size: 20,
+                                            ),
+                                          ),
+                                        ),
+                                        if (esInactivo)
+                                          Positioned(
+                                            right: 0,
+                                            bottom: 0,
+                                            child: Container(
+                                              padding: const EdgeInsets.all(2),
+                                              decoration: BoxDecoration(
+                                                color: Colors.red,
+                                                shape: BoxShape.circle,
+                                                border: Border.all(
+                                                  color: Colors.white,
+                                                  width: 1,
+                                                ),
+                                              ),
+                                              child: const Icon(
+                                                Icons.block,
+                                                size: 10,
+                                                color: Colors.white,
+                                              ),
+                                            ),
+                                          ),
+                                      ],
+                                    ),
+                                    title: Row(
+                                      children: [
+                                        Expanded(
+                                          child: Text(
+                                            rama.descripcion,
+                                            style: TextStyle(
+                                              fontSize: 13,
+                                              decoration:
+                                                  esInactivo
+                                                      ? TextDecoration
+                                                          .lineThrough
+                                                      : null,
+                                              color:
+                                                  esInactivo
+                                                      ? Colors.grey.shade600
+                                                      : null,
+                                            ),
+                                          ),
+                                        ),
+                                        if (esInactivo)
+                                          Chip(
+                                            label: const Text(
+                                              'INACTIVO',
+                                              style: TextStyle(
+                                                fontSize: 8,
+                                                color: Colors.white,
+                                              ),
+                                            ),
+                                            backgroundColor:
+                                                Colors.red.shade400,
+                                            padding: EdgeInsets.zero,
+                                            materialTapTargetSize:
+                                                MaterialTapTargetSize
+                                                    .shrinkWrap,
+                                          ),
+                                      ],
+                                    ),
+                                    subtitle: Text(
+                                      'Nivel: ${rama.nivel} | Expande para ver cargos${esInactivo ? " | Desactivado" : ""}',
+                                      style: TextStyle(
+                                        fontSize: 11,
+                                        color:
+                                            esInactivo
+                                                ? Colors.grey.shade500
+                                                : null,
+                                      ),
+                                    ),
+                                    // Los children se construyen solo cuando se expande
+                                    children: _buildCargosDeRamaLazy(
+                                      rama,
+                                      todosCargos,
+                                      cargo,
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                  ),
+                  const SizedBox(height: 8),
+
+                  // Leyenda
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.blue.shade50,
+                      borderRadius: BorderRadius.circular(4),
+                      border: Border.all(color: Colors.blue.shade200),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.info_outline,
+                              size: 14,
+                              color: Colors.blue.shade700,
+                            ),
+                            const SizedBox(width: 4),
+                            Expanded(
+                              child: Text(
+                                'Expande una rama y selecciona el cargo que será el nuevo padre.',
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  color: Colors.blue.shade900,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 4),
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.block,
+                              size: 12,
+                              color: Colors.red.shade600,
+                            ),
+                            const SizedBox(width: 4),
+                            Expanded(
+                              child: Text(
+                                'Los cargos inactivos están disponibles (aparecen tachados con fondo gris)',
+                                style: TextStyle(
+                                  fontSize: 9,
+                                  color: Colors.grey.shade700,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('Cancelar'),
+              ),
+            ],
+          ),
+    );
+  }
+
+  // Obtener cargos disponibles de una rama como posibles padres
+  List<CargoEntity> _obtenerCargosDeRama(
+    CargoEntity raiz,
+    List<CargoEntity> todosCargos,
+    CargoEntity cargoAMover,
+  ) {
+    List<CargoEntity> cargosRama = [raiz];
+    Set<int> visitados = {raiz.codCargo}; // Prevenir ciclos
+
+    void agregarDescendientes(int codPadre) {
+      for (var c in todosCargos) {
+        if (c.codCargoPadre == codPadre &&
+            c.esVisible == 1 &&
+            // MODIFICADO: Incluir cargos inactivos (estado == 0)
+            c.codCargo != cargoAMover.codCargo &&
+            !visitados.contains(c.codCargo)) {
+          visitados.add(c.codCargo);
+          cargosRama.add(c);
+          agregarDescendientes(c.codCargo);
+        }
+      }
+    }
+
+    agregarDescendientes(raiz.codCargo);
+    return cargosRama;
+  }
+
+  // Construir lista de cargos de una rama de forma lazy (solo cuando se expande)
+  List<Widget> _buildCargosDeRamaLazy(
+    CargoEntity rama,
+    List<CargoEntity> todosCargos,
+    CargoEntity cargoAMover,
+  ) {
+    // Obtener cargos de la rama de forma más eficiente
+    final cargosRama = _obtenerCargosDeRama(rama, todosCargos, cargoAMover);
+
+    // Limitar la cantidad si es muy grande
+    final cargosAMostrar = cargosRama.take(50).toList();
+
+    return cargosAMostrar.map((cargoDestino) {
+      final esInactivo = cargoDestino.estado == 0;
+
+      return ListTile(
+        dense: true,
+        contentPadding: const EdgeInsets.only(left: 60, right: 16),
+        // Fondo gris para cargos inactivos
+        tileColor: esInactivo ? Colors.grey.shade100 : null,
+        leading: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 30,
+              height: 30,
+              decoration: BoxDecoration(
+                color:
+                    esInactivo
+                        ? Colors.grey.shade400
+                        : _getNodeColor(cargoDestino),
+                shape: BoxShape.circle,
+                border:
+                    esInactivo ? Border.all(color: Colors.red, width: 2) : null,
+              ),
+              child: Center(
+                child: Text(
+                  'N${cargoDestino.nivel}',
+                  style: const TextStyle(
+                    fontSize: 9,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
                   ),
                 ),
+              ),
+            ),
+            if (esInactivo) ...[
+              const SizedBox(width: 4),
+              Icon(Icons.block, size: 14, color: Colors.red.shade700),
+            ],
+          ],
+        ),
+        title: Row(
+          children: [
+            Expanded(
+              child: Text(
+                cargoDestino.descripcion,
+                style: TextStyle(
+                  fontSize: 12,
+                  decoration: esInactivo ? TextDecoration.lineThrough : null,
+                  color: esInactivo ? Colors.grey.shade600 : null,
+                ),
+              ),
+            ),
+            if (esInactivo)
+              Chip(
+                label: const Text(
+                  'INACTIVO',
+                  style: TextStyle(fontSize: 9, color: Colors.white),
+                ),
+                backgroundColor: Colors.red.shade400,
+                padding: EdgeInsets.zero,
+                materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              ),
+          ],
+        ),
+        subtitle: Text(
+          'Nivel: ${cargoDestino.nivel} | Pos: ${cargoDestino.posicion}${esInactivo ? " | Desactivado" : ""}',
+          style: TextStyle(
+            fontSize: 10,
+            color: esInactivo ? Colors.grey.shade500 : null,
+          ),
+        ),
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Botón para activar/desactivar
+            IconButton(
+              icon: Icon(
+                esInactivo ? Icons.check_circle : Icons.block,
+                color: esInactivo ? Colors.green : Colors.red,
+                size: 20,
+              ),
+              tooltip: esInactivo ? 'Activar cargo' : 'Desactivar cargo',
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(),
+              onPressed: () {
+                Navigator.of(context).pop();
+                if (esInactivo) {
+                  _showActivateConfirmation(cargoDestino);
+                } else {
+                  if (cargoDestino.canDeactivate == 1) {
+                    _showInactivateConfirmation(cargoDestino);
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(
+                          'No se puede desactivar "${cargoDestino.descripcion}" porque tiene dependencias activas',
+                        ),
+                        backgroundColor: Colors.orange,
+                      ),
+                    );
+                  }
+                }
+              },
+            ),
+            const SizedBox(width: 8),
+            // Botón para reasignar
+            IconButton(
+              icon: Icon(
+                Icons.arrow_forward,
+                size: 20,
+                color: esInactivo ? Colors.grey : Colors.blue,
+              ),
+              tooltip: 'Seleccionar como nuevo padre',
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(),
+              onPressed: () {
+                Navigator.of(context).pop();
+                _confirmReasignarRama(cargoAMover, cargoDestino, rama);
+              },
+            ),
+          ],
+        ),
+        onTap: () {
+          // Al hacer tap, mostrar menú de opciones
+          _showCargoQuickActions(context, cargoDestino, cargoAMover, rama);
+        },
+      );
+    }).toList();
+  }
+
+  // Mostrar menú de acciones rápidas para un cargo en el diálogo de reasignar
+  void _showCargoQuickActions(
+    BuildContext context,
+    CargoEntity cargo,
+    CargoEntity cargoAMover,
+    CargoEntity rama,
+  ) {
+    final esInactivo = cargo.estado == 0;
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (BuildContext context) {
+        return Padding(
+          padding: const EdgeInsets.symmetric(vertical: 20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Header
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color:
+                            esInactivo
+                                ? Colors.grey.shade400
+                                : _getNodeColor(cargo),
+                        shape: BoxShape.circle,
+                        border:
+                            esInactivo
+                                ? Border.all(color: Colors.red, width: 2)
+                                : null,
+                      ),
+                      child: Center(
+                        child: Text(
+                          'N${cargo.nivel}',
+                          style: const TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            cargo.descripcion,
+                            style: Theme.of(
+                              context,
+                            ).textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.w600,
+                              decoration:
+                                  esInactivo
+                                      ? TextDecoration.lineThrough
+                                      : null,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          Text(
+                            'Nivel ${cargo.nivel} | Pos ${cargo.posicion}',
+                            style: Theme.of(context).textTheme.bodySmall,
+                          ),
+                        ],
+                      ),
+                    ),
+                    if (esInactivo)
+                      Chip(
+                        label: const Text(
+                          'INACTIVO',
+                          style: TextStyle(fontSize: 9, color: Colors.white),
+                        ),
+                        backgroundColor: Colors.red.shade400,
+                        padding: EdgeInsets.zero,
+                      ),
+                    IconButton(
+                      icon: const Icon(Icons.close),
+                      onPressed: () => Navigator.of(context).pop(),
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
+                    ),
+                  ],
+                ),
+              ),
+              const Divider(height: 24),
+
+              // Seleccionar como nuevo padre
+              ListTile(
+                leading: const Icon(Icons.call_split, color: Colors.deepPurple),
+                title: const Text('Seleccionar como nuevo padre'),
+                subtitle: Text(
+                  'Mover "${cargoAMover.descripcion}" a esta rama',
+                ),
+                trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+                onTap: () {
+                  Navigator.of(context).pop();
+                  Navigator.of(
+                    context,
+                  ).pop(); // Cerrar el diálogo de reasignar también
+                  _confirmReasignarRama(cargoAMover, cargo, rama);
+                },
+              ),
+
+              const Divider(height: 8),
+
+              // Activar/Desactivar
+              if (esInactivo)
+                ListTile(
+                  leading: const Icon(Icons.check_circle, color: Colors.green),
+                  title: const Text(
+                    'Activar cargo',
+                    style: TextStyle(color: Colors.green),
+                  ),
+                  trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+                  onTap: () {
+                    Navigator.of(context).pop();
+                    Navigator.of(
+                      context,
+                    ).pop(); // Cerrar el diálogo de reasignar también
+                    _showActivateConfirmation(cargo);
+                  },
+                )
+              else if (cargo.canDeactivate == 1)
+                ListTile(
+                  leading: const Icon(Icons.block, color: Colors.red),
+                  title: const Text(
+                    'Desactivar cargo',
+                    style: TextStyle(color: Colors.red),
+                  ),
+                  trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+                  onTap: () {
+                    Navigator.of(context).pop();
+                    Navigator.of(
+                      context,
+                    ).pop(); // Cerrar el diálogo de reasignar también
+                    _showInactivateConfirmation(cargo);
+                  },
+                )
+              else
+                ListTile(
+                  leading: Icon(Icons.block, color: Colors.grey.shade400),
+                  title: Text(
+                    'No se puede desactivar',
+                    style: TextStyle(color: Colors.grey.shade600),
+                  ),
+                  subtitle: const Text(
+                    'Tiene empleados o cargos subordinados activos',
+                    style: TextStyle(fontSize: 11),
+                  ),
+                  enabled: false,
+                ),
+
+              // Ver detalles completos
+              ListTile(
+                leading: const Icon(Icons.info_outline),
+                title: const Text('Ver detalles completos'),
+                trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+                onTap: () {
+                  Navigator.of(context).pop();
+                  Navigator.of(
+                    context,
+                  ).pop(); // Cerrar el diálogo de reasignar también
+                  _showCargoDetails(cargo);
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  // Confirmar reasignación a otra rama
+  void _confirmReparentar(CargoEntity cargo, CargoEntity nuevoPadre) {
+    final tieneDependencias =
+        cargo.tieneEmpleadosActivos > 0 || cargo.numHijosActivos > 0;
+
+    showDialog(
+      context: context,
+      builder:
+          (context) => AlertDialog(
+            title: Row(
+              children: [
+                Icon(
+                  tieneDependencias
+                      ? Icons.warning
+                      : Icons.switch_access_shortcut,
+                  color: tieneDependencias ? Colors.orange : Colors.blue,
+                ),
+                const SizedBox(width: 8),
+                const Expanded(child: Text('Confirmar Reparentar')),
               ],
+            ),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    '¿Estás seguro de cambiar el padre de este cargo?',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 16),
+                  Text('Cargo: ${cargo.descripcion}'),
+                  Text('Código: ${cargo.codCargo}'),
+                  const SizedBox(height: 8),
+                  Text('Nuevo padre: ${nuevoPadre.descripcion}'),
+                  Text('Nivel nuevo: ${nuevoPadre.nivel + 1}'),
+                  const SizedBox(height: 16),
+
+                  // Advertencia si tiene dependencias
+                  if (tieneDependencias) ...[
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.orange.shade50,
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                          color: Colors.orange.shade300,
+                          width: 2,
+                        ),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Icon(
+                                Icons.warning_amber,
+                                color: Colors.orange.shade700,
+                                size: 24,
+                              ),
+                              const SizedBox(width: 8),
+                              const Expanded(
+                                child: Text(
+                                  '⚠️ ADVERTENCIA IMPORTANTE',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 13,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+                          const Text(
+                            'Este cargo tiene dependencias:',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 12,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          if (cargo.tieneEmpleadosActivos > 0)
+                            Padding(
+                              padding: const EdgeInsets.only(left: 8),
+                              child: Text(
+                                '• ${cargo.tieneEmpleadosActivos} empleado(s) asignado(s)',
+                                style: const TextStyle(fontSize: 12),
+                              ),
+                            ),
+                          if (cargo.numHijosActivos > 0)
+                            Padding(
+                              padding: const EdgeInsets.only(left: 8),
+                              child: Text(
+                                '• ${cargo.numHijosActivos} cargo(s) subordinado(s)',
+                                style: const TextStyle(fontSize: 12),
+                              ),
+                            ),
+                          const SizedBox(height: 12),
+                          const Text(
+                            'Reparentar este cargo podría afectar:',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 12,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          const Padding(
+                            padding: EdgeInsets.only(left: 8),
+                            child: Text(
+                              '• Reportes jerárquicos\n'
+                              '• Permisos de acceso\n'
+                              '• Flujos de aprobación\n'
+                              '• Estructura de costos\n'
+                              '• Otros módulos del sistema',
+                              style: TextStyle(fontSize: 11),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                  ] else ...[
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.blue.shade50,
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.info,
+                            color: Colors.blue.shade700,
+                            size: 20,
+                          ),
+                          const SizedBox(width: 8),
+                          const Expanded(
+                            child: Text(
+                              'Esta acción modificará la estructura organizacional.',
+                              style: TextStyle(fontSize: 12),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                  ],
+                ],
+              ),
             ),
             actions: [
               TextButton(
@@ -732,6 +1835,376 @@ class _CargosScreenState extends ConsumerState<CargosScreen> {
             ],
           ),
     );
+  }
+
+  // Confirmar reasignación a otra rama
+  void _confirmReasignarRama(
+    CargoEntity cargo,
+    CargoEntity nuevoParaEnRama,
+    CargoEntity ramaDestino,
+  ) {
+    final tieneDependencias =
+        cargo.tieneEmpleadosActivos > 0 || cargo.numHijosActivos > 0;
+    final tieneSubordinados = cargo.numHijosActivos > 0;
+
+    showDialog(
+      context: context,
+      builder:
+          (context) => AlertDialog(
+            title: Row(
+              children: [
+                Icon(
+                  tieneDependencias ? Icons.warning : Icons.call_split,
+                  color: tieneDependencias ? Colors.orange : Colors.deepPurple,
+                ),
+                const SizedBox(width: 8),
+                const Expanded(child: Text('Confirmar Reasignación')),
+              ],
+            ),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    '¿Estás seguro de reasignar este cargo a otra rama?',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Información del cargo
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade100,
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.work,
+                              size: 16,
+                              color: Colors.grey.shade700,
+                            ),
+                            const SizedBox(width: 6),
+                            const Text(
+                              'Cargo a mover:',
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          cargo.descripcion,
+                          style: const TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        Text(
+                          'Código: ${cargo.codCargo} | Nivel actual: ${cargo.nivel}',
+                          style: TextStyle(
+                            fontSize: 10,
+                            color: Colors.grey.shade600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+
+                  // Información del destino
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.arrow_downward,
+                        color: Colors.deepPurple.shade300,
+                      ),
+                      const SizedBox(width: 8),
+                      const Text(
+                        'Se moverá a:',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: Colors.purple.shade50,
+                      borderRadius: BorderRadius.circular(6),
+                      border: Border.all(color: Colors.purple.shade200),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.account_tree,
+                              size: 16,
+                              color: Colors.purple.shade700,
+                            ),
+                            const SizedBox(width: 6),
+                            const Text(
+                              'Rama destino:',
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          ramaDestino.descripcion,
+                          style: const TextStyle(
+                            fontSize: 13,
+                            color: Colors.deepPurple,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.supervisor_account,
+                              size: 14,
+                              color: Colors.grey.shade700,
+                            ),
+                            const SizedBox(width: 6),
+                            const Text(
+                              'Nuevo padre:',
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          nuevoParaEnRama.descripcion,
+                          style: const TextStyle(fontSize: 12),
+                        ),
+                        Text(
+                          'Nuevo nivel: ${nuevoParaEnRama.nivel + 1}',
+                          style: TextStyle(
+                            fontSize: 10,
+                            color: Colors.grey.shade600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Advertencia sobre subordinados
+                  if (tieneSubordinados) ...[
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: Colors.blue.shade50,
+                        borderRadius: BorderRadius.circular(6),
+                        border: Border.all(color: Colors.blue.shade300),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.people,
+                            color: Colors.blue.shade700,
+                            size: 20,
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              'Este cargo tiene ${cargo.numHijosActivos} cargo(s) subordinado(s). Toda la sub-jerarquía se moverá junto con él.',
+                              style: const TextStyle(fontSize: 11),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                  ],
+
+                  // Advertencia si tiene dependencias
+                  if (tieneDependencias) ...[
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.orange.shade50,
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                          color: Colors.orange.shade300,
+                          width: 2,
+                        ),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Icon(
+                                Icons.warning_amber,
+                                color: Colors.orange.shade700,
+                                size: 20,
+                              ),
+                              const SizedBox(width: 8),
+                              const Expanded(
+                                child: Text(
+                                  '⚠️ ADVERTENCIA IMPORTANTE',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 12,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'Este cargo tiene:',
+                            style: const TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Padding(
+                            padding: const EdgeInsets.only(left: 8),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  '• ${cargo.tieneEmpleadosActivos} empleado(s) asignado(s)',
+                                  style: const TextStyle(fontSize: 11),
+                                ),
+                                Text(
+                                  '• ${cargo.numHijosActivos} cargo(s) subordinado(s)',
+                                  style: const TextStyle(fontSize: 11),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          const Text(
+                            'Cambiar de rama podría afectar:',
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Padding(
+                            padding: const EdgeInsets.only(left: 8),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: const [
+                                Text(
+                                  '• Reportes jerárquicos',
+                                  style: TextStyle(fontSize: 11),
+                                ),
+                                Text(
+                                  '• Permisos de acceso',
+                                  style: TextStyle(fontSize: 11),
+                                ),
+                                Text(
+                                  '• Flujos de aprobación',
+                                  style: TextStyle(fontSize: 11),
+                                ),
+                                Text(
+                                  '• Estructura de costos',
+                                  style: TextStyle(fontSize: 11),
+                                ),
+                                Text(
+                                  '• Otros módulos del sistema',
+                                  style: TextStyle(fontSize: 11),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ] else ...[
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.green.shade50,
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.check_circle,
+                            color: Colors.green.shade700,
+                            size: 18,
+                          ),
+                          const SizedBox(width: 8),
+                          const Expanded(
+                            child: Text(
+                              'Este cargo no tiene empleados ni subordinados.',
+                              style: TextStyle(fontSize: 11),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('Cancelar'),
+              ),
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                  _executeReasignarRama(cargo, nuevoParaEnRama);
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor:
+                      tieneDependencias ? Colors.orange : Colors.deepPurple,
+                ),
+                child: const Text('Confirmar Reasignación'),
+              ),
+            ],
+          ),
+    );
+  }
+
+  // Ejecutar reasignación a otra rama
+  void _executeReasignarRama(CargoEntity cargo, CargoEntity nuevoParaEnRama) {
+    // TODO: Implementar la llamada al backend para reasignar
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          'Reasignando ${cargo.descripcion} a rama de ${nuevoParaEnRama.descripcion}...',
+        ),
+        backgroundColor: Colors.deepPurple,
+      ),
+    );
+
+    // Aquí deberías hacer la llamada al backend
+    Future.delayed(const Duration(seconds: 2), () {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Función no implementada en el backend'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+    });
   }
 
   // Ejecutar reparentar
@@ -829,6 +2302,268 @@ class _CargosScreenState extends ConsumerState<CargosScreen> {
       SnackBar(
         content: Text('Inactivando ${cargo.descripcion}...'),
         backgroundColor: Colors.red,
+      ),
+    );
+
+    // Aquí deberías hacer la llamada al backend
+    // Por ahora, solo mostramos un mensaje
+    Future.delayed(const Duration(seconds: 2), () {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Función no implementada en el backend'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+    });
+  }
+
+  // Confirmar activación
+  void _showActivateConfirmation(CargoEntity cargo) {
+    showDialog(
+      context: context,
+      builder:
+          (context) => AlertDialog(
+            title: const Row(
+              children: [
+                Icon(Icons.check_circle, color: Colors.green),
+                SizedBox(width: 8),
+                Text('Confirmar Activación'),
+              ],
+            ),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  '¿Estás seguro de activar este cargo?',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 16),
+                Text('Cargo: ${cargo.descripcion}'),
+                Text('Código: ${cargo.codCargo}'),
+                const SizedBox(height: 16),
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.green.shade50,
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(Icons.info, color: Colors.green.shade700, size: 20),
+                      const SizedBox(width: 8),
+                      const Expanded(
+                        child: Text(
+                          'Esta acción reactivará el cargo en el sistema.',
+                          style: TextStyle(fontSize: 12),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('Cancelar'),
+              ),
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                  _executeActivate(cargo);
+                },
+                style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
+                child: const Text('Activar'),
+              ),
+            ],
+          ),
+    );
+  }
+
+  // Ejecutar activación
+  void _executeActivate(CargoEntity cargo) {
+    // TODO: Implementar la llamada al backend para activar
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Activando ${cargo.descripcion}...'),
+        backgroundColor: Colors.green,
+      ),
+    );
+
+    // Aquí deberías hacer la llamada al backend
+    // Por ahora, solo mostramos un mensaje
+    Future.delayed(const Duration(seconds: 2), () {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Función no implementada en el backend'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+    });
+  }
+
+  // Diálogo para cambiar posición
+  void _showCambiarPosicionDialog(CargoEntity cargo) {
+    final TextEditingController posicionController = TextEditingController(
+      text: cargo.posicion.toString(),
+    );
+    final tieneDependencias =
+        cargo.tieneEmpleadosActivos > 0 || cargo.numHijosActivos > 0;
+
+    showDialog(
+      context: context,
+      builder:
+          (context) => AlertDialog(
+            title: Row(
+              children: [
+                Icon(
+                  tieneDependencias
+                      ? Icons.warning
+                      : Icons.format_list_numbered,
+                  color: tieneDependencias ? Colors.orange : Colors.blue,
+                ),
+                const SizedBox(width: 8),
+                const Expanded(child: Text('Cambiar Posición')),
+              ],
+            ),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Cargo: ${cargo.descripcion}',
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 8),
+                  Text('Nivel actual: ${cargo.nivel}'),
+                  Text('Posición actual: ${cargo.posicion}'),
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: posicionController,
+                    keyboardType: TextInputType.number,
+                    decoration: const InputDecoration(
+                      labelText: 'Nueva posición',
+                      hintText: 'Ingrese la nueva posición',
+                      border: OutlineInputBorder(),
+                      prefixIcon: Icon(Icons.format_list_numbered),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+
+                  // Advertencia si tiene dependencias
+                  if (tieneDependencias) ...[
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.orange.shade50,
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                          color: Colors.orange.shade300,
+                          width: 2,
+                        ),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Icon(
+                                Icons.warning_amber,
+                                color: Colors.orange.shade700,
+                                size: 20,
+                              ),
+                              const SizedBox(width: 8),
+                              const Expanded(
+                                child: Text(
+                                  '⚠️ ADVERTENCIA',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 12,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'Este cargo tiene ${cargo.tieneEmpleadosActivos} empleado(s) y ${cargo.numHijosActivos} cargo(s) subordinado(s).',
+                            style: const TextStyle(fontSize: 11),
+                          ),
+                          const SizedBox(height: 4),
+                          const Text(
+                            'Cambiar la posición podría afectar reportes y visualizaciones en otros módulos.',
+                            style: TextStyle(fontSize: 11),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ] else ...[
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.blue.shade50,
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.info,
+                            color: Colors.blue.shade700,
+                            size: 20,
+                          ),
+                          const SizedBox(width: 8),
+                          const Expanded(
+                            child: Text(
+                              'La posición determina el orden horizontal en el organigrama.',
+                              style: TextStyle(fontSize: 12),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('Cancelar'),
+              ),
+              ElevatedButton(
+                onPressed: () {
+                  final nuevaPosicion = int.tryParse(posicionController.text);
+                  if (nuevaPosicion != null &&
+                      nuevaPosicion != cargo.posicion) {
+                    Navigator.of(context).pop();
+                    _executeCambiarPosicion(cargo, nuevaPosicion);
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Por favor ingrese una posición válida'),
+                        backgroundColor: Colors.orange,
+                      ),
+                    );
+                  }
+                },
+                child: const Text('Cambiar'),
+              ),
+            ],
+          ),
+    );
+  }
+
+  // Ejecutar cambio de posición
+  void _executeCambiarPosicion(CargoEntity cargo, int nuevaPosicion) {
+    // TODO: Implementar la llamada al backend para cambiar posición
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          'Cambiando posición de ${cargo.descripcion} a $nuevaPosicion...',
+        ),
+        backgroundColor: Colors.blue,
       ),
     );
 

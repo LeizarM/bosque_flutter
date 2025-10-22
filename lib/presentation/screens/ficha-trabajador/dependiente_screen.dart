@@ -1429,7 +1429,7 @@ Widget _buildReporteDependientesXEdadBtn(BuildContext context, WidgetRef ref) {
         _ReporteOption(
             title: 'Dependientes hijos en general',
             filename: 'RptDependientesHijos.pdf',
-            permissionName: 'btnRptConsumoTigo',
+            permissionName: 'btnRptDepXEDAD',
             provider: jasperPdfDependientesHijos, 
         ),
         // ¡Agrega más reportes aquí!
@@ -1456,7 +1456,7 @@ Widget _buildReporteDependientesXEdadBtn(BuildContext context, WidgetRef ref) {
 
     // 4. Si hay más de una opción, mostramos el botón de menú (PopupMenuButton)
     return PermissionWidget(
-        buttonName: 'BTN_GRUPO_REPORTES', // Permiso para ver el grupo
+        buttonName: 'btnRptDepXEDAD', // Permiso para ver el grupo
         
         // El PopupMenuButton encapsula la funcionalidad del menú
         child: PopupMenuButton<_ReporteOption>(
