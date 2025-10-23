@@ -33,6 +33,8 @@ class CargoEntity {
 
   List<CargoEntity> items;
 
+  int codCargoPadreOriginal;
+
   CargoEntity({
     required this.codCargo,
     required this.codCargoPadre,
@@ -66,5 +68,6 @@ class CargoEntity {
     required this.estadoPadre,
     required this.esVisible,
     required this.items,
+    required this.codCargoPadreOriginal,
   });
 }

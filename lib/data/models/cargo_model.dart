@@ -40,6 +40,7 @@ class CargoModel {
   int esVisible;
 
   List<CargoModel>? items;
+  int codCargoPadreOriginal;
 
   CargoModel({
     required this.codCargo,
@@ -74,6 +75,7 @@ class CargoModel {
     required this.estadoPadre,
     required this.esVisible,
     required this.items,
+    required this.codCargoPadreOriginal,
   });
 
   factory CargoModel.fromJson(Map<String, dynamic> json) => CargoModel(
@@ -114,6 +116,7 @@ class CargoModel {
                 .map((item) => CargoModel.fromJson(item))
                 .toList()
             : null,
+    codCargoPadreOriginal: json["codCargoPadreOriginal"] ?? 0,
   );
 
   Map<String, dynamic> toJson() => {
@@ -149,6 +152,7 @@ class CargoModel {
     "esVisible": esVisible,
     "items":
         items != null ? items!.map((item) => item.toJson()).toList() : null,
+    "codCargoPadreOriginal": codCargoPadreOriginal,
   };
 
   // Método para convertir de Model a Entity
@@ -184,6 +188,7 @@ class CargoModel {
     esVisible: esVisible,
     items:
         items != null ? items!.map((model) => model.toEntity()).toList() : [],
+    codCargoPadreOriginal: codCargoPadreOriginal,
   );
 
   // Método factory para convertir de Entity a Model
@@ -219,5 +224,6 @@ class CargoModel {
     estadoPadre: entity.estadoPadre,
     esVisible: entity.esVisible,
     items: entity.items.map((e) => CargoModel.fromEntity(e)).toList(),
+    codCargoPadreOriginal: entity.codCargoPadreOriginal,
   );
 }

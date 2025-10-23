@@ -1,6 +1,8 @@
 import 'package:bosque_flutter/core/state/rrhh_provider.dart';
 import 'package:bosque_flutter/domain/entities/cargo_entity.dart';
 import 'package:bosque_flutter/presentation/screens/estructura-organizacional/organigrama_custom.dart';
+import 'package:bosque_flutter/presentation/widgets/estructura-organizacional/cargo_actions_bottom_sheet.dart';
+import 'package:bosque_flutter/presentation/widgets/estructura-organizacional/editar_cargo_form.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -436,222 +438,31 @@ class _CargosScreenState extends ConsumerState<CargosScreen> {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),
-      builder: (BuildContext context) {
-        return Padding(
-          padding: const EdgeInsets.symmetric(vertical: 20),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Header
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Row(
-                  children: [
-                    Icon(
-                      _getStatusIcon(cargo),
-                      color: Theme.of(context).primaryColor,
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Text(
-                        cargo.descripcion,
-                        style: Theme.of(context).textTheme.titleMedium
-                            ?.copyWith(fontWeight: FontWeight.w600),
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.close),
-                      onPressed: () => Navigator.of(context).pop(),
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(),
-                    ),
-                  ],
+      builder:
+          (context) => CargoActionsBottomSheet(
+            cargo: cargo,
+            onViewDetails: () {
+              Navigator.of(context).pop();
+              _showCargoDetails(cargo);
+            },
+            onEdit: () {
+              Navigator.of(context).pop();
+              _showEditarCargoForm(cargo);
+            },
+            onDuplicate: () {
+              Navigator.of(context).pop();
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Función no implementada aún'),
+                  backgroundColor: Colors.orange,
                 ),
-              ),
-              const Divider(height: 24),
-
-              // Ver detalles
-              ListTile(
-                leading: const Icon(Icons.info_outline),
-                title: const Text('Ver detalles'),
-                trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-                onTap: () {
-                  Navigator.of(context).pop();
-                  _showCargoDetails(cargo);
-                },
-              ),
-
-              // Duplicar cargo
-              ListTile(
-                leading: const Icon(Icons.content_copy, color: Colors.blue),
-                title: const Text('Duplicar cargo'),
-                subtitle: const Text(
-                  'Crear nuevo cargo con las mismas configuraciones',
-                  style: TextStyle(fontSize: 11),
-                ),
-                trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-                onTap: () {
-                  Navigator.of(context).pop();
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Función no implementada aún'),
-                      backgroundColor: Colors.orange,
-                    ),
-                  );
-                },
-              ),
-
-              const Divider(height: 8),
-
-              // Reparentar (cambiar padre) - Siempre disponible para cargos activos
-              if (cargo.estado == 1) ...[
-                ListTile(
-                  leading: Icon(
-                    Icons.switch_access_shortcut,
-                    color: cargo.canDeactivate == 0 ? Colors.orange : null,
-                  ),
-                  title: Row(
-                    children: [
-                      const Text('Reparentar (Cambiar padre)'),
-                      if (cargo.canDeactivate == 0) ...[
-                        const SizedBox(width: 8),
-                        Icon(
-                          Icons.warning_amber,
-                          size: 16,
-                          color: Colors.orange.shade700,
-                        ),
-                      ],
-                    ],
-                  ),
-                  trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-                  onTap: () {
-                    Navigator.of(context).pop();
-                    _showReparentarDialog(cargo);
-                  },
-                ),
-              ],
-
-              // Cambiar posición - Siempre disponible para cargos activos
-              if (cargo.estado == 1) ...[
-                ListTile(
-                  leading: Icon(
-                    Icons.format_list_numbered,
-                    color: cargo.canDeactivate == 0 ? Colors.orange : null,
-                  ),
-                  title: Row(
-                    children: [
-                      const Text('Cambiar posición'),
-                      if (cargo.canDeactivate == 0) ...[
-                        const SizedBox(width: 8),
-                        Icon(
-                          Icons.warning_amber,
-                          size: 16,
-                          color: Colors.orange.shade700,
-                        ),
-                      ],
-                    ],
-                  ),
-                  trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-                  onTap: () {
-                    Navigator.of(context).pop();
-                    _showCambiarPosicionDialog(cargo);
-                  },
-                ),
-              ],
-
-              // Reasignar a otra rama - Siempre disponible para cargos activos
-              if (cargo.estado == 1) ...[
-                ListTile(
-                  leading: Icon(
-                    Icons.call_split,
-                    color:
-                        cargo.canDeactivate == 0
-                            ? Colors.purple
-                            : Colors.deepPurple,
-                  ),
-                  title: Row(
-                    children: [
-                      const Text('Reasignar a otra rama'),
-                      if (cargo.canDeactivate == 0) ...[
-                        const SizedBox(width: 8),
-                        Icon(
-                          Icons.warning_amber,
-                          size: 16,
-                          color: Colors.orange.shade700,
-                        ),
-                      ],
-                    ],
-                  ),
-                  subtitle: const Text(
-                    'Mover cargo a otra rama del organigrama',
-                    style: TextStyle(fontSize: 11),
-                  ),
-                  trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-                  onTap: () {
-                    Navigator.of(context).pop();
-                    _showReasignarRamaDialog(cargo);
-                  },
-                ),
-              ],
-
-              const Divider(height: 8),
-
-              // Activar o Inactivar cargo - Siempre visible
-              if (cargo.estado == 1) ...[
-                // Cargo activo - Opción para inactivar
-                if (cargo.canDeactivate == 1)
-                  ListTile(
-                    leading: const Icon(Icons.block, color: Colors.red),
-                    title: const Text(
-                      'Desactivar cargo',
-                      style: TextStyle(color: Colors.red),
-                    ),
-                    trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-                    onTap: () {
-                      Navigator.of(context).pop();
-                      _showInactivateConfirmation(cargo);
-                    },
-                  )
-                else
-                  ListTile(
-                    leading: Icon(Icons.block, color: Colors.grey.shade400),
-                    title: Text(
-                      'Desactivar cargo',
-                      style: TextStyle(color: Colors.grey.shade600),
-                    ),
-                    subtitle: const Text(
-                      'No disponible: tiene dependencias activas',
-                      style: TextStyle(fontSize: 11),
-                    ),
-                    trailing: Icon(
-                      Icons.warning_amber,
-                      color: Colors.orange.shade700,
-                      size: 20,
-                    ),
-                    enabled: false,
-                  ),
-              ] else ...[
-                // Cargo inactivo - Opción para activar
-                ListTile(
-                  leading: const Icon(Icons.check_circle, color: Colors.green),
-                  title: const Text(
-                    'Activar cargo',
-                    style: TextStyle(color: Colors.green),
-                  ),
-                  trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-                  onTap: () {
-                    Navigator.of(context).pop();
-                    _showActivateConfirmation(cargo);
-                  },
-                ),
-              ],
-            ],
+              );
+            },
           ),
-        );
-      },
     );
   }
+
+  // Old bottom sheet code removed - using CargoActionsBottomSheet widget instead
 
   // Mostrar detalles del cargo
   void _showCargoDetails(CargoEntity cargo) {
@@ -2402,6 +2213,395 @@ class _CargosScreenState extends ConsumerState<CargosScreen> {
       );
     });
   }
+
+  // ============================================================================
+  // MÉTODOS DEL FORMULARIO UNIFICADO DE EDICIÓN
+  // ============================================================================
+
+  // Mostrar formulario unificado de edición
+  void _showEditarCargoForm(CargoEntity cargo) {
+    final cargosAsync = ref.read(cargosXEmpresaProvider(widget.codEmpresa));
+    final cargos = cargosAsync.value ?? [];
+    final todosCargos = _aplanarCargos(cargos);
+
+    showDialog(
+      context: context,
+      builder:
+          (context) => EditarCargoForm(
+            cargo: cargo,
+            todosCargos: todosCargos,
+            onGuardar: (data) {
+              _procesarCambiosCargo(data, cargo);
+            },
+          ),
+    );
+  }
+
+  // Procesar cambios del formulario de edición - CON CONFIRMACIÓN DETALLADA
+  void _procesarCambiosCargo(CargoEditData data, CargoEntity cargoOriginal) {
+    // Construir resumen de cambios
+    final cambios = <String, String>{};
+
+    // Detectar cambios en estado
+    if (data.nuevoEstado != cargoOriginal.estado) {
+      cambios['Estado'] =
+          '${cargoOriginal.estado == 1 ? "Activo" : "Inactivo"} → ${data.nuevoEstado == 1 ? "Activo" : "Inactivo"}';
+    }
+
+    // Detectar cambios en posición
+    if (data.nuevaPosicion != cargoOriginal.posicion) {
+      cambios['Posición'] = '${cargoOriginal.posicion} → ${data.nuevaPosicion}';
+    }
+
+    // Detectar cambios en padre
+    if (data.nuevoCargoPadre != null &&
+        data.nuevoCargoPadre != cargoOriginal.codCargoPadre) {
+      final cargosValue =
+          ref.read(cargosXEmpresaProvider(widget.codEmpresa)).value;
+      if (cargosValue != null) {
+        final todosCargos = _aplanarCargos(cargosValue);
+
+        // Padre anterior
+        final padreAnterior =
+            cargoOriginal.codCargoPadre == 0
+                ? 'Ninguno (Raíz)'
+                : todosCargos
+                    .firstWhere(
+                      (c) => c.codCargo == cargoOriginal.codCargoPadre,
+                      orElse: () => todosCargos.first,
+                    )
+                    .descripcion;
+
+        // Padre nuevo
+        final padreNuevo =
+            data.nuevoCargoPadre == 0
+                ? 'Ninguno (Raíz)'
+                : todosCargos
+                    .firstWhere(
+                      (c) => c.codCargo == data.nuevoCargoPadre,
+                      orElse: () => todosCargos.first,
+                    )
+                    .descripcion;
+
+        cambios['Padre'] = '$padreAnterior → $padreNuevo';
+      }
+    }
+
+    // Si no hay cambios, informar al usuario
+    if (cambios.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('⚠️ No se detectaron cambios'),
+          backgroundColor: Colors.orange,
+          duration: Duration(seconds: 2),
+        ),
+      );
+      return;
+    }
+
+    // Mostrar diálogo de confirmación con los datos a enviar
+    showDialog(
+      context: context,
+      builder:
+          (context) => AlertDialog(
+            title: Row(
+              children: [
+                Icon(Icons.preview, color: Theme.of(context).primaryColor),
+                const SizedBox(width: 12),
+                const Text('Confirmar Cambios'),
+              ],
+            ),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Info del cargo
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.blue.shade50,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.blue.shade200),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Cargo',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey.shade600,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          cargoOriginal.descripcion,
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        Text(
+                          'Código: ${cargoOriginal.codCargo}',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey.shade600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Título de cambios
+                  Text(
+                    'Datos a enviar al backend:',
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+
+                  // Lista de cambios
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade50,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.grey.shade300),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Datos que se enviarán
+                        _buildDataRow(
+                          'codCargo',
+                          data.codCargo.toString(),
+                          Colors.blue,
+                        ),
+                        if (cambios.containsKey('Estado'))
+                          _buildDataRow(
+                            'estado',
+                            data.nuevoEstado.toString(),
+                            Colors.green,
+                          ),
+                        if (cambios.containsKey('Posición'))
+                          _buildDataRow(
+                            'posicion',
+                            data.nuevaPosicion.toString(),
+                            Colors.orange,
+                          ),
+                        if (cambios.containsKey('Padre'))
+                          _buildDataRow(
+                            'codCargoPadre',
+                            data.nuevoCargoPadre.toString(),
+                            Colors.purple,
+                          ),
+
+                        const Divider(height: 16),
+
+                        // Resumen de cambios legible
+                        ...cambios.entries.map(
+                          (entry) => Padding(
+                            padding: const EdgeInsets.only(bottom: 8),
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Icon(
+                                  Icons.arrow_forward,
+                                  size: 16,
+                                  color: Colors.grey.shade600,
+                                ),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: RichText(
+                                    text: TextSpan(
+                                      style: TextStyle(
+                                        fontSize: 13,
+                                        color: Colors.grey.shade800,
+                                      ),
+                                      children: [
+                                        TextSpan(
+                                          text: '${entry.key}: ',
+                                          style: const TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                        TextSpan(text: entry.value),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  // Advertencias
+                  if (data.nuevoEstado == 0 &&
+                      cargoOriginal.numHijosActivos > 0)
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.deepOrange.shade50,
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                          color: Colors.deepOrange.shade300,
+                          width: 2,
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.warning,
+                            color: Colors.deepOrange.shade700,
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              '⚠️ Este cargo tiene ${cargoOriginal.numHijosActivos} subordinado(s) activo(s)',
+                              style: TextStyle(
+                                color: Colors.deepOrange.shade900,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('Cancelar'),
+              ),
+              ElevatedButton.icon(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                  _enviarCambiosAlBackend(data);
+                },
+                icon: const Icon(Icons.send),
+                label: const Text('Enviar al Backend'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.green,
+                  foregroundColor: Colors.white,
+                ),
+              ),
+            ],
+          ),
+    );
+  }
+
+  // Widget helper para mostrar filas de datos
+  Widget _buildDataRow(String key, String value, Color color) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 6),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(4),
+              border: Border.all(color: color.withOpacity(0.3)),
+            ),
+            child: Text(
+              key,
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.bold,
+                color: color.withOpacity(0.9),
+                fontFamily: 'monospace',
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+          const Text(':', style: TextStyle(fontWeight: FontWeight.bold)),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              value,
+              style: const TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                fontFamily: 'monospace',
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Enviar cambios al backend (aquí irá la llamada real al API)
+  void _enviarCambiosAlBackend(CargoEditData data) {
+    // TODO: Aquí deberías hacer la llamada al backend con los cambios
+
+    // Mostrar los datos que se enviarían en formato JSON
+    final jsonData = {
+      'codCargo': data.codCargo,
+      'nuevoEstado': data.nuevoEstado,
+      'nuevaPosicion': data.nuevaPosicion,
+      if (data.nuevoCargoPadre != null) 'nuevoCargoPadre': data.nuevoCargoPadre,
+    };
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              '📤 Datos a enviar al backend:',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              jsonData.toString(),
+              style: const TextStyle(fontSize: 11, fontFamily: 'monospace'),
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              '⚠️ Función no implementada en el backend aún',
+              style: TextStyle(fontSize: 11),
+            ),
+          ],
+        ),
+        backgroundColor: Colors.blue,
+        duration: const Duration(seconds: 6),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+
+    // Simulación de llamada al backend
+    Future.delayed(const Duration(seconds: 2), () {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('✅ Cambios guardados exitosamente (simulado)'),
+            backgroundColor: Colors.green,
+            duration: Duration(seconds: 2),
+          ),
+        );
+
+        // Refrescar la lista de cargos
+        ref.invalidate(cargosXEmpresaProvider(widget.codEmpresa));
+      }
+    });
+  }
+
+  // ============================================================================
+  // FIN DE MÉTODOS DEL FORMULARIO UNIFICADO
+  // ============================================================================
 
   // Diálogo para cambiar posición
   void _showCambiarPosicionDialog(CargoEntity cargo) {

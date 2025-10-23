@@ -1,6 +1,12 @@
+import 'dart:typed_data';
 import 'package:bosque_flutter/domain/entities/cargo_entity.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:graphview/GraphView.dart';
+import 'dart:ui' as ui;
+import 'package:flutter/foundation.dart' show kIsWeb;
+// ignore: avoid_web_libraries_in_flutter, deprecated_member_use
+import 'dart:html' as html;
 
 class OrganigramaCustom extends StatefulWidget {
   final List<CargoEntity> cargos;
@@ -21,6 +27,7 @@ class _OrganigramaCustomState extends State<OrganigramaCustom> {
   BuchheimWalkerConfiguration builder = BuchheimWalkerConfiguration();
   final TransformationController _transformationController =
       TransformationController();
+  final GlobalKey _organigramaKey = GlobalKey();
   Map<int, Node> nodeMap = {};
   Map<int, CargoEntity> cargoMap = {};
 
@@ -79,6 +86,127 @@ class _OrganigramaCustomState extends State<OrganigramaCustom> {
     }
   }
 
+  // Método para capturar el organigrama completo en alta calidad
+  Future<void> exportarOrganigrama(BuildContext context) async {
+    // Usar un contexto del diálogo directamente
+    BuildContext? dialogContext;
+
+    try {
+      // Mostrar loading
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (BuildContext ctx) {
+          dialogContext = ctx;
+          return const Center(
+            child: Card(
+              child: Padding(
+                padding: EdgeInsets.all(20),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    CircularProgressIndicator(),
+                    SizedBox(height: 16),
+                    Text('Generando imagen ...'),
+                  ],
+                ),
+              ),
+            ),
+          );
+        },
+      );
+
+      // Esperar un frame
+      await Future.delayed(const Duration(milliseconds: 200));
+
+      // Encontrar el RenderRepaintBoundary
+      RenderRepaintBoundary boundary =
+          _organigramaKey.currentContext!.findRenderObject()
+              as RenderRepaintBoundary;
+
+      // Capturar la imagen COMPLETA con ALTA CALIDAD (pixelRatio: 3.0 para mejor resolución)
+      // Esto capturará TODO el contenido del RepaintBoundary, no solo lo visible
+      ui.Image originalImage = await boundary.toImage(pixelRatio: 3.0);
+
+      // Convertir directamente a PNG sin redimensionar (mantener calidad original)
+      ByteData? byteData = await originalImage.toByteData(
+        format: ui.ImageByteFormat.png,
+      );
+      Uint8List pngBytes = byteData!.buffer.asUint8List();
+
+      // Información del tamaño para el usuario
+      final int ancho = originalImage.width;
+      final int alto = originalImage.height;
+
+      // Liberar recursos
+      originalImage.dispose();
+
+      // Cerrar loading
+      if (dialogContext != null && dialogContext!.mounted) {
+        Navigator.of(dialogContext!).pop();
+      }
+
+      // Descargar el archivo (funciona en Web)
+      if (kIsWeb) {
+        final blob = html.Blob([pngBytes]);
+        final url = html.Url.createObjectUrlFromBlob(blob);
+        final anchor =
+            html.document.createElement('a') as html.AnchorElement
+              ..href = url
+              ..style.display = 'none'
+              ..download =
+                  'organigrama_${DateTime.now().millisecondsSinceEpoch}.png';
+        html.document.body?.children.add(anchor);
+
+        // Click para descargar
+        anchor.click();
+
+        // Limpiar después de un momento
+        Future.delayed(const Duration(milliseconds: 500), () {
+          html.document.body?.children.remove(anchor);
+          html.Url.revokeObjectUrl(url);
+        });
+
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                'Organigrama exportado en alta calidad\nResolución: ${ancho}x${alto} pixels',
+              ),
+              backgroundColor: Colors.green,
+              duration: Duration(seconds: 4),
+            ),
+          );
+        }
+      } else {
+        // Para plataformas móviles/desktop (no implementado aún)
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Exportación solo disponible en versión Web'),
+              backgroundColor: Colors.orange,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      // Cerrar loading si está abierto
+      if (dialogContext != null && dialogContext!.mounted) {
+        Navigator.of(dialogContext!).pop();
+      }
+
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error al exportar: $e'),
+            backgroundColor: Colors.red,
+            duration: Duration(seconds: 4),
+          ),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     if (widget.cargos.isEmpty) {
@@ -87,27 +215,82 @@ class _OrganigramaCustomState extends State<OrganigramaCustom> {
 
     _buildGraph();
 
-    return InteractiveViewer(
-      constrained: false,
-      boundaryMargin: const EdgeInsets.all(200),
-      minScale: 0.1,
-      maxScale: 5.0,
-      transformationController: _transformationController,
-      child: GraphView(
-        graph: graph,
-        algorithm: BuchheimWalkerAlgorithm(builder, TreeEdgeRenderer(builder)),
-        paint:
-            Paint()
-              ..color = Colors.grey.shade400
-              ..strokeWidth = 2
-              ..style = PaintingStyle.stroke,
-        builder: (Node node) {
-          final codCargo = node.key!.value as int;
-          final cargo = cargoMap[codCargo];
-          if (cargo == null) return const SizedBox.shrink();
-          return _buildNodeWidget(cargo);
-        },
-      ),
+    return Stack(
+      children: [
+        // Organigrama visible con InteractiveViewer
+        InteractiveViewer(
+          constrained: false,
+          boundaryMargin: const EdgeInsets.all(200),
+          minScale: 0.1,
+          maxScale: 5.0,
+          transformationController: _transformationController,
+          child: Container(
+            color: Colors.white,
+            child: GraphView(
+              graph: graph,
+              algorithm: BuchheimWalkerAlgorithm(
+                builder,
+                TreeEdgeRenderer(builder),
+              ),
+              paint:
+                  Paint()
+                    ..color = Colors.grey.shade400
+                    ..strokeWidth = 2
+                    ..style = PaintingStyle.stroke,
+              builder: (Node node) {
+                final codCargo = node.key!.value as int;
+                final cargo = cargoMap[codCargo];
+                if (cargo == null) return const SizedBox.shrink();
+                return _buildNodeWidget(cargo);
+              },
+            ),
+          ),
+        ),
+        // Organigrama invisible pero completo para captura (fuera de pantalla)
+        Positioned(
+          left: -50000, // Fuera de la vista
+          top: -50000,
+          child: RepaintBoundary(
+            key: _organigramaKey,
+            child: Container(
+              color: Colors.white,
+              padding: const EdgeInsets.all(
+                50,
+              ), // Padding para que no se corten los bordes
+              child: GraphView(
+                graph: graph,
+                algorithm: BuchheimWalkerAlgorithm(
+                  builder,
+                  TreeEdgeRenderer(builder),
+                ),
+                paint:
+                    Paint()
+                      ..color = Colors.grey.shade400
+                      ..strokeWidth = 2
+                      ..style = PaintingStyle.stroke,
+                builder: (Node node) {
+                  final codCargo = node.key!.value as int;
+                  final cargo = cargoMap[codCargo];
+                  if (cargo == null) return const SizedBox.shrink();
+                  return _buildNodeWidget(cargo);
+                },
+              ),
+            ),
+          ),
+        ),
+        // Botón flotante para exportar
+        Positioned(
+          bottom: 16,
+          right: 16,
+          child: FloatingActionButton.extended(
+            onPressed: () => exportarOrganigrama(context),
+            icon: const Icon(Icons.download),
+            label: const Text('Exportar'),
+            backgroundColor: Colors.blue,
+            tooltip: 'Exportar organigrama en alta calidad',
+          ),
+        ),
+      ],
     );
   }
 

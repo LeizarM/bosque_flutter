@@ -136,20 +136,25 @@ class EstructuraOrganizacionalEmpresaScreen extends ConsumerWidget {
         },
       );
     } else {
-      // Desktop/Web: GridView
+      // Desktop/Web: GridView mejorado
       final gridDimensions = ResponsiveUtilsBosque.getGridDimensions(context);
       return GridView.builder(
+        padding: const EdgeInsets.all(24),
         gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
           crossAxisCount: gridDimensions.crossAxisCount,
-          childAspectRatio: gridDimensions.childAspectRatio,
-          crossAxisSpacing: gridDimensions.crossAxisSpacing,
-          mainAxisSpacing: gridDimensions.mainAxisSpacing,
+          childAspectRatio: 1.8, // Más ancho para mejor presentación
+          crossAxisSpacing: 24,
+          mainAxisSpacing: 24,
         ),
         itemCount: empresas.length,
         itemBuilder: (context, index) {
           final empresa = empresas[index];
           return Card(
-            elevation: 4,
+            elevation: 2,
+            shadowColor: Colors.black26,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
             child: InkWell(
               onTap: () {
                 ref
@@ -157,33 +162,124 @@ class EstructuraOrganizacionalEmpresaScreen extends ConsumerWidget {
                     .selectEmpresa(empresa);
                 _showEmpresaActionsBottomSheet(context, empresa);
               },
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        CircleAvatar(child: Text(empresa.nombre[0])),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Text(
-                            empresa.nombre,
-                            style: Theme.of(context).textTheme.titleMedium
-                                ?.copyWith(fontWeight: FontWeight.bold),
+              borderRadius: BorderRadius.circular(16),
+              child: Container(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(16),
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [Colors.blue.shade50, Colors.white],
+                  ),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Container(
+                            width: 56,
+                            height: 56,
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                                colors: [
+                                  Theme.of(context).primaryColor,
+                                  Theme.of(
+                                    context,
+                                  ).primaryColor.withOpacity(0.7),
+                                ],
+                              ),
+                              borderRadius: BorderRadius.circular(12),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Theme.of(
+                                    context,
+                                  ).primaryColor.withOpacity(0.3),
+                                  blurRadius: 8,
+                                  offset: const Offset(0, 4),
+                                ),
+                              ],
+                            ),
+                            child: Center(
+                              child: Text(
+                                empresa.nombre[0].toUpperCase(),
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 28,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
                           ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    if (empresa.sigla.isNotEmpty) ...[
-                      Text(
-                        'Sigla: ${empresa.sigla}',
-                        style: Theme.of(context).textTheme.bodySmall,
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  empresa.nombre,
+                                  style: Theme.of(
+                                    context,
+                                  ).textTheme.titleLarge?.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 18,
+                                  ),
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                if (empresa.sigla.isNotEmpty) ...[
+                                  const SizedBox(height: 4),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 8,
+                                      vertical: 4,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: Colors.blue.shade100,
+                                      borderRadius: BorderRadius.circular(6),
+                                    ),
+                                    child: Text(
+                                      empresa.sigla,
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w600,
+                                        color: Colors.blue.shade900,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      const Spacer(),
+                      const Divider(),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          Icon(
+                            Icons.arrow_forward_ios,
+                            size: 16,
+                            color: Theme.of(context).primaryColor,
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            'Ver detalles',
+                            style: TextStyle(
+                              color: Theme.of(context).primaryColor,
+                              fontWeight: FontWeight.w600,
+                              fontSize: 13,
+                            ),
+                          ),
+                        ],
                       ),
                     ],
-                    const Spacer(),
-                  ],
+                  ),
                 ),
               ),
             ),
