@@ -1,9 +1,11 @@
+import 'package:bosque_flutter/core/state/rrhh_provider.dart';
 import 'package:bosque_flutter/domain/entities/cargo_entity.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// Formulario unificado para editar todas las propiedades de un cargo
-class EditarCargoForm extends StatefulWidget {
+class EditarCargoForm extends ConsumerStatefulWidget {
   final CargoEntity cargo;
   final List<CargoEntity> todosCargos;
   final Function(CargoEditData) onGuardar;
@@ -16,32 +18,37 @@ class EditarCargoForm extends StatefulWidget {
   });
 
   @override
-  State<EditarCargoForm> createState() => _EditarCargoFormState();
+  ConsumerState<EditarCargoForm> createState() => _EditarCargoFormState();
 }
 
-class _EditarCargoFormState extends State<EditarCargoForm>
+class _EditarCargoFormState extends ConsumerState<EditarCargoForm>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
   final _formKey = GlobalKey<FormState>();
 
   // Controladores
+  late TextEditingController _nombreController;
   late TextEditingController _posicionController;
   CargoEntity? _nuevoCargoPadre;
   bool _estadoActivo = true;
+  int? _nivelJerarquicoSeleccionado; // Nivel jerárquico seleccionado
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
+    _nombreController = TextEditingController(text: widget.cargo.descripcion);
     _posicionController = TextEditingController(
       text: widget.cargo.posicion.toString(),
     );
     _estadoActivo = widget.cargo.estado == 1;
+    _nivelJerarquicoSeleccionado = widget.cargo.codNivel;
   }
 
   @override
   void dispose() {
     _tabController.dispose();
+    _nombreController.dispose();
     _posicionController.dispose();
     super.dispose();
   }
@@ -192,6 +199,51 @@ class _EditarCargoFormState extends State<EditarCargoForm>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // 🆕 CAMPO PARA EDITAR NOMBRE DEL CARGO
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(Icons.badge, color: Theme.of(context).primaryColor),
+                      const SizedBox(width: 8),
+                      Text(
+                        'Nombre del Cargo',
+                        style: Theme.of(context).textTheme.titleMedium
+                            ?.copyWith(fontWeight: FontWeight.bold),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  TextFormField(
+                    controller: _nombreController,
+                    decoration: const InputDecoration(
+                      labelText: 'Nombre del cargo *',
+                      hintText: 'Ej: Gerente de Ventas',
+                      border: OutlineInputBorder(),
+                      prefixIcon: Icon(Icons.work),
+                    ),
+                    validator: (value) {
+                      if (value == null || value.trim().isEmpty) {
+                        return 'El nombre del cargo es obligatorio';
+                      }
+                      if (value.trim().length < 3) {
+                        return 'El nombre debe tener al menos 3 caracteres';
+                      }
+                      return null;
+                    },
+                    maxLength: 100,
+                    textCapitalization: TextCapitalization.words,
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+
           // Estado actual
           Card(
             color: estaActivo ? Colors.green.shade50 : Colors.red.shade50,
@@ -371,6 +423,8 @@ class _EditarCargoFormState extends State<EditarCargoForm>
   }
 
   Widget _buildPosicionTab() {
+    final nivelesAsync = ref.watch(nivelesJerarquicosProvider);
+
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -385,7 +439,7 @@ class _EditarCargoFormState extends State<EditarCargoForm>
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Posición Actual',
+                    'Información Actual',
                     style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
                   ),
                   const SizedBox(height: 8),
@@ -405,12 +459,24 @@ class _EditarCargoFormState extends State<EditarCargoForm>
                         ),
                       ),
                       const SizedBox(width: 16),
-                      Text(
-                        'Nivel: ${widget.cargo.nivel}',
-                        style: TextStyle(
-                          fontSize: 16,
-                          color: Colors.grey.shade600,
-                        ),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Posición: ${widget.cargo.posicion}',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Colors.grey.shade600,
+                            ),
+                          ),
+                          Text(
+                            'Nivel Jerárquico: ${widget.cargo.codNivel}',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Colors.grey.shade600,
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),
@@ -420,9 +486,62 @@ class _EditarCargoFormState extends State<EditarCargoForm>
           ),
           const SizedBox(height: 24),
 
+          // 🆕 Dropdown de Nivel Jerárquico
+          Text(
+            'Nivel Jerárquico',
+            style: Theme.of(
+              context,
+            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 12),
+          nivelesAsync.when(
+            loading: () => const Center(child: CircularProgressIndicator()),
+            error:
+                (error, _) =>
+                    Text('Error: $error', style: TextStyle(color: Colors.red)),
+            data: (niveles) {
+              if (niveles.isEmpty) {
+                return const Text('No hay niveles jerárquicos disponibles');
+              }
+
+              return DropdownButtonFormField<int>(
+                value: _nivelJerarquicoSeleccionado,
+                decoration: InputDecoration(
+                  labelText: 'Selecciona el nivel jerárquico',
+                  prefixIcon: const Icon(Icons.stairs),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  helperText: 'Nivel de la estructura organizacional',
+                ),
+                items:
+                    niveles.where((n) => n.activo == 1).map((nivel) {
+                      return DropdownMenuItem<int>(
+                        value: nivel.codNivel,
+                        child: Text(
+                          'Nivel ${nivel.nivel} - Bs. ${nivel.haberBasico.toStringAsFixed(0)}',
+                        ),
+                      );
+                    }).toList(),
+                onChanged: (value) {
+                  setState(() {
+                    _nivelJerarquicoSeleccionado = value;
+                  });
+                },
+                validator: (value) {
+                  if (value == null) {
+                    return 'Debes seleccionar un nivel jerárquico';
+                  }
+                  return null;
+                },
+              );
+            },
+          ),
+          const SizedBox(height: 24),
+
           // Input para nueva posición
           Text(
-            'Nueva Posición',
+            'Posición en Organigrama',
             style: Theme.of(
               context,
             ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
@@ -666,35 +785,53 @@ class _EditarCargoFormState extends State<EditarCargoForm>
 
   void _guardarCambios() {
     if (_formKey.currentState!.validate()) {
+      final nombreActualizado = _nombreController.text.trim();
+      final nombreCambio =
+          nombreActualizado != widget.cargo.descripcion
+              ? nombreActualizado
+              : null;
+
       final data = CargoEditData(
         codCargo: widget.cargo.codCargo,
+        nuevoNombre: nombreCambio,
         nuevoEstado: _estadoActivo ? 1 : 0,
         nuevaPosicion: int.parse(_posicionController.text),
+        nuevoNivelJerarquico: _nivelJerarquicoSeleccionado,
         // Usar codCargoPadreOriginal del cargo seleccionado como nuevo padre
         nuevoCargoPadre: _nuevoCargoPadre?.codCargoPadreOriginal,
+        esNuevo: false,
       );
 
       widget.onGuardar(data);
-      Navigator.of(context).pop();
+      // NO cerrar el diálogo para poder seguir editando
+      // Navigator.of(context).pop();
     }
   }
 }
 
 /// Clase para encapsular los datos editados
 class CargoEditData {
-  final int codCargo;
+  final int codCargo; // 0 para nuevos cargos
+  final String? nuevoNombre; // Nuevo nombre (null si no cambió)
   final int nuevoEstado;
   final int nuevaPosicion;
   final int? nuevoCargoPadre;
+  final int? nuevoNivelJerarquico; // Nuevo nivel jerárquico (codNivel)
+  final bool esNuevo; // true si es un cargo nuevo
 
   CargoEditData({
     required this.codCargo,
+    this.nuevoNombre,
     required this.nuevoEstado,
     required this.nuevaPosicion,
     this.nuevoCargoPadre,
+    this.nuevoNivelJerarquico,
+    this.esNuevo = false,
   });
 
   bool get cambioEstado => true;
   bool get cambioPosicion => true;
   bool get cambioParent => nuevoCargoPadre != null;
+  bool get cambioNombre => nuevoNombre != null && nuevoNombre!.isNotEmpty;
+  bool get cambioNivel => nuevoNivelJerarquico != null;
 }

@@ -1,12 +1,19 @@
 import 'package:bosque_flutter/data/repositories/rrhh_repository_impl.dart';
+import 'package:bosque_flutter/data/repositories/nivel_jerarquico_impl.dart';
 import 'package:bosque_flutter/domain/entities/cargo_entity.dart';
 import 'package:bosque_flutter/domain/entities/empresa_entity.dart';
 import 'package:bosque_flutter/domain/entities/sucursal_entity.dart';
+import 'package:bosque_flutter/domain/entities/nivel_jerarquico_entity.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 // Provider para el repositorio
 final rrhhRepositoryProvider = Provider<RRHHRepositoryImpl>((ref) {
   return RRHHRepositoryImpl();
+});
+
+// Provider para el repositorio de niveles jerárquicos
+final nivelJerarquicoRepositoryProvider = Provider<NivelJerarquicoImpl>((ref) {
+  return NivelJerarquicoImpl();
 });
 
 // StateNotifier para manejar el estado de la lista de empresas
@@ -165,4 +172,38 @@ final cargosXEmpresaProvider = StateNotifierProvider.family<
 >((ref, codEmpresa) {
   final repository = ref.watch(rrhhRepositoryProvider);
   return CargosXEmpresaNotifier(repository, codEmpresa);
+});
+
+// StateNotifier para manejar el estado de la lista de niveles jerárquicos
+class NivelesJerarquicosNotifier
+    extends StateNotifier<AsyncValue<List<NivelJerarquicoEntity>>> {
+  final NivelJerarquicoImpl _repository;
+
+  NivelesJerarquicosNotifier(this._repository)
+    : super(const AsyncValue.loading()) {
+    _loadNivelesJerarquicos();
+  }
+
+  Future<void> _loadNivelesJerarquicos() async {
+    state = const AsyncValue.loading();
+    try {
+      final niveles = await _repository.getNivelesJerarquicos();
+      state = AsyncValue.data(niveles);
+    } catch (e, stack) {
+      state = AsyncValue.error(e, stack);
+    }
+  }
+
+  Future<void> refresh() async {
+    await _loadNivelesJerarquicos();
+  }
+}
+
+// Provider para los niveles jerárquicos
+final nivelesJerarquicosProvider = StateNotifierProvider<
+  NivelesJerarquicosNotifier,
+  AsyncValue<List<NivelJerarquicoEntity>>
+>((ref) {
+  final repository = ref.watch(nivelJerarquicoRepositoryProvider);
+  return NivelesJerarquicosNotifier(repository);
 });

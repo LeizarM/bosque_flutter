@@ -7,6 +7,7 @@ class CargoActionsBottomSheet extends StatelessWidget {
   final VoidCallback onViewDetails;
   final VoidCallback onEdit;
   final VoidCallback onDuplicate;
+  final VoidCallback onAddChild; // 🆕 Agregar hijo
 
   const CargoActionsBottomSheet({
     super.key,
@@ -14,6 +15,7 @@ class CargoActionsBottomSheet extends StatelessWidget {
     required this.onViewDetails,
     required this.onEdit,
     required this.onDuplicate,
+    required this.onAddChild,
   });
 
   @override
@@ -98,6 +100,46 @@ class CargoActionsBottomSheet extends StatelessWidget {
                 color: Theme.of(context).primaryColor,
               ),
               onTap: onEdit,
+            ),
+          ),
+
+          const Divider(height: 8),
+
+          // 🆕 Agregar cargo hijo
+          Container(
+            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  Colors.green.withOpacity(0.1),
+                  Colors.green.withOpacity(0.05),
+                ],
+              ),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: Colors.green.withOpacity(0.3),
+                width: 2,
+              ),
+            ),
+            child: ListTile(
+              leading: const Icon(
+                Icons.add_circle,
+                color: Colors.green,
+                size: 28,
+              ),
+              title: const Text(
+                'Agregar Cargo Hijo',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: Colors.green,
+                ),
+              ),
+              subtitle: const Text(
+                'Crear nuevo cargo que dependerá de este',
+                style: TextStyle(fontSize: 11),
+              ),
+              trailing: const Icon(Icons.arrow_forward, color: Colors.green),
+              onTap: onAddChild,
             ),
           ),
 

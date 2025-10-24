@@ -156,6 +156,7 @@ class AppConstants {
   static const String lstCargos = '/rrhh/lst-cargos';
   static const String lstSucursales = '/rrhh/lst-sucursales';
   static const String lstCargosXEmpresaNew = '/rrhh/lstOrganigramaNew';
+  static const String lstNivelesJerarquicos = '/rrhh/lstNivelesJerarquicos';
 
   //endpoints para la gestion de facturas TIGO
   static const String tigoCargarFacturas = '/tigo/SubirExcel';

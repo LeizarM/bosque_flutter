@@ -113,6 +113,13 @@ class _CargosScreenState extends ConsumerState<CargosScreen> {
           style: const TextStyle(fontSize: 16),
         ),
         actions: [
+          // 🆕 Botón para crear nuevo cargo
+          IconButton(
+            icon: const Icon(Icons.add_circle),
+            tooltip: 'Nuevo Cargo',
+            onPressed: () => _showCrearCargoDialog(),
+          ),
+
           IconButton(
             icon: Icon(isOrganigramaMode ? Icons.list : Icons.account_tree),
             tooltip: isOrganigramaMode ? 'Ver Lista' : 'Ver Organigrama',
@@ -448,6 +455,10 @@ class _CargosScreenState extends ConsumerState<CargosScreen> {
             onEdit: () {
               Navigator.of(context).pop();
               _showEditarCargoForm(cargo);
+            },
+            onAddChild: () {
+              Navigator.of(context).pop();
+              _showCrearCargoHijoDialog(cargo);
             },
             onDuplicate: () {
               Navigator.of(context).pop();
@@ -2218,6 +2229,78 @@ class _CargosScreenState extends ConsumerState<CargosScreen> {
   // MÉTODOS DEL FORMULARIO UNIFICADO DE EDICIÓN
   // ============================================================================
 
+  // 🆕 Mostrar diálogo para crear nuevo cargo (RAÍZ)
+  void _showCrearCargoDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return _CrearCargoDialog(
+          codEmpresa: widget.codEmpresa,
+          cargoPadre: null, // Sin padre = raíz
+          onGuardar: (data) {
+            _procesarNuevoCargo(data);
+          },
+        );
+      },
+    );
+  }
+
+  // 🆕 Mostrar diálogo para crear cargo HIJO de un cargo específico
+  void _showCrearCargoHijoDialog(CargoEntity cargoPadre) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return _CrearCargoDialog(
+          codEmpresa: widget.codEmpresa,
+          cargoPadre: cargoPadre, // Padre predefinido
+          onGuardar: (data) {
+            _procesarNuevoCargo(data);
+          },
+        );
+      },
+    );
+  }
+
+  // Procesar nuevo cargo
+  void _procesarNuevoCargo(CargoEditData data) {
+    if (data.nuevoNombre == null || data.nuevoNombre!.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('⚠️ El nombre del cargo es obligatorio'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+
+    final datosParaBackend = {
+      'codEmpresa': widget.codEmpresa,
+      'nombre': data.nuevoNombre,
+      'estado': data.nuevoEstado,
+      'posicion': data.nuevaPosicion,
+      'codCargoPadre': data.nuevoCargoPadre ?? 0, // 0 = raíz
+      'codNivel': data.nuevoNivelJerarquico,
+    };
+
+    // 🖨️ IMPRIMIR EN CONSOLA
+    print('═══════════════════════════════════════════════════════════');
+    print('📤 CREAR NUEVO CARGO - DATOS AL BACKEND:');
+    print('═══════════════════════════════════════════════════════════');
+    datosParaBackend.forEach((key, value) {
+      print('  $key: $value');
+    });
+    print('═══════════════════════════════════════════════════════════');
+
+    // TODO: Aquí llamar al backend para crear el cargo
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('✅ Nuevo cargo "${data.nuevoNombre}" creado'),
+        backgroundColor: Colors.green,
+        duration: const Duration(seconds: 3),
+      ),
+    );
+  }
+
   // Mostrar formulario unificado de edición
   void _showEditarCargoForm(CargoEntity cargo) {
     final cargosAsync = ref.read(cargosXEmpresaProvider(widget.codEmpresa));
@@ -2242,10 +2325,14 @@ class _CargosScreenState extends ConsumerState<CargosScreen> {
     // Preparar datos que se enviarán al backend
     final datosParaBackend = {
       'codCargo': data.codCargo,
+      'nombre':
+          data.nuevoNombre ??
+          cargoOriginal.descripcion, // Siempre incluir nombre
       'estado': data.nuevoEstado,
       'posicion': data.nuevaPosicion,
       'codCargoPadre':
           data.nuevoCargoPadre ?? cargoOriginal.codCargoPadreOriginal,
+      'codNivel': data.nuevoNivelJerarquico ?? cargoOriginal.codNivel,
     };
 
     // 🖨️ IMPRIMIR EN CONSOLA
@@ -2316,6 +2403,8 @@ class _CargosScreenState extends ConsumerState<CargosScreen> {
       'nuevoEstado': data.nuevoEstado,
       'nuevaPosicion': data.nuevaPosicion,
       if (data.nuevoCargoPadre != null) 'nuevoCargoPadre': data.nuevoCargoPadre,
+      if (data.nuevoNivelJerarquico != null)
+        'nuevoNivelJerarquico': data.nuevoNivelJerarquico,
     };
 
     ScaffoldMessenger.of(context).showSnackBar(
@@ -2548,5 +2637,333 @@ class _CargosScreenState extends ConsumerState<CargosScreen> {
     // Ya no necesitamos dispose del _transformationController
     // _transformationController.dispose();
     super.dispose();
+  }
+}
+
+// ============================================================================
+// DIÁLOGO SIMPLE PARA CREAR NUEVO CARGO
+// ============================================================================
+class _CrearCargoDialog extends ConsumerStatefulWidget {
+  final int codEmpresa;
+  final CargoEntity? cargoPadre; // Padre predefinido (null = raíz)
+  final Function(CargoEditData) onGuardar;
+
+  const _CrearCargoDialog({
+    required this.codEmpresa,
+    this.cargoPadre,
+    required this.onGuardar,
+  });
+
+  @override
+  ConsumerState<_CrearCargoDialog> createState() => _CrearCargoDialogState();
+}
+
+class _CrearCargoDialogState extends ConsumerState<_CrearCargoDialog> {
+  final _formKey = GlobalKey<FormState>();
+  final _nombreController = TextEditingController();
+  final _posicionController = TextEditingController(text: '1');
+  late bool _esRaiz; // Determinado por si hay padre predefinido
+  int? _nivelJerarquicoSeleccionado; // Nivel jerárquico seleccionado
+
+  @override
+  void initState() {
+    super.initState();
+    // Si hay padre predefinido, NO es raíz
+    _esRaiz = widget.cargoPadre == null;
+  }
+
+  @override
+  void dispose() {
+    _nombreController.dispose();
+    _posicionController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Container(
+        width: 500,
+        padding: const EdgeInsets.all(24),
+        child: Form(
+          key: _formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Header
+              Row(
+                children: [
+                  Icon(
+                    Icons.add_circle,
+                    color:
+                        widget.cargoPadre != null
+                            ? Colors.green
+                            : Theme.of(context).primaryColor,
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          widget.cargoPadre != null
+                              ? 'Crear Cargo Hijo'
+                              : 'Crear Nuevo Cargo',
+                          style: Theme.of(context).textTheme.titleLarge
+                              ?.copyWith(fontWeight: FontWeight.bold),
+                        ),
+                        if (widget.cargoPadre != null) ...[
+                          const SizedBox(height: 4),
+                          Text(
+                            'Padre: ${widget.cargoPadre!.descripcion}',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey.shade600,
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close),
+                    onPressed: () => Navigator.of(context).pop(),
+                  ),
+                ],
+              ),
+              const Divider(height: 32),
+
+              // Nombre
+              TextFormField(
+                controller: _nombreController,
+                decoration: const InputDecoration(
+                  labelText: 'Nombre del Cargo *',
+                  hintText: 'Ej: Gerente de Ventas',
+                  border: OutlineInputBorder(),
+                  prefixIcon: Icon(Icons.work),
+                ),
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return 'El nombre es obligatorio';
+                  }
+                  if (value.trim().length < 3) {
+                    return 'Mínimo 3 caracteres';
+                  }
+                  return null;
+                },
+                maxLength: 100,
+                textCapitalization: TextCapitalization.words,
+                autofocus: true,
+              ),
+              const SizedBox(height: 16),
+
+              // Posición
+              TextFormField(
+                controller: _posicionController,
+                decoration: const InputDecoration(
+                  labelText: 'Posición *',
+                  hintText: '1',
+                  border: OutlineInputBorder(),
+                  prefixIcon: Icon(Icons.format_list_numbered),
+                ),
+                keyboardType: TextInputType.number,
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'La posición es obligatoria';
+                  }
+                  final pos = int.tryParse(value);
+                  if (pos == null || pos < 1) {
+                    return 'Debe ser un número mayor a 0';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 16),
+
+              // 🆕 Dropdown de Nivel Jerárquico
+              Consumer(
+                builder: (context, ref, _) {
+                  final nivelesAsync = ref.watch(nivelesJerarquicosProvider);
+
+                  return nivelesAsync.when(
+                    loading:
+                        () => const Center(child: CircularProgressIndicator()),
+                    error:
+                        (error, _) => Text(
+                          'Error: $error',
+                          style: const TextStyle(color: Colors.red),
+                        ),
+                    data: (niveles) {
+                      if (niveles.isEmpty) {
+                        return const Text(
+                          'No hay niveles jerárquicos disponibles',
+                        );
+                      }
+
+                      return DropdownButtonFormField<int>(
+                        value: _nivelJerarquicoSeleccionado,
+                        decoration: const InputDecoration(
+                          labelText: 'Nivel Jerárquico *',
+                          hintText: 'Selecciona el nivel',
+                          border: OutlineInputBorder(),
+                          prefixIcon: Icon(Icons.stairs),
+                        ),
+                        items:
+                            niveles.where((n) => n.activo == 1).map((nivel) {
+                              return DropdownMenuItem<int>(
+                                value: nivel.codNivel,
+                                child: Text(
+                                  'Nivel ${nivel.nivel} - Bs. ${nivel.haberBasico.toStringAsFixed(0)}',
+                                ),
+                              );
+                            }).toList(),
+                        onChanged: (value) {
+                          setState(() {
+                            _nivelJerarquicoSeleccionado = value;
+                          });
+                        },
+                        validator: (value) {
+                          if (value == null) {
+                            return 'Debes seleccionar un nivel jerárquico';
+                          }
+                          return null;
+                        },
+                      );
+                    },
+                  );
+                },
+              ),
+              const SizedBox(height: 16),
+
+              // Tipo de cargo (solo si NO hay padre predefinido)
+              if (widget.cargoPadre == null) ...[
+                CheckboxListTile(
+                  value: _esRaiz,
+                  onChanged: (value) {
+                    setState(() {
+                      _esRaiz = value ?? true;
+                    });
+                  },
+                  title: const Text('Cargo Raíz'),
+                  subtitle: const Text(
+                    'El cargo no tendrá padre (cargo de nivel superior)',
+                  ),
+                  controlAffinity: ListTileControlAffinity.leading,
+                ),
+
+                if (!_esRaiz) ...[
+                  const SizedBox(height: 8),
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.orange.shade50,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.orange.shade200),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.info,
+                          color: Colors.orange.shade700,
+                          size: 20,
+                        ),
+                        const SizedBox(width: 8),
+                        const Expanded(
+                          child: Text(
+                            'Para asignar un padre, usa "Reparentar" después de crear el cargo',
+                            style: TextStyle(fontSize: 12),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ],
+
+              // Info cuando hay padre predefinido
+              if (widget.cargoPadre != null) ...[
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.green.shade50,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.green.shade200),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.account_tree,
+                        color: Colors.green.shade700,
+                        size: 20,
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'Este cargo será hijo de: ${widget.cargoPadre!.descripcion}',
+                          style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+
+              const SizedBox(height: 24),
+
+              // Botones
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  TextButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    child: const Text('Cancelar'),
+                  ),
+                  const SizedBox(width: 12),
+                  ElevatedButton.icon(
+                    onPressed: _guardar,
+                    icon: const Icon(Icons.save),
+                    label: const Text('Crear Cargo'),
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 24,
+                        vertical: 12,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _guardar() {
+    if (_formKey.currentState!.validate()) {
+      // Determinar el padre:
+      // 1. Si hay padre predefinido -> usar el codCargo del padre (que será el padre de este nuevo cargo)
+      // 2. Si es raíz -> 0
+      final codPadre =
+          widget.cargoPadre != null ? widget.cargoPadre!.codCargo : 0;
+
+      final data = CargoEditData(
+        codCargo: 0, // 0 = nuevo
+        nuevoNombre: _nombreController.text.trim(),
+        nuevoEstado: 1, // Activo por defecto
+        nuevaPosicion: int.parse(_posicionController.text),
+        nuevoCargoPadre: codPadre,
+        nuevoNivelJerarquico: _nivelJerarquicoSeleccionado,
+        esNuevo: true,
+      );
+
+      widget.onGuardar(data);
+      Navigator.of(context).pop();
+    }
   }
 }
