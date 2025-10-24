@@ -523,13 +523,13 @@ class _EditarCargoFormState extends State<EditarCargoForm>
                       const SizedBox(width: 12),
                       Expanded(
                         child: Text(
-                          widget.cargo.codCargoPadre == 0
+                          widget.cargo.codCargoPadreOriginal == 0
                               ? 'Ninguno (Cargo Raíz)'
                               : widget.todosCargos
                                   .firstWhere(
                                     (c) =>
                                         c.codCargo ==
-                                        widget.cargo.codCargoPadre,
+                                        widget.cargo.codCargoPadreOriginal,
                                     orElse: () => widget.cargo,
                                   )
                                   .descripcion,
@@ -670,7 +670,8 @@ class _EditarCargoFormState extends State<EditarCargoForm>
         codCargo: widget.cargo.codCargo,
         nuevoEstado: _estadoActivo ? 1 : 0,
         nuevaPosicion: int.parse(_posicionController.text),
-        nuevoCargoPadre: _nuevoCargoPadre?.codCargo,
+        // Usar codCargoPadreOriginal del cargo seleccionado como nuevo padre
+        nuevoCargoPadre: _nuevoCargoPadre?.codCargoPadreOriginal,
       );
 
       widget.onGuardar(data);

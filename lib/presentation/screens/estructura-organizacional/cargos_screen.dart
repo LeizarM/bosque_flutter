@@ -2239,266 +2239,30 @@ class _CargosScreenState extends ConsumerState<CargosScreen> {
 
   // Procesar cambios del formulario de edición - CON CONFIRMACIÓN DETALLADA
   void _procesarCambiosCargo(CargoEditData data, CargoEntity cargoOriginal) {
-    // Construir resumen de cambios
-    final cambios = <String, String>{};
+    // Preparar datos que se enviarán al backend
+    final datosParaBackend = {
+      'codCargo': data.codCargo,
+      'estado': data.nuevoEstado,
+      'posicion': data.nuevaPosicion,
+      'codCargoPadre':
+          data.nuevoCargoPadre ?? cargoOriginal.codCargoPadreOriginal,
+    };
 
-    // Detectar cambios en estado
-    if (data.nuevoEstado != cargoOriginal.estado) {
-      cambios['Estado'] =
-          '${cargoOriginal.estado == 1 ? "Activo" : "Inactivo"} → ${data.nuevoEstado == 1 ? "Activo" : "Inactivo"}';
-    }
-
-    // Detectar cambios en posición
-    if (data.nuevaPosicion != cargoOriginal.posicion) {
-      cambios['Posición'] = '${cargoOriginal.posicion} → ${data.nuevaPosicion}';
-    }
-
-    // Detectar cambios en padre
-    if (data.nuevoCargoPadre != null &&
-        data.nuevoCargoPadre != cargoOriginal.codCargoPadre) {
-      final cargosValue =
-          ref.read(cargosXEmpresaProvider(widget.codEmpresa)).value;
-      if (cargosValue != null) {
-        final todosCargos = _aplanarCargos(cargosValue);
-
-        // Padre anterior
-        final padreAnterior =
-            cargoOriginal.codCargoPadre == 0
-                ? 'Ninguno (Raíz)'
-                : todosCargos
-                    .firstWhere(
-                      (c) => c.codCargo == cargoOriginal.codCargoPadre,
-                      orElse: () => todosCargos.first,
-                    )
-                    .descripcion;
-
-        // Padre nuevo
-        final padreNuevo =
-            data.nuevoCargoPadre == 0
-                ? 'Ninguno (Raíz)'
-                : todosCargos
-                    .firstWhere(
-                      (c) => c.codCargo == data.nuevoCargoPadre,
-                      orElse: () => todosCargos.first,
-                    )
-                    .descripcion;
-
-        cambios['Padre'] = '$padreAnterior → $padreNuevo';
-      }
-    }
-
-    // Si no hay cambios, informar al usuario
-    if (cambios.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('⚠️ No se detectaron cambios'),
-          backgroundColor: Colors.orange,
-          duration: Duration(seconds: 2),
-        ),
-      );
-      return;
-    }
-
-    // Mostrar diálogo de confirmación con los datos a enviar
-    showDialog(
-      context: context,
-      builder:
-          (context) => AlertDialog(
-            title: Row(
-              children: [
-                Icon(Icons.preview, color: Theme.of(context).primaryColor),
-                const SizedBox(width: 12),
-                const Text('Confirmar Cambios'),
-              ],
-            ),
-            content: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Info del cargo
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: Colors.blue.shade50,
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: Colors.blue.shade200),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Cargo',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.grey.shade600,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          cargoOriginal.descripcion,
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        Text(
-                          'Código: ${cargoOriginal.codCargo}',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.grey.shade600,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Título de cambios
-                  Text(
-                    'Datos a enviar al backend:',
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-
-                  // Lista de cambios
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: Colors.grey.shade50,
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: Colors.grey.shade300),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Datos que se enviarán
-                        _buildDataRow(
-                          'codCargo',
-                          data.codCargo.toString(),
-                          Colors.blue,
-                        ),
-                        if (cambios.containsKey('Estado'))
-                          _buildDataRow(
-                            'estado',
-                            data.nuevoEstado.toString(),
-                            Colors.green,
-                          ),
-                        if (cambios.containsKey('Posición'))
-                          _buildDataRow(
-                            'posicion',
-                            data.nuevaPosicion.toString(),
-                            Colors.orange,
-                          ),
-                        if (cambios.containsKey('Padre'))
-                          _buildDataRow(
-                            'codCargoPadre',
-                            data.nuevoCargoPadre.toString(),
-                            Colors.purple,
-                          ),
-
-                        const Divider(height: 16),
-
-                        // Resumen de cambios legible
-                        ...cambios.entries.map(
-                          (entry) => Padding(
-                            padding: const EdgeInsets.only(bottom: 8),
-                            child: Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Icon(
-                                  Icons.arrow_forward,
-                                  size: 16,
-                                  color: Colors.grey.shade600,
-                                ),
-                                const SizedBox(width: 8),
-                                Expanded(
-                                  child: RichText(
-                                    text: TextSpan(
-                                      style: TextStyle(
-                                        fontSize: 13,
-                                        color: Colors.grey.shade800,
-                                      ),
-                                      children: [
-                                        TextSpan(
-                                          text: '${entry.key}: ',
-                                          style: const TextStyle(
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                        ),
-                                        TextSpan(text: entry.value),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  const SizedBox(height: 16),
-
-                  // Advertencias
-                  if (data.nuevoEstado == 0 &&
-                      cargoOriginal.numHijosActivos > 0)
-                    Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: Colors.deepOrange.shade50,
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(
-                          color: Colors.deepOrange.shade300,
-                          width: 2,
-                        ),
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(
-                            Icons.warning,
-                            color: Colors.deepOrange.shade700,
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              '⚠️ Este cargo tiene ${cargoOriginal.numHijosActivos} subordinado(s) activo(s)',
-                              style: TextStyle(
-                                color: Colors.deepOrange.shade900,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                ],
-              ),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(),
-                child: const Text('Cancelar'),
-              ),
-              ElevatedButton.icon(
-                onPressed: () {
-                  Navigator.of(context).pop();
-                  _enviarCambiosAlBackend(data);
-                },
-                icon: const Icon(Icons.send),
-                label: const Text('Enviar al Backend'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.green,
-                  foregroundColor: Colors.white,
-                ),
-              ),
-            ],
-          ),
+    // 🖨️ IMPRIMIR EN CONSOLA
+    print('═══════════════════════════════════════════════════════════');
+    print('📤 DATOS QUE SE ENVIARÁN AL BACKEND:');
+    print('═══════════════════════════════════════════════════════════');
+    print(
+      'Cargo: ${cargoOriginal.descripcion} (ID: ${cargoOriginal.codCargo})',
     );
+    print('-----------------------------------------------------------');
+    datosParaBackend.forEach((key, value) {
+      print('  $key: $value');
+    });
+    print('═══════════════════════════════════════════════════════════');
+
+    // Enviar al backend (sin cerrar el diálogo)
+    _enviarCambiosAlBackend(data);
   }
 
   // Widget helper para mostrar filas de datos
