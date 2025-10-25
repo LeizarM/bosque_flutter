@@ -1,4 +1,5 @@
 import 'package:bosque_flutter/core/state/rrhh_provider.dart';
+import 'package:bosque_flutter/core/state/user_provider.dart';
 import 'package:bosque_flutter/domain/entities/cargo_entity.dart';
 import 'package:bosque_flutter/presentation/screens/estructura-organizacional/organigrama_custom.dart';
 import 'package:bosque_flutter/presentation/widgets/estructura-organizacional/cargo_actions_bottom_sheet.dart';
@@ -2262,11 +2263,21 @@ class _CargosScreenState extends ConsumerState<CargosScreen> {
   }
 
   // Procesar nuevo cargo
-  void _procesarNuevoCargo(CargoEditData data) {
+  Future<void> _procesarNuevoCargo(CargoEditData data) async {
     if (data.nuevoNombre == null || data.nuevoNombre!.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('⚠️ El nombre del cargo es obligatorio'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+
+    if (data.nuevoNivelJerarquico == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('⚠️ El nivel jerárquico es obligatorio'),
           backgroundColor: Colors.orange,
         ),
       );
@@ -2282,23 +2293,111 @@ class _CargosScreenState extends ConsumerState<CargosScreen> {
       'codNivel': data.nuevoNivelJerarquico,
     };
 
-    // 🖨️ IMPRIMIR EN CONSOLA
-    print('═══════════════════════════════════════════════════════════');
-    print('📤 CREAR NUEVO CARGO - DATOS AL BACKEND:');
-    print('═══════════════════════════════════════════════════════════');
-    datosParaBackend.forEach((key, value) {
-      print('  $key: $value');
-    });
-    print('═══════════════════════════════════════════════════════════');
+    // Mostrar indicador de carga
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Row(
+            children: [
+              SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                ),
+              ),
+              SizedBox(width: 16),
+              Text('Creando cargo...'),
+            ],
+          ),
+          duration: Duration(seconds: 30),
+          backgroundColor: Colors.blue,
+        ),
+      );
+    }
 
-    // TODO: Aquí llamar al backend para crear el cargo
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('✅ Nuevo cargo "${data.nuevoNombre}" creado'),
-        backgroundColor: Colors.green,
-        duration: const Duration(seconds: 3),
-      ),
-    );
+    try {
+      // Obtener el código del usuario logueado
+      final codUsuario = await ref.read(userProvider.notifier).getCodUsuario();
+
+      // Crear entidad de cargo para enviar al backend
+      final nuevoCargo = CargoEntity(
+        codCargo: 0, // 0 = nuevo cargo
+        codCargoPadre: data.nuevoCargoPadre ?? 0,
+        descripcion: data.nuevoNombre!,
+        codEmpresa: widget.codEmpresa,
+        codNivel: data.nuevoNivelJerarquico!,
+        posicion: data.nuevaPosicion,
+        estado: data.nuevoEstado,
+        audUsuario: codUsuario,
+        sucursal: '',
+        sucursalPlanilla: '',
+        nombreEmpresa: widget.nombreEmpresa,
+        nombreEmpresaPlanilla: '',
+        codEmpresaPlanilla: 0,
+        codCargoPlanilla: 0,
+        descripcionPlanilla: '',
+        nivel: 0,
+        tieneEmpleadosActivos: 0,
+        tieneEmpleadosTotales: 0,
+        estaAsignadoSucursal: 0,
+        canDeactivate: 1,
+        numDependientes: 0,
+        numDependenciasTotales: 0,
+        numDependenciasCompletas: 0,
+        numDeDependencias: 0,
+        numHijosActivos: 0,
+        numHijosTotal: 0,
+        resumenCompleto: '',
+        estadoPadre: '1',
+        esVisible: 1,
+        items: [],
+        codCargoPadreOriginal: data.nuevoCargoPadre ?? 0,
+      );
+
+      // Llamar al repositorio
+      final repository = ref.read(rrhhRepositoryProvider);
+      final success = await repository.registrarCargo(nuevoCargo);
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).clearSnackBars();
+
+        if (success) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                '✅ Cargo "${data.nuevoNombre}" creado exitosamente',
+              ),
+              backgroundColor: Colors.green,
+              duration: const Duration(seconds: 3),
+            ),
+          );
+
+          // Refrescar la lista de cargos
+          ref.invalidate(cargosXEmpresaProvider(widget.codEmpresa));
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('❌ Error al crear el cargo'),
+              backgroundColor: Colors.red,
+              duration: Duration(seconds: 3),
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).clearSnackBars();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('❌ Error: ${e.toString()}'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 5),
+          ),
+        );
+      }
+    }
   }
 
   // Mostrar formulario unificado de edición
@@ -2321,7 +2420,21 @@ class _CargosScreenState extends ConsumerState<CargosScreen> {
   }
 
   // Procesar cambios del formulario de edición - CON CONFIRMACIÓN DETALLADA
-  void _procesarCambiosCargo(CargoEditData data, CargoEntity cargoOriginal) {
+  Future<void> _procesarCambiosCargo(
+    CargoEditData data,
+    CargoEntity cargoOriginal,
+  ) async {
+    // Validar que el codCargo sea diferente de cero (es un cargo existente)
+    if (data.codCargo == 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('⚠️ Error: El cargo no tiene un código válido'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
     // Preparar datos que se enviarán al backend
     final datosParaBackend = {
       'codCargo': data.codCargo,
@@ -2335,21 +2448,111 @@ class _CargosScreenState extends ConsumerState<CargosScreen> {
       'codNivel': data.nuevoNivelJerarquico ?? cargoOriginal.codNivel,
     };
 
-    // 🖨️ IMPRIMIR EN CONSOLA
-    print('═══════════════════════════════════════════════════════════');
-    print('📤 DATOS QUE SE ENVIARÁN AL BACKEND:');
-    print('═══════════════════════════════════════════════════════════');
-    print(
-      'Cargo: ${cargoOriginal.descripcion} (ID: ${cargoOriginal.codCargo})',
-    );
-    print('-----------------------------------------------------------');
-    datosParaBackend.forEach((key, value) {
-      print('  $key: $value');
-    });
-    print('═══════════════════════════════════════════════════════════');
+    // Mostrar indicador de carga
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Row(
+            children: [
+              SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                ),
+              ),
+              SizedBox(width: 16),
+              Text('Actualizando cargo...'),
+            ],
+          ),
+          duration: Duration(seconds: 30),
+          backgroundColor: Colors.blue,
+        ),
+      );
+    }
 
-    // Enviar al backend (sin cerrar el diálogo)
-    _enviarCambiosAlBackend(data);
+    try {
+      // Obtener el código del usuario logueado
+      final codUsuario = await ref.read(userProvider.notifier).getCodUsuario();
+
+      // Crear entidad de cargo actualizada
+      final cargoActualizado = CargoEntity(
+        codCargo: data.codCargo,
+        codCargoPadre:
+            data.nuevoCargoPadre ?? cargoOriginal.codCargoPadreOriginal,
+        descripcion: data.nuevoNombre ?? cargoOriginal.descripcion,
+        codEmpresa: cargoOriginal.codEmpresa,
+        codNivel: data.nuevoNivelJerarquico ?? cargoOriginal.codNivel,
+        posicion: data.nuevaPosicion,
+        estado: data.nuevoEstado,
+        audUsuario: codUsuario,
+        sucursal: cargoOriginal.sucursal,
+        sucursalPlanilla: cargoOriginal.sucursalPlanilla,
+        nombreEmpresa: cargoOriginal.nombreEmpresa,
+        nombreEmpresaPlanilla: cargoOriginal.nombreEmpresaPlanilla,
+        codEmpresaPlanilla: cargoOriginal.codEmpresaPlanilla,
+        codCargoPlanilla: cargoOriginal.codCargoPlanilla,
+        descripcionPlanilla: cargoOriginal.descripcionPlanilla,
+        nivel: cargoOriginal.nivel,
+        tieneEmpleadosActivos: cargoOriginal.tieneEmpleadosActivos,
+        tieneEmpleadosTotales: cargoOriginal.tieneEmpleadosTotales,
+        estaAsignadoSucursal: cargoOriginal.estaAsignadoSucursal,
+        canDeactivate: cargoOriginal.canDeactivate,
+        numDependientes: cargoOriginal.numDependientes,
+        numDependenciasTotales: cargoOriginal.numDependenciasTotales,
+        numDependenciasCompletas: cargoOriginal.numDependenciasCompletas,
+        numDeDependencias: cargoOriginal.numDeDependencias,
+        numHijosActivos: cargoOriginal.numHijosActivos,
+        numHijosTotal: cargoOriginal.numHijosTotal,
+        resumenCompleto: cargoOriginal.resumenCompleto,
+        estadoPadre: cargoOriginal.estadoPadre,
+        esVisible: cargoOriginal.esVisible,
+        items: cargoOriginal.items,
+        codCargoPadreOriginal:
+            data.nuevoCargoPadre ?? cargoOriginal.codCargoPadreOriginal,
+      );
+
+      // Llamar al repositorio
+      final repository = ref.read(rrhhRepositoryProvider);
+      final success = await repository.registrarCargo(cargoActualizado);
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).clearSnackBars();
+
+        if (success) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('✅ Cargo actualizado exitosamente'),
+              backgroundColor: Colors.green,
+              duration: Duration(seconds: 3),
+            ),
+          );
+
+          // Refrescar la lista de cargos
+          ref.invalidate(cargosXEmpresaProvider(widget.codEmpresa));
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('❌ Error al actualizar el cargo'),
+              backgroundColor: Colors.red,
+              duration: Duration(seconds: 3),
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).clearSnackBars();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('❌ Error: ${e.toString()}'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 5),
+          ),
+        );
+      }
+    }
   }
 
   // Widget helper para mostrar filas de datos
@@ -2394,64 +2597,6 @@ class _CargosScreenState extends ConsumerState<CargosScreen> {
   }
 
   // Enviar cambios al backend (aquí irá la llamada real al API)
-  void _enviarCambiosAlBackend(CargoEditData data) {
-    // TODO: Aquí deberías hacer la llamada al backend con los cambios
-
-    // Mostrar los datos que se enviarían en formato JSON
-    final jsonData = {
-      'codCargo': data.codCargo,
-      'nuevoEstado': data.nuevoEstado,
-      'nuevaPosicion': data.nuevaPosicion,
-      if (data.nuevoCargoPadre != null) 'nuevoCargoPadre': data.nuevoCargoPadre,
-      if (data.nuevoNivelJerarquico != null)
-        'nuevoNivelJerarquico': data.nuevoNivelJerarquico,
-    };
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              '📤 Datos a enviar al backend:',
-              style: TextStyle(fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              jsonData.toString(),
-              style: const TextStyle(fontSize: 11, fontFamily: 'monospace'),
-            ),
-            const SizedBox(height: 8),
-            const Text(
-              '⚠️ Función no implementada en el backend aún',
-              style: TextStyle(fontSize: 11),
-            ),
-          ],
-        ),
-        backgroundColor: Colors.blue,
-        duration: const Duration(seconds: 6),
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
-
-    // Simulación de llamada al backend
-    Future.delayed(const Duration(seconds: 2), () {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('✅ Cambios guardados exitosamente (simulado)'),
-            backgroundColor: Colors.green,
-            duration: Duration(seconds: 2),
-          ),
-        );
-
-        // Refrescar la lista de cargos
-        ref.invalidate(cargosXEmpresaProvider(widget.codEmpresa));
-      }
-    });
-  }
-
   // ============================================================================
   // FIN DE MÉTODOS DEL FORMULARIO UNIFICADO
   // ============================================================================

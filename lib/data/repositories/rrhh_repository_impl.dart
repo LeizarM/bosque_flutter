@@ -143,4 +143,38 @@ class RRHHRepositoryImpl implements RRHHRepository {
       throw Exception('Error desconocido lstCargosXEmpresa: ${e.toString()}');
     }
   }
+
+  //Para Actualizar o registrar un cargo
+  @override
+  Future<bool> registrarCargo(CargoEntity cargo) async {
+    final model = CargoModel.fromEntity(cargo);
+
+    try {
+      final response = await _dio.post(
+        AppConstants.registrarCargo,
+        data: model.toJson(),
+      );
+
+      if ((response.statusCode == 200 || response.statusCode == 201) &&
+          response.data != null) {
+        // El backend puede responder con 'success', 'ok', o 'msg'
+        final success =
+            response.data['success'] ??
+            (response.data['ok'] == 'ok') ??
+            (response.data['msg'] != null);
+        return success;
+      } else {
+        throw Exception('Error al registrar el cargo');
+      }
+    } on DioException catch (e) {
+      String errorMessage = 'Error de conexión: ${e.message}';
+      if (e.response != null && e.response!.data != null) {
+        errorMessage =
+            'Error del servidor: ${e.response!.statusCode} - ${e.response!.data.toString()}';
+      }
+      throw Exception(errorMessage);
+    } catch (e) {
+      throw Exception('Error desconocido registrarCargo: ${e.toString()}');
+    }
+  }
 }

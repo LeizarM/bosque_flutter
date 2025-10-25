@@ -17,4 +17,7 @@ abstract class RRHHRepository {
 
   //Para listar los cargos por empresa pero con detalles adicionales
   Future<List<CargoEntity>> lstCargosXEmpresa(int codEmpresa);
+
+  //Para Actualizar o registrar un cargo
+  Future<bool> registrarCargo(CargoEntity cargo);
 }

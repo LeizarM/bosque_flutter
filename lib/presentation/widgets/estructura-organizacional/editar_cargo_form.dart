@@ -42,7 +42,9 @@ class _EditarCargoFormState extends ConsumerState<EditarCargoForm>
       text: widget.cargo.posicion.toString(),
     );
     _estadoActivo = widget.cargo.estado == 1;
-    _nivelJerarquicoSeleccionado = widget.cargo.codNivel;
+    // Inicializar nivel jerárquico solo si es mayor a 0
+    _nivelJerarquicoSeleccionado =
+        widget.cargo.codNivel > 0 ? widget.cargo.codNivel : null;
   }
 
   @override
@@ -504,8 +506,30 @@ class _EditarCargoFormState extends ConsumerState<EditarCargoForm>
                 return const Text('No hay niveles jerárquicos disponibles');
               }
 
+              // Filtrar solo niveles activos
+              final nivelesActivos =
+                  niveles.where((n) => n.activo == 1).toList();
+
+              if (nivelesActivos.isEmpty) {
+                return const Text('No hay niveles jerárquicos activos');
+              }
+
+              // Verificar si el valor actual está en la lista de activos
+              final valorValido = nivelesActivos.any(
+                (n) => n.codNivel == _nivelJerarquicoSeleccionado,
+              );
+
+              // Si el valor no es válido, establecerlo en null
+              if (!valorValido && _nivelJerarquicoSeleccionado != null) {
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  setState(() {
+                    _nivelJerarquicoSeleccionado = null;
+                  });
+                });
+              }
+
               return DropdownButtonFormField<int>(
-                value: _nivelJerarquicoSeleccionado,
+                value: valorValido ? _nivelJerarquicoSeleccionado : null,
                 decoration: InputDecoration(
                   labelText: 'Selecciona el nivel jerárquico',
                   prefixIcon: const Icon(Icons.stairs),
@@ -514,8 +538,9 @@ class _EditarCargoFormState extends ConsumerState<EditarCargoForm>
                   ),
                   helperText: 'Nivel de la estructura organizacional',
                 ),
+                hint: const Text('Selecciona un nivel'),
                 items:
-                    niveles.where((n) => n.activo == 1).map((nivel) {
+                    nivelesActivos.map((nivel) {
                       return DropdownMenuItem<int>(
                         value: nivel.codNivel,
                         child: Text(
@@ -797,8 +822,8 @@ class _EditarCargoFormState extends ConsumerState<EditarCargoForm>
         nuevoEstado: _estadoActivo ? 1 : 0,
         nuevaPosicion: int.parse(_posicionController.text),
         nuevoNivelJerarquico: _nivelJerarquicoSeleccionado,
-        // Usar codCargoPadreOriginal del cargo seleccionado como nuevo padre
-        nuevoCargoPadre: _nuevoCargoPadre?.codCargoPadreOriginal,
+        // Usar codCargo del cargo seleccionado como nuevo padre
+        nuevoCargoPadre: _nuevoCargoPadre?.codCargo,
         esNuevo: false,
       );
 
