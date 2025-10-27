@@ -2,7 +2,6 @@ import 'package:bosque_flutter/core/state/rrhh_provider.dart';
 import 'package:bosque_flutter/core/utils/responsive_utils_bosque.dart';
 import 'package:bosque_flutter/domain/entities/empresa_entity.dart';
 import 'package:bosque_flutter/presentation/screens/estructura-organizacional/cargos_screen.dart';
-import 'package:bosque_flutter/presentation/screens/estructura-organizacional/sucursales_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -12,55 +11,11 @@ class EstructuraOrganizacionalEmpresaScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final empresasAsync = ref.watch(empresasProvider);
-    final selectedEmpresa = ref.watch(selectedEmpresaProvider);
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Empresas'),
         actions: [
-          PopupMenuButton<String>(
-            onSelected: (value) {
-              switch (value) {
-                case 'nueva':
-                  _showNuevaEmpresaDialog(context);
-                  break;
-                case 'editar':
-                  if (selectedEmpresa != null) {
-                    _showEditarEmpresaDialog(context, selectedEmpresa);
-                  } else {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Selecciona una empresa primero'),
-                      ),
-                    );
-                  }
-                  break;
-              }
-            },
-            itemBuilder:
-                (BuildContext context) => [
-                  const PopupMenuItem<String>(
-                    value: 'nueva',
-                    child: Row(
-                      children: [
-                        Icon(Icons.add),
-                        SizedBox(width: 8),
-                        Text('Nueva Empresa'),
-                      ],
-                    ),
-                  ),
-                  const PopupMenuItem<String>(
-                    value: 'editar',
-                    child: Row(
-                      children: [
-                        Icon(Icons.edit),
-                        SizedBox(width: 8),
-                        Text('Editar Empresa'),
-                      ],
-                    ),
-                  ),
-                ],
-          ),
           IconButton(
             icon: const Icon(Icons.refresh),
             onPressed: () {
@@ -349,59 +304,10 @@ class EstructuraOrganizacionalEmpresaScreen extends ConsumerWidget {
                   );
                 },
               ),
-
-              ListTile(
-                leading: const Icon(Icons.location_city_outlined),
-                title: const Text('Sucursales'),
-                trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-                onTap: () {
-                  Navigator.of(context).pop();
-                  // Navigate to sucursales
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder:
-                          (context) => SucursalesScreen(
-                            codEmpresa: empresa.codEmpresa,
-                            nombreEmpresa: empresa.nombre,
-                          ),
-                    ),
-                  );
-                },
-              ),
-
-              const Divider(height: 8),
-
-              ListTile(
-                leading: const Icon(Icons.edit_outlined),
-                title: const Text('Editar empresa'),
-                trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-                onTap: () {
-                  Navigator.of(context).pop();
-                  _showEditarEmpresaDialog(context, empresa);
-                },
-              ),
             ],
           ),
         );
       },
-    );
-  }
-
-  void _showNuevaEmpresaDialog(BuildContext context) {
-    // TODO: Implementar diálogo para nueva empresa
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Función Nueva Empresa - próximamente')),
-    );
-  }
-
-  void _showEditarEmpresaDialog(BuildContext context, EmpresaEntity empresa) {
-    // TODO: Implementar diálogo para editar empresa
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          'Función Editar Empresa para ${empresa.nombre} - próximamente',
-        ),
-      ),
     );
   }
 }

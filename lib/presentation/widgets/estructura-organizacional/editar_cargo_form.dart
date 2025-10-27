@@ -594,6 +594,27 @@ class _EditarCargoFormState extends ConsumerState<EditarCargoForm>
               if (pos == null || pos < 1) {
                 return 'Debe ser un número mayor a 0';
               }
+
+              // Validar que la posición sea mayor o igual a la del padre
+              final padreSeleccionado = _nuevoCargoPadre;
+              if (padreSeleccionado != null &&
+                  pos < padreSeleccionado.posicion) {
+                return 'La posición debe ser >= ${padreSeleccionado.posicion} (posición del padre)';
+              }
+
+              // Si no hay nuevo padre, verificar con el padre original
+              if (padreSeleccionado == null &&
+                  widget.cargo.codCargoPadreOriginal != 0) {
+                final padreOriginal = widget.todosCargos.firstWhere(
+                  (c) => c.codCargo == widget.cargo.codCargoPadreOriginal,
+                  orElse: () => widget.cargo,
+                );
+                if (padreOriginal.codCargo != widget.cargo.codCargo &&
+                    pos < padreOriginal.posicion) {
+                  return 'La posición debe ser >= ${padreOriginal.posicion} (posición del padre)';
+                }
+              }
+
               return null;
             },
           ),

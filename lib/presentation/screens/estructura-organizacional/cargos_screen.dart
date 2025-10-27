@@ -27,45 +27,158 @@ class CargosScreen extends ConsumerStatefulWidget {
 }
 
 class _CargosScreenState extends ConsumerState<CargosScreen> {
-  // Ya no necesitamos GraphView ni sus configuraciones
-  // final Graph graph = Graph()..isTree = true;
-  // BuchheimWalkerConfiguration builder = BuchheimWalkerConfiguration();
-  // SugiyamaConfiguration sugiyamaBuilder = SugiyamaConfiguration();
-  // final TransformationController _transformationController = TransformationController();
-  // Map<int, Node> nodeMap = {};
-  // Map<int, CargoEntity> cargoMap = {};
-  // bool useSugiyama = true;
+  // Campo de búsqueda
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
 
   @override
   void initState() {
     super.initState();
     // _configureBuilders(); // Ya no necesario
+    _searchController.addListener(() {
+      setState(() {
+        _searchQuery = _searchController.text.toLowerCase();
+      });
+    });
   }
 
-  // Ya no necesitamos los métodos de GraphView
-  /*
-  void _configureBuilders() {
-    builder
-      ..siblingSeparation = (150)
-      ..levelSeparation = (180)
-      ..subtreeSeparation = (150)
-      ..orientation = (BuchheimWalkerConfiguration.ORIENTATION_TOP_BOTTOM);
+  // Método para filtrar cargos por búsqueda
+  List<CargoEntity> _filtrarCargos(List<CargoEntity> cargos) {
+    if (_searchQuery.isEmpty) {
+      return cargos;
+    }
 
-    sugiyamaBuilder
-      ..nodeSeparation = (150)
-      ..levelSeparation = (180)
-      ..orientation = (SugiyamaConfiguration.ORIENTATION_TOP_BOTTOM)
-      ..bendPointShape = CurvedBendPointShape(curveLength: 20);
+    List<CargoEntity> resultado = [];
+
+    void filtrarRecursivo(List<CargoEntity> lista) {
+      for (var cargo in lista) {
+        // Verificar si el cargo coincide con la búsqueda
+        final coincide =
+            cargo.descripcion.toLowerCase().contains(_searchQuery) ||
+            cargo.codCargo.toString().contains(_searchQuery);
+
+        // Filtrar hijos recursivamente
+        List<CargoEntity> hijosFiltrados = [];
+        if (cargo.items.isNotEmpty) {
+          for (var hijo in cargo.items) {
+            final hijoCoincide =
+                hijo.descripcion.toLowerCase().contains(_searchQuery) ||
+                hijo.codCargo.toString().contains(_searchQuery);
+
+            if (hijoCoincide) {
+              hijosFiltrados.add(hijo);
+            } else {
+              // Revisar si algún descendiente coincide
+              var hijoConDescendientes = _filtrarCargoConDescendientes(hijo);
+              if (hijoConDescendientes != null) {
+                hijosFiltrados.add(hijoConDescendientes);
+              }
+            }
+          }
+        }
+
+        // Agregar el cargo si coincide o tiene hijos que coinciden
+        if (coincide || hijosFiltrados.isNotEmpty) {
+          resultado.add(
+            CargoEntity(
+              codCargo: cargo.codCargo,
+              codCargoPadre: cargo.codCargoPadre,
+              descripcion: cargo.descripcion,
+              codEmpresa: cargo.codEmpresa,
+              codNivel: cargo.codNivel,
+              posicion: cargo.posicion,
+              estado: cargo.estado,
+              audUsuario: cargo.audUsuario,
+              sucursal: cargo.sucursal,
+              sucursalPlanilla: cargo.sucursalPlanilla,
+              nombreEmpresa: cargo.nombreEmpresa,
+              nombreEmpresaPlanilla: cargo.nombreEmpresaPlanilla,
+              codEmpresaPlanilla: cargo.codEmpresaPlanilla,
+              codCargoPlanilla: cargo.codCargoPlanilla,
+              descripcionPlanilla: cargo.descripcionPlanilla,
+              nivel: cargo.nivel,
+              tieneEmpleadosActivos: cargo.tieneEmpleadosActivos,
+              tieneEmpleadosTotales: cargo.tieneEmpleadosTotales,
+              estaAsignadoSucursal: cargo.estaAsignadoSucursal,
+              canDeactivate: cargo.canDeactivate,
+              numDependientes: cargo.numDependientes,
+              numDependenciasTotales: cargo.numDependenciasTotales,
+              numDependenciasCompletas: cargo.numDependenciasCompletas,
+              numDeDependencias: cargo.numDeDependencias,
+              numHijosActivos: cargo.numHijosActivos,
+              numHijosTotal: cargo.numHijosTotal,
+              resumenCompleto: cargo.resumenCompleto,
+              estadoPadre: cargo.estadoPadre,
+              esVisible: cargo.esVisible,
+              items: hijosFiltrados,
+              codCargoPadreOriginal: cargo.codCargoPadreOriginal,
+            ),
+          );
+        }
+      }
+    }
+
+    filtrarRecursivo(cargos);
+    return resultado;
   }
 
-  void _buildGraph(List<CargoEntity> cargos) {
-    graph.nodes.clear();
-    graph.edges.clear();
-    nodeMap.clear();
-    cargoMap.clear();
-    ...
+  // Método auxiliar para filtrar cargo con sus descendientes
+  CargoEntity? _filtrarCargoConDescendientes(CargoEntity cargo) {
+    List<CargoEntity> hijosFiltrados = [];
+
+    for (var hijo in cargo.items) {
+      final coincide =
+          hijo.descripcion.toLowerCase().contains(_searchQuery) ||
+          hijo.codCargo.toString().contains(_searchQuery);
+
+      if (coincide) {
+        hijosFiltrados.add(hijo);
+      } else {
+        var hijoConDescendientes = _filtrarCargoConDescendientes(hijo);
+        if (hijoConDescendientes != null) {
+          hijosFiltrados.add(hijoConDescendientes);
+        }
+      }
+    }
+
+    if (hijosFiltrados.isEmpty) {
+      return null;
+    }
+
+    return CargoEntity(
+      codCargo: cargo.codCargo,
+      codCargoPadre: cargo.codCargoPadre,
+      descripcion: cargo.descripcion,
+      codEmpresa: cargo.codEmpresa,
+      codNivel: cargo.codNivel,
+      posicion: cargo.posicion,
+      estado: cargo.estado,
+      audUsuario: cargo.audUsuario,
+      sucursal: cargo.sucursal,
+      sucursalPlanilla: cargo.sucursalPlanilla,
+      nombreEmpresa: cargo.nombreEmpresa,
+      nombreEmpresaPlanilla: cargo.nombreEmpresaPlanilla,
+      codEmpresaPlanilla: cargo.codEmpresaPlanilla,
+      codCargoPlanilla: cargo.codCargoPlanilla,
+      descripcionPlanilla: cargo.descripcionPlanilla,
+      nivel: cargo.nivel,
+      tieneEmpleadosActivos: cargo.tieneEmpleadosActivos,
+      tieneEmpleadosTotales: cargo.tieneEmpleadosTotales,
+      estaAsignadoSucursal: cargo.estaAsignadoSucursal,
+      canDeactivate: cargo.canDeactivate,
+      numDependientes: cargo.numDependientes,
+      numDependenciasTotales: cargo.numDependenciasTotales,
+      numDependenciasCompletas: cargo.numDependenciasCompletas,
+      numDeDependencias: cargo.numDeDependencias,
+      numHijosActivos: cargo.numHijosActivos,
+      numHijosTotal: cargo.numHijosTotal,
+      resumenCompleto: cargo.resumenCompleto,
+      estadoPadre: cargo.estadoPadre,
+      esVisible: cargo.esVisible,
+      items: hijosFiltrados,
+      codCargoPadreOriginal: cargo.codCargoPadreOriginal,
+    );
   }
-  */
 
   Color _getNodeColor(CargoEntity cargo) {
     if (cargo.estado == 0) {
@@ -114,7 +227,7 @@ class _CargosScreenState extends ConsumerState<CargosScreen> {
           style: const TextStyle(fontSize: 16),
         ),
         actions: [
-          // 🆕 Botón para crear nuevo cargo
+          // Botón para crear nuevo cargo
           IconButton(
             icon: const Icon(Icons.add_circle),
             tooltip: 'Nuevo Cargo',
@@ -158,20 +271,55 @@ class _CargosScreenState extends ConsumerState<CargosScreen> {
                 ],
               ),
             ),
-        data:
-            (cargos) =>
-                isOrganigramaMode
-                    ? _buildOrganigramaView(cargos)
-                    : _buildListView(cargos),
+        data: (cargos) {
+          return Column(
+            children: [
+              // Barra de búsqueda - SOLO en modo lista
+              if (!isOrganigramaMode)
+                Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: TextField(
+                    controller: _searchController,
+                    decoration: InputDecoration(
+                      hintText: 'Buscar cargo...',
+                      prefixIcon: const Icon(Icons.search),
+                      suffixIcon:
+                          _searchQuery.isNotEmpty
+                              ? IconButton(
+                                icon: const Icon(Icons.clear),
+                                onPressed: () {
+                                  _searchController.clear();
+                                },
+                              )
+                              : null,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      filled: true,
+                      fillColor: Colors.grey.shade50,
+                    ),
+                  ),
+                ),
+              // Vista según el modo
+              Expanded(
+                child:
+                    isOrganigramaMode
+                        ? _buildOrganigramaView(
+                          cargos,
+                        ) // Organigrama sin filtro
+                        : _buildListView(
+                          _filtrarCargos(cargos),
+                        ), // Lista con filtro
+              ),
+            ],
+          );
+        },
       ),
     );
   }
 
   // Vista de organigrama
   Widget _buildOrganigramaView(List<CargoEntity> cargos) {
-    print('=== CargosScreen _buildOrganigramaView ===');
-    print('Total cargos recibidos: ${cargos.length}');
-
     if (cargos.isEmpty) {
       return const Center(
         child: Column(
@@ -184,12 +332,6 @@ class _CargosScreenState extends ConsumerState<CargosScreen> {
         ),
       );
     }
-
-    print('Primer cargo: ${cargos.first.descripcion}');
-    print('Primer cargo tiene items: ${cargos.first.items.length}');
-
-    // Ya no necesitamos _buildGraph porque usamos posicionamiento manual
-    // _buildGraph(cargos);
 
     return Column(
       children: [
@@ -376,67 +518,6 @@ class _CargosScreenState extends ConsumerState<CargosScreen> {
       ],
     );
   }
-
-  // Ya no necesitamos este método porque el widget personalizado tiene su propia implementación
-  /*
-  Widget _buildNodeWidget(CargoEntity cargo) {
-    final nodeColor = _getNodeColor(cargo);
-
-    return InkWell(
-      onTap: () => _showCargoActions(cargo),
-      child: Container(
-        constraints: const BoxConstraints(
-          minWidth: 140,
-          maxWidth: 180,
-          minHeight: 80,
-        ),
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-        decoration: BoxDecoration(
-          color: nodeColor,
-          borderRadius: BorderRadius.circular(4),
-          border: Border.all(
-            color: cargo.estado == 0
-                ? Colors.red.shade700
-                : cargo.tieneEmpleadosActivos > 0
-                ? Colors.green.shade700
-                : cargo.numHijosActivos > 0
-                ? Colors.blue.shade700
-                : Colors.grey.shade600,
-            width: 1.5,
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.15),
-              blurRadius: 3,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            // Nombre del cargo (principal)
-            Text(
-              cargo.descripcion,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 10,
-                fontWeight: FontWeight.bold,
-                height: 1.2,
-                decoration: cargo.estado == 0 ? TextDecoration.lineThrough : null,
-                color: cargo.estado == 0 ? Colors.grey.shade600 : Colors.black87,
-              ),
-              maxLines: 3,
-              overflow: TextOverflow.ellipsis,
-            ),
-            // ... resto del código comentado
-          ],
-        ),
-      ),
-    );
-  }
-  */
 
   // Mostrar acciones del cargo
   void _showCargoActions(CargoEntity cargo) {
@@ -2778,9 +2859,11 @@ class _CargosScreenState extends ConsumerState<CargosScreen> {
   }
 
   @override
+  @override
   void dispose() {
     // Ya no necesitamos dispose del _transformationController
     // _transformationController.dispose();
+    _searchController.dispose();
     super.dispose();
   }
 }
@@ -2806,7 +2889,7 @@ class _CrearCargoDialog extends ConsumerStatefulWidget {
 class _CrearCargoDialogState extends ConsumerState<_CrearCargoDialog> {
   final _formKey = GlobalKey<FormState>();
   final _nombreController = TextEditingController();
-  final _posicionController = TextEditingController(text: '1');
+  late final TextEditingController _posicionController;
   late bool _esRaiz; // Determinado por si hay padre predefinido
   int? _nivelJerarquicoSeleccionado; // Nivel jerárquico seleccionado
 
@@ -2815,6 +2898,10 @@ class _CrearCargoDialogState extends ConsumerState<_CrearCargoDialog> {
     super.initState();
     // Si hay padre predefinido, NO es raíz
     _esRaiz = widget.cargoPadre == null;
+
+    // Inicializar posición con la del padre si existe, sino con 1
+    final posicionInicial = widget.cargoPadre?.posicion.toString() ?? '1';
+    _posicionController = TextEditingController(text: posicionInicial);
   }
 
   @override
@@ -2907,11 +2994,18 @@ class _CrearCargoDialogState extends ConsumerState<_CrearCargoDialog> {
               // Posición
               TextFormField(
                 controller: _posicionController,
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   labelText: 'Posición *',
-                  hintText: '1',
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.format_list_numbered),
+                  hintText:
+                      widget.cargoPadre != null
+                          ? 'Mínimo: ${widget.cargoPadre!.posicion}'
+                          : '1',
+                  border: const OutlineInputBorder(),
+                  prefixIcon: const Icon(Icons.format_list_numbered),
+                  helperText:
+                      widget.cargoPadre != null
+                          ? 'Debe ser >= ${widget.cargoPadre!.posicion} (posición del padre)'
+                          : null,
                 ),
                 keyboardType: TextInputType.number,
                 validator: (value) {
@@ -2922,6 +3016,13 @@ class _CrearCargoDialogState extends ConsumerState<_CrearCargoDialog> {
                   if (pos == null || pos < 1) {
                     return 'Debe ser un número mayor a 0';
                   }
+
+                  // Validar que la posición sea >= a la del padre
+                  if (widget.cargoPadre != null &&
+                      pos < widget.cargoPadre!.posicion) {
+                    return 'Debe ser >= ${widget.cargoPadre!.posicion} (posición del padre)';
+                  }
+
                   return null;
                 },
               ),
