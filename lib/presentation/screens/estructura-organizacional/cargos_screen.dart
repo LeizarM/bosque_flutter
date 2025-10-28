@@ -2893,6 +2893,9 @@ class _CrearCargoDialogState extends ConsumerState<_CrearCargoDialog> {
   late bool _esRaiz; // Determinado por si hay padre predefinido
   int? _nivelJerarquicoSeleccionado; // Nivel jerárquico seleccionado
 
+  // 🔄 Sugerencias de cargos REALES inactivos similares
+  List<CargoEntity> _cargosInactivosSimilares = [];
+
   @override
   void initState() {
     super.initState();
@@ -2902,6 +2905,59 @@ class _CrearCargoDialogState extends ConsumerState<_CrearCargoDialog> {
     // Inicializar posición con la del padre si existe, sino con 1
     final posicionInicial = widget.cargoPadre?.posicion.toString() ?? '1';
     _posicionController = TextEditingController(text: posicionInicial);
+
+    // 🔄 Listener para buscar cargos similares mientras el usuario escribe
+    _nombreController.addListener(_buscarCargosSimilares);
+  }
+
+  // 🔄 Buscar cargos REALES inactivos con nombres similares
+  void _buscarCargosSimilares() {
+    final query = _nombreController.text.trim().toLowerCase();
+
+    // Solo buscar si hay al menos 3 caracteres
+    if (query.length < 3) {
+      setState(() {
+        _cargosInactivosSimilares = [];
+      });
+      return;
+    }
+
+    // Obtener todos los cargos de la empresa
+    final cargosAsync = ref.read(cargosXEmpresaProvider(widget.codEmpresa));
+    final cargosJerarquicos = cargosAsync.value ?? [];
+
+    // Aplanar la jerarquía
+    List<CargoEntity> todosLosCargos = [];
+    void aplanar(List<CargoEntity> lista) {
+      for (var cargo in lista) {
+        todosLosCargos.add(cargo);
+        if (cargo.items.isNotEmpty) {
+          aplanar(cargo.items);
+        }
+      }
+    }
+
+    aplanar(cargosJerarquicos);
+
+    // Filtrar: Solo cargos REALES (no ficticios) Y INACTIVOS (estado==0)
+    final similares =
+        todosLosCargos
+            .where((cargo) {
+              final esFicticio =
+                  cargo.descripcion.contains('[Ficticio') ||
+                  cargo.descripcion.toLowerCase().contains('ficticio');
+              final esRealInactivo = !esFicticio && cargo.estado == 0;
+              final nombreCoincide = cargo.descripcion.toLowerCase().contains(
+                query,
+              );
+              return esRealInactivo && nombreCoincide;
+            })
+            .take(5)
+            .toList(); // Máximo 5 sugerencias
+
+    setState(() {
+      _cargosInactivosSimilares = similares;
+    });
   }
 
   @override
@@ -2989,6 +3045,96 @@ class _CrearCargoDialogState extends ConsumerState<_CrearCargoDialog> {
                 textCapitalization: TextCapitalization.words,
                 autofocus: true,
               ),
+
+              // 🔄 Sugerencias de cargos REALES inactivos similares
+              if (_cargosInactivosSimilares.isNotEmpty) ...[
+                const SizedBox(height: 12),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.orange.shade50,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.orange.shade200),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.lightbulb_outline,
+                            color: Colors.orange.shade700,
+                            size: 20,
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              'Cargos inactivos similares encontrados:',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: Colors.orange.shade900,
+                                fontSize: 13,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      ...(_cargosInactivosSimilares.map((cargo) {
+                        return Card(
+                          margin: const EdgeInsets.only(bottom: 6),
+                          elevation: 0,
+                          color: Colors.white,
+                          child: ListTile(
+                            dense: true,
+                            leading: Icon(
+                              Icons.warning_amber,
+                              color: Colors.orange.shade700,
+                              size: 20,
+                            ),
+                            title: Text(
+                              cargo.descripcion,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 13,
+                              ),
+                            ),
+                            subtitle: Text(
+                              'Cód: ${cargo.codCargo} | Nivel: ${cargo.nivel} | Pos: ${cargo.posicion}',
+                              style: const TextStyle(fontSize: 11),
+                            ),
+                            trailing: ElevatedButton.icon(
+                              icon: const Icon(Icons.check_circle, size: 16),
+                              label: const Text('Activar'),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.green,
+                                foregroundColor: Colors.white,
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 8,
+                                ),
+                              ),
+                              onPressed: () {
+                                _confirmarActivarCargo(cargo);
+                              },
+                            ),
+                          ),
+                        );
+                      }).toList()),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Sugerencia: Si existe un cargo similar, actívalo en lugar de crear uno nuevo.',
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: Colors.orange.shade800,
+                          fontStyle: FontStyle.italic,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+
               const SizedBox(height: 16),
 
               // Posición
@@ -3211,5 +3357,171 @@ class _CrearCargoDialogState extends ConsumerState<_CrearCargoDialog> {
       widget.onGuardar(data);
       Navigator.of(context).pop();
     }
+  }
+
+  // 🔄 Confirmar y activar un cargo REAL inactivo
+  void _confirmarActivarCargo(CargoEntity cargo) {
+    showDialog(
+      context: context,
+      builder:
+          (context) => AlertDialog(
+            title: Row(
+              children: [
+                Icon(Icons.info_outline, color: Colors.orange.shade700),
+                const SizedBox(width: 12),
+                const Expanded(child: Text('Activar Cargo Existente')),
+              ],
+            ),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Se encontró un cargo inactivo con este nombre:',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 12),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade100,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Nombre: ${cargo.descripcion}',
+                        style: const TextStyle(fontSize: 13),
+                      ),
+                      Text(
+                        'Código: ${cargo.codCargo}',
+                        style: const TextStyle(fontSize: 13),
+                      ),
+                      Text(
+                        'Nivel: ${cargo.nivel}',
+                        style: const TextStyle(fontSize: 13),
+                      ),
+                      Text(
+                        'Posición: ${cargo.posicion}',
+                        style: const TextStyle(fontSize: 13),
+                      ),
+                      Text(
+                        'Padre: ${cargo.codCargoPadre}',
+                        style: const TextStyle(fontSize: 13),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 12),
+                const Text(
+                  '¿Deseas activar este cargo en lugar de crear uno nuevo?',
+                  style: TextStyle(fontSize: 13),
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('Cancelar'),
+              ),
+              ElevatedButton.icon(
+                icon: const Icon(Icons.check_circle),
+                label: const Text('Activar Cargo'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.green,
+                  foregroundColor: Colors.white,
+                ),
+                onPressed: () async {
+                  Navigator.of(context).pop(); // Cerrar confirmación
+                  Navigator.of(context).pop(); // Cerrar diálogo de crear
+
+                  // Activar el cargo (cambiar estado a 1)
+                  try {
+                    final codUsuario =
+                        await ref.read(userProvider.notifier).getCodUsuario();
+
+                    // Crear objeto CargoEntity actualizado con estado = 1
+                    final cargoActivado = CargoEntity(
+                      codCargo: cargo.codCargo,
+                      codCargoPadre: cargo.codCargoPadre,
+                      descripcion: cargo.descripcion,
+                      nivel: cargo.nivel,
+                      posicion: cargo.posicion,
+                      codEmpresa: cargo.codEmpresa,
+                      estado: 1, // ✅ Activar
+                      sucursal: cargo.sucursal,
+                      sucursalPlanilla: cargo.sucursalPlanilla,
+                      nombreEmpresa: cargo.nombreEmpresa,
+                      nombreEmpresaPlanilla: cargo.nombreEmpresaPlanilla,
+                      codEmpresaPlanilla: cargo.codEmpresaPlanilla,
+                      codCargoPlanilla: cargo.codCargoPlanilla,
+                      descripcionPlanilla: cargo.descripcionPlanilla,
+                      codNivel: cargo.codNivel,
+                      audUsuario: codUsuario,
+                      tieneEmpleadosActivos: cargo.tieneEmpleadosActivos,
+                      tieneEmpleadosTotales: cargo.tieneEmpleadosTotales,
+                      estaAsignadoSucursal: cargo.estaAsignadoSucursal,
+                      canDeactivate: cargo.canDeactivate,
+                      numDependientes: cargo.numDependientes,
+                      numDependenciasTotales: cargo.numDependenciasTotales,
+                      numDependenciasCompletas: cargo.numDependenciasCompletas,
+                      numDeDependencias: cargo.numDeDependencias,
+                      numHijosActivos: cargo.numHijosActivos,
+                      numHijosTotal: cargo.numHijosTotal,
+                      resumenCompleto: cargo.resumenCompleto,
+                      estadoPadre: cargo.estadoPadre,
+                      esVisible: cargo.esVisible,
+                      items: cargo.items,
+                      codCargoPadreOriginal: cargo.codCargoPadreOriginal,
+                    );
+
+                    final repository = ref.read(rrhhRepositoryProvider);
+                    final success = await repository.registrarCargo(
+                      cargoActivado,
+                    );
+
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).clearSnackBars();
+
+                      if (success) {
+                        // Refrescar lista
+                        ref.invalidate(
+                          cargosXEmpresaProvider(widget.codEmpresa),
+                        );
+
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(
+                              '✅ Cargo "${cargo.descripcion}" activado exitosamente',
+                            ),
+                            backgroundColor: Colors.green,
+                          ),
+                        );
+                      } else {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('❌ Error al activar el cargo'),
+                            backgroundColor: Colors.red,
+                          ),
+                        );
+                      }
+                    }
+                  } catch (e) {
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).clearSnackBars();
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('❌ Error al activar cargo: $e'),
+                          backgroundColor: Colors.red,
+                        ),
+                      );
+                    }
+                  }
+                },
+              ),
+            ],
+          ),
+    );
   }
 }

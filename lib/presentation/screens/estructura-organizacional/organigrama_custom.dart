@@ -49,11 +49,14 @@ class _OrganigramaCustomState extends State<OrganigramaCustom> {
     }
   }
 
+  List<CargoEntity> _nodosHuerfanos = [];
+
   void _buildGraph() {
     graph.nodes.clear();
     graph.edges.clear();
     nodeMap.clear();
     cargoMap.clear();
+    _nodosHuerfanos.clear();
 
     final todosLosCargos = <CargoEntity>[];
     void aplanarCargos(List<CargoEntity> cargos) {
@@ -67,21 +70,63 @@ class _OrganigramaCustomState extends State<OrganigramaCustom> {
 
     aplanarCargos(widget.cargos);
 
+    // Crear nodos: OCULTAR solo cargos REALES inactivos
+    // MOSTRAR: cargos activos + cargos ficticios (aunque estén inactivos)
     for (var cargo in todosLosCargos) {
-      final node = Node.Id(cargo.codCargo);
-      nodeMap[cargo.codCargo] = node;
-      cargoMap[cargo.codCargo] = cargo;
-      graph.addNode(node);
+      final esFicticio =
+          cargo.descripcion.contains('[Ficticio') ||
+          cargo.descripcion.toLowerCase().contains('ficticio');
+      final esRealInactivo = !esFicticio && cargo.estado == 0;
+
+      // Si es REAL Y está INACTIVO -> NO MOSTRAR
+      if (!esRealInactivo) {
+        final node = Node.Id(cargo.codCargo);
+        nodeMap[cargo.codCargo] = node;
+        cargoMap[cargo.codCargo] = cargo;
+        graph.addNode(node);
+      }
     }
 
+    // Detectar TODAS las RAÍCES (codCargoPadre = 0) visibles en el grafo
+    // Incluye: Reales activos Y Ficticios (aunque estén inactivos)
+    final todasLasRaices =
+        todosLosCargos.where((cargo) {
+          return cargo.codCargoPadre == 0 &&
+              nodeMap.containsKey(cargo.codCargo);
+        }).toList();
+
+    //  Si hay múltiples raíces, crear un NODO VIRTUAL como raíz común
+    Node? nodoRaizVirtual;
+    if (todasLasRaices.length > 1) {
+      nodoRaizVirtual = Node.Id(-1); // ID virtual
+      graph.addNode(nodoRaizVirtual);
+
+      // Conectar TODAS las raíces al nodo virtual (reales y ficticias)
+      for (var raiz in todasLasRaices) {
+        final nodeRaiz = nodeMap[raiz.codCargo];
+        if (nodeRaiz != null) {
+          graph.addEdge(nodoRaizVirtual, nodeRaiz);
+        }
+      }
+    }
+
+    //  Crear edges: Los hijos de cargos inactivos quedan "huérfanos"
     for (var cargo in todosLosCargos) {
+      // Si el cargo hijo no se muestra, saltarlo
+      if (!nodeMap.containsKey(cargo.codCargo)) continue;
+
+      // Si es una raíz real (codCargoPadre = 0), ya se manejó arriba
       if (cargo.codCargoPadre == 0) continue;
 
       final nodeChild = nodeMap[cargo.codCargo];
       final nodeParent = nodeMap[cargo.codCargoPadre];
 
+      // Si el padre existe Y está visible, crear la conexión
       if (nodeChild != null && nodeParent != null) {
         graph.addEdge(nodeParent, nodeChild);
+      } else if (nodeChild != null && nodeParent == null) {
+        //  NODO HUÉRFANO: El padre no existe o está inactivo
+        _nodosHuerfanos.add(cargo);
       }
     }
   }
@@ -215,82 +260,275 @@ class _OrganigramaCustomState extends State<OrganigramaCustom> {
 
     _buildGraph();
 
-    return Stack(
+    return Row(
       children: [
-        // Organigrama visible con InteractiveViewer
-        InteractiveViewer(
-          constrained: false,
-          boundaryMargin: const EdgeInsets.all(200),
-          minScale: 0.1,
-          maxScale: 5.0,
-          transformationController: _transformationController,
-          child: Container(
-            color: Colors.white,
-            child: GraphView(
-              graph: graph,
-              algorithm: BuchheimWalkerAlgorithm(
-                builder,
-                TreeEdgeRenderer(builder),
+        // Panel principal del organigrama
+        Expanded(
+          child: Stack(
+            children: [
+              // Organigrama visible con InteractiveViewer
+              InteractiveViewer(
+                constrained: false,
+                boundaryMargin: const EdgeInsets.all(200),
+                minScale: 0.1,
+                maxScale: 5.0,
+                transformationController: _transformationController,
+                child: Container(
+                  color: Colors.white,
+                  child: GraphView(
+                    graph: graph,
+                    algorithm: BuchheimWalkerAlgorithm(
+                      builder,
+                      TreeEdgeRenderer(builder),
+                    ),
+                    paint:
+                        Paint()
+                          ..color = Colors.grey.shade400
+                          ..strokeWidth = 2
+                          ..style = PaintingStyle.stroke,
+                    builder: (Node node) {
+                      final codCargo = node.key!.value as int;
+                      // Si es el nodo virtual raíz, no mostrarlo
+                      if (codCargo == -1) {
+                        return Container(
+                          width: 1,
+                          height: 1,
+                          color: Colors.transparent,
+                        );
+                      }
+                      final cargo = cargoMap[codCargo];
+                      if (cargo == null) return const SizedBox.shrink();
+                      return _buildNodeWidget(cargo);
+                    },
+                  ),
+                ),
               ),
-              paint:
-                  Paint()
-                    ..color = Colors.grey.shade400
-                    ..strokeWidth = 2
-                    ..style = PaintingStyle.stroke,
-              builder: (Node node) {
-                final codCargo = node.key!.value as int;
-                final cargo = cargoMap[codCargo];
-                if (cargo == null) return const SizedBox.shrink();
-                return _buildNodeWidget(cargo);
+              // Organigrama invisible pero completo para captura (fuera de pantalla)
+              Positioned(
+                left: -50000, // Fuera de la vista
+                top: -50000,
+                child: RepaintBoundary(
+                  key: _organigramaKey,
+                  child: Container(
+                    color: Colors.white,
+                    padding: const EdgeInsets.all(
+                      50,
+                    ), // Padding para que no se corten los bordes
+                    child: GraphView(
+                      graph: graph,
+                      algorithm: BuchheimWalkerAlgorithm(
+                        builder,
+                        TreeEdgeRenderer(builder),
+                      ),
+                      paint:
+                          Paint()
+                            ..color = Colors.grey.shade400
+                            ..strokeWidth = 2
+                            ..style = PaintingStyle.stroke,
+                      builder: (Node node) {
+                        final codCargo = node.key!.value as int;
+                        if (codCargo == -1) {
+                          return Container(
+                            width: 1,
+                            height: 1,
+                            color: Colors.transparent,
+                          );
+                        }
+                        final cargo = cargoMap[codCargo];
+                        if (cargo == null) return const SizedBox.shrink();
+                        return _buildNodeWidget(cargo);
+                      },
+                    ),
+                  ),
+                ),
+              ),
+              // Botón flotante para exportar
+              Positioned(
+                bottom: 16,
+                right: 16,
+                child: FloatingActionButton.extended(
+                  onPressed: () => exportarOrganigrama(context),
+                  icon: const Icon(Icons.download),
+                  label: const Text('Exportar'),
+                  backgroundColor: Colors.blue,
+                  tooltip: 'Exportar organigrama en alta calidad',
+                ),
+              ),
+            ],
+          ),
+        ),
+        // Panel lateral de nodos huérfanos
+        if (_nodosHuerfanos.isNotEmpty) _buildPanelHuerfanos(),
+      ],
+    );
+  }
+
+  Widget _buildPanelHuerfanos() {
+    return Container(
+      width: 280,
+      decoration: BoxDecoration(
+        color: Colors.orange.shade50,
+        border: Border(left: BorderSide(color: Colors.orange, width: 3)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 8,
+            offset: const Offset(-2, 0),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          // Header del panel
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.orange,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.1),
+                  blurRadius: 4,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Row(
+              children: [
+                Icon(Icons.warning_amber_rounded, color: Colors.white),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Nodos Huérfanos',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      Text(
+                        '${_nodosHuerfanos.length} cargo(s) sin padre',
+                        style: TextStyle(color: Colors.white70, fontSize: 11),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          // Lista de nodos huérfanos
+          Expanded(
+            child: ListView.builder(
+              padding: const EdgeInsets.all(8),
+              itemCount: _nodosHuerfanos.length,
+              itemBuilder: (context, index) {
+                final cargo = _nodosHuerfanos[index];
+                return Card(
+                  margin: const EdgeInsets.only(bottom: 8),
+                  elevation: 2,
+                  color: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    side: BorderSide(color: Colors.orange.shade300, width: 2),
+                  ),
+                  child: InkWell(
+                    onTap: () => widget.onNodeTap(cargo),
+                    borderRadius: BorderRadius.circular(8),
+                    child: Padding(
+                      padding: const EdgeInsets.all(12),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Icon(
+                                Icons.link_off,
+                                color: Colors.orange,
+                                size: 16,
+                              ),
+                              const SizedBox(width: 4),
+                              Expanded(
+                                child: Text(
+                                  cargo.descripcion,
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.black87,
+                                  ),
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 6),
+                          Text(
+                            'Código: ${cargo.codCargo}',
+                            style: TextStyle(
+                              fontSize: 10,
+                              color: Colors.grey.shade600,
+                            ),
+                          ),
+                          Text(
+                            'Nivel: ${cargo.nivel} | Pos: ${cargo.posicion}',
+                            style: TextStyle(
+                              fontSize: 10,
+                              color: Colors.grey.shade600,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 6,
+                              vertical: 2,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.red.shade100,
+                              borderRadius: BorderRadius.circular(4),
+                              border: Border.all(color: Colors.red.shade300),
+                            ),
+                            child: Text(
+                              'Padre inactivo: ${cargo.codCargoPadre}',
+                              style: TextStyle(
+                                fontSize: 9,
+                                color: Colors.red.shade900,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                          if (cargo.tieneEmpleadosActivos > 0)
+                            Padding(
+                              padding: const EdgeInsets.only(top: 4),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 6,
+                                  vertical: 2,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: Colors.blue.shade100,
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                                child: Text(
+                                  '👤 ${cargo.tieneEmpleadosActivos} empleado(s)',
+                                  style: TextStyle(
+                                    fontSize: 9,
+                                    color: Colors.blue.shade900,
+                                  ),
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                  ),
+                );
               },
             ),
           ),
-        ),
-        // Organigrama invisible pero completo para captura (fuera de pantalla)
-        Positioned(
-          left: -50000, // Fuera de la vista
-          top: -50000,
-          child: RepaintBoundary(
-            key: _organigramaKey,
-            child: Container(
-              color: Colors.white,
-              padding: const EdgeInsets.all(
-                50,
-              ), // Padding para que no se corten los bordes
-              child: GraphView(
-                graph: graph,
-                algorithm: BuchheimWalkerAlgorithm(
-                  builder,
-                  TreeEdgeRenderer(builder),
-                ),
-                paint:
-                    Paint()
-                      ..color = Colors.grey.shade400
-                      ..strokeWidth = 2
-                      ..style = PaintingStyle.stroke,
-                builder: (Node node) {
-                  final codCargo = node.key!.value as int;
-                  final cargo = cargoMap[codCargo];
-                  if (cargo == null) return const SizedBox.shrink();
-                  return _buildNodeWidget(cargo);
-                },
-              ),
-            ),
-          ),
-        ),
-        // Botón flotante para exportar
-        Positioned(
-          bottom: 16,
-          right: 16,
-          child: FloatingActionButton.extended(
-            onPressed: () => exportarOrganigrama(context),
-            icon: const Icon(Icons.download),
-            label: const Text('Exportar'),
-            backgroundColor: Colors.blue,
-            tooltip: 'Exportar organigrama en alta calidad',
-          ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 

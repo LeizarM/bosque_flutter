@@ -29,9 +29,11 @@ class _EditarCargoFormState extends ConsumerState<EditarCargoForm>
   // Controladores
   late TextEditingController _nombreController;
   late TextEditingController _posicionController;
+  late TextEditingController _buscarPadreController; // 🆕 Buscador
   CargoEntity? _nuevoCargoPadre;
   bool _estadoActivo = true;
   int? _nivelJerarquicoSeleccionado; // Nivel jerárquico seleccionado
+  String _busquedaPadre = ''; // 🆕 Query de búsqueda
 
   @override
   void initState() {
@@ -41,6 +43,12 @@ class _EditarCargoFormState extends ConsumerState<EditarCargoForm>
     _posicionController = TextEditingController(
       text: widget.cargo.posicion.toString(),
     );
+    _buscarPadreController = TextEditingController(); // 🆕 Inicializar buscador
+    _buscarPadreController.addListener(() {
+      setState(() {
+        _busquedaPadre = _buscarPadreController.text.toLowerCase();
+      });
+    });
     _estadoActivo = widget.cargo.estado == 1;
     // Inicializar nivel jerárquico solo si es mayor a 0
     _nivelJerarquicoSeleccionado =
@@ -52,6 +60,7 @@ class _EditarCargoFormState extends ConsumerState<EditarCargoForm>
     _tabController.dispose();
     _nombreController.dispose();
     _posicionController.dispose();
+    _buscarPadreController.dispose(); // 🆕 Dispose del buscador
     super.dispose();
   }
 
@@ -664,6 +673,16 @@ class _EditarCargoFormState extends ConsumerState<EditarCargoForm>
   Widget _buildReparentarTab() {
     final cargosDisponibles = _obtenerCargosDisponibles();
 
+    // 🆕 Filtrar cargos según búsqueda
+    final cargosFiltrados =
+        _busquedaPadre.isEmpty
+            ? cargosDisponibles
+            : cargosDisponibles.where((cargo) {
+              return cargo.descripcion.toLowerCase().contains(_busquedaPadre) ||
+                  cargo.codCargo.toString().contains(_busquedaPadre) ||
+                  cargo.nivel.toString().contains(_busquedaPadre);
+            }).toList();
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -713,40 +732,109 @@ class _EditarCargoFormState extends ConsumerState<EditarCargoForm>
           ),
         ),
 
-        // Lista de cargos disponibles
+        // 🆕 Campo de búsqueda
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Text(
-            'Seleccionar Nuevo Padre',
-            style: Theme.of(
-              context,
-            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+          child: TextField(
+            controller: _buscarPadreController,
+            decoration: InputDecoration(
+              labelText: 'Buscar cargo padre',
+              hintText: 'Nombre, código o nivel...',
+              prefixIcon: const Icon(Icons.search),
+              suffixIcon:
+                  _busquedaPadre.isNotEmpty
+                      ? IconButton(
+                        icon: const Icon(Icons.clear),
+                        onPressed: () {
+                          _buscarPadreController.clear();
+                        },
+                      )
+                      : null,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+              filled: true,
+              fillColor: Colors.grey.shade50,
+            ),
+          ),
+        ),
+        const SizedBox(height: 12),
+
+        // Contador de resultados
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Row(
+            children: [
+              Text(
+                'Seleccionar Nuevo Padre',
+                style: Theme.of(
+                  context,
+                ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+              ),
+              const Spacer(),
+              if (_busquedaPadre.isNotEmpty)
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.blue.shade100,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    '${cargosFiltrados.length} resultado(s)',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.blue.shade900,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+            ],
           ),
         ),
         const SizedBox(height: 8),
 
         Expanded(
           child:
-              cargosDisponibles.isEmpty
+              cargosFiltrados.isEmpty
                   ? Center(
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Icon(
-                          Icons.warning,
+                          _busquedaPadre.isEmpty
+                              ? Icons.warning
+                              : Icons.search_off,
                           size: 64,
                           color: Colors.orange.shade300,
                         ),
                         const SizedBox(height: 16),
-                        const Text('No hay cargos disponibles para reparentar'),
+                        Text(
+                          _busquedaPadre.isEmpty
+                              ? 'No hay cargos disponibles para reparentar'
+                              : 'No se encontraron resultados',
+                          style: TextStyle(color: Colors.grey.shade600),
+                        ),
+                        if (_busquedaPadre.isNotEmpty) ...[
+                          const SizedBox(height: 8),
+                          TextButton.icon(
+                            onPressed: () {
+                              _buscarPadreController.clear();
+                            },
+                            icon: const Icon(Icons.clear),
+                            label: const Text('Limpiar búsqueda'),
+                          ),
+                        ],
                       ],
                     ),
                   )
                   : ListView.builder(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
-                    itemCount: cargosDisponibles.length,
+                    itemCount: cargosFiltrados.length,
                     itemBuilder: (context, index) {
-                      final cargo = cargosDisponibles[index];
+                      final cargo = cargosFiltrados[index];
                       final esSeleccionado =
                           _nuevoCargoPadre?.codCargo == cargo.codCargo;
 
@@ -789,7 +877,7 @@ class _EditarCargoFormState extends ConsumerState<EditarCargoForm>
                             ),
                           ),
                           subtitle: Text(
-                            'Nivel: ${cargo.nivel} | Pos: ${cargo.posicion}',
+                            'Cód: ${cargo.codCargo} | Nivel: ${cargo.nivel} | Pos: ${cargo.posicion}',
                             style: const TextStyle(fontSize: 12),
                           ),
                           trailing:
