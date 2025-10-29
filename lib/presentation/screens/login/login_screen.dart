@@ -23,6 +23,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   bool _isLoading = false;
   String? _message;
   bool _obscurePassword = true;
+  final FocusNode _usernameFocus = FocusNode();
+  final FocusNode _passwordFocus = FocusNode();
 
   void _login() async {
     if (_usernameController.text.isEmpty || _passwordController.text.isEmpty) {
@@ -79,54 +81,61 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       });
     }
   }
-// Método para mostrar el diálogo de actualización
-void _showUpdateDialog(BuildContext context, String serverVersion) {
-  showDialog(
-    context: context,
-    barrierDismissible: false, // El usuario no puede cerrar el diálogo tocando fuera
-    builder: (BuildContext dialogContext) {
-      return AlertDialog(
-        title: Row(
-          children: [
-            Icon(Icons.system_update, color: Theme.of(context).colorScheme.primary),
-            const SizedBox(width: 10),
-            const Text('Actualización necesaria'),
-          ],
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'La versión actual de la aplicación (${AppConstants.APP_VERSION}) está desactualizada.',
-              style: Theme.of(context).textTheme.bodyLarge,
-            ),
-            const SizedBox(height: 12),
-            Text(
-              'Para continuar utilizando BOSQUE, por favor actualice a la versión $serverVersion.',
-              style: Theme.of(context).textTheme.bodyMedium,
-            ),
-          ],
-        ),
-        actions: [
-          
-          TextButton(
-            onPressed: () {
-              // Cerrar la aplicación
-              Navigator.of(dialogContext).pop();
-              // En una aplicación real, podrías usar SystemNavigator.pop() para cerrar la app
-            },
-            child: const Text('Cerrar'),
+
+  // Método para mostrar el diálogo de actualización
+  void _showUpdateDialog(BuildContext context, String serverVersion) {
+    showDialog(
+      context: context,
+      barrierDismissible:
+          false, // El usuario no puede cerrar el diálogo tocando fuera
+      builder: (BuildContext dialogContext) {
+        return AlertDialog(
+          title: Row(
+            children: [
+              Icon(
+                Icons.system_update,
+                color: Theme.of(context).colorScheme.primary,
+              ),
+              const SizedBox(width: 10),
+              const Text('Actualización necesaria'),
+            ],
           ),
-        ],
-      );
-    },
-  );
-}
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'La versión actual de la aplicación (${AppConstants.APP_VERSION}) está desactualizada.',
+                style: Theme.of(context).textTheme.bodyLarge,
+              ),
+              const SizedBox(height: 12),
+              Text(
+                'Para continuar utilizando BOSQUE, por favor actualice a la versión $serverVersion.',
+                style: Theme.of(context).textTheme.bodyMedium,
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                // Cerrar la aplicación
+                Navigator.of(dialogContext).pop();
+                // En una aplicación real, podrías usar SystemNavigator.pop() para cerrar la app
+              },
+              child: const Text('Cerrar'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   void dispose() {
     _usernameController.dispose();
     _passwordController.dispose();
+    _usernameFocus.dispose();
+    _passwordFocus.dispose();
     super.dispose();
   }
 
@@ -144,10 +153,7 @@ void _showUpdateDialog(BuildContext context, String serverVersion) {
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [
-              colorScheme.primary,
-              colorScheme.secondary,
-            ],
+            colors: [colorScheme.primary, colorScheme.secondary],
           ),
         ),
         child: SafeArea(
@@ -156,9 +162,10 @@ void _showUpdateDialog(BuildContext context, String serverVersion) {
               child: ResponsiveRowColumn(
                 rowMainAxisAlignment: MainAxisAlignment.center,
                 columnMainAxisAlignment: MainAxisAlignment.center,
-                layout: isSmallScreen
-                    ? ResponsiveRowColumnType.COLUMN
-                    : ResponsiveRowColumnType.ROW,
+                layout:
+                    isSmallScreen
+                        ? ResponsiveRowColumnType.COLUMN
+                        : ResponsiveRowColumnType.ROW,
                 children: [
                   ResponsiveRowColumnItem(
                     rowFlex: 1,
@@ -175,9 +182,8 @@ void _showUpdateDialog(BuildContext context, String serverVersion) {
                           const SizedBox(height: 16),
                           Text(
                             'BOSQUE',
-                            style: Theme.of(context).textTheme.displaySmall?.copyWith(
-                                  color: colorScheme.onPrimary,
-                                ),
+                            style: Theme.of(context).textTheme.displaySmall
+                                ?.copyWith(color: colorScheme.onPrimary),
                           ),
                         ],
                       ),
@@ -196,9 +202,10 @@ void _showUpdateDialog(BuildContext context, String serverVersion) {
                         borderRadius: BorderRadius.circular(16.0),
                         boxShadow: [
                           BoxShadow(
-                            color: appTheme.isDarkMode
-                                ? Colors.black.withAlpha(70)
-                                : Colors.black.withAlpha(51),
+                            color:
+                                appTheme.isDarkMode
+                                    ? Colors.black.withAlpha(70)
+                                    : Colors.black.withAlpha(51),
                             blurRadius: 10.0,
                             offset: const Offset(0, 5),
                           ),
@@ -210,14 +217,17 @@ void _showUpdateDialog(BuildContext context, String serverVersion) {
                         children: [
                           Text(
                             'Iniciar Sesión',
-                            style: Theme.of(context).textTheme.displaySmall?.copyWith(
-                                  color: colorScheme.secondary,
-                                ),
+                            style: Theme.of(context).textTheme.displaySmall
+                                ?.copyWith(color: colorScheme.secondary),
                             textAlign: TextAlign.center,
                           ),
                           const SizedBox(height: 24.0),
                           TextField(
                             controller: _usernameController,
+                            focusNode: _usernameFocus,
+                            onSubmitted: (value) {
+                              _passwordFocus.requestFocus();
+                            },
                             decoration: const InputDecoration(
                               labelText: 'Usuario',
                               prefixIcon: Icon(Icons.person),
@@ -226,12 +236,18 @@ void _showUpdateDialog(BuildContext context, String serverVersion) {
                           const SizedBox(height: 16.0),
                           TextField(
                             controller: _passwordController,
+                            focusNode: _passwordFocus,
+                            onSubmitted: (value) {
+                              _login();
+                            },
                             decoration: InputDecoration(
                               labelText: 'Contraseña',
                               prefixIcon: const Icon(Icons.lock),
                               suffixIcon: IconButton(
                                 icon: Icon(
-                                  _obscurePassword ? Icons.visibility : Icons.visibility_off,
+                                  _obscurePassword
+                                      ? Icons.visibility
+                                      : Icons.visibility_off,
                                 ),
                                 onPressed: () {
                                   setState(() {
@@ -243,7 +259,7 @@ void _showUpdateDialog(BuildContext context, String serverVersion) {
                             obscureText: _obscurePassword,
                           ),
                           const SizedBox(height: 8.0),
-                          
+
                           if (_message != null) ...[
                             Container(
                               padding: const EdgeInsets.all(8.0),
@@ -253,7 +269,9 @@ void _showUpdateDialog(BuildContext context, String serverVersion) {
                               ),
                               child: Text(
                                 _message!,
-                                style: TextStyle(color: colorScheme.onErrorContainer),
+                                style: TextStyle(
+                                  color: colorScheme.onErrorContainer,
+                                ),
                                 textAlign: TextAlign.center,
                               ),
                             ),
@@ -262,14 +280,17 @@ void _showUpdateDialog(BuildContext context, String serverVersion) {
                           const SizedBox(height: 8.0),
                           SizedBox(
                             height: 50,
-                            child: _isLoading
-                                ? Center(
-                                    child: CircularProgressIndicator(
-                                        color: colorScheme.primary))
-                                : ElevatedButton(
-                                    onPressed: _login,
-                                    child: const Text('INICIAR SESIÓN'),
-                                  ),
+                            child:
+                                _isLoading
+                                    ? Center(
+                                      child: CircularProgressIndicator(
+                                        color: colorScheme.primary,
+                                      ),
+                                    )
+                                    : ElevatedButton(
+                                      onPressed: _login,
+                                      child: const Text('INICIAR SESIÓN'),
+                                    ),
                           ),
                         ],
                       ),
