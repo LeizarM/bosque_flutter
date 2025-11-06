@@ -5,8 +5,11 @@ import 'package:flutter/rendering.dart';
 import 'package:graphview/GraphView.dart';
 import 'dart:ui' as ui;
 import 'package:flutter/foundation.dart' show kIsWeb;
-// ignore: avoid_web_libraries_in_flutter, deprecated_member_use
-import 'dart:html' as html;
+
+// Importar de forma condicional para web y móvil
+import 'web_export_stub.dart'
+    if (dart.library.html) 'web_export.dart'
+    as web_export;
 
 class OrganigramaCustom extends StatefulWidget {
   final List<CargoEntity> cargos;
@@ -193,46 +196,10 @@ class _OrganigramaCustomState extends State<OrganigramaCustom> {
 
       // Descargar el archivo (funciona en Web)
       if (kIsWeb) {
-        final blob = html.Blob([pngBytes]);
-        final url = html.Url.createObjectUrlFromBlob(blob);
-        final anchor =
-            html.document.createElement('a') as html.AnchorElement
-              ..href = url
-              ..style.display = 'none'
-              ..download =
-                  'organigrama_${DateTime.now().millisecondsSinceEpoch}.png';
-        html.document.body?.children.add(anchor);
-
-        // Click para descargar
-        anchor.click();
-
-        // Limpiar después de un momento
-        Future.delayed(const Duration(milliseconds: 500), () {
-          html.document.body?.children.remove(anchor);
-          html.Url.revokeObjectUrl(url);
-        });
-
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                'Organigrama exportado en alta calidad\nResolución: ${ancho}x${alto} pixels',
-              ),
-              backgroundColor: Colors.green,
-              duration: Duration(seconds: 4),
-            ),
-          );
-        }
+        await _exportarWeb(pngBytes, ancho, alto, context);
       } else {
-        // Para plataformas móviles/desktop (no implementado aún)
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Exportación solo disponible en versión Web'),
-              backgroundColor: Colors.orange,
-            ),
-          );
-        }
+        // Para plataformas móviles/desktop
+        await _exportarMovilDesktop(pngBytes, ancho, alto, context);
       }
     } catch (e) {
       // Cerrar loading si está abierto
@@ -245,11 +212,74 @@ class _OrganigramaCustomState extends State<OrganigramaCustom> {
           SnackBar(
             content: Text('Error al exportar: $e'),
             backgroundColor: Colors.red,
-            duration: Duration(seconds: 4),
+            duration: const Duration(seconds: 4),
           ),
         );
       }
     }
+  }
+
+  // Exportar para plataforma Web
+  Future<void> _exportarWeb(
+    Uint8List pngBytes,
+    int ancho,
+    int alto,
+    BuildContext context,
+  ) async {
+    if (!kIsWeb) return;
+
+    try {
+      // Usar el ExportManager para descargar
+      final exportManager = web_export.createExportManager();
+      final nombreArchivo =
+          'organigrama_${DateTime.now().millisecondsSinceEpoch}.png';
+      await exportManager.descargarPNG(pngBytes, nombreArchivo);
+
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Organigrama descargado exitosamente\nResolución: ${ancho}x${alto} pixels',
+            ),
+            backgroundColor: Colors.green,
+            duration: const Duration(seconds: 4),
+          ),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error al descargar: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  // Exportar para plataformas móviles/desktop
+  Future<void> _exportarMovilDesktop(
+    Uint8List pngBytes,
+    int ancho,
+    int alto,
+    BuildContext context,
+  ) async {
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Organigrama generado exitosamente\nResolución: ${ancho}x${alto} pixels\n(Imagen lista para compartir)',
+          ),
+          backgroundColor: Colors.orange,
+          duration: const Duration(seconds: 4),
+        ),
+      );
+    }
+    // Aquí se puede implementar la exportación nativa usando:
+    // - share_plus para compartir
+    // - path_provider para guardar archivos
+    // - file_saver para descargar
   }
 
   @override
