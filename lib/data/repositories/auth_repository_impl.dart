@@ -1,5 +1,9 @@
+import 'package:bosque_flutter/data/models/empleado_model.dart';
 import 'package:bosque_flutter/data/models/usuarioBtn_model.dart';
+import 'package:bosque_flutter/data/models/vista_usuario_model.dart';
+import 'package:bosque_flutter/domain/entities/empleado_entity.dart';
 import 'package:bosque_flutter/domain/entities/usuarioBtn_entity.dart';
+import 'package:bosque_flutter/domain/entities/vista_usuario_entity.dart';
 import 'package:dio/dio.dart';
 import 'package:bosque_flutter/core/constants/app_constants.dart';
 import 'package:bosque_flutter/core/network/dio_client.dart';
@@ -47,7 +51,6 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   /// Método para obtener los usuarios
-  @override
   @override
   Future<List<LoginEntity>> getUsers() async {
     try {
@@ -170,5 +173,87 @@ class AuthRepositoryImpl implements AuthRepository {
     _botonesAutorizados.clear();
     _botonesCargados = false;
     _tipoUsuario = null;
+  }
+
+  /// Método para copiar permisos de vista de un usuario a otro
+  @override
+  Future<bool> copiarPermisos(VistaUsuarioEntity vistaUsuario) async {
+    final model = VistaUsuarioModel.fromEntity(vistaUsuario);
+
+    try {
+      final response = await _dio.post(
+        AppConstants.registroVistaUsuario,
+        data: model.toJson(),
+      );
+
+      return response.statusCode == 200 || response.statusCode == 201;
+    } on DioException catch (e) {
+      // Manejar errores de red o del servidor
+      String errorMessage = 'Error de conexión: ${e.message}';
+      if (e.response != null && e.response!.data != null) {
+        errorMessage =
+            'Error del servidor: ${e.response!.statusCode} - ${e.response!.data.toString()}';
+      }
+      throw Exception(errorMessage);
+    } catch (e) {
+      throw Exception('Error desconocido: ${e.toString()}');
+    }
+  }
+
+  @override
+  Future<bool> registrarLogin(LoginEntity user) async {
+    final model = LoginDataModel.fromEntity(user);
+
+    try {
+      final response = await _dio.post(
+        AppConstants.registroLogin,
+        data: model.toJson(),
+      );
+
+      return response.statusCode == 200 || response.statusCode == 201;
+    } on DioException catch (e) {
+      // Manejar errores de red o del servidor
+      String errorMessage = 'Error de conexión: ${e.message}';
+      if (e.response != null && e.response!.data != null) {
+        errorMessage =
+            'Error del servidor: ${e.response!.statusCode} - ${e.response!.data.toString()}';
+      }
+      throw Exception(errorMessage);
+    } catch (e) {
+      throw Exception('Error desconocido: ${e.toString()}');
+    }
+  }
+
+  @override
+  Future<List<EmpleadoEntity>> listarEmpleados() async {
+    try {
+      final response = await _dio.post(AppConstants.listaEmpleados, data: {});
+
+      if (response.statusCode == 200 && response.data != null) {
+        // Intentar obtener los datos del campo 'data' o usar directamente si es un array
+        final data = response.data is List 
+            ? response.data 
+            : response.data['data'] ?? [];
+            
+        final items =
+            (data as List<dynamic>)
+                .map((json) => EmpleadoModel.fromJson(json))
+                .toList();
+
+        return items.map((model) => model.toEntity()).toList();
+      } else {
+        throw Exception('Error al obtener los empleados');
+      }
+    } on DioException catch (e) {
+      // Manejar errores de red o del servidor
+      String errorMessage = 'Error de conexión: ${e.message}';
+      if (e.response != null && e.response!.data != null) {
+        errorMessage =
+            'Error del servidor: ${e.response!.statusCode} - ${e.response!.data.toString()}';
+      }
+      throw Exception(errorMessage);
+    } catch (e) {
+      throw Exception('Error desconocido getEmpleados: ${e.toString()}');
+    }
   }
 }

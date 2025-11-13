@@ -5,11 +5,7 @@ class LoginModel {
   final String status;
   final LoginDataModel? data;
 
-  LoginModel({
-    required this.mensaje,
-    required this.status,
-    this.data,
-  });
+  LoginModel({required this.mensaje, required this.status, this.data});
 
   factory LoginModel.fromJson(Map<String, dynamic> json) {
     return LoginModel(
@@ -20,10 +16,7 @@ class LoginModel {
   }
 
   Map<String, dynamic> toJson() {
-    final Map<String, dynamic> dataMap = {
-      'mensaje': mensaje,
-      'status': status,
-    };
+    final Map<String, dynamic> dataMap = {'mensaje': mensaje, 'status': status};
     if (data != null) dataMap['data'] = data!.toJson();
     return dataMap;
   }
@@ -104,7 +97,9 @@ class LoginDataModel {
     // Mapeo seguro para cargo anidado
     String cargo = '';
     try {
-      cargo = json['empleado']?['empleadoCargo']?['cargoSucursal']?['cargo']?['descripcion'] ?? '';
+      cargo =
+          json['empleado']?['empleadoCargo']?['cargoSucursal']?['cargo']?['descripcion'] ??
+          '';
     } catch (_) {
       cargo = '';
     }
@@ -176,7 +171,31 @@ class LoginDataModel {
       nombreCiudad: nombreCiudad,
       nombreEmpresa: nombreEmpresa,
       npassword: npassword,
+    );
+  }
 
+  // Método factory para convertir de Entity a Model
+  factory LoginDataModel.fromEntity(LoginEntity entity) {
+    return LoginDataModel(
+      token: entity.token,
+      bearer: entity.bearer,
+      nombreCompleto: entity.nombreCompleto,
+      cargo: entity.cargo,
+      tipoUsuario: entity.tipoUsuario,
+      codUsuario: entity.codUsuario,
+      codEmpleado: entity.codEmpleado,
+      codEmpresa: entity.codEmpresa,
+      codCiudad: entity.codCiudad,
+      login: entity.login,
+      versionApp: entity.versionApp,
+      codSucursal: entity.codSucursal,
+      esAutorizador: entity.esAutorizador,
+      estado: entity.estado,
+      audUsuarioI: entity.audUsuarioI,
+      nombreSucursal: entity.nombreSucursal,
+      nombreCiudad: entity.nombreCiudad,
+      nombreEmpresa: entity.nombreEmpresa,
+      npassword: entity.npassword,
     );
   }
 }

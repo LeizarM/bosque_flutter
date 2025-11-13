@@ -6,6 +6,11 @@ class AppConstants {
 
   static const String loginEndpoint = '/auth/login';
   static const String menuEndpoint = '/view/vistaDinamica';
+  static const String registroVistaUsuario = '/auth/registroVistaUsuario';
+  static const String registroLogin =
+      '/view/registroUsuario'; //registro login o usuario
+  static const String listaEmpleados = '/auth/lstEmpleados';
+
   static const String articulosEndpoint = '/paginaXApp/articulosX';
   static const String articulosAlmacenEndpoint =
       '/paginaXApp/articulosXAlmacen';

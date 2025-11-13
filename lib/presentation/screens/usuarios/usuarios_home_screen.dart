@@ -1,3 +1,6 @@
+import 'package:bosque_flutter/domain/entities/vista_usuario_entity.dart';
+import 'package:bosque_flutter/data/repositories/auth_repository_impl.dart';
+import 'package:dropdown_search/dropdown_search.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:bosque_flutter/core/state/user_provider.dart';
@@ -123,6 +126,7 @@ class _UsuariosHomeScreenState extends ConsumerState<UsuariosHomeScreen> {
     ThemeData theme,
     ColorScheme colorScheme,
     bool isCopy,
+    List<dynamic> users,
   ) {
     showDialog(
       context: context,
@@ -148,6 +152,7 @@ class _UsuariosHomeScreenState extends ConsumerState<UsuariosHomeScreen> {
               );
             });
           },
+          availableUsers: users,
         );
       },
     );
@@ -169,48 +174,50 @@ class _UsuariosHomeScreenState extends ConsumerState<UsuariosHomeScreen> {
           users: users,
           theme: theme,
           colorScheme: colorScheme,
-          onConfirm: (selectedUser) {
-            Navigator.of(dialogContext).pop();
-            _showPermissionsSelectionDialog(
-              user,
-              selectedUser,
-              context,
-              ref,
-              theme,
-              colorScheme,
-            );
-          },
-        );
-      },
-    );
-  }
-
-  void _showPermissionsSelectionDialog(
-    dynamic targetUser,
-    dynamic sourceUser,
-    BuildContext context,
-    WidgetRef ref,
-    ThemeData theme,
-    ColorScheme colorScheme,
-  ) {
-    showDialog(
-      context: context,
-      builder: (dialogContext) {
-        return _PermissionsSelectionDialog(
-          targetUser: targetUser,
-          sourceUser: sourceUser,
-          theme: theme,
-          colorScheme: colorScheme,
-          onConfirm: () {
-            Navigator.of(dialogContext).pop();
-            Future.delayed(Duration(milliseconds: 300), () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: const Text('Permisos copiados correctamente'),
-                  backgroundColor: colorScheme.primary,
-                ),
+          onConfirm: (selectedUser) async {
+            try {
+              // Crear la entidad de vista de usuario para copiar permisos
+              final vistaUsuarioEntity = VistaUsuarioEntity(
+                codUsuario: user.codUsuario,
+                codVista: 0,
+                nivelAcceso: 0,
+                autorizador: selectedUser.codUsuario,
+                audUsuarioI: ref.read(userProvider)?.codUsuario ?? 0,
               );
-            });
+
+              // Llamar al método copiarPermisos del repositorio
+              final resultado = await AuthRepositoryImpl().copiarPermisos(
+                vistaUsuarioEntity,
+              );
+
+              Navigator.of(dialogContext).pop();
+              Future.delayed(const Duration(milliseconds: 300), () {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(
+                      resultado
+                          ? 'Permisos de ${selectedUser.login} copiados a ${user.login}'
+                          : 'Error al copiar permisos',
+                    ),
+                    backgroundColor:
+                        resultado ? colorScheme.primary : colorScheme.error,
+                    duration: const Duration(seconds: 3),
+                  ),
+                );
+              });
+            } catch (e) {
+              debugPrint('Error al copiar permisos: $e');
+              Navigator.of(dialogContext).pop();
+              Future.delayed(const Duration(milliseconds: 300), () {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Error al copiar permisos: $e'),
+                    backgroundColor: colorScheme.error,
+                    duration: const Duration(seconds: 3),
+                  ),
+                );
+              });
+            }
           },
         );
       },
@@ -232,7 +239,7 @@ class _UsuariosHomeScreenState extends ConsumerState<UsuariosHomeScreen> {
           colorScheme: colorScheme,
           onConfirm: () {
             Navigator.of(dialogContext).pop();
-            Future.delayed(Duration(milliseconds: 300), () {
+            Future.delayed(const Duration(milliseconds: 300), () {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: const Text('Permisos asignados correctamente'),
@@ -511,6 +518,7 @@ class _UsuariosHomeScreenState extends ConsumerState<UsuariosHomeScreen> {
                                     theme,
                                     colorScheme,
                                     false,
+                                    users,
                                   );
                                 } else if (value == 'restablecer') {
                                   _showResetPasswordDialog(
@@ -848,6 +856,7 @@ class _UsuariosHomeScreenState extends ConsumerState<UsuariosHomeScreen> {
                                                       theme,
                                                       colorScheme,
                                                       false,
+                                                      users,
                                                     );
                                                   },
                                                 ),
@@ -989,7 +998,7 @@ class _UsuariosHomeScreenState extends ConsumerState<UsuariosHomeScreen> {
   }
 }
 
-class _UserFormDialog extends StatefulWidget {
+class _UserFormDialog extends ConsumerStatefulWidget {
   final dynamic user;
   final bool isCopy;
   final bool isNew;
@@ -997,6 +1006,7 @@ class _UserFormDialog extends StatefulWidget {
   final ColorScheme colorScheme;
   final VoidCallback onResetPassword;
   final Function(String message, bool isSuccess) onShowMessage;
+  final List<dynamic>? availableUsers;
 
   const _UserFormDialog({
     required this.user,
@@ -1006,14 +1016,15 @@ class _UserFormDialog extends StatefulWidget {
     required this.colorScheme,
     required this.onResetPassword,
     required this.onShowMessage,
+    this.availableUsers,
   });
 
   @override
-  State<_UserFormDialog> createState() => _UserFormDialogState();
+  ConsumerState<_UserFormDialog> createState() => _UserFormDialogState();
 }
 
-class _UserFormDialogState extends State<_UserFormDialog> {
-  late TextEditingController _nombreController;
+class _UserFormDialogState extends ConsumerState<_UserFormDialog> {
+  late int _selectedEmpleadoCode; // Cambiar a int para almacenar codPersona
   late TextEditingController _loginController;
   late TextEditingController _cargoController;
   late String _tipoUsuario;
@@ -1023,9 +1034,12 @@ class _UserFormDialogState extends State<_UserFormDialog> {
   @override
   void initState() {
     super.initState();
-    _nombreController = TextEditingController(
-      text: widget.user?.nombreCompleto ?? '',
-    );
+    // Si es edición (no es nuevo ni copia), cargar el codEmpleado del usuario
+    if (!widget.isNew && !widget.isCopy) {
+      _selectedEmpleadoCode = widget.user?.codEmpleado ?? 0;
+    } else {
+      _selectedEmpleadoCode = 0;
+    }
     _loginController = TextEditingController(text: widget.user?.login ?? '');
     _cargoController = TextEditingController(text: widget.user?.cargo ?? '');
     _tipoUsuario = widget.user?.tipoUsuario ?? 'lim';
@@ -1035,7 +1049,6 @@ class _UserFormDialogState extends State<_UserFormDialog> {
 
   @override
   void dispose() {
-    _nombreController.dispose();
     _loginController.dispose();
     _cargoController.dispose();
     super.dispose();
@@ -1059,17 +1072,75 @@ class _UserFormDialogState extends State<_UserFormDialog> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            TextField(
-              controller: _nombreController,
-              decoration: InputDecoration(
-                labelText: 'Nombre Completo',
-                border: const OutlineInputBorder(),
-                prefixIcon: Icon(
-                  Icons.person,
-                  color: widget.colorScheme.primary,
+            ref
+                .watch(empleadosListProvider)
+                .when(
+                  data: (empleados) {
+                    // Crear un map de codEmpleado -> nombre para búsqueda
+                    final selectedEmpleado =
+                        _selectedEmpleadoCode == 0
+                            ? null
+                            : empleados.firstWhere(
+                              (e) => e.codEmpleado == _selectedEmpleadoCode,
+                              orElse: () => null as dynamic,
+                            );
+
+                    return DropdownSearch<dynamic>(
+                      items: empleados,
+                      selectedItem: selectedEmpleado,
+                      enabled: widget.isNew || widget.isCopy,
+                      dropdownDecoratorProps: DropDownDecoratorProps(
+                        dropdownSearchDecoration: InputDecoration(
+                          labelText: 'Empleado',
+                          border: const OutlineInputBorder(),
+                          prefixIcon: Icon(
+                            Icons.person,
+                            color: widget.colorScheme.primary,
+                          ),
+                        ),
+                      ),
+                      popupProps: PopupProps.menu(
+                        showSearchBox: true,
+                        searchFieldProps: TextFieldProps(
+                          decoration: InputDecoration(
+                            labelText: 'Buscar empleado...',
+                            border: const OutlineInputBorder(),
+                            prefixIcon: Icon(
+                              Icons.search,
+                              color: widget.colorScheme.primary,
+                            ),
+                          ),
+                        ),
+                        itemBuilder: (context, empleado, isSelected) {
+                          return Padding(
+                            padding: const EdgeInsets.all(8.0),
+                            child: Text(
+                              '${empleado.nombres}',
+                              style: widget.theme.textTheme.bodyMedium,
+                            ),
+                          );
+                        },
+                      ),
+                      itemAsString:
+                          (empleado) =>
+                              '${empleado.nombres} (Cod: ${empleado.codEmpleado})',
+                      onChanged:
+                          widget.isNew || widget.isCopy
+                              ? (value) {
+                                setState(() {
+                                  _selectedEmpleadoCode =
+                                      value?.codEmpleado ?? 0;
+                                });
+                              }
+                              : null,
+                      compareFn: (item, selectedItem) {
+                        return item.codEmpleado == selectedItem.codEmpleado;
+                      },
+                    );
+                  },
+                  loading: () => const CircularProgressIndicator(),
+                  error: (error, stack) => Text('Error: $error'),
                 ),
-              ),
-            ),
             const SizedBox(height: 12),
             TextField(
               controller: _loginController,
@@ -1272,19 +1343,44 @@ class _CopyPermissionsDialog extends StatefulWidget {
 
 class _CopyPermissionsDialogState extends State<_CopyPermissionsDialog> {
   dynamic _selectedUser;
+  String _searchText = '';
+  late FocusNode _focusNode;
+  late TextEditingController _searchController;
+  bool _showDropdown = false;
 
   @override
   void initState() {
     super.initState();
+    _focusNode = FocusNode();
+    _searchController = TextEditingController();
     // Excluir el usuario actual de la lista
     _selectedUser =
         widget.users.where((u) => u.login != widget.user.login).firstOrNull;
   }
 
   @override
+  void dispose() {
+    _focusNode.dispose();
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final filteredUsers =
+    final allUsers =
         widget.users.where((u) => u.login != widget.user.login).toList();
+
+    final filteredUsers =
+        allUsers.where((u) {
+          final searchLower = _searchText.toLowerCase();
+          return (u.nombreCompleto ?? '').toLowerCase().contains(searchLower) ||
+              (u.login ?? '').toLowerCase().contains(searchLower);
+        }).toList();
+
+    // Si el usuario seleccionado no está en la lista filtrada, deseleccionar
+    if (_selectedUser != null && !filteredUsers.contains(_selectedUser)) {
+      _selectedUser = null;
+    }
 
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -1341,37 +1437,322 @@ class _CopyPermissionsDialogState extends State<_CopyPermissionsDialog> {
                     overflow: TextOverflow.ellipsis,
                   ),
                   const SizedBox(height: 16),
-                  DropdownButtonFormField<dynamic>(
-                    value: _selectedUser,
-                    isExpanded: true,
-                    decoration: InputDecoration(
-                      labelText: 'Seleccionar usuario',
-                      border: const OutlineInputBorder(),
-                      prefixIcon: Icon(
-                        Icons.person,
-                        color: widget.colorScheme.primary,
+                  // Dropdown con búsqueda integrada
+                  Container(
+                    decoration: BoxDecoration(
+                      border: Border.all(
+                        color:
+                            _showDropdown
+                                ? widget.colorScheme.primary
+                                : Colors.grey.shade300,
+                        width: _showDropdown ? 2 : 1,
                       ),
-                      isDense: true,
+                      borderRadius: BorderRadius.circular(4),
                     ),
-                    items:
-                        filteredUsers.map((user) {
-                          return DropdownMenuItem(
-                            value: user,
-                            child: Text(
-                              user.nombreCompleto ?? user.login,
-                              overflow: TextOverflow.ellipsis,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        // Campo de búsqueda
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(12, 8, 8, 8),
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.search,
+                                color: widget.colorScheme.primary,
+                                size: 20,
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: TextField(
+                                  controller: _searchController,
+                                  focusNode: _focusNode,
+                                  onChanged: (value) {
+                                    setState(() {
+                                      _searchText = value;
+                                    });
+                                  },
+                                  onTap: () {
+                                    setState(() {
+                                      _showDropdown = true;
+                                    });
+                                  },
+                                  decoration: InputDecoration(
+                                    hintText:
+                                        _selectedUser != null
+                                            ? '${_selectedUser.nombreCompleto ?? _selectedUser.login}'
+                                            : 'Buscar usuario...',
+                                    border: InputBorder.none,
+                                    isDense: true,
+                                    contentPadding: EdgeInsets.zero,
+                                  ),
+                                  style: widget.theme.textTheme.bodyMedium,
+                                ),
+                              ),
+                              if (_searchText.isNotEmpty ||
+                                  _selectedUser != null)
+                                IconButton(
+                                  icon: const Icon(Icons.clear),
+                                  iconSize: 18,
+                                  padding: EdgeInsets.zero,
+                                  constraints: const BoxConstraints(
+                                    minWidth: 32,
+                                    minHeight: 32,
+                                  ),
+                                  onPressed: () {
+                                    setState(() {
+                                      _searchController.clear();
+                                      _searchText = '';
+                                      _selectedUser = null;
+                                    });
+                                  },
+                                ),
+                            ],
+                          ),
+                        ),
+                        // Lista desplegable de usuarios
+                        if (_showDropdown && filteredUsers.isNotEmpty)
+                          Container(
+                            decoration: BoxDecoration(
+                              border: Border(
+                                top: BorderSide(color: Colors.grey.shade300),
+                              ),
                             ),
-                          );
-                        }).toList(),
-                    onChanged: (value) {
-                      setState(() {
-                        _selectedUser = value;
-                      });
-                    },
+                            constraints: const BoxConstraints(maxHeight: 200),
+                            child: ListView.builder(
+                              shrinkWrap: true,
+                              itemCount: filteredUsers.length,
+                              itemBuilder: (context, index) {
+                                final user = filteredUsers[index];
+                                final isSelected = _selectedUser == user;
+                                return InkWell(
+                                  onTap: () {
+                                    setState(() {
+                                      _selectedUser = user;
+                                      _searchController.text =
+                                          user.nombreCompleto ?? user.login;
+                                      _searchText = '';
+                                      _showDropdown = false;
+                                      _focusNode.unfocus();
+                                    });
+                                  },
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 12,
+                                      vertical: 12,
+                                    ),
+                                    color:
+                                        isSelected
+                                            ? widget.colorScheme.primary
+                                                .withOpacity(0.1)
+                                            : null,
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          user.nombreCompleto ?? user.login,
+                                          style: widget
+                                              .theme
+                                              .textTheme
+                                              .bodyMedium
+                                              ?.copyWith(
+                                                fontWeight:
+                                                    isSelected
+                                                        ? FontWeight.bold
+                                                        : FontWeight.normal,
+                                                color:
+                                                    isSelected
+                                                        ? widget
+                                                            .colorScheme
+                                                            .primary
+                                                        : null,
+                                              ),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                        if ((user.login ?? '').isNotEmpty)
+                                          Text(
+                                            user.login,
+                                            style: widget
+                                                .theme
+                                                .textTheme
+                                                .labelSmall
+                                                ?.copyWith(
+                                                  color: Colors.grey.shade600,
+                                                ),
+                                          ),
+                                      ],
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                          )
+                        else if (_showDropdown && filteredUsers.isEmpty)
+                          Container(
+                            decoration: BoxDecoration(
+                              border: Border(
+                                top: BorderSide(color: Colors.grey.shade300),
+                              ),
+                            ),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 16,
+                            ),
+                            child: Center(
+                              child: Text(
+                                'No se encontraron usuarios',
+                                style: widget.theme.textTheme.bodySmall
+                                    ?.copyWith(color: Colors.grey.shade600),
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
                   ),
                 ],
               ),
             ),
+            // Comparación de datos de ambos usuarios
+            if (_selectedUser != null)
+              Container(
+                margin: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 12,
+                ),
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: widget.colorScheme.surfaceContainerHighest,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.grey.shade300),
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      'Comparación de Datos',
+                      style: widget.theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: widget.colorScheme.primary,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    // Tabla comparativa
+                    Table(
+                      columnWidths: {
+                        0: const FlexColumnWidth(0.3),
+                        1: const FlexColumnWidth(0.35),
+                        2: const FlexColumnWidth(0.35),
+                      },
+                      children: [
+                        // Header
+                        TableRow(
+                          decoration: BoxDecoration(
+                            color: widget.colorScheme.primary.withOpacity(0.1),
+                          ),
+                          children: [
+                            _buildTableCell('Campo', isBold: true),
+                            _buildTableCell(
+                              'De: ${widget.user.login}',
+                              isBold: true,
+                            ),
+                            _buildTableCell(
+                              'A: ${_selectedUser.login}',
+                              isBold: true,
+                            ),
+                          ],
+                        ),
+                        // Nombre Completo
+                        TableRow(
+                          children: [
+                            _buildTableCell('Nombre', isBold: true),
+                            _buildTableCell(widget.user.nombreCompleto ?? '-'),
+                            _buildTableCell(
+                              _selectedUser.nombreCompleto ?? '-',
+                            ),
+                          ],
+                        ),
+                        // Tipo de Usuario
+                        TableRow(
+                          children: [
+                            _buildTableCell('Tipo', isBold: true),
+                            _buildTableCell(
+                              widget.user.tipoUsuario == 'adm'
+                                  ? 'Administrador'
+                                  : 'Limitado',
+                            ),
+                            _buildTableCell(
+                              _selectedUser.tipoUsuario == 'adm'
+                                  ? 'Administrador'
+                                  : 'Limitado',
+                            ),
+                          ],
+                        ),
+                        // Estado
+                        TableRow(
+                          children: [
+                            _buildTableCell('Estado', isBold: true),
+                            _buildTableCell(
+                              widget.user.estado == 'D'
+                                  ? 'Desbloqueado'
+                                  : 'Bloqueado',
+                            ),
+                            _buildTableCell(
+                              _selectedUser.estado == 'D'
+                                  ? 'Desbloqueado'
+                                  : 'Bloqueado',
+                            ),
+                          ],
+                        ),
+                        // Autorizador
+                        TableRow(
+                          children: [
+                            _buildTableCell('Autorizador', isBold: true),
+                            _buildTableCell(
+                              widget.user.esAutorizador.toUpperCase() == 'SI'
+                                  ? 'Sí'
+                                  : 'No',
+                            ),
+                            _buildTableCell(
+                              _selectedUser.esAutorizador.toUpperCase() == 'SI'
+                                  ? 'Sí'
+                                  : 'No',
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.blue.shade50,
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: Colors.blue.shade200),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.info_outline,
+                            color: Colors.blue.shade700,
+                            size: 20,
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Text(
+                              'Los permisos del usuario "${_selectedUser.login}" se copiarán a "${widget.user.login}"',
+                              style: widget.theme.textTheme.bodySmall?.copyWith(
+                                color: Colors.blue.shade900,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             // Actions
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
@@ -1401,7 +1782,7 @@ class _CopyPermissionsDialogState extends State<_CopyPermissionsDialog> {
                         borderRadius: BorderRadius.circular(8),
                       ),
                     ),
-                    label: const Text('Siguiente'),
+                    label: const Text('Copiar Permisos'),
                     onPressed:
                         _selectedUser != null
                             ? () => widget.onConfirm(_selectedUser)
@@ -1412,6 +1793,20 @@ class _CopyPermissionsDialogState extends State<_CopyPermissionsDialog> {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildTableCell(String text, {bool isBold = false}) {
+    return Padding(
+      padding: const EdgeInsets.all(12),
+      child: Text(
+        text,
+        style: widget.theme.textTheme.bodySmall?.copyWith(
+          fontWeight: isBold ? FontWeight.bold : FontWeight.normal,
+          color: isBold ? widget.colorScheme.primary : null,
+        ),
+        textAlign: TextAlign.center,
       ),
     );
   }

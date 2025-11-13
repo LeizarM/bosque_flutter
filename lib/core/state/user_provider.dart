@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:bosque_flutter/core/constants/app_constants.dart';
 import 'package:bosque_flutter/core/state/button_permissions_provider.dart';
+import 'package:bosque_flutter/domain/entities/empleado_entity.dart';
 import 'package:bosque_flutter/domain/entities/login_entity.dart';
 import 'package:bosque_flutter/core/utils/secure_storage.dart';
 import 'package:flutter/material.dart';
@@ -72,7 +73,6 @@ class UserStateNotifier extends StateNotifier<LoginEntity?> {
     await storage.saveUserData(userDataJson);
     // Guardar el token por separado si es necesario
     await storage.saveToken(user.token);
-    
   }
 
   Future<void> clearUser() async {
@@ -157,24 +157,23 @@ class UserStateNotifier extends StateNotifier<LoginEntity?> {
     }
   }
 
-
   Future<String> getCargo() async {
     // First try to get cargo from state if available
     if (state?.cargo.isNotEmpty == true) {
       return state!.cargo;
     }
-    
+
     // If not in state, try to get from storage
     final storage = SecureStorage();
     final userDataJson = await storage.getUserData();
     if (userDataJson == null) return 'USUARIO SIN CARGO ASIGNADO';
-    
+
     try {
       final userData = jsonDecode(userDataJson);
-      
+
       // Check for cargo in different possible locations in JSON
       String? cargo;
-      
+
       // Check in nested data object
       if (userData['data']?['cargo'] != null) {
         cargo = userData['data']['cargo'].toString();
@@ -189,11 +188,13 @@ class UserStateNotifier extends StateNotifier<LoginEntity?> {
         final parts = token.split('.');
         if (parts.length > 1) {
           final payload = base64Url.normalize(parts[1]);
-          final payloadData = jsonDecode(utf8.decode(base64Url.decode(payload)));
+          final payloadData = jsonDecode(
+            utf8.decode(base64Url.decode(payload)),
+          );
           cargo = payloadData['cargo']?.toString();
         }
       }
-      
+
       return cargo?.isNotEmpty == true ? cargo! : 'USUARIO SIN CARGO ASIGNADO';
     } catch (e) {
       return 'USUARIO SIN CARGO ASIGNADO';
@@ -215,14 +216,10 @@ class UserStateNotifier extends StateNotifier<LoginEntity?> {
   Future<List<LoginEntity>> getUsers() async {
     try {
       final users = await _authRepository.getUsers();
-      if (users.isNotEmpty) {
-        print('Primer usuario: \\n${users.first.toJson()}');
-      } else {
-        print('No llegaron usuarios del backend');
-      }
+
       return users;
     } catch (e) {
-      print('Error al obtener usuarios: $e');
+      //print('Error al obtener usuarios: $e');
       return [];
     }
   }
@@ -244,8 +241,15 @@ final usersListProvider = FutureProvider<List<LoginEntity>>((ref) {
 });
 
 // Definimos el provider usando StateNotifierProvider
-               final userProvider = StateNotifierProvider<UserStateNotifier, LoginEntity?>((
+final userProvider = StateNotifierProvider<UserStateNotifier, LoginEntity?>((
   ref,
 ) {
   return UserStateNotifier();
+});
+
+// Provider para cargar la lista de empleados desde el backend
+final empleadosListProvider = FutureProvider<List<EmpleadoEntity>>((ref) async {
+  final authRepository = AuthRepositoryImpl();
+  final empleados = await authRepository.listarEmpleados();
+  return empleados;
 });
