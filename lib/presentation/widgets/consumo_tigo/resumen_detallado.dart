@@ -3,6 +3,7 @@ import 'package:bosque_flutter/core/state/user_provider.dart';
 import 'package:bosque_flutter/core/utils/responsive_utils_bosque.dart';
 import 'package:bosque_flutter/domain/entities/tigo_ejecutado_entity.dart';
 import 'package:bosque_flutter/presentation/screens/facturas-tigo/ver_grupos.dart';
+import 'package:bosque_flutter/presentation/widgets/dependientes/confirm_dialogs.dart';
 import 'package:bosque_flutter/presentation/widgets/shared/permission_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -357,6 +358,8 @@ if (ejecutadoEnProvider && !mostrarTigoEjecutado) {
     _buildRefreshButtonResumen(
       onRefresh: () {
         ref.invalidate(tigoArbolDetallado((_empresaSeleccionada, widget.periodoCobrado)));
+        ref.invalidate(insertarAnticipoTigo(widget.periodoCobrado));
+        ref.invalidate(ejecutarTigo((widget.periodoCobrado,0)));
       },
     ),
   ],
@@ -619,10 +622,23 @@ if (ejecutadoEnProvider && !mostrarTigoEjecutado) {
         );
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error al ejecutar: $e')),
-      );
-    }
+            // 🚨 CAMBIO REQUERIDO: Manejar la excepción limpia y mostrar el SnackBar rojo
+            
+            // 1. Limpiamos el prefijo 'Exception: ' si existe
+            String mensajeError = e.toString().contains('Exception: ') 
+                ? e.toString().replaceFirst('Exception: ', '') 
+                : e.toString();
+
+            // 2. Mostramos el mensaje limpio en un SnackBar rojo
+           /* ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                    content: Text('Error al ejecutar: $mensajeError'), // Muestra el mensaje exacto del SP
+                    backgroundColor: Colors.red,
+                    duration: const Duration(seconds: 8), // Lo hacemos visible más tiempo
+                ),
+            );*/
+            AppSnackbarCustom.showError(context, 'Error al ejecutar: $mensajeError');
+        }
                 }
               },
               /*onInsertarDatos: () async {

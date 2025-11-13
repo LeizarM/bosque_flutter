@@ -476,9 +476,9 @@ String _getParentesco(WidgetRef ref, DependienteEntity dependiente) {
                   onSave: (updatedDependiente, updatedPersona) async {
                     try {
                       // Registrar primero la persona actualizada
-                      await ref.read(
+                     /* await ref.read(
                         registrarPersonaProvider(updatedPersona).future,
-                      );
+                      );*/
                       // await ref.read(dependientesNotifierProvider.notifier).editarDependiente(updatedDependiente);
                       await ref.read(
                         editarDepProvider(updatedDependiente).future,
@@ -535,30 +535,24 @@ String _getParentesco(WidgetRef ref, DependienteEntity dependiente) {
                 persona: null,
                 onSave: (newDependiente, newPersona) async {
                   try {
-                    final personaRegistrada = await ref.read(
-                      registrarPersonaProvider(newPersona).future,
-                    );
-                    final dependienteConPersona = newDependiente.copyWith(
-                      codPersona: personaRegistrada.codPersona,
-                    );
+                    // 1. LLAMADA FINAL DE REGISTRO DE DEPENDIENTE
+                    // newDependiente ya tiene codPersona válido desde _handleSubmit.
                     await ref.read(
-                      editarDepProvider(dependienteConPersona).future,
+                      editarDepProvider(newDependiente).future,
                     );
+                    
+                    // 2. Invalidar Providers
                     ref.invalidate(dependientesProvider(widget.codEmpleado));
                     ref.invalidate(empleadosDependientesProvider);
-                    //Navigator.of(context).pop();
+
                   } catch (e) {
-                    AppSnackbar.showError(
-                      context,
-                      'Error al registrar: ${e.toString()}',
-                    );
+                    // 3. Relanzar la excepción para que el catch del _handleSubmit la maneje
+                    throw e; 
                   }
                 },
                 onCancel: () => Navigator.of(context).pop(),
               ),
-              const SizedBox(height: 16),
-            
-              const SizedBox(height: 8),
+              
             ],
           ),
         ),
@@ -736,7 +730,7 @@ String _getParentesco(WidgetRef ref, DependienteEntity dependiente) {
                 children: [
                   if (habilitarEdicion &&
                       selectedOperation['dependiente'] == 'editar' &&
-                      (dependiente.codEmpleado == null || dependiente.codEmpleado == 0))
+                      (dependiente.empActivo == null || dependiente.empActivo == 0))
                     IconButton(
                       icon: const Icon(Icons.edit, color: Colors.teal),
                       tooltip: 'Editar',
@@ -1082,7 +1076,7 @@ Widget _buildDependientesWebView(
                               trailing: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  if (habilitarEdicion && (dep.codEmpleado == null || dep.codEmpleado == 0))
+                                  if (habilitarEdicion && (dep.empActivo == null || dep.empActivo == 0))
                                     IconButton(
                                       icon: const Icon(Icons.edit, color: Colors.teal),
                                       tooltip: 'Editar',

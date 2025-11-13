@@ -20,16 +20,16 @@ class PersonaModel {
     final String apPaterno;
     final String apMaterno;
     final String ciExpedido;
-    final DateTime ciFechaVencimiento;
+    final DateTime? ciFechaVencimiento;
     final String ciNumero;
     final String direccion;
     final String estadoCivil;
-    final DateTime fechaNacimiento;
+    final DateTime? fechaNacimiento;
     final String lugarNacimiento;
     final int nacionalidad;
     final String sexo;
-    final double lat;
-    final double lng;
+    final double? lat;
+    final double? lng;
     final int audUsuarioI;
     final String? datoPersona;
     final ZonaModel zona;
@@ -67,16 +67,18 @@ class PersonaModel {
         apPaterno: json["apPaterno"]??'',
         apMaterno: json["apMaterno"]??'',
         ciExpedido: json["ciExpedido"]??'',
-        ciFechaVencimiento:json["ciFechaVencimiento"] != null ? DateTime.parse(json["ciFechaVencimiento"]) : DateTime.now(),
+        //ciFechaVencimiento:json["ciFechaVencimiento"] != null ? DateTime.parse(json["ciFechaVencimiento"]) : DateTime.now(),
+        ciFechaVencimiento: json["ciFechaVencimiento"] != null ? DateTime.tryParse(json["ciFechaVencimiento"]) : null,
         ciNumero: json["ciNumero"]??'',
         direccion: json["direccion"]??'',
         estadoCivil: json["estadoCivil"]??'',
-        fechaNacimiento: json["fechaNacimiento"] != null ? DateTime.parse(json["fechaNacimiento"]) : DateTime.now(),
+        fechaNacimiento: json["fechaNacimiento"] != null ? DateTime.tryParse(json["fechaNacimiento"]) : null,
+        //fechaNacimiento: json["fechaNacimiento"] != null ? DateTime.parse(json["fechaNacimiento"]) : DateTime.now(),
         lugarNacimiento: json["lugarNacimiento"]??'',
         nacionalidad: json["nacionalidad"]?? 0,
         sexo: json["sexo"]?? '',
-        lat: json["lat"]?? 0.0,
-        lng: json["lng"]?? 0.0,
+        lat: json["lat"] != null ? (json["lat"] as num).toDouble() : null,
+        lng: json["lng"] != null ? (json["lng"] as num).toDouble() : null,
         audUsuarioI: json["audUsuarioI"]?? 0,
         datoPersona: json["datoPersona"]??'',
         zona: ZonaModel.fromJson(json["zona"]),
@@ -91,11 +93,13 @@ class PersonaModel {
         "apPaterno": apPaterno,
         "apMaterno": apMaterno,
         "ciExpedido": ciExpedido,
-        "ciFechaVencimiento": "${ciFechaVencimiento.year.toString().padLeft(4, '0')}-${ciFechaVencimiento.month.toString().padLeft(2, '0')}-${ciFechaVencimiento.day.toString().padLeft(2, '0')}",
+        //"ciFechaVencimiento": "${ciFechaVencimiento.year.toString().padLeft(4, '0')}-${ciFechaVencimiento.month.toString().padLeft(2, '0')}-${ciFechaVencimiento.day.toString().padLeft(2, '0')}",
+        "ciFechaVencimiento": ciFechaVencimiento?.toIso8601String(),
         "ciNumero": ciNumero,
         "direccion": direccion,
         "estadoCivil": estadoCivil,
-        "fechaNacimiento": "${fechaNacimiento.year.toString().padLeft(4, '0')}-${fechaNacimiento.month.toString().padLeft(2, '0')}-${fechaNacimiento.day.toString().padLeft(2, '0')}",
+        //"fechaNacimiento": "${fechaNacimiento.year.toString().padLeft(4, '0')}-${fechaNacimiento.month.toString().padLeft(2, '0')}-${fechaNacimiento.day.toString().padLeft(2, '0')}",
+        "fechaNacimiento": fechaNacimiento?.toIso8601String(),
         "lugarNacimiento": lugarNacimiento,
         "nacionalidad": nacionalidad,
         "sexo": sexo,

@@ -359,11 +359,9 @@ Future<List<DependienteEntity>> editarDep(DependienteEntity dep) async {
       return [];
     }
   }
-  @override
+ @override
 Future<PersonaEntity> registrarPersona(PersonaModel persona) async {
   try {
-    print('Enviando datos de persona: ${persona.toJson()}'); // Log para depuración
-
     final response = await _dio.post(
       AppConstants.perRegistrarPersona,
       data: persona.toJson(),
@@ -375,27 +373,38 @@ Future<PersonaEntity> registrarPersona(PersonaModel persona) async {
       ),
     );
 
-    print('Respuesta del servidor: ${response.data}'); // Log para depuración
+    // Si es código 409 (CI duplicado)
+    if (response.statusCode == 409) {
+      // Lanzar solo el mensaje sin wrapper Exception
+      throw 'El CI ya se encuentra registrado';
+    }
 
+    // Para otros errores 4xx
+    if (response.statusCode! >= 400) {
+      // Mensaje genérico sin wrapper Exception
+      throw 'No se pudo completar el registro';
+    }
+
+    // Si todo está bien (200/201)
     if (response.statusCode == 201 || response.statusCode == 200) {
-      // Si la respuesta es exitosa, retornamos la persona original
-      // ya que el servidor podría no devolver los datos actualizados
-      return persona.toEntity();
-    } else {
-      throw Exception(
-        'Error al registrar persona: ${response.statusCode} - ${response.data}',
+      final int? codPersona = response.data['codPersona'];
+      return persona.toEntity().copyWith(
+        codPersona: codPersona ?? 0,
       );
     }
+
+    // Error por defecto sin wrapper Exception
+    throw 'No se pudo completar el registro';
+
   } on DioException catch (e) {
-    print('DioException: ${e.response?.data}'); // Log para depuración
-    String errorMessage = 'Error de conexión: ${e.message}';
-    if (e.response != null && e.response!.data != null) {
-      errorMessage = 'Error del servidor: ${e.response!.statusCode} - ${e.response!.data}';
+    // Para errores de Dio, solo lanzar el mensaje sin wrapper
+    if (e.response?.statusCode == 409) {
+      throw 'El CI ya se encuentra registrado';
     }
-    throw Exception(errorMessage);
+    throw 'No se pudo completar el registro';
   } catch (e) {
-    print('Error inesperado: $e'); // Log para depuración
-    throw Exception('Error inesperado: $e');
+    // Para cualquier otro error, solo lanzar mensaje genérico
+    throw 'No se pudo completar el registro';
   }
 }
    @override
@@ -419,7 +428,7 @@ Future<PersonaEntity> registrarPersona(PersonaModel persona) async {
       return [];
     }
   }
-  @override
+   @override
 Future<List<TelefonoEntity>> registrarTelefono(TelefonoEntity tel) async {
   try {
     // Log para depuración
@@ -437,14 +446,32 @@ Future<List<TelefonoEntity>> registrarTelefono(TelefonoEntity tel) async {
     if (response.statusCode == 201 || response.statusCode == 200) {
       // Después de registrar exitosamente, obtener la lista actualizada
       return await obtenerTelefono(tel.codPersona);
-    } else {
+    } 
+    // Si Dio no lanza excepción para 409 (comportamiento menos común, pero posible)
+    else if (response.statusCode == 409 && response.data != null && response.data is Map) {
+         // Si es 409, extraemos el mensaje del backend
+        String serverMessage = response.data['msg'] as String? ?? 'Error de duplicidad desconocido.';
+        throw Exception(serverMessage);
+    } 
+    else {
       throw Exception(
         'Error al registrar teléfono: ${response.statusCode} - ${response.data}',
       );
     }
   } on DioException catch (e) {
     print('DioException: ${e.response?.data}');
-    throw Exception('Error de conexión: ${e.message}');
+    
+    // 🚨 💥 CLAVE: MANEJAR EL 409 CONFLICT 💥 🚨
+    if (e.response?.statusCode == 409 && e.response?.data != null && e.response!.data is Map) {
+      // El backend devuelve: {"msg": "Error: La combinación...", "error": "Duplicidad"}
+      String serverMessage = e.response!.data['msg'] as String? ?? 'Error de duplicidad no especificado.';
+      
+      // Lanzamos una excepción con el mensaje CLARO del backend
+      throw Exception(serverMessage);
+    }
+    
+    // Para cualquier otro error de conexión o servidor (400, 500, etc.)
+    throw Exception('Error de conexión/servidor: ${e.response?.statusCode} - ${e.message}');
   } catch (e) {
     print('Error inesperado: $e');
     throw Exception('Error inesperado: $e');
@@ -1394,6 +1421,107 @@ Future<Uint8List>descargarRptDependientesHijos()async{
     endpoint: AppConstants.depExportarPdfDependientesHijos,
   );
 }
+//OBTENDRA UN LISTA DE PERSONAS
+@override
+  Future<List<PersonaEntity>> getListaPersonas()async {
+    try {
+      final response = await _dio.post(AppConstants.perObtenerLstPersonas);
+      if (response.statusCode == 200 && response.data != null) {
+        final data = response.data ?? [];
+        final items = (data as List<dynamic>)
+            .map((json) => PersonaModel.fromJson(json))
+            .toList();
+        return items.map((model) => model.toEntity()).toList();
+      } else {
+        return [];
+      }
+    } on DioException catch (e) {
+      print('Error al obtener Parentesco: ${e.message}');
+      return [];
+    } catch (e) {
+      print('Error al obtener Parentesco: $e');
+      return [];
+    }
+  }
+  //OBTENDRA UNA PERSONA MEDIANTE EL CI
+  @override
+  Future<PersonaEntity> obtenerPersonaXCarnet(String ciNumero)async {
+   try{
+    final response = await _dio.post(
+      AppConstants.perObtenerPersonaXCarnet,
+      data: {'ciNumero': ciNumero},     
+    );
+
+    if (response.statusCode == 200 && response.data != null) {
+      final personaModel = PersonaModel.fromJson(response.data);
+      return personaModel.toEntity();
+    } else {
+      throw Exception('Error al obtener persona: ${response.statusCode}');
+    }
+   }catch (e) {
+    throw Exception('Error al obtener persona: $e');
+   }
+  }
+  //DATOS EMPLEADO POR CODEMPLEADO
+  @override
+  Future<PersonaEntity> obtenerDatosEmpleado(int codEmpleado) async {
+    try {
+      final response = await _dio.post(
+        AppConstants.obtenerDatosEmpleado,
+        data: {'codEmpleado': codEmpleado},
+      );
+      // DEBUG: inspeccionar la respuesta
+      print('DEBUG obtenerDatosEmpleado response.code: ${response.statusCode}, data: ${response.data}');
+      if (response.statusCode == 200 && response.data != null) {
+        final personaModel = PersonaModel.fromJson(response.data);
+        return personaModel.toEntity();
+      } else {
+        throw Exception('Error al obtener persona: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('Error al obtener persona: $e');
+    }
+  }
+  //OBTENER CORPORATIVO X EMPLEADO
+   @override
+  Future<TelefonoEntity> obtenerCorporativoEmpleado(int codTipoTel,String telefono)async {
+   try{
+    final response = await _dio.post(
+      AppConstants.perObtenerCoprorativoEmpleado,
+      data: {'codTipoTel': codTipoTel,
+             'telefono': telefono} ,     
+    );
+
+    if (response.statusCode == 200 && response.data != null) {
+      final personaModel = TelefonoModel.fromJson(response.data);
+      return personaModel.toEntity();
+    } else {
+      throw Exception('Error al obtener telefono del empleado: ${response.statusCode}');
+    }
+   }catch (e) {
+    throw Exception('Error al obtener telefono : $e');
+   }
+  }
+  //ver datos x jerarquia
+  @override
+  Future<EmpleadoEntity> verDatosXJerarquia(int codEmpleado,int codEmpleadoConsultado)async {
+    try{
+final response = await _dio.post(
+      AppConstants.verInfoEmpXJerarquia,
+      data: {
+        'codEmpleado': codEmpleado,
+        'codEmpleadoConsultado': codEmpleadoConsultado  // Agregar el codEmpleado en el body
+      },
+    );      if (response.statusCode == 200 && response.data != null) {
+      final empleadoModel = EmpleadoModel.fromJson(response.data);
+      return empleadoModel.toEntity();
+    } else {
+      throw Exception('Error al obtener datos del empleado: ${response.statusCode}');
+    }
+   }catch (e) {
+    throw Exception('Error al obtener el empleado : $e');
+   }
+  }
 
 
 }

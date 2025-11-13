@@ -431,18 +431,19 @@ class _TelefonoSectionState extends ConsumerState<TelefonoSection> {
               codPersona: widget.codPersona,
               isEditing: false,
               onSave: (telefono) async {
-                try {
-                  await ref.read(registrarTelefonoProvider(telefono).future);
-                  ref.invalidate(telefonoProvider(widget.codPersona));
-                  
-                } catch (e) {
-                  if (!context.mounted) return;
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Error: ${e.toString()}')),
-                  );
-                  rethrow;
-                }
-              },
+  final codTipoTel = telefono.codTipoTel;
+  final numero = telefono.telefono;
+
+  final existente = await ref.read(obtenerCorporativoEmpleado((codTipoTel, numero)).future);
+
+  if (existente.codTelefono != 0) {
+    AppSnackbarCustom.showError(context, 'El teléfono ya se encuentra registrado.');
+    return;
+  }
+
+  await ref.read(registrarTelefonoProvider(telefono).future);
+  ref.invalidate(telefonoProvider(widget.codPersona));
+},
               onCancel: () => Navigator.of(context).pop(),
             ),
           ),
@@ -459,7 +460,9 @@ class _TelefonoSectionState extends ConsumerState<TelefonoSection> {
           codPersona: widget.codPersona,
           isEditing: true,
           onSave: (telefonoActualizado) async {
-            try {
+            await ref.read(registrarTelefonoProvider(telefonoActualizado).future);
+            ref.invalidate(telefonoProvider(widget.codPersona));
+            /*try {
               await ref.read(registrarTelefonoProvider(telefonoActualizado).future);
               ref.invalidate(telefonoProvider(widget.codPersona));
              
@@ -469,7 +472,7 @@ class _TelefonoSectionState extends ConsumerState<TelefonoSection> {
                 SnackBar(content: Text('Error: ${e.toString()}')),
               );
               rethrow;
-            }
+            }*/
           },
           onCancel: () => Navigator.of(context).pop(),
         ),

@@ -99,6 +99,19 @@ Future<void> _parsePhoneNumber(String telefono) async {
 
         // Verificar si el widget sigue montado antes de continuar
         if (!mounted) return;
+        // --- VALIDACIÓN DE DUPLICIDAD ANTES DE GUARDAR ---
+      final existente = await ref.read(
+        obtenerCorporativoEmpleado((telefono.codTipoTel, telefono.telefono)).future,
+      );
+      if (existente.codTelefono != 0 && (!widget.isEditing || existente.codTelefono != telefono.codTelefono)) {
+        if (context.mounted) {
+          AppSnackbarCustom.showError(
+            context,
+            'El teléfono ya se encuentra registrado.'
+          );
+        }
+        return;
+      }
 
         // Llamar a onSave y esperar a que termine
         await widget.onSave(telefono);
@@ -124,9 +137,27 @@ Future<void> _parsePhoneNumber(String telefono) async {
       } catch (e) {
         // Mostrar SnackBar de error
       if (context.mounted) {
-        AppSnackbar.showError(
+        String errorMessage;
+        
+        // e.toString() ahora contiene el mensaje claro (Ej: "Exception: Error: La combinación de...")
+        
+        // Eliminamos los prefijos para obtener solo el mensaje de negocio
+        errorMessage = e.toString().replaceFirst('Exception: ', '');
+        
+        // Si el mensaje aún tiene el prefijo "Error: ", lo quitamos para ser más amigable
+        if (errorMessage.startsWith("Error: ")) {
+            errorMessage = errorMessage.replaceFirst("Error: ", "");
+        }
+        
+        // Fallback genérico (en caso de que el mensaje sea muy corto)
+        if (errorMessage.isEmpty) {
+             errorMessage = 'Ocurrió un error inesperado al guardar el teléfono.';
+        }
+
+        // El mensaje ahora será: "La combinación de número y tipo de teléfono ya existe."
+        AppSnackbarCustom.showError(
           context, 
-          'Error al ${widget.isEditing ? 'actualizar' : 'agregar'} el teléfono'
+          errorMessage
         );
       }
       }

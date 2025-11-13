@@ -1,6 +1,8 @@
 import 'package:bosque_flutter/core/constants/app_constants.dart';
 import 'package:bosque_flutter/core/state/empleados_dependientes_provider.dart';
 import 'package:bosque_flutter/core/state/user_provider.dart';
+import 'package:bosque_flutter/core/utils/banner_personalizado.dart';
+import 'package:bosque_flutter/domain/entities/empleado_entity.dart';
 
 import 'package:bosque_flutter/presentation/widgets/dependientes/confirm_dialogs.dart';
 import 'package:bosque_flutter/presentation/widgets/dependientes/formulario_persona.dart';
@@ -49,11 +51,14 @@ final _personaKey = GlobalKey<FormularioPersonaState>();
   // Variables para los dropdowns
   String? _parentescoSeleccionado;
   String? _esActivoSeleccionado;
+  
  
   PersonaEntity? _personaTemp;
 final MapController _mapController = MapController();
 double? _currentLat;
   double? _currentLng;
+
+  String? _internalErrorMessage;
   @override
   void initState() {
     super.initState();
@@ -137,6 +142,17 @@ double? _currentLat;
                     },
                     onCancel: () {},
                   ),
+                  if (_internalErrorMessage != null)
+                                  Padding(
+ padding: const EdgeInsets.only(top: 16.0),
+child: BannerCustom( // USAMOS TU WIDGET PERSONALIZADO
+message: _internalErrorMessage!,
+ color: Colors.red.shade600, // Color para error
+icon: Icons.error_outline,
+onClose: () => setState(() => _internalErrorMessage = null),
+maxLines: 5,
+ ),
+),
                   
                   _buildActionButtons(),
                 ],
@@ -222,18 +238,184 @@ double? _currentLat;
 }
 
 void _handleSubmit() async {
+  // -----------------------------------------------------------
+  // 0. VALIDACIÓN INICIAL Y PREPARACIÓN
+  // -----------------------------------------------------------
   final personaState = _personaKey.currentState;
   final isDependienteValid = _formKey.currentState?.validate() ?? false;
   final isPersonaValid = personaState?.validate() ?? false;
 
   if (!isDependienteValid || !isPersonaValid) {
-    // No hagas nada más, los errores ya se muestran en los campos
+    return;
+  }
+  
+  setState(() {
+    _internalErrorMessage = null;
+  });
+
+  final personaFormulario = await personaState!.getPersona();
+  
+  // --------------------------------------------------------------------------------------
+  // 1. VALIDACIÓN: CI VS. EMPLEADO (Mantenido sin cambios)
+  // --------------------------------------------------------------------------------------
+  EmpleadoEntity empleado;
+  try {
+    empleado = await ref.read(empObtenerDatosEmpleado(widget.codEmpleado).future);
+  } catch (e) {
+    if (mounted) {
+      setState(() {
+        _internalErrorMessage = '❌ ERROR: No se pudieron obtener los datos del empleado: ${e.toString()}';
+      });
+    }
     return;
   }
 
-  // Si ambos formularios son válidos, continúa con el guardado
-  final persona = await personaState!.getPersona();
-// Confirmación antes de guardar
+  final empleadoCI = empleado.persona?.ciNumero;
+  final dependienteCI = personaFormulario.ciNumero;
+
+  if (empleadoCI != null && dependienteCI != null && empleadoCI == dependienteCI) {
+    if (mounted) {
+      setState(() {
+        _internalErrorMessage = '❌ ERROR: No puede registrarse a sí mismo (C.I. $empleadoCI) como su propio dependiente.';
+      });
+    }
+    return;
+  }
+
+  // --------------------------------------------------------------------------------------
+  // 2. VALIDACIÓN: Duplicidad de dependiente existente (solo modo NO edición)
+  // --------------------------------------------------------------------------------------
+  if (!widget.isEditing && personaFormulario.codPersona != 0) {
+    final codPersonaExistente = personaFormulario.codPersona;
+    final dependientesAsync = ref.read(dependientesProvider(widget.codEmpleado));
+
+    if (dependientesAsync.hasValue) {
+      final isDuplicated = dependientesAsync.value!.any((d) => d.codPersona == codPersonaExistente);
+
+      if (isDuplicated) {
+        if (mounted) {
+          setState(() {
+            _internalErrorMessage =
+                '❌ ERROR: La persona con C.I. ${personaFormulario.ciNumero} ya está registrada como su dependiente. Use el botón "Editar" en la lista para modificar sus datos.';
+          });
+        }
+        return; 
+      }
+    }
+    
+    // Si la persona existe pero NO es dependiente, guardamos directamente.
+    await _handleFinalSave(personaFormulario);
+    return;
+  }
+
+  // --------------------------------------------------------------------------------------
+  // 3. REGISTRO/EDICIÓN DE PERSONA (Punto Único de Registro y Control 409)
+  // --------------------------------------------------------------------------------------
+  PersonaEntity? personaFinal;
+  bool isError409 = false; // 🚩 DECLARACIÓN DEL FLAG
+
+  try {
+    // 🛑 LLAMADA AL BACKEND: Intentará registrar/actualizar. 
+    // Esto se hace si es EDICIÓN, o si es un CI NUEVO (codPersona=0).
+    // Si el CI es duplicado, el BE ahora lanza 409.
+    if (widget.isEditing || personaFormulario.codPersona == 0) {
+      personaFinal = await ref.read(
+        registrarPersonaProvider(personaFormulario).future,
+      );
+
+      // Bloqueo de seguridad si el backend devuelve codPersona=0 en lugar de 409.
+      if (personaFinal?.codPersona == 0) {
+        throw Exception('409: La persona con C.I. ${personaFormulario.ciNumero} ya se encuentra registrada. No se pudo registrar.');
+      }
+    } else {
+      // Caso de autocompletado exitoso.
+      personaFinal = personaFormulario;
+    }
+    
+  } catch (e) {
+    // 4. MANEJO DE ERRORES CENTRALIZADO: Captura la excepción del proveedor.
+    final errorString = e.toString();
+    
+    // 🚨 DETECCIÓN DE 409: Activa la bandera para mostrar el diálogo.
+    if (errorString.contains('409:') || errorString.contains('ya se encuentra registrada')) {
+      isError409 = true; // ⬅️ ASIGNACIÓN DEL FLAG
+    } 
+    // Manejo de errores que no son 409 (500, red, etc.).
+    else {
+      if (mounted) {
+        setState(() {
+          _internalErrorMessage = 'Error en el proceso de registro: ${errorString}';
+        });
+      }
+      return; // Detiene la ejecución para errores graves/inesperados.
+    }
+  } 
+  
+  // --------------------------------------------------------------------------------------
+  // 5. MANEJO POST-TRY (Activa el diálogo si hubo 409)
+  // --------------------------------------------------------------------------------------
+  if (isError409) {
+    if (!mounted) return;
+
+    // 🚨 LÓGICA DE BIFURCACIÓN: Modo Edición vs. Modo Agregar.
+    if (widget.isEditing) {
+      // Caso Edición: NO se permite autocompletar. Se muestra error directo.
+      setState(() {
+        _internalErrorMessage =
+            '❌ ERROR: El C.I. ingresado ya existe. No se puede actualizar a un C.I. que pertenece a otra persona.';
+      });
+      return; // Detiene la ejecución.
+    }
+
+    // --- Caso Agregar: Muestra el DIÁLOGO DE AUTOCOMPLETAR ---
+    String errorMessage = '❌ ERROR: El C.I. ingresado ya existe. Por favor, corrija el C.I. o use la opción de Autocompletar.';
+    
+    final confirmedAutofill = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => AlertDialog(
+        title: const Text('C.I. Registrado'),
+        content: Text(
+          'La persona con C.I. ${personaFormulario.ciNumero} ya existe en el sistema. '
+          '¿Desea autocompletar el formulario con sus datos? El código de persona existente se usará para el registro del dependiente.'
+        ),
+        actions: [
+          TextButton(child: const Text('No Autocompletar'), onPressed: () => Navigator.of(ctx).pop(false)),
+          ElevatedButton(child: const Text('Autocompletar'), onPressed: () => Navigator.of(ctx).pop(true)),
+        ],
+      ),
+    );
+    
+    if (confirmedAutofill == true) {
+      // Llama a la función para recargar los datos del formulario con la persona existente.
+      await _handleAutofill(personaFormulario.ciNumero!); 
+      return; // El usuario debe presionar Guardar de nuevo.
+    }
+
+    setState(() {
+      _internalErrorMessage = errorMessage;
+    });
+    return; // Detiene la ejecución.
+  }
+
+  // --------------------------------------------------------------------------------------
+  // 6. GUARDADO FINAL (Solo si el try tuvo éxito y personaFinal no es nulo)
+  // --------------------------------------------------------------------------------------
+  if (personaFinal != null) {
+      await _handleFinalSave(personaFinal);
+  }
+}
+
+// --------------------------------------------------------------------------------------------------
+// --- FUNCIÓN AUXILIAR DE CONFIRMACIÓN Y REGISTRO (Extraída para modularidad, requerida por el flujo) ---
+// La he llamado _handleFinalSave para distinguirla de _handleSubmit.
+// Si deseas evitar este método a toda costa, su contenido debe ser INCLUIDO en los dos puntos
+// donde se llama dentro de _handleSubmit (uno en el IF, otro al final del TRY).
+// Por claridad y evitar código repetido, mantengo _handleFinalSave.
+// --------------------------------------------------------------------------------------------------
+
+Future<void> _handleFinalSave(PersonaEntity personaGuardada) async {
+  // --- DIÁLOGO DE CONFIRMACIÓN DEL DEPENDIENTE ---
   final confirmed = await showDialog<bool>(
     context: context,
     builder: (ctx) => AlertDialog(
@@ -257,26 +439,20 @@ void _handleSubmit() async {
   );
 
   if (confirmed != true) return;
-  try {
-    /*final personaGuardada = await ref.read(
-      registrarPersonaProvider(persona).future,
-    );*/
 
-   // final nombreCompleto =
-       // '${personaGuardada.nombres} ${personaGuardada.apPaterno} ${personaGuardada.apMaterno}'.trim();
-
-    final dependiente = widget.isEditing
-        ? widget.dependiente!.copyWith(
+  // 2. CREAR Y ASIGNAR EL CODPERSONA
+  final dependiente = widget.isEditing
+      ? widget.dependiente!.copyWith(
             codEmpleado: widget.codEmpleado,
-            codPersona: persona.codPersona,
+            codPersona: personaGuardada.codPersona, // ID VÁLIDO
             parentesco: _parentescoSeleccionado ?? widget.dependiente!.parentesco,
             esActivo: _esActivoSeleccionado ?? widget.dependiente!.esActivo,
             nombreCompleto: '',
           )
-        : DependienteEntity(
+      : DependienteEntity(
             codEmpleado: widget.codEmpleado,
             codDependiente: 0,
-            codPersona: persona.codPersona,
+            codPersona: personaGuardada.codPersona, // ID VÁLIDO
             parentesco: _parentescoSeleccionado!,
             esActivo: _esActivoSeleccionado!,
             nombreCompleto: '',
@@ -285,8 +461,11 @@ void _handleSubmit() async {
             edad: 0,
           );
 
-    await widget.onSave(dependiente, persona);
+  // 3. LLAMADA A widget.onSave
+  try {
+    await widget.onSave(dependiente, personaGuardada);
 
+    // 4. Éxito
     if (mounted) {
       AppSnackbarCustom.showSuccess(
         context,
@@ -297,11 +476,46 @@ void _handleSubmit() async {
       Navigator.of(context).pop();
     }
   } catch (e) {
+    // Manejo de error de registro de Dependiente (si falla la llamada a onSave/editarDepProvider)
     if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: ${e.toString()}')),
-      );
+       setState(() {
+          _internalErrorMessage = '❌ Error al registrar el dependiente: ${e.toString()}';
+       });
     }
+  }
+}
+Future<void> _handleAutofill(String ciNumero) async {
+  try {
+    // 1. Cargar la Persona por C.I. usando tu provider
+    final personaExistente = await ref.read(
+        obtenerPersonaXCarnet(ciNumero).future, 
+    );
+    
+    // 2. Aplicar los datos al formularioPersona (llama al método que acabamos de crear)
+    if (personaExistente.codPersona != 0) {
+      _personaKey.currentState?.loadPersona(personaExistente);
+    } else {
+      // Si el backend no devuelve la persona, lanzamos un error
+      throw Exception('Datos de persona no encontrados.');
+    }
+    
+    // 3. Resetear el estado de error y mostrar éxito
+    if (mounted) {
+        setState(() {
+            _internalErrorMessage = null;
+        });
+        AppSnackbarCustom.showSuccess(
+            context, 
+            'Datos de C.I. ${ciNumero} cargados. Verifique el parentesco y presione Guardar.',
+        );
+    }
+  } catch (e) {
+    if (mounted) {
+      setState(() {
+         _internalErrorMessage = '❌ Error al cargar los datos: ${e.toString()}';
+      });
+    }
+    // No relanzamos aquí, solo mostramos el error en el banner.
   }
 }
 
@@ -312,30 +526,5 @@ void _handleSubmit() async {
     super.dispose();
   }
   // Agregar después de la sección de género en _buildDatosAdicionalesSection
-Widget _buildMapSection() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          'Ubicación',
-          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-        ),
-        const SizedBox(height: 8),
-        MapViewer(
-        mapController: _mapController,
-        latitude: _currentLat!,
-        longitude: _currentLng!,
-        height: 200,
-        isInteractive: true,
-        canChangeLocation: true,
-        onTap: (LatLng point) {
-          setState(() {
-            _currentLat = point.latitude;
-            _currentLng = point.longitude;
-          });
-        },
-      ),
-      ],
-    );
-  }
+
 }

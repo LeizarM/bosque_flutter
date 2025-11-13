@@ -5,6 +5,7 @@ import 'package:bosque_flutter/core/state/user_provider.dart';
 import 'package:bosque_flutter/core/utils/banner_personalizado.dart';
 import 'package:bosque_flutter/core/utils/responsive_utils_bosque.dart';
 import 'package:bosque_flutter/domain/entities/ciExpedido_entity.dart';
+import 'package:bosque_flutter/domain/entities/empleado_entity.dart';
 import 'package:bosque_flutter/domain/entities/estado_civil_entity.dart';
 import 'package:bosque_flutter/domain/entities/persona_entity.dart';
 import 'package:bosque_flutter/domain/entities/sexo_entity.dart';
@@ -22,6 +23,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class PersonaSection extends ConsumerStatefulWidget {
+  final EmpleadoEntity empleado;
+  //final bool ocultarCamposSensibles;
   final int codPersona; // Cambiamos persona por codPersona
   final int codEmpleado;
   final bool habilitarEdicion;
@@ -33,7 +36,10 @@ class PersonaSection extends ConsumerStatefulWidget {
   static final MapController _mapController = MapController();
 
   const PersonaSection({
+    
+    required this.empleado,
     super.key,
+    //this.ocultarCamposSensibles = false,
     required this.codPersona, // Actualizamos el constructor
     required this.codEmpleado,
     required this.habilitarEdicion,
@@ -228,12 +234,12 @@ if (warningCount < warningLimit) {
 }
 
           // Mueve el mapa si la ubicación es válida
-          if (persona.lat != null && persona.lng != null) {
-            PersonaSection._mapController.move(
-              LatLng(persona.lat!, persona.lng!),
-              13.0,
-            );
-          }
+          if (widget.empleado.persona.lat != null && widget.empleado.persona.lng != null) {
+    PersonaSection._mapController.move(
+      LatLng(widget.empleado.persona.lat!, widget.empleado.persona.lng!),  // Usa valores restringidos
+      13.0,
+    );
+  }
         });
 
         final camposCol1 = <Widget>[
@@ -259,18 +265,19 @@ if (warningCount < warningLimit) {
             isDesktop,
           ),
           _infoField(
-            theme,
-            'C.I NÚMERO',
-            persona.ciNumero,
-            Icons.pin,
-            isDesktop,
-          ),
+  theme,
+  'C.I NÚMERO',
+  widget.empleado.persona.ciNumero ,
+  Icons.pin,
+  isDesktop,
+),
           Consumer(
             builder:
                 (context, ref, _) => _infoField(
                   theme,
                   'C.I EXPEDIDO',
-                  formatText(_getCiExpedido(ref, persona), isDesktop),
+                  //widget.ocultarCamposSensibles? '*****':
+                  formatText(_getCiExpedido(ref, widget.empleado.persona), isDesktop),
                   Icons.badge,
                   isDesktop,
                 ),
@@ -278,9 +285,9 @@ if (warningCount < warningLimit) {
           _infoField(
             theme,
             'FECHA DE NACIMIENTO',
-            persona.fechaNacimiento != null
-                ? DateFormat('dd-MM-yyyy').format(persona.fechaNacimiento!)
-                : 'Sin registros',
+            widget.empleado.persona.fechaNacimiento != null
+           ?DateFormat('dd-MM-yyyy').format(widget.empleado.persona.fechaNacimiento!)
+           :'NO AUTORIZADO',
             Icons.cake,
             isDesktop,
           ),
@@ -297,9 +304,9 @@ if (warningCount < warningLimit) {
           _infoField(
             theme,
             'FECHA DE VENCIMIENTO C.I',
-            persona.ciFechaVencimiento != null
-                ? DateFormat('dd-MM-yyyy').format(persona.ciFechaVencimiento!)
-                : 'Sin registros',
+            widget.empleado.persona.ciFechaVencimiento != null
+                 ?DateFormat('dd-MM-yyyy').format(widget.empleado.persona.ciFechaVencimiento!)
+                 :'NO AUTORIZADO',
             Icons.event,
             isDesktop,
             valueColor:
@@ -310,7 +317,7 @@ if (warningCount < warningLimit) {
                 (context, ref, _) => _infoField(
                   theme,
                   'ESTADO CIVIL',
-                  formatText(_getEstadoCivil(ref, persona), isDesktop),
+                  formatText(_getEstadoCivil(ref, widget.empleado.persona), isDesktop),
                   Icons.people,
                   isDesktop,
                 ),
@@ -355,7 +362,7 @@ if (warningCount < warningLimit) {
           _infoField(
             theme,
             'DIRECCIÓN',
-            formatText(persona.direccion, isDesktop),
+            formatText(widget.empleado.persona.direccion, isDesktop),
             Icons.home,
             isDesktop,
           ),
@@ -529,21 +536,22 @@ else // Si es móvil (isDesktop: false), usa IconButton con tooltip
                             width: double.infinity,
                             height: isDesktop ? 340 : 220,
                             child: MapViewer(
-                              mapController: PersonaSection._mapController,
-                              latitude: persona.lat ?? -16.516064598979447,
-                              longitude: persona.lng ?? -68.13540079367057,
-                              isInteractive: true,
-                              canChangeLocation: false,
-                            ),
+    mapController: PersonaSection._mapController,
+    latitude: widget.empleado.persona.lat!,
+    longitude: widget.empleado.persona.lng!,
+    isInteractive: true,
+    canChangeLocation: false,
+),
                           ),
                         ),
-                        if (persona.lat != null && persona.lng != null) ...[
+                        //CHECKPOINT AQUI
+                        if (widget.empleado.persona.lat != null && widget.empleado.persona.lng != null) ...[
                           const SizedBox(height: 6),
                           Center(
                             child: TextButton.icon(
                               onPressed: () async {
                                 final Uri uri = Uri.parse(
-                                  '${AppConstants.googleMapsSearchBaseUrl}=${persona.lat},${persona.lng}',
+                                  '${AppConstants.googleMapsSearchBaseUrl}=${widget.empleado.persona.lat},${widget.empleado.persona.lng}',
                                 );
                                 if (await canLaunchUrl(uri)) {
                                   await launchUrl(
@@ -633,7 +641,7 @@ else // Si es móvil (isDesktop: false), usa IconButton con tooltip
           orElse:
               () => CiExpedidoEntity(
                 codTipos: '',
-                nombre: 'No encontrado',
+                nombre: widget.empleado.persona.ciExpedido,
                 codGrupo: 0,
                 listTipos: [],
               ),
@@ -654,7 +662,7 @@ else // Si es móvil (isDesktop: false), usa IconButton con tooltip
           orElse:
               () => EstadoCivilEntity(
                 codTipos: '',
-                nombre: 'No encontrado',
+                nombre: widget.empleado.persona.ciExpedido,
                 codGrupo: 0,
                 listTipos: [],
               ),
@@ -739,20 +747,31 @@ else // Si es móvil (isDesktop: false), usa IconButton con tooltip
                 Navigator.pop(context);
 
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Persona actualizada correctamente'),
-                    backgroundColor: Colors.green,
-                  ),
-                );
-              } catch (e) {
-                if (!context.mounted) return;
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('Error al actualizar: $e'),
-                    backgroundColor: Colors.red,
-                  ),
-                );
+                const SnackBar(
+                  content: Text('Datos actualizados correctamente'),
+                  backgroundColor: Colors.green,
+                ),
+              );
+            } catch (e) {
+              if (!context.mounted) return;
+              
+              // Manejo de errores mejorado
+              String mensajeError = 'El Ci ya existe o hubo un error al actualizar';
+              
+              if (e.toString().contains('409')) {
+                mensajeError = 'El CI ya se encuentra registrado';
+              } else if (e.toString().contains('ERROR:')) {
+                // Extraer solo el mensaje después de "ERROR:"
+                mensajeError = e.toString().split('ERROR:').last.trim();
               }
+
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(mensajeError),
+                  backgroundColor: Colors.red,
+                ),
+              );
+            }
             },
           ),
         );

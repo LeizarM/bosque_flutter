@@ -1,6 +1,6 @@
 class AppConstants {
-  //static const String baseUrl = 'https://app.esppapel.com:8443';
-  static const String baseUrl = 'http://192.168.3.107:9223';
+  static const String baseUrl = 'https://app.esppapel.com:8443';
+  //static const String baseUrl = 'http://192.168.3.107:9223';
 
   static const String APP_VERSION = "1.0.1";
 
@@ -153,6 +153,13 @@ class AppConstants {
   static const String depExportarPdfDependientes = '/rrhh/pdfDependientes';
   static const String depExportarPdfDependientesHijos =
       '/rrhh/pdfDependientesHijos';
+  static const String perObtenerPersonaXCarnet = '/rrhh/obtenerPersonaXCarnet';
+
+  static const String obtenerDatosEmpleado =
+      '/fichaTrabajador/obtenerDatosEmpleado';
+  static const String perObtenerCoprorativoEmpleado =
+      '/rrhh/obtenerCorporativoXEmpleado';
+  static const String verInfoEmpXJerarquia = '/fichaTrabajador/datosXJerarquia';
 
   // = = = = = = = = = = = = = = = = = = = = = = = = = Endpoints para la gestion de RRHH = = = = = = = = = = = = = = = = = =
 

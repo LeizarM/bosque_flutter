@@ -92,4 +92,9 @@ abstract class FichaTrabajadorRepository{
   Future<void> aprobarDocumentoPendiente(Map<String, dynamic> doc);
   Future<bool> desbloquearUsuario({required int codUsuario});
   Future<UsuarioBloqueadoEntity> obtenerUsuarioBloqueado(int codUsuario);
+  Future<List<PersonaEntity>> getListaPersonas();
+  Future<PersonaEntity> obtenerPersonaXCarnet(String ciNumero);
+  Future<PersonaEntity> obtenerDatosEmpleado(int codEmpleado);
+  Future<TelefonoEntity> obtenerCorporativoEmpleado(int codTipoTel,String telefono);
+  Future<EmpleadoEntity> verDatosXJerarquia(int codEmpleado,int codEmpleadoConsultado);
 }

@@ -46,12 +46,18 @@ final empleadoProvider = FutureProvider.family<EmpleadoEntity, int>((ref, codEmp
   );
 });
 
+
 final dependientesProvider = FutureProvider.family<List<DependienteEntity>,int>((ref, codEmpleado)async{
   final repo = FichaTrabajadorImpl();
   final dependientes = await repo.getDependientes(codEmpleado);
   return dependientes;
 });
 
+final perObtenerLstPersonas = FutureProvider<List<PersonaEntity>>((ref)async{
+  final repo = FichaTrabajadorImpl();
+  final personas = await repo.getListaPersonas();
+  return personas;
+});
 final parentescosProvider = FutureProvider<List<ParentescoEntity>>((ref)async{
   final repo = FichaTrabajadorImpl();
   final parentescos = await repo.obtenerParentesco();
@@ -377,10 +383,10 @@ final cumpleMensajesInitProvider = FutureProvider<void>((ref) async {
   final mensajes = <String>[];
 
   for (final emp in cumpleanios) {
-    if (emp.persona.fechaNacimiento.day == hoy.day &&
-        emp.persona.fechaNacimiento.month == hoy.month) {
+    if (emp.persona.fechaNacimiento!.day == hoy.day &&
+        emp.persona.fechaNacimiento!.month == hoy.month) {
       final nacimiento = emp.persona.fechaNacimiento;
-      int edad = hoy.year - nacimiento.year;
+      int edad = hoy.year - nacimiento!.year;
       if (hoy.month < nacimiento.month ||
           (hoy.month == nacimiento.month && hoy.day < nacimiento.day)) {
         edad--;
@@ -422,4 +428,37 @@ final jasperPdfDependientesXEdad = FutureProvider<Uint8List>((ref) async {
 final jasperPdfDependientesHijos = FutureProvider<Uint8List>((ref) async {
   final repo = FichaTrabajadorImpl();
   return await repo.descargarRptDependientesHijos();
+});
+//obtener persona por carnet
+final obtenerPersonaXCarnet = FutureProvider.family<PersonaEntity, String>(
+  (ref, ciNumero) async {
+    final repo = FichaTrabajadorImpl();
+    return await repo.obtenerPersonaXCarnet(ciNumero);
+  },
+);
+final obtenerPersonaXCodPersona = FutureProvider.family<PersonaEntity, int>((ref, codEmpleado) async {
+  print('⭐ Provider obtenerPersonaXCodPersona - Iniciando con codPersona: $codEmpleado');
+  
+  // Reemplaza 'PersonaRepoImpl()' con tu clase de repositorio de Persona real
+  final repo = FichaTrabajadorImpl(); 
+  
+  // Reemplaza 'obtenerPersonaPorCod' con el método real de tu repositorio que trae la PersonaEntity.
+  final PersonaEntity persona = await repo.obtenerDatosEmpleado(codEmpleado); 
+  
+  if (persona.codPersona == 0) {
+    throw Exception('No se encontró la Persona con código: $codEmpleado');
+  }
+  
+  return persona;
+});
+final obtenerCorporativoEmpleado = FutureProvider.family<TelefonoEntity,(int, String)>((ref, params) async {
+  final repo = FichaTrabajadorImpl();
+  final corporativoXEmpleado = await repo.obtenerCorporativoEmpleado(params.$1,params.$2);
+  return corporativoXEmpleado;
+});
+//ver informacion del empleado X jerarquia
+final empleadoXJerarquiaProvider = FutureProvider.family<EmpleadoEntity,(int ,int)>((ref, params) async {
+  final repo = FichaTrabajadorImpl();
+  final empleado = await repo.verDatosXJerarquia(params.$1,params.$2);
+  return empleado;
 });

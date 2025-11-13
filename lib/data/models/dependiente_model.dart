@@ -20,6 +20,7 @@ class DependienteModel {
     final String nombreCompleto;
     final dynamic descripcion;
     final int edad;
+    final int? empActivo;
 
     DependienteModel({
         required this.codDependiente,
@@ -31,6 +32,7 @@ class DependienteModel {
         required this.nombreCompleto,
         required this.descripcion,
         required this.edad,
+        this.empActivo,
     });
 
     factory DependienteModel.fromJson(Map<String, dynamic> json) => DependienteModel(
@@ -43,6 +45,7 @@ class DependienteModel {
         nombreCompleto: json["nombreCompleto"]??'',
         descripcion: json["descripcion"]??'',
         edad: json["edad"]?? 0,
+        empActivo: json["empActivo"]?? 0,
     );
 
     Map<String, dynamic> toJson() => {
@@ -55,6 +58,7 @@ class DependienteModel {
         "nombreCompleto": nombreCompleto,
         "descripcion": descripcion,
         "edad": edad,
+        "empActivo": empActivo,
     };
     DependienteEntity toEntity()=> DependienteEntity(
         codDependiente: codDependiente,
@@ -66,6 +70,7 @@ class DependienteModel {
         nombreCompleto: nombreCompleto,
         descripcion: descripcion,
         edad: edad,
+        empActivo: empActivo,
     );
     factory DependienteModel.fromEntity(DependienteEntity entity) => DependienteModel(
         codDependiente: entity.codDependiente,
@@ -77,5 +82,6 @@ class DependienteModel {
         nombreCompleto: entity.nombreCompleto,
         descripcion: entity.descripcion,
         edad: entity.edad,
+        empActivo: entity.empActivo,
     );
 }

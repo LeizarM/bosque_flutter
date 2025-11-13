@@ -348,13 +348,7 @@ Widget build(BuildContext context) {
             ],
           ),
           if (nros.isNotEmpty)
-            Padding(
-              padding: const EdgeInsets.only(top: 4.0, left: 4.0),
-              child: Text(
-                '¡Hay números sin asignar!',
-                style: TextStyle(color: Colors.orange[800], fontWeight: FontWeight.bold),
-              ),
-            ),
+            _buildRecordatorioNumerosSinAsignar(nros),
         ],
       );
     },
@@ -449,4 +443,24 @@ Future<void> _mostrarDialogoNumerosSinAsignar(List<SocioTigoEntity> nros) async 
       ],
     );
   }
+  Widget _buildRecordatorioNumerosSinAsignar(List<SocioTigoEntity> nros) {
+  if (nros.isEmpty) return const SizedBox.shrink();
+  return Padding(
+    padding: const EdgeInsets.only(top: 4.0, left: 4.0),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          '¡Hay números sin asignar!',
+          style: TextStyle(color: Colors.orange[800], fontWeight: FontWeight.bold),
+        ),
+        SizedBox(height: 4),
+        Text(
+          "Nota: Para asociar un número sin asignar a un empleado que no aparece en la lista, debe actualizar la información desde la sección 'Ficha Trabajador'.",
+          style: TextStyle(color: Colors.blueGrey[700], fontSize: 13),
+        ),
+      ],
+    ),
+  );
+}
 }

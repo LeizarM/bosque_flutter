@@ -8,6 +8,7 @@ class DependienteEntity {
   final String nombreCompleto;
   final dynamic descripcion;
   final int edad;
+  final int? empActivo;
   DependienteEntity({
     required this.codDependiente,
     required this.codPersona,
@@ -18,6 +19,7 @@ class DependienteEntity {
     required this.nombreCompleto,
     required this.descripcion,
     required this.edad,
+     this.empActivo,
   });
    Map<String, dynamic> toJson() {
     return {
@@ -28,6 +30,9 @@ class DependienteEntity {
       'esActivo': esActivo,
       'nombreCompleto': nombreCompleto,
       'audUsuario': audUsuario, 
+      'descripcion': descripcion,
+      'edad': edad,
+      'empActivo': empActivo,
     };
   }
   
@@ -42,6 +47,7 @@ class DependienteEntity {
     String? nombreCompleto,
     dynamic descripcion,
     int? edad,
+    int? empActivo,
   }) {
     return DependienteEntity(
       codDependiente: codDependiente ?? this.codDependiente,
@@ -53,6 +59,7 @@ class DependienteEntity {
       nombreCompleto: nombreCompleto ?? this.nombreCompleto,
       descripcion: descripcion ?? this.descripcion,
       edad: edad ?? this.edad,
+      empActivo: empActivo ?? this.empActivo,
     );
   }
   

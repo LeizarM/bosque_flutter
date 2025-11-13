@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:ui';
 
 import 'package:bosque_flutter/core/state/empleados_dependientes_provider.dart';
@@ -59,14 +60,24 @@ class FormularioPersonaState extends ConsumerState<FormularioPersona>{
   int? _ciudadSeleccionada;
   double? _currentLat;
   double? _currentLng;
+  late PersonaEntity _personaTemp;
+  // 🛑 NUEVOS CAMPOS PARA VALIDACIÓN EN TIEMPO REAL
+  Timer? _debounce;
+  String? _ciErrorMessage; 
+  String? _initialCi; // Para evitar validar el CI original en modo edición
+  bool _ciFound = false;
    @override
   void initState() {
     super.initState();
+    _personaTemp = widget.persona ?? PersonaEntity.vacio();
     _initControllers();
     _initSelections();
     // Inicializar las coordenadas
     _currentLat = widget.persona?.lat ?? -16.516064598979447;
     _currentLng = widget.persona?.lng ?? -68.13540079367057;
+
+    // 🛑 GUARDAR EL CI INICIAL
+    _initialCi = widget.persona?.ciNumero;
   }
 
   void _initSelections() {
@@ -88,12 +99,12 @@ class FormularioPersonaState extends ConsumerState<FormularioPersona>{
       'ciNumero': TextEditingController(text: widget.persona?.ciNumero??''),
       'ciFechaVencimiento': TextEditingController(
     text: widget.persona?.ciFechaVencimiento != null 
-      ? FormatearFecha.formatearFecha(widget.persona!.ciFechaVencimiento)
+      ? FormatearFecha.formatearFecha(widget.persona!.ciFechaVencimiento!)
       : ''
   ),
   'fechaNacimiento': TextEditingController(
     text: widget.persona?.fechaNacimiento != null 
-      ? FormatearFecha.formatearFecha(widget.persona!.fechaNacimiento)
+      ? FormatearFecha.formatearFecha(widget.persona!.fechaNacimiento!)
       : ''
   ),   
       
@@ -102,13 +113,148 @@ class FormularioPersonaState extends ConsumerState<FormularioPersona>{
       ),
     };
   }
+  // 🛑 CANCELAR EL TIMER EN DISPOSE
+  @override
+  void dispose() {
+    _debounce?.cancel(); 
+    _focusNode.dispose();
+    _controllers.forEach((key, controller) => controller.dispose());
+    super.dispose();
+  }
+  // 🛑 FUNCIÓN DE VALIDACIÓN EN TIEMPO REAL (DEBOUNCED)
+  void _validateCiOnType(String ciNumero) {
+    // 🛑 1. Lógica de Modo Edición (sin cambios)
+    if (widget.isEditing) {
+      if (ciNumero == _initialCi) {
+        setState(() => _ciErrorMessage = null);
+      }
+      return; 
+    }
+    
+    // 2. Limpiar el estado
+    setState(() {
+      _ciErrorMessage = null; 
+      _ciFound = false; 
+    });
+    
+    // 3. Cancelar el timer y verificación de longitud (sin cambios)
+    if (_debounce?.isActive ?? false) _debounce!.cancel();
+
+    if (ciNumero.isEmpty || ciNumero.length < 5) { 
+      return;
+    }
+
+    // 4. Iniciar debounce
+    _debounce = Timer(const Duration(milliseconds: 700), () async { 
+      try {
+        final PersonaEntity personaExistente =
+            await ref.read(obtenerPersonaXCarnet(ciNumero).future);
+
+        // 5. Caso 1: CI ENCONTRADO (EXISTE - codPersona != 0)
+        if (personaExistente.codPersona != 0) {
+          if (mounted) {
+            setState(() {
+              if (_controllers['ciNumero']?.text == ciNumero) {
+                  _ciErrorMessage = 
+                      //'❌ Este C.I. ya está registrado (${personaExistente.nombres} ${personaExistente.apPaterno}).';
+                      'Este C.I. ya está registrado.';
+                  _ciFound = true; 
+                  _personaTemp = personaExistente; 
+              }
+            });
+          }
+        } else {
+          // 6. Caso 2: CI NO ENCONTRADO (DISPONIBLE - codPersona es 0, sin excepción)
+          if (mounted) {
+            setState(() {
+              if (_controllers['ciNumero']?.text == ciNumero) {
+                _ciErrorMessage = '✅ C.I. disponible para nuevo registro.'; 
+              }
+            });
+          }
+        }
+
+      } catch (e) {
+        // 7. Manejo de error
+        final errorString = e.toString().toLowerCase();
+
+        // 1. Caso 3a: ERROR 409 (CI DE OTRA PERSONA) - Bloquea el uso.
+        if (errorString.contains('409') || errorString.contains('ya se encuentra registrada')) {
+           if (mounted) {
+              setState(() {
+                _ciErrorMessage = '❌ Este C.I. ya pertenece a otra persona. No se puede usar.';
+              });
+            }
+        }
+        // 🛑 2. CATCH-ALL: CUALQUIER otra excepción (incluyendo el 404, 500, o fallo de red).
+        // Si no es un error de duplicidad (409), asumimos que es disponibilidad (404)
+        // para evitar mostrar un error de sistema.
+        else {
+            if (mounted) {
+              setState(() {
+                // Aquí el error puede ser el 404/No Encontrado, o un fallo de red real.
+                // Priorizamos mostrar disponibilidad para no frustrar al usuario con un CI nuevo.
+                _ciErrorMessage = '✅ C.I. disponible para nuevo registro.'; 
+              });
+            }
+        }
+      }
+    });
+}
+  void loadPersona(PersonaEntity persona) {
+  if (!mounted) return;
+  setState(() {
+    // 1. 🚨 CRUCIAL: Guarda la persona (¡contiene el codPersona existente!)
+    _personaTemp = persona; 
+
+    // 2. Actualizar los controladores de texto
+    _controllers['nombres']?.text = persona.nombres ?? '';
+    _controllers['apPaterno']?.text = persona.apPaterno ?? '';
+    _controllers['apMaterno']?.text = persona.apMaterno ?? '';
+    _controllers['direccion']?.text = persona.direccion ?? '';
+    _controllers['ciNumero']?.text = persona.ciNumero ?? '';
+    _controllers['lugarNacimiento']?.text = persona.lugarNacimiento ?? '';
+
+    // Formato de fechas
+    _controllers['ciFechaVencimiento']?.text = persona.ciFechaVencimiento != null
+        ? FormatearFecha.formatearFecha(persona.ciFechaVencimiento!)
+        : '';
+    _controllers['fechaNacimiento']?.text = persona.fechaNacimiento != null
+        ? FormatearFecha.formatearFecha(persona.fechaNacimiento!)
+        : '';
+
+    // 3. Actualizar los Dropdowns y variables de estado
+    _ciExpedidoSeleccionado = persona.ciExpedido;
+    _estadoCivilSeleccionado = persona.estadoCivil;
+    _nacionalidadSeleccionado = persona.nacionalidad;
+    _ciudadSeleccionada = persona.codZona; // Asumo que codZona también tiene el codCiudad asociado si lo necesitas para repopular la ciudad
+    _zonaSeleccionado = persona.codZona; 
+    _generoSeleccionado = persona.sexo;
+
+    // 4. Actualizar el mapa
+    _currentLat = persona.lat ?? -16.516064598979447;
+    _currentLng = persona.lng ?? -68.13540079367057;
+    _mapController.move(LatLng(_currentLat!, _currentLng!), 13.0); // Mueve el mapa a la ubicación
+    
+    // Si la Ciudad/Zona se actualizan, debes invalidar sus providers
+    ref.invalidate(ciudadProvider(_nacionalidadSeleccionado!));
+    if (_ciudadSeleccionada != null) {
+      ref.invalidate(zonaProvider(_ciudadSeleccionada!));
+    }
+  });
+}
   Future<int> getCodUsuario() async {
     return await ref.read(userProvider.notifier).getCodUsuario();
   }
   Future<PersonaEntity> getPersona() async {
   final codUsuario = await getCodUsuario();
+  // 🚨 CORRECCIÓN CRUCIAL: Usar _personaTemp.codPersona si existe, sino 0.
+  final codPersonaFinal = widget.isEditing 
+                          ? widget.persona?.codPersona ?? _personaTemp.codPersona 
+                          : _personaTemp.codPersona; // Si fue autocompletado, _personaTemp.codPersona != 0
   return PersonaEntity(
-    codPersona: widget.isEditing ? widget.persona?.codPersona ?? 0 : 0,
+    //codPersona: widget.isEditing ? widget.persona?.codPersona ?? 0 : 0,
+    codPersona: codPersonaFinal,
     nombres: _controllers['nombres']?.text ?? '',
     apPaterno: _controllers['apPaterno']?.text ?? '',
     apMaterno: _controllers['apMaterno']?.text ?? '',
@@ -406,39 +552,77 @@ Widget build(BuildContext context) {
   }
 
   List<Widget> _buildDocumentosFields(bool isLargeScreen) {
-    return [
-      _buildDropdownField<String>(
-        value: _ciExpedidoSeleccionado,
-        label: 'C.I EXPEDIDO',
-        items: ref.watch(ciExpedidoProvider).when(
-          data: (items) => items.map((item) =>
-            DropdownMenuItem(
-              value: item.codTipos,
-              child: Text(item.nombre),
-            ),
-          ).toList(),
-          loading: () => [],
-          error: (_, __) => [],
+  
+  // 🛑 1. Definir el campo CI como un widget local, incluyendo los nuevos parámetros.
+  Widget ciField = _buildFormField(
+    controller: _controllers['ciNumero']!,
+    label: 'NRO CARNET DE IDENTIDAD',
+    validator: (value) => validarCI(value, esObligatorio: true),
+    onChanged: _validateCiOnType, // <-- Llama a la validación debounced
+    errorText: _ciErrorMessage,   // <-- Muestra el mensaje de error
+    flex: isLargeScreen ? 2 : 1,
+  );
+
+  // 🛑 2. LÓGICA CONDICIONAL: Si el CI fue encontrado y NO estamos en modo edición,
+  //      envolvemos el campo en un Column y añadimos el botón.
+  if (_ciFound && !widget.isEditing) {
+    ciField = Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        ciField, // El campo de texto con el error
+        const SizedBox(height: 4),
+        Align(
+          alignment: Alignment.centerLeft, // Alineación del botón
+          child: TextButton.icon(
+            icon: const Icon(Icons.auto_fix_high),
+            label: const Text('Autocompletar Campos Ahora'),
+            onPressed: () {
+              // 🚨 AL PRESIONAR EL BOTÓN: 
+              // 1. Carga los datos de la persona encontrada (_personaTemp).
+              loadPersona(_personaTemp); 
+              
+              // 2. Oculta el mensaje y el botón para que el usuario pueda guardar.
+              setState(() {
+                _ciFound = false; 
+                _ciErrorMessage = null; 
+              });
+            },
+          ),
         ),
-        onChanged: (value) => setState(() => _ciExpedidoSeleccionado = value),
-        validator: (value) => validarDropdown(value, 'C.I expedido'),
-        flex: 1,
-      ),
-      _buildFormField(
-        controller: _controllers['ciNumero']!,
-        label: 'NRO CARNET DE IDENTIDAD',
-        validator: (value) => validarSoloNumeros(value, esObligatorio: true),
-        flex: isLargeScreen ? 2 : 1,
-      ),
-      _buildDateField(
-        controller: _controllers['ciFechaVencimiento']!,
-        label: 'FECHA DE VENCIMIENTO C.I',
-        permitirFechaFutura: true,
-        flex: 1,
-      ),
-      
-    ];
+      ],
+    );
   }
+
+  // 3. Retornar la lista final de widgets.
+  return [
+    _buildDropdownField<String>(
+      value: _ciExpedidoSeleccionado,
+      label: 'C.I EXPEDIDO',
+      items: ref.watch(ciExpedidoProvider).when(
+        data: (items) => items.map((item) =>
+          DropdownMenuItem(
+            value: item.codTipos,
+            child: Text(item.nombre),
+          ),
+        ).toList(),
+        loading: () => [],
+        error: (_, __) => [],
+      ),
+      onChanged: (value) => setState(() => _ciExpedidoSeleccionado = value),
+      validator: (value) => validarDropdown(value, 'C.I expedido'),
+      flex: 1,
+    ),
+    ciField, // <-- Usamos el widget de CI (que ahora puede incluir el botón)
+    _buildDateField(
+      controller: _controllers['ciFechaVencimiento']!,
+      label: 'FECHA DE VENCIMIENTO C.I',
+      permitirFechaFutura: true,
+      flex: 1,
+    ),
+    
+  ];
+}
 
   List<Widget> _buildDatosAdicionalesFields(bool isLargeScreen) {
     return [
@@ -583,6 +767,8 @@ Widget build(BuildContext context) {
     required String label,
     required String? Function(String?)? validator,
     required int flex,
+    String? errorText, // 🛑 NUEVO
+    void Function(String)? onChanged, // 🛑 NUEVO
   }) {
     return ConstrainedBox(
       constraints: BoxConstraints(
@@ -591,13 +777,16 @@ Widget build(BuildContext context) {
       ),
       child: TextFormField(
         controller: controller,
+        onChanged: onChanged,
         decoration: InputDecoration(
           labelText: label,
           border: const OutlineInputBorder(),
+          errorText: errorText, // 🛑 AÑADIR errorText
           // Compatibilidad con modo oscuro
           labelStyle: TextStyle(color: Theme.of(context).colorScheme.onSurface),
           fillColor: Theme.of(context).colorScheme.surface,
           filled: true,
+          errorMaxLines: 5
         ),
         validator: validator,
         inputFormatters: bloquearEspacios,
@@ -813,55 +1002,52 @@ Widget build(BuildContext context) {
   void _handleSubmit() async {
   if (_formKey.currentState?.validate() ?? false) {
     try {
-      // Crear la persona basado en si estamos editando o creando
-      final persona = PersonaEntity(
-        codPersona: widget.isEditing ? widget.persona!.codPersona : 0, // Mantener ID si es edición
-        nombres: _controllers['nombres']?.text ?? '',
-        apPaterno: _controllers['apPaterno']?.text ?? '',
-        apMaterno: _controllers['apMaterno']?.text ?? '',
-        direccion: _controllers['direccion']?.text ?? '',
-        ciNumero: _controllers['ciNumero']?.text ?? '',
-        ciExpedido: _ciExpedidoSeleccionado!,
-        estadoCivil: _estadoCivilSeleccionado!,
-        nacionalidad: _nacionalidadSeleccionado!,
-        codZona: _zonaSeleccionado!,
-        sexo: _generoSeleccionado!,
-        ciFechaVencimiento: FormatearFecha.parseFecha(_controllers['ciFechaVencimiento']!.text),
-        fechaNacimiento: FormatearFecha.parseFecha(_controllers['fechaNacimiento']!.text),
-        lugarNacimiento: _controllers['lugarNacimiento']?.text ?? '',
-        lat: _currentLat ?? -16.5,
-        lng: _currentLng ?? -68.1,
-        audUsuarioI: await getCodUsuario(), 
+      if (_ciFound && !widget.isEditing) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Este CI ya está registrado'),
+            backgroundColor: Colors.orange,
+          ),
+        );
+        return;
+      }
+
+      final persona = await getPersona();
+      
+      try {
+        await widget.onSave(persona);
+        ref.invalidate(obtenerPersonaProvider(persona.codPersona));
+        ref.invalidate(empleadosDependientesProvider);
+        ref.invalidate(empleadoXJerarquiaProvider);
+      } catch (e) {
+        if (!mounted) return;
+
+        // Extraer solo el mensaje relevante del error
+        String mensajeError = 'El CI ya se encuentra registrado';
         
-      );
-
-
-      await widget.onSave(persona);
-      ref.invalidate(obtenerPersonaProvider(persona.codPersona));
-      ref.invalidate(empleadosDependientesProvider);
-      if (mounted) {
-        // Mostrar mensaje según la operación
-        if (widget.isEditing) {
-          AppSnackbarCustom.showEdit(
-            context, 
-            'Datos actualizados correctamente'
-          );
-        } else {
-          AppSnackbarCustom.showAdd(
-            context, 
-            'Datos registrados correctamente'
-          );
+        // Si no es un error 409, usar mensaje genérico
+        if (!e.toString().contains('409')) {
+          mensajeError = 'No se pudo completar el registro';
         }
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(mensajeError),
+            backgroundColor: Colors.orange,
+          ),
+        );
+        return;
       }
       
     } catch (e) {
-      if (mounted) {
-        AppSnackbarCustom.show(
-          context: context,
-          message: 'Error: ${e.toString()}',
-          type: SnackBarType.error,
-        );
-      }
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('No se pudo completar el registro'),
+          backgroundColor: Colors.red,
+        ),
+      );
     }
   }
 }

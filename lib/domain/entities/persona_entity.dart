@@ -9,16 +9,16 @@ class PersonaEntity {
   final String apPaterno;
   final String apMaterno;
   final String ciExpedido;
-  final DateTime ciFechaVencimiento;
+  final DateTime? ciFechaVencimiento;
   final String ciNumero;
   final String direccion;
   final String estadoCivil;
-  final DateTime fechaNacimiento;
+  final DateTime? fechaNacimiento;
   final String lugarNacimiento;
   final int nacionalidad;
   final String sexo;
-  final double lat;
-  final double lng;
+  final double? lat;
+  final double? lng;
   final int audUsuarioI;
   final String? datoPersona;
   final PaisEntity? pais;
@@ -32,11 +32,11 @@ class PersonaEntity {
     required this.apPaterno,
     required this.apMaterno,
     required this.ciExpedido,
-    required this.ciFechaVencimiento,
+    this.ciFechaVencimiento,
     required this.ciNumero,
     required this.direccion,
     required this.estadoCivil,
-    required this.fechaNacimiento,
+    this.fechaNacimiento,
     required this.lugarNacimiento,
     required this.nacionalidad,
     required this.sexo,
@@ -48,6 +48,34 @@ class PersonaEntity {
     this.ciudad,
     this.zona,
   });
+  factory PersonaEntity.vacio() {
+    // Definimos una fecha mínima segura para los campos required DateTime
+    final DateTime minDate = DateTime(1900); 
+
+    return PersonaEntity(
+      codPersona: 0, // CRUCIAL: 0 indica que es una persona nueva/vacía
+      codZona: 0, 
+      nombres: '',
+      apPaterno: '',
+      apMaterno: '',
+      ciExpedido: 'LP', // Usar un valor por defecto válido (e.g., 'SN' - Sin Expedir)
+      ciFechaVencimiento: null, // Fecha de referencia
+      ciNumero: '',
+      direccion: '',
+      estadoCivil: 'sol', // Usar un valor por defecto válido (e.g., 'S' - Soltero/a)
+      fechaNacimiento: null, // Fecha de referencia
+      lugarNacimiento: '',
+      nacionalidad: 0, 
+      sexo: 'M', // Usar un valor por defecto válido (e.g., 'M' - Masculino)
+      lat: -16.516064598979447, // Coordenadas por defecto (La Paz)
+      lng: -68.13540079367057,  // Coordenadas por defecto (La Paz)
+      audUsuarioI: 0,
+      datoPersona: null,
+      pais: null,
+      ciudad: null,
+      zona: null,
+    );
+  }
   // Método copyWith
   PersonaEntity copyWith({
     int? codPersona,

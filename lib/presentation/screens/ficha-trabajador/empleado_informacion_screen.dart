@@ -3,6 +3,7 @@ import 'package:bosque_flutter/core/state/menu_provider.dart';
 import 'package:bosque_flutter/core/state/user_provider.dart';
 import 'package:bosque_flutter/core/utils/responsive_utils_bosque.dart';
 import 'package:bosque_flutter/domain/entities/ciExpedido_entity.dart';
+import 'package:bosque_flutter/domain/entities/empleado_entity.dart';
 import 'package:bosque_flutter/domain/entities/estado_civil_entity.dart';
 import 'package:bosque_flutter/domain/entities/login_entity.dart';
 import 'package:bosque_flutter/domain/entities/pais_entity.dart';
@@ -170,14 +171,23 @@ class _InfoEmpleadoScreenState extends ConsumerState<InfoEmpleadoScreen> {
   final theme = Theme.of(context);
   final isDark = theme.brightness == Brightness.dark;
   final size = MediaQuery.of(context).size;
+  final codEmpleadoUsuario = ref.watch(userProvider)?.codEmpleado;
+  //final codUsuario = ref.read(userProvider.notifier).getCodEmpleado();
+    print('Usuario logeado (codEmpleadoUsuario): $codEmpleadoUsuario, Consultado (widget.codEmpleado): ${widget.codEmpleado}');
+
 
   return Scaffold(
     backgroundColor: isDark ? Colors.grey[900] : Colors.grey[100],
     appBar: AppBar(
       title: const Text('Información del Empleado'),
     ),
-    body: ref.watch(empObtenerDatosEmpleados(widget.codEmpleado)).when(
-      data: (codPersona) {
+    body: codEmpleadoUsuario == null 
+    ? const Center(child: CircularProgressIndicator())
+  : ref.watch(empleadoXJerarquiaProvider((codEmpleadoUsuario, widget.codEmpleado))).when(
+      data: (empleado) {
+        final codPersona = empleado.codPersona;
+        // Guarda el codPersona si necesitas refrescar luego
+        _ultimoCodPersona = codPersona;
         // Refresca los providers dependientes de codPersona solo si cambió
         if (_lastCodPersona != codPersona) {
           _lastCodPersona = codPersona;
@@ -330,7 +340,7 @@ class _InfoEmpleadoScreenState extends ConsumerState<InfoEmpleadoScreen> {
                   horizontal: size.width * 0.1,
                   vertical: 24,
                 ),
-                child: _buildDesktopPageContent(codPersona),
+                child: _buildDesktopPageContent(empleado),
               ),
             ),
           ],
@@ -415,7 +425,9 @@ void _invalidateProvidersForTab(int page, int? codPersona) {
       break;
   }
 }
-Widget _buildDesktopPageContent(int codPersona) {
+Widget _buildDesktopPageContent(EmpleadoEntity empleado) {
+  //final codEmpleadoUsuario = ref.watch(userProvider)?.codEmpleado;
+//final esAutoConsulta = codEmpleadoUsuario == widget.codEmpleado;
   switch (_currentPage) {
     case 0:
       return Row(
@@ -446,7 +458,7 @@ Widget _buildDesktopPageContent(int codPersona) {
                 const SizedBox(height: 24),
                 _buildSection(
               child: TelefonoSection(
-                codPersona: codPersona,
+                codPersona: empleado.codPersona,
                 habilitarEdicion: _habilitarEdicion,
                 estadoExpandido: estadoExpandido,
                 selectedOperation: selectedOperation,
@@ -464,7 +476,7 @@ Widget _buildDesktopPageContent(int codPersona) {
                 const SizedBox(height: 24),
             _buildSection(
               child: EmailSeccion(
-                codPersona: codPersona,
+                codPersona: empleado.codPersona,
                 habilitarEdicion: _habilitarEdicion,
                 estadoExpandido: estadoExpandido,
                 selectedOperation: selectedOperation,
@@ -539,7 +551,8 @@ ref.invalidate(usuarioBloqueadoProvider(codUsuario));
       ),
             _buildSection(
               child: PersonaSection(
-                codPersona: codPersona,
+                empleado:empleado,
+                codPersona: empleado.codPersona,
                 codEmpleado: widget.codEmpleado,
                 habilitarEdicion: _habilitarEdicion,
                 estadoExpandido: estadoExpandido,
@@ -548,6 +561,7 @@ ref.invalidate(usuarioBloqueadoProvider(codUsuario));
                 onUpdateOperation: (op) =>
                     setState(() => selectedOperation['persona'] = op),
                 onEditar: () => activarEdicion('persona'),
+                //ocultarCamposSensibles: !esAutoConsulta,
               ),
             ),
           ],
@@ -612,6 +626,7 @@ ref.invalidate(usuarioBloqueadoProvider(codUsuario));
   Widget _buildMobileLayout(canSeeReport) {
   final theme = Theme.of(context);
   final isDark = theme.brightness == Brightness.dark;
+  final codEmpleadoUsuario = ref.watch(userProvider)?.codEmpleado;
 
   return Scaffold(
     backgroundColor: isDark ? Colors.grey[900] : Colors.grey[100],
@@ -779,20 +794,22 @@ FutureBuilder<String>(
         ),
       ),
     ),
-    body: ref.watch(empObtenerDatosEmpleados(widget.codEmpleado)).when(
-      data: (codPersona) {
-        _ultimoCodPersona = codPersona;
+    body: codEmpleadoUsuario == null
+  ? const Center(child: CircularProgressIndicator())
+  : ref.watch(empleadoXJerarquiaProvider((codEmpleadoUsuario, widget.codEmpleado))).when(
+      data: (empleado) {
+        _ultimoCodPersona = empleado.codPersona;
          Future.microtask(() {
-      ref.refresh(obtenerPersonaProvider(codPersona));
-      ref.refresh(telefonoProvider(codPersona));
-      ref.refresh(emailProvider(codPersona));
+      ref.refresh(obtenerPersonaProvider(empleado.codPersona));
+      ref.refresh(telefonoProvider(empleado.codPersona));
+      ref.refresh(emailProvider(empleado.codPersona));
     });
         return RefreshIndicator(
           onRefresh: () async {
             ref.invalidate(empObtenerDatosEmpleados(widget.codEmpleado));
-            ref.invalidate(obtenerPersonaProvider(codPersona));
-            ref.invalidate(telefonoProvider(codPersona));
-            ref.invalidate(emailProvider(codPersona));
+            ref.invalidate(obtenerPersonaProvider(empleado.codPersona));
+            ref.invalidate(telefonoProvider(empleado.codPersona));
+            ref.invalidate(emailProvider(empleado.codPersona));
             ref.invalidate(formacionProvider(widget.codEmpleado));
             ref.invalidate(experienciaLaboralProvider(widget.codEmpleado));
             ref.invalidate(obtenerGaranteReferenciaProvider(widget.codEmpleado));
@@ -802,8 +819,8 @@ FutureBuilder<String>(
           child: ListView(
             physics: const AlwaysScrollableScrollPhysics(),
             children: [
-              if (_currentPage == 0) _buildInfoPage(codPersona),
-              if (_currentPage == 1) _buildContactPage(codPersona),
+              if (_currentPage == 0) _buildInfoPage(empleado),
+              if (_currentPage == 1) _buildContactPage(empleado.codPersona),
               if (_currentPage == 2) _buildFormacionPage(),
               if (_currentPage == 3) _buildExperienciaPage(),
             //  if (_currentPage == 4) _buildReferenciasPage(),
@@ -820,7 +837,10 @@ FutureBuilder<String>(
   );
 }
 
-  Widget _buildInfoPage(int codPersona) {
+  Widget _buildInfoPage(EmpleadoEntity empleado) {
+    final codPersona = empleado.codPersona;
+    //final codEmpleadoUsuario = ref.watch(userProvider)?.codEmpleado;
+  //final esAutoConsulta = codEmpleadoUsuario == widget.codEmpleado;
     return SingleChildScrollView(
       key: ValueKey(codPersona),
       padding: const EdgeInsets.all(16),
@@ -901,6 +921,7 @@ FutureBuilder<String>(
           const SizedBox(height: 16),
           _buildSection(
             child: PersonaSection(
+              empleado:empleado,
               codPersona: codPersona,
               codEmpleado: widget.codEmpleado,
               habilitarEdicion: _habilitarEdicion,
@@ -910,6 +931,7 @@ FutureBuilder<String>(
               onUpdateOperation: (op) =>
                   setState(() => selectedOperation['persona'] = op),
               onEditar: () => activarEdicion('persona'),
+              //ocultarCamposSensibles: !esAutoConsulta,
             ),
           ),
         ],

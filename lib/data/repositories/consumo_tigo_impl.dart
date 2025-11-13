@@ -376,11 +376,26 @@ Future<bool> insertarTigoEjectuado(String periodoCobrado,int audUsuario) async {
   );
 }
   } on DioException catch (e) {
-    print('DioException: ${e.response?.data}');
-    throw Exception('Error de conexión: ${e.message}');
+    final response = e.response;
+    
+    // CLAVE: Chequeo y extracción del error 400
+    if (response != null && response.statusCode == 400) {
+        final data = response.data;
+        // Asumimos que el JSON del backend tiene el campo "msg"
+        if (data is Map && data.containsKey('msg')) {
+            final errorMessage = data['msg'] as String;
+            // Lanzar una Exception con el mensaje limpio para el Provider/UI
+            throw Exception(errorMessage); 
+        }
+    }
+    
+    // Para cualquier otro error (500, red, etc.)
+    print('DioException genérica: ${response?.data ?? e.message}');
+    throw Exception('Error de conexión o servidor. Intente más tarde.');
+
   } catch (e) {
     print('Error inesperado: $e');
-    throw Exception('Error inesperado: $e');
+    rethrow;
   }
 }
 //obtener tigo ejecutado

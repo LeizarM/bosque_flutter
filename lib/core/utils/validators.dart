@@ -229,6 +229,35 @@ void validarYEnviarEnWeb(GlobalKey<FormState> formKey, VoidCallback onSave) {
     }
   }
 }
+// Validador exclusivo para C.I.: permite solo letras y números (sin caracteres especiales),
+// sin espacios, longitud mínima 7 y máxima 8.
+String? validarCI(String? value, {bool esObligatorio = false}) {
+  final trimmed = (value ?? '').trim();
+
+  if (esObligatorio && trimmed.isEmpty) {
+    return 'Este campo es obligatorio';
+  }
+
+  if (trimmed.isNotEmpty) {
+    // No permitir espacios intermedios
+    if (trimmed.contains(' ')) {
+      return 'No se permiten espacios';
+    }
+
+    // Solo letras y números
+    if (!RegExp(r'^[A-Za-z0-9]+$').hasMatch(trimmed)) {
+      return 'Solo se permiten letras y números';
+    }
+
+    if (trimmed.length < 7) {
+      return 'Debe tener al menos 7 caracteres';
+    } else if (trimmed.length > 8) {
+      return 'Debe tener como máximo 8 caracteres';
+    }
+  }
+
+  return null;
+}
 
 
 
