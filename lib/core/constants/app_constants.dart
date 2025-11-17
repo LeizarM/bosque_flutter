@@ -1,6 +1,6 @@
 class AppConstants {
-  static const String baseUrl = 'https://app.esppapel.com:8443';
-  //static const String baseUrl = 'http://192.168.3.107:9223';
+  //static const String baseUrl = 'https://app.esppapel.com:8443';
+  static const String baseUrl = 'http://192.168.3.107:9223';
 
   static const String APP_VERSION = "1.0.1";
 
@@ -8,8 +8,13 @@ class AppConstants {
   static const String menuEndpoint = '/view/vistaDinamica';
   static const String registroVistaUsuario = '/auth/registroVistaUsuario';
   static const String registroLogin =
-      '/view/registroUsuario'; //registro login o usuario
+      '/auth/registroUsuario'; //registro login o usuario
   static const String listaEmpleados = '/auth/lstEmpleados';
+  static const String verificarDuplicadoUsuario =
+      '/auth/verificarDuplicadoUsuario';
+
+  static const String cargarPermisosUsuario = '/auth/lstUsuarioPermisosTree';
+  static const String actualizarPermisos = '/auth/actualizarPermisos';
 
   static const String articulosEndpoint = '/paginaXApp/articulosX';
   static const String articulosAlmacenEndpoint =

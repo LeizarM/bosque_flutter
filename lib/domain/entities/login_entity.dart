@@ -18,6 +18,8 @@ class LoginEntity {
   final String nombreCiudad;
   final String nombreEmpresa;
   String npassword;
+  String password;
+  String password2;
 
   LoginEntity({
     required this.token,
@@ -39,13 +41,17 @@ class LoginEntity {
     required this.nombreCiudad,
     required this.nombreEmpresa,
     required this.npassword,
+    required this.password,
+    required this.password2,
   });
 
   factory LoginEntity.fromJson(Map<String, dynamic> json) {
     // Mapeo seguro para cargo anidado
     String cargo = '';
     try {
-      cargo = json['empleado']?['empleadoCargo']?['cargoSucursal']?['cargo']?['descripcion'] ?? '';
+      cargo =
+          json['empleado']?['empleadoCargo']?['cargoSucursal']?['cargo']?['descripcion'] ??
+          '';
     } catch (_) {
       cargo = '';
     }
@@ -70,6 +76,8 @@ class LoginEntity {
       nombreCiudad: json['nombreCiudad'] ?? '',
       nombreEmpresa: json['nombreEmpresa'] ?? '',
       npassword: json['npassword'] ?? '',
+      password: json['password'] ?? '',
+      password2: json['password2'] ?? '',
     );
   }
 
@@ -94,6 +102,8 @@ class LoginEntity {
     if (nombreCiudad.isNotEmpty) data['nombreCiudad'] = nombreCiudad;
     if (nombreEmpresa.isNotEmpty) data['nombreEmpresa'] = nombreEmpresa;
     if (npassword.isNotEmpty) data['npassword'] = npassword;
+    if (password.isNotEmpty) data['password'] = password;
+    if (password2.isNotEmpty) data['password2'] = password2;
     return data;
   }
 }

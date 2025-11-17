@@ -1,4 +1,5 @@
 import 'package:bosque_flutter/domain/entities/vista_usuario_entity.dart';
+import 'package:bosque_flutter/domain/entities/login_entity.dart';
 import 'package:bosque_flutter/data/repositories/auth_repository_impl.dart';
 import 'package:dropdown_search/dropdown_search.dart';
 import 'package:flutter/material.dart';
@@ -137,19 +138,29 @@ class _UsuariosHomeScreenState extends ConsumerState<UsuariosHomeScreen> {
           theme: theme,
           colorScheme: colorScheme,
           onResetPassword: () {
-            Navigator.of(dialogContext).pop();
-            _showResetPasswordDialog(user, context, ref, theme, colorScheme);
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (mounted && Navigator.canPop(dialogContext)) {
+                Navigator.of(dialogContext).pop();
+              }
+              _showResetPasswordDialog(user, context, ref, theme, colorScheme);
+            });
           },
           onShowMessage: (message, isSuccess) {
-            Navigator.of(dialogContext).pop();
-            Future.delayed(Duration(milliseconds: 300), () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(message),
-                  backgroundColor:
-                      isSuccess ? colorScheme.primary : colorScheme.error,
-                ),
-              );
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (mounted && Navigator.canPop(dialogContext)) {
+                Navigator.of(dialogContext).pop();
+              }
+              Future.delayed(Duration(milliseconds: 300), () {
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(message),
+                      backgroundColor:
+                          isSuccess ? colorScheme.primary : colorScheme.error,
+                    ),
+                  );
+                }
+              });
             });
           },
           availableUsers: users,
@@ -183,6 +194,18 @@ class _UsuariosHomeScreenState extends ConsumerState<UsuariosHomeScreen> {
                 nivelAcceso: 0,
                 autorizador: selectedUser.codUsuario,
                 audUsuarioI: ref.read(userProvider)?.codUsuario ?? 0,
+                fila: 0,
+                codVistaPadre: 0,
+                codBoton: 0,
+                direccion: '',
+                nombreComponente: '',
+                modulo: '',
+                vista: '',
+                boton: '',
+                descripcion: '',
+                imagen: '',
+                nivelAccesoBoton: 0,
+                tipo: '',
               );
 
               // Llamar al método copiarPermisos del repositorio
@@ -272,15 +295,21 @@ class _UsuariosHomeScreenState extends ConsumerState<UsuariosHomeScreen> {
             // No hacer nada en nuevo usuario
           },
           onShowMessage: (message, isSuccess) {
-            Navigator.of(dialogContext).pop();
-            Future.delayed(Duration(milliseconds: 300), () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(message),
-                  backgroundColor:
-                      isSuccess ? colorScheme.primary : colorScheme.error,
-                ),
-              );
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (mounted && Navigator.canPop(dialogContext)) {
+                Navigator.of(dialogContext).pop();
+              }
+              Future.delayed(Duration(milliseconds: 300), () {
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(message),
+                      backgroundColor:
+                          isSuccess ? colorScheme.primary : colorScheme.error,
+                    ),
+                  );
+                }
+              });
             });
           },
         );
@@ -1306,15 +1335,145 @@ class _UserFormDialogState extends ConsumerState<_UserFormDialog> {
                 ? 'Crear Copia'
                 : 'Guardar Cambios',
           ),
-          onPressed: () {
-            widget.onShowMessage(
-              widget.isNew
-                  ? 'Usuario creado correctamente'
-                  : widget.isCopy
-                  ? 'Usuario copiado correctamente'
-                  : 'Cambios guardados correctamente',
-              true,
-            );
+          onPressed: () async {
+            // Validar que se haya seleccionado un empleado
+            if (_selectedEmpleadoCode == 0) {
+              widget.onShowMessage('Por favor selecciona un empleado', false);
+              return;
+            }
+
+            // Validar que el login no esté vacío
+            if (_loginController.text.isEmpty) {
+              widget.onShowMessage(
+                'Por favor ingresa el login del usuario',
+                false,
+              );
+              return;
+            }
+
+            // Si es nuevo, verificar duplicados
+            if (widget.isNew) {
+              try {
+                // Obtener el empleado seleccionado para capturar datos
+                final empleadosData = await ref.read(
+                  empleadosListProvider.future,
+                );
+                final empleadoSeleccionado = empleadosData.firstWhere(
+                  (e) => e.codEmpleado == _selectedEmpleadoCode,
+                );
+
+                // Obtener el codUsuario del usuario actual
+                final currentUser = ref.read(userProvider);
+                final audUsuario = currentUser?.codUsuario ?? 0;
+
+                // Crear la entidad LoginEntity con los datos capturados para verificar duplicado
+                final usuarioParaVerificar = LoginEntity(
+                  token: '',
+                  bearer: '',
+                  nombreCompleto: empleadoSeleccionado.nombres,
+                  cargo: _cargoController.text,
+                  tipoUsuario: _tipoUsuario,
+                  codUsuario: 0,
+                  codEmpleado: _selectedEmpleadoCode,
+                  codEmpresa: empleadoSeleccionado.codPersona,
+                  codCiudad: 0,
+                  login: _loginController.text,
+                  versionApp: '',
+                  codSucursal: 0,
+                  esAutorizador: _esAutorizador,
+                  estado: _estado,
+                  audUsuarioI: audUsuario,
+                  nombreSucursal: '',
+                  nombreCiudad: '',
+                  nombreEmpresa: '',
+                  npassword: '',
+                  password: '',
+                  password2: _cargoController.text,
+                );
+
+                final authRepo = AuthRepositoryImpl();
+                final duplicadoCount = await authRepo.verificarDuplicadoUsuario(
+                  usuarioParaVerificar,
+                );
+
+                if (duplicadoCount > 0) {
+                  widget.onShowMessage(
+                    'El usuario o empleado ya existe',
+                    false,
+                  );
+                  return;
+                }
+              } catch (e) {
+                widget.onShowMessage('Error al verificar duplicado: $e', false);
+                return;
+              }
+            }
+
+            // Obtener el empleado seleccionado para capturar datos
+            try {
+              final empleadosData = await ref.read(
+                empleadosListProvider.future,
+              );
+              final empleadoSeleccionado = empleadosData.firstWhere(
+                (e) => e.codEmpleado == _selectedEmpleadoCode,
+              );
+
+              // Obtener el codUsuario del usuario actual
+              final currentUser = ref.read(userProvider);
+              final audUsuario = currentUser?.codUsuario ?? 0;
+
+              // Crear la entidad LoginEntity con los datos capturados
+              final nuevoUsuario = LoginEntity(
+                token: '',
+                bearer: '',
+                nombreCompleto: empleadoSeleccionado.nombres,
+                cargo: _cargoController.text,
+                tipoUsuario: _tipoUsuario,
+                codUsuario: widget.isNew ? 0 : (widget.user?.codUsuario ?? 0),
+                codEmpleado: _selectedEmpleadoCode,
+                codEmpresa: empleadoSeleccionado.codPersona,
+                codCiudad: 0,
+                login: _loginController.text,
+                versionApp: '',
+                codSucursal: 0,
+                esAutorizador: _esAutorizador,
+                estado: _estado,
+                audUsuarioI: audUsuario,
+                nombreSucursal: '',
+                nombreCiudad: '',
+                nombreEmpresa: '',
+                password: '',
+                password2:
+                    _cargoController
+                        .text, // La contraseña se captura del campo cargo (contraseña)
+                npassword: '',
+              );
+
+              // Registrar el usuario
+              final authRepo = AuthRepositoryImpl();
+              final registroExitoso = await authRepo.registrarLogin(
+                nuevoUsuario,
+              );
+
+              if (registroExitoso) {
+                // Refrescar la lista de usuarios
+                final _ = ref.refresh(usersListProvider);
+
+                Navigator.of(context).pop();
+                widget.onShowMessage(
+                  widget.isNew
+                      ? 'Usuario creado correctamente'
+                      : widget.isCopy
+                      ? 'Usuario copiado correctamente'
+                      : 'Cambios guardados correctamente',
+                  true,
+                );
+              } else {
+                widget.onShowMessage('Error al guardar el usuario', false);
+              }
+            } catch (e) {
+              widget.onShowMessage('Error al guardar: $e', false);
+            }
           },
         ),
       ],
@@ -1939,7 +2098,7 @@ class _PermissionsSelectionDialogState
   }
 }
 
-class _AssignPermissionsDialog extends StatefulWidget {
+class _AssignPermissionsDialog extends ConsumerStatefulWidget {
   final dynamic user;
   final ThemeData theme;
   final ColorScheme colorScheme;
@@ -1953,124 +2112,568 @@ class _AssignPermissionsDialog extends StatefulWidget {
   });
 
   @override
-  State<_AssignPermissionsDialog> createState() =>
+  ConsumerState<_AssignPermissionsDialog> createState() =>
       _AssignPermissionsDialogState();
 }
 
-class _AssignPermissionsDialogState extends State<_AssignPermissionsDialog> {
-  // Definir los módulos y vistas disponibles
-  final Map<String, List<String>> modules = {
-    'Gestión': ['Usuarios', 'Roles', 'Permisos'],
-    'Reportes': ['Reportes Básicos', 'Reportes Avanzados', 'Exportar'],
-    'Administración': ['Configuración', 'Auditoría', 'Base de Datos'],
-    'Inventario': ['Productos', 'Movimientos', 'Valuación'],
-  };
-
-  late Map<String, bool> selectedPermissions;
+class _AssignPermissionsDialogState
+    extends ConsumerState<_AssignPermissionsDialog> {
+  late Map<int, bool> expandedNodes;
+  late Map<int, bool> selectedPermissions;
+  late final AutoDisposeFutureProvider<List<dynamic>> _permisosProvider;
 
   @override
   void initState() {
     super.initState();
-    // Inicializar todos los permisos como no seleccionados
+    expandedNodes = {};
     selectedPermissions = {};
-    modules.forEach((module, views) {
-      views.forEach((view) {
-        selectedPermissions['$module - $view'] = false;
-      });
+
+    // Crear el provider una sola vez en initState
+    _permisosProvider = FutureProvider.autoDispose<List<dynamic>>((ref) async {
+      final authRepo = AuthRepositoryImpl();
+      return await authRepo.cargarPermisosVistaHierarquico(
+        widget.user.codUsuario,
+      );
     });
   }
 
   @override
   Widget build(BuildContext context) {
+    final permisosAsyncValue = ref.watch(_permisosProvider);
+    final isDesktop = ResponsiveUtilsBosque.isDesktop(context);
+    final isMobile = ResponsiveUtilsBosque.isMobile(context);
+    final screenWidth = MediaQuery.of(context).size.width;
+    final screenHeight = MediaQuery.of(context).size.height;
+
+    // Dimensiones responsivas
+    final dialogWidth =
+        isDesktop
+            ? screenWidth * 0.6
+            : isMobile
+            ? screenWidth * 0.95
+            : screenWidth * 0.8;
+
+    final dialogHeight =
+        isDesktop
+            ? screenHeight * 0.7
+            : isMobile
+            ? screenHeight * 0.8
+            : screenHeight * 0.75;
+
     return AlertDialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      title: Row(
-        children: [
-          Icon(Icons.security, color: widget.colorScheme.primary),
-          const SizedBox(width: 8),
-          Text(
-            'Asignar Permisos',
-            style: widget.theme.textTheme.titleLarge?.copyWith(
-              color: widget.colorScheme.primary,
-            ),
-          ),
-        ],
-      ),
-      content: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
+      contentPadding: EdgeInsets.zero,
+      title: Padding(
+        padding: EdgeInsets.all(
+          ResponsiveUtilsBosque.getHorizontalPadding(context),
+        ),
+        child: Row(
           children: [
-            Text(
-              'Usuario: ${widget.user.nombreCompleto}',
-              style: widget.theme.textTheme.bodyMedium?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
+            Icon(
+              Icons.security,
+              color: widget.colorScheme.primary,
+              size: isMobile ? 20 : 24,
             ),
-            const SizedBox(height: 16),
-            Text(
-              'Selecciona los permisos para este usuario:',
-              style: widget.theme.textTheme.bodyMedium,
-            ),
-            const SizedBox(height: 12),
-            ...modules.entries.map((entry) {
-              final moduleName = entry.key;
-              final views = entry.value;
-
-              return Column(
+            SizedBox(width: isMobile ? 8 : 12),
+            Expanded(
+              child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
-                    moduleName,
-                    style: widget.theme.textTheme.titleSmall?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: widget.colorScheme.primary,
+                    'Seleccionar los permisos del usuario:',
+                    style: widget.theme.textTheme.titleMedium?.copyWith(
+                      fontSize: isMobile ? 14 : 16,
                     ),
                   ),
-                  ...views.map((view) {
-                    final key = '$moduleName - $view';
-                    return CheckboxListTile(
-                      title: Text(
-                        view,
-                        style: widget.theme.textTheme.bodyMedium,
-                      ),
-                      value: selectedPermissions[key] ?? false,
-                      onChanged: (value) {
-                        setState(() {
-                          selectedPermissions[key] = value ?? false;
-                        });
-                      },
-                      contentPadding: EdgeInsets.zero,
-                    );
-                  }).toList(),
-                  const SizedBox(height: 8),
+                  Text(
+                    widget.user.nombreCompleto ?? 'Usuario',
+                    style: widget.theme.textTheme.titleMedium?.copyWith(
+                      color: widget.colorScheme.primary,
+                      fontWeight: FontWeight.bold,
+                      fontSize: isMobile ? 16 : 18,
+                    ),
+                  ),
                 ],
-              );
-            }).toList(),
+              ),
+            ),
           ],
         ),
       ),
+      content: SizedBox(
+        width: dialogWidth,
+        height: dialogHeight,
+        child: permisosAsyncValue.when(
+          data: (permisos) {
+            return Column(
+              children: [
+                // Header de la tabla
+                Container(
+                  padding: EdgeInsets.symmetric(
+                    horizontal:
+                        ResponsiveUtilsBosque.getHorizontalPadding(context) *
+                        0.5,
+                    vertical: isMobile ? 8 : 12,
+                  ),
+                  decoration: BoxDecoration(
+                    color: widget.colorScheme.primaryContainer,
+                    border: Border(
+                      bottom: BorderSide(
+                        color: widget.colorScheme.primary.withOpacity(0.3),
+                        width: 2,
+                      ),
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      SizedBox(width: isMobile ? 20 : 24),
+                      Expanded(
+                        flex: isMobile ? 4 : 5,
+                        child: Text(
+                          'Nombre',
+                          style: widget.theme.textTheme.bodyMedium?.copyWith(
+                            fontWeight: FontWeight.bold,
+                            color: widget.colorScheme.onPrimaryContainer,
+                            fontSize: isMobile ? 12 : 14,
+                          ),
+                        ),
+                      ),
+                      if (!isMobile)
+                        Expanded(
+                          flex: 2,
+                          child: Text(
+                            'Tipo',
+                            style: widget.theme.textTheme.bodyMedium?.copyWith(
+                              fontWeight: FontWeight.bold,
+                              color: widget.colorScheme.onPrimaryContainer,
+                              fontSize: 14,
+                            ),
+                          ),
+                        ),
+                      Expanded(
+                        flex: isMobile ? 3 : 2,
+                        child: Text(
+                          'Permiso',
+                          style: widget.theme.textTheme.bodyMedium?.copyWith(
+                            fontWeight: FontWeight.bold,
+                            color: widget.colorScheme.onPrimaryContainer,
+                            fontSize: isMobile ? 12 : 14,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                // Contenido scrollable
+                Expanded(
+                  child: SingleChildScrollView(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        ...permisos.map((permiso) {
+                          return _buildPermissionTreeItem(permiso, 0, permisos);
+                        }).toList(),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            );
+          },
+          loading:
+              () => Center(
+                child: CircularProgressIndicator(
+                  color: widget.colorScheme.primary,
+                ),
+              ),
+          error:
+              (error, stack) => Center(
+                child: Text(
+                  'Error al cargar permisos: $error',
+                  style: widget.theme.textTheme.bodyMedium?.copyWith(
+                    color: widget.colorScheme.error,
+                  ),
+                ),
+              ),
+        ),
+      ),
       actions: [
-        TextButton(
-          child: Text(
-            'Cancelar',
-            style: widget.theme.textTheme.bodyMedium?.copyWith(
-              color: widget.colorScheme.secondary,
+        Padding(
+          padding: EdgeInsets.all(
+            ResponsiveUtilsBosque.getHorizontalPadding(context) * 0.5,
+          ),
+          child:
+              isMobile
+                  ? Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      ElevatedButton.icon(
+                        icon: const Icon(Icons.save, size: 18),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: widget.colorScheme.primary,
+                          foregroundColor: widget.colorScheme.onPrimary,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 12,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                        label: const Text('Guardar Permisos'),
+                        onPressed: widget.onConfirm,
+                      ),
+                      const SizedBox(height: 8),
+                      TextButton(
+                        style: TextButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 12,
+                          ),
+                        ),
+                        child: Text(
+                          'Cancelar',
+                          style: widget.theme.textTheme.bodyMedium?.copyWith(
+                            color: widget.colorScheme.secondary,
+                          ),
+                        ),
+                        onPressed: () => Navigator.of(context).pop(),
+                      ),
+                    ],
+                  )
+                  : Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      TextButton(
+                        child: Text(
+                          'Cancelar',
+                          style: widget.theme.textTheme.bodyMedium?.copyWith(
+                            color: widget.colorScheme.secondary,
+                          ),
+                        ),
+                        onPressed: () => Navigator.of(context).pop(),
+                      ),
+                      const SizedBox(width: 8),
+                      ElevatedButton.icon(
+                        icon: const Icon(Icons.save),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: widget.colorScheme.primary,
+                          foregroundColor: widget.colorScheme.onPrimary,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                        label: const Text('Guardar Permisos'),
+                        onPressed: widget.onConfirm,
+                      ),
+                    ],
+                  ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildPermissionTreeItem(
+    dynamic permiso,
+    int level,
+    List<dynamic> allPermisos,
+  ) {
+    final codVista = permiso['codVista'] as int;
+    final codBoton = permiso['codBoton'] as int? ?? 0;
+    final nombreComponente = (permiso['nombreComponente'] ?? '').toString();
+    final tipo = (permiso['tipo'] ?? 'Modulo').toString();
+    final nivelAcceso = permiso['nivelAcceso'] as int? ?? 0;
+    final children = (permiso['children'] ?? []) as List<dynamic>;
+
+    // Usar codBoton como clave única para botones, codVista para los demás
+    final uniqueKey = codBoton > 0 ? codBoton : codVista;
+    final isExpanded = expandedNodes[uniqueKey] ?? (level == 0);
+
+    final isMobile = ResponsiveUtilsBosque.isMobile(context);
+    final indent = level * (isMobile ? 12.0 : 16.0);
+    final hasChildren = children.isNotEmpty;
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        InkWell(
+          onTap: () {
+            setState(() {
+              if (hasChildren) {
+                expandedNodes[uniqueKey] = !isExpanded;
+              }
+            });
+          },
+          child: Container(
+            padding: EdgeInsets.symmetric(
+              vertical: isMobile ? 6 : 4,
+              horizontal: isMobile ? 4 : 8,
+            ),
+            decoration: BoxDecoration(
+              color:
+                  level == 0
+                      ? widget.colorScheme.surfaceVariant.withOpacity(0.3)
+                      : null,
+              border: Border(
+                bottom: BorderSide(
+                  color: widget.colorScheme.outlineVariant.withOpacity(0.5),
+                  width: 0.5,
+                ),
+              ),
+            ),
+            child: Row(
+              children: [
+                // Icono de expand/collapse
+                SizedBox(
+                  width: isMobile ? 20 : 24,
+                  child:
+                      hasChildren
+                          ? Icon(
+                            isExpanded
+                                ? Icons.expand_more
+                                : Icons.chevron_right,
+                            size: isMobile ? 16 : 18,
+                            color: widget.colorScheme.primary,
+                          )
+                          : null,
+                ),
+
+                // Columna Nombre (con indentación)
+                Expanded(
+                  flex: isMobile ? 4 : 5,
+                  child: Padding(
+                    padding: EdgeInsets.only(left: indent),
+                    child: Text(
+                      nombreComponente,
+                      style: widget.theme.textTheme.bodySmall?.copyWith(
+                        fontWeight:
+                            tipo == 'Modulo'
+                                ? FontWeight.bold
+                                : FontWeight.normal,
+                        fontSize: isMobile ? 11 : 13,
+                        color:
+                            tipo == 'Modulo'
+                                ? widget.colorScheme.primary
+                                : widget.colorScheme.onSurface,
+                      ),
+                      maxLines: isMobile ? 3 : 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ),
+
+                // Columna Tipo (oculta en móvil)
+                if (!isMobile)
+                  Expanded(
+                    flex: 2,
+                    child: Text(
+                      tipo,
+                      style: widget.theme.textTheme.bodySmall?.copyWith(
+                        fontSize: 13,
+                        color: widget.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ),
+
+                // Columna Permiso (Dropdown)
+                Expanded(
+                  flex: isMobile ? 3 : 2,
+                  child: DropdownButton<String>(
+                    value: nivelAcceso == 1 ? 'Permitir' : 'Sin Acceso',
+                    isExpanded: true,
+                    underline: Container(),
+                    isDense: true,
+                    icon: Icon(
+                      Icons.arrow_drop_down,
+                      size: isMobile ? 20 : 24,
+                      color: widget.colorScheme.primary,
+                    ),
+                    style: widget.theme.textTheme.bodySmall?.copyWith(
+                      fontSize: isMobile ? 11 : 13,
+                    ),
+                    dropdownColor: widget.colorScheme.surface,
+                    items: [
+                      DropdownMenuItem(
+                        value: 'Sin Acceso',
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.block,
+                              size: isMobile ? 14 : 16,
+                              color: widget.colorScheme.error,
+                            ),
+                            const SizedBox(width: 4),
+                            Flexible(
+                              child: Text(
+                                isMobile ? 'Denegar' : 'Sin Acceso',
+                                style: widget.theme.textTheme.bodySmall
+                                    ?.copyWith(
+                                      fontSize: isMobile ? 11 : 13,
+                                      color: widget.colorScheme.error,
+                                    ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      DropdownMenuItem(
+                        value: 'Permitir',
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.check_circle,
+                              size: isMobile ? 14 : 16,
+                              color: widget.colorScheme.primary,
+                            ),
+                            const SizedBox(width: 4),
+                            Flexible(
+                              child: Text(
+                                'Permitir',
+                                style: widget.theme.textTheme.bodySmall
+                                    ?.copyWith(
+                                      fontSize: isMobile ? 11 : 13,
+                                      color: widget.colorScheme.primary,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                    onChanged: (value) async {
+                      final nuevoNivelAcceso = value == 'Permitir' ? 1 : 0;
+
+                      // Obtener el usuario actual para auditoría
+                      final currentUser = ref.read(userProvider);
+                      final audUsuario = currentUser?.codUsuario ?? 0;
+
+                      // Crear el objeto VistaUsuarioEntity con todos los datos
+                      final vistaUsuario = VistaUsuarioEntity(
+                        codUsuario: widget.user.codUsuario,
+                        codVista: codVista,
+                        codBoton: codBoton,
+                        nivelAcceso: nuevoNivelAcceso,
+                        autorizador: permiso['autorizador'] ?? 0,
+                        audUsuarioI: audUsuario,
+                        fila: 0,
+                        codVistaPadre: permiso['codVistaPadre'] ?? 0,
+                        direccion: permiso['direccion'] ?? '',
+                        nombreComponente: nombreComponente,
+                        modulo: '',
+                        vista: '',
+                        boton: '',
+                        descripcion: permiso['descripcion'] ?? '',
+                        imagen: permiso['imagen'] ?? '',
+                        nivelAccesoBoton: permiso['nivelAccesoBoton'] ?? 0,
+                        tipo: tipo,
+                      );
+
+                      // Mostrar indicador de carga
+                      if (context.mounted) {
+                        showDialog(
+                          context: context,
+                          barrierDismissible: false,
+                          builder:
+                              (context) => Center(
+                                child: Container(
+                                  padding: const EdgeInsets.all(24),
+                                  decoration: BoxDecoration(
+                                    color: widget.colorScheme.surface,
+                                    borderRadius: BorderRadius.circular(16),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: widget.colorScheme.shadow
+                                            .withOpacity(0.3),
+                                        blurRadius: 10,
+                                        spreadRadius: 2,
+                                      ),
+                                    ],
+                                  ),
+                                  child: Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      CircularProgressIndicator(
+                                        color: widget.colorScheme.primary,
+                                      ),
+                                      const SizedBox(height: 16),
+                                      Text(
+                                        'Actualizando permiso...',
+                                        style: widget.theme.textTheme.bodyMedium
+                                            ?.copyWith(
+                                              color:
+                                                  widget.colorScheme.onSurface,
+                                            ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                        );
+                      }
+
+                      try {
+                        final authRepo = AuthRepositoryImpl();
+                        final success = await authRepo.actualizarPermisos(
+                          vistaUsuario,
+                        );
+
+                        if (context.mounted) {
+                          Navigator.of(context).pop(); // Cerrar loading
+
+                          if (success) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text(
+                                  'Permiso actualizado correctamente',
+                                ),
+                                backgroundColor: Colors.green,
+                              ),
+                            );
+
+                            // Actualizar el estado local
+                            setState(() {
+                              permiso['nivelAcceso'] = nuevoNivelAcceso;
+                            });
+
+                            // Refrescar el provider para recargar los datos
+                            ref.invalidate(_permisosProvider);
+                          } else {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Error al actualizar el permiso'),
+                                backgroundColor: Colors.red,
+                              ),
+                            );
+                          }
+                        }
+                      } catch (e) {
+                        if (context.mounted) {
+                          Navigator.of(context).pop(); // Cerrar loading
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('Error: ${e.toString()}'),
+                              backgroundColor: Colors.red,
+                            ),
+                          );
+                        }
+                      }
+                    },
+                  ),
+                ),
+              ],
             ),
           ),
-          onPressed: () => Navigator.of(context).pop(),
         ),
-        ElevatedButton.icon(
-          icon: const Icon(Icons.save),
-          style: ElevatedButton.styleFrom(
-            backgroundColor: widget.colorScheme.primary,
-            foregroundColor: widget.colorScheme.onPrimary,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
-            ),
-          ),
-          label: const Text('Guardar Permisos'),
-          onPressed: widget.onConfirm,
-        ),
+
+        // Items hijo
+        if (isExpanded && hasChildren)
+          ...children.map((child) {
+            return _buildPermissionTreeItem(child, level + 1, allPermisos);
+          }).toList(),
       ],
     );
   }

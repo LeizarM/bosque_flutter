@@ -231,10 +231,9 @@ class AuthRepositoryImpl implements AuthRepository {
 
       if (response.statusCode == 200 && response.data != null) {
         // Intentar obtener los datos del campo 'data' o usar directamente si es un array
-        final data = response.data is List 
-            ? response.data 
-            : response.data['data'] ?? [];
-            
+        final data =
+            response.data is List ? response.data : response.data['data'] ?? [];
+
         final items =
             (data as List<dynamic>)
                 .map((json) => EmpleadoModel.fromJson(json))
@@ -254,6 +253,118 @@ class AuthRepositoryImpl implements AuthRepository {
       throw Exception(errorMessage);
     } catch (e) {
       throw Exception('Error desconocido getEmpleados: ${e.toString()}');
+    }
+  }
+
+  @override
+  Future<int> verificarDuplicadoUsuario(LoginEntity user) async {
+    try {
+      final response = await _dio.post(
+        AppConstants.verificarDuplicadoUsuario,
+        data: user.toJson(),
+      );
+
+      if (response.statusCode == 200 && response.data != null) {
+        // El backend devuelve un número: 0 si no existe, > 0 si existe
+        return response.data ?? 0;
+      } else {
+        return 0;
+      }
+    } on DioException catch (e) {
+      // Manejar errores de red o del servidor
+      String errorMessage = 'Error de conexión: ${e.message}';
+      if (e.response != null && e.response!.data != null) {
+        errorMessage =
+            'Error del servidor: ${e.response!.statusCode} - ${e.response!.data.toString()}';
+      }
+      throw Exception(errorMessage);
+    } catch (e) {
+      throw Exception(
+        'Error desconocido verificarDuplicadoUsuario: ${e.toString()}',
+      );
+    }
+  }
+
+  @override
+  Future<List<VistaUsuarioEntity>> cargarPermisosVista(int codUsuario) async {
+    try {
+      final response = await _dio.post(
+        AppConstants.cargarPermisosUsuario,
+        data: {"codUsuario": codUsuario},
+      );
+
+      if (response.statusCode == 200 && response.data != null) {
+        // Convertir los datos de respuesta a lista de VistaUsuarioEntity
+        final List<VistaUsuarioEntity> permisos = [];
+        final List<dynamic> data = response.data;
+
+        for (var item in data) {
+          // Usar tu modelo existente para la conversión
+          final model = VistaUsuarioModel.fromJson(item);
+          permisos.add(model.toEntity());
+        }
+
+        return permisos;
+      } else {
+        return [];
+      }
+    } catch (e) {
+      debugPrint('Error al cargar permisos de vista: ${e.toString()}');
+      return [];
+    }
+  }
+
+  /// Método para cargar los permisos de vista manteniendo la estructura jerárquica
+  Future<List<dynamic>> cargarPermisosVistaHierarquico(int codUsuario) async {
+    try {
+      final response = await _dio.post(
+        AppConstants.cargarPermisosUsuario,
+        data: {"codUsuario": codUsuario},
+      );
+
+      if (response.statusCode == 200 && response.data != null) {
+        // El backend devuelve: {"success": true, "message": "...", "data": [...]}
+        if (response.data is Map) {
+          final data = response.data['data'];
+          if (data is List) {
+            return data;
+          }
+        } else if (response.data is List) {
+          return response.data;
+        }
+        return [];
+      } else {
+        return [];
+      }
+    } catch (e) {
+      debugPrint(
+        'Error al cargar permisos de vista jerárquico: ${e.toString()}',
+      );
+      return [];
+    }
+  }
+
+  @override
+  Future<bool> actualizarPermisos(VistaUsuarioEntity vu) async {
+    final model = VistaUsuarioModel.fromEntity(vu);
+
+    try {
+      final response = await _dio.post(
+        AppConstants.actualizarPermisos,
+        data: model.toJson(),
+      );
+
+      return response.statusCode == 200 || response.statusCode == 201;
+    } on DioException catch (e) {
+      // Manejar errores de red o del servidor
+      String errorMessage = 'Error de conexión: ${e.message}';
+      if (e.response != null && e.response!.data != null) {
+        errorMessage =
+            'Error del servidor: ${e.response!.statusCode} - ${e.response!.data.toString()}';
+      }
+      throw Exception(errorMessage);
+    } catch (e) {
+      throw Exception('Error desconocido: ${e.toString()}');
     }
   }
 }

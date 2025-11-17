@@ -19,4 +19,10 @@ abstract class AuthRepository {
   Future<bool> copiarPermisos(VistaUsuarioEntity vistaUsuario);
 
   Future<List<EmpleadoEntity>> listarEmpleados();
+
+  Future<int> verificarDuplicadoUsuario(LoginEntity user);
+
+  Future<List<VistaUsuarioEntity>> cargarPermisosVista(int codUsuario);
+
+  Future<bool> actualizarPermisos(VistaUsuarioEntity vu);
 }
