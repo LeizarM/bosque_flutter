@@ -2493,6 +2493,7 @@ class _CargosScreenState extends ConsumerState<CargosScreen> {
           (context) => EditarCargoForm(
             cargo: cargo,
             todosCargos: todosCargos,
+            codEmpresa: widget.codEmpresa,
             onGuardar: (data) {
               _procesarCambiosCargo(data, cargo);
             },

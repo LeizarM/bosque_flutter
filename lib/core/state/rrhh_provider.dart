@@ -1,6 +1,7 @@
 import 'package:bosque_flutter/data/repositories/rrhh_repository_impl.dart';
 import 'package:bosque_flutter/data/repositories/nivel_jerarquico_impl.dart';
 import 'package:bosque_flutter/domain/entities/cargo_entity.dart';
+import 'package:bosque_flutter/domain/entities/cargo_sucursal_entity.dart';
 import 'package:bosque_flutter/domain/entities/empresa_entity.dart';
 import 'package:bosque_flutter/domain/entities/sucursal_entity.dart';
 import 'package:bosque_flutter/domain/entities/nivel_jerarquico_entity.dart';
@@ -206,4 +207,43 @@ final nivelesJerarquicosProvider = StateNotifierProvider<
 >((ref) {
   final repository = ref.watch(nivelJerarquicoRepositoryProvider);
   return NivelesJerarquicosNotifier(repository);
+});
+
+// StateNotifier para manejar las sucursales asignadas a un cargo
+class SucursalesXCargoNotifier
+    extends StateNotifier<AsyncValue<List<CargoSucursalEntity>>> {
+  final RRHHRepositoryImpl _repository;
+  final int _codCargo;
+
+  SucursalesXCargoNotifier(this._repository, this._codCargo)
+    : super(const AsyncValue.loading()) {
+    _loadSucursalesXCargo();
+  }
+
+  Future<void> _loadSucursalesXCargo() async {
+    state = const AsyncValue.loading();
+    try {
+      final sucursales = await _repository.lstSucursalesXCargo(_codCargo);
+      // Filtrar elementos que no son asignaciones reales (codCargoSucursal > 0)
+      final sucursalesReales =
+          sucursales.where((s) => s.codCargoSucursal > 0).toList();
+      state = AsyncValue.data(sucursalesReales);
+    } catch (e, stack) {
+      state = AsyncValue.error(e, stack);
+    }
+  }
+
+  Future<void> refresh() async {
+    await _loadSucursalesXCargo();
+  }
+}
+
+// Provider para las sucursales asignadas a un cargo específico
+final sucursalesXCargoProvider = StateNotifierProvider.family<
+  SucursalesXCargoNotifier,
+  AsyncValue<List<CargoSucursalEntity>>,
+  int
+>((ref, codCargo) {
+  final repository = ref.watch(rrhhRepositoryProvider);
+  return SucursalesXCargoNotifier(repository, codCargo);
 });

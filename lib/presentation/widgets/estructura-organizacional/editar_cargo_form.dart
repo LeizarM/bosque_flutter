@@ -1,5 +1,9 @@
 import 'package:bosque_flutter/core/state/rrhh_provider.dart';
+import 'package:bosque_flutter/core/state/user_provider.dart';
+import 'package:bosque_flutter/data/repositories/rrhh_repository_impl.dart';
 import 'package:bosque_flutter/domain/entities/cargo_entity.dart';
+import 'package:bosque_flutter/domain/entities/cargo_sucursal_entity.dart';
+import 'package:bosque_flutter/domain/entities/sucursal_entity.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -8,12 +12,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 class EditarCargoForm extends ConsumerStatefulWidget {
   final CargoEntity cargo;
   final List<CargoEntity> todosCargos;
+  final int codEmpresa; // Código de la empresa para cargar sucursales
   final Function(CargoEditData) onGuardar;
 
   const EditarCargoForm({
     super.key,
     required this.cargo,
     required this.todosCargos,
+    required this.codEmpresa,
     required this.onGuardar,
   });
 
@@ -38,7 +44,7 @@ class _EditarCargoFormState extends ConsumerState<EditarCargoForm>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
+    _tabController = TabController(length: 4, vsync: this);
     _nombreController = TextEditingController(text: widget.cargo.descripcion);
     _posicionController = TextEditingController(
       text: widget.cargo.posicion.toString(),
@@ -151,6 +157,7 @@ class _EditarCargoFormState extends ConsumerState<EditarCargoForm>
                 Tab(icon: Icon(Icons.toggle_on), text: 'Estado'),
                 Tab(icon: Icon(Icons.format_list_numbered), text: 'Posición'),
                 Tab(icon: Icon(Icons.account_tree), text: 'Reparentar'),
+                Tab(icon: Icon(Icons.location_city), text: 'Sucursales'),
               ],
             ),
             const SizedBox(height: 16),
@@ -165,6 +172,7 @@ class _EditarCargoFormState extends ConsumerState<EditarCargoForm>
                     _buildEstadoTab(),
                     _buildPosicionTab(),
                     _buildReparentarTab(),
+                    _buildSucursalesTab(),
                   ],
                 ),
               ),
@@ -915,6 +923,672 @@ class _EditarCargoFormState extends ConsumerState<EditarCargoForm>
         ],
       ),
     );
+  }
+
+  // ============================================================================
+  // TAB DE SUCURSALES - Listar y asignar sucursales al cargo
+  // ============================================================================
+  Widget _buildSucursalesTab() {
+    // Providers para las sucursales asignadas y las sucursales disponibles
+    final sucursalesAsignadasAsync = ref.watch(
+      sucursalesXCargoProvider(widget.cargo.codCargo),
+    );
+    final sucursalesEmpresaAsync = ref.watch(
+      sucursalesProvider(widget.codEmpresa),
+    );
+
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header con información del cargo
+          Card(
+            color: Colors.teal.shade50,
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Row(
+                children: [
+                  Icon(Icons.location_city, color: Colors.teal.shade700),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Sucursales Asignadas',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey.shade600,
+                          ),
+                        ),
+                        Text(
+                          widget.cargo.descripcion,
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.teal.shade900,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  // Botón para refrescar
+                  IconButton(
+                    icon: Icon(Icons.refresh, color: Colors.teal.shade700),
+                    onPressed: () {
+                      ref
+                          .read(
+                            sucursalesXCargoProvider(
+                              widget.cargo.codCargo,
+                            ).notifier,
+                          )
+                          .refresh();
+                    },
+                    tooltip: 'Refrescar lista',
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          // Sección para asignar nueva sucursal
+          Text(
+            'Asignar a Nueva Sucursal',
+            style: Theme.of(
+              context,
+            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 12),
+
+          // Dropdown de sucursales disponibles
+          sucursalesEmpresaAsync.when(
+            loading: () => const Center(child: CircularProgressIndicator()),
+            error:
+                (error, _) => Text(
+                  'Error cargando sucursales: $error',
+                  style: const TextStyle(color: Colors.red),
+                ),
+            data: (sucursalesEmpresa) {
+              return sucursalesAsignadasAsync.when(
+                loading: () => const Center(child: CircularProgressIndicator()),
+                error:
+                    (error, _) => Text(
+                      'Error: $error',
+                      style: const TextStyle(color: Colors.red),
+                    ),
+                data: (sucursalesAsignadas) {
+                  // Filtrar sucursales que ya están asignadas
+                  final sucursalesYaAsignadas =
+                      sucursalesAsignadas.map((cs) => cs.codSucursal).toSet();
+                  final sucursalesDisponibles =
+                      sucursalesEmpresa
+                          .where(
+                            (s) =>
+                                !sucursalesYaAsignadas.contains(s.codSucursal),
+                          )
+                          .toList();
+
+                  if (sucursalesDisponibles.isEmpty) {
+                    return Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade100,
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: Colors.grey.shade300),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(Icons.info, color: Colors.grey.shade600),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Text(
+                              'El cargo ya está asignado a todas las sucursales de la empresa.',
+                              style: TextStyle(color: Colors.grey.shade700),
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  }
+
+                  return _buildAsignarSucursalSection(sucursalesDisponibles);
+                },
+              );
+            },
+          ),
+          const SizedBox(height: 24),
+
+          // Lista de sucursales asignadas
+          Text(
+            'Sucursales Actuales',
+            style: Theme.of(
+              context,
+            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 12),
+
+          // Necesitamos ambos providers para poder editar
+          sucursalesEmpresaAsync.when(
+            loading: () => const Center(child: CircularProgressIndicator()),
+            error: (error, _) => Text('Error: $error'),
+            data: (sucursalesEmpresa) {
+              return sucursalesAsignadasAsync.when(
+                loading: () => const Center(child: CircularProgressIndicator()),
+                error:
+                    (error, _) => Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.red.shade50,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(Icons.error, color: Colors.red.shade700),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Text(
+                              'Error: $error',
+                              style: TextStyle(color: Colors.red.shade700),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                data: (sucursalesAsignadas) {
+                  if (sucursalesAsignadas.isEmpty) {
+                    return Container(
+                      padding: const EdgeInsets.all(24),
+                      decoration: BoxDecoration(
+                        color: Colors.orange.shade50,
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: Colors.orange.shade200),
+                      ),
+                      child: Column(
+                        children: [
+                          Icon(
+                            Icons.warning_amber,
+                            size: 48,
+                            color: Colors.orange.shade400,
+                          ),
+                          const SizedBox(height: 12),
+                          Text(
+                            'Sin Asignaciones',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.orange.shade900,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            'Este cargo no está asignado a ninguna sucursal.',
+                            style: TextStyle(color: Colors.orange.shade700),
+                            textAlign: TextAlign.center,
+                          ),
+                        ],
+                      ),
+                    );
+                  }
+
+                  return _buildListaSucursalesAsignadas(
+                    sucursalesAsignadas,
+                    sucursalesEmpresa,
+                  );
+                },
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Widget para la sección de asignar nueva sucursal
+  Widget _buildAsignarSucursalSection(
+    List<SucursalEntity> sucursalesDisponibles,
+  ) {
+    return StatefulBuilder(
+      builder: (context, setLocalState) {
+        SucursalEntity? sucursalSeleccionada;
+        bool isLoading = false;
+
+        return Card(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                DropdownButtonFormField<SucursalEntity>(
+                  value: sucursalSeleccionada,
+                  decoration: InputDecoration(
+                    labelText: 'Seleccionar sucursal',
+                    prefixIcon: const Icon(Icons.store),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                  hint: const Text('Selecciona una sucursal'),
+                  items:
+                      sucursalesDisponibles.map((sucursal) {
+                        return DropdownMenuItem<SucursalEntity>(
+                          value: sucursal,
+                          child: Text(sucursal.nombre),
+                        );
+                      }).toList(),
+                  onChanged: (value) {
+                    setLocalState(() {
+                      sucursalSeleccionada = value;
+                    });
+                  },
+                ),
+                const SizedBox(height: 16),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    onPressed:
+                        sucursalSeleccionada == null || isLoading
+                            ? null
+                            : () async {
+                              setLocalState(() => isLoading = true);
+                              await _asignarSucursal(sucursalSeleccionada!);
+                              setLocalState(() => isLoading = false);
+                            },
+                    icon:
+                        isLoading
+                            ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                            : const Icon(Icons.add),
+                    label: Text(
+                      isLoading ? 'Asignando...' : 'Asignar Sucursal',
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.teal,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  // Widget para mostrar la lista de sucursales asignadas
+  Widget _buildListaSucursalesAsignadas(
+    List<CargoSucursalEntity> sucursales,
+    List<SucursalEntity> todasLasSucursales,
+  ) {
+    return Column(
+      children:
+          sucursales.map((cargoSucursal) {
+            final nombreSucursal =
+                cargoSucursal.sucursal?.nombre ?? 'Sucursal desconocida';
+            final nombreEmpresa = cargoSucursal.sucursal?.empresa.nombre ?? '';
+
+            return Card(
+              margin: const EdgeInsets.only(bottom: 8),
+              child: ListTile(
+                leading: Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: Colors.teal.shade100,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Icon(Icons.store, color: Colors.teal.shade700),
+                ),
+                title: Text(
+                  nombreSucursal,
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
+                subtitle:
+                    nombreEmpresa.isNotEmpty
+                        ? Text(
+                          'Empresa: $nombreEmpresa',
+                          style: const TextStyle(fontSize: 12),
+                        )
+                        : null,
+                trailing: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Botón de editar
+                    IconButton(
+                      icon: const Icon(Icons.edit, color: Colors.blue),
+                      onPressed:
+                          () => _mostrarDialogoEditarAsignacion(
+                            cargoSucursal,
+                            todasLasSucursales,
+                            sucursales,
+                          ),
+                      tooltip: 'Cambiar sucursal',
+                    ),
+                    // Botón de eliminar
+                    IconButton(
+                      icon: const Icon(Icons.delete, color: Colors.red),
+                      onPressed:
+                          () => _confirmarEliminarAsignacion(cargoSucursal),
+                      tooltip: 'Eliminar asignación',
+                    ),
+                  ],
+                ),
+              ),
+            );
+          }).toList(),
+    );
+  }
+
+  // Diálogo para editar/cambiar la sucursal de una asignación existente
+  void _mostrarDialogoEditarAsignacion(
+    CargoSucursalEntity asignacionActual,
+    List<SucursalEntity> todasLasSucursales,
+    List<CargoSucursalEntity> sucursalesAsignadas,
+  ) {
+    // Filtrar sucursales disponibles (excluir las ya asignadas, excepto la actual)
+    final sucursalesDisponibles =
+        todasLasSucursales.where((s) {
+          // Permitir la sucursal actual
+          if (s.codSucursal == asignacionActual.codSucursal) return true;
+          // Excluir otras ya asignadas
+          return !sucursalesAsignadas.any(
+            (cs) => cs.codSucursal == s.codSucursal,
+          );
+        }).toList();
+
+    SucursalEntity? nuevaSucursalSeleccionada = todasLasSucursales.firstWhere(
+      (s) => s.codSucursal == asignacionActual.codSucursal,
+      orElse: () => todasLasSucursales.first,
+    );
+
+    showDialog(
+      context: context,
+      builder: (dialogContext) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            bool isLoading = false;
+
+            return AlertDialog(
+              title: Row(
+                children: [
+                  Icon(Icons.edit, color: Colors.blue.shade700),
+                  const SizedBox(width: 8),
+                  const Text('Cambiar Sucursal'),
+                ],
+              ),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Sucursal actual: ${asignacionActual.sucursal?.nombre ?? "Desconocida"}',
+                    style: TextStyle(color: Colors.grey.shade600),
+                  ),
+                  const SizedBox(height: 16),
+                  DropdownButtonFormField<SucursalEntity>(
+                    value: nuevaSucursalSeleccionada,
+                    decoration: InputDecoration(
+                      labelText: 'Nueva sucursal',
+                      prefixIcon: const Icon(Icons.store),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                    items:
+                        sucursalesDisponibles.map((sucursal) {
+                          final esActual =
+                              sucursal.codSucursal ==
+                              asignacionActual.codSucursal;
+                          return DropdownMenuItem<SucursalEntity>(
+                            value: sucursal,
+                            child: Text(
+                              esActual
+                                  ? '${sucursal.nombre} (actual)'
+                                  : sucursal.nombre,
+                              style: TextStyle(
+                                fontWeight:
+                                    esActual
+                                        ? FontWeight.bold
+                                        : FontWeight.normal,
+                              ),
+                            ),
+                          );
+                        }).toList(),
+                    onChanged: (value) {
+                      setDialogState(() {
+                        nuevaSucursalSeleccionada = value;
+                      });
+                    },
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(dialogContext).pop(),
+                  child: const Text('Cancelar'),
+                ),
+                ElevatedButton.icon(
+                  onPressed:
+                      isLoading ||
+                              nuevaSucursalSeleccionada == null ||
+                              nuevaSucursalSeleccionada!.codSucursal ==
+                                  asignacionActual.codSucursal
+                          ? null
+                          : () async {
+                            setDialogState(() => isLoading = true);
+
+                            final success = await _actualizarAsignacion(
+                              asignacionActual,
+                              nuevaSucursalSeleccionada!,
+                            );
+
+                            if (success && dialogContext.mounted) {
+                              Navigator.of(dialogContext).pop();
+                            }
+
+                            setDialogState(() => isLoading = false);
+                          },
+                  icon:
+                      isLoading
+                          ? const SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                          : const Icon(Icons.save),
+                  label: Text(isLoading ? 'Guardando...' : 'Guardar Cambios'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.blue,
+                    foregroundColor: Colors.white,
+                  ),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
+  // Método para actualizar una asignación existente (cambiar sucursal)
+  Future<bool> _actualizarAsignacion(
+    CargoSucursalEntity asignacionActual,
+    SucursalEntity nuevaSucursal,
+  ) async {
+    try {
+      final repository = ref.read(rrhhRepositoryProvider);
+      final user = ref.read(userProvider);
+
+      // Crear la nueva asignación con el codCargoSucursal existente para actualizar
+      final cargoSucursalActualizado = CargoSucursalEntity(
+        codCargoSucursal:
+            asignacionActual.codCargoSucursal, // Mantener el ID para actualizar
+        codSucursal: nuevaSucursal.codSucursal,
+        codCargo: widget.cargo.codCargo,
+        audUsuario: user?.codUsuario ?? 0,
+        datoCargo: widget.cargo.descripcion,
+      );
+
+      final success = await repository.registrarCargoSucursal(
+        cargoSucursalActualizado,
+      );
+
+      if (success) {
+        // Refrescar la lista
+        ref
+            .read(sucursalesXCargoProvider(widget.cargo.codCargo).notifier)
+            .refresh();
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                'Sucursal cambiada a "${nuevaSucursal.nombre}" correctamente',
+              ),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
+        return true;
+      }
+      return false;
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error al actualizar: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+      return false;
+    }
+  }
+
+  // Método para asignar una sucursal al cargo
+  Future<void> _asignarSucursal(SucursalEntity sucursal) async {
+    try {
+      final repository = ref.read(rrhhRepositoryProvider);
+      final user = ref.read(userProvider);
+
+      final cargoSucursal = CargoSucursalEntity(
+        codCargoSucursal: 0, // Nuevo registro
+        codSucursal: sucursal.codSucursal,
+        codCargo: widget.cargo.codCargo,
+        audUsuario: user?.codUsuario ?? 0,
+        datoCargo: widget.cargo.descripcion,
+      );
+
+      final success = await repository.registrarCargoSucursal(cargoSucursal);
+
+      if (success) {
+        // Refrescar la lista
+        ref
+            .read(sucursalesXCargoProvider(widget.cargo.codCargo).notifier)
+            .refresh();
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                'Sucursal "${sucursal.nombre}" asignada correctamente',
+              ),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error al asignar: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  // Diálogo de confirmación para eliminar asignación
+  void _confirmarEliminarAsignacion(CargoSucursalEntity cargoSucursal) {
+    showDialog(
+      context: context,
+      builder:
+          (context) => AlertDialog(
+            title: const Row(
+              children: [
+                Icon(Icons.warning, color: Colors.orange),
+                SizedBox(width: 8),
+                Text('Confirmar Eliminación'),
+              ],
+            ),
+            content: Text(
+              '¿Estás seguro de eliminar la asignación del cargo a la sucursal "${cargoSucursal.sucursal?.nombre ?? 'desconocida'}"?',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('Cancelar'),
+              ),
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                  _eliminarAsignacion(cargoSucursal);
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.red,
+                  foregroundColor: Colors.white,
+                ),
+                child: const Text('Eliminar'),
+              ),
+            ],
+          ),
+    );
+  }
+
+  // Método para eliminar una asignación
+  Future<void> _eliminarAsignacion(CargoSucursalEntity cargoSucursal) async {
+    try {
+      final repository = ref.read(rrhhRepositoryProvider);
+
+      final success = await repository.eliminarCargoSucursal(
+        cargoSucursal.codCargoSucursal,
+      );
+
+      if (success) {
+        // Refrescar la lista
+        ref
+            .read(sucursalesXCargoProvider(widget.cargo.codCargo).notifier)
+            .refresh();
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                'Asignación a "${cargoSucursal.sucursal?.nombre}" eliminada',
+              ),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error al eliminar: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 
   void _guardarCambios() {

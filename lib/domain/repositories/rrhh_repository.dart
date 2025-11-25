@@ -1,6 +1,7 @@
 import 'package:bosque_flutter/domain/entities/cargo_entity.dart';
 import 'package:bosque_flutter/domain/entities/empresa_entity.dart';
 import 'package:bosque_flutter/domain/entities/sucursal_entity.dart';
+import 'package:bosque_flutter/domain/entities/cargo_sucursal_entity.dart';
 
 abstract class RRHHRepository {
   //Registrar Empresa
@@ -20,4 +21,13 @@ abstract class RRHHRepository {
 
   //Para Actualizar o registrar un cargo
   Future<bool> registrarCargo(CargoEntity cargo);
+
+  //Para listar las sucursales que pertenece un cargo
+  Future<List<CargoSucursalEntity>> lstSucursalesXCargo(int codCargo);
+
+  //Para registrar asignación de cargo a sucursal
+  Future<bool> registrarCargoSucursal(CargoSucursalEntity cargoSucursal);
+
+  //Para eliminar asignación de cargo a sucursal
+  Future<bool> eliminarCargoSucursal(int codCargoSucursal);
 }

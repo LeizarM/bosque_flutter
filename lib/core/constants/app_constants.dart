@@ -171,10 +171,13 @@ class AppConstants {
   //  **** Para la estructura organizacional *********/
   static const String lstEmpresa = '/rrhh/lst-empresas';
   static const String lstCargos = '/rrhh/lst-cargos';
-  static const String lstSucursales = '/rrhh/lst-sucursales';
   static const String lstCargosXEmpresaNew = '/rrhh/lstOrganigramaNew';
   static const String lstNivelesJerarquicos = '/rrhh/lstNivelesJerarquicos';
   static const String registrarCargo = '/rrhh/registroCargo';
+  static const String lstSucursales = '/rrhh/sucXEmpresa';
+  static const String lstSucursalesXCargo = '/rrhh/sucXCargo';
+  static const String registrarCargoSucursal = '/rrhh/registroCargoSuc';
+  static const String eliminarCargoSucursal = '/rrhh/cargoSuc';
 
   //endpoints para la gestion de facturas TIGO
   static const String tigoCargarFacturas = '/tigo/SubirExcel';
