@@ -176,8 +176,8 @@ class AppConstants {
   static const String registrarCargo = '/rrhh/registroCargo';
   static const String lstSucursales = '/rrhh/sucXEmpresa';
   static const String lstSucursalesXCargo = '/rrhh/sucXCargo';
-  static const String registrarCargoSucursal = '/rrhh/registroCargoSuc';
-  static const String eliminarCargoSucursal = '/rrhh/cargoSuc';
+  static const String registrarCargoSucursal = '/rrhh/registroCargoSucursal';
+  static const String eliminarCargoSucursal = '/rrhh/eliminarCargoSuc';
 
   //endpoints para la gestion de facturas TIGO
   static const String tigoCargarFacturas = '/tigo/SubirExcel';

@@ -221,7 +221,7 @@ class RRHHRepositoryImpl implements RRHHRepository {
     }
   }
 
-  //Registrar asignación de cargo a sucursal
+  //Registrar asignación de cargo a sucursal o actualizar
   @override
   Future<bool> registrarCargoSucursal(CargoSucursalEntity cargoSucursal) async {
     final model = CargoSucursalModel.fromEntity(cargoSucursal);
@@ -260,12 +260,18 @@ class RRHHRepositoryImpl implements RRHHRepository {
   @override
   Future<bool> eliminarCargoSucursal(int codCargoSucursal) async {
     try {
-      final response = await _dio.delete(
-        '${AppConstants.eliminarCargoSucursal}/$codCargoSucursal',
+      final response = await _dio.post(
+        AppConstants.eliminarCargoSucursal,
+        data: {'codCargoSucursal': codCargoSucursal},
       );
 
-      if (response.statusCode == 200 || response.statusCode == 204) {
-        return true;
+      if ((response.statusCode == 200 || response.statusCode == 201) &&
+          response.data != null) {
+        final success =
+            response.data['success'] ??
+            (response.data['ok'] == 'ok') ??
+            (response.data['msg'] != null);
+        return success;
       } else {
         throw Exception('Error al eliminar la asignación cargo-sucursal');
       }

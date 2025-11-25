@@ -1149,19 +1149,21 @@ class _EditarCargoFormState extends ConsumerState<EditarCargoForm>
   Widget _buildAsignarSucursalSection(
     List<SucursalEntity> sucursalesDisponibles,
   ) {
-    return StatefulBuilder(
-      builder: (context, setLocalState) {
-        SucursalEntity? sucursalSeleccionada;
-        bool isLoading = false;
+    // Usamos un ValueNotifier para mantener el estado
+    final sucursalSeleccionada = ValueNotifier<SucursalEntity?>(null);
+    final isLoading = ValueNotifier<bool>(false);
 
-        return Card(
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                DropdownButtonFormField<SucursalEntity>(
-                  value: sucursalSeleccionada,
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            ValueListenableBuilder<SucursalEntity?>(
+              valueListenable: sucursalSeleccionada,
+              builder: (context, selectedValue, _) {
+                return DropdownButtonFormField<SucursalEntity>(
+                  value: selectedValue,
                   decoration: InputDecoration(
                     labelText: 'Seleccionar sucursal',
                     prefixIcon: const Icon(Icons.store),
@@ -1178,46 +1180,56 @@ class _EditarCargoFormState extends ConsumerState<EditarCargoForm>
                         );
                       }).toList(),
                   onChanged: (value) {
-                    setLocalState(() {
-                      sucursalSeleccionada = value;
-                    });
+                    sucursalSeleccionada.value = value;
                   },
-                ),
-                const SizedBox(height: 16),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton.icon(
-                    onPressed:
-                        sucursalSeleccionada == null || isLoading
-                            ? null
-                            : () async {
-                              setLocalState(() => isLoading = true);
-                              await _asignarSucursal(sucursalSeleccionada!);
-                              setLocalState(() => isLoading = false);
-                            },
-                    icon:
-                        isLoading
-                            ? const SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                            : const Icon(Icons.add),
-                    label: Text(
-                      isLoading ? 'Asignando...' : 'Asignar Sucursal',
-                    ),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.teal,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                    ),
-                  ),
-                ),
-              ],
+                );
+              },
             ),
-          ),
-        );
-      },
+            const SizedBox(height: 16),
+            ValueListenableBuilder<SucursalEntity?>(
+              valueListenable: sucursalSeleccionada,
+              builder: (context, selectedValue, _) {
+                return ValueListenableBuilder<bool>(
+                  valueListenable: isLoading,
+                  builder: (context, loading, _) {
+                    return SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton.icon(
+                        onPressed:
+                            selectedValue == null || loading
+                                ? null
+                                : () async {
+                                  isLoading.value = true;
+                                  await _asignarSucursal(selectedValue);
+                                  isLoading.value = false;
+                                  // Limpiar selección después de asignar
+                                  sucursalSeleccionada.value = null;
+                                },
+                        icon:
+                            loading
+                                ? const SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(strokeWidth: 2),
+                                )
+                                : const Icon(Icons.add),
+                        label: Text(
+                          loading ? 'Asignando...' : 'Asignar Sucursal',
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.teal,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                        ),
+                      ),
+                    );
+                  },
+                );
+              },
+            ),
+          ],
+        ),
+      ),
     );
   }
 
