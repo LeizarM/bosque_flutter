@@ -35,6 +35,9 @@ class CargoEntity {
 
   int codCargoPadreOriginal;
 
+  int codEmpleado;
+  String nombreCompleto;
+
   CargoEntity({
     required this.codCargo,
     required this.codCargoPadre,
@@ -69,5 +72,7 @@ class CargoEntity {
     required this.esVisible,
     required this.items,
     required this.codCargoPadreOriginal,
+    required this.codEmpleado,
+    required this.nombreCompleto,
   });
 }

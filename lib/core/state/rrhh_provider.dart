@@ -247,3 +247,52 @@ final sucursalesXCargoProvider = StateNotifierProvider.family<
   final repository = ref.watch(rrhhRepositoryProvider);
   return SucursalesXCargoNotifier(repository, codCargo);
 });
+
+// StateNotifier para manejar los empleados asignados a un cargo
+class EmpleadosXCargoNotifier
+    extends StateNotifier<AsyncValue<List<CargoEntity>>> {
+  final RRHHRepositoryImpl _repository;
+  final int _codCargo;
+  bool _isDisposed = false;
+
+  EmpleadosXCargoNotifier(this._repository, this._codCargo)
+    : super(const AsyncValue.loading()) {
+    _loadEmpleadosXCargo();
+  }
+
+  Future<void> _loadEmpleadosXCargo() async {
+    if (_isDisposed) return;
+    state = const AsyncValue.loading();
+    try {
+      final empleados = await _repository.obtenerEmpleadosXCargo(_codCargo);
+      if (!_isDisposed) {
+        state = AsyncValue.data(empleados);
+      }
+    } catch (e, stack) {
+      if (!_isDisposed) {
+        state = AsyncValue.error(e, stack);
+      }
+    }
+  }
+
+  Future<void> refresh() async {
+    await _loadEmpleadosXCargo();
+  }
+
+  @override
+  void dispose() {
+    _isDisposed = true;
+    super.dispose();
+  }
+}
+
+// Provider para los empleados asignados a un cargo específico
+// Usando autoDispose para limpiar cuando ya no se usa
+final empleadosXCargoProvider = StateNotifierProvider.autoDispose
+    .family<EmpleadosXCargoNotifier, AsyncValue<List<CargoEntity>>, int>((
+      ref,
+      codCargo,
+    ) {
+      final repository = ref.watch(rrhhRepositoryProvider);
+      return EmpleadosXCargoNotifier(repository, codCargo);
+    });

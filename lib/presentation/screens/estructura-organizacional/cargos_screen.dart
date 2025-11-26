@@ -1,5 +1,7 @@
+import 'package:bosque_flutter/core/constants/app_constants.dart';
 import 'package:bosque_flutter/core/state/rrhh_provider.dart';
 import 'package:bosque_flutter/core/state/user_provider.dart';
+import 'package:bosque_flutter/core/utils/responsive_utils_bosque.dart';
 import 'package:bosque_flutter/domain/entities/cargo_entity.dart';
 import 'package:bosque_flutter/presentation/screens/estructura-organizacional/organigrama_custom.dart';
 import 'package:bosque_flutter/presentation/widgets/estructura-organizacional/cargo_actions_bottom_sheet.dart';
@@ -112,6 +114,8 @@ class _CargosScreenState extends ConsumerState<CargosScreen> {
               esVisible: cargo.esVisible,
               items: hijosFiltrados,
               codCargoPadreOriginal: cargo.codCargoPadreOriginal,
+              codEmpleado: cargo.codEmpleado,
+              nombreCompleto: cargo.nombreCompleto,
             ),
           );
         }
@@ -177,6 +181,8 @@ class _CargosScreenState extends ConsumerState<CargosScreen> {
       esVisible: cargo.esVisible,
       items: hijosFiltrados,
       codCargoPadreOriginal: cargo.codCargoPadreOriginal,
+      codEmpleado: cargo.codEmpleado,
+      nombreCompleto: cargo.nombreCompleto,
     );
   }
 
@@ -387,6 +393,7 @@ class _CargosScreenState extends ConsumerState<CargosScreen> {
           child: OrganigramaCustom(
             cargos: cargos,
             onNodeTap: (cargo) => _showCargoActions(cargo),
+            onEmpleadosTap: (cargo) => _showEmpleadosDialog(cargo),
           ),
         ),
       ],
@@ -434,67 +441,131 @@ class _CargosScreenState extends ConsumerState<CargosScreen> {
           padding: EdgeInsets.only(left: nivel * 20.0),
           child: Card(
             margin: const EdgeInsets.only(bottom: 8),
-            child: ListTile(
-              leading: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // Línea indicadora de nivel
-                  if (nivel > 0)
-                    Container(
-                      width: 3,
-                      height: 40,
-                      color: _getNodeColor(cargo),
-                      margin: const EdgeInsets.only(right: 8),
+            child: InkWell(
+              onTap: () => _showCargoActions(cargo),
+              borderRadius: BorderRadius.circular(12),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 10,
+                ),
+                child: Row(
+                  children: [
+                    // Leading: Línea indicadora + Ícono clickeable
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        // Línea indicadora de nivel
+                        if (nivel > 0)
+                          Container(
+                            width: 3,
+                            height: 40,
+                            color: _getNodeColor(cargo),
+                            margin: const EdgeInsets.only(right: 8),
+                          ),
+                        // Icono del cargo - clickeable si tiene empleados
+                        Material(
+                          color: Colors.transparent,
+                          child: InkWell(
+                            onTap:
+                                cargo.tieneEmpleadosActivos > 0
+                                    ? () => _showEmpleadosDialog(cargo)
+                                    : null,
+                            borderRadius: BorderRadius.circular(20),
+                            child: Stack(
+                              clipBehavior: Clip.none,
+                              children: [
+                                CircleAvatar(
+                                  backgroundColor: _getNodeColor(cargo),
+                                  radius: 18,
+                                  child: Icon(_getStatusIcon(cargo), size: 18),
+                                ),
+                                // Badge de empleados si tiene
+                                if (cargo.tieneEmpleadosActivos > 0)
+                                  Positioned(
+                                    right: -4,
+                                    top: -4,
+                                    child: Container(
+                                      padding: const EdgeInsets.all(4),
+                                      decoration: BoxDecoration(
+                                        color: Colors.green.shade600,
+                                        shape: BoxShape.circle,
+                                        border: Border.all(
+                                          color: Colors.white,
+                                          width: 1.5,
+                                        ),
+                                      ),
+                                      child: Text(
+                                        '${cargo.tieneEmpleadosActivos}',
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 9,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
-                  // Icono del cargo
-                  CircleAvatar(
-                    backgroundColor: _getNodeColor(cargo),
-                    radius: 18,
-                    child: Icon(_getStatusIcon(cargo), size: 18),
-                  ),
-                ],
-              ),
-              title: Text(
-                cargo.descripcion,
-                style: TextStyle(
-                  fontWeight: nivel == 0 ? FontWeight.bold : FontWeight.normal,
-                  fontSize: nivel == 0 ? 15 : 14,
-                  color: cargo.estado == 0 ? Colors.grey : null,
-                  decoration:
-                      cargo.estado == 0 ? TextDecoration.lineThrough : null,
+                    const SizedBox(width: 16),
+                    // Title y Subtitle
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            cargo.descripcion,
+                            style: TextStyle(
+                              fontWeight:
+                                  nivel == 0
+                                      ? FontWeight.bold
+                                      : FontWeight.normal,
+                              fontSize: nivel == 0 ? 15 : 14,
+                              color: cargo.estado == 0 ? Colors.grey : null,
+                              decoration:
+                                  cargo.estado == 0
+                                      ? TextDecoration.lineThrough
+                                      : null,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            'Nivel: ${cargo.nivel} | Pos: ${cargo.posicion}',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey.shade600,
+                            ),
+                          ),
+                          if (cargo.tieneEmpleadosActivos > 0)
+                            Text(
+                              '👤 ${cargo.tieneEmpleadosActivos} empleado${cargo.tieneEmpleadosActivos > 1 ? 's' : ''}',
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: Colors.green.shade700,
+                              ),
+                            ),
+                          if (cargo.numHijosActivos > 0)
+                            Text(
+                              '📊 ${cargo.numHijosActivos} cargo${cargo.numHijosActivos > 1 ? 's' : ''} subordinado${cargo.numHijosActivos > 1 ? 's' : ''}',
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: Colors.blue.shade700,
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                    // Trailing
+                    cargo.estado == 1
+                        ? const Icon(Icons.check_circle, color: Colors.green)
+                        : const Icon(Icons.cancel, color: Colors.red),
+                  ],
                 ),
               ),
-              subtitle: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const SizedBox(height: 4),
-                  Text(
-                    'Nivel: ${cargo.nivel} | Pos: ${cargo.posicion}',
-                    style: const TextStyle(fontSize: 12),
-                  ),
-                  if (cargo.tieneEmpleadosActivos > 0)
-                    Text(
-                      '👤 ${cargo.tieneEmpleadosActivos} empleado${cargo.tieneEmpleadosActivos > 1 ? 's' : ''}',
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: Colors.green.shade700,
-                      ),
-                    ),
-                  if (cargo.numHijosActivos > 0)
-                    Text(
-                      '📊 ${cargo.numHijosActivos} cargo${cargo.numHijosActivos > 1 ? 's' : ''} subordinado${cargo.numHijosActivos > 1 ? 's' : ''}',
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: Colors.blue.shade700,
-                      ),
-                    ),
-                ],
-              ),
-              trailing:
-                  cargo.estado == 1
-                      ? const Icon(Icons.check_circle, color: Colors.green)
-                      : const Icon(Icons.cancel, color: Colors.red),
-              onTap: () => _showCargoActions(cargo),
             ),
           ),
         ),
@@ -516,6 +587,23 @@ class _CargosScreenState extends ConsumerState<CargosScreen> {
         const SizedBox(width: 4),
         Text(label, style: const TextStyle(fontSize: 12)),
       ],
+    );
+  }
+
+  // Mostrar diálogo de empleados asignados a un cargo
+  void _showEmpleadosDialog(CargoEntity cargo) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder:
+          (context) => _EmpleadosBottomSheet(
+            cargo: cargo,
+            codEmpresa: widget.codEmpresa,
+          ),
     );
   }
 
@@ -557,108 +645,18 @@ class _CargosScreenState extends ConsumerState<CargosScreen> {
 
   // Old bottom sheet code removed - using CargoActionsBottomSheet widget instead
 
-  // Mostrar detalles del cargo
+  // Mostrar detalles del cargo con tabs
   void _showCargoDetails(CargoEntity cargo) {
+    final isMobile = ResponsiveUtilsBosque.isMobile(context);
+
     showDialog(
       context: context,
       builder:
-          (context) => AlertDialog(
-            title: Row(
-              children: [
-                Icon(
-                  _getStatusIcon(cargo),
-                  color:
-                      cargo.tieneEmpleadosActivos > 0
-                          ? Colors.green
-                          : Colors.blue,
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    cargo.descripcion,
-                    style: const TextStyle(fontSize: 18),
-                  ),
-                ),
-              ],
-            ),
-            content: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _buildDetailRow('Código:', '${cargo.codCargo}'),
-                  _buildDetailRow('Nivel:', '${cargo.codNivel}'),
-                  _buildDetailRow('Posición:', '${cargo.posicion}'),
-                  _buildDetailRow(
-                    'Estado:',
-                    cargo.estado == 1 ? 'Activo' : 'Inactivo',
-                  ),
-                  _buildDetailRow(
-                    'Puede desactivarse:',
-                    cargo.canDeactivate == 1 ? 'Sí' : 'No',
-                  ),
-                  const Divider(),
-                  _buildDetailRow(
-                    'Empleados activos:',
-                    '${cargo.tieneEmpleadosActivos}',
-                  ),
-                  _buildDetailRow(
-                    'Empleados totales:',
-                    '${cargo.tieneEmpleadosTotales}',
-                  ),
-                  const Divider(),
-                  _buildDetailRow(
-                    'Hijos activos:',
-                    '${cargo.numHijosActivos} de ${cargo.numHijosTotal}',
-                  ),
-                  _buildDetailRow('Dependencias:', '${cargo.numDependientes}'),
-                  _buildDetailRow(
-                    'Dependencias totales:',
-                    '${cargo.numDependenciasTotales}',
-                  ),
-                  const Divider(),
-                  _buildDetailRow('Estado padre:', cargo.estadoPadre),
-                  const SizedBox(height: 8),
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: Colors.blue.shade50,
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    child: Text(
-                      cargo.resumenCompleto,
-                      style: const TextStyle(fontSize: 12),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(),
-                child: const Text('Cerrar'),
-              ),
-            ],
+          (context) => _CargoDetailsDialog(
+            cargo: cargo,
+            isMobile: isMobile,
+            getStatusIcon: _getStatusIcon,
           ),
-    );
-  }
-
-  Widget _buildDetailRow(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(
-            width: 140,
-            child: Text(
-              label,
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-            ),
-          ),
-          Expanded(child: Text(value, style: const TextStyle(fontSize: 13))),
-        ],
-      ),
     );
   }
 
@@ -2435,6 +2433,8 @@ class _CargosScreenState extends ConsumerState<CargosScreen> {
         esVisible: 1,
         items: [],
         codCargoPadreOriginal: data.nuevoCargoPadre ?? 0,
+        codEmpleado: 0,
+        nombreCompleto: '',
       );
 
       // Llamar al repositorio
@@ -2593,6 +2593,8 @@ class _CargosScreenState extends ConsumerState<CargosScreen> {
         items: cargoOriginal.items,
         codCargoPadreOriginal:
             data.nuevoCargoPadre ?? cargoOriginal.codCargoPadreOriginal,
+        codEmpleado: cargoOriginal.codEmpleado,
+        nombreCompleto: cargoOriginal.nombreCompleto,
       );
 
       // Llamar al repositorio
@@ -3475,6 +3477,8 @@ class _CrearCargoDialogState extends ConsumerState<_CrearCargoDialog> {
                       esVisible: cargo.esVisible,
                       items: cargo.items,
                       codCargoPadreOriginal: cargo.codCargoPadreOriginal,
+                      codEmpleado: cargo.codEmpleado,
+                      nombreCompleto: cargo.nombreCompleto,
                     );
 
                     final repository = ref.read(rrhhRepositoryProvider);
@@ -3523,6 +3527,1142 @@ class _CrearCargoDialogState extends ConsumerState<_CrearCargoDialog> {
               ),
             ],
           ),
+    );
+  }
+}
+
+// =============================================================================
+// DIALOG DE DETALLES DEL CARGO CON TABS
+// =============================================================================
+class _CargoDetailsDialog extends StatelessWidget {
+  final CargoEntity cargo;
+  final bool isMobile;
+  final IconData Function(CargoEntity) getStatusIcon;
+
+  const _CargoDetailsDialog({
+    required this.cargo,
+    required this.isMobile,
+    required this.getStatusIcon,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Container(
+        width: isMobile ? double.infinity : 500,
+        constraints: BoxConstraints(
+          maxHeight: MediaQuery.of(context).size.height * 0.8,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Header
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color:
+                    cargo.estado == 1
+                        ? Colors.blue.shade50
+                        : Colors.grey.shade200,
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(16),
+                ),
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color:
+                          cargo.tieneEmpleadosActivos > 0
+                              ? Colors.green.shade100
+                              : Colors.blue.shade100,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Icon(
+                      getStatusIcon(cargo),
+                      color:
+                          cargo.tieneEmpleadosActivos > 0
+                              ? Colors.green.shade700
+                              : Colors.blue.shade700,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          cargo.descripcion,
+                          style: TextStyle(
+                            fontSize: isMobile ? 16 : 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 4),
+                        Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 2,
+                              ),
+                              decoration: BoxDecoration(
+                                color:
+                                    cargo.estado == 1
+                                        ? Colors.green.shade100
+                                        : Colors.red.shade100,
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Text(
+                                cargo.estado == 1 ? 'ACTIVO' : 'INACTIVO',
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold,
+                                  color:
+                                      cargo.estado == 1
+                                          ? Colors.green.shade700
+                                          : Colors.red.shade700,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              'Código: ${cargo.codCargo}',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey.shade600,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                ],
+              ),
+            ),
+
+            // Contenido
+            Flexible(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Sección: Información básica
+                    _buildSectionCard(
+                      'Información Básica',
+                      Icons.info,
+                      Colors.blue,
+                      [
+                        _buildInfoRow('Código', '${cargo.codCargo}'),
+                        _buildInfoRow('Nivel Jerárquico', '${cargo.codNivel}'),
+                        _buildInfoRow('Posición', '${cargo.posicion}'),
+                        _buildInfoRow(
+                          'Estado',
+                          cargo.estado == 1 ? 'Activo' : 'Inactivo',
+                        ),
+                        _buildInfoRow(
+                          'Puede desactivarse',
+                          cargo.canDeactivate == 1 ? 'Sí' : 'No',
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+
+                    // Sección: Empleados
+                    _buildSectionCard('Empleados', Icons.people, Colors.green, [
+                      _buildInfoRow(
+                        'Empleados activos',
+                        '${cargo.tieneEmpleadosActivos}',
+                      ),
+                      _buildInfoRow(
+                        'Empleados totales',
+                        '${cargo.tieneEmpleadosTotales}',
+                      ),
+                    ]),
+                    const SizedBox(height: 12),
+
+                    // Sección: Jerarquía
+                    _buildSectionCard(
+                      'Jerarquía',
+                      Icons.account_tree,
+                      Colors.purple,
+                      [
+                        _buildInfoRow(
+                          'Cargos hijos activos',
+                          '${cargo.numHijosActivos} de ${cargo.numHijosTotal}',
+                        ),
+                        _buildInfoRow(
+                          'Dependencias',
+                          '${cargo.numDependientes}',
+                        ),
+                        _buildInfoRow(
+                          'Dependencias totales',
+                          '${cargo.numDependenciasTotales}',
+                        ),
+                        _buildInfoRow('Estado padre', cargo.estadoPadre),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+
+                    // Resumen
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.amber.shade50,
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: Colors.amber.shade200),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Icon(
+                                Icons.summarize,
+                                size: 18,
+                                color: Colors.amber.shade700,
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                'Resumen',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.amber.shade900,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            cargo.resumenCompleto,
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: Colors.grey.shade700,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+            // Footer
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                border: Border(top: BorderSide(color: Colors.grey.shade300)),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text('Cerrar'),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSectionCard(
+    String title,
+    IconData icon,
+    Color color,
+    List<Widget> children,
+  ) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.05),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: color.withOpacity(0.2)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(icon, size: 18, color: color),
+              const SizedBox(width: 8),
+              Text(
+                title,
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: color,
+                  fontSize: 14,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          ...children,
+        ],
+      ),
+    );
+  }
+
+  Widget _buildInfoRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 150,
+            child: Text(
+              label,
+              style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
+            ),
+          ),
+          Expanded(
+            child: Text(
+              value,
+              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// =============================================================================
+// BOTTOM SHEET DE EMPLEADOS POR CARGO
+// =============================================================================
+class _EmpleadosBottomSheet extends ConsumerStatefulWidget {
+  final CargoEntity cargo;
+  final int codEmpresa;
+
+  const _EmpleadosBottomSheet({required this.cargo, required this.codEmpresa});
+
+  @override
+  ConsumerState<_EmpleadosBottomSheet> createState() =>
+      _EmpleadosBottomSheetState();
+}
+
+class _EmpleadosBottomSheetState extends ConsumerState<_EmpleadosBottomSheet> {
+  @override
+  void initState() {
+    super.initState();
+    // Forzar recarga de datos al abrir el bottom sheet
+    Future.microtask(() {
+      ref.invalidate(empleadosXCargoProvider(widget.cargo.codCargo));
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final empleadosAsync = ref.watch(
+      empleadosXCargoProvider(widget.cargo.codCargo),
+    );
+    final screenHeight = MediaQuery.of(context).size.height;
+
+    return Container(
+      height: screenHeight * 0.7,
+      padding: const EdgeInsets.only(top: 8),
+      child: Column(
+        children: [
+          // Handle del bottom sheet
+          Container(
+            width: 40,
+            height: 4,
+            margin: const EdgeInsets.only(bottom: 12),
+            decoration: BoxDecoration(
+              color: Colors.grey.shade300,
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+
+          // Header
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: Colors.green.shade100,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(
+                    Icons.people,
+                    color: Colors.green.shade700,
+                    size: 24,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Empleados Activos',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.grey.shade800,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        widget.cargo.descripcion,
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: Colors.grey.shade600,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
+                ),
+                // Contador
+                empleadosAsync.when(
+                  loading:
+                      () => const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      ),
+                  error:
+                      (_, __) => Icon(Icons.error, color: Colors.red.shade400),
+                  data: (empleados) {
+                    // Filtrar solo empleados activos
+                    final activos =
+                        empleados.where((e) => e.estado == 1).toList();
+                    return Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.green.shade600,
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: Text(
+                        '${activos.length}',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                        ),
+                      ),
+                    );
+                  },
+                ),
+                const SizedBox(width: 8),
+                IconButton(
+                  icon: Icon(Icons.refresh, color: Colors.green.shade700),
+                  onPressed: () {
+                    ref
+                        .read(
+                          empleadosXCargoProvider(
+                            widget.cargo.codCargo,
+                          ).notifier,
+                        )
+                        .refresh();
+                  },
+                  tooltip: 'Refrescar',
+                ),
+                IconButton(
+                  icon: const Icon(Icons.close),
+                  onPressed: () => Navigator.pop(context),
+                ),
+              ],
+            ),
+          ),
+
+          const Divider(height: 24),
+
+          // Lista de empleados
+          Expanded(
+            child: empleadosAsync.when(
+              loading:
+                  () => const Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        CircularProgressIndicator(),
+                        SizedBox(height: 12),
+                        Text('Cargando empleados...'),
+                      ],
+                    ),
+                  ),
+              error:
+                  (error, _) => Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(24),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.error_outline,
+                            size: 48,
+                            color: Colors.red.shade300,
+                          ),
+                          const SizedBox(height: 12),
+                          Text(
+                            'Error al cargar empleados',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: Colors.red.shade700,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            error.toString(),
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey.shade600,
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          ElevatedButton.icon(
+                            onPressed: () {
+                              ref
+                                  .read(
+                                    empleadosXCargoProvider(
+                                      widget.cargo.codCargo,
+                                    ).notifier,
+                                  )
+                                  .refresh();
+                            },
+                            icon: const Icon(Icons.refresh, size: 18),
+                            label: const Text('Reintentar'),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+              data: (empleados) {
+                // Filtrar solo empleados activos
+                final empleadosActivos =
+                    empleados.where((e) => e.estado == 1).toList();
+
+                if (empleadosActivos.isEmpty) {
+                  return Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(32),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(20),
+                            decoration: BoxDecoration(
+                              color: Colors.orange.shade50,
+                              shape: BoxShape.circle,
+                            ),
+                            child: Icon(
+                              Icons.person_off,
+                              size: 48,
+                              color: Colors.orange.shade400,
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            'Sin Empleados Activos',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.orange.shade900,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'Este cargo no tiene empleados activos actualmente.',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Colors.grey.shade600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                }
+
+                return ListView.builder(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  itemCount: empleadosActivos.length,
+                  itemBuilder: (context, index) {
+                    final empleado = empleadosActivos[index];
+                    return _buildEmpleadoItem(empleado);
+                  },
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEmpleadoItem(CargoEntity empleado) {
+    final iniciales = _getInicialesEmpleado(empleado.nombreCompleto);
+
+    return Card(
+      margin: const EdgeInsets.only(bottom: 8),
+      elevation: 1,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(color: Colors.green.shade100),
+      ),
+      child: InkWell(
+        onTap: () => _showEmpleadoDetalle(empleado),
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Row(
+            children: [
+              // Avatar con foto
+              GestureDetector(
+                onTap:
+                    () => _mostrarFotoCompleta(
+                      context,
+                      empleado.codEmpleado,
+                      empleado.nombreCompleto,
+                    ),
+                child: Container(
+                  width: 48,
+                  height: 48,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.green.shade200, width: 2),
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(10),
+                    child: Image.network(
+                      _getImageUrl(empleado.codEmpleado),
+                      width: 48,
+                      height: 48,
+                      fit: BoxFit.cover,
+                      loadingBuilder: (context, child, loadingProgress) {
+                        if (loadingProgress == null) return child;
+                        return Container(
+                          width: 48,
+                          height: 48,
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                              colors: [
+                                Colors.green.shade400,
+                                Colors.green.shade600,
+                              ],
+                            ),
+                          ),
+                          child: Center(
+                            child: SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ),
+                        );
+                      },
+                      errorBuilder: (context, error, stackTrace) {
+                        return Container(
+                          width: 48,
+                          height: 48,
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                              colors: [
+                                Colors.green.shade400,
+                                Colors.green.shade600,
+                              ],
+                            ),
+                          ),
+                          child: Center(
+                            child: Text(
+                              iniciales,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                              ),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              // Información
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      empleado.nombreCompleto,
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                        color: Colors.grey.shade800,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 4),
+                    // Sucursal
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.location_on,
+                          size: 14,
+                          color: Colors.grey.shade500,
+                        ),
+                        const SizedBox(width: 4),
+                        Expanded(
+                          child: Text(
+                            empleado.sucursal.isNotEmpty
+                                ? empleado.sucursal
+                                : 'Sin sucursal',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey.shade600,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 2),
+                    // Empresa
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.business,
+                          size: 14,
+                          color: Colors.grey.shade500,
+                        ),
+                        const SizedBox(width: 4),
+                        Expanded(
+                          child: Text(
+                            empleado.nombreEmpresa.isNotEmpty
+                                ? empleado.nombreEmpresa
+                                : 'Sin empresa',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey.shade500,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              // Indicador activo
+              Column(
+                children: [
+                  Container(
+                    width: 10,
+                    height: 10,
+                    decoration: BoxDecoration(
+                      color: Colors.green,
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.green.withOpacity(0.4),
+                          blurRadius: 4,
+                          spreadRadius: 1,
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Icon(
+                    Icons.chevron_right,
+                    color: Colors.grey.shade400,
+                    size: 20,
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  String _getInicialesEmpleado(String nombreCompleto) {
+    if (nombreCompleto.isEmpty) return '?';
+    final partes =
+        nombreCompleto.trim().split(' ').where((p) => p.isNotEmpty).toList();
+    if (partes.isEmpty) return '?';
+    if (partes.length == 1) {
+      final parte = partes[0];
+      if (parte.isEmpty) return '?';
+      return parte.substring(0, parte.length >= 2 ? 2 : 1).toUpperCase();
+    }
+    return '${partes[0][0]}${partes[1][0]}'.toUpperCase();
+  }
+
+  void _showEmpleadoDetalle(CargoEntity empleado) {
+    showDialog(
+      context: context,
+      builder:
+          (context) => AlertDialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            title: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.green.shade100,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Icon(Icons.person, color: Colors.green.shade700),
+                ),
+                const SizedBox(width: 12),
+                const Expanded(
+                  child: Text(
+                    'Detalle del Empleado',
+                    style: TextStyle(fontSize: 18),
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.close),
+                  onPressed: () => Navigator.pop(context),
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
+                ),
+              ],
+            ),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Avatar grande con foto
+                  GestureDetector(
+                    onTap: () {
+                      Navigator.pop(context);
+                      _mostrarFotoCompleta(
+                        context,
+                        empleado.codEmpleado,
+                        empleado.nombreCompleto,
+                      );
+                    },
+                    child: Container(
+                      width: 80,
+                      height: 80,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(
+                          color: Colors.green.shade300,
+                          width: 3,
+                        ),
+                      ),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(11),
+                        child: Image.network(
+                          _getImageUrl(empleado.codEmpleado),
+                          width: 80,
+                          height: 80,
+                          fit: BoxFit.cover,
+                          loadingBuilder: (context, child, loadingProgress) {
+                            if (loadingProgress == null) return child;
+                            return Container(
+                              width: 80,
+                              height: 80,
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
+                                  colors: [
+                                    Colors.green.shade400,
+                                    Colors.green.shade700,
+                                  ],
+                                ),
+                              ),
+                              child: const Center(
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            );
+                          },
+                          errorBuilder: (context, error, stackTrace) {
+                            return Container(
+                              width: 80,
+                              height: 80,
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
+                                  colors: [
+                                    Colors.green.shade400,
+                                    Colors.green.shade700,
+                                  ],
+                                ),
+                              ),
+                              child: Center(
+                                child: Text(
+                                  _getInicialesEmpleado(
+                                    empleado.nombreCompleto,
+                                  ),
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 24,
+                                  ),
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    empleado.nombreCompleto,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.green.shade100,
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Text(
+                      'ACTIVO',
+                      style: TextStyle(
+                        color: Colors.green.shade700,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 11,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  const Divider(),
+                  const SizedBox(height: 8),
+                  _buildDetalleRow(
+                    Icons.badge,
+                    'Código',
+                    '${empleado.codEmpleado}',
+                  ),
+                  _buildDetalleRow(Icons.work, 'Cargo', empleado.descripcion),
+                  _buildDetalleRow(
+                    Icons.location_city,
+                    'Sucursal',
+                    empleado.sucursal.isNotEmpty
+                        ? empleado.sucursal
+                        : 'No asignada',
+                  ),
+                  _buildDetalleRow(
+                    Icons.business,
+                    'Empresa',
+                    empleado.nombreEmpresa.isNotEmpty
+                        ? empleado.nombreEmpresa
+                        : 'No asignada',
+                  ),
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Cerrar'),
+              ),
+            ],
+          ),
+    );
+  }
+
+  Widget _buildDetalleRow(IconData icon, String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: Row(
+        children: [
+          Icon(icon, size: 18, color: Colors.grey.shade600),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: TextStyle(fontSize: 11, color: Colors.grey.shade500),
+                ),
+                Text(
+                  value,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Obtener URL de imagen del empleado
+  String _getImageUrl(int codEmpleado) {
+    return '${AppConstants.baseUrl}${AppConstants.getImageUrl}/$codEmpleado.jpg';
+  }
+
+  // Mostrar foto completa del empleado
+  void _mostrarFotoCompleta(
+    BuildContext context,
+    int codEmpleado,
+    String nombreCompleto,
+  ) {
+    showDialog(
+      context: context,
+      barrierDismissible: true,
+      barrierColor: Colors.black87,
+      builder: (BuildContext context) {
+        return Dialog(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          insetPadding: const EdgeInsets.all(16),
+          child: GestureDetector(
+            onTap: () => Navigator.of(context).pop(),
+            child: Container(
+              constraints: BoxConstraints(
+                maxHeight: MediaQuery.of(context).size.height * 0.7,
+                maxWidth: MediaQuery.of(context).size.width * 0.9,
+              ),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(16),
+                color: Colors.white,
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Header con nombre
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.green.shade600,
+                      borderRadius: const BorderRadius.only(
+                        topLeft: Radius.circular(16),
+                        topRight: Radius.circular(16),
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.person, color: Colors.white),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            nombreCompleto,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                            ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.close, color: Colors.white),
+                          onPressed: () => Navigator.of(context).pop(),
+                        ),
+                      ],
+                    ),
+                  ),
+                  // Imagen
+                  Flexible(
+                    child: ClipRRect(
+                      borderRadius: const BorderRadius.only(
+                        bottomLeft: Radius.circular(16),
+                        bottomRight: Radius.circular(16),
+                      ),
+                      child: Image.network(
+                        _getImageUrl(codEmpleado),
+                        fit: BoxFit.contain,
+                        loadingBuilder: (context, child, loadingProgress) {
+                          if (loadingProgress == null) return child;
+                          return Container(
+                            height: 300,
+                            color: Colors.grey.shade100,
+                            child: Center(
+                              child: CircularProgressIndicator(
+                                color: Colors.green.shade600,
+                              ),
+                            ),
+                          );
+                        },
+                        errorBuilder: (context, error, stackTrace) {
+                          return Container(
+                            height: 300,
+                            color: Colors.grey.shade100,
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.person_off,
+                                  size: 64,
+                                  color: Colors.grey.shade400,
+                                ),
+                                const SizedBox(height: 12),
+                                Text(
+                                  'Imagen no disponible',
+                                  style: TextStyle(
+                                    color: Colors.grey.shade600,
+                                    fontSize: 14,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 }

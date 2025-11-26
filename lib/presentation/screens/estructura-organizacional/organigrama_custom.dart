@@ -14,11 +14,13 @@ import 'web_export_stub.dart'
 class OrganigramaCustom extends StatefulWidget {
   final List<CargoEntity> cargos;
   final Function(CargoEntity) onNodeTap;
+  final Function(CargoEntity)? onEmpleadosTap;
 
   const OrganigramaCustom({
     super.key,
     required this.cargos,
     required this.onNodeTap,
+    this.onEmpleadosTap,
   });
 
   @override
@@ -626,9 +628,34 @@ class _OrganigramaCustomState extends State<OrganigramaCustom> {
                 overflow: TextOverflow.ellipsis,
               ),
               if (cargo.tieneEmpleadosActivos > 0)
-                Text(
-                  '👤 ${cargo.tieneEmpleadosActivos}',
-                  style: const TextStyle(fontSize: 9),
+                Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    onTap:
+                        widget.onEmpleadosTap != null
+                            ? () => widget.onEmpleadosTap!(cargo)
+                            : null,
+                    borderRadius: BorderRadius.circular(8),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 6,
+                        vertical: 2,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.green.shade100,
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: Colors.green.shade400),
+                      ),
+                      child: Text(
+                        '👤 ${cargo.tieneEmpleadosActivos}',
+                        style: TextStyle(
+                          fontSize: 9,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.green.shade800,
+                        ),
+                      ),
+                    ),
+                  ),
                 ),
             ],
           ),

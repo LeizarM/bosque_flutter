@@ -288,4 +288,55 @@ class RRHHRepositoryImpl implements RRHHRepository {
       );
     }
   }
+
+  //Obtener los empleados asignados a un cargo
+  @override
+  Future<List<CargoEntity>> obtenerEmpleadosXCargo(int codCargo) async {
+    try {
+      final response = await _dio.post(
+        AppConstants.obtenerEmpleadosXCargo,
+        data: {'codCargo': codCargo},
+        options: Options(
+          sendTimeout: const Duration(seconds: 30),
+          receiveTimeout: const Duration(seconds: 30),
+        ),
+      );
+
+      if (response.statusCode == 200 && response.data != null) {
+        // El backend devuelve directamente el array, NO dentro de 'data'
+        final data =
+            response.data is List
+                ? response.data
+                : (response.data['data'] ?? []);
+
+        if (data == null) {
+          return [];
+        }
+
+        final items =
+            (data as List<dynamic>)
+                .map((json) => CargoModel.fromJson(json))
+                .toList();
+
+        return items.map((model) => model.toEntity()).toList();
+      } else if (response.statusCode == 200 && response.data == null) {
+        // Respuesta vacía válida
+        return [];
+      } else {
+        throw Exception('Error al obtener los empleados por cargo');
+      }
+    } on DioException catch (e) {
+      String errorMessage = 'Error de conexión';
+      if (e.type == DioExceptionType.connectionTimeout ||
+          e.type == DioExceptionType.sendTimeout ||
+          e.type == DioExceptionType.receiveTimeout) {
+        errorMessage = 'Tiempo de espera agotado. Intente nuevamente.';
+      } else if (e.response != null && e.response!.data != null) {
+        errorMessage = 'Error del servidor: ${e.response!.statusCode}';
+      }
+      throw Exception(errorMessage);
+    } catch (e) {
+      throw Exception('Error al cargar empleados: ${e.toString()}');
+    }
+  }
 }

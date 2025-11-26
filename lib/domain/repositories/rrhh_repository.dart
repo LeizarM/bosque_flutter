@@ -30,4 +30,7 @@ abstract class RRHHRepository {
 
   //Para eliminar asignación de cargo a sucursal
   Future<bool> eliminarCargoSucursal(int codCargoSucursal);
+
+  //Para obtener los empleados asignados a un cargo
+  Future<List<CargoEntity>> obtenerEmpleadosXCargo(int codCargo);
 }

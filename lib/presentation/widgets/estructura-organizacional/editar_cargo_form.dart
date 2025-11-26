@@ -1,6 +1,6 @@
 import 'package:bosque_flutter/core/state/rrhh_provider.dart';
 import 'package:bosque_flutter/core/state/user_provider.dart';
-import 'package:bosque_flutter/data/repositories/rrhh_repository_impl.dart';
+import 'package:bosque_flutter/core/utils/responsive_utils_bosque.dart';
 import 'package:bosque_flutter/domain/entities/cargo_entity.dart';
 import 'package:bosque_flutter/domain/entities/cargo_sucursal_entity.dart';
 import 'package:bosque_flutter/domain/entities/sucursal_entity.dart';
@@ -147,17 +147,40 @@ class _EditarCargoFormState extends ConsumerState<EditarCargoForm>
             ),
             const SizedBox(height: 16),
 
-            // Tabs
+            // Tabs - Responsivo
             TabBar(
               controller: _tabController,
               labelColor: Theme.of(context).primaryColor,
               unselectedLabelColor: Colors.grey,
               indicatorColor: Theme.of(context).primaryColor,
-              tabs: const [
-                Tab(icon: Icon(Icons.toggle_on), text: 'Estado'),
-                Tab(icon: Icon(Icons.format_list_numbered), text: 'Posición'),
-                Tab(icon: Icon(Icons.account_tree), text: 'Reparentar'),
-                Tab(icon: Icon(Icons.location_city), text: 'Sucursales'),
+              isScrollable: ResponsiveUtilsBosque.isMobile(context),
+              tabs: [
+                Tab(
+                  icon: const Icon(Icons.toggle_on),
+                  text:
+                      ResponsiveUtilsBosque.isMobile(context) ? null : 'Estado',
+                ),
+                Tab(
+                  icon: const Icon(Icons.format_list_numbered),
+                  text:
+                      ResponsiveUtilsBosque.isMobile(context)
+                          ? null
+                          : 'Posición',
+                ),
+                Tab(
+                  icon: const Icon(Icons.account_tree),
+                  text:
+                      ResponsiveUtilsBosque.isMobile(context)
+                          ? null
+                          : 'Reparentar',
+                ),
+                Tab(
+                  icon: const Icon(Icons.location_city),
+                  text:
+                      ResponsiveUtilsBosque.isMobile(context)
+                          ? null
+                          : 'Sucursales',
+                ),
               ],
             ),
             const SizedBox(height: 16),
