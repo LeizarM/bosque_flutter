@@ -3,13 +3,13 @@ import 'package:bosque_flutter/core/state/empleados_dependientes_provider.dart';
 import 'package:bosque_flutter/core/state/menu_provider.dart';
 import 'package:bosque_flutter/core/state/user_provider.dart';
 import 'package:bosque_flutter/core/utils/banner_personalizado.dart';
+import 'package:bosque_flutter/core/utils/console_log.dart';
 import 'package:bosque_flutter/core/utils/responsive_utils_bosque.dart';
 import 'package:bosque_flutter/domain/entities/ciExpedido_entity.dart';
 import 'package:bosque_flutter/domain/entities/empleado_entity.dart';
 import 'package:bosque_flutter/domain/entities/estado_civil_entity.dart';
 import 'package:bosque_flutter/domain/entities/persona_entity.dart';
 import 'package:bosque_flutter/domain/entities/sexo_entity.dart';
-import 'package:bosque_flutter/presentation/widgets/dependientes/cronometro_bloqueo.dart';
 import 'package:bosque_flutter/presentation/widgets/dependientes/formulario_persona.dart';
 import 'package:bosque_flutter/presentation/widgets/dependientes/map_viewer.dart';
 import 'package:bosque_flutter/presentation/widgets/dependientes/secccion__foto_docs.dart';
@@ -56,7 +56,6 @@ class _PersonaSectionState extends ConsumerState<PersonaSection> {
   String? _advertenciaMensaje;
   Color? _advertenciaColor;
   IconData? _advertenciaIcon;
-  bool _habilitarEdicion = false;
   final Set<int> _docsAllowedEmployees = {2, 218, 21, 50, 47};
   //checkpoint
   String _capitalize(String text) {
@@ -70,8 +69,9 @@ class _PersonaSectionState extends ConsumerState<PersonaSection> {
         .map((word) {
           if (word.isEmpty) return word;
           final especiales = ['s.a.', 's.r.l.', 'ipx', 'esppapel'];
-          if (especiales.contains(word.toLowerCase()))
+          if (especiales.contains(word.toLowerCase())) {
             return word.toUpperCase();
+          }
           return _capitalize(word);
         })
         .join(' ');
@@ -99,28 +99,8 @@ class _PersonaSectionState extends ConsumerState<PersonaSection> {
     prefs.remove('fechaAdvertenciaDatos');
   }
 
-  Future<void> _verificarPermisosEdicion() async {
-    try {
-      final permissionService = ref.read(permissionServiceProvider);
-      final hasPermission = await permissionService.verificarPermisosEdicion(
-        widget.codEmpleado,
-      );
-      if (mounted) {
-        setState(() {
-          _habilitarEdicion = hasPermission;
-        });
-      }
-    } catch (e) {
-      debugPrint('Error al verificar permisos: $e');
-      if (mounted) {
-        setState(() {
-          _habilitarEdicion = false;
-        });
-      }
-    }
-  }
-
   @override
+  // ignore: non_constant_identifier_names
   Widget build(BuildContext BuildContext) {
     final theme = Theme.of(context);
     final isDesktop = ResponsiveUtilsBosque.isDesktop(context);
@@ -145,7 +125,7 @@ class _PersonaSectionState extends ConsumerState<PersonaSection> {
         final bool ciVencido =
             persona.ciFechaVencimiento != null &&
             persona.ciFechaVencimiento!.isBefore(DateTime.now());
-        bool _isLatLngDefecto(double? lat, double? lng) {
+        bool isLatLngDefecto(double? lat, double? lng) {
           const latDefecto = -16.516064;
           const lngDefecto = -68.1354;
           const margen = 0.0001;
@@ -180,7 +160,7 @@ class _PersonaSectionState extends ConsumerState<PersonaSection> {
                 }
               }
             } else {
-              final ubicacionPorDefecto = _isLatLngDefecto(
+              final ubicacionPorDefecto = isLatLngDefecto(
                 persona.lat,
                 persona.lng,
               );
@@ -196,7 +176,7 @@ class _PersonaSectionState extends ConsumerState<PersonaSection> {
 
                   if (warningCount < warningLimit) {
                     await ref.read(warningCounterProvider.notifier).increment();
-                    print(
+                    console(
                       'Advertencia sumada. Nuevo valor: ${ref.read(warningCounterProvider)}',
                     );
                     // Mostrar advertencia especial si solo queda una antes del bloqueo
@@ -1147,7 +1127,7 @@ class _PersonaSectionState extends ConsumerState<PersonaSection> {
               },
               errorBuilder: (context, error, stackTrace) {
                 // ignore: avoid_print
-                print('Error al cargar imagen: $url, Error: $error');
+                console('Error al cargar imagen: $url, Error: $error');
                 return const Icon(
                   Icons.broken_image,
                   size: 40,

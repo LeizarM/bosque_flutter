@@ -1,8 +1,8 @@
-import 'dart:typed_data';
 import 'package:bosque_flutter/core/constants/app_constants.dart';
 import 'package:bosque_flutter/core/state/empleados_dependientes_provider.dart';
 import 'package:bosque_flutter/core/state/user_provider.dart';
 import 'package:bosque_flutter/core/utils/banner_personalizado.dart';
+import 'package:bosque_flutter/core/utils/console_log.dart';
 import 'package:bosque_flutter/presentation/widgets/dependientes/confirm_dialogs.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -17,22 +17,21 @@ class SeccionFoto extends ConsumerStatefulWidget {
   final Function(String) onToggleSeccion;
 
   const SeccionFoto({
-    Key? key,
+    super.key,
     required this.codEmpleado,
     required this.habilitarEdicion,
     required this.estadoExpandido,
     required this.onToggleSeccion,
-  }) : super(key: key);
+  });
 
   @override
+  // ignore: library_private_types_in_public_api
   _SeccionFotoState createState() => _SeccionFotoState();
 }
 
 class _SeccionFotoState extends ConsumerState<SeccionFoto> {
   Uint8List? _imageBytes;
-  int _imageTimestamp = DateTime.now().millisecondsSinceEpoch;
   XFile? imagenSeleccionada;
-  Uint8List? _webImageBytes;
   bool _alertaMostrada = false;
   // BannerCustom
   String? _bannerMensaje;
@@ -41,9 +40,7 @@ class _SeccionFotoState extends ConsumerState<SeccionFoto> {
 
   String _getImageUrl() {
     final imageVersion = ref.watch(imageVersionProvider); // ✅ Aquí sí
-    return AppConstants.baseUrl +
-        AppConstants.getImageUrl +
-        '/${widget.codEmpleado}.jpg?v=$imageVersion';
+    return '${AppConstants.baseUrl}${AppConstants.getImageUrl}/${widget.codEmpleado}.jpg?v=$imageVersion';
   }
 
   @override
@@ -94,7 +91,7 @@ class _SeccionFotoState extends ConsumerState<SeccionFoto> {
         }
       }
     } catch (e) {
-      print('Error revisando foto: $e');
+      console('Error revisando foto: $e');
     }
   }
 
@@ -114,7 +111,6 @@ class _SeccionFotoState extends ConsumerState<SeccionFoto> {
         setState(() {
           imagenSeleccionada = imagen;
           _imageBytes = bytes;
-          _webImageBytes = bytes;
         });
       }
     } catch (e) {
@@ -139,7 +135,6 @@ class _SeccionFotoState extends ConsumerState<SeccionFoto> {
         setState(() {
           imagenSeleccionada = imagen;
           _imageBytes = bytes;
-          _webImageBytes = bytes;
         });
       }
     } catch (e) {
@@ -163,9 +158,8 @@ class _SeccionFotoState extends ConsumerState<SeccionFoto> {
 
       setState(() {
         // 2. Limpiar el estado local (la imagen pendiente desaparece de la vista previa)
-        _imageTimestamp = DateTime.now().millisecondsSinceEpoch;
         _imageBytes = null;
-        _webImageBytes = null; // También limpia el webImageBytes
+        // También limpia el webImageBytes
         imagenSeleccionada = null;
       });
 
@@ -211,7 +205,6 @@ class _SeccionFotoState extends ConsumerState<SeccionFoto> {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final bool isDark = theme.brightness == Brightness.dark;
-    final Color cardColor = isDark ? colorScheme.surface : Colors.white;
     final Color borderColor =
         isDark ? colorScheme.primary : Colors.teal.shade700;
 
@@ -385,7 +378,6 @@ class _SeccionFotoState extends ConsumerState<SeccionFoto> {
                                 onPressed:
                                     () => setState(() {
                                       _imageBytes = null;
-                                      _webImageBytes = null;
                                       imagenSeleccionada = null;
                                     }),
                                 tooltip: 'Cancelar',

@@ -53,7 +53,8 @@ class EntregasState {
       fechaFin: fechaFin ?? this.fechaFin,
       posicionInicial: posicionInicial ?? this.posicionInicial,
       posicionFinal: posicionFinal ?? this.posicionFinal,
-      sincronizacionEnProceso: sincronizacionEnProceso ?? this.sincronizacionEnProceso,
+      sincronizacionEnProceso:
+          sincronizacionEnProceso ?? this.sincronizacionEnProceso,
       historialRuta: historialRuta ?? this.historialRuta, // Añadido a copyWith
     );
   }
@@ -66,7 +67,8 @@ class EntregasNotifier extends StateNotifier<EntregasState> {
   SharedPreferences? _prefs; // Nullable para carga lazy
   bool _prefsInitialized = false;
 
-  EntregasNotifier(this._repository, this._userNotifier) : super(EntregasState()) {
+  EntregasNotifier(this._repository, this._userNotifier)
+    : super(EntregasState()) {
     _initializeAsync();
   }
 
@@ -99,12 +101,13 @@ class EntregasNotifier extends StateNotifier<EntregasState> {
   // Cargar estado guardado de la ruta desde SharedPreferences
   Future<void> _cargarEstadoGuardado() async {
     if (!_prefsInitialized || _prefs == null) return;
-    
+
     try {
       final rutaIniciada = _prefs!.getBool('ruta_iniciada') ?? false;
       final fechaInicioStr = _prefs!.getString('fecha_inicio');
-      final fechaInicio = fechaInicioStr != null ? DateTime.parse(fechaInicioStr) : null;
-      
+      final fechaInicio =
+          fechaInicioStr != null ? DateTime.parse(fechaInicioStr) : null;
+
       if (rutaIniciada) {
         state = state.copyWith(
           rutaIniciada: rutaIniciada,
@@ -122,17 +125,11 @@ class EntregasNotifier extends StateNotifier<EntregasState> {
     try {
       state = state.copyWith(isLoading: true, error: null);
       final entregas = await _repository.getEntregas(codEmpleado);
-      state = state.copyWith(
-        isLoading: false,
-        entregas: entregas,
-      );
+      state = state.copyWith(isLoading: false, entregas: entregas);
       debugPrint('📦 Entregas cargadas: ${entregas.length} elementos');
     } catch (e) {
       debugPrint('❌ Error cargando entregas: $e');
-      state = state.copyWith(
-        isLoading: false,
-        error: e.toString(),
-      );
+      state = state.copyWith(isLoading: false, error: e.toString());
     }
   }
 
@@ -151,17 +148,17 @@ class EntregasNotifier extends StateNotifier<EntregasState> {
 
       // Obtener posición actual
       final posicion = await _obtenerPosicionActual();
-      
+
       // Obtener dirección a partir de las coordenadas
       String direccion = await _repository.obtenerDireccionDesdeAPI(
-        posicion.latitude, 
-        posicion.longitude
+        posicion.latitude,
+        posicion.longitude,
       );
-      
+
       // Obtener datos del usuario
       final codUsuario = await _userNotifier.getCodUsuario();
       final codEmpleado = await _userNotifier.getCodEmpleado();
-      
+
       // Registrar inicio de ruta en el sistema
       final ahora = DateTime.now();
       await _repository.registrarRuta(
@@ -183,7 +180,7 @@ class EntregasNotifier extends StateNotifier<EntregasState> {
         obs: "Iniciando Entregas",
         audUsuario: codUsuario,
       );
-      
+
       // Guardar estado en SharedPreferences (solo si está disponible)
       await _ensurePrefsInitialized();
       if (_prefsInitialized && _prefs != null) {
@@ -195,7 +192,7 @@ class EntregasNotifier extends StateNotifier<EntregasState> {
           debugPrint('⚠️ Error guardando en SharedPreferences: $e');
         }
       }
-      
+
       // Actualizar estado
       state = state.copyWith(
         rutaIniciada: true,
@@ -203,13 +200,11 @@ class EntregasNotifier extends StateNotifier<EntregasState> {
         posicionInicial: posicion,
         error: null,
       );
-      
+
       debugPrint('✅ Ruta iniciada correctamente');
     } catch (e) {
       debugPrint('❌ Error iniciando ruta: $e');
-      state = state.copyWith(
-        error: e.toString(),
-      );
+      state = state.copyWith(error: e.toString());
     }
   }
 
@@ -217,21 +212,21 @@ class EntregasNotifier extends StateNotifier<EntregasState> {
   Future<void> finalizarRuta() async {
     try {
       debugPrint('🏁 Finalizando ruta de entregas...');
-      
+
       // Obtener posición actual
       final posicion = await _obtenerPosicionActual();
       final ahora = DateTime.now();
-      
+
       // Obtener dirección a partir de las coordenadas
       String direccion = await _repository.obtenerDireccionDesdeAPI(
-        posicion.latitude, 
-        posicion.longitude
+        posicion.latitude,
+        posicion.longitude,
       );
-      
+
       // Obtener datos del usuario
       final codUsuario = await _userNotifier.getCodUsuario();
       final codEmpleado = await _userNotifier.getCodEmpleado();
-      
+
       // Registrar fin de ruta en el sistema
       bool registroExitoso = await _repository.registrarRuta(
         docEntry: 0,
@@ -252,7 +247,7 @@ class EntregasNotifier extends StateNotifier<EntregasState> {
         obs: "Finalizando Entregas",
         audUsuario: codUsuario,
       );
-      
+
       // Guardar estado en SharedPreferences (solo si está disponible)
       await _ensurePrefsInitialized();
       if (_prefsInitialized && _prefs != null) {
@@ -264,10 +259,10 @@ class EntregasNotifier extends StateNotifier<EntregasState> {
           debugPrint('⚠️ Error guardando fin de ruta: $e');
         }
       }
-      
+
       // Cargar nuevamente las entregas para refrescar el estado
       final entregas = await _repository.getEntregas(codEmpleado);
-      
+
       // Actualizar estado
       state = state.copyWith(
         rutaIniciada: false,
@@ -275,11 +270,12 @@ class EntregasNotifier extends StateNotifier<EntregasState> {
         posicionFinal: posicion,
         sincronizacionEnProceso: false,
         entregas: entregas,
-        error: !registroExitoso 
-              ? 'Hubo un problema al registrar el fin de entregas'
-              : null,
+        error:
+            !registroExitoso
+                ? 'Hubo un problema al registrar el fin de entregas'
+                : null,
       );
-      
+
       debugPrint('✅ Ruta finalizada correctamente');
     } catch (e) {
       debugPrint('❌ Error finalizando ruta: $e');
@@ -291,7 +287,11 @@ class EntregasNotifier extends StateNotifier<EntregasState> {
   }
 
   // Marcar una entrega como completada
-  Future<void> marcarEntregaCompletada(int idEntrega, String direccion, {String? observaciones}) async {
+  Future<void> marcarEntregaCompletada(
+    int idEntrega,
+    String direccion, {
+    String? observaciones,
+  }) async {
     try {
       if (!state.rutaIniciada) {
         state = state.copyWith(
@@ -304,39 +304,43 @@ class EntregasNotifier extends StateNotifier<EntregasState> {
 
       // Obtener posición actual
       final posicion = await _obtenerPosicionActual();
-      
+
       // Obtener dirección automáticamente a partir de las coordenadas usando la API
       final direccionGeo = await _repository.obtenerDireccionDesdeAPI(
-        posicion.latitude, 
-        posicion.longitude
+        posicion.latitude,
+        posicion.longitude,
       );
-      
+
       // Encontrar la entrega que se quiere marcar
       final entrega = state.entregas.firstWhere(
         (e) => e.idEntrega == idEntrega,
-        orElse: () => throw Exception('No se encontró la entrega con ID $idEntrega'),
+        orElse:
+            () =>
+                throw Exception('No se encontró la entrega con ID $idEntrega'),
       );
-      
+
       // Obtenemos el docNum para marcar todo el documento como entregado
       final docNum = entrega.docNum;
       final docEntry = entrega.docEntry;
-      final db = entrega.db ?? "BD no disponible";  // Valor por defecto si es null
-      
+      final db = entrega.db; // Valor por defecto si es null
+
       // Obtener datos del usuario usando el userNotifier inyectado
       final codUsuario = await _userNotifier.getCodUsuario();
       final codSucursal = await _userNotifier.getCodSucursal();
       final codCiudad = await _userNotifier.getCodCiudad();
-      
+
       // Validación adicional para asegurar que tenemos todos los datos necesarios
       if (codUsuario == 0 || codSucursal == 0 || codCiudad == 0) {
-        throw Exception('No se pudieron obtener los datos del usuario necesarios para marcar la entrega');
+        throw Exception(
+          'No se pudieron obtener los datos del usuario necesarios para marcar la entrega',
+        );
       }
-      
+
       final ahora = DateTime.now();
-      
+
       // Marcar la entrega en el estado como en proceso de sincronización
       state = state.copyWith(sincronizacionEnProceso: true);
-      
+
       try {
         // Llamar al método que marca todo el documento de una vez
         final exito = await _repository.marcarDocumentoEntregado(
@@ -345,14 +349,15 @@ class EntregasNotifier extends StateNotifier<EntregasState> {
           db: db,
           latitud: posicion.latitude,
           longitud: posicion.longitude,
-          direccionEntrega: direccionGeo, // Usamos la dirección obtenida de la API
+          direccionEntrega:
+              direccionGeo, // Usamos la dirección obtenida de la API
           fechaEntrega: ahora,
           audUsuario: codUsuario,
           codSucursalChofer: codSucursal,
           codCiudadChofer: codCiudad,
           observaciones: observaciones,
         );
-        
+
         if (exito) {
           // Actualizar todas las entregas del documento en el estado local
           final nuevasEntregas = [...state.entregas];
@@ -362,13 +367,14 @@ class EntregasNotifier extends StateNotifier<EntregasState> {
                 fueEntregado: 1, // Marcar como entregado
                 latitud: posicion.latitude,
                 longitud: posicion.longitude,
-                direccionEntrega: direccionGeo, // Actualizamos la dirección local con la obtenida de la API
+                direccionEntrega:
+                    direccionGeo, // Actualizamos la dirección local con la obtenida de la API
                 fechaEntrega: ahora,
                 obs: observaciones,
               );
             }
           }
-          
+
           state = state.copyWith(
             entregas: nuevasEntregas,
             error: null,
@@ -378,12 +384,15 @@ class EntregasNotifier extends StateNotifier<EntregasState> {
         } else {
           debugPrint('❌ Error: No se pudo marcar el documento como entregado');
           state = state.copyWith(
-            error: 'No se pudo marcar el documento como entregado. Intente nuevamente.',
+            error:
+                'No se pudo marcar el documento como entregado. Intente nuevamente.',
             sincronizacionEnProceso: false,
           );
         }
       } catch (repoError) {
-        debugPrint('❌ Error en la comunicación con el repositorio: ${repoError.toString()}');
+        debugPrint(
+          '❌ Error en la comunicación con el repositorio: ${repoError.toString()}',
+        );
         state = state.copyWith(
           error: 'Error de comunicación: ${repoError.toString()}',
           sincronizacionEnProceso: false,
@@ -402,39 +411,42 @@ class EntregasNotifier extends StateNotifier<EntregasState> {
   Future<void> loadHistorialRuta(DateTime fecha, int codEmpleado) async {
     try {
       state = state.copyWith(isLoading: true, error: null);
-      final historialRuta = await _repository.getHistorialRuta(fecha, codEmpleado);
-      state = state.copyWith(
-        isLoading: false,
-        historialRuta: historialRuta,
+      final historialRuta = await _repository.getHistorialRuta(
+        fecha,
+        codEmpleado,
       );
-      debugPrint('📚 Historial de ruta cargado: ${historialRuta.length} elementos');
+      state = state.copyWith(isLoading: false, historialRuta: historialRuta);
+      debugPrint(
+        '📚 Historial de ruta cargado: ${historialRuta.length} elementos',
+      );
     } catch (e) {
       debugPrint('❌ Error cargando historial: $e');
-      state = state.copyWith(
-        isLoading: false,
-        error: e.toString(),
-      );
+      state = state.copyWith(isLoading: false, error: e.toString());
     }
   }
 
   // Ver extracto de rutas de choferes entre fechas osea sus rutas
-  Future<void> cargarExtractoChoferes(DateTime fechaInicio, DateTime fechaFin) async {
-    debugPrint('⏳ Llamando a cargarExtractoChoferes con fechas: '
-      'inicio=${fechaInicio.toIso8601String()}, fin=${fechaFin.toIso8601String()}');
+  Future<void> cargarExtractoChoferes(
+    DateTime fechaInicio,
+    DateTime fechaFin,
+  ) async {
+    debugPrint(
+      '⏳ Llamando a cargarExtractoChoferes con fechas: '
+      'inicio=${fechaInicio.toIso8601String()}, fin=${fechaFin.toIso8601String()}',
+    );
     try {
       state = state.copyWith(isLoading: true, error: null);
-      final extractoChoferes = await _repository.getExtractoRutas(fechaInicio, fechaFin);
-      debugPrint('✅ Datos recibidos del backend: ${extractoChoferes.length} registros');
-      state = state.copyWith(
-        isLoading: false,
-        entregas: extractoChoferes,
+      final extractoChoferes = await _repository.getExtractoRutas(
+        fechaInicio,
+        fechaFin,
       );
+      debugPrint(
+        '✅ Datos recibidos del backend: ${extractoChoferes.length} registros',
+      );
+      state = state.copyWith(isLoading: false, entregas: extractoChoferes);
     } catch (e) {
       debugPrint('❌ Error en cargarExtractoChoferes: ${e.toString()}');
-      state = state.copyWith(
-        isLoading: false,
-        error: e.toString(),
-      );
+      state = state.copyWith(isLoading: false, error: e.toString());
     }
   }
 
@@ -455,7 +467,7 @@ class EntregasNotifier extends StateNotifier<EntregasState> {
           return false;
         }
       }
-      
+
       if (permission == LocationPermission.deniedForever) {
         debugPrint('⚠️ Permisos de localización denegados permanentemente');
         return false;
@@ -464,7 +476,9 @@ class EntregasNotifier extends StateNotifier<EntregasState> {
       debugPrint('✅ Servicios de localización disponibles');
       return true;
     } catch (e) {
-      debugPrint('❌ Error al verificar servicios de localización: ${e.toString()}');
+      debugPrint(
+        '❌ Error al verificar servicios de localización: ${e.toString()}',
+      );
       return false;
     }
   }
@@ -474,13 +488,17 @@ class EntregasNotifier extends StateNotifier<EntregasState> {
     // Verificar los servicios de localización primero
     bool disponible = await verificarServiciosLocalizacion();
     if (!disponible) {
-      throw Exception('Los servicios de ubicación no están disponibles o los permisos fueron denegados.');
+      throw Exception(
+        'Los servicios de ubicación no están disponibles o los permisos fueron denegados.',
+      );
     }
 
     debugPrint('📍 Obteniendo posición actual...');
     // Si los servicios están disponibles, obtener la posición actual
     final posicion = await Geolocator.getCurrentPosition();
-    debugPrint('📍 Posición obtenida: ${posicion.latitude}, ${posicion.longitude}');
+    debugPrint(
+      '📍 Posición obtenida: ${posicion.latitude}, ${posicion.longitude}',
+    );
     return posicion;
   }
 }
@@ -491,7 +509,9 @@ final entregasRepositoryProvider = Provider<EntregasRepository>((ref) {
 });
 
 // Proveedor LAZY para SharedPreferences - se carga cuando se necesita
-final sharedPreferencesProvider = FutureProvider<SharedPreferences>((ref) async {
+final sharedPreferencesProvider = FutureProvider<SharedPreferences>((
+  ref,
+) async {
   debugPrint('🔄 Inicializando SharedPreferences...');
   final prefs = await SharedPreferences.getInstance();
   debugPrint('✅ SharedPreferences inicializado');
@@ -499,7 +519,9 @@ final sharedPreferencesProvider = FutureProvider<SharedPreferences>((ref) async 
 });
 
 // Proveedor síncrono para acceso rápido a SharedPreferences después de la primera carga
-final sharedPreferencesSyncProvider = StateProvider<SharedPreferences?>((ref) => null);
+final sharedPreferencesSyncProvider = StateProvider<SharedPreferences?>(
+  (ref) => null,
+);
 
 // Provider que inicializa SharedPreferences en background y actualiza el provider síncrono
 final initSharedPrefsProvider = FutureProvider<void>((ref) async {
@@ -513,19 +535,20 @@ final initSharedPrefsProvider = FutureProvider<void>((ref) async {
 });
 
 // Proveedor para el notificador de entregas - OPTIMIZADO
-final entregasNotifierProvider = StateNotifierProvider<EntregasNotifier, EntregasState>((ref) {
-  final repository = ref.watch(entregasRepositoryProvider);
-  final userNotifier = ref.watch(userProvider.notifier);
-  
-  // Inicializar SharedPreferences en background (no bloquea)
-  ref.read(initSharedPrefsProvider);
-  
-  // Crear el notifier sin esperar SharedPreferences
-  final notifier = EntregasNotifier(repository, userNotifier);
-  
-  debugPrint('🔧 EntregasNotifier creado');
-  return notifier;
-});
+final entregasNotifierProvider =
+    StateNotifierProvider<EntregasNotifier, EntregasState>((ref) {
+      final repository = ref.watch(entregasRepositoryProvider);
+      final userNotifier = ref.watch(userProvider.notifier);
+
+      // Inicializar SharedPreferences en background (no bloquea)
+      ref.read(initSharedPrefsProvider);
+
+      // Crear el notifier sin esperar SharedPreferences
+      final notifier = EntregasNotifier(repository, userNotifier);
+
+      debugPrint('🔧 EntregasNotifier creado');
+      return notifier;
+    });
 
 // Provider helper para verificar si SharedPreferences está listo
 final isSharedPrefsReadyProvider = Provider<bool>((ref) {

@@ -37,7 +37,6 @@ class EntregaCardView extends StatelessWidget {
       physics: const NeverScrollableScrollPhysics(),
       itemCount: entregasAgrupadas.length,
       itemBuilder: (context, index) {
-        final docNum = entregasAgrupadas[index].key;
         final entregas = entregasAgrupadas[index].value;
         final entrega = entregas.first;
 

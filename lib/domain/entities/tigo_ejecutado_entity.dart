@@ -76,7 +76,7 @@ class TigoEjecutadoEntity {
   }) {
     return TigoEjecutadoEntity(
       codCuenta: codCuenta ?? this.codCuenta,
-      corporativo: corporativo ?? this.corporativo,
+      corporativo: corporativo ?? corporativo,
       codEmpleado: codEmpleado ?? this.codEmpleado,
       nombreCompleto: nombreCompleto ?? this.nombreCompleto,
       descripcion: descripcion ?? this.descripcion,

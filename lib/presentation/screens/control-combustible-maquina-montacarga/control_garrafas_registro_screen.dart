@@ -407,15 +407,6 @@ class _ControlGarrafasRegistroScreenState
         audUsuario: audUsuario,
       );
 
-      // Mostrar datos para debug
-      print('=== GARRAFA A REGISTRAR ===');
-      print('codSucursal: ${compraGarrafa.codSucursal}');
-      print('descripcion: ${compraGarrafa.descripcion}');
-      print('cantidad: ${compraGarrafa.cantidad}');
-      print('monto: ${compraGarrafa.monto}');
-      print('audUsuario: ${compraGarrafa.audUsuario}');
-      print('===============================');
-
       // Registrar garrafa usando el provider
       final result = await ref.read(
         registrarGarrafaProvider(compraGarrafa).future,

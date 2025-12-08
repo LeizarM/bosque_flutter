@@ -1,5 +1,3 @@
-import 'dart:ui';
-
 import 'package:bosque_flutter/core/state/empleados_dependientes_provider.dart';
 import 'package:bosque_flutter/domain/entities/experiencia_laboral_entity.dart';
 import 'package:bosque_flutter/presentation/widgets/dependientes/confirm_dialogs.dart';
@@ -42,8 +40,9 @@ class ExperienciaLaboralSeccion extends ConsumerWidget {
         .map((word) {
           if (word.isEmpty) return word;
           final especiales = ['s.a.', 's.r.l.', 'ipx', 'esppapel'];
-          if (especiales.contains(word.toLowerCase()))
+          if (especiales.contains(word.toLowerCase())) {
             return word.toUpperCase();
+          }
           return _capitalize(word);
         })
         .join(' ');
@@ -259,11 +258,12 @@ class ExperienciaLaboralSeccion extends ConsumerWidget {
                               final _ = await ref.refresh(
                                 experienciaLaboralProvider(codEmpleado).future,
                               );
-                              if (context.mounted)
+                              if (context.mounted) {
                                 AppSnackbarCustom.showDelete(
                                   context,
                                   'Experiencia Laboral eliminada correctamente',
                                 );
+                              }
                             }
                           }),
                     ),
@@ -352,8 +352,9 @@ class ExperienciaLaboralSeccion extends ConsumerWidget {
                     icon: Icons.calendar_today,
                     etiqueta: 'Fecha de inicio',
                     valor:
+                        // ignore: unnecessary_null_comparison
                         exp.fechaInicio != null
-                            ? DateFormat('dd-MM-yyyy').format(exp.fechaInicio!)
+                            ? DateFormat('dd-MM-yyyy').format(exp.fechaInicio)
                             : '',
                     colorValor: textoPrincipal,
                     colorIcono: icono,
@@ -368,8 +369,9 @@ class ExperienciaLaboralSeccion extends ConsumerWidget {
                     icon: Icons.calendar_today,
                     etiqueta: 'Fecha de finalización',
                     valor:
+                        // ignore: unnecessary_null_comparison
                         exp.fechaFin != null
-                            ? DateFormat('dd-MM-yyyy').format(exp.fechaFin!)
+                            ? DateFormat('dd-MM-yyyy').format(exp.fechaFin)
                             : '',
                     colorValor: textoPrincipal,
                     colorIcono: icono,

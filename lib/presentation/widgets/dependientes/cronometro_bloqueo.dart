@@ -7,11 +7,11 @@ class CronometroBloqueo extends StatefulWidget {
   final Future<void> Function()? onFinalizado;
 
   const CronometroBloqueo({
-    Key? key,
+    super.key,
     required this.fechaLimite,
     required this.estaBloqueado,
     this.onFinalizado,
-  }) : super(key: key);
+  });
 
   @override
   State<CronometroBloqueo> createState() => _CronometroBloqueoState();

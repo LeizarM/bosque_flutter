@@ -1,15 +1,15 @@
 import 'package:bosque_flutter/core/state/Consumo_tigo_provider.dart';
+import 'package:bosque_flutter/core/utils/console_log.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class FacturasTigoCalculoScreen extends ConsumerWidget {
   final String periodoCobrado;
-  const FacturasTigoCalculoScreen({Key? key, required this.periodoCobrado})
-    : super(key: key);
+  const FacturasTigoCalculoScreen({super.key, required this.periodoCobrado});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    print(
+    console(
       'Entrando a FacturasTigoCalculoScreen con periodoCobrado: $periodoCobrado',
     );
     final tigoAsync = ref.watch(tigoTotalXCuenta(periodoCobrado));

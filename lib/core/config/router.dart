@@ -329,7 +329,6 @@ final routerProvider = Provider<GoRouter>((ref) {
       redirect: (BuildContext context, GoRouterState state) async {
         // Validar usuario y versión usando asyncUserProvider
 
-        final isOnLoginPage = state.uri.toString() == '/login';
         if (state.fullPath == '/') {
           return '/login';
         }

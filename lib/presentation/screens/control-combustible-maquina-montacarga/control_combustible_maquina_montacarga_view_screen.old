@@ -590,37 +590,37 @@ class _ControlCombustibleMaquinaMontaCargaViewScreenState
       List<ControlCombustibleMaquinaMontacargaEntity> movimientos) {
     var movimientosFiltrados = movimientos;
     
-    print('Movimientos antes del filtro: ${movimientos.length}'); // Debug
-    print('Filtro seleccionado: $_tipoTransaccionFiltro'); // Debug
+    console('Movimientos antes del filtro: ${movimientos.length}'); // Debug
+    console('Filtro seleccionado: $_tipoTransaccionFiltro'); // Debug
     
     // Filtrar por tipo de transacción
     if (_tipoTransaccionFiltro != 'TODOS') {
       movimientosFiltrados = movimientosFiltrados.where((m) {
         // Debug: imprimir el tipo de cada movimiento
-        print('Movimiento tipoTransaccion: "${m.tipoTransaccion}" (length: ${m.tipoTransaccion.length})');
+        console('Movimiento tipoTransaccion: "${m.tipoTransaccion}" (length: ${m.tipoTransaccion.length})');
         
         // Normalizar el tipo de transacción (trim y uppercase)
         final tipoTransaccionNormalizado = m.tipoTransaccion.trim().toUpperCase();
         final filtroNormalizado = _tipoTransaccionFiltro.trim().toUpperCase();
         
-        print('Comparando: "$tipoTransaccionNormalizado" == "$filtroNormalizado"');
+        console('Comparando: "$tipoTransaccionNormalizado" == "$filtroNormalizado"');
         
         // Si el tipo está vacío o es null, no lo incluimos en ningún filtro específico
         if (tipoTransaccionNormalizado.isEmpty) {
-          print('Tipo vacío, excluido del filtro');
+          console('Tipo vacío, excluido del filtro');
           return false;
         }
         
         final matches = tipoTransaccionNormalizado == filtroNormalizado;
-        print('Match: $matches');
+        console('Match: $matches');
         
         return matches;
       }).toList();
       
-      print('Después del filtro por tipo: ${movimientosFiltrados.length}'); // Debug
+      console('Después del filtro por tipo: ${movimientosFiltrados.length}'); // Debug
     }
     
-    print('Movimientos finales: ${movimientosFiltrados.length}'); // Debug
+    console('Movimientos finales: ${movimientosFiltrados.length}'); // Debug
     return movimientosFiltrados;
   }
 

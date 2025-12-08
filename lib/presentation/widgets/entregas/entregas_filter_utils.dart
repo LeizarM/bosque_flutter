@@ -8,14 +8,15 @@ class EntregasFilterUtils {
     int? sortColumnIndex,
     bool sortAscending,
   ) {
-    var filtered = lista.where((entry) {
-      final entrega = entry.value.first;
-      final search = searchText.toLowerCase();
-      return entrega.cardName.toLowerCase().contains(search) == true ||
-             entrega.factura.toString().contains(search) ||
-             (entrega.addressEntregaFac.toLowerCase().contains(search) ?? false) ||
-             (entrega.addressEntregaMat.toLowerCase().contains(search) ?? false);
-    }).toList();
+    var filtered =
+        lista.where((entry) {
+          final entrega = entry.value.first;
+          final search = searchText.toLowerCase();
+          return entrega.cardName.toLowerCase().contains(search) == true ||
+              entrega.factura.toString().contains(search) ||
+              (entrega.addressEntregaFac.toLowerCase().contains(search)) ||
+              (entrega.addressEntregaMat.toLowerCase().contains(search));
+        }).toList();
 
     if (sortColumnIndex != null) {
       filtered.sort((a, b) {
@@ -24,20 +25,21 @@ class EntregasFilterUtils {
         int cmp = 0;
         switch (sortColumnIndex) {
           case 0: // Cliente
-            cmp = (ea.cardName ?? '').compareTo(eb.cardName ?? '');
+            cmp = (ea.cardName).compareTo(eb.cardName);
             break;
           case 1: // Factura
             cmp = ea.factura.compareTo(eb.factura);
             break;
           case 2: // Fecha
-            cmp = (ea.fechaEntrega ?? DateTime(1900)).compareTo(eb.fechaEntrega ?? DateTime(1900));
+            cmp = (ea.fechaEntrega).compareTo(eb.fechaEntrega);
             break;
           case 3: // Dirección
-            cmp = (ea.addressEntregaMat ?? '').compareTo(eb.addressEntregaFac ?? '');
+            cmp = (ea.addressEntregaMat).compareTo(eb.addressEntregaFac);
             break;
           case 4: // Estado
-            cmp = (a.value.every((e) => e.fueEntregado == 1) ? 1 : 0)
-                .compareTo(b.value.every((e) => e.fueEntregado == 1) ? 1 : 0);
+            cmp = (a.value.every((e) => e.fueEntregado == 1) ? 1 : 0).compareTo(
+              b.value.every((e) => e.fueEntregado == 1) ? 1 : 0,
+            );
             break;
         }
         return sortAscending ? cmp : -cmp;
@@ -47,7 +49,9 @@ class EntregasFilterUtils {
   }
 
   /// Agrupa las entregas por número de documento
-  static Map<int, List<EntregaEntity>> agruparEntregas(List<EntregaEntity> entregas) {
+  static Map<int, List<EntregaEntity>> agruparEntregas(
+    List<EntregaEntity> entregas,
+  ) {
     final Map<int, List<EntregaEntity>> entregasAgrupadas = {};
     for (final entrega in entregas) {
       if (entregasAgrupadas.containsKey(entrega.docNum)) {

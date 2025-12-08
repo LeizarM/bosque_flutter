@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:ui';
 
 import 'package:bosque_flutter/core/state/empleados_dependientes_provider.dart';
 import 'package:bosque_flutter/core/state/user_provider.dart';
@@ -7,7 +6,6 @@ import 'package:bosque_flutter/core/utils/formatear_fecha.dart';
 import 'package:bosque_flutter/core/utils/validators.dart';
 import 'package:bosque_flutter/domain/entities/persona_entity.dart';
 import 'package:bosque_flutter/domain/entities/zona_entity.dart';
-import 'package:bosque_flutter/presentation/widgets/dependientes/confirm_dialogs.dart';
 import 'package:bosque_flutter/presentation/widgets/dependientes/formulario_ciudad.dart';
 import 'package:bosque_flutter/presentation/widgets/dependientes/formulario_pais.dart';
 import 'package:bosque_flutter/presentation/widgets/dependientes/formulario_zona.dart';
@@ -33,7 +31,7 @@ class FormularioPersona extends ConsumerStatefulWidget {
   final bool showActions;
 
   const FormularioPersona({
-    Key? key,
+    super.key,
     required this.title,
     this.formKey,
     this.persona,
@@ -42,7 +40,7 @@ class FormularioPersona extends ConsumerStatefulWidget {
     required this.onSave,
     required this.onCancel,
     this.showActions = true,
-  }) : super(key: key);
+  });
   @override
   FormularioPersonaState createState() => FormularioPersonaState();
 }
@@ -218,12 +216,12 @@ class FormularioPersonaState extends ConsumerState<FormularioPersona> {
       _personaTemp = persona;
 
       // 2. Actualizar los controladores de texto
-      _controllers['nombres']?.text = persona.nombres ?? '';
-      _controllers['apPaterno']?.text = persona.apPaterno ?? '';
-      _controllers['apMaterno']?.text = persona.apMaterno ?? '';
-      _controllers['direccion']?.text = persona.direccion ?? '';
-      _controllers['ciNumero']?.text = persona.ciNumero ?? '';
-      _controllers['lugarNacimiento']?.text = persona.lugarNacimiento ?? '';
+      _controllers['nombres']?.text = persona.nombres;
+      _controllers['apPaterno']?.text = persona.apPaterno;
+      _controllers['apMaterno']?.text = persona.apMaterno;
+      _controllers['direccion']?.text = persona.direccion;
+      _controllers['ciNumero']?.text = persona.ciNumero;
+      _controllers['lugarNacimiento']?.text = persona.lugarNacimiento;
 
       // Formato de fechas
       _controllers['ciFechaVencimiento']?.text =

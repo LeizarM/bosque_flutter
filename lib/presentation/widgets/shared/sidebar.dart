@@ -9,6 +9,7 @@ class AppSidebar extends ConsumerStatefulWidget {
   const AppSidebar({super.key});
 
   @override
+  // ignore: library_private_types_in_public_api
   _AppSidebarState createState() => _AppSidebarState();
 }
 

@@ -1,15 +1,15 @@
 import 'package:bosque_flutter/core/state/Consumo_tigo_provider.dart';
+import 'package:bosque_flutter/core/utils/console_log.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class FacturasTigoResumenScreen extends ConsumerWidget {
   final String periodoCobrado;
-  const FacturasTigoResumenScreen({Key? key, required this.periodoCobrado})
-    : super(key: key);
+  const FacturasTigoResumenScreen({super.key, required this.periodoCobrado});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    print(
+    console(
       'Entrando a FacturasTigoResumenScreen con periodoCobrado: $periodoCobrado',
     );
     final tigoResumenPorCuenta = ref.watch(tigoResumenXCuenta(periodoCobrado));
@@ -116,8 +116,7 @@ class FacturasTigoResumenScreen extends ConsumerWidget {
                                                 alignment: Alignment.centerLeft,
                                                 child: Text(
                                                   resumenCuenta.nombreCompleto
-                                                          ?.toString() ??
-                                                      '',
+                                                      .toString(),
                                                 ),
                                               ),
                                             ),
@@ -127,11 +126,8 @@ class FacturasTigoResumenScreen extends ConsumerWidget {
                                                     Alignment.centerRight,
                                                 child: Text(
                                                   resumenCuenta
-                                                          .totalCobradoXCuenta
-                                                          ?.toStringAsFixed(
-                                                            2,
-                                                          ) ??
-                                                      '',
+                                                      .totalCobradoXCuenta
+                                                      .toStringAsFixed(2),
                                                 ),
                                               ),
                                             ),

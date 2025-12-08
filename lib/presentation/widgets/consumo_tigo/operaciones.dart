@@ -5,9 +5,9 @@ class OperacionesTigoWidget extends ConsumerWidget {
   final List<Widget> accionesExtra;
 
   const OperacionesTigoWidget({
-    Key? key,
+    super.key,
     required this.accionesExtra,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {

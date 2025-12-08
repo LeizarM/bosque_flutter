@@ -1,6 +1,5 @@
-import 'dart:ui';
-
 import 'package:bosque_flutter/core/state/empleados_dependientes_provider.dart';
+import 'package:bosque_flutter/core/utils/console_log.dart';
 import 'package:bosque_flutter/domain/entities/garante_referencia.dart';
 import 'package:bosque_flutter/domain/entities/tipo_garante_referencia_entity.dart';
 import 'package:bosque_flutter/presentation/widgets/dependientes/confirm_dialogs.dart';
@@ -45,8 +44,9 @@ class GaranteReferenciaSeccion extends ConsumerWidget {
         .map((word) {
           if (word.isEmpty) return word;
           final especiales = ['s.a.', 's.r.l.', 'ipx', 'esppapel'];
-          if (especiales.contains(word.toLowerCase()))
+          if (especiales.contains(word.toLowerCase())) {
             return word.toUpperCase();
+          }
           return _capitalize(word);
         })
         .join(' ');
@@ -117,16 +117,10 @@ class GaranteReferenciaSeccion extends ConsumerWidget {
             cargarGarRef.when(
               // Dentro del cargarGarRef.when(data: ...)
               data: (garanteRef) {
-                print('GARANTE REF: $garanteRef');
+                console('GARANTE REF: $garanteRef');
                 // Si quieres filtrar por tipo desde un filtro externo:
-                List<GaranteReferenciaEntity> listaFiltrada = garanteRef;
                 if (filtroTipo == 'gar') {
-                  listaFiltrada =
-                      garanteRef.where((g) => g.tipo == 'gar').toList();
-                } else if (filtroTipo == 'ref') {
-                  listaFiltrada =
-                      garanteRef.where((g) => g.tipo == 'ref').toList();
-                }
+                } else if (filtroTipo == 'ref') {}
 
                 // Si quieres mostrar ambos bloques separados:
                 final garantes =
@@ -329,11 +323,12 @@ class GaranteReferenciaSeccion extends ConsumerWidget {
                                     codEmpleado,
                                   ).future,
                                 );
-                                if (context.mounted)
+                                if (context.mounted) {
                                   AppSnackbarCustom.showDelete(
                                     context,
                                     'Garante/Referencia eliminada correctamente',
                                   );
+                                }
                               }
                             }),
                       ),

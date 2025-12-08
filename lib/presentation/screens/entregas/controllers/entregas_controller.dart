@@ -1,3 +1,4 @@
+import 'package:bosque_flutter/core/utils/console_log.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
@@ -12,7 +13,9 @@ class EntregasController {
   EntregasController(this.ref, this.context);
 
   Future<bool> checkLocationPermission() async {
-    return await ref.read(entregasNotifierProvider.notifier).verificarServiciosLocalizacion();
+    return await ref
+        .read(entregasNotifierProvider.notifier)
+        .verificarServiciosLocalizacion();
   }
 
   Future<int> getCodEmpleado() async {
@@ -20,7 +23,9 @@ class EntregasController {
   }
 
   Future<void> cargarEntregas(int codEmpleado) async {
-    await ref.read(entregasNotifierProvider.notifier).cargarEntregas(codEmpleado);
+    await ref
+        .read(entregasNotifierProvider.notifier)
+        .cargarEntregas(codEmpleado);
   }
 
   Future<bool> solicitarPermisosUbicacion() async {
@@ -43,20 +48,23 @@ class EntregasController {
       if (permission == LocationPermission.deniedForever) {
         final irAConfiguracion = await showDialog<bool>(
           context: context,
-          builder: (context) => AlertDialog(
-            title: const Text('Permisos de ubicación necesarios'),
-            content: const Text('Los permisos de ubicación son necesarios para marcar entregas. Por favor, habilítalos en la configuración de la aplicación.'),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context, false),
-                child: const Text('Cancelar'),
+          builder:
+              (context) => AlertDialog(
+                title: const Text('Permisos de ubicación necesarios'),
+                content: const Text(
+                  'Los permisos de ubicación son necesarios para marcar entregas. Por favor, habilítalos en la configuración de la aplicación.',
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context, false),
+                    child: const Text('Cancelar'),
+                  ),
+                  TextButton(
+                    onPressed: () => Navigator.pop(context, true),
+                    child: const Text('Ir a Configuración'),
+                  ),
+                ],
               ),
-              TextButton(
-                onPressed: () => Navigator.pop(context, true),
-                child: const Text('Ir a Configuración'),
-              ),
-            ],
-          ),
         );
         if (irAConfiguracion == true) {
           await Geolocator.openAppSettings();
@@ -68,7 +76,7 @@ class EntregasController {
       }
       return true;
     } catch (e) {
-      print('Error al solicitar permisos de ubicación: ${e.toString()}');
+      console('Error al solicitar permisos de ubicación: ${e.toString()}');
       return false;
     }
   }
@@ -81,12 +89,17 @@ class EntregasController {
     await ref.read(entregasNotifierProvider.notifier).finalizarRuta();
   }
 
-  Future<void> marcarEntregaCompletada(EntregaEntity entrega, String? observaciones) async {
-    await ref.read(entregasNotifierProvider.notifier).marcarEntregaCompletada(
-      entrega.idEntrega,
-      "",
-      observaciones: observaciones,
-    );
+  Future<void> marcarEntregaCompletada(
+    EntregaEntity entrega,
+    String? observaciones,
+  ) async {
+    await ref
+        .read(entregasNotifierProvider.notifier)
+        .marcarEntregaCompletada(
+          entrega.idEntrega,
+          "",
+          observaciones: observaciones,
+        );
   }
 
   void mostrarMensajeError(String mensaje) {

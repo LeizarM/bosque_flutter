@@ -1,6 +1,5 @@
 import 'package:bosque_flutter/core/constants/app_constants.dart';
 import 'package:bosque_flutter/core/state/empleados_dependientes_provider.dart';
-import 'package:bosque_flutter/core/state/notifiers/dependientes_notifier.dart';
 import 'package:bosque_flutter/core/state/user_provider.dart';
 import 'package:bosque_flutter/core/utils/descargar_reportes_jasper.dart';
 import 'package:bosque_flutter/core/utils/responsive_utils_bosque.dart';
@@ -27,22 +26,18 @@ import 'package:flutter/services.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_speed_dial/flutter_speed_dial.dart';
-import 'package:latlong2/latlong.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 //checkpoint
 class DependienteScreen extends ConsumerStatefulWidget {
   final int codEmpleado;
-  const DependienteScreen({Key? key, required this.codEmpleado})
-    : super(key: key);
+  const DependienteScreen({super.key, required this.codEmpleado});
 
   @override
   ConsumerState<DependienteScreen> createState() => _DependienteScreenState();
 }
 
 class _DependienteScreenState extends ConsumerState<DependienteScreen> {
-  final MapController _viewMapController = MapController();
-
   bool _habilitarEdicion = false;
   bool _permisosVerificados = false;
   int? _expandedIndex;
@@ -50,8 +45,10 @@ class _DependienteScreenState extends ConsumerState<DependienteScreen> {
   late int _codEmpleado;
   String _vistaSeleccionada = 'dependientes'; // o 'garantes'
   // Para el estado expandido y operación seleccionada de garantes/referencias
-  Map<String, bool> _estadoExpandidoGarante = {};
-  Map<String, String?> _selectedOperationGarante = {'garanteReferencia': null};
+  final Map<String, bool> _estadoExpandidoGarante = {};
+  final Map<String, String?> _selectedOperationGarante = {
+    'garanteReferencia': null,
+  };
   //mostrar operaciones seleccionadas por seccion
   // Agregar a las variables de estado
   Map<String, String?> selectedOperation = {
@@ -62,8 +59,6 @@ class _DependienteScreenState extends ConsumerState<DependienteScreen> {
     return _mapControllers.putIfAbsent(codPersona, () => MapController());
   }
 
-  List<DependienteEntity> _dependientes = [];
-  List<ParentescoEntity> _parentescos = [];
   List<CiExpedidoEntity> listCiExpedido = [];
   List<EstadoCivilEntity> listEstCivil = [];
   List<PaisEntity> listPaises = [];
@@ -74,8 +69,6 @@ class _DependienteScreenState extends ConsumerState<DependienteScreen> {
   Map<int, PersonaEntity?> personasEdit = {};
   List<bool> _editingStates = [];
   String _datoPersona = '';
-  bool _isLoading = true;
-  String? _errorMessage;
   Map<String, bool> estadoExpandido = {
     'empleado': true,
     'persona': true,
@@ -132,8 +125,6 @@ class _DependienteScreenState extends ConsumerState<DependienteScreen> {
 
   Future<void> _initAllLoad() async {
     try {
-      setState(() => _isLoading = true);
-
       // Cargar empleado actual
       final empleadosAsync = await ref.read(
         empleadosDependientesProvider(_codEmpleado).future,
@@ -147,23 +138,15 @@ class _DependienteScreenState extends ConsumerState<DependienteScreen> {
       final dependientes = await ref.read(
         dependientesProvider(_codEmpleado).future,
       );
-      final parentescos = await ref.read(parentescosProvider.future);
-
       if (!mounted) return;
 
       setState(() {
         _datoPersona = empleadoActual.persona.datoPersona ?? '';
-        _dependientes = dependientes;
-        _parentescos = parentescos;
         _editingStates = List.filled(dependientes.length, false);
-        _isLoading = false;
       });
     } catch (e) {
       if (!mounted) return;
-      setState(() {
-        _errorMessage = e.toString();
-        _isLoading = false;
-      });
+      setState(() {});
     }
   }
 
@@ -183,7 +166,6 @@ class _DependienteScreenState extends ConsumerState<DependienteScreen> {
     } catch (e) {
       if (mounted) {
         setState(() {
-          _errorMessage = e.toString();
           _habilitarEdicion = false;
           _permisosVerificados = true;
         });
@@ -214,9 +196,7 @@ class _DependienteScreenState extends ConsumerState<DependienteScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final dependientesAsync = ref.watch(
-      dependientesProvider(widget.codEmpleado),
-    );
+    ref.watch(dependientesProvider(widget.codEmpleado));
 
     final isDesktop = MediaQuery.of(context).size.width >= 900;
 
@@ -613,7 +593,7 @@ class _DependienteScreenState extends ConsumerState<DependienteScreen> {
                           ref.invalidate(empleadosDependientesProvider);
                         } catch (e) {
                           // 3. Relanzar la excepción para que el catch del _handleSubmit la maneje
-                          throw e;
+                          rethrow;
                         }
                       },
                       onCancel: () => Navigator.of(context).pop(),
@@ -880,7 +860,6 @@ class _DependienteScreenState extends ConsumerState<DependienteScreen> {
                     );
                     final ScrollController telefonoScrollController =
                         ScrollController();
-                    final isDesktop = MediaQuery.of(context).size.width >= 900;
                     return telefonosAsync.when(
                       data: (telefonos) {
                         if (telefonos.isEmpty) {
@@ -1014,7 +993,7 @@ class _DependienteScreenState extends ConsumerState<DependienteScreen> {
                                                         content:
                                                             '¿Está seguro que desea eliminar este teléfono?',
                                                         onConfirm: () async {
-                                                          await ref.read(
+                                                          ref.read(
                                                             eliminarTelefonoProvider(
                                                               telefono
                                                                   .codTelefono,
@@ -1128,7 +1107,6 @@ class _DependienteScreenState extends ConsumerState<DependienteScreen> {
     void Function(TelefonoEntity telefono) mostrarDialogoEditarTelefono,
   ) {
     final colorScheme = Theme.of(context).colorScheme;
-    final isDesktop = MediaQuery.of(context).size.width >= 900;
 
     return Center(
       child: Container(
@@ -1599,7 +1577,7 @@ class _DependienteScreenState extends ConsumerState<DependienteScreen> {
                                                                                           content:
                                                                                               '¿Está seguro que desea eliminar este teléfono?',
                                                                                           onConfirm: () async {
-                                                                                            await ref.read(
+                                                                                            ref.read(
                                                                                               eliminarTelefonoProvider(
                                                                                                 telefono.codTelefono,
                                                                                               ),
@@ -1768,42 +1746,6 @@ class _DependienteScreenState extends ConsumerState<DependienteScreen> {
           ],
         ),
       ),
-    );
-  }
-
-  //boton para reportes
-  Widget _buildReporteDependientesXEdadBtn(
-    BuildContext context,
-    WidgetRef ref,
-  ) {
-    // 1. Define la función de descarga que encapsula la lógica de Riverpod
-    Future<Uint8List> downloadFunction() async {
-      // Invalida el provider para asegurar la nueva descarga
-      ref.invalidate(jasperPdfDependientesXEdad);
-
-      // Lee y espera el resultado del provider
-      return ref.read(jasperPdfDependientesXEdad.future);
-    }
-
-    // 2. RETORNA EL WIDGET DE PERMISOS que envuelve el botón
-    return PermissionWidget(
-      // Este nombre debe coincidir exactamente con el permiso en tu backend/provider
-      buttonName: 'btnRptDepXEDAD', // Ejemplo, usa el nombre real
-      // El 'child' es el IconButton que solo se mostrará si tiene permiso
-      child: IconButton(
-        icon: const Icon(Icons.picture_as_pdf, color: Colors.red),
-        tooltip: 'Generar Reporte Dependientes por Edad',
-        onPressed: () async {
-          await mostrarReportePdf(
-            context: context,
-            downloadFunction: downloadFunction,
-            filename: 'RptDependientesPorEdad.pdf',
-          );
-        },
-      ),
-
-      // Opcional: Define qué mostrar si NO tiene permiso (por defecto es SizedBox.shrink)
-      // placeholder: const Opacity(opacity: 0.5, child: Icon(Icons.picture_as_pdf)),
     );
   }
 

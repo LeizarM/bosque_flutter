@@ -8,13 +8,13 @@ class ConfirmDialog extends StatelessWidget {
   final Color? confirmColor;
 
   const ConfirmDialog({
-    Key? key,
+    super.key,
     this.title = 'Confirmar',
     this.content = '¿Está seguro?',
     this.confirmText = 'Confirmar',
     this.cancelText = 'Cancelar',
     this.confirmColor,
-  }) : super(key: key);
+  });
 
   static Future<bool?> show(
     BuildContext context, {

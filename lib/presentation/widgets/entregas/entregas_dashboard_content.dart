@@ -92,10 +92,11 @@ class _EntregasDashboardContentState
     final int totalPages = (allData.length / _itemsPerPage).ceil();
     if (_currentPage > totalPages && totalPages > 0) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted)
+        if (mounted) {
           setState(() {
             _currentPage = 1;
           });
+        }
       });
       return allData.sublist(0, _itemsPerPage.clamp(0, allData.length));
     }
@@ -503,10 +504,12 @@ class _EntregasDashboardContentState
                       },
                       rowColorCallback: (ctx) {
                         final estado = ctx.row.cells['estado']?.value;
-                        if (estado == 'Completo')
+                        if (estado == 'Completo') {
                           return colorScheme.primary.withValues(alpha: 0.08);
-                        if (estado == 'Completado Por Sistema')
+                        }
+                        if (estado == 'Completado Por Sistema') {
                           return colorScheme.error.withValues(alpha: 0.08);
+                        }
                         return colorScheme.tertiary.withValues(alpha: 0.08);
                       },
                     ),
@@ -572,11 +575,12 @@ class _EntregasDashboardContentState
                           )
                           .toList(),
                   onChanged: (v) {
-                    if (v != null)
+                    if (v != null) {
                       setState(() {
                         _itemsPerPage = v;
                         _currentPage = 1;
                       });
+                    }
                   },
                 ),
               ],
@@ -786,11 +790,12 @@ class _EntregasDashboardContentState
                               )
                               .toList(),
                       onChanged: (v) {
-                        if (v != null)
+                        if (v != null) {
                           setState(() {
                             _itemsPerPage = v;
                             _currentPage = 1;
                           });
+                        }
                       },
                     ),
                   ],

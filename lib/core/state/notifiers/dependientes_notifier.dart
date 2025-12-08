@@ -1,3 +1,4 @@
+import 'package:bosque_flutter/core/utils/console_log.dart';
 import 'package:bosque_flutter/data/repositories/ficha_trabajador_impl.dart';
 import 'package:bosque_flutter/domain/entities/dependiente_entity.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -15,16 +16,18 @@ class DependientesNotifier extends AsyncNotifier<List<DependienteEntity>> {
       state = const AsyncValue.loading();
 
       final resultado = await _repository.eliminarDependiente(codDependiente);
-      
+
       if (resultado) {
         state = AsyncValue.data(
-          state.value!.where((d) => d.codDependiente != codDependiente).toList()
+          state.value!
+              .where((d) => d.codDependiente != codDependiente)
+              .toList(),
         );
         return true;
       } else {
         state = AsyncValue.error(
           'No se pudo eliminar el dependiente',
-          StackTrace.current
+          StackTrace.current,
         );
         return false;
       }
@@ -33,21 +36,26 @@ class DependientesNotifier extends AsyncNotifier<List<DependienteEntity>> {
       return false;
     }
   }
-  Future<List<DependienteEntity>> editarDependiente(DependienteEntity dependiente) async {
+
+  Future<List<DependienteEntity>> editarDependiente(
+    DependienteEntity dependiente,
+  ) async {
     try {
       state = const AsyncValue.loading();
       final repo = FichaTrabajadorImpl();
-      
-      print('Enviando dependiente a editar: $dependiente'); // Log para depuración
-      
+
+      console(
+        'Enviando dependiente a editar: $dependiente',
+      ); // Log para depuración
+
       final result = await repo.editarDep(dependiente);
-      
-      print('Resultado de edición: $result'); // Log para depuración
-      
+
+      console('Resultado de edición: $result'); // Log para depuración
+
       state = AsyncValue.data(result);
       return result;
     } catch (e) {
-      print('Error en editarDependiente: $e'); // Log para depuración
+      console('Error en editarDependiente: $e'); // Log para depuración
       state = AsyncValue.error(e, StackTrace.current);
       throw Exception('Error al editar dependiente: $e');
     }

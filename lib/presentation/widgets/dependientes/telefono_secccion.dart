@@ -56,8 +56,9 @@ class _TelefonoSectionState extends ConsumerState<TelefonoSection> {
         .map((word) {
           if (word.isEmpty) return word;
           final especiales = ['s.a.', 's.r.l.', 'ipx', 'esppapel'];
-          if (especiales.contains(word.toLowerCase()))
+          if (especiales.contains(word.toLowerCase())) {
             return word.toUpperCase();
+          }
           return _capitalize(word);
         })
         .join(' ');
@@ -320,11 +321,12 @@ class _TelefonoSectionState extends ConsumerState<TelefonoSection> {
                                       final _ = ref.refresh(
                                         telefonoProvider(widget.codPersona),
                                       );
-                                      if (context.mounted)
+                                      if (context.mounted) {
                                         AppSnackbarCustom.showDelete(
                                           context,
                                           'Teléfono eliminado correctamente',
                                         );
+                                      }
                                     }
                                   }),
                             ),
@@ -512,11 +514,12 @@ class _TelefonoSectionState extends ConsumerState<TelefonoSection> {
                                                       widget.codPersona,
                                                     ),
                                                   );
-                                                  if (context.mounted)
+                                                  if (context.mounted) {
                                                     AppSnackbarCustom.showDelete(
                                                       context,
                                                       'Teléfono eliminado correctamente',
                                                     );
+                                                  }
                                                 }
                                               }),
                                         ),

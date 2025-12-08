@@ -1,4 +1,5 @@
 import 'package:bosque_flutter/core/state/Consumo_tigo_provider.dart';
+import 'package:bosque_flutter/core/utils/console_log.dart';
 import 'package:bosque_flutter/presentation/widgets/consumo_tigo/formulario_socios.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -16,7 +17,9 @@ class GruposTigoScreen extends ConsumerStatefulWidget {
 class _GruposTigoScreenState extends ConsumerState<GruposTigoScreen> {
   @override
   Widget build(BuildContext context) {
-    print ('GruposTigoScreen build - periodoCobrado: ${widget.periodoCobrado}');
+    console(
+      'GruposTigoScreen build - periodoCobrado: ${widget.periodoCobrado}',
+    );
     final gruposAsync = ref.watch(obtenerGruposTigo(widget.periodoCobrado));
 
     final isMobile = ResponsiveUtilsBosque.isMobile(context);
@@ -61,7 +64,9 @@ class _GruposTigoScreenState extends ConsumerState<GruposTigoScreen> {
             if (isMobile) {
               return _buildGruposListMobile(
                 grupos: grupos,
-                onEditarGrupo: (grupo) => _mostrarFormularioGrupo(context, ref, grupo: grupo),
+                onEditarGrupo:
+                    (grupo) =>
+                        _mostrarFormularioGrupo(context, ref, grupo: grupo),
                 onEliminarGrupo: (grupo) => _eliminarGrupo(context, ref, grupo),
               );
             } else {
@@ -72,7 +77,11 @@ class _GruposTigoScreenState extends ConsumerState<GruposTigoScreen> {
                   children: [
                     const Text(
                       'Listado de Grupos',
-                      style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.blueGrey),
+                      style: TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.blueGrey,
+                      ),
                     ),
                     const SizedBox(height: 18),
                     Expanded(
@@ -81,8 +90,14 @@ class _GruposTigoScreenState extends ConsumerState<GruposTigoScreen> {
                           constraints: const BoxConstraints(maxWidth: 900),
                           child: _buildGruposTable(
                             grupos: grupos,
-                            onEditarGrupo: (grupo) => _mostrarFormularioGrupo(context, ref, grupo: grupo),
-                            onEliminarGrupo: (grupo) => _eliminarGrupo(context, ref, grupo),
+                            onEditarGrupo:
+                                (grupo) => _mostrarFormularioGrupo(
+                                  context,
+                                  ref,
+                                  grupo: grupo,
+                                ),
+                            onEliminarGrupo:
+                                (grupo) => _eliminarGrupo(context, ref, grupo),
                           ),
                         ),
                       ),
@@ -111,55 +126,89 @@ class _GruposTigoScreenState extends ConsumerState<GruposTigoScreen> {
           columnSpacing: 32,
           headingRowColor: MaterialStateProperty.all(Colors.blue[100]),
           columns: const [
-            DataColumn(label: Text('Nombre', style: TextStyle(fontWeight: FontWeight.bold))),
-            DataColumn(label: Text('Teléfono', style: TextStyle(fontWeight: FontWeight.bold))),
-            DataColumn(label: Text('Descripción', style: TextStyle(fontWeight: FontWeight.bold))),
-            DataColumn(label: Text('Acciones', style: TextStyle(fontWeight: FontWeight.bold))),
+            DataColumn(
+              label: Text(
+                'Nombre',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+            ),
+            DataColumn(
+              label: Text(
+                'Teléfono',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+            ),
+            DataColumn(
+              label: Text(
+                'Descripción',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+            ),
+            DataColumn(
+              label: Text(
+                'Acciones',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+            ),
           ],
-          rows: grupos.map((grupo) {
-            final esSinAsignar = (grupo.nombreCompleto ).toUpperCase() == '   SIN ASIGNAR';
-            return DataRow(
-              color: esSinAsignar
-                  ? MaterialStateProperty.all(Colors.red[50])
-                  : null,
-              cells: [
-                DataCell(Row(
-                  children: [
-                    if (esSinAsignar)
-                      const Icon(Icons.warning, color: Colors.red, size: 18),
-                    Text(
-                      grupo.nombreCompleto,
-                      style: TextStyle(
-                        color: esSinAsignar ? Colors.red : null,
-                        fontWeight: esSinAsignar ? FontWeight.bold : null,
+          rows:
+              grupos.map((grupo) {
+                final esSinAsignar =
+                    (grupo.nombreCompleto).toUpperCase() == '   SIN ASIGNAR';
+                return DataRow(
+                  color:
+                      esSinAsignar
+                          ? MaterialStateProperty.all(Colors.red[50])
+                          : null,
+                  cells: [
+                    DataCell(
+                      Row(
+                        children: [
+                          if (esSinAsignar)
+                            const Icon(
+                              Icons.warning,
+                              color: Colors.red,
+                              size: 18,
+                            ),
+                          Text(
+                            grupo.nombreCompleto,
+                            style: TextStyle(
+                              color: esSinAsignar ? Colors.red : null,
+                              fontWeight: esSinAsignar ? FontWeight.bold : null,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    DataCell(Text(grupo.telefono.toString())),
+                    DataCell(Text(grupo.descripcion ?? '-')),
+                    DataCell(
+                      Row(
+                        children: [
+                          Tooltip(
+                            message: 'Editar',
+                            child: IconButton(
+                              icon: const Icon(Icons.edit, color: Colors.blue),
+                              onPressed: () => onEditarGrupo(grupo),
+                            ),
+                          ),
+                          if (!esSinAsignar)
+                            Tooltip(
+                              message: 'Eliminar',
+                              child: IconButton(
+                                icon: const Icon(
+                                  Icons.delete,
+                                  color: Colors.red,
+                                ),
+                                onPressed: () => onEliminarGrupo(grupo),
+                              ),
+                            ),
+                        ],
                       ),
                     ),
                   ],
-                )),
-                DataCell(Text(grupo.telefono.toString() )),
-                DataCell(Text(grupo.descripcion ?? '-')),
-                DataCell(Row(
-                  children: [
-                    Tooltip(
-                      message: 'Editar',
-                      child: IconButton(
-                        icon: const Icon(Icons.edit, color: Colors.blue),
-                        onPressed: () => onEditarGrupo(grupo),
-                      ),
-                    ),
-                    if (!esSinAsignar)
-                      Tooltip(
-                        message: 'Eliminar',
-                        child: IconButton(
-                          icon: const Icon(Icons.delete, color: Colors.red),
-                          onPressed: () => onEliminarGrupo(grupo),
-                        ),
-                      ),
-                  ],
-                )),
-              ],
-            );
-          }).toList(),
+                );
+              }).toList(),
         ),
       ),
     );
@@ -177,13 +226,15 @@ class _GruposTigoScreenState extends ConsumerState<GruposTigoScreen> {
       separatorBuilder: (_, __) => const SizedBox(height: 10),
       itemBuilder: (context, index) {
         final grupo = grupos[index];
-        final esSinAsignar = (grupo.nombreCompleto ).toUpperCase() == '   SIN ASIGNAR';
+        final esSinAsignar =
+            (grupo.nombreCompleto).toUpperCase() == '   SIN ASIGNAR';
         return Card(
           color: esSinAsignar ? Colors.red[50] : Colors.white,
           child: ListTile(
-            leading: esSinAsignar
-                ? const Icon(Icons.warning, color: Colors.red)
-                : const Icon(Icons.group, color: Colors.blueGrey),
+            leading:
+                esSinAsignar
+                    ? const Icon(Icons.warning, color: Colors.red)
+                    : const Icon(Icons.group, color: Colors.blueGrey),
             title: Text(
               grupo.nombreCompleto,
               style: TextStyle(
@@ -194,7 +245,7 @@ class _GruposTigoScreenState extends ConsumerState<GruposTigoScreen> {
             subtitle: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Teléfono: ${grupo.telefono }'),
+                Text('Teléfono: ${grupo.telefono}'),
                 Text('Descripción: ${grupo.descripcion ?? "-"}'),
               ],
             ),
@@ -218,12 +269,18 @@ class _GruposTigoScreenState extends ConsumerState<GruposTigoScreen> {
     );
   }
 
-  void _mostrarFormularioGrupo(BuildContext context, WidgetRef ref, {SocioTigoEntity? grupo}) {
+  void _mostrarFormularioGrupo(
+    BuildContext context,
+    WidgetRef ref, {
+    SocioTigoEntity? grupo,
+  }) {
     showDialog(
       context: context,
       builder: (ctx) {
         return Dialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
           child: FormularioSocios(
             title: grupo == null ? 'Agregar Grupo' : 'Editar Grupo',
             socios: grupo,
@@ -247,31 +304,36 @@ class _GruposTigoScreenState extends ConsumerState<GruposTigoScreen> {
     );
   }
 
-  void _eliminarGrupo(BuildContext context, WidgetRef ref, SocioTigoEntity grupo) async {
+  void _eliminarGrupo(
+    BuildContext context,
+    WidgetRef ref,
+    SocioTigoEntity grupo,
+  ) async {
     final confirmar = await showDialog<bool>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: Row(
-          children: const [
-            Icon(Icons.delete, color: Colors.red),
-            SizedBox(width: 8),
-            Text('Eliminar Grupo'),
-          ],
-        ),
-        content: const Text('¿Está seguro que desea eliminar este grupo?'),
-        actions: [
-          TextButton(
-            child: const Text('Cancelar'),
-            onPressed: () => Navigator.of(ctx).pop(false),
+      builder:
+          (ctx) => AlertDialog(
+            title: Row(
+              children: const [
+                Icon(Icons.delete, color: Colors.red),
+                SizedBox(width: 8),
+                Text('Eliminar Grupo'),
+              ],
+            ),
+            content: const Text('¿Está seguro que desea eliminar este grupo?'),
+            actions: [
+              TextButton(
+                child: const Text('Cancelar'),
+                onPressed: () => Navigator.of(ctx).pop(false),
+              ),
+              ElevatedButton.icon(
+                icon: const Icon(Icons.delete),
+                label: const Text('Eliminar'),
+                style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+                onPressed: () => Navigator.of(ctx).pop(true),
+              ),
+            ],
           ),
-          ElevatedButton.icon(
-            icon: const Icon(Icons.delete),
-            label: const Text('Eliminar'),
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-            onPressed: () => Navigator.of(ctx).pop(true),
-          ),
-        ],
-      ),
     );
     if (confirmar == true) {
       await ref.read(eliminarGrupoTigo(grupo.codCuenta).future);
@@ -280,7 +342,10 @@ class _GruposTigoScreenState extends ConsumerState<GruposTigoScreen> {
       ref.invalidate(obtenerNroSinAsignar(widget.periodoCobrado));
       ref.invalidate(tigoArbolDetallado((null, widget.periodoCobrado)));
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Grupo eliminado'), backgroundColor: Colors.red),
+        const SnackBar(
+          content: Text('Grupo eliminado'),
+          backgroundColor: Colors.red,
+        ),
       );
     }
   }

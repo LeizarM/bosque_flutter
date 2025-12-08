@@ -1,4 +1,3 @@
-import 'dart:ui';
 
 import 'package:bosque_flutter/core/state/user_provider.dart';
 import 'package:bosque_flutter/core/utils/formatear_fecha.dart';
@@ -18,14 +17,14 @@ class FormularioExperienciaLaboral extends ConsumerStatefulWidget{
   final VoidCallback onCancel;
 
   const FormularioExperienciaLaboral({
-    Key? key,
+    super.key,
     required this.title,
     this.experienciaLaboral,
     required this.codEmpleado,
     required this.isEditing,
     required this.onSave,
     required this.onCancel,
-  }) : super(key: key);
+  });
 
   @override
   FormularioExperienciaLaboralState createState() => FormularioExperienciaLaboralState();

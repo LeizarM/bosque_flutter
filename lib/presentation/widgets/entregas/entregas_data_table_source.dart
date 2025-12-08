@@ -25,22 +25,27 @@ class EntregasDataTableSource extends DataTableSource {
       cells: [
         DataCell(
           Text(
-            entregaPrimaria.cardName ?? '',
+            entregaPrimaria.cardName,
             softWrap: true,
             overflow: TextOverflow.visible,
           ),
         ),
         DataCell(Text(entregaPrimaria.factura.toString())),
-        DataCell(Text(
-          entregaPrimaria.fechaEntrega != null
-              ? '${entregaPrimaria.docDate.day.toString().padLeft(2, '0')}/${entregaPrimaria.docDate.month.toString().padLeft(2, '0')}/${entregaPrimaria.docDate.year}'
-              : '',
-        )),
+        DataCell(
+          Text(
+            // ignore: unnecessary_null_comparison
+            entregaPrimaria.fechaEntrega != null
+                ? '${entregaPrimaria.docDate.day.toString().padLeft(2, '0')}/${entregaPrimaria.docDate.month.toString().padLeft(2, '0')}/${entregaPrimaria.docDate.year}'
+                : '',
+          ),
+        ),
         DataCell(
           ConstrainedBox(
-            constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.25),
+            constraints: BoxConstraints(
+              maxWidth: MediaQuery.of(context).size.width * 0.25,
+            ),
             child: Text(
-              entregaPrimaria.addressEntregaMat ?? '',
+              entregaPrimaria.addressEntregaMat,
               softWrap: true,
               overflow: TextOverflow.visible,
             ),
@@ -49,9 +54,10 @@ class EntregasDataTableSource extends DataTableSource {
         DataCell(Text(todosEntregados ? 'Entregado' : 'Pendiente')),
         DataCell(
           ElevatedButton(
-            onPressed: !rutaIniciada || todosEntregados
-                ? null
-                : () => onMarcarEntrega(entregaPrimaria),
+            onPressed:
+                !rutaIniciada || todosEntregados
+                    ? null
+                    : () => onMarcarEntrega(entregaPrimaria),
             child: const Text('Marcar'),
           ),
         ),

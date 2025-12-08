@@ -6,7 +6,6 @@ import 'package:bosque_flutter/core/constants/app_constants.dart';
 import 'package:bosque_flutter/core/state/user_provider.dart';
 import 'package:bosque_flutter/data/repositories/ficha_trabajador_impl.dart';
 import 'package:bosque_flutter/presentation/widgets/shared/permission_widget.dart';
-import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:bosque_flutter/core/state/empleados_dependientes_provider.dart';
@@ -15,7 +14,7 @@ import 'package:bosque_flutter/presentation/screens/screens.dart';
 import 'package:bosque_flutter/core/utils/responsive_utils_bosque.dart';
 
 class EmpleadosDependientesView extends ConsumerStatefulWidget {
-  const EmpleadosDependientesView({Key? key}) : super(key: key);
+  const EmpleadosDependientesView({super.key});
 
   @override
   ConsumerState<EmpleadosDependientesView> createState() =>
@@ -24,7 +23,6 @@ class EmpleadosDependientesView extends ConsumerStatefulWidget {
 
 class _EmpleadosDependientesViewState
     extends ConsumerState<EmpleadosDependientesView> {
-  bool _isListenerAdded = false;
   Timer? _debounce;
   String _searchTerm = "";
   final ScrollController _scrollController = ScrollController();
@@ -60,7 +58,7 @@ class _EmpleadosDependientesViewState
 
   @override
   Widget build(BuildContext context) {
-    final codEmpleado = ref.read(userProvider.notifier).getCodEmpleado();
+    ref.read(userProvider.notifier).getCodEmpleado();
     final empleadosAsync =
         _codEmpleadoUsuario == null
             ? const AsyncValue.loading()
@@ -490,9 +488,8 @@ class _EmpleadosDependientesViewState
                                                                 empleado
                                                                     .codEmpleado,
                                                                 empleado
-                                                                        .dependiente
-                                                                        .codEmpleado ??
-                                                                    0,
+                                                                    .dependiente
+                                                                    .codEmpleado,
                                                               ),
                                                               const SizedBox(
                                                                 width: 8,
@@ -623,10 +620,11 @@ class _EmpleadosDependientesViewState
                                                       filtered.length,
                                                     ),
                                                   );
-                                                  if (start > 1)
+                                                  if (start > 1) {
                                                     pageButtons.add(
                                                       const Text('...'),
                                                     );
+                                                  }
                                                 }
                                                 for (
                                                   int i = start;
@@ -641,10 +639,11 @@ class _EmpleadosDependientesViewState
                                                   );
                                                 }
                                                 if (end < totalPages - 1) {
-                                                  if (end < totalPages - 2)
+                                                  if (end < totalPages - 2) {
                                                     pageButtons.add(
                                                       const Text('...'),
                                                     );
+                                                  }
                                                   pageButtons.add(
                                                     _buildNumberButton(
                                                       totalPages - 1,
@@ -874,10 +873,7 @@ class _EmpleadosDependientesViewState
                                             ),
                                             child: _buildReferenciasButton(
                                               empleado.codEmpleado,
-                                              empleado
-                                                      .dependiente
-                                                      .codEmpleado ??
-                                                  0,
+                                              empleado.dependiente.codEmpleado,
                                             ),
                                           ),
                                         ),
@@ -1179,9 +1175,7 @@ class _EmpleadosDependientesViewState
 
   String getImageUrl(int codEmpleado) {
     final imageVersion = ref.watch(imageVersionProvider);
-    return AppConstants.baseUrl +
-        AppConstants.getImageUrl +
-        '/$codEmpleado.jpg?v=$imageVersion';
+    return '${AppConstants.baseUrl}${AppConstants.getImageUrl}/$codEmpleado.jpg?v=$imageVersion';
     //return AppConstants.baseUrl + AppConstants.getImageUrl + '/$codEmpleado.jpg?timestamp=${DateTime.now().millisecondsSinceEpoch}';
     //return "http://localhost:9223/fichaTrabajador/uploads/img/$codEmpleado.jpg?timestamp=${DateTime.now().millisecondsSinceEpoch}";
   }
@@ -1648,9 +1642,6 @@ class _EmpleadosDependientesViewState
                                                                                             ),
                                                                                       ),
                                                                                       ElevatedButton(
-                                                                                        child: const Text(
-                                                                                          'Rechazar',
-                                                                                        ),
                                                                                         style: ElevatedButton.styleFrom(
                                                                                           backgroundColor:
                                                                                               Colors.red,
@@ -1660,6 +1651,9 @@ class _EmpleadosDependientesViewState
                                                                                               ctx,
                                                                                               true,
                                                                                             ),
+                                                                                        child: const Text(
+                                                                                          'Rechazar',
+                                                                                        ),
                                                                                       ),
                                                                                     ],
                                                                                   ),

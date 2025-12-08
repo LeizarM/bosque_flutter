@@ -2011,9 +2011,9 @@ class _PermissionsSelectionDialogState
     // Inicializar todos los permisos como no seleccionados
     selectedPermissions = {};
     modules.forEach((module, views) {
-      views.forEach((view) {
+      for (var view in views) {
         selectedPermissions['$module - $view'] = false;
-      });
+      }
     });
   }
 
@@ -2065,11 +2065,11 @@ class _PermissionsSelectionDialogState
                       },
                       contentPadding: EdgeInsets.zero,
                     );
-                  }).toList(),
+                  }),
                   const SizedBox(height: 8),
                 ],
               );
-            }).toList(),
+            }),
           ],
         ),
       ),
@@ -2276,7 +2276,7 @@ class _AssignPermissionsDialogState
                       children: [
                         ...permisos.map((permiso) {
                           return _buildPermissionTreeItem(permiso, 0, permisos);
-                        }).toList(),
+                        }),
                       ],
                     ),
                   ),
@@ -2679,7 +2679,7 @@ class _AssignPermissionsDialogState
         if (isExpanded && hasChildren)
           ...children.map((child) {
             return _buildPermissionTreeItem(child, level + 1, allPermisos);
-          }).toList(),
+          }),
       ],
     );
   }

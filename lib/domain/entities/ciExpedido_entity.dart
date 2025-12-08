@@ -1,3 +1,4 @@
+// ignore: file_names
 class CiExpedidoEntity {
   final String codTipos;
   final String nombre;

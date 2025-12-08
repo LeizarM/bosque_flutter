@@ -158,7 +158,7 @@ class CargoModel {
     "estadoPadre": estadoPadre,
     "esVisible": esVisible,
     "items":
-        items != null ? items!.map((item) => item.toJson()).toList() : null,
+        items?.map((item) => item.toJson()).toList(),
     "codCargoPadreOriginal": codCargoPadreOriginal,
     "codEmpleado": codEmpleado,
     "nombreCompleto": nombreCompleto,

@@ -54,7 +54,7 @@ class _OrganigramaCustomState extends State<OrganigramaCustom> {
     }
   }
 
-  List<CargoEntity> _nodosHuerfanos = [];
+  final List<CargoEntity> _nodosHuerfanos = [];
 
   void _buildGraph() {
     graph.nodes.clear();
@@ -175,7 +175,7 @@ class _OrganigramaCustomState extends State<OrganigramaCustom> {
               as RenderRepaintBoundary;
 
       // Capturar la imagen COMPLETA con ALTA CALIDAD (pixelRatio: 3.0 para mejor resolución)
-      // Esto capturará TODO el contenido del RepaintBoundary, no solo lo visible
+      // Esto capturará todo el contenido del RepaintBoundary, no solo lo visible
       ui.Image originalImage = await boundary.toImage(pixelRatio: 3.0);
 
       // Convertir directamente a PNG sin redimensionar (mantener calidad original)
@@ -241,7 +241,7 @@ class _OrganigramaCustomState extends State<OrganigramaCustom> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              'Organigrama descargado exitosamente\nResolución: ${ancho}x${alto} pixels',
+              'Organigrama descargado exitosamente\nResolución: ${ancho}x$alto pixels',
             ),
             backgroundColor: Colors.green,
             duration: const Duration(seconds: 4),
@@ -271,7 +271,7 @@ class _OrganigramaCustomState extends State<OrganigramaCustom> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            'Organigrama generado exitosamente\nResolución: ${ancho}x${alto} pixels\n(Imagen lista para compartir)',
+            'Organigrama generado exitosamente\nResolución: ${ancho}x$alto pixels\n(Imagen lista para compartir)',
           ),
           backgroundColor: Colors.orange,
           duration: const Duration(seconds: 4),

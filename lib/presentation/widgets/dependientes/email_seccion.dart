@@ -270,11 +270,12 @@ class _EmailSeccionState extends ConsumerState<EmailSeccion> {
                                       final _ = await ref.refresh(
                                         emailProvider(widget.codPersona).future,
                                       );
-                                      if (context.mounted)
+                                      if (context.mounted) {
                                         AppSnackbarCustom.showDelete(
                                           context,
                                           'Email eliminado correctamente',
                                         );
+                                      }
                                     }
                                   }),
                             ),
@@ -434,11 +435,12 @@ class _EmailSeccionState extends ConsumerState<EmailSeccion> {
                                                       widget.codPersona,
                                                     ).future,
                                                   );
-                                                  if (context.mounted)
+                                                  if (context.mounted) {
                                                     AppSnackbarCustom.showDelete(
                                                       context,
                                                       'Email eliminado correctamente',
                                                     );
+                                                  }
                                                 }
                                               }),
                                         ),

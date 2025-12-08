@@ -1,6 +1,6 @@
 import 'dart:io';
-import 'dart:typed_data';
 import 'package:bosque_flutter/core/state/user_provider.dart';
+import 'package:bosque_flutter/core/utils/console_log.dart';
 import 'package:bosque_flutter/domain/entities/deposito_cheque_entity.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -600,6 +600,7 @@ class DepositosChequesNotifier extends StateNotifier<DepositosChequesState> {
       }
 
       bool allOk = true;
+      // ignore: unused_local_variable
       int notasGuardadas = 0;
 
       // Obtener codUsuario desde userProvider
@@ -714,7 +715,7 @@ class DepositosChequesNotifier extends StateNotifier<DepositosChequesState> {
         ),
       );
 
-      print('Error detallado: $e');
+      console('Error detallado: $e');
     }
   }
 
@@ -840,10 +841,6 @@ class DepositosChequesNotifier extends StateNotifier<DepositosChequesState> {
       // En web, imitar el comportamiento de Angular
       final blob = html.Blob([bytes]);
       final url = html.Url.createObjectUrlFromBlob(blob);
-      final anchor =
-          html.AnchorElement(href: url)
-            ..setAttribute('download', fileName)
-            ..click();
 
       html.Url.revokeObjectUrl(url);
 
@@ -900,7 +897,7 @@ class DepositosChequesNotifier extends StateNotifier<DepositosChequesState> {
         // await Share.shareFiles([file.path], text: 'Imagen de depósito');
 
         // O simplemente mostrar un mensaje de éxito
-        print('Imagen guardada en: ${file.path}');
+        console('Imagen guardada en: ${file.path}');
       } else {
         throw Exception(
           'Plataforma no soportada para guardar imágenes localmente',

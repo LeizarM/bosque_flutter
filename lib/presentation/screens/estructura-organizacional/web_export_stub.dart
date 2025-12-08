@@ -3,6 +3,8 @@
 
 import 'dart:typed_data';
 
+import 'package:bosque_flutter/core/utils/console_log.dart';
+
 /// Interfaz para descargar archivos en diferentes plataformas
 abstract class ExportManager {
   /// Descarga un archivo PNG
@@ -14,7 +16,7 @@ class ExportManagerStub implements ExportManager {
   @override
   Future<void> descargarPNG(Uint8List bytes, String nombreArchivo) async {
     // Por ahora solo registramos que se generó exitosamente
-    print('Organigrama generado: $nombreArchivo (${bytes.length} bytes)');
+    console('Organigrama generado: $nombreArchivo (${bytes.length} bytes)');
   }
 }
 

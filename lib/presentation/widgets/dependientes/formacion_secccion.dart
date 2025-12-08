@@ -1,5 +1,3 @@
-import 'dart:ui';
-
 import 'package:bosque_flutter/core/state/empleados_dependientes_provider.dart';
 import 'package:bosque_flutter/domain/entities/formacion_entity.dart';
 import 'package:bosque_flutter/domain/entities/tipo_duracion_formacion_entity.dart';
@@ -45,8 +43,9 @@ class FormacionSecccion extends ConsumerWidget {
         .map((word) {
           if (word.isEmpty) return word;
           final especiales = ['s.a.', 's.r.l.', 'ipx', 'esppapel'];
-          if (especiales.contains(word.toLowerCase()))
+          if (especiales.contains(word.toLowerCase())) {
             return word.toUpperCase();
+          }
           return _capitalize(word);
         })
         .join(' ');
@@ -294,11 +293,12 @@ class FormacionSecccion extends ConsumerWidget {
                               final _ = await ref.refresh(
                                 formacionProvider(codEmpleado).future,
                               );
-                              if (context.mounted)
+                              if (context.mounted) {
                                 AppSnackbarCustom.showDelete(
                                   context,
                                   'Formación eliminada correctamente',
                                 );
+                              }
                             }
                           }),
                     ),
@@ -409,6 +409,7 @@ class FormacionSecccion extends ConsumerWidget {
                     icon: Icons.calendar_today,
                     etiqueta: 'Fecha de finalización',
                     valor:
+                        // ignore: unnecessary_null_comparison
                         formacion.fechaFormacion != null
                             ? DateFormat(
                               'dd-MM-yyyy',

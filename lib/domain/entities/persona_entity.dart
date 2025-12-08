@@ -50,25 +50,26 @@ class PersonaEntity {
   });
   factory PersonaEntity.vacio() {
     // Definimos una fecha mínima segura para los campos required DateTime
-    final DateTime minDate = DateTime(1900); 
 
     return PersonaEntity(
       codPersona: 0, // CRUCIAL: 0 indica que es una persona nueva/vacía
-      codZona: 0, 
+      codZona: 0,
       nombres: '',
       apPaterno: '',
       apMaterno: '',
-      ciExpedido: 'LP', // Usar un valor por defecto válido (e.g., 'SN' - Sin Expedir)
+      ciExpedido:
+          'LP', // Usar un valor por defecto válido (e.g., 'SN' - Sin Expedir)
       ciFechaVencimiento: null, // Fecha de referencia
       ciNumero: '',
       direccion: '',
-      estadoCivil: 'sol', // Usar un valor por defecto válido (e.g., 'S' - Soltero/a)
+      estadoCivil:
+          'sol', // Usar un valor por defecto válido (e.g., 'S' - Soltero/a)
       fechaNacimiento: null, // Fecha de referencia
       lugarNacimiento: '',
-      nacionalidad: 0, 
+      nacionalidad: 0,
       sexo: 'M', // Usar un valor por defecto válido (e.g., 'M' - Masculino)
       lat: -16.516064598979447, // Coordenadas por defecto (La Paz)
-      lng: -68.13540079367057,  // Coordenadas por defecto (La Paz)
+      lng: -68.13540079367057, // Coordenadas por defecto (La Paz)
       audUsuarioI: 0,
       datoPersona: null,
       pais: null,

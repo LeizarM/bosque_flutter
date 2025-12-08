@@ -1,9 +1,5 @@
-import 'dart:ui';
-
 import 'package:bosque_flutter/core/state/empleados_dependientes_provider.dart';
 import 'package:bosque_flutter/core/utils/responsive_utils_bosque.dart';
-import 'package:bosque_flutter/presentation/widgets/dependientes/info_row.dart';
-import 'package:bosque_flutter/presentation/widgets/dependientes/speed_dial.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -34,8 +30,9 @@ class RelacionLaboralSeccion extends ConsumerWidget {
         .map((word) {
           if (word.isEmpty) return word;
           final especiales = ['s.a.', 's.r.l.', 'ipx', 'esppapel'];
-          if (especiales.contains(word.toLowerCase()))
+          if (especiales.contains(word.toLowerCase())) {
             return word.toUpperCase();
+          }
           return _capitalize(word);
         })
         .join(' ');
@@ -70,7 +67,7 @@ class RelacionLaboralSeccion extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final cargarRelEmp = ref.watch(relacionLaboralProvider(codEmpleado));
     final isDesktop = ResponsiveUtilsBosque.isDesktop(context);
-    final isMobile = ResponsiveUtilsBosque.isMobile(context);
+    ResponsiveUtilsBosque.isMobile(context);
 
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
@@ -153,6 +150,7 @@ class RelacionLaboralSeccion extends ConsumerWidget {
                                   icon: Icons.calendar_today,
                                   etiqueta: 'Fecha de inicio',
                                   valor:
+                                      // ignore: unnecessary_null_comparison
                                       relacionLaboral.fechaIni != null
                                           ? DateFormat(
                                             'dd-MM-yyyy',

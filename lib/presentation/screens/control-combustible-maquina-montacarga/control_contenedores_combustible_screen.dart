@@ -1,3 +1,4 @@
+import 'package:bosque_flutter/core/utils/console_log.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -88,14 +89,14 @@ class _ControlContenedoresCombustibleScreenState
         clavesVistas.add(claveUnica);
         mapaUnico[claveUnica] = contenedor;
       } else {
-        print(
+        console(
           'DEBUG: Duplicado ignorado - $claveUnica (${contenedor.descripcion})',
         );
       }
     }
 
     final resultado = mapaUnico.values.toList();
-    print(
+    console(
       'DEBUG: Contenedores únicos después de filtrado: ${resultado.length}',
     );
 
@@ -749,9 +750,9 @@ class _ControlContenedoresCombustibleScreenState
         );
 
         // Debug detallado de todas las clases
-        print('=== DEBUG CONTENEDORES DETALLADO ===');
-        print('Total elementos originales: ${contenedores.length}');
-        print('Total elementos filtrados: ${contenedoresFiltrados.length}');
+        console('=== DEBUG CONTENEDORES DETALLADO ===');
+        console('Total elementos originales: ${contenedores.length}');
+        console('Total elementos filtrados: ${contenedoresFiltrados.length}');
 
         // Agrupar por clase para ver qué hay
         Map<String, int> clasesCounts = {};
@@ -760,9 +761,9 @@ class _ControlContenedoresCombustibleScreenState
               (clasesCounts[contenedor.clase] ?? 0) + 1;
         }
 
-        print('Distribución por clases:');
+        console('Distribución por clases:');
         clasesCounts.forEach((clase, count) {
-          print('  $clase: $count elementos');
+          console('  $clase: $count elementos');
         });
 
         // Mostrar algunos ejemplos de cada clase
@@ -770,14 +771,14 @@ class _ControlContenedoresCombustibleScreenState
           var ejemplos = contenedoresFiltrados
               .where((c) => c.clase == clase)
               .take(2);
-          print('Ejemplos de $clase:');
+          console('Ejemplos de $clase:');
           for (var ejemplo in ejemplos) {
-            print(
+            console(
               '  - ${ejemplo.descripcion} (ID: ${ejemplo.idContenedor}, Código: ${ejemplo.codigo})',
             );
           }
         }
-        print('=====================================');
+        console('=====================================');
 
         return Column(
           children: [
@@ -911,31 +912,31 @@ class _ControlContenedoresCombustibleScreenState
                             clavesUsadas.add(claveUnica);
                             itemsUnicos[claveUnica] = contenedor;
                           } else {
-                            print(
+                            console(
                               'DUPLICADO ELIMINADO en dropdown: $claveUnica - ${contenedor.descripcion}',
                             );
                           }
                         }
 
-                        print(
+                        console(
                           'DEBUG: Items únicos para dropdown destino: ${itemsUnicos.length}',
                         );
-                        print('DEBUG: Claves: ${itemsUnicos.keys.toList()}');
+                        console('DEBUG: Claves: ${itemsUnicos.keys.toList()}');
 
                         return itemsUnicos.entries.map((entry) {
                           final claveUnica = entry.key;
                           final contenedor = entry.value;
 
                           // Debug específico para ver saldos
-                          print(
+                          console(
                             'CONTENEDOR DESTINO: ${contenedor.descripcion}',
                           );
-                          print('  - Código: ${contenedor.codigo}');
-                          print('  - Sucursal: ${contenedor.codSucursal}');
-                          print(
+                          console('  - Código: ${contenedor.codigo}');
+                          console('  - Sucursal: ${contenedor.codSucursal}');
+                          console(
                             '  - Saldo: ${contenedor.saldoActualCombustible}',
                           );
-                          print('  - Unidad: ${contenedor.unidadMedida}');
+                          console('  - Unidad: ${contenedor.unidadMedida}');
 
                           return DropdownMenuItem<String>(
                             value: claveUnica,
@@ -951,7 +952,7 @@ class _ControlContenedoresCombustibleScreenState
                           );
                         }).toList();
                       } catch (e) {
-                        print('ERROR creando items dropdown destino: $e');
+                        console('ERROR creando items dropdown destino: $e');
                         return <DropdownMenuItem<String>>[];
                       }
                     })();
@@ -968,8 +969,8 @@ class _ControlContenedoresCombustibleScreenState
                     (item) => item.value == valorActual,
                   );
                   if (!esValorValido) {
-                    print('VALOR INVÁLIDO detectado: $valorActual');
-                    print(
+                    console('VALOR INVÁLIDO detectado: $valorActual');
+                    console(
                       'Items disponibles: ${itemsDisponibles.map((e) => e.value).toList()}',
                     );
                     // Limpiar selección si no está disponible
@@ -1010,7 +1011,7 @@ class _ControlContenedoresCombustibleScreenState
                           );
                         } catch (e) {
                           // Si no se encuentra, buscar en toda la lista
-                          print(
+                          console(
                             'FALLBACK: Buscando en lista completa para clave: $newValue',
                           );
                           try {
@@ -1018,11 +1019,11 @@ class _ControlContenedoresCombustibleScreenState
                               (c) =>
                                   '${c.idContenedor}_${c.codigo}' == newValue,
                             );
-                            print(
+                            console(
                               'ENCONTRADO en lista completa: ${contenedorEncontrado.descripcion}',
                             );
                           } catch (e2) {
-                            print(
+                            console(
                               'ERROR: Contenedor no encontrado en ninguna lista: $newValue',
                             );
                             contenedorEncontrado = null;
@@ -1034,15 +1035,15 @@ class _ControlContenedoresCombustibleScreenState
                         });
 
                         if (contenedorEncontrado != null) {
-                          print(
+                          console(
                             'DESTINO SELECCIONADO: ${contenedorEncontrado.descripcion} (${contenedorEncontrado.idContenedor}_${contenedorEncontrado.codigo})',
                           );
-                          print(
+                          console(
                             'SALDO POR SUCURSAL: ${contenedorEncontrado.saldoActualCombustible} ${contenedorEncontrado.unidadMedida} - Sucursal: ${contenedorEncontrado.codSucursal}',
                           );
                         }
                       } catch (e) {
-                        print('ERROR GENERAL en onChanged destino: $e');
+                        console('ERROR GENERAL en onChanged destino: $e');
                         setState(() {
                           _contenedorDestinoSeleccionado = null;
                         });
@@ -1075,7 +1076,7 @@ class _ControlContenedoresCombustibleScreenState
         );
       },
       loading: () {
-        print('=== CARGANDO CONTENEDORES ===');
+        console('=== CARGANDO CONTENEDORES ===');
         return DropdownButtonFormField<String>(
           items: const [],
           onChanged: null,
@@ -1091,8 +1092,8 @@ class _ControlContenedoresCombustibleScreenState
         );
       },
       error: (error, stackTrace) {
-        print('=== ERROR CARGANDO CONTENEDORES ===');
-        print('Error: $error');
+        console('=== ERROR CARGANDO CONTENEDORES ===');
+        console('Error: $error');
         return DropdownButtonFormField<String>(
           items: const [],
           onChanged: null,
@@ -1145,8 +1146,8 @@ class _ControlContenedoresCombustibleScreenState
         tipoMovimiento: _tipoMovimientoSeleccionado!,
       );
 
-      print('DEBUG: Tipo movimiento: $_tipoMovimientoSeleccionado');
-      print('DEBUG: Campos habilitados: $camposHabilitados');
+      console('DEBUG: Tipo movimiento: $_tipoMovimientoSeleccionado');
+      console('DEBUG: Campos habilitados: $camposHabilitados');
 
       // Campo de entrada
       if (camposHabilitados['valorEntrada'] == true) {
@@ -1277,7 +1278,7 @@ class _ControlContenedoresCombustibleScreenState
       }
     }
 
-    print('DEBUG: Total campos creados: ${campos.length}');
+    console('DEBUG: Total campos creados: ${campos.length}');
 
     // Si no hay campos, mostrar un mensaje informativo
     if (campos.isEmpty) {
@@ -1728,7 +1729,7 @@ class _ControlContenedoresCombustibleScreenState
       // Obtener codSucursal del usuario usando el método getCodSucursal
       final userNotifier = ref.read(userProvider.notifier);
       final codSucursalUsuario = await userNotifier.getCodSucursal();
-      print(
+      console(
         'DEBUG: codSucursal obtenido desde getCodSucursal(): $codSucursalUsuario',
       );
 
@@ -1785,27 +1786,27 @@ class _ControlContenedoresCombustibleScreenState
       );
 
       // Mostrar en consola para debug antes de enviar
-      print('=== MOVIMIENTO A REGISTRAR ===');
-      print('tipoMovimiento: ${movimiento.tipoMovimiento}');
-      print('idOrigen: ${movimiento.idOrigen}');
-      print('codigoOrigen: ${movimiento.codigoOrigen}');
-      print('sucursalOrigen: ${movimiento.sucursalOrigen}');
-      print('idDestino: ${movimiento.idDestino}');
-      print('codigoDestino: ${movimiento.codigoDestino}');
-      print('sucursalDestino: ${movimiento.sucursalDestino}');
-      print('codSucursal: ${movimiento.codSucursal}');
-      print('fechaMovimiento: ${movimiento.fechaMovimiento}');
-      print('valor: ${movimiento.valor}');
-      print('valorEntrada: ${movimiento.valorEntrada}');
-      print('valorSalida: ${movimiento.valorSalida}');
-      print('valorSaldo: ${movimiento.valorSaldo}');
-      print('unidadMedida: ${movimiento.unidadMedida}');
-      print('estado: ${movimiento.estado}');
-      print('obs: ${movimiento.obs}');
-      print('codEmpleado: ${movimiento.codEmpleado}');
-      print('idCompraGarrafa: ${movimiento.idCompraGarrafa}');
-      print('audUsuario: ${movimiento.audUsuario}');
-      print('===============================');
+      console('=== MOVIMIENTO A REGISTRAR ===');
+      console('tipoMovimiento: ${movimiento.tipoMovimiento}');
+      console('idOrigen: ${movimiento.idOrigen}');
+      console('codigoOrigen: ${movimiento.codigoOrigen}');
+      console('sucursalOrigen: ${movimiento.sucursalOrigen}');
+      console('idDestino: ${movimiento.idDestino}');
+      console('codigoDestino: ${movimiento.codigoDestino}');
+      console('sucursalDestino: ${movimiento.sucursalDestino}');
+      console('codSucursal: ${movimiento.codSucursal}');
+      console('fechaMovimiento: ${movimiento.fechaMovimiento}');
+      console('valor: ${movimiento.valor}');
+      console('valorEntrada: ${movimiento.valorEntrada}');
+      console('valorSalida: ${movimiento.valorSalida}');
+      console('valorSaldo: ${movimiento.valorSaldo}');
+      console('unidadMedida: ${movimiento.unidadMedida}');
+      console('estado: ${movimiento.estado}');
+      console('obs: ${movimiento.obs}');
+      console('codEmpleado: ${movimiento.codEmpleado}');
+      console('idCompraGarrafa: ${movimiento.idCompraGarrafa}');
+      console('audUsuario: ${movimiento.audUsuario}');
+      console('===============================');
 
       final result = await ref.read(
         registrarMovimientoProvider(movimiento).future,

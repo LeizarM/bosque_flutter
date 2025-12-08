@@ -7,7 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class FacturasTigoView extends ConsumerStatefulWidget {
-  const FacturasTigoView({Key? key}) : super(key: key);
+  const FacturasTigoView({super.key});
 
   @override
   ConsumerState<FacturasTigoView> createState() => _FacturasTigoViewState();

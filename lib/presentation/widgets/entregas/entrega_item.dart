@@ -32,54 +32,61 @@ class _EntregaItemState extends State<EntregaItem> {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    
+
     // Obtener dimensiones responsivas
     final bool isMobile = ResponsiveUtilsBosque.isMobile(context);
-    final bool isTablet = ResponsiveUtilsBosque.isTablet(context);
-    final double horizontalPadding = ResponsiveUtilsBosque.getHorizontalPadding(context);
-    
+    ResponsiveUtilsBosque.isTablet(context);
+    final double horizontalPadding = ResponsiveUtilsBosque.getHorizontalPadding(
+      context,
+    );
+
     // Determinar estado visual
     final bool entregado = widget.todosEntregados;
     final bool parcial = !widget.todosEntregados && widget.algunoEntregado;
-    
+
     // Colores y estilos según el estado
-    final Color backgroundColor = entregado
-        ? colorScheme.primaryContainer.withAlpha(80)
-        : parcial
+    final Color backgroundColor =
+        entregado
+            ? colorScheme.primaryContainer.withAlpha(80)
+            : parcial
             ? colorScheme.secondaryContainer.withAlpha(80)
             : widget.disabled
-                ? colorScheme.surfaceTint.withAlpha(30)
-                : colorScheme.surface;
-    
-    final Color borderColor = entregado
-        ? colorScheme.primary
-        : parcial
+            ? colorScheme.surfaceTint.withAlpha(30)
+            : colorScheme.surface;
+
+    final Color borderColor =
+        entregado
+            ? colorScheme.primary
+            : parcial
             ? colorScheme.secondary
             : widget.disabled
-                ? colorScheme.outline
-                : colorScheme.primary;
-    
-    final IconData iconData = entregado
-        ? Icons.check_circle
-        : parcial
+            ? colorScheme.outline
+            : colorScheme.primary;
+
+    final IconData iconData =
+        entregado
+            ? Icons.check_circle
+            : parcial
             ? Icons.incomplete_circle
             : widget.disabled
-                ? Icons.hourglass_empty
-                : Icons.local_shipping;
-    
-    final Color iconColor = entregado
-        ? colorScheme.primary
-        : parcial
+            ? Icons.hourglass_empty
+            : Icons.local_shipping;
+
+    final Color iconColor =
+        entregado
+            ? colorScheme.primary
+            : parcial
             ? colorScheme.secondary
             : widget.disabled
-                ? colorScheme.outline
-                : colorScheme.primary;
-    
+            ? colorScheme.outline
+            : colorScheme.primary;
+
     // Obtener la lista completa de productos
-    final productos = widget.productosAdicionalesEntrega.isEmpty 
-        ? [widget.entrega] 
-        : widget.productosAdicionalesEntrega;
-    
+    final productos =
+        widget.productosAdicionalesEntrega.isEmpty
+            ? [widget.entrega]
+            : widget.productosAdicionalesEntrega;
+
     // Ajustar tamaños de fuente según el dispositivo
     final double titleFontSize = ResponsiveUtilsBosque.getResponsiveValue(
       context: context,
@@ -88,7 +95,7 @@ class _EntregaItemState extends State<EntregaItem> {
       tablet: 17.0,
       desktop: 18.0,
     );
-    
+
     final double subtitleFontSize = ResponsiveUtilsBosque.getResponsiveValue(
       context: context,
       defaultValue: 14.0,
@@ -96,7 +103,7 @@ class _EntregaItemState extends State<EntregaItem> {
       tablet: 13.5,
       desktop: 14.0,
     );
-    
+
     final double contentFontSize = ResponsiveUtilsBosque.getResponsiveValue(
       context: context,
       defaultValue: 13.0,
@@ -104,7 +111,7 @@ class _EntregaItemState extends State<EntregaItem> {
       tablet: 12.5,
       desktop: 13.0,
     );
-    
+
     return Card(
       margin: EdgeInsets.symmetric(
         horizontal: horizontalPadding / 2,
@@ -137,7 +144,11 @@ class _EntregaItemState extends State<EntregaItem> {
                       shape: BoxShape.circle,
                     ),
                     child: Center(
-                      child: Icon(iconData, color: iconColor, size: isMobile ? 24 : 28),
+                      child: Icon(
+                        iconData,
+                        color: iconColor,
+                        size: isMobile ? 24 : 28,
+                      ),
                     ),
                   ),
                   SizedBox(width: isMobile ? 8 : 12),
@@ -183,7 +194,10 @@ class _EntregaItemState extends State<EntregaItem> {
                   // Estado de entrega
                   if (entregado)
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 5,
+                      ),
                       decoration: BoxDecoration(
                         color: colorScheme.primary,
                         borderRadius: BorderRadius.circular(12),
@@ -199,7 +213,10 @@ class _EntregaItemState extends State<EntregaItem> {
                     )
                   else if (parcial)
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 5,
+                      ),
                       decoration: BoxDecoration(
                         color: colorScheme.secondary,
                         borderRadius: BorderRadius.circular(12),
@@ -215,7 +232,10 @@ class _EntregaItemState extends State<EntregaItem> {
                     )
                   else if (widget.rutaIniciada && !widget.disabled)
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 5,
+                      ),
                       decoration: BoxDecoration(
                         color: colorScheme.secondary,
                         borderRadius: BorderRadius.circular(12),
@@ -231,7 +251,10 @@ class _EntregaItemState extends State<EntregaItem> {
                     )
                   else
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 5,
+                      ),
                       decoration: BoxDecoration(
                         color: colorScheme.surfaceTint.withAlpha(80),
                         borderRadius: BorderRadius.circular(12),
@@ -247,26 +270,26 @@ class _EntregaItemState extends State<EntregaItem> {
                     ),
                 ],
               ),
-              
+
               const SizedBox(height: 16),
               const Divider(height: 1),
               const SizedBox(height: 16),
-              
+
               // Dirección
               _buildInfoSection(
                 context,
                 'Dirección:',
-                widget.entrega.addressEntregaMat.isNotEmpty 
-                    ? widget.entrega.addressEntregaMat 
+                widget.entrega.addressEntregaMat.isNotEmpty
+                    ? widget.entrega.addressEntregaMat
                     : widget.entrega.addressEntregaFac,
                 Icons.location_on,
                 colorScheme.primary,
                 subtitleFontSize,
                 contentFontSize,
               ),
-              
+
               const SizedBox(height: 12),
-              
+
               // Observaciones
               if (widget.entrega.obsF.isNotEmpty)
                 _buildInfoSection(
@@ -278,21 +301,20 @@ class _EntregaItemState extends State<EntregaItem> {
                   subtitleFontSize,
                   contentFontSize,
                 ),
-                
-              if (widget.entrega.obsF.isNotEmpty)
-                const SizedBox(height: 12),
-              
+
+              if (widget.entrega.obsF.isNotEmpty) const SizedBox(height: 12),
+
               // Panel expandible para productos
               _buildExpandableProductPanel(
-                context, 
-                productos, 
+                context,
+                productos,
                 colorScheme,
                 subtitleFontSize,
                 contentFontSize,
               ),
-              
+
               const SizedBox(height: 12),
-              
+
               // Información de entrega completada
               if (entregado && widget.entrega.direccionEntrega != null)
                 Container(
@@ -300,7 +322,9 @@ class _EntregaItemState extends State<EntregaItem> {
                   decoration: BoxDecoration(
                     color: colorScheme.primaryContainer.withAlpha(80),
                     borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: colorScheme.primary.withAlpha(130)),
+                    border: Border.all(
+                      color: colorScheme.primary.withAlpha(130),
+                    ),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -350,9 +374,11 @@ class _EntregaItemState extends State<EntregaItem> {
                     ],
                   ),
                 ),
-              
+
               // Botón para marcar como entregado si no está entregado y la ruta está iniciada
-              if (!widget.todosEntregados && widget.rutaIniciada && !widget.disabled)
+              if (!widget.todosEntregados &&
+                  widget.rutaIniciada &&
+                  !widget.disabled)
                 Padding(
                   padding: const EdgeInsets.only(top: 12),
                   child: Center(
@@ -363,7 +389,10 @@ class _EntregaItemState extends State<EntregaItem> {
                       style: ElevatedButton.styleFrom(
                         backgroundColor: colorScheme.primary,
                         foregroundColor: colorScheme.onPrimary,
-                        minimumSize: Size(isMobile ? 180 : 200, isMobile ? 36 : 40),
+                        minimumSize: Size(
+                          isMobile ? 180 : 200,
+                          isMobile ? 36 : 40,
+                        ),
                       ),
                     ),
                   ),
@@ -374,7 +403,7 @@ class _EntregaItemState extends State<EntregaItem> {
       ),
     );
   }
-  
+
   Widget _buildInfoSection(
     BuildContext context,
     String title,
@@ -417,7 +446,7 @@ class _EntregaItemState extends State<EntregaItem> {
   }
 
   Widget _buildExpandableProductPanel(
-    BuildContext context, 
+    BuildContext context,
     List<EntregaEntity> productos,
     ColorScheme colorScheme,
     double titleSize,
@@ -450,8 +479,8 @@ class _EntregaItemState extends State<EntregaItem> {
                 ),
                 const Spacer(),
                 Icon(
-                  _isProductosExpanded 
-                      ? Icons.keyboard_arrow_up 
+                  _isProductosExpanded
+                      ? Icons.keyboard_arrow_up
                       : Icons.keyboard_arrow_down,
                   color: colorScheme.primary,
                 ),
@@ -459,24 +488,27 @@ class _EntregaItemState extends State<EntregaItem> {
             ),
           ),
         ),
-        
+
         // Contenido expandible
         AnimatedCrossFade(
           firstChild: const SizedBox(height: 0),
           secondChild: Column(
             children: [
               const SizedBox(height: 8),
-              ...productos.map((producto) => _buildProductItem(
-                context,
-                producto,
-                colorScheme,
-                contentSize,
-              )),
+              ...productos.map(
+                (producto) => _buildProductItem(
+                  context,
+                  producto,
+                  colorScheme,
+                  contentSize,
+                ),
+              ),
             ],
           ),
-          crossFadeState: _isProductosExpanded 
-              ? CrossFadeState.showSecond 
-              : CrossFadeState.showFirst,
+          crossFadeState:
+              _isProductosExpanded
+                  ? CrossFadeState.showSecond
+                  : CrossFadeState.showFirst,
           duration: const Duration(milliseconds: 300),
         ),
       ],
@@ -490,22 +522,21 @@ class _EntregaItemState extends State<EntregaItem> {
     double fontSize,
   ) {
     final bool isMobile = ResponsiveUtilsBosque.isMobile(context);
-    
+
     return Container(
-      margin: EdgeInsets.only(
-        bottom: 12, 
-        left: isMobile ? 16 : 26
-      ),
+      margin: EdgeInsets.only(bottom: 12, left: isMobile ? 16 : 26),
       padding: EdgeInsets.all(isMobile ? 8 : 10),
       decoration: BoxDecoration(
-        color: producto.fueEntregado == 1
-            ? colorScheme.primaryContainer.withAlpha(40)
-            : colorScheme.surfaceTint.withAlpha(10),
+        color:
+            producto.fueEntregado == 1
+                ? colorScheme.primaryContainer.withAlpha(40)
+                : colorScheme.surfaceTint.withAlpha(10),
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
-          color: producto.fueEntregado == 1
-              ? colorScheme.primary.withAlpha(100)
-              : colorScheme.outline.withAlpha(50),
+          color:
+              producto.fueEntregado == 1
+                  ? colorScheme.primary.withAlpha(100)
+                  : colorScheme.outline.withAlpha(50),
         ),
       ),
       child: Row(
@@ -517,24 +548,27 @@ class _EntregaItemState extends State<EntregaItem> {
             height: isMobile ? 14 : 16,
             margin: EdgeInsets.only(top: 2, right: isMobile ? 8 : 10),
             decoration: BoxDecoration(
-              color: producto.fueEntregado == 1
-                  ? colorScheme.primary.withAlpha(50)
-                  : Colors.transparent,
+              color:
+                  producto.fueEntregado == 1
+                      ? colorScheme.primary.withAlpha(50)
+                      : Colors.transparent,
               shape: BoxShape.circle,
               border: Border.all(
-                color: producto.fueEntregado == 1
-                    ? colorScheme.primary
-                    : colorScheme.outline,
+                color:
+                    producto.fueEntregado == 1
+                        ? colorScheme.primary
+                        : colorScheme.outline,
                 width: 2,
               ),
             ),
-            child: producto.fueEntregado == 1
-                ? Icon(
-                    Icons.check,
-                    size: isMobile ? 10 : 12,
-                    color: colorScheme.primary,
-                  )
-                : null,
+            child:
+                producto.fueEntregado == 1
+                    ? Icon(
+                      Icons.check,
+                      size: isMobile ? 10 : 12,
+                      color: colorScheme.primary,
+                    )
+                    : null,
           ),
           Expanded(
             child: Column(
@@ -555,7 +589,10 @@ class _EntregaItemState extends State<EntregaItem> {
                     ),
                     if (producto.fueEntregado == 1)
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 2,
+                        ),
                         decoration: BoxDecoration(
                           color: colorScheme.primary,
                           borderRadius: BorderRadius.circular(10),
@@ -573,12 +610,7 @@ class _EntregaItemState extends State<EntregaItem> {
                 ),
                 const SizedBox(height: 4),
                 // Descripción del producto
-                Text(
-                  producto.dscription,
-                  style: TextStyle(
-                    fontSize: fontSize,
-                  ),
-                ),
+                Text(producto.dscription, style: TextStyle(fontSize: fontSize)),
                 const SizedBox(height: 4),
                 // Cantidad
                 Wrap(

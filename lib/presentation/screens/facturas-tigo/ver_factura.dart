@@ -1,5 +1,4 @@
 import 'dart:io' as io;
-import 'dart:typed_data';
 import 'package:bosque_flutter/core/state/Consumo_tigo_provider.dart';
 import 'package:bosque_flutter/core/state/user_provider.dart';
 import 'package:bosque_flutter/core/utils/responsive_utils_bosque.dart';
@@ -334,13 +333,6 @@ Widget build(BuildContext context) {
                   onPressed: () => Navigator.of(ctx).pop(),
                 ),
                 ElevatedButton(
-                  child: localLoading
-                      ? const SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                        )
-                      : const Text('Subir'),
                   onPressed: (localBytes != null && !localLoading)
                       ? () async {
                           setDialogState(() => localLoading = true);
@@ -375,6 +367,13 @@ Widget build(BuildContext context) {
                           }
                         }
                       : null,
+                  child: localLoading
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                        )
+                      : const Text('Subir'),
                 ),
               ],
             );

@@ -951,7 +951,7 @@ class _VentasArticulosViewState extends ConsumerState<VentasArticulosView> {
                   ),
                 ),
                 Text(
-                  'UTM: ${articuloPrincipal.utm ?? ''}',
+                  'UTM: ${articuloPrincipal.utm}',
                   style: TextStyle(
                     color: Theme.of(context).colorScheme.onPrimary,
                     fontWeight: FontWeight.bold,

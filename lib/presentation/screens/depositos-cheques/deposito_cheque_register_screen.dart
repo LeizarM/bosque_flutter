@@ -252,17 +252,19 @@ class _DepositoChequeRegisterScreenState
                                         try {
                                           final okDeposito = await notifier
                                               .registrarDeposito(imagen);
-                                          if (!okDeposito)
+                                          if (!okDeposito) {
                                             throw Exception(
                                               'No se pudo registrar el depósito',
                                             );
+                                          }
                                           final okNotas =
                                               await notifier
                                                   .guardarNotasRemision();
-                                          if (!okNotas)
+                                          if (!okNotas) {
                                             throw Exception(
                                               'No se pudieron registrar todas las notas de remisión',
                                             );
+                                          }
                                           ScaffoldMessenger.of(
                                             context,
                                           ).showSnackBar(
@@ -1383,7 +1385,6 @@ class _EditableSaldoPendienteCell extends StatefulWidget {
     required this.valorOriginal,
     required this.valorActual,
     required this.onChanged,
-    super.key,
   });
 
   @override

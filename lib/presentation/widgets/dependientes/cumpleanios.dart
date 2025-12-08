@@ -5,10 +5,10 @@ class CumpleanosBanner extends StatelessWidget {
   final VoidCallback onClose;
 
   const CumpleanosBanner({
-    Key? key,
+    super.key,
     required this.cumpleMensajes,
     required this.onClose,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

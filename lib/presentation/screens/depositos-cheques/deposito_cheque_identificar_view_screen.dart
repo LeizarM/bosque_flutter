@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:bosque_flutter/core/utils/console_log.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
@@ -104,8 +105,8 @@ class _DepositoChequeIdentificarViewScreenState
   Widget build(BuildContext context) {
     final state = ref.watch(depositosChequesIdentificarViewProvider);
     final notifier = ref.read(depositosChequesIdentificarViewProvider.notifier);
-    final isMobile = ResponsiveUtilsBosque.isMobile(context);
-    final isDesktop = ResponsiveUtilsBosque.isDesktop(context);
+    ResponsiveUtilsBosque.isMobile(context);
+    ResponsiveUtilsBosque.isDesktop(context);
 
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
@@ -313,7 +314,7 @@ class _DepositosIdentificarTable extends ConsumerWidget {
     final state = ref.watch(depositosChequesIdentificarViewProvider);
     final notifier = ref.read(depositosChequesIdentificarViewProvider.notifier);
     final isDesktop = ResponsiveUtilsBosque.isDesktop(context);
-    final isTablet = ResponsiveUtilsBosque.isTablet(context);
+    ResponsiveUtilsBosque.isTablet(context);
     final isMobile = ResponsiveUtilsBosque.isMobile(context);
     final depositos = state.depositos;
     final page = state.page;
@@ -609,104 +610,6 @@ class _DepositosIdentificarTable extends ConsumerWidget {
     return DataCell(SizedBox(width: width, child: child));
   }
 
-  // Tabla para tablet (sin la columna de Observaciones)
-  Widget _buildTabletScrollableTable(
-    List<dynamic> paged,
-    double maxWidth,
-    Function onAsignarCliente,
-  ) {
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child: ConstrainedBox(
-        constraints: BoxConstraints(minWidth: maxWidth),
-        child: SingleChildScrollView(
-          child: DataTable(
-            columnSpacing: 12,
-            horizontalMargin: 8,
-            headingRowHeight: 46,
-            dataRowHeight: 52,
-            columns: const [
-              DataColumn(label: Text('ID')),
-              DataColumn(label: Text('Cliente')),
-              DataColumn(label: Text('Empresa')),
-              DataColumn(label: Text('Banco')),
-              DataColumn(label: Text('Importe')),
-              DataColumn(label: Text('Moneda')),
-              DataColumn(label: Text('Fecha')),
-              DataColumn(label: Text('Estado')),
-              DataColumn(label: Text('Acciones')),
-            ],
-            rows:
-                paged.map((d) {
-                  final esVerificado = d.esPendiente.toLowerCase().contains(
-                    'verific',
-                  );
-                  return DataRow(
-                    cells: [
-                      DataCell(Text(d.idDeposito.toString())),
-                      DataCell(Text(d.codCliente)),
-                      DataCell(Text(d.nombreEmpresa)),
-                      DataCell(Text(d.nombreBanco)),
-                      DataCell(Text(d.importe.toStringAsFixed(2))),
-                      DataCell(Text(d.moneda)),
-                      DataCell(
-                        Text(
-                          d.fechaI != null
-                              ? "${d.fechaI!.day.toString().padLeft(2, '0')}/${d.fechaI!.month.toString().padLeft(2, '0')}/${d.fechaI!.year}"
-                              : '',
-                        ),
-                      ),
-                      DataCell(_EstadoChip(estado: d.esPendiente)),
-                      DataCell(
-                        esVerificado // Si está verificado, mostrar un contenedor vacío
-                            ? const SizedBox.shrink()
-                            : Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                IconButton(
-                                  icon: const Icon(
-                                    Icons.person,
-                                    color: Colors.orange,
-                                    size: 20,
-                                  ),
-                                  tooltip: 'Asignar Cliente',
-                                  onPressed: () => onAsignarCliente(d),
-                                  constraints: const BoxConstraints(
-                                    maxWidth: 32,
-                                  ),
-                                  padding: EdgeInsets.zero,
-                                ),
-                                IconButton(
-                                  icon: const Icon(
-                                    Icons.copy,
-                                    color: Colors.indigo,
-                                    size: 20,
-                                  ),
-                                  tooltip: 'Copiar',
-                                  onPressed: () {},
-                                  constraints: const BoxConstraints(
-                                    maxWidth: 32,
-                                  ),
-                                  padding: EdgeInsets.zero,
-                                ),
-                              ],
-                            ),
-                      ),
-                    ],
-                  );
-                }).toList(),
-            border: TableBorder(
-              horizontalInside: BorderSide(
-                width: 1,
-                color: Colors.grey.shade200,
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
   Widget _buildInfoRow(String label, String value) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
@@ -975,11 +878,11 @@ class _ActualizacionDepositoDialogState
             _configurarDatosIniciales();
           }
         } catch (e) {
-          print('Error al cargar empresas: $e');
+          console('Error al cargar empresas: $e');
         }
       }
     } catch (e) {
-      print('Error general: $e');
+      console('Error general: $e');
     } finally {
       if (mounted) {
         setState(() {
@@ -1016,10 +919,10 @@ class _ActualizacionDepositoDialogState
         // Ahora intentamos cargar clientes y bancos
         _cargarClientesYBancos(empresa);
       } catch (e) {
-        print('Error al configurar empresa: $e');
+        console('Error al configurar empresa: $e');
       }
     } catch (e) {
-      print('Error en configuración inicial: $e');
+      console('Error en configuración inicial: $e');
     }
   }
 
@@ -1058,7 +961,7 @@ class _ActualizacionDepositoDialogState
                 .seleccionarCliente(cliente);
           }
         } catch (e) {
-          print('Error al configurar cliente: $e');
+          console('Error al configurar cliente: $e');
         }
       }
 
@@ -1078,11 +981,11 @@ class _ActualizacionDepositoDialogState
 
           ref.read(depositosChequesProvider.notifier).seleccionarBanco(banco);
         } catch (e) {
-          print('Error al configurar banco: $e');
+          console('Error al configurar banco: $e');
         }
       }
     } catch (e) {
-      print('Error al cargar clientes y bancos: $e');
+      console('Error al cargar clientes y bancos: $e');
     }
   }
 
@@ -1095,7 +998,7 @@ class _ActualizacionDepositoDialogState
       setState(() {}); // <-- Fuerza el rebuild para reflejar el cambio visual
       _actualizarTotales();
     } catch (e) {
-      print('Error al seleccionar nota: $e');
+      console('Error al seleccionar nota: $e');
     }
   }
 
@@ -1135,7 +1038,7 @@ class _ActualizacionDepositoDialogState
             total += nota.saldoPendiente;
           }
         } catch (e) {
-          print('Error procesando nota $docNum: $e');
+          console('Error procesando nota $docNum: $e');
         }
       }
 
@@ -1143,7 +1046,7 @@ class _ActualizacionDepositoDialogState
         totalDocumentos = total;
       });
     } catch (e) {
-      print('Error al actualizar totales: $e');
+      console('Error al actualizar totales: $e');
     }
   }
 
@@ -1225,7 +1128,7 @@ class _ActualizacionDepositoDialogState
     // Responsividad
     final isMobile = ResponsiveUtilsBosque.isMobile(context);
     final isTablet = ResponsiveUtilsBosque.isTablet(context);
-    final isDesktop = ResponsiveUtilsBosque.isDesktop(context);
+    ResponsiveUtilsBosque.isDesktop(context);
     final horizontalPadding = ResponsiveUtilsBosque.getHorizontalPadding(
       context,
     );
@@ -1267,7 +1170,6 @@ class _ActualizacionDepositoDialogState
 
     final state = ref.watch(depositosChequesProvider);
     final notasRemision = state.notasRemision;
-    final notasSeleccionadas = state.notasSeleccionadas;
     if (state.notasSeleccionadas.isNotEmpty) {
       _actualizarTotales();
     }
@@ -1407,7 +1309,7 @@ class _ActualizacionDepositoDialogState
                                           )
                                           .seleccionarCliente(null);
                                     } catch (e) {
-                                      print('Error al limpiar cliente: $e');
+                                      console('Error al limpiar cliente: $e');
                                     }
                                     if (mounted) {
                                       setState(() {
@@ -1443,7 +1345,7 @@ class _ActualizacionDepositoDialogState
                                 .read(depositosChequesProvider.notifier)
                                 .seleccionarCliente(seleccionado);
                           } catch (e) {
-                            print('Error al seleccionar cliente: $e');
+                            console('Error al seleccionar cliente: $e');
                           }
                           if (mounted) {
                             setState(() {
@@ -1502,7 +1404,7 @@ class _ActualizacionDepositoDialogState
                                         .read(depositosChequesProvider.notifier)
                                         .seleccionarBanco(newValue);
                                   } catch (e) {
-                                    print('Error al seleccionar banco: $e');
+                                    console('Error al seleccionar banco: $e');
                                   }
                                 }
                               },
@@ -1543,7 +1445,7 @@ class _ActualizacionDepositoDialogState
                                       .setACuenta(nuevaCuenta);
                                   _actualizarTotales();
                                 } catch (e) {
-                                  print('Error al actualizar cuenta: $e');
+                                  console('Error al actualizar cuenta: $e');
                                 }
                               },
                             ),
@@ -1599,7 +1501,7 @@ class _ActualizacionDepositoDialogState
                                               )
                                               .seleccionarBanco(newValue);
                                         } catch (e) {
-                                          print(
+                                          console(
                                             'Error al seleccionar banco: $e',
                                           );
                                         }
@@ -1650,7 +1552,9 @@ class _ActualizacionDepositoDialogState
                                             .setACuenta(nuevaCuenta);
                                         _actualizarTotales();
                                       } catch (e) {
-                                        print('Error al actualizar cuenta: $e');
+                                        console(
+                                          'Error al actualizar cuenta: $e',
+                                        );
                                       }
                                     },
                                   ),
@@ -1755,7 +1659,7 @@ class _ActualizacionDepositoDialogState
                                 .read(depositosChequesProvider.notifier)
                                 .setObservaciones(value);
                           } catch (e) {
-                            print('Error al guardar observaciones: $e');
+                            console('Error al guardar observaciones: $e');
                           }
                         },
                       ),
@@ -2083,7 +1987,7 @@ class _ActualizacionDepositoDialogState
         return false;
       }
     } catch (e) {
-      print('Error al verificar notas seleccionadas: $e');
+      console('Error al verificar notas seleccionadas: $e');
     }
 
     // Verificar que el total coincida con el importe del depósito
@@ -2162,7 +2066,7 @@ class _ActualizacionDepositoDialogState
               depositoIdOriginal > 0 ? depositoIdOriginal : null,
         );
       } catch (e) {
-        print('[DEBUG][DIALOG] Error al guardar notas: $e');
+        console('[DEBUG][DIALOG] Error al guardar notas: $e');
         todasGuardadas = false;
       }
 
@@ -2248,7 +2152,7 @@ class _ActualizacionDepositoDialogState
     final notasRemision = state.notasRemision;
     final notasSeleccionadas = state.notasSeleccionadas;
     final isDesktop = ResponsiveUtilsBosque.isDesktop(context);
-    final isMobile = ResponsiveUtilsBosque.isMobile(context);
+    ResponsiveUtilsBosque.isMobile(context);
 
     // Configurar un ancho mínimo para la tabla
     final double tableMinWidth = isDesktop ? 800.0 : 700.0;
@@ -2421,8 +2325,9 @@ class _ActualizacionDepositoDialogState
                               Set<WidgetState> states,
                             ) {
                               if (seleccionado) return Colors.teal.shade50;
-                              if (states.contains(WidgetState.hovered))
+                              if (states.contains(WidgetState.hovered)) {
                                 return Colors.grey.shade50;
+                              }
                               return null;
                             }),
                             cells: [
@@ -2475,6 +2380,7 @@ class _ActualizacionDepositoDialogState
                                     ),
                                   ),
                                   child: Text(
+                                    // ignore: unnecessary_null_comparison
                                     doc.fecha != null
                                         ? "${doc.fecha.day.toString().padLeft(2, '0')}/${doc.fecha.month.toString().padLeft(2, '0')}/${doc.fecha.year}"
                                         : '',

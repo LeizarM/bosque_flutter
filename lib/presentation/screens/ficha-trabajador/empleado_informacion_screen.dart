@@ -1,6 +1,7 @@
 import 'package:bosque_flutter/core/state/empleados_dependientes_provider.dart';
 import 'package:bosque_flutter/core/state/menu_provider.dart';
 import 'package:bosque_flutter/core/state/user_provider.dart';
+import 'package:bosque_flutter/core/utils/console_log.dart';
 import 'package:bosque_flutter/core/utils/responsive_utils_bosque.dart';
 import 'package:bosque_flutter/domain/entities/ciExpedido_entity.dart';
 import 'package:bosque_flutter/domain/entities/empleado_entity.dart';
@@ -12,20 +13,17 @@ import 'package:bosque_flutter/presentation/widgets/dependientes/cronometro_bloq
 import 'package:bosque_flutter/presentation/widgets/dependientes/email_seccion.dart';
 import 'package:bosque_flutter/presentation/widgets/dependientes/experiencia_laboral_seccion.dart';
 import 'package:bosque_flutter/presentation/widgets/dependientes/formacion_secccion.dart';
-import 'package:bosque_flutter/presentation/widgets/dependientes/garante_referencia_seccion.dart';
 import 'package:bosque_flutter/presentation/widgets/dependientes/persona_seccion.dart';
 import 'package:bosque_flutter/presentation/widgets/dependientes/relacion_laboral_seccion.dart';
 import 'package:bosque_flutter/presentation/widgets/dependientes/seccion_foto.dart';
 import 'package:bosque_flutter/presentation/widgets/dependientes/telefono_secccion.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart';
 import 'package:printing/printing.dart';
 
 class InfoEmpleadoScreen extends ConsumerStatefulWidget {
   final int codEmpleado;
-  const InfoEmpleadoScreen({Key? key, required this.codEmpleado})
-    : super(key: key);
+  const InfoEmpleadoScreen({super.key, required this.codEmpleado});
 
   @override
   ConsumerState<InfoEmpleadoScreen> createState() => _InfoEmpleadoScreenState();
@@ -180,7 +178,7 @@ class _InfoEmpleadoScreenState extends ConsumerState<InfoEmpleadoScreen> {
     final size = MediaQuery.of(context).size;
     final codEmpleadoUsuario = ref.watch(userProvider)?.codEmpleado;
     //final codUsuario = ref.read(userProvider.notifier).getCodEmpleado();
-    print(
+    console(
       'Usuario logeado (codEmpleadoUsuario): $codEmpleadoUsuario, Consultado (widget.codEmpleado): ${widget.codEmpleado}',
     );
 
@@ -383,8 +381,7 @@ class _InfoEmpleadoScreenState extends ConsumerState<InfoEmpleadoScreen> {
                                                 } catch (e) {
                                                   user = null;
                                                 }
-                                                if (user != null &&
-                                                    user.codUsuario != null) {
+                                                if (user != null) {
                                                   final result = await ref.read(
                                                     desbloquearUsuarioProvider(
                                                       user.codUsuario,
@@ -641,20 +638,18 @@ class _InfoEmpleadoScreenState extends ConsumerState<InfoEmpleadoScreen> {
                             } catch (e) {
                               user = null;
                             }
-                            if (user == null || user.codUsuario == null)
+                            if (user == null) {
                               return const SizedBox.shrink();
+                            }
 
                             final usuarioBloqueadoAsync = ref.watch(
-                              usuarioBloqueadoProvider(user.codUsuario!),
+                              usuarioBloqueadoProvider(user.codUsuario),
                             );
                             final warningCount = ref.watch(
                               warningCounterProvider,
                             );
                             return usuarioBloqueadoAsync.when(
                               data: (usuarioBloqueado) {
-                                if (usuarioBloqueado == null)
-                                  return const SizedBox.shrink();
-                                // SOLO muestra el cronómetro si está bloqueado o hay advertencias activas
                                 if ((usuarioBloqueado.bloqueado != 1) &&
                                     warningCount == 0) {
                                   return const SizedBox.shrink();
@@ -664,13 +659,9 @@ class _InfoEmpleadoScreenState extends ConsumerState<InfoEmpleadoScreen> {
                                   estaBloqueado:
                                       usuarioBloqueado.bloqueado == 1,
                                   onFinalizado: () async {
-                                    print(
+                                    console(
                                       'Cronómetro finalizado, intentando bloquear usuario...',
                                     );
-                                    final audUsuario =
-                                        await ref
-                                            .read(userProvider.notifier)
-                                            .getCodUsuario();
                                     final codUsuario =
                                         await ref
                                             .read(userProvider.notifier)
@@ -892,7 +883,7 @@ class _InfoEmpleadoScreenState extends ConsumerState<InfoEmpleadoScreen> {
                         } catch (e) {
                           user = null;
                         }
-                        if (user != null && user.codUsuario != null) {
+                        if (user != null) {
                           final result = await ref.read(
                             desbloquearUsuarioProvider(user.codUsuario).future,
                           );
@@ -1104,17 +1095,16 @@ class _InfoEmpleadoScreenState extends ConsumerState<InfoEmpleadoScreen> {
                   } catch (e) {
                     user = null;
                   }
-                  if (user == null || user.codUsuario == null)
+                  if (user == null) {
                     return const SizedBox.shrink();
+                  }
 
                   final usuarioBloqueadoAsync = ref.watch(
-                    usuarioBloqueadoProvider(user.codUsuario!),
+                    usuarioBloqueadoProvider(user.codUsuario),
                   );
                   final warningCount = ref.watch(warningCounterProvider);
                   return usuarioBloqueadoAsync.when(
                     data: (usuarioBloqueado) {
-                      if (usuarioBloqueado == null)
-                        return const SizedBox.shrink();
                       if ((usuarioBloqueado.bloqueado != 1) &&
                           warningCount == 0) {
                         return const SizedBox.shrink();
@@ -1123,7 +1113,7 @@ class _InfoEmpleadoScreenState extends ConsumerState<InfoEmpleadoScreen> {
                         fechaLimite: usuarioBloqueado.fechaLimite,
                         estaBloqueado: usuarioBloqueado.bloqueado == 1,
                         onFinalizado: () async {
-                          print(
+                          console(
                             'Cronómetro finalizado, intentando bloquear usuario...',
                           );
                           final codUsuario =
@@ -1260,28 +1250,6 @@ class _InfoEmpleadoScreenState extends ConsumerState<InfoEmpleadoScreen> {
           onEditar: () => activarEdicion('experienciaLaboral'),
           onAgregar: () => (),
           onEliminar: () => (),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildReferenciasPage() {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
-      child: _buildSection(
-        child: GaranteReferenciaSeccion(
-          codEmpleado: widget.codEmpleado,
-          habilitarEdicion: _habilitarEdicion,
-          estadoExpandido: estadoExpandido,
-          selectedOperation: selectedOperation,
-          onToggleSeccion: toggleSeccion,
-          onUpdateOperation:
-              (op) =>
-                  setState(() => selectedOperation['garanteReferencia'] = op),
-          onEditar: () => activarEdicion('garanteReferencia'),
-          onAgregar: () => (),
-          onEliminar: () => (),
-          filtroTipo: 'todos',
         ),
       ),
     );

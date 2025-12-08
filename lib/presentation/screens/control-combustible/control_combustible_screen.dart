@@ -419,7 +419,7 @@ class _ControlCombustibleScreenState
                         const SizedBox(height: 12),
 
                         // Container with fixed height for bidon list
-                        Container(
+                        SizedBox(
                           height: 300, // Fixed height to prevent overflow
                           child: _BidonListWidget(
                             codSucursalMaqVehiDestino:
@@ -540,8 +540,9 @@ class _ControlCombustibleScreenState
   void _registrarCombustible() async {
     if (!_formKey.currentState!.validate() ||
         _selectedFuelType == null ||
-        _selectedCocheId == null)
+        _selectedCocheId == null) {
       return;
+    }
 
     try {
       // Validar primero si se puede registrar verificando el consumo
@@ -855,17 +856,17 @@ class _ControlCombustibleScreenState
           children: [
             Expanded(
               child: Column(
-                children: fields.sublist(0, (fields.length / 2).ceil()),
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 mainAxisSize: MainAxisSize.min,
+                children: fields.sublist(0, (fields.length / 2).ceil()),
               ),
             ),
             const SizedBox(width: 32),
             Expanded(
               child: Column(
-                children: fields.sublist((fields.length / 2).ceil()),
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 mainAxisSize: MainAxisSize.min,
+                children: fields.sublist((fields.length / 2).ceil()),
               ),
             ),
           ],
@@ -873,8 +874,8 @@ class _ControlCombustibleScreenState
       } else {
         // Una columna en móvil/tablet
         return Column(
-          children: fields,
           crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: fields,
         );
       }
     }

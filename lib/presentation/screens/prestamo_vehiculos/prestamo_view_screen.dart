@@ -1,3 +1,4 @@
+import 'package:bosque_flutter/core/utils/console_log.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:bosque_flutter/core/state/prestamo_vehiculos_provider.dart';
@@ -180,8 +181,8 @@ class _PrestamoViewScreenState extends ConsumerState<PrestamoViewScreen> {
     ColorScheme colorScheme,
   ) {
     // Debug: Agregar logs para verificar el estado
-    print('🔍 PrestamoViewScreen - Estado: ${state.status}');
-    print(
+    console('🔍 PrestamoViewScreen - Estado: ${state.status}');
+    console(
       '🔍 PrestamoViewScreen - Solicitudes count: ${state.solicitudesPrestamos.length}',
     );
 
@@ -190,7 +191,7 @@ class _PrestamoViewScreenState extends ConsumerState<PrestamoViewScreen> {
     }
 
     if (state.status == FetchStatus.error) {
-      print('❌ Error: ${state.errorMessage}');
+      console('❌ Error: ${state.errorMessage}');
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -225,8 +226,8 @@ class _PrestamoViewScreenState extends ConsumerState<PrestamoViewScreen> {
     final solicitudesFiltradas = _filtrarSolicitudes(
       state.solicitudesPrestamos,
     );
-    print('🔍 Solicitudes filtradas count: ${solicitudesFiltradas.length}');
-    print('🔍 Filtro actual: $_estadoFiltro');
+    console('🔍 Solicitudes filtradas count: ${solicitudesFiltradas.length}');
+    console('🔍 Filtro actual: $_estadoFiltro');
 
     if (solicitudesFiltradas.isEmpty) {
       return Center(
@@ -309,7 +310,7 @@ class _PrestamoViewScreenState extends ConsumerState<PrestamoViewScreen> {
     }
 
     final isDesktop = ResponsiveUtilsBosque.isDesktop(context);
-    print('🔍 Es Desktop: $isDesktop');
+    console('🔍 Es Desktop: $isDesktop');
 
     return isDesktop
         ? _buildDesktopTable(solicitudesFiltradas, colorScheme)
@@ -764,7 +765,7 @@ class _PrestamoViewScreenState extends ConsumerState<PrestamoViewScreen> {
   }
 
   Widget _buildMobileList(List<dynamic> solicitudes, ColorScheme colorScheme) {
-    print('🔍 BuildMobileList - Solicitudes: ${solicitudes.length}');
+    console('🔍 BuildMobileList - Solicitudes: ${solicitudes.length}');
 
     return Column(
       children: [
@@ -822,7 +823,7 @@ class _PrestamoViewScreenState extends ConsumerState<PrestamoViewScreen> {
             itemCount: solicitudes.length,
             itemBuilder: (context, index) {
               final solicitud = solicitudes[index];
-              print('🔍 Construyendo item $index: ${solicitud.idSolicitud}');
+              console('🔍 Construyendo item $index: ${solicitud.idSolicitud}');
 
               return Container(
                 width: double.infinity,

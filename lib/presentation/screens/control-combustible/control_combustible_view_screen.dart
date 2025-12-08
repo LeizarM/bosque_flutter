@@ -447,7 +447,7 @@ class _ControlCombustibleViewScreenState
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    Theme.of(context);
     return Scaffold(
       appBar: AppBar(title: const Text('Control de Combustible')),
       body: SingleChildScrollView(
@@ -522,9 +522,7 @@ class _ControlCombustibleViewScreenState
                       final asyncCombustibles = ref.watch(
                         combustiblesPorCocheProvider(_selectedCocheId!),
                       );
-                      final isDesktop = ResponsiveUtilsBosque.isDesktop(
-                        context,
-                      );
+                      ResponsiveUtilsBosque.isDesktop(context);
                       final isMobile = ResponsiveUtilsBosque.isMobile(context);
                       final colorScheme = Theme.of(context).colorScheme;
                       return asyncCombustibles.when(
@@ -586,6 +584,7 @@ class _ControlCombustibleViewScreenState
                                                   ),
                                                 ),
                                                 Text(
+                                                  // ignore: unnecessary_null_comparison
                                                   c.fecha != null
                                                       ? "${c.fecha.day.toString().padLeft(2, '0')}/${c.fecha.month.toString().padLeft(2, '0')}/${c.fecha.year}"
                                                       : '',
@@ -741,7 +740,7 @@ class _ControlCombustibleViewScreenState
                                               ],
                                             ),
                                             const SizedBox(height: 8),
-                                            if ((c.obs ?? '').isNotEmpty) ...[
+                                            if ((c.obs).isNotEmpty) ...[
                                               Container(
                                                 width: double.infinity,
                                                 padding: const EdgeInsets.all(
@@ -984,6 +983,7 @@ class _ControlCombustibleViewScreenState
                                             ),
                                             DataCell(
                                               Text(
+                                                // ignore: unnecessary_null_comparison
                                                 c.fecha != null
                                                     ? "${c.fecha.day.toString().padLeft(2, '0')}/${c.fecha.month.toString().padLeft(2, '0')}/${c.fecha.year}"
                                                     : '',
@@ -1086,10 +1086,10 @@ class _ControlCombustibleViewScreenState
                                                       maxWidth: 150,
                                                     ),
                                                 child: Text(
-                                                  c.obs ?? 'Sin observaciones',
+                                                  c.obs,
                                                   style: TextStyle(
                                                     color:
-                                                        (c.obs ?? '').isEmpty
+                                                        (c.obs).isEmpty
                                                             ? colorScheme.onSurface
                                                             // ignore: deprecated_member_use
                                                             .withValues(
@@ -1101,7 +1101,7 @@ class _ControlCombustibleViewScreenState
                                                                   0.7,
                                                                 ),
                                                     fontStyle:
-                                                        (c.obs ?? '').isEmpty
+                                                        (c.obs).isEmpty
                                                             ? FontStyle.italic
                                                             : FontStyle.normal,
                                                   ),

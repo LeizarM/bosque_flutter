@@ -1,10 +1,8 @@
 import 'package:bosque_flutter/presentation/widgets/entregas/entrega_detalle_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:logger/web.dart';
 import 'package:pluto_grid/pluto_grid.dart';
 import 'package:intl/intl.dart';
-import 'package:url_launcher/url_launcher.dart';
 import 'dart:math'; // Para min y max
 
 import 'package:bosque_flutter/core/state/chofer_provider.dart';
@@ -12,9 +10,6 @@ import 'package:bosque_flutter/core/state/entregas_provider.dart';
 import 'package:bosque_flutter/domain/entities/chofer_entity.dart';
 import 'package:bosque_flutter/domain/entities/entregas_entity.dart';
 import 'package:bosque_flutter/core/utils/responsive_utils_bosque.dart';
-import 'package:bosque_flutter/core/constants/app_constants.dart';
-import 'package:flutter_map/flutter_map.dart';
-import 'package:latlong2/latlong.dart';
 
 class EntregasPorChoferContent extends ConsumerStatefulWidget {
   const EntregasPorChoferContent({super.key});
@@ -765,7 +760,7 @@ class _EntregasPorChoferContentState
           margin: const EdgeInsets.symmetric(vertical: 8),
           child: ListTile(
             title: Text(
-              entrega.cardName ?? '-',
+              entrega.cardName,
               style: TextStyle(color: colorScheme.onSurface),
             ),
             subtitle: Column(

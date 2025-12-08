@@ -11,8 +11,7 @@ import 'package:printing/printing.dart';
 
 class ResumenDetalladoScreen extends ConsumerStatefulWidget {
   final String periodoCobrado;
-  const ResumenDetalladoScreen({Key? key, required this.periodoCobrado})
-    : super(key: key);
+  const ResumenDetalladoScreen({super.key, required this.periodoCobrado});
 
   @override
   ConsumerState<ResumenDetalladoScreen> createState() =>
@@ -24,7 +23,7 @@ class _ResumenDetalladoScreenState
   final Map<String, bool> expandedMap = {};
   String? _empresaSeleccionada;
   bool mostrarTigoEjecutado = false;
-  TextEditingController _searchController = TextEditingController();
+  final TextEditingController _searchController = TextEditingController();
 
   final Map<int, bool> expandedArbolMap = {};
   final TextEditingController _buscadorController = TextEditingController();

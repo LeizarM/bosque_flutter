@@ -26,6 +26,7 @@ class _EstadoVehiculosScreenState extends ConsumerState<EstadoVehiculosScreen> {
   }
 
   void _cargarVehiculos() {
+    // ignore: unused_result
     ref.refresh(cochesDisponiblesProvider);
   }
 
@@ -460,13 +461,9 @@ class _EstadoVehiculosScreenState extends ConsumerState<EstadoVehiculosScreen> {
                     ],
                     rows:
                         vehiculos.map((vehiculo) {
-                          final estado = _extraerEstado(vehiculo.coche ?? '');
-                          final sucursal = _extraerSucursal(
-                            vehiculo.coche ?? '',
-                          );
-                          final vehiculoInfo = _extraerVehiculo(
-                            vehiculo.coche ?? '',
-                          );
+                          final estado = _extraerEstado(vehiculo.coche);
+                          final sucursal = _extraerSucursal(vehiculo.coche);
+                          final vehiculoInfo = _extraerVehiculo(vehiculo.coche);
 
                           return DataRow(
                             color: WidgetStateProperty.resolveWith<Color?>((
@@ -577,9 +574,9 @@ class _EstadoVehiculosScreenState extends ConsumerState<EstadoVehiculosScreen> {
             itemCount: vehiculos.length,
             itemBuilder: (context, index) {
               final vehiculo = vehiculos[index];
-              final estado = _extraerEstado(vehiculo.coche ?? '');
-              final sucursal = _extraerSucursal(vehiculo.coche ?? '');
-              final vehiculoInfo = _extraerVehiculo(vehiculo.coche ?? '');
+              final estado = _extraerEstado(vehiculo.coche);
+              final sucursal = _extraerSucursal(vehiculo.coche);
+              final vehiculoInfo = _extraerVehiculo(vehiculo.coche);
               final enUso = estado.toLowerCase().contains('uso');
 
               return Card(

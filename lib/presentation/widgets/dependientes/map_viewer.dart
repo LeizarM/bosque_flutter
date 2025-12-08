@@ -15,7 +15,7 @@ class MapViewer extends StatelessWidget {
   final MapController mapController;
 
   const MapViewer({
-    Key? key,
+    super.key,
     required this.latitude,
     required this.longitude,
     this.height = 200,
@@ -24,7 +24,7 @@ class MapViewer extends StatelessWidget {
     this.onTap,
     this.zoom = 13.0,
     required this.mapController, // Requerido
-  }) : super(key: key);
+  });
 
  @override
 Widget build(BuildContext context) {

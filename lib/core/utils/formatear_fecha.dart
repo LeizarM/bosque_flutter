@@ -7,12 +7,12 @@ class DatePickerField extends StatelessWidget {
   final bool permitirFechaFutura; // Nuevo parámetro
 
   const DatePickerField({
-    Key? key,
+    super.key,
     required this.controller,
     required this.labelText,
     this.validator,
     this.permitirFechaFutura = false, // false por defecto
-  }) : super(key: key);
+  });
 
   String _formatDate(DateTime date) {
     return "${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}";

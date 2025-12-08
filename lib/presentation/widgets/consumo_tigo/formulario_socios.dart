@@ -1,7 +1,6 @@
-import 'dart:ui';
-
 import 'package:bosque_flutter/core/state/Consumo_tigo_provider.dart';
 import 'package:bosque_flutter/core/state/user_provider.dart';
+import 'package:bosque_flutter/core/utils/console_log.dart';
 import 'package:bosque_flutter/core/utils/responsive_utils_bosque.dart';
 import 'package:bosque_flutter/core/utils/validators.dart';
 import 'package:bosque_flutter/domain/entities/socio_tigo_entity.dart';
@@ -20,7 +19,7 @@ class FormularioSocios extends ConsumerStatefulWidget {
   final VoidCallback onCancel;
 
   const FormularioSocios({
-    Key? key,
+    super.key,
     required this.title,
     this.socios,
     required this.codEmpleado,
@@ -28,7 +27,7 @@ class FormularioSocios extends ConsumerStatefulWidget {
     required this.isEditing,
     required this.onSave,
     required this.onCancel,
-  }) : super(key: key);
+  });
 
   @override
   FormularioSocioState createState() => FormularioSocioState();
@@ -71,7 +70,7 @@ class FormularioSocioState extends ConsumerState<FormularioSocios> {
 
   void _handleSubmit() async {
     if (_formKey.currentState?.validate() ?? false) {
-      final codEmpleadoValue = _socioSeleccionado ?? null;
+      final codEmpleadoValue = _socioSeleccionado;
       final telefonoIngresado = int.tryParse(_telefonoController.text);
 
       // VALIDACIÓN: Verificar si el teléfono ya existe en facturasTigoProvider
@@ -79,11 +78,11 @@ class FormularioSocioState extends ConsumerState<FormularioSocios> {
         tigoResumenDetallado(widget.periodoCobrado),
       );
       final facturas = facturasAsync.asData?.value ?? [];
-      //print('Teléfono ingresado: $telefonoIngresado');
-      //print('Facturas encontradas: ${facturas.length}');
+      //console('Teléfono ingresado: $telefonoIngresado');
+      //console('Facturas encontradas: ${facturas.length}');
       bool telefonoDuplicado = false;
       for (var factura in facturas) {
-        //print('Comparando factura.nroCuenta=${factura.corporativo} con telefonoIngresado=$telefonoIngresado');
+        //console('Comparando factura.nroCuenta=${factura.corporativo} con telefonoIngresado=$telefonoIngresado');
         // Ajusta el tipo de comparación según tu modelo
         if (factura.corporativo.toString() == telefonoIngresado.toString() &&
             (factura.nombreCompleto.toUpperCase()) != 'SIN ASIGNAR') {
@@ -331,7 +330,9 @@ class FormularioSocioState extends ConsumerState<FormularioSocios> {
       loading: () => const Center(child: CircularProgressIndicator()),
       error: (error, _) => Text('Error: $error'),
       data: (nros) {
-        print('Números sin asignar recibidos: ${nros.map((e) => e.telefono)}');
+        console(
+          'Números sin asignar recibidos: ${nros.map((e) => e.telefono)}',
+        );
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [

@@ -19,14 +19,14 @@ class FormularioTelefono extends ConsumerStatefulWidget {
   final VoidCallback onCancel;
 
   const FormularioTelefono({
-    Key? key,
+    super.key,
     required this.title,
     this.telefono,
     required this.codPersona,
     required this.isEditing,
     required this.onSave,
     required this.onCancel,
-  }) : super(key: key);
+  });
 
   @override
   FormularioTelefonoState createState() => FormularioTelefonoState();

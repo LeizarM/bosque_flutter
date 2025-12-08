@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:bosque_flutter/core/state/prestamo_vehiculos_provider.dart';
 import 'package:bosque_flutter/core/state/user_provider.dart';
-import 'package:intl/intl.dart';
 
 class EntregaPrestamoDialog extends ConsumerStatefulWidget {
   final dynamic solicitud; // PrestamoChoferEntity

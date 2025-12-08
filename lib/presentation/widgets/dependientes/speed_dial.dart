@@ -17,7 +17,7 @@ class CustomSpeedDial extends StatelessWidget {
   final Size? childrenButtonSize;
 
   const CustomSpeedDial({
-    Key? key,
+    super.key,
     this.visible = true,
     this.operacionHabilitada = const ['editar'],
     required this.nombreSeccion,
@@ -31,7 +31,7 @@ class CustomSpeedDial extends StatelessWidget {
     this.direction = SpeedDialDirection.left,
     this.buttonSize = const Size(38, 38),
     this.childrenButtonSize = const Size(32, 32),
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

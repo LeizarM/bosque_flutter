@@ -1,4 +1,3 @@
-import 'dart:ui';
 
 import 'package:bosque_flutter/core/state/user_provider.dart';
 import 'package:bosque_flutter/core/utils/responsive_utils_bosque.dart';
@@ -17,14 +16,14 @@ class FormularioEmail extends ConsumerStatefulWidget {
   final VoidCallback onCancel;
 
   const FormularioEmail({
-    Key? key,
+    super.key,
     required this.title,
     this.email,
     required this.codPersona,
     required this.isEditing,
     required this.onSave,
     required this.onCancel,
-  }) : super(key: key);
+  });
 
   @override
   FormularioEmailState createState() => FormularioEmailState();
