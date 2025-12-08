@@ -4,11 +4,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class FacturasTigoResumenScreen extends ConsumerWidget {
   final String periodoCobrado;
-  const FacturasTigoResumenScreen({Key? key, required this.periodoCobrado}) : super(key: key);
+  const FacturasTigoResumenScreen({Key? key, required this.periodoCobrado})
+    : super(key: key);
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    print('Entrando a FacturasTigoResumenScreen con periodoCobrado: $periodoCobrado');
+    print(
+      'Entrando a FacturasTigoResumenScreen con periodoCobrado: $periodoCobrado',
+    );
     final tigoResumenPorCuenta = ref.watch(tigoResumenXCuenta(periodoCobrado));
     return Padding(
       padding: const EdgeInsets.all(24.0),
@@ -30,7 +33,11 @@ class FacturasTigoResumenScreen extends ConsumerWidget {
                   children: [
                     Row(
                       children: [
-                        Icon(Icons.account_balance_wallet, color: Colors.blue[700], size: 32),
+                        Icon(
+                          Icons.account_balance_wallet,
+                          color: Colors.blue[700],
+                          size: 32,
+                        ),
                         const SizedBox(width: 10),
                         Text(
                           'Resumen por Cuenta',
@@ -45,13 +52,20 @@ class FacturasTigoResumenScreen extends ConsumerWidget {
                     const SizedBox(height: 18),
                     Expanded(
                       child: tigoResumenPorCuenta.when(
-                        loading: () => const Center(child: CircularProgressIndicator()),
-                        error: (err, _) => Center(
-                          child: Text(
-                            'Error al cargar datos: $err',
-                            style: const TextStyle(fontSize: 18, color: Colors.red),
-                          ),
-                        ),
+                        loading:
+                            () => const Center(
+                              child: CircularProgressIndicator(),
+                            ),
+                        error:
+                            (err, _) => Center(
+                              child: Text(
+                                'Error al cargar datos: $err',
+                                style: const TextStyle(
+                                  fontSize: 18,
+                                  color: Colors.red,
+                                ),
+                              ),
+                            ),
                         data: (resumen) {
                           if (resumen.isEmpty) {
                             return const Center(
@@ -68,41 +82,62 @@ class FacturasTigoResumenScreen extends ConsumerWidget {
                               child: SingleChildScrollView(
                                 scrollDirection: Axis.horizontal,
                                 child: DataTable(
-                                  headingRowColor: MaterialStateProperty.all(Colors.blue[100]),
-                                  dataRowColor: MaterialStateProperty.all(Colors.white),
+                                  headingRowColor: MaterialStateProperty.all(
+                                    Colors.blue[100],
+                                  ),
+                                  dataRowColor: MaterialStateProperty.all(
+                                    Colors.white,
+                                  ),
                                   columnSpacing: 32,
                                   columns: const [
                                     DataColumn(
                                       label: Text(
                                         'NOMBRE COMPLETO',
-                                        style: TextStyle(fontWeight: FontWeight.bold),
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                        ),
                                       ),
                                     ),
                                     DataColumn(
                                       label: Text(
                                         'TOTAL Bs',
-                                        style: TextStyle(fontWeight: FontWeight.bold),
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                        ),
                                       ),
                                     ),
                                   ],
-                                  rows: resumen.map((resumenCuenta) {
-                                    return DataRow(
-                                      cells: [
-                                        DataCell(
-                                          Align(
-                                            alignment: Alignment.centerLeft,
-                                            child: Text(resumenCuenta.nombreCompleto?.toString() ?? ''),
-                                          ),
-                                        ),
-                                        DataCell(
-                                          Align(
-                                            alignment: Alignment.centerRight,
-                                            child: Text(resumenCuenta.totalCobradoXCuenta?.toStringAsFixed(2) ?? ''),
-                                          ),
-                                        ),
-                                      ],
-                                    );
-                                  }).toList(),
+                                  rows:
+                                      resumen.map((resumenCuenta) {
+                                        return DataRow(
+                                          cells: [
+                                            DataCell(
+                                              Align(
+                                                alignment: Alignment.centerLeft,
+                                                child: Text(
+                                                  resumenCuenta.nombreCompleto
+                                                          ?.toString() ??
+                                                      '',
+                                                ),
+                                              ),
+                                            ),
+                                            DataCell(
+                                              Align(
+                                                alignment:
+                                                    Alignment.centerRight,
+                                                child: Text(
+                                                  resumenCuenta
+                                                          .totalCobradoXCuenta
+                                                          ?.toStringAsFixed(
+                                                            2,
+                                                          ) ??
+                                                      '',
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        );
+                                      }).toList(),
                                 ),
                               ),
                             ),
@@ -128,7 +163,7 @@ class FacturasTigoResumenScreen extends ConsumerWidget {
               ),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.blueGrey.withOpacity(0.15),
+                  color: Colors.blueGrey.withValues(alpha: 0.15),
                   blurRadius: 16,
                   offset: const Offset(4, 8),
                 ),

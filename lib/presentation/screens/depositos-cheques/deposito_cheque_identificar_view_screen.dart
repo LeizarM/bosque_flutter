@@ -32,9 +32,10 @@ class DocumentoDisponible {
   });
 }
 
-final depositosChequesIdentificarViewProvider = StateNotifierProvider<DepositosChequesNotifier, DepositosChequesState>(
-  (ref) => DepositosChequesNotifier(ref),
-);
+final depositosChequesIdentificarViewProvider =
+    StateNotifierProvider<DepositosChequesNotifier, DepositosChequesState>(
+      (ref) => DepositosChequesNotifier(ref),
+    );
 
 class DepositoChequeIdentificarViewScreen extends ConsumerStatefulWidget {
   const DepositoChequeIdentificarViewScreen({super.key});
@@ -57,7 +58,7 @@ class _DepositoChequeIdentificarViewScreenState
     // Inicializar con fechas predeterminadas
     _fechaDesdeController.text = "01/05/2025";
     _fechaHastaController.text = "31/05/2025";
-    
+
     // Limpiar los resultados de búsqueda de depósitos al entrar a esta pantalla
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(depositosChequesProvider.notifier).clearDepositosResults();
@@ -136,13 +137,14 @@ class _DepositoChequeIdentificarViewScreenState
               _buildSearchForm(context, notifier),
               const SizedBox(height: 24),
               Expanded(
-                child: state.cargando
-                    ? Center(
-                        child: CircularProgressIndicator(
-                          color: colorScheme.primary,
-                        ),
-                      )
-                    : _DepositosIdentificarTable(),
+                child:
+                    state.cargando
+                        ? Center(
+                          child: CircularProgressIndicator(
+                            color: colorScheme.primary,
+                          ),
+                        )
+                        : _DepositosIdentificarTable(),
               ),
             ],
           ),
@@ -181,7 +183,9 @@ class _DepositoChequeIdentificarViewScreenState
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(8),
-        borderSide: BorderSide(color: colorScheme.outline.withOpacity(0.6)),
+        borderSide: BorderSide(
+          color: colorScheme.outline.withValues(alpha: 0.6),
+        ),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(8),
@@ -201,7 +205,10 @@ class _DepositoChequeIdentificarViewScreenState
             readOnly: true,
             decoration: inputDecoration.copyWith(
               labelText: 'Desde',
-              prefixIcon: Icon(Icons.calendar_today, color: colorScheme.primary),
+              prefixIcon: Icon(
+                Icons.calendar_today,
+                color: colorScheme.primary,
+              ),
             ),
             onTap: () => _pickDate(context, true),
           ),
@@ -211,7 +218,10 @@ class _DepositoChequeIdentificarViewScreenState
             readOnly: true,
             decoration: inputDecoration.copyWith(
               labelText: 'Hasta',
-              prefixIcon: Icon(Icons.calendar_today, color: colorScheme.primary),
+              prefixIcon: Icon(
+                Icons.calendar_today,
+                color: colorScheme.primary,
+              ),
             ),
             onTap: () => _pickDate(context, false),
           ),
@@ -248,7 +258,10 @@ class _DepositoChequeIdentificarViewScreenState
             readOnly: true,
             decoration: inputDecoration.copyWith(
               labelText: 'Desde',
-              suffixIcon: Icon(Icons.calendar_today, color: colorScheme.primary),
+              suffixIcon: Icon(
+                Icons.calendar_today,
+                color: colorScheme.primary,
+              ),
             ),
             onTap: () => _pickDate(context, true),
           ),
@@ -260,7 +273,10 @@ class _DepositoChequeIdentificarViewScreenState
             readOnly: true,
             decoration: inputDecoration.copyWith(
               labelText: 'Hasta',
-              suffixIcon: Icon(Icons.calendar_today, color: colorScheme.primary),
+              suffixIcon: Icon(
+                Icons.calendar_today,
+                color: colorScheme.primary,
+              ),
             ),
             onTap: () => _pickDate(context, false),
           ),
@@ -352,7 +368,9 @@ class _DepositosIdentificarTable extends ConsumerWidget {
               separatorBuilder: (context, index) => const Divider(height: 1),
               itemBuilder: (context, index) {
                 final d = paged[index];
-                final esVerificado = d.esPendiente.toLowerCase().contains('verific');
+                final esVerificado = d.esPendiente.toLowerCase().contains(
+                  'verific',
+                );
                 return Card(
                   elevation: 1,
                   margin: const EdgeInsets.symmetric(
@@ -403,7 +421,8 @@ class _DepositosIdentificarTable extends ConsumerWidget {
                                   color: Colors.orange,
                                 ),
                                 tooltip: 'Asignar Cliente',
-                                onPressed: () => mostrarDialogoAsignarCliente(d),
+                                onPressed:
+                                    () => mostrarDialogoAsignarCliente(d),
                               ),
                             ],
                           ),
@@ -498,7 +517,7 @@ class _DepositosIdentificarTable extends ConsumerWidget {
   ) {
     // Definir una constante para el ancho mínimo de la tabla
     const double tableMinWidth = 950.0;
-    
+
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       child: SizedBox(
@@ -512,7 +531,7 @@ class _DepositosIdentificarTable extends ConsumerWidget {
             dataRowHeight: 52,
             columns: [
               _customDataColumn('ID', 60),
-              _customDataColumn('Cliente', 90), 
+              _customDataColumn('Cliente', 90),
               _customDataColumn('Empresa', 90),
               _customDataColumn('Banco', 200),
               _customDataColumn('Importe', 90),
@@ -522,50 +541,58 @@ class _DepositosIdentificarTable extends ConsumerWidget {
               _customDataColumn('Observaciones', 180),
               _customDataColumn('Acciones', 80),
             ],
-            rows: paged.map((d) {
-              final esVerificado = d.esPendiente.toLowerCase().contains('verific');
-              return DataRow(
-                cells: [
-                  _customDataCell(Text(d.idDeposito.toString()), 60),
-                  _customDataCell(Text(d.codCliente), 90),
-                  _customDataCell(Text(d.nombreEmpresa), 90),
-                  _customDataCell(Text(d.nombreBanco), 200),
-                  _customDataCell(Text(d.importe.toStringAsFixed(2)), 90),
-                  _customDataCell(Text(d.moneda), 60),
-                  _customDataCell(
-                    Text(
-                      d.fechaI != null
-                          ? "${d.fechaI!.day.toString().padLeft(2, '0')}/${d.fechaI!.month.toString().padLeft(2, '0')}/${d.fechaI!.year}"
-                          : '',
-                    ),
-                    80,
-                  ),
-                  _customDataCell(_EstadoChip(estado: d.esPendiente), 100),
-                  _customDataCell(Text(d.obs, overflow: TextOverflow.ellipsis), 180),
-                  _customDataCell(
-                    esVerificado // Si está verificado, mostrar un contenedor vacío
-                        ? const SizedBox.shrink()
-                        : Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              IconButton(
-                                icon: const Icon(
-                                  Icons.person,
-                                  color: Colors.orange,
-                                  size: 20,
+            rows:
+                paged.map((d) {
+                  final esVerificado = d.esPendiente.toLowerCase().contains(
+                    'verific',
+                  );
+                  return DataRow(
+                    cells: [
+                      _customDataCell(Text(d.idDeposito.toString()), 60),
+                      _customDataCell(Text(d.codCliente), 90),
+                      _customDataCell(Text(d.nombreEmpresa), 90),
+                      _customDataCell(Text(d.nombreBanco), 200),
+                      _customDataCell(Text(d.importe.toStringAsFixed(2)), 90),
+                      _customDataCell(Text(d.moneda), 60),
+                      _customDataCell(
+                        Text(
+                          d.fechaI != null
+                              ? "${d.fechaI!.day.toString().padLeft(2, '0')}/${d.fechaI!.month.toString().padLeft(2, '0')}/${d.fechaI!.year}"
+                              : '',
+                        ),
+                        80,
+                      ),
+                      _customDataCell(_EstadoChip(estado: d.esPendiente), 100),
+                      _customDataCell(
+                        Text(d.obs, overflow: TextOverflow.ellipsis),
+                        180,
+                      ),
+                      _customDataCell(
+                        esVerificado // Si está verificado, mostrar un contenedor vacío
+                            ? const SizedBox.shrink()
+                            : Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                IconButton(
+                                  icon: const Icon(
+                                    Icons.person,
+                                    color: Colors.orange,
+                                    size: 20,
+                                  ),
+                                  tooltip: 'Asignar Cliente',
+                                  onPressed: () => onAsignarCliente(d),
+                                  constraints: const BoxConstraints(
+                                    maxWidth: 32,
+                                  ),
+                                  padding: EdgeInsets.zero,
                                 ),
-                                tooltip: 'Asignar Cliente',
-                                onPressed: () => onAsignarCliente(d),
-                                constraints: const BoxConstraints(maxWidth: 32),
-                                padding: EdgeInsets.zero,
-                              ),
-                            ],
-                          ),
-                    80,
-                  ),
-                ],
-              );
-            }).toList(),
+                              ],
+                            ),
+                        80,
+                      ),
+                    ],
+                  );
+                }).toList(),
           ),
         ),
       ),
@@ -611,7 +638,9 @@ class _DepositosIdentificarTable extends ConsumerWidget {
             ],
             rows:
                 paged.map((d) {
-                  final esVerificado = d.esPendiente.toLowerCase().contains('verific');
+                  final esVerificado = d.esPendiente.toLowerCase().contains(
+                    'verific',
+                  );
                   return DataRow(
                     cells: [
                       DataCell(Text(d.idDeposito.toString())),
@@ -632,32 +661,36 @@ class _DepositosIdentificarTable extends ConsumerWidget {
                         esVerificado // Si está verificado, mostrar un contenedor vacío
                             ? const SizedBox.shrink()
                             : Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  IconButton(
-                                    icon: const Icon(
-                                      Icons.person,
-                                      color: Colors.orange,
-                                      size: 20,
-                                    ),
-                                    tooltip: 'Asignar Cliente',
-                                    onPressed: () => onAsignarCliente(d),
-                                    constraints: const BoxConstraints(maxWidth: 32),
-                                    padding: EdgeInsets.zero,
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                IconButton(
+                                  icon: const Icon(
+                                    Icons.person,
+                                    color: Colors.orange,
+                                    size: 20,
                                   ),
-                                  IconButton(
-                                    icon: const Icon(
-                                      Icons.copy,
-                                      color: Colors.indigo,
-                                      size: 20,
-                                    ),
-                                    tooltip: 'Copiar',
-                                    onPressed: () {},
-                                    constraints: const BoxConstraints(maxWidth: 32),
-                                    padding: EdgeInsets.zero,
+                                  tooltip: 'Asignar Cliente',
+                                  onPressed: () => onAsignarCliente(d),
+                                  constraints: const BoxConstraints(
+                                    maxWidth: 32,
                                   ),
-                                ],
-                              ),
+                                  padding: EdgeInsets.zero,
+                                ),
+                                IconButton(
+                                  icon: const Icon(
+                                    Icons.copy,
+                                    color: Colors.indigo,
+                                    size: 20,
+                                  ),
+                                  tooltip: 'Copiar',
+                                  onPressed: () {},
+                                  constraints: const BoxConstraints(
+                                    maxWidth: 32,
+                                  ),
+                                  padding: EdgeInsets.zero,
+                                ),
+                              ],
+                            ),
                       ),
                     ],
                   );
@@ -1131,28 +1164,29 @@ class _ActualizacionDepositoDialogState
         // En móvil, mostrar opción de cámara o galería
         final contextMenu = await showModalBottomSheet<ImageSource>(
           context: context,
-          builder: (context) => SafeArea(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                ListTile(
-                  leading: const Icon(Icons.photo_library),
-                  title: const Text('Galería'),
-                  onTap: () => Navigator.pop(context, ImageSource.gallery),
+          builder:
+              (context) => SafeArea(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    ListTile(
+                      leading: const Icon(Icons.photo_library),
+                      title: const Text('Galería'),
+                      onTap: () => Navigator.pop(context, ImageSource.gallery),
+                    ),
+                    ListTile(
+                      leading: const Icon(Icons.camera_alt),
+                      title: const Text('Cámara'),
+                      onTap: () => Navigator.pop(context, ImageSource.camera),
+                    ),
+                    const SizedBox(height: 8),
+                    TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: const Text('Cancelar'),
+                    ),
+                  ],
                 ),
-                ListTile(
-                  leading: const Icon(Icons.camera_alt),
-                  title: const Text('Cámara'),
-                  onTap: () => Navigator.pop(context, ImageSource.camera),
-                ),
-                const SizedBox(height: 8),
-                TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: const Text('Cancelar'),
-                ),
-              ],
-            ),
-          ),
+              ),
         );
         if (contextMenu != null) {
           imagen = await picker.pickImage(
@@ -1321,19 +1355,24 @@ class _ActualizacionDepositoDialogState
                       ),
                       value: empresaSeleccionada,
                       hint: const Text("Seleccione una empresa"),
-                      items: state.empresas
-                          .where((e) => e.codEmpresa != 0) // Filtrar "Todos"
-                          .map((empresa) {
-                            return DropdownMenuItem<EmpresaEntity>(
-                              value: empresa,
-                              child: Text(empresa.nombre),
-                            );
-                          })
-                          .toList(),
-                      onChanged: null, // <-- Deshabilita el dropdown (solo lectura)
-                      disabledHint: empresaSeleccionada != null
-                          ? Text(empresaSeleccionada!.nombre)
-                          : const Text("Seleccione una empresa"),
+                      items:
+                          state.empresas
+                              .where(
+                                (e) => e.codEmpresa != 0,
+                              ) // Filtrar "Todos"
+                              .map((empresa) {
+                                return DropdownMenuItem<EmpresaEntity>(
+                                  value: empresa,
+                                  child: Text(empresa.nombre),
+                                );
+                              })
+                              .toList(),
+                      onChanged:
+                          null, // <-- Deshabilita el dropdown (solo lectura)
+                      disabledHint:
+                          empresaSeleccionada != null
+                              ? Text(empresaSeleccionada!.nombre)
+                              : const Text("Seleccione una empresa"),
                     ),
                     SizedBox(height: verticalPadding),
 
@@ -1363,7 +1402,9 @@ class _ActualizacionDepositoDialogState
                                     });
                                     try {
                                       await ref
-                                          .read(depositosChequesProvider.notifier)
+                                          .read(
+                                            depositosChequesProvider.notifier,
+                                          )
                                           .seleccionarCliente(null);
                                     } catch (e) {
                                       print('Error al limpiar cliente: $e');
@@ -1500,7 +1541,7 @@ class _ActualizacionDepositoDialogState
                                   ref
                                       .read(depositosChequesProvider.notifier)
                                       .setACuenta(nuevaCuenta);
-                                    _actualizarTotales();
+                                  _actualizarTotales();
                                 } catch (e) {
                                   print('Error al actualizar cuenta: $e');
                                 }
@@ -1517,7 +1558,8 @@ class _ActualizacionDepositoDialogState
                                 children: [
                                   Text(
                                     'Banco',
-                                    style: Theme.of(context).textTheme.bodyMedium,
+                                    style:
+                                        Theme.of(context).textTheme.bodyMedium,
                                   ),
                                   SizedBox(height: 4),
                                   DropdownButtonFormField<BancoXCuentaEntity>(
@@ -1552,11 +1594,14 @@ class _ActualizacionDepositoDialogState
                                         try {
                                           ref
                                               .read(
-                                                depositosChequesProvider.notifier,
+                                                depositosChequesProvider
+                                                    .notifier,
                                               )
                                               .seleccionarBanco(newValue);
                                         } catch (e) {
-                                          print('Error al seleccionar banco: $e');
+                                          print(
+                                            'Error al seleccionar banco: $e',
+                                          );
                                         }
                                       }
                                     },
@@ -1572,7 +1617,8 @@ class _ActualizacionDepositoDialogState
                                 children: [
                                   Text(
                                     'A Cuenta',
-                                    style: Theme.of(context).textTheme.bodyMedium,
+                                    style:
+                                        Theme.of(context).textTheme.bodyMedium,
                                   ),
                                   SizedBox(height: 4),
                                   TextFormField(
@@ -1730,13 +1776,14 @@ class _ActualizacionDepositoDialogState
                         border: Border.all(color: Colors.grey[300]!),
                         borderRadius: BorderRadius.circular(4),
                       ),
-                      child: notasRemision.isEmpty
-                          ? const Center(
-                              child: Text(
-                                'No hay documentos disponibles para este cliente',
-                              ),
-                            )
-                          : _buildDocumentosTable(),
+                      child:
+                          notasRemision.isEmpty
+                              ? const Center(
+                                child: Text(
+                                  'No hay documentos disponibles para este cliente',
+                                ),
+                              )
+                              : _buildDocumentosTable(),
                     ),
 
                     SizedBox(height: verticalPadding),
@@ -1749,7 +1796,8 @@ class _ActualizacionDepositoDialogState
                               children: [
                                 Expanded(
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       const Text('Total Documentos'),
                                       SizedBox(height: 4),
@@ -1762,7 +1810,9 @@ class _ActualizacionDepositoDialogState
                                           border: Border.all(
                                             color: Colors.grey[300]!,
                                           ),
-                                          borderRadius: BorderRadius.circular(4),
+                                          borderRadius: BorderRadius.circular(
+                                            4,
+                                          ),
                                         ),
                                         child: Text(
                                           '${totalDocumentos.toStringAsFixed(2)} BS',
@@ -1774,7 +1824,8 @@ class _ActualizacionDepositoDialogState
                                 SizedBox(width: 8),
                                 Expanded(
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       const Text('A Cuenta'),
                                       SizedBox(height: 4),
@@ -1787,7 +1838,9 @@ class _ActualizacionDepositoDialogState
                                           border: Border.all(
                                             color: Colors.grey[300]!,
                                           ),
-                                          borderRadius: BorderRadius.circular(4),
+                                          borderRadius: BorderRadius.circular(
+                                            4,
+                                          ),
                                         ),
                                         child: Text(
                                           '${aCuenta.toStringAsFixed(2)} BS',
@@ -1861,9 +1914,8 @@ class _ActualizacionDepositoDialogState
                       children: [
                         Text(
                           'Importe del Depósito:',
-                          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                            fontWeight: FontWeight.bold,
-                          ),
+                          style: Theme.of(context).textTheme.bodyLarge
+                              ?.copyWith(fontWeight: FontWeight.bold),
                         ),
                         const Spacer(),
                         Container(
@@ -1994,7 +2046,7 @@ class _ActualizacionDepositoDialogState
             ),
           ),
         ),
-      )
+      ),
     );
   }
 
@@ -2057,9 +2109,7 @@ class _ActualizacionDepositoDialogState
           behavior: SnackBarBehavior.floating,
           margin: const EdgeInsets.all(16),
           elevation: 8,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
-          ),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         ),
       );
     }
@@ -2199,10 +2249,10 @@ class _ActualizacionDepositoDialogState
     final notasSeleccionadas = state.notasSeleccionadas;
     final isDesktop = ResponsiveUtilsBosque.isDesktop(context);
     final isMobile = ResponsiveUtilsBosque.isMobile(context);
-    
+
     // Configurar un ancho mínimo para la tabla
     final double tableMinWidth = isDesktop ? 800.0 : 700.0;
-    
+
     return Theme(
       data: Theme.of(context).copyWith(
         dividerColor: Colors.grey.shade300,
@@ -2224,7 +2274,7 @@ class _ActualizacionDepositoDialogState
           borderRadius: BorderRadius.circular(8),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.05),
+              color: Colors.black.withValues(alpha: 0.05),
               blurRadius: 5,
               spreadRadius: 1,
             ),
@@ -2240,36 +2290,48 @@ class _ActualizacionDepositoDialogState
             controller: _horizontalController,
             thickness: 8,
             radius: Radius.circular(4),
-            notificationPredicate: (notif) => notif.depth == 1 && notif.metrics.axis == Axis.horizontal,
+            notificationPredicate:
+                (notif) =>
+                    notif.depth == 1 && notif.metrics.axis == Axis.horizontal,
             child: SingleChildScrollView(
               controller: _verticalController,
               child: SingleChildScrollView(
                 controller: _horizontalController,
                 scrollDirection: Axis.horizontal,
                 child: ConstrainedBox(
-                  constraints: BoxConstraints(
-                    minWidth: tableMinWidth,
-                  ),
+                  constraints: BoxConstraints(minWidth: tableMinWidth),
                   child: DataTable(
                     columnSpacing: isDesktop ? 20 : 16,
                     headingRowHeight: 50,
                     dataRowHeight: 56,
                     dividerThickness: 1,
-                    headingRowColor: WidgetStateProperty.all(Colors.grey.shade100),
+                    headingRowColor: WidgetStateProperty.all(
+                      Colors.grey.shade100,
+                    ),
                     border: TableBorder(
                       top: BorderSide(width: 1, color: Colors.grey.shade300),
                       bottom: BorderSide(width: 1, color: Colors.grey.shade300),
                       left: BorderSide.none,
                       right: BorderSide.none,
-                      verticalInside: BorderSide(width: 1, color: Colors.grey.shade200),
-                      horizontalInside: BorderSide(width: 1, color: Colors.grey.shade200),
+                      verticalInside: BorderSide(
+                        width: 1,
+                        color: Colors.grey.shade200,
+                      ),
+                      horizontalInside: BorderSide(
+                        width: 1,
+                        color: Colors.grey.shade200,
+                      ),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     columns: [
                       DataColumn(
                         label: Row(
                           children: [
-                            Icon(Icons.check_box_outline_blank, size: 16, color: Colors.teal.shade800),
+                            Icon(
+                              Icons.check_box_outline_blank,
+                              size: 16,
+                              color: Colors.teal.shade800,
+                            ),
                             SizedBox(width: 4),
                             Text('Seleccionar'),
                           ],
@@ -2278,17 +2340,24 @@ class _ActualizacionDepositoDialogState
                       DataColumn(
                         label: Row(
                           children: [
-                            Icon(Icons.description, size: 16, color: Colors.teal.shade800),
+                            Icon(
+                              Icons.description,
+                              size: 16,
+                              color: Colors.teal.shade800,
+                            ),
                             SizedBox(width: 4),
                             Text('Número Doc.'),
-                          
-                    ]),
-            
+                          ],
+                        ),
                       ),
                       DataColumn(
                         label: Row(
                           children: [
-                            Icon(Icons.receipt, size: 16, color: Colors.teal.shade800),
+                            Icon(
+                              Icons.receipt,
+                              size: 16,
+                              color: Colors.teal.shade800,
+                            ),
                             SizedBox(width: 4),
                             Text('Num. Factura'),
                           ],
@@ -2297,16 +2366,24 @@ class _ActualizacionDepositoDialogState
                       DataColumn(
                         label: Row(
                           children: [
-                            Icon(Icons.calendar_today, size: 16, color: Colors.teal.shade800),
+                            Icon(
+                              Icons.calendar_today,
+                              size: 16,
+                              color: Colors.teal.shade800,
+                            ),
                             SizedBox(width: 4),
                             Text('Fecha'),
-                          ]
+                          ],
                         ),
                       ),
                       DataColumn(
                         label: Row(
                           children: [
-                            Icon(Icons.attach_money, size: 16, color: Colors.teal.shade800),
+                            Icon(
+                              Icons.attach_money,
+                              size: 16,
+                              color: Colors.teal.shade800,
+                            ),
                             SizedBox(width: 4),
                             Text('Total (Bs)'),
                           ],
@@ -2315,124 +2392,163 @@ class _ActualizacionDepositoDialogState
                       DataColumn(
                         label: Row(
                           children: [
-                            Icon(Icons.account_balance_wallet, size: 16, color: Colors.teal.shade800),
+                            Icon(
+                              Icons.account_balance_wallet,
+                              size: 16,
+                              color: Colors.teal.shade800,
+                            ),
                             SizedBox(width: 4),
                             Text('Saldo Pendiente'),
                           ],
                         ),
                       ),
                     ],
-                    rows: notasRemision.map<DataRow>((doc) {
-                      final seleccionado = notasSeleccionadas.contains(doc.docNum);
-                      final saldoValue = state.saldosEditados[doc.docNum]?.toString() ??
-                          doc.saldoPendiente.toString();
-                      
-                      // Utilizar una key única para cada fila para mantener el estado
-                      return DataRow(
-                        key: ValueKey('doc_${doc.docNum}_${seleccionado ? '1' : '0'}'),
-                        color: WidgetStateProperty.resolveWith<Color?>(
-                          (Set<WidgetState> states) {
-                            if (seleccionado) return Colors.teal.shade50;
-                            if (states.contains(WidgetState.hovered)) return Colors.grey.shade50;
-                            return null;
-                          },
-                        ),
-                        cells: [
-                          DataCell(
-                            Container(
-                              key: ValueKey('check_${doc.docNum}_${seleccionado ? '1' : '0'}'),
-                              child: Checkbox(
-                                value: seleccionado,
-                                activeColor: Colors.teal.shade600,
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
-                                onChanged: (value) => _toggleDocumentoSeleccionado(
-                                  doc.docNum,
-                                  value ?? false,
+                    rows: notasRemision
+                        .map<DataRow>((doc) {
+                          final seleccionado = notasSeleccionadas.contains(
+                            doc.docNum,
+                          );
+                          final saldoValue =
+                              state.saldosEditados[doc.docNum]?.toString() ??
+                              doc.saldoPendiente.toString();
+
+                          // Utilizar una key única para cada fila para mantener el estado
+                          return DataRow(
+                            key: ValueKey(
+                              'doc_${doc.docNum}_${seleccionado ? '1' : '0'}',
+                            ),
+                            color: WidgetStateProperty.resolveWith<Color?>((
+                              Set<WidgetState> states,
+                            ) {
+                              if (seleccionado) return Colors.teal.shade50;
+                              if (states.contains(WidgetState.hovered))
+                                return Colors.grey.shade50;
+                              return null;
+                            }),
+                            cells: [
+                              DataCell(
+                                Container(
+                                  key: ValueKey(
+                                    'check_${doc.docNum}_${seleccionado ? '1' : '0'}',
+                                  ),
+                                  child: Checkbox(
+                                    value: seleccionado,
+                                    activeColor: Colors.teal.shade600,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(4),
+                                    ),
+                                    onChanged:
+                                        (value) => _toggleDocumentoSeleccionado(
+                                          doc.docNum,
+                                          value ?? false,
+                                        ),
+                                  ),
                                 ),
                               ),
-                            ),
-                          ),
-                          DataCell(
-                            Container(
-                              padding: EdgeInsets.all(8),
-                              decoration: BoxDecoration(
-                                color: Colors.grey.shade100,
-                                borderRadius: BorderRadius.circular(4),
-                              ),
-                              child: Text(
-                                doc.docNum.toString(),
-                                style: TextStyle(fontWeight: FontWeight.w500),
-                              ),
-                            ),
-                          ),
-                          DataCell(Text(doc.numFact.toString())),
-                          DataCell(
-                            Container(
-                              padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                              decoration: BoxDecoration(
-                                color: Colors.blue.shade50,
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(color: Colors.blue.shade100),
-                              ),
-                              child: Text(
-                                doc.fecha != null
-                                    ? "${doc.fecha.day.toString().padLeft(2, '0')}/${doc.fecha.month.toString().padLeft(2, '0')}/${doc.fecha.year}"
-                                    : '',
-                                style: TextStyle(
-                                  color: Colors.blue.shade800,
-                                  fontSize: 13,
-                                ),
-                              ),
-                            ),
-                          ),
-                          DataCell(
-                            Text(
-                              doc.totalMonto.toStringAsFixed(2),
-                              style: TextStyle(fontWeight: FontWeight.w500),
-                            ),
-                          ),
-                          DataCell(
-                            seleccionado
-                                ? Container(
-                                    key: ValueKey('editable_${doc.docNum}_${seleccionado ? '1' : '0'}'),
-                                    child: EditableSaldoPendienteCell(
-                                      valorOriginal: doc.saldoPendiente,
-                                      valorActual: saldoValue,
-                                      onChanged: (v, showError) {
-                                        final val = double.tryParse(v) ?? 0.0;
-                                        if (val <= doc.saldoPendiente) {
-                                          ref
-                                              .read(depositosChequesProvider.notifier)
-                                              .editarSaldoPendiente(doc.docNum, val);
-                                          _actualizarTotales();
-                                        }
-                                        showError(val > doc.saldoPendiente);
-                                      },
-                                    ),
-                                  )
-                                : Container(
-                                    padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                                    decoration: BoxDecoration(
-                                      color: Colors.grey.shade50,
-                                      borderRadius: BorderRadius.circular(8),
-                                      border: Border.all(color: Colors.grey.shade300),
-                                    ),
-                                    child: Text(
-                                      doc.saldoPendiente.toStringAsFixed(2),
-                                      style: TextStyle(fontWeight: FontWeight.w400),
+                              DataCell(
+                                Container(
+                                  padding: EdgeInsets.all(8),
+                                  decoration: BoxDecoration(
+                                    color: Colors.grey.shade100,
+                                    borderRadius: BorderRadius.circular(4),
+                                  ),
+                                  child: Text(
+                                    doc.docNum.toString(),
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.w500,
                                     ),
                                   ),
-                          ),
-                        ],
-                      );
-                    }).toList(growable: false),
+                                ),
+                              ),
+                              DataCell(Text(doc.numFact.toString())),
+                              DataCell(
+                                Container(
+                                  padding: EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 4,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: Colors.blue.shade50,
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(
+                                      color: Colors.blue.shade100,
+                                    ),
+                                  ),
+                                  child: Text(
+                                    doc.fecha != null
+                                        ? "${doc.fecha.day.toString().padLeft(2, '0')}/${doc.fecha.month.toString().padLeft(2, '0')}/${doc.fecha.year}"
+                                        : '',
+                                    style: TextStyle(
+                                      color: Colors.blue.shade800,
+                                      fontSize: 13,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              DataCell(
+                                Text(
+                                  doc.totalMonto.toStringAsFixed(2),
+                                  style: TextStyle(fontWeight: FontWeight.w500),
+                                ),
+                              ),
+                              DataCell(
+                                seleccionado
+                                    ? Container(
+                                      key: ValueKey(
+                                        'editable_${doc.docNum}_${seleccionado ? '1' : '0'}',
+                                      ),
+                                      child: EditableSaldoPendienteCell(
+                                        valorOriginal: doc.saldoPendiente,
+                                        valorActual: saldoValue,
+                                        onChanged: (v, showError) {
+                                          final val = double.tryParse(v) ?? 0.0;
+                                          if (val <= doc.saldoPendiente) {
+                                            ref
+                                                .read(
+                                                  depositosChequesProvider
+                                                      .notifier,
+                                                )
+                                                .editarSaldoPendiente(
+                                                  doc.docNum,
+                                                  val,
+                                                );
+                                            _actualizarTotales();
+                                          }
+                                          showError(val > doc.saldoPendiente);
+                                        },
+                                      ),
+                                    )
+                                    : Container(
+                                      padding: EdgeInsets.symmetric(
+                                        horizontal: 12,
+                                        vertical: 8,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: Colors.grey.shade50,
+                                        borderRadius: BorderRadius.circular(8),
+                                        border: Border.all(
+                                          color: Colors.grey.shade300,
+                                        ),
+                                      ),
+                                      child: Text(
+                                        doc.saldoPendiente.toStringAsFixed(2),
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.w400,
+                                        ),
+                                      ),
+                                    ),
+                              ),
+                            ],
+                          );
+                        })
+                        .toList(growable: false),
                   ),
                 ),
               ),
             ),
           ),
         ),
-      )
+      ),
     );
   }
 }

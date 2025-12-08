@@ -10,9 +10,10 @@ import 'dart:typed_data';
 // Proveedor para almacenar los bytes de la imagen (necesario para web)
 final imageBytesProvider = StateProvider<Uint8List?>((ref) => null);
 
-final depositosChequesRegisterProvider = StateNotifierProvider<DepositosChequesNotifier, DepositosChequesState>(
-  (ref) => DepositosChequesNotifier(ref),
-);
+final depositosChequesRegisterProvider =
+    StateNotifierProvider<DepositosChequesNotifier, DepositosChequesState>(
+      (ref) => DepositosChequesNotifier(ref),
+    );
 
 class DepositoChequeRegisterScreen extends ConsumerStatefulWidget {
   const DepositoChequeRegisterScreen({super.key});
@@ -38,14 +39,16 @@ class _DepositoChequeRegisterScreenState
     final state = ref.watch(depositosChequesRegisterProvider);
     final notifier = ref.read(depositosChequesRegisterProvider.notifier);
     final imageBytes = ref.watch(imageBytesProvider);
-    
+
     // Determinar si estamos en móvil o desktop
     final isMobile = ResponsiveUtilsBosque.isMobile(context);
-    
+
     // Obtener los paddings responsivos
-    final horizontalPadding = ResponsiveUtilsBosque.getHorizontalPadding(context);
+    final horizontalPadding = ResponsiveUtilsBosque.getHorizontalPadding(
+      context,
+    );
     final verticalPadding = ResponsiveUtilsBosque.getVerticalPadding(context);
-    
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Registro de Depósitos'),
@@ -53,184 +56,277 @@ class _DepositoChequeRegisterScreenState
         elevation: 0,
         foregroundColor: Colors.teal,
       ),
-      body: state.cargando
-          ? const Center(child: CircularProgressIndicator())
-          : SingleChildScrollView(
-              padding: EdgeInsets.symmetric(
-                horizontal: horizontalPadding,
-                vertical: verticalPadding,
-              ),
-              child: Container(
-                decoration: BoxDecoration(
-                  color: Colors.teal.shade50,
-                  borderRadius: BorderRadius.circular(
+      body:
+          state.cargando
+              ? const Center(child: CircularProgressIndicator())
+              : SingleChildScrollView(
+                padding: EdgeInsets.symmetric(
+                  horizontal: horizontalPadding,
+                  vertical: verticalPadding,
+                ),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: Colors.teal.shade50,
+                    borderRadius: BorderRadius.circular(
+                      ResponsiveUtilsBosque.getResponsiveValue(
+                        context: context,
+                        defaultValue: 16.0,
+                        mobile: 12.0,
+                        desktop: 20.0,
+                      ),
+                    ),
+                  ),
+                  padding: EdgeInsets.all(
                     ResponsiveUtilsBosque.getResponsiveValue(
                       context: context,
-                      defaultValue: 16.0,
-                      mobile: 12.0,
-                      desktop: 20.0,
+                      defaultValue: 24.0,
+                      mobile: 16.0,
+                      desktop: 32.0,
                     ),
                   ),
-                ),
-                padding: EdgeInsets.all(
-                  ResponsiveUtilsBosque.getResponsiveValue(
-                    context: context,
-                    defaultValue: 24.0,
-                    mobile: 16.0,
-                    desktop: 32.0,
-                  ),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Layout responsivo para empresa y cliente
-                    isMobile
-                        ? _buildMobileFields(context, state, notifier)
-                        : _buildDesktopFields(context, state, notifier),
-                    // Tabla de notas de remisión
-                    if (state.notasRemision.isNotEmpty) ...[
-                      SizedBox(height: ResponsiveUtilsBosque.getVerticalPadding(context)),
-                      _buildNotasRemisionTable(context, state, notifier),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Layout responsivo para empresa y cliente
+                      isMobile
+                          ? _buildMobileFields(context, state, notifier)
+                          : _buildDesktopFields(context, state, notifier),
+                      // Tabla de notas de remisión
+                      if (state.notasRemision.isNotEmpty) ...[
+                        SizedBox(
+                          height: ResponsiveUtilsBosque.getVerticalPadding(
+                            context,
+                          ),
+                        ),
+                        _buildNotasRemisionTable(context, state, notifier),
+                      ],
+
+                      SizedBox(
+                        height: ResponsiveUtilsBosque.getVerticalPadding(
+                          context,
+                        ),
+                      ),
+
+                      // Layout responsivo para cuenta y banco
+                      isMobile
+                          ? _buildMobileBancoFields(context, state, notifier)
+                          : _buildDesktopBancoFields(context, state, notifier),
+
+                      SizedBox(
+                        height: ResponsiveUtilsBosque.getVerticalPadding(
+                          context,
+                        ),
+                      ),
+
+                      // Layout responsivo para importe y moneda
+                      isMobile
+                          ? _buildMobileImporteFields(context, state, notifier)
+                          : _buildDesktopImporteFields(
+                            context,
+                            state,
+                            notifier,
+                          ),
+
+                      SizedBox(
+                        height:
+                            ResponsiveUtilsBosque.getVerticalPadding(context) *
+                            1.5,
+                      ),
+
+                      // Sección de imagen del depósito
+                      Text(
+                        'Imagen del Depósito',
+                        style: ResponsiveUtilsBosque.getResponsiveValue(
+                          context: context,
+                          defaultValue: Theme.of(context).textTheme.titleMedium,
+                          desktop: Theme.of(context).textTheme.titleLarge,
+                        ),
+                      ),
+                      SizedBox(
+                        height:
+                            ResponsiveUtilsBosque.getVerticalPadding(context) *
+                            0.5,
+                      ),
+
+                      // Pasamos el imageBytes y ref para manejo multiplataforma
+                      _buildImageUploader(
+                        context,
+                        state,
+                        notifier,
+                        imageBytes,
+                        ref,
+                      ),
+
+                      SizedBox(
+                        height:
+                            ResponsiveUtilsBosque.getVerticalPadding(context) *
+                            1.5,
+                      ),
+
+                      // Botones de acción
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: Wrap(
+                          spacing: 16,
+                          runSpacing: 12,
+                          alignment: WrapAlignment.end,
+                          children: [
+                            OutlinedButton(
+                              onPressed: () {
+                                notifier.limpiarFormulario();
+                                // También limpiamos los bytes de la imagen
+                                ref.read(imageBytesProvider.notifier).state =
+                                    null;
+                              },
+                              style: OutlinedButton.styleFrom(
+                                padding: EdgeInsets.symmetric(
+                                  horizontal:
+                                      ResponsiveUtilsBosque.getResponsiveValue(
+                                        context: context,
+                                        defaultValue: 16.0,
+                                        mobile: 12.0,
+                                        desktop: 24.0,
+                                      ),
+                                  vertical:
+                                      ResponsiveUtilsBosque.getResponsiveValue(
+                                        context: context,
+                                        defaultValue: 12.0,
+                                        mobile: 8.0,
+                                        desktop: 16.0,
+                                      ),
+                                ),
+                              ),
+                              child: const Text('Cancelar'),
+                            ),
+                            ElevatedButton.icon(
+                              onPressed:
+                                  _isGuardarEnabled(state, ref)
+                                      ? () async {
+                                        final tieneNotas =
+                                            state.notasSeleccionadas.isNotEmpty;
+                                        final tieneACuenta = state.aCuenta > 0;
+                                        if (state.bancoSeleccionado == null) {
+                                          ScaffoldMessenger.of(
+                                            context,
+                                          ).showSnackBar(
+                                            const SnackBar(
+                                              content: Text(
+                                                'Debe seleccionar un banco.',
+                                              ),
+                                            ),
+                                          );
+                                          return;
+                                        }
+                                        if (!(tieneNotas || tieneACuenta) ||
+                                            state.importeTotal <= 0) {
+                                          ScaffoldMessenger.of(
+                                            context,
+                                          ).showSnackBar(
+                                            const SnackBar(
+                                              content: Text(
+                                                'Debe seleccionar al menos una nota de remisión o ingresar un valor a cuenta mayor a 0. El importe total debe ser mayor a 0.',
+                                              ),
+                                            ),
+                                          );
+                                          return;
+                                        }
+                                        final imageBytes = ref.read(
+                                          imageBytesProvider,
+                                        );
+                                        final imagen =
+                                            kIsWeb
+                                                ? imageBytes
+                                                : state.imagenDeposito;
+                                        if (imagen == null) {
+                                          ScaffoldMessenger.of(
+                                            context,
+                                          ).showSnackBar(
+                                            const SnackBar(
+                                              content: Text(
+                                                'Debe cargar una imagen del depósito.',
+                                              ),
+                                            ),
+                                          );
+                                          return;
+                                        }
+                                        try {
+                                          final okDeposito = await notifier
+                                              .registrarDeposito(imagen);
+                                          if (!okDeposito)
+                                            throw Exception(
+                                              'No se pudo registrar el depósito',
+                                            );
+                                          final okNotas =
+                                              await notifier
+                                                  .guardarNotasRemision();
+                                          if (!okNotas)
+                                            throw Exception(
+                                              'No se pudieron registrar todas las notas de remisión',
+                                            );
+                                          ScaffoldMessenger.of(
+                                            context,
+                                          ).showSnackBar(
+                                            const SnackBar(
+                                              content: Text(
+                                                'Depósito y notas de remisión registrados correctamente.',
+                                              ),
+                                            ),
+                                          );
+                                          notifier.limpiarFormulario();
+                                          ref
+                                              .read(imageBytesProvider.notifier)
+                                              .state = null;
+                                        } catch (e) {
+                                          ScaffoldMessenger.of(
+                                            context,
+                                          ).showSnackBar(
+                                            SnackBar(
+                                              content: Text(
+                                                'Error: ${e.toString()}',
+                                              ),
+                                            ),
+                                          );
+                                        }
+                                      }
+                                      : null,
+                              icon: const Icon(Icons.save),
+                              label: const Text('Guardar'),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.green,
+                                padding: EdgeInsets.symmetric(
+                                  horizontal:
+                                      ResponsiveUtilsBosque.getResponsiveValue(
+                                        context: context,
+                                        defaultValue: 16.0,
+                                        mobile: 12.0,
+                                        desktop: 24.0,
+                                      ),
+                                  vertical:
+                                      ResponsiveUtilsBosque.getResponsiveValue(
+                                        context: context,
+                                        defaultValue: 12.0,
+                                        mobile: 8.0,
+                                        desktop: 16.0,
+                                      ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                     ],
-                    
-                    SizedBox(height: ResponsiveUtilsBosque.getVerticalPadding(context)),
-                    
-                    // Layout responsivo para cuenta y banco
-                    isMobile
-                        ? _buildMobileBancoFields(context, state, notifier)
-                        : _buildDesktopBancoFields(context, state, notifier),
-                    
-                    SizedBox(height: ResponsiveUtilsBosque.getVerticalPadding(context)),
-                    
-                    // Layout responsivo para importe y moneda
-                    isMobile
-                        ? _buildMobileImporteFields(context, state, notifier)
-                        : _buildDesktopImporteFields(context, state, notifier),
-                    
-                    SizedBox(height: ResponsiveUtilsBosque.getVerticalPadding(context) * 1.5),
-                    
-                    // Sección de imagen del depósito
-                    Text(
-                      'Imagen del Depósito',
-                      style: ResponsiveUtilsBosque.getResponsiveValue(
-                        context: context,
-                        defaultValue: Theme.of(context).textTheme.titleMedium,
-                        desktop: Theme.of(context).textTheme.titleLarge,
-                      ),
-                    ),
-                    SizedBox(height: ResponsiveUtilsBosque.getVerticalPadding(context) * 0.5),
-                    
-                    // Pasamos el imageBytes y ref para manejo multiplataforma
-                    _buildImageUploader(context, state, notifier, imageBytes, ref),
-                    
-                    SizedBox(height: ResponsiveUtilsBosque.getVerticalPadding(context) * 1.5),
-                    
-                    // Botones de acción
-                    Align(
-                      alignment: Alignment.centerRight,
-                      child: Wrap(
-                        spacing: 16,
-                        runSpacing: 12,
-                        alignment: WrapAlignment.end,
-                        children: [
-                          OutlinedButton(
-                            onPressed: () {
-                              notifier.limpiarFormulario();
-                              // También limpiamos los bytes de la imagen
-                              ref.read(imageBytesProvider.notifier).state = null;
-                            },
-                            style: OutlinedButton.styleFrom(
-                              padding: EdgeInsets.symmetric(
-                                horizontal: ResponsiveUtilsBosque.getResponsiveValue(
-                                  context: context,
-                                  defaultValue: 16.0,
-                                  mobile: 12.0,
-                                  desktop: 24.0,
-                                ),
-                                vertical: ResponsiveUtilsBosque.getResponsiveValue(
-                                  context: context,
-                                  defaultValue: 12.0,
-                                  mobile: 8.0,
-                                  desktop: 16.0,
-                                ),
-                              ),
-                            ),
-                            child: const Text('Cancelar'),
-                          ),
-                          ElevatedButton.icon(
-                            onPressed: _isGuardarEnabled(state, ref)
-                                ? () async {
-                                    final tieneNotas = state.notasSeleccionadas.isNotEmpty;
-                                    final tieneACuenta = state.aCuenta > 0;
-                                    if (state.bancoSeleccionado == null) {
-                                      ScaffoldMessenger.of(context).showSnackBar(
-                                        const SnackBar(content: Text('Debe seleccionar un banco.')),
-                                      );
-                                      return;
-                                    }
-                                    if (!(tieneNotas || tieneACuenta) || state.importeTotal <= 0) {
-                                      ScaffoldMessenger.of(context).showSnackBar(
-                                        const SnackBar(content: Text('Debe seleccionar al menos una nota de remisión o ingresar un valor a cuenta mayor a 0. El importe total debe ser mayor a 0.')),
-                                      );
-                                      return;
-                                    }
-                                    final imageBytes = ref.read(imageBytesProvider);
-                                    final imagen = kIsWeb ? imageBytes : state.imagenDeposito;
-                                    if (imagen == null) {
-                                      ScaffoldMessenger.of(context).showSnackBar(
-                                        const SnackBar(content: Text('Debe cargar una imagen del depósito.')),
-                                      );
-                                      return;
-                                    }
-                                    try {
-                                      final okDeposito = await notifier.registrarDeposito(imagen);
-                                      if (!okDeposito) throw Exception('No se pudo registrar el depósito');
-                                      final okNotas = await notifier.guardarNotasRemision();
-                                      if (!okNotas) throw Exception('No se pudieron registrar todas las notas de remisión');
-                                      ScaffoldMessenger.of(context).showSnackBar(
-                                        const SnackBar(content: Text('Depósito y notas de remisión registrados correctamente.')),
-                                      );
-                                      notifier.limpiarFormulario();
-                                      ref.read(imageBytesProvider.notifier).state = null;
-                                    } catch (e) {
-                                      ScaffoldMessenger.of(context).showSnackBar(
-                                        SnackBar(content: Text('Error: ${e.toString()}')),
-                                      );
-                                    }
-                                  }
-                                : null,
-                            icon: const Icon(Icons.save),
-                            label: const Text('Guardar'),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.green,
-                              padding: EdgeInsets.symmetric(
-                                horizontal: ResponsiveUtilsBosque.getResponsiveValue(
-                                  context: context,
-                                  defaultValue: 16.0,
-                                  mobile: 12.0,
-                                  desktop: 24.0,
-                                ),
-                                vertical: ResponsiveUtilsBosque.getResponsiveValue(
-                                  context: context,
-                                  defaultValue: 12.0,
-                                  mobile: 8.0,
-                                  desktop: 16.0,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
+                  ),
                 ),
               ),
-            ),
     );
   }
 
   // Widget para los campos de empresa y cliente en móvil (columna)
-  Widget _buildMobileFields(BuildContext context, dynamic state, dynamic notifier) {
+  Widget _buildMobileFields(
+    BuildContext context,
+    dynamic state,
+    dynamic notifier,
+  ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -242,7 +338,11 @@ class _DepositoChequeRegisterScreenState
   }
 
   // Widget para los campos de empresa y cliente en desktop (fila)
-  Widget _buildDesktopFields(BuildContext context, dynamic state, dynamic notifier) {
+  Widget _buildDesktopFields(
+    BuildContext context,
+    dynamic state,
+    dynamic notifier,
+  ) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -254,7 +354,11 @@ class _DepositoChequeRegisterScreenState
   }
 
   // Widget para los campos de A Cuenta y Banco en móvil (columna)
-  Widget _buildMobileBancoFields(BuildContext context, dynamic state, dynamic notifier) {
+  Widget _buildMobileBancoFields(
+    BuildContext context,
+    dynamic state,
+    dynamic notifier,
+  ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -266,7 +370,11 @@ class _DepositoChequeRegisterScreenState
   }
 
   // Widget para los campos de A Cuenta y Banco en desktop (fila)
-  Widget _buildDesktopBancoFields(BuildContext context, dynamic state, dynamic notifier) {
+  Widget _buildDesktopBancoFields(
+    BuildContext context,
+    dynamic state,
+    dynamic notifier,
+  ) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -278,7 +386,11 @@ class _DepositoChequeRegisterScreenState
   }
 
   // Widget para los campos de Importe y Moneda en móvil (columna)
-  Widget _buildMobileImporteFields(BuildContext context, dynamic state, dynamic notifier) {
+  Widget _buildMobileImporteFields(
+    BuildContext context,
+    dynamic state,
+    dynamic notifier,
+  ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -290,7 +402,11 @@ class _DepositoChequeRegisterScreenState
   }
 
   // Widget para los campos de Importe y Moneda en desktop (fila)
-  Widget _buildDesktopImporteFields(BuildContext context, dynamic state, dynamic notifier) {
+  Widget _buildDesktopImporteFields(
+    BuildContext context,
+    dynamic state,
+    dynamic notifier,
+  ) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -302,15 +418,19 @@ class _DepositoChequeRegisterScreenState
   }
 
   // Campo de Empresa
-  Widget _buildEmpresaField(BuildContext context, dynamic state, dynamic notifier) {
+  Widget _buildEmpresaField(
+    BuildContext context,
+    dynamic state,
+    dynamic notifier,
+  ) {
     // Corregir el error de tipo generando explícitamente los DropdownMenuItem<dynamic>
-    final empresaItems = state.empresas.map<DropdownMenuItem<dynamic>>((e) => 
-      DropdownMenuItem<dynamic>(
-        value: e,
-        child: Text(e.nombre),
-      )
-    ).toList();
-    
+    final empresaItems =
+        state.empresas
+            .map<DropdownMenuItem<dynamic>>(
+              (e) => DropdownMenuItem<dynamic>(value: e, child: Text(e.nombre)),
+            )
+            .toList();
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -327,7 +447,8 @@ class _DepositoChequeRegisterScreenState
           ),
         ),
         SizedBox(height: 8),
-        DropdownButtonFormField<dynamic>(  // Especificar el tipo genérico aquí
+        DropdownButtonFormField<dynamic>(
+          // Especificar el tipo genérico aquí
           value: state.empresaSeleccionada,
           items: empresaItems,
           onChanged: (value) {
@@ -348,7 +469,11 @@ class _DepositoChequeRegisterScreenState
   }
 
   // Campo de Cliente con búsqueda
-  Widget _buildClienteField(BuildContext context, dynamic state, dynamic notifier) {
+  Widget _buildClienteField(
+    BuildContext context,
+    dynamic state,
+    dynamic notifier,
+  ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -368,57 +493,67 @@ class _DepositoChequeRegisterScreenState
         // Verificamos si hay clientes para mostrar
         state.clientes.isEmpty && state.empresaSeleccionada != null
             ? Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  border: Border.all(color: Colors.red),
-                  borderRadius: BorderRadius.circular(4),
-                  color: Colors.red.shade50,
-                ),
-                child: const Text(
-                  'No existen clientes para la empresa seleccionada.',
-                  style: TextStyle(color: Colors.red),
-                ),
-              )
-            : Stack(
-                children: [
-                  TextField(
-                    readOnly: true,
-                    decoration: InputDecoration(
-                      border: const OutlineInputBorder(),
-                      hintText: 'Buscar cliente',
-                      prefixIcon: const Icon(Icons.search),
-                      contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-                      suffixIcon: state.clienteSeleccionado != null
-                          ? IconButton(
-                              icon: const Icon(Icons.clear),
-                              onPressed: () => notifier.seleccionarCliente(null),
-                            )
-                          : null,
-                    ),
-                    controller: TextEditingController(
-                      text: state.clienteSeleccionado?.nombreCompleto ?? '',
-                    ),
-                    onTap: () {
-                      showDialog(
-                        context: context,
-                        builder: (context) => ClienteSearchDialog(
-                          clientes: state.clientes,
-                          onClienteSelected: (cliente) {
-                            notifier.seleccionarCliente(cliente);
-                            Navigator.pop(context);
-                          },
-                        ),
-                      );
-                    },
-                  ),
-                ],
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                border: Border.all(color: Colors.red),
+                borderRadius: BorderRadius.circular(4),
+                color: Colors.red.shade50,
               ),
+              child: const Text(
+                'No existen clientes para la empresa seleccionada.',
+                style: TextStyle(color: Colors.red),
+              ),
+            )
+            : Stack(
+              children: [
+                TextField(
+                  readOnly: true,
+                  decoration: InputDecoration(
+                    border: const OutlineInputBorder(),
+                    hintText: 'Buscar cliente',
+                    prefixIcon: const Icon(Icons.search),
+                    contentPadding: EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 12,
+                    ),
+                    suffixIcon:
+                        state.clienteSeleccionado != null
+                            ? IconButton(
+                              icon: const Icon(Icons.clear),
+                              onPressed:
+                                  () => notifier.seleccionarCliente(null),
+                            )
+                            : null,
+                  ),
+                  controller: TextEditingController(
+                    text: state.clienteSeleccionado?.nombreCompleto ?? '',
+                  ),
+                  onTap: () {
+                    showDialog(
+                      context: context,
+                      builder:
+                          (context) => ClienteSearchDialog(
+                            clientes: state.clientes,
+                            onClienteSelected: (cliente) {
+                              notifier.seleccionarCliente(cliente);
+                              Navigator.pop(context);
+                            },
+                          ),
+                    );
+                  },
+                ),
+              ],
+            ),
       ],
     );
   }
 
   // Campo de A Cuenta
-  Widget _buildACuentaField(BuildContext context, dynamic state, dynamic notifier) {
+  Widget _buildACuentaField(
+    BuildContext context,
+    dynamic state,
+    dynamic notifier,
+  ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -449,14 +584,21 @@ class _DepositoChequeRegisterScreenState
   }
 
   // Campo de Banco
-  Widget _buildBancoField(BuildContext context, dynamic state, dynamic notifier) {
+  Widget _buildBancoField(
+    BuildContext context,
+    dynamic state,
+    dynamic notifier,
+  ) {
     // Corregir el error de tipo generando explícitamente los DropdownMenuItem<dynamic>
-    final bancoItems = state.bancos.map<DropdownMenuItem<dynamic>>((b) => 
-      DropdownMenuItem<dynamic>(
-        value: b,
-        child: Text(b.nombreBanco),
-      )
-    ).toList();
+    final bancoItems =
+        state.bancos
+            .map<DropdownMenuItem<dynamic>>(
+              (b) => DropdownMenuItem<dynamic>(
+                value: b,
+                child: Text(b.nombreBanco),
+              ),
+            )
+            .toList();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -474,7 +616,8 @@ class _DepositoChequeRegisterScreenState
           ),
         ),
         SizedBox(height: 8),
-        DropdownButtonFormField<dynamic>(  // Especificar el tipo genérico aquí
+        DropdownButtonFormField<dynamic>(
+          // Especificar el tipo genérico aquí
           value: state.bancoSeleccionado,
           items: bancoItems,
           onChanged: (value) => notifier.seleccionarBanco(value),
@@ -490,7 +633,11 @@ class _DepositoChequeRegisterScreenState
   }
 
   // Campo de Importe Total (solo lectura y calculado en tiempo real)
-  Widget _buildImporteTotalField(BuildContext context, dynamic state, dynamic notifier) {
+  Widget _buildImporteTotalField(
+    BuildContext context,
+    dynamic state,
+    dynamic notifier,
+  ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -525,18 +672,25 @@ class _DepositoChequeRegisterScreenState
   }
 
   // Campo de Moneda
-  Widget _buildMonedaField(BuildContext context, dynamic state, dynamic notifier) {
+  Widget _buildMonedaField(
+    BuildContext context,
+    dynamic state,
+    dynamic notifier,
+  ) {
     // Opciones con label y valor
     final monedaOptions = const [
       {'label': 'Bolivianos', 'value': 'BS'},
       {'label': 'Dólares', 'value': 'USD'},
     ];
-    final monedaItems = monedaOptions.map<DropdownMenuItem<String>>((m) =>
-      DropdownMenuItem<String>(
-        value: m['value']!,
-        child: Text(m['label']!),
-      )
-    ).toList();
+    final monedaItems =
+        monedaOptions
+            .map<DropdownMenuItem<String>>(
+              (m) => DropdownMenuItem<String>(
+                value: m['value']!,
+                child: Text(m['label']!),
+              ),
+            )
+            .toList();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -569,7 +723,13 @@ class _DepositoChequeRegisterScreenState
   }
 
   // Widget para subir imágenes - COMPATIBLE CON WEB Y MÓVIL, CON OPCIÓN DE CÁMARA EN MÓVIL
-  Widget _buildImageUploader(BuildContext context, dynamic state, dynamic notifier, Uint8List? imageBytes, WidgetRef ref) {
+  Widget _buildImageUploader(
+    BuildContext context,
+    dynamic state,
+    dynamic notifier,
+    Uint8List? imageBytes,
+    WidgetRef ref,
+  ) {
     final imageHeight = ResponsiveUtilsBosque.getResponsiveValue(
       context: context,
       defaultValue: 120.0,
@@ -610,10 +770,7 @@ class _DepositoChequeRegisterScreenState
                 children: [
                   Text(
                     'Seleccionar imagen desde',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 16),
                   ListTile(
@@ -654,26 +811,42 @@ class _DepositoChequeRegisterScreenState
         color: Colors.grey,
         dashPattern: const [6, 3],
         borderType: BorderType.RRect,
-        radius: Radius.circular(ResponsiveUtilsBosque.getResponsiveValue(
-          context: context,
-          defaultValue: 8.0,
-          mobile: 6.0,
-          desktop: 10.0,
-        )),
+        radius: Radius.circular(
+          ResponsiveUtilsBosque.getResponsiveValue(
+            context: context,
+            defaultValue: 8.0,
+            mobile: 6.0,
+            desktop: 10.0,
+          ),
+        ),
         child: Container(
           height: imageHeight,
           width: double.infinity,
           alignment: Alignment.center,
-          child: _buildImageContent(context, state, notifier, imageHeight, imageBytes, ref),
+          child: _buildImageContent(
+            context,
+            state,
+            notifier,
+            imageHeight,
+            imageBytes,
+            ref,
+          ),
         ),
       ),
     );
   }
 
   // Contenido de la imagen - COMPATIBLE CON WEB Y MÓVIL
-  Widget _buildImageContent(BuildContext context, dynamic state, dynamic notifier, double imageHeight, Uint8List? imageBytes, WidgetRef ref) {
+  Widget _buildImageContent(
+    BuildContext context,
+    dynamic state,
+    dynamic notifier,
+    double imageHeight,
+    Uint8List? imageBytes,
+    WidgetRef ref,
+  ) {
     final isMobile = !kIsWeb && ResponsiveUtilsBosque.isMobile(context);
-    
+
     // Si estamos en web y tenemos bytes de imagen
     if (kIsWeb && imageBytes != null) {
       return Stack(
@@ -716,7 +889,7 @@ class _DepositoChequeRegisterScreenState
           ),
         ],
       );
-    } 
+    }
     // Si no estamos en web y tenemos una imagen de archivo
     else if (!kIsWeb && state.imagenDeposito != null) {
       return Stack(
@@ -756,7 +929,7 @@ class _DepositoChequeRegisterScreenState
           ),
         ],
       );
-    } 
+    }
     // Si no hay imagen seleccionada
     else {
       return Column(
@@ -826,14 +999,20 @@ class _DepositoChequeRegisterScreenState
   }
 
   // Widget para la tabla de notas de remisión
-  Widget _buildNotasRemisionTable(BuildContext context, dynamic state, dynamic notifier) {
+  Widget _buildNotasRemisionTable(
+    BuildContext context,
+    dynamic state,
+    dynamic notifier,
+  ) {
     final notas = state.notasRemision;
     final seleccionadas = state.notasSeleccionadas;
     final saldosEditados = state.saldosEditados;
     double totalSeleccionados = 0;
     for (var nota in notas) {
       if (seleccionadas.contains(nota.docNum)) {
-        totalSeleccionados += saldosEditados[nota.docNum]?.toDouble() ?? nota.saldoPendiente.toDouble();
+        totalSeleccionados +=
+            saldosEditados[nota.docNum]?.toDouble() ??
+            nota.saldoPendiente.toDouble();
       }
     }
     final double nuevoImporteTotal = totalSeleccionados + (state.aCuenta ?? 0);
@@ -878,10 +1057,15 @@ class _DepositoChequeRegisterScreenState
                 // Filas
                 ...notas.map((nota) {
                   final bool seleccionado = seleccionadas.contains(nota.docNum);
-                  final saldoValue = saldosEditados[nota.docNum]?.toString() ?? nota.saldoPendiente.toString();
-                  
+                  final saldoValue =
+                      saldosEditados[nota.docNum]?.toString() ??
+                      nota.saldoPendiente.toString();
+
                   return Container(
-                    color: seleccionado ? Colors.green.withOpacity(0.1) : Colors.white,
+                    color:
+                        seleccionado
+                            ? Colors.green.withValues(alpha: 0.1)
+                            : Colors.white,
                     child: Row(
                       children: [
                         // Cambia aquí: usa Checkbox real
@@ -892,7 +1076,10 @@ class _DepositoChequeRegisterScreenState
                             child: Checkbox(
                               value: seleccionado,
                               onChanged: (checked) {
-                                notifier.seleccionarNota(nota.docNum, checked ?? false);
+                                notifier.seleccionarNota(
+                                  nota.docNum,
+                                  checked ?? false,
+                                );
                               },
                               activeColor: Colors.green,
                             ),
@@ -900,28 +1087,35 @@ class _DepositoChequeRegisterScreenState
                         ),
                         _buildTableCell(nota.docNum.toString(), 180),
                         _buildTableCell(nota.numFact.toString(), 120),
-                        _buildTableCell('${nota.fecha.day.toString().padLeft(2, '0')}/${nota.fecha.month.toString().padLeft(2, '0')}/${nota.fecha.year}', 120),
+                        _buildTableCell(
+                          '${nota.fecha.day.toString().padLeft(2, '0')}/${nota.fecha.month.toString().padLeft(2, '0')}/${nota.fecha.year}',
+                          120,
+                        ),
                         _buildTableCell(nota.nombreCliente, 180),
                         _buildTableCell(nota.totalMonto.toString(), 120),
                         Container(
                           width: 200,
                           padding: EdgeInsets.all(8),
-                          child: seleccionado
-                              ? _EditableSaldoPendienteCell(
-                                  valorOriginal: nota.saldoPendiente,
-                                  valorActual: saldoValue,
-                                  onChanged: (v, showError) {
-                                    final val = double.tryParse(v) ?? 0.0;
-                                    if (val <= nota.saldoPendiente) {
-                                      notifier.editarSaldoPendiente(nota.docNum, val);
-                                    }
-                                    showError(val > nota.saldoPendiente);
-                                  },
-                                )
-                              : Text(
-                                  nota.saldoPendiente.toString(),
-                                  textAlign: TextAlign.center,
-                                ),
+                          child:
+                              seleccionado
+                                  ? _EditableSaldoPendienteCell(
+                                    valorOriginal: nota.saldoPendiente,
+                                    valorActual: saldoValue,
+                                    onChanged: (v, showError) {
+                                      final val = double.tryParse(v) ?? 0.0;
+                                      if (val <= nota.saldoPendiente) {
+                                        notifier.editarSaldoPendiente(
+                                          nota.docNum,
+                                          val,
+                                        );
+                                      }
+                                      showError(val > nota.saldoPendiente);
+                                    },
+                                  )
+                                  : Text(
+                                    nota.saldoPendiente.toString(),
+                                    textAlign: TextAlign.center,
+                                  ),
                         ),
                       ],
                     ),
@@ -946,7 +1140,10 @@ class _DepositoChequeRegisterScreenState
             ),
             Text(
               'Total seleccionado: ${totalSeleccionados.toStringAsFixed(2)} Bs',
-              style: TextStyle(fontWeight: FontWeight.bold, color: Colors.green),
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                color: Colors.green,
+              ),
             ),
           ],
         ),
@@ -961,10 +1158,7 @@ class _DepositoChequeRegisterScreenState
       alignment: Alignment.center,
       child: Text(
         text,
-        style: TextStyle(
-          fontWeight: FontWeight.bold,
-          color: Colors.green,
-        ),
+        style: TextStyle(fontWeight: FontWeight.bold, color: Colors.green),
         textAlign: TextAlign.center,
       ),
     );
@@ -990,12 +1184,18 @@ class _DepositoChequeRegisterScreenState
     final imagenCargada = imagen != null;
     final importeValido = state.importeTotal > 0;
     // Validar que todos los saldos editados sean <= al original
-    final saldosValidos = (state.notasSeleccionadas as List<int>).every((docNum) {
+    final saldosValidos = (state.notasSeleccionadas as List<int>).every((
+      docNum,
+    ) {
       final nota = state.notasRemision.firstWhere((n) => n.docNum == docNum);
       final saldoEditado = state.saldosEditados[docNum] ?? nota.saldoPendiente;
       return saldoEditado <= nota.saldoPendiente;
     });
-    return bancoSeleccionado && imagenCargada && importeValido && (tieneNotas || tieneACuenta) && saldosValidos;
+    return bancoSeleccionado &&
+        imagenCargada &&
+        importeValido &&
+        (tieneNotas || tieneACuenta) &&
+        saldosValidos;
   }
 }
 
@@ -1038,10 +1238,14 @@ class _ClienteSearchDialogState extends State<ClienteSearchDialog> {
       });
     } else {
       setState(() {
-        _filteredClientes = widget.clientes
-            .where((cliente) => 
-                cliente.nombreCompleto.toLowerCase().contains(query.toLowerCase()))
-            .toList();
+        _filteredClientes =
+            widget.clientes
+                .where(
+                  (cliente) => cliente.nombreCompleto.toLowerCase().contains(
+                    query.toLowerCase(),
+                  ),
+                )
+                .toList();
       });
     }
   }
@@ -1049,14 +1253,13 @@ class _ClienteSearchDialogState extends State<ClienteSearchDialog> {
   @override
   Widget build(BuildContext context) {
     final isDesktop = ResponsiveUtilsBosque.isDesktop(context);
-    final dialogWidth = isDesktop 
-        ? MediaQuery.of(context).size.width * 0.4 
-        : MediaQuery.of(context).size.width * 0.9;
+    final dialogWidth =
+        isDesktop
+            ? MediaQuery.of(context).size.width * 0.4
+            : MediaQuery.of(context).size.width * 0.9;
 
     return Dialog(
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Container(
         width: dialogWidth,
         padding: EdgeInsets.all(
@@ -1098,7 +1301,9 @@ class _ClienteSearchDialogState extends State<ClienteSearchDialog> {
             Flexible(
               child: Container(
                 constraints: BoxConstraints(
-                  maxHeight: MediaQuery.of(context).size.height * (isDesktop ? 0.6 : 0.4),
+                  maxHeight:
+                      MediaQuery.of(context).size.height *
+                      (isDesktop ? 0.6 : 0.4),
                 ),
                 child: ListView.builder(
                   shrinkWrap: true,
@@ -1182,10 +1387,12 @@ class _EditableSaldoPendienteCell extends StatefulWidget {
   });
 
   @override
-  State<_EditableSaldoPendienteCell> createState() => _EditableSaldoPendienteCellState();
+  State<_EditableSaldoPendienteCell> createState() =>
+      _EditableSaldoPendienteCellState();
 }
 
-class _EditableSaldoPendienteCellState extends State<_EditableSaldoPendienteCell> {
+class _EditableSaldoPendienteCellState
+    extends State<_EditableSaldoPendienteCell> {
   late TextEditingController _controller;
   String? _errorText;
   final FocusNode _focusNode = FocusNode();
@@ -1236,14 +1443,18 @@ class _EditableSaldoPendienteCellState extends State<_EditableSaldoPendienteCell
               }
               widget.onChanged(v, (show) {
                 setState(() {
-                  _errorText = show ? 'No puede ser mayor al saldo original' : null;
+                  _errorText =
+                      show ? 'No puede ser mayor al saldo original' : null;
                 });
               });
             },
             decoration: InputDecoration(
               border: const OutlineInputBorder(),
               isDense: true,
-              contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 8,
+                vertical: 8,
+              ),
               errorText: null, // No uses errorText aquí, lo mostramos abajo
             ),
           ),

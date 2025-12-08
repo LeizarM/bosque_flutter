@@ -33,19 +33,23 @@ class FormacionSecccion extends ConsumerWidget {
     required this.onAgregar, // Nuevo requerimiento
     required this.onEliminar, // Nuevo requerimiento
   });
-//checkpoint
+  //checkpoint
   String _capitalize(String text) {
     if (text.isEmpty) return text;
     return text[0].toUpperCase() + text.substring(1).toLowerCase();
   }
 
   String _capitalizeWords(String text) {
-    return text.split(' ').map((word) {
-      if (word.isEmpty) return word;
-      final especiales = ['s.a.', 's.r.l.', 'ipx', 'esppapel'];
-      if (especiales.contains(word.toLowerCase())) return word.toUpperCase();
-      return _capitalize(word);
-    }).join(' ');
+    return text
+        .split(' ')
+        .map((word) {
+          if (word.isEmpty) return word;
+          final especiales = ['s.a.', 's.r.l.', 'ipx', 'esppapel'];
+          if (especiales.contains(word.toLowerCase()))
+            return word.toUpperCase();
+          return _capitalize(word);
+        })
+        .join(' ');
   }
 
   String formatText(String text, bool isDesktop) {
@@ -53,7 +57,12 @@ class FormacionSecccion extends ConsumerWidget {
     return _capitalizeWords(text);
   }
 
-  Widget autoText(String text, TextStyle style, {int maxLines = 1, TextAlign? textAlign}) {
+  Widget autoText(
+    String text,
+    TextStyle style, {
+    int maxLines = 1,
+    TextAlign? textAlign,
+  }) {
     return FittedBox(
       fit: BoxFit.scaleDown,
       alignment: Alignment.centerLeft,
@@ -77,8 +86,10 @@ class FormacionSecccion extends ConsumerWidget {
     final colorScheme = theme.colorScheme;
     final bool isDark = theme.brightness == Brightness.dark;
     final Color icono = isDark ? colorScheme.primary : Colors.teal.shade700;
-    final Color textoPrincipal = isDark ? colorScheme.onSurface : Colors.grey.shade900;
-    final Color textoSecundario = isDark ? colorScheme.onSurfaceVariant : Colors.grey.shade600;
+    final Color textoPrincipal =
+        isDark ? colorScheme.onSurface : Colors.grey.shade900;
+    final Color textoSecundario =
+        isDark ? colorScheme.onSurfaceVariant : Colors.grey.shade600;
 
     return Padding(
       padding: EdgeInsets.symmetric(
@@ -107,7 +118,8 @@ class FormacionSecccion extends ConsumerWidget {
                   visible: habilitarEdicion,
                   nombreSeccion: 'formaciones',
                   onEditar: onEditar,
-                  onAgregar: () => _mostrarDialogoAgregarFormacion(context, ref),
+                  onAgregar:
+                      () => _mostrarDialogoAgregarFormacion(context, ref),
                   onEliminar: onEliminar,
                   updateOperation: onUpdateOperation,
                   operacionHabilitada: const ['editar', 'agregar', 'eliminar'],
@@ -115,7 +127,7 @@ class FormacionSecccion extends ConsumerWidget {
                 ),
             ],
           ),
-          Divider(height: 20, color: Colors.grey.withOpacity(0.18)),
+          Divider(height: 20, color: Colors.grey.withValues(alpha: 0.18)),
           formacionAsync.when(
             data: (formaciones) {
               if (formaciones.isEmpty) {
@@ -136,9 +148,10 @@ class FormacionSecccion extends ConsumerWidget {
               final showScroll = formaciones.length > 4;
               final formacionList = ListView.builder(
                 shrinkWrap: true,
-                physics: showScroll
-                    ? const AlwaysScrollableScrollPhysics()
-                    : const NeverScrollableScrollPhysics(),
+                physics:
+                    showScroll
+                        ? const AlwaysScrollableScrollPhysics()
+                        : const NeverScrollableScrollPhysics(),
                 itemCount: formaciones.length,
                 itemBuilder: (context, index) {
                   final formacion = formaciones[index];
@@ -155,13 +168,12 @@ class FormacionSecccion extends ConsumerWidget {
               );
 
               return showScroll
-                  ? SizedBox(
-                      height: (4 * 130.0) + 16,
-                      child: formacionList,
-                    )
+                  ? SizedBox(height: (4 * 130.0) + 16, child: formacionList)
                   : Column(
-                      children: formaciones
-                          .map((formacion) => _buildFormacionTile(
+                    children:
+                        formaciones
+                            .map(
+                              (formacion) => _buildFormacionTile(
                                 context,
                                 ref,
                                 formacion,
@@ -169,21 +181,24 @@ class FormacionSecccion extends ConsumerWidget {
                                 icono,
                                 textoPrincipal,
                                 textoSecundario,
-                              ))
-                          .toList(),
-                    );
+                              ),
+                            )
+                            .toList(),
+                  );
             },
-            loading: () => const Padding(
-              padding: EdgeInsets.all(16),
-              child: Center(child: CircularProgressIndicator()),
-            ),
-            error: (error, _) => Padding(
-              padding: const EdgeInsets.all(16),
-              child: Text(
-                'Error al cargar formaciones: $error',
-                style: const TextStyle(color: Colors.red),
-              ),
-            ),
+            loading:
+                () => const Padding(
+                  padding: EdgeInsets.all(16),
+                  child: Center(child: CircularProgressIndicator()),
+                ),
+            error:
+                (error, _) => Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Text(
+                    'Error al cargar formaciones: $error',
+                    style: const TextStyle(color: Colors.red),
+                  ),
+                ),
           ),
         ],
       ),
@@ -216,59 +231,76 @@ class FormacionSecccion extends ConsumerWidget {
                 Icon(Icons.school, color: icono, size: isDesktop ? 22 : 18),
                 const SizedBox(width: 8),
                 Expanded(
-  child: Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      Text(
-        'Descripción',
-        style: TextStyle(
-          fontSize: isDesktop ? 12 : 11,
-          color: textoSecundario,
-          fontFamily: 'Montserrat',
-          fontWeight: FontWeight.w500,
-        ),
-      ),
-      Text(
-        formatText(formacion.descripcion, isDesktop),
-        style: TextStyle(
-          fontSize: isDesktop ? 17 : 15,
-          color: textoPrincipal,
-          fontWeight: FontWeight.bold,
-          fontFamily: 'Montserrat',
-          letterSpacing: 0.1,
-        ),
-        maxLines: 4,
-        overflow: TextOverflow.ellipsis,
-        softWrap: true,
-      ),
-    ],
-  ),
-),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Descripción',
+                        style: TextStyle(
+                          fontSize: isDesktop ? 12 : 11,
+                          color: textoSecundario,
+                          fontFamily: 'Montserrat',
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      Text(
+                        formatText(formacion.descripcion, isDesktop),
+                        style: TextStyle(
+                          fontSize: isDesktop ? 17 : 15,
+                          color: textoPrincipal,
+                          fontWeight: FontWeight.bold,
+                          fontFamily: 'Montserrat',
+                          letterSpacing: 0.1,
+                        ),
+                        maxLines: 4,
+                        overflow: TextOverflow.ellipsis,
+                        softWrap: true,
+                      ),
+                    ],
+                  ),
+                ),
                 if (habilitarEdicion) ...[
                   if (selectedOperation['formacion'] == 'editar')
                     IconButton(
                       icon: Icon(Icons.edit, color: icono),
                       tooltip: 'Editar',
-                      onPressed: () => _mostrarDialogoEditarFormacion(context, ref, formacion),
+                      onPressed:
+                          () => _mostrarDialogoEditarFormacion(
+                            context,
+                            ref,
+                            formacion,
+                          ),
                     ),
                   if (selectedOperation['formacion'] == 'eliminar')
                     IconButton(
                       icon: const Icon(Icons.delete, color: Colors.red),
                       tooltip: 'Eliminar',
-                      onPressed: () => ConfirmDialog.show(
-                        context,
-                        title: 'Eliminar Formación',
-                        content: '¿Está seguro que desea eliminar esta Formación?',
-                        confirmText: 'Eliminar',
-                        cancelText: 'Cancelar',
-                        confirmColor: Colors.red,
-                      ).then((confirmed) async {
-                        if (confirmed == true && context.mounted) {
-                          await ref.read(eliminarFormacionProvider(formacion.codFormacion).future);
-                          final _ = await ref.refresh(formacionProvider(codEmpleado).future);
-                          if (context.mounted) AppSnackbarCustom.showDelete(context, 'Formación eliminada correctamente');
-                        }
-                      }),
+                      onPressed:
+                          () => ConfirmDialog.show(
+                            context,
+                            title: 'Eliminar Formación',
+                            content:
+                                '¿Está seguro que desea eliminar esta Formación?',
+                            confirmText: 'Eliminar',
+                            cancelText: 'Cancelar',
+                            confirmColor: Colors.red,
+                          ).then((confirmed) async {
+                            if (confirmed == true && context.mounted) {
+                              await ref.read(
+                                eliminarFormacionProvider(
+                                  formacion.codFormacion,
+                                ).future,
+                              );
+                              final _ = await ref.refresh(
+                                formacionProvider(codEmpleado).future,
+                              );
+                              if (context.mounted)
+                                AppSnackbarCustom.showDelete(
+                                  context,
+                                  'Formación eliminada correctamente',
+                                );
+                            }
+                          }),
                     ),
                 ],
               ],
@@ -293,7 +325,9 @@ class FormacionSecccion extends ConsumerWidget {
                 Expanded(
                   child: Consumer(
                     builder: (context, ref, child) {
-                      final tipoDuracionAsync = ref.watch(obtenerTipoDuracionFormacionProvider);
+                      final tipoDuracionAsync = ref.watch(
+                        obtenerTipoDuracionFormacionProvider,
+                      );
                       return _datoConEtiqueta(
                         context,
                         icon: Icons.timelapse,
@@ -302,12 +336,13 @@ class FormacionSecccion extends ConsumerWidget {
                           data: (tipos) {
                             final tipoDuracion = tipos.firstWhere(
                               (t) => t.codTipos == formacion.tipoDuracion,
-                              orElse: () => TipoDuracionFormacionEntity(
-                                codTipos: '',
-                                nombre: '',
-                                codGrupo: 0,
-                                listTipos: [],
-                              ),
+                              orElse:
+                                  () => TipoDuracionFormacionEntity(
+                                    codTipos: '',
+                                    nombre: '',
+                                    codGrupo: 0,
+                                    listTipos: [],
+                                  ),
                             );
                             return tipoDuracion.nombre.isNotEmpty
                                 ? formatText(tipoDuracion.nombre, isDesktop)
@@ -333,7 +368,9 @@ class FormacionSecccion extends ConsumerWidget {
                 Expanded(
                   child: Consumer(
                     builder: (context, ref, child) {
-                      final tipoFormacionAsync = ref.watch(obtenerTipoFormacionProvider);
+                      final tipoFormacionAsync = ref.watch(
+                        obtenerTipoFormacionProvider,
+                      );
                       return _datoConEtiqueta(
                         context,
                         icon: Icons.category,
@@ -342,12 +379,13 @@ class FormacionSecccion extends ConsumerWidget {
                           data: (tipos) {
                             final tipoFormacion = tipos.firstWhere(
                               (t) => t.codTipos == formacion.tipoFormacion,
-                              orElse: () => TipoFormacionEntity(
-                                codTipos: '',
-                                nombre: '',
-                                codGrupo: 0,
-                                listTipos: [],
-                              ),
+                              orElse:
+                                  () => TipoFormacionEntity(
+                                    codTipos: '',
+                                    nombre: '',
+                                    codGrupo: 0,
+                                    listTipos: [],
+                                  ),
                             );
                             return tipoFormacion.nombre.isNotEmpty
                                 ? formatText(tipoFormacion.nombre, isDesktop)
@@ -370,9 +408,12 @@ class FormacionSecccion extends ConsumerWidget {
                     context,
                     icon: Icons.calendar_today,
                     etiqueta: 'Fecha de finalización',
-                    valor: formacion.fechaFormacion != null
-                        ? DateFormat('dd-MM-yyyy').format(formacion.fechaFormacion)
-                        : '',
+                    valor:
+                        formacion.fechaFormacion != null
+                            ? DateFormat(
+                              'dd-MM-yyyy',
+                            ).format(formacion.fechaFormacion)
+                            : '',
                     color: icono,
                     textoPrincipal: textoPrincipal,
                     textoSecundario: textoSecundario,
@@ -431,77 +472,76 @@ class FormacionSecccion extends ConsumerWidget {
       ],
     );
   }
-//checkpoint
+
+  //checkpoint
   void _mostrarDialogoAgregarFormacion(BuildContext context, WidgetRef ref) {
-  showDialog(
-    context: context,
-    barrierDismissible: false,
-    builder: (context) => Dialog(
-      backgroundColor: Colors.transparent,
-      insetPadding: EdgeInsets.zero,
-      child: FormularioFormacion(
-        title: 'Agregar Formación',
-        codEmpleado: codEmpleado,
-        isEditing: false,
-        onSave: (formacion) async {
-          try {
-            await ref.read(registrarFormacionProvider(formacion).future);
-            ref.invalidate(formacionProvider(codEmpleado));
-            
-          
-          } catch (e) {
-            if (!context.mounted) return;
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('Error: ${e.toString()}'),
-                backgroundColor: Colors.red,
-              ),
-            );
-            rethrow;
-          }
-        },
-        onCancel: () => Navigator.of(context).pop(),
-      ),
-    ),
-  );
-}
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder:
+          (context) => Dialog(
+            backgroundColor: Colors.transparent,
+            insetPadding: EdgeInsets.zero,
+            child: FormularioFormacion(
+              title: 'Agregar Formación',
+              codEmpleado: codEmpleado,
+              isEditing: false,
+              onSave: (formacion) async {
+                try {
+                  await ref.read(registrarFormacionProvider(formacion).future);
+                  ref.invalidate(formacionProvider(codEmpleado));
+                } catch (e) {
+                  if (!context.mounted) return;
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Error: ${e.toString()}'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                  rethrow;
+                }
+              },
+              onCancel: () => Navigator.of(context).pop(),
+            ),
+          ),
+    );
+  }
 
   void _mostrarDialogoEditarFormacion(
-  BuildContext context,
-  WidgetRef ref,
-  FormacionEntity formacion,
-) {
-  showDialog(
-    context: context,
-    barrierDismissible: false,
-    builder: (context) => Dialog(
-      backgroundColor: Colors.transparent,
-      insetPadding: EdgeInsets.zero,
-      child: FormularioFormacion(
-        title: 'Editar Formación',
-        codEmpleado: codEmpleado,
-        isEditing: true,
-        formacion: formacion,
-        onSave: (formacion) async {
-          try {
-            await ref.read(registrarFormacionProvider(formacion).future);
-            ref.invalidate(formacionProvider(codEmpleado));
-            
-            
-          } catch (e) {
-            if (!context.mounted) return;
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('Error al editar la formación: $e'),
-                backgroundColor: Colors.red,
-              ),
-            );
-            rethrow;
-          }
-        },
-        onCancel: () => Navigator.of(context).pop(),
-      ),
-    ),
-  );
+    BuildContext context,
+    WidgetRef ref,
+    FormacionEntity formacion,
+  ) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder:
+          (context) => Dialog(
+            backgroundColor: Colors.transparent,
+            insetPadding: EdgeInsets.zero,
+            child: FormularioFormacion(
+              title: 'Editar Formación',
+              codEmpleado: codEmpleado,
+              isEditing: true,
+              formacion: formacion,
+              onSave: (formacion) async {
+                try {
+                  await ref.read(registrarFormacionProvider(formacion).future);
+                  ref.invalidate(formacionProvider(codEmpleado));
+                } catch (e) {
+                  if (!context.mounted) return;
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Error al editar la formación: $e'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                  rethrow;
+                }
+              },
+              onCancel: () => Navigator.of(context).pop(),
+            ),
+          ),
+    );
+  }
 }
-} 

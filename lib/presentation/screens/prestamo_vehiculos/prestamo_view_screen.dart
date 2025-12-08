@@ -28,7 +28,8 @@ class _PrestamoViewScreenState extends ConsumerState<PrestamoViewScreen> {
   void _cargarSolicitudesPrestamos() async {
     final user = ref.read(userProvider);
     if (user != null) {
-      ref.read(solicitudesPrestamosNotifierProvider.notifier)
+      ref
+          .read(solicitudesPrestamosNotifierProvider.notifier)
           .cargarSolicitudesPrestamos(user.codSucursal, user.codEmpleado);
     }
   }
@@ -38,7 +39,7 @@ class _PrestamoViewScreenState extends ConsumerState<PrestamoViewScreen> {
     final state = ref.watch(solicitudesPrestamosNotifierProvider);
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    
+
     return Scaffold(
       backgroundColor: colorScheme.surface,
       appBar: AppBar(
@@ -60,9 +61,7 @@ class _PrestamoViewScreenState extends ConsumerState<PrestamoViewScreen> {
       body: Column(
         children: [
           _buildFiltros(colorScheme),
-          Expanded(
-            child: _buildContent(state, colorScheme),
-          ),
+          Expanded(child: _buildContent(state, colorScheme)),
         ],
       ),
     );
@@ -70,12 +69,17 @@ class _PrestamoViewScreenState extends ConsumerState<PrestamoViewScreen> {
 
   Widget _buildFiltros(ColorScheme colorScheme) {
     final isDesktop = ResponsiveUtilsBosque.isDesktop(context);
-    
+
     return Card(
-      margin: EdgeInsets.all(ResponsiveUtilsBosque.getHorizontalPadding(context)),
+      margin: EdgeInsets.all(
+        ResponsiveUtilsBosque.getHorizontalPadding(context),
+      ),
       child: Padding(
         padding: const EdgeInsets.all(16.0),
-        child: isDesktop ? _buildDesktopFiltros(colorScheme) : _buildMobileFiltros(colorScheme),
+        child:
+            isDesktop
+                ? _buildDesktopFiltros(colorScheme)
+                : _buildMobileFiltros(colorScheme),
       ),
     );
   }
@@ -83,11 +87,7 @@ class _PrestamoViewScreenState extends ConsumerState<PrestamoViewScreen> {
   Widget _buildDesktopFiltros(ColorScheme colorScheme) {
     return Row(
       children: [
-        Icon(
-          Icons.filter_list,
-          color: colorScheme.primary,
-          size: 20,
-        ),
+        Icon(Icons.filter_list, color: colorScheme.primary, size: 20),
         const SizedBox(width: 12),
         Text(
           'Filtrar por estado:',
@@ -97,9 +97,7 @@ class _PrestamoViewScreenState extends ConsumerState<PrestamoViewScreen> {
           ),
         ),
         const SizedBox(width: 16),
-        Expanded(
-          child: _buildDropdownField(colorScheme),
-        ),
+        Expanded(child: _buildDropdownField(colorScheme)),
       ],
     );
   }
@@ -110,11 +108,7 @@ class _PrestamoViewScreenState extends ConsumerState<PrestamoViewScreen> {
       children: [
         Row(
           children: [
-            Icon(
-              Icons.filter_list,
-              color: colorScheme.primary,
-              size: 18,
-            ),
+            Icon(Icons.filter_list, color: colorScheme.primary, size: 18),
             const SizedBox(width: 8),
             Text(
               'Filtrar por estado',
@@ -136,32 +130,36 @@ class _PrestamoViewScreenState extends ConsumerState<PrestamoViewScreen> {
     return DropdownButtonFormField<String>(
       value: _estadoFiltro,
       decoration: InputDecoration(
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-        ),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
         contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         filled: true,
-        fillColor: colorScheme.surfaceContainerHighest.withOpacity(0.3),
+        fillColor: colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
         isDense: true,
       ),
       isExpanded: true,
       menuMaxHeight: 300,
       items: [
         const DropdownMenuItem(
-          value: 'TODOS', 
+          value: 'TODOS',
           child: Text('Todos', overflow: TextOverflow.ellipsis),
         ),
         const DropdownMenuItem(
-          value: 'Disponible - Pendiente Aprobación', 
+          value: 'Disponible - Pendiente Aprobación',
           child: Text('Pendiente Aprobación', overflow: TextOverflow.ellipsis),
         ),
         const DropdownMenuItem(
-          value: 'Aprobado - Pendiente Entrega', 
-          child: Text('Aprobado - Pendiente Entrega', overflow: TextOverflow.ellipsis),
+          value: 'Aprobado - Pendiente Entrega',
+          child: Text(
+            'Aprobado - Pendiente Entrega',
+            overflow: TextOverflow.ellipsis,
+          ),
         ),
         const DropdownMenuItem(
-          value: 'Aprobado - En Uso - Pendiente Devolución', 
-          child: Text('En Uso - Pendiente Devolución', overflow: TextOverflow.ellipsis),
+          value: 'Aprobado - En Uso - Pendiente Devolución',
+          child: Text(
+            'En Uso - Pendiente Devolución',
+            overflow: TextOverflow.ellipsis,
+          ),
         ),
       ],
       onChanged: (value) {
@@ -177,11 +175,16 @@ class _PrestamoViewScreenState extends ConsumerState<PrestamoViewScreen> {
     );
   }
 
-  Widget _buildContent(SolicitudesPrestamosState state, ColorScheme colorScheme) {
+  Widget _buildContent(
+    SolicitudesPrestamosState state,
+    ColorScheme colorScheme,
+  ) {
     // Debug: Agregar logs para verificar el estado
     print('🔍 PrestamoViewScreen - Estado: ${state.status}');
-    print('🔍 PrestamoViewScreen - Solicitudes count: ${state.solicitudesPrestamos.length}');
-    
+    print(
+      '🔍 PrestamoViewScreen - Solicitudes count: ${state.solicitudesPrestamos.length}',
+    );
+
     if (state.status == FetchStatus.loading) {
       return const Center(child: CircularProgressIndicator());
     }
@@ -219,7 +222,9 @@ class _PrestamoViewScreenState extends ConsumerState<PrestamoViewScreen> {
       );
     }
 
-    final solicitudesFiltradas = _filtrarSolicitudes(state.solicitudesPrestamos);
+    final solicitudesFiltradas = _filtrarSolicitudes(
+      state.solicitudesPrestamos,
+    );
     print('🔍 Solicitudes filtradas count: ${solicitudesFiltradas.length}');
     print('🔍 Filtro actual: $_estadoFiltro');
 
@@ -229,19 +234,19 @@ class _PrestamoViewScreenState extends ConsumerState<PrestamoViewScreen> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(
-              Icons.assignment_outlined, 
-              size: 80, 
-              color: colorScheme.primary.withOpacity(0.5)
+              Icons.assignment_outlined,
+              size: 80,
+              color: colorScheme.primary.withValues(alpha: 0.5),
             ),
             const SizedBox(height: 24),
             Text(
-              _estadoFiltro == 'TODOS' 
+              _estadoFiltro == 'TODOS'
                   ? 'No hay solicitudes de préstamos'
                   : 'Sin solicitudes para: $_estadoFiltro',
               style: TextStyle(
-                fontSize: 20, 
+                fontSize: 20,
                 fontWeight: FontWeight.w600,
-                color: colorScheme.onSurface
+                color: colorScheme.onSurface,
               ),
               textAlign: TextAlign.center,
             ),
@@ -249,12 +254,12 @@ class _PrestamoViewScreenState extends ConsumerState<PrestamoViewScreen> {
             Container(
               constraints: const BoxConstraints(maxWidth: 300),
               child: Text(
-                _estadoFiltro == 'TODOS' 
+                _estadoFiltro == 'TODOS'
                     ? 'Actualmente no hay solicitudes de préstamos de vehículos pendientes de gestión. Las nuevas solicitudes aparecerán aquí automáticamente.'
                     : 'No se encontraron solicitudes con el estado seleccionado. Intente cambiar el filtro para ver otras solicitudes.',
                 style: TextStyle(
-                  fontSize: 14, 
-                  color: colorScheme.onSurfaceVariant.withOpacity(0.8),
+                  fontSize: 14,
+                  color: colorScheme.onSurfaceVariant.withValues(alpha: 0.8),
                   height: 1.4,
                 ),
                 textAlign: TextAlign.center,
@@ -271,7 +276,10 @@ class _PrestamoViewScreenState extends ConsumerState<PrestamoViewScreen> {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: colorScheme.primary,
                     foregroundColor: colorScheme.onPrimary,
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
+                    ),
                   ),
                 ),
                 if (_estadoFiltro != 'TODOS') ...[
@@ -286,7 +294,10 @@ class _PrestamoViewScreenState extends ConsumerState<PrestamoViewScreen> {
                     label: const Text('Ver Todas'),
                     style: OutlinedButton.styleFrom(
                       foregroundColor: colorScheme.primary,
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 8,
+                      ),
                     ),
                   ),
                 ],
@@ -299,7 +310,7 @@ class _PrestamoViewScreenState extends ConsumerState<PrestamoViewScreen> {
 
     final isDesktop = ResponsiveUtilsBosque.isDesktop(context);
     print('🔍 Es Desktop: $isDesktop');
-    
+
     return isDesktop
         ? _buildDesktopTable(solicitudesFiltradas, colorScheme)
         : _buildMobileList(solicitudesFiltradas, colorScheme);
@@ -310,24 +321,27 @@ class _PrestamoViewScreenState extends ConsumerState<PrestamoViewScreen> {
     // Mostrar diálogo de confirmación
     final confirmar = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Confirmar Aprobación'),
-        content: Text('¿Está seguro que desea aprobar la solicitud #${solicitud.idSolicitud}?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Cancelar'),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.green,
-              foregroundColor: Colors.white,
+      builder:
+          (context) => AlertDialog(
+            title: const Text('Confirmar Aprobación'),
+            content: Text(
+              '¿Está seguro que desea aprobar la solicitud #${solicitud.idSolicitud}?',
             ),
-            child: const Text('Aprobar'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(false),
+                child: const Text('Cancelar'),
+              ),
+              ElevatedButton(
+                onPressed: () => Navigator.of(context).pop(true),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.green,
+                  foregroundColor: Colors.white,
+                ),
+                child: const Text('Aprobar'),
+              ),
+            ],
           ),
-        ],
-      ),
     );
 
     if (confirmar == true) {
@@ -338,10 +352,14 @@ class _PrestamoViewScreenState extends ConsumerState<PrestamoViewScreen> {
       if (success) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Solicitud #${solicitud.idSolicitud} aprobada exitosamente'),
+            content: Text(
+              'Solicitud #${solicitud.idSolicitud} aprobada exitosamente',
+            ),
             backgroundColor: Colors.green,
             behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
           ),
         );
         // Recargar la lista
@@ -350,10 +368,14 @@ class _PrestamoViewScreenState extends ConsumerState<PrestamoViewScreen> {
         final state = ref.read(solicitudesPrestamosNotifierProvider);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error al aprobar solicitud: ${state.errorMessage ?? "Error desconocido"}'),
+            content: Text(
+              'Error al aprobar solicitud: ${state.errorMessage ?? "Error desconocido"}',
+            ),
             backgroundColor: Theme.of(context).colorScheme.error,
             behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
           ),
         );
       }
@@ -364,24 +386,27 @@ class _PrestamoViewScreenState extends ConsumerState<PrestamoViewScreen> {
     // Mostrar diálogo de confirmación
     final confirmar = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Confirmar Rechazo'),
-        content: Text('¿Está seguro que desea rechazar la solicitud #${solicitud.idSolicitud}?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Cancelar'),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red,
-              foregroundColor: Colors.white,
+      builder:
+          (context) => AlertDialog(
+            title: const Text('Confirmar Rechazo'),
+            content: Text(
+              '¿Está seguro que desea rechazar la solicitud #${solicitud.idSolicitud}?',
             ),
-            child: const Text('Rechazar'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(false),
+                child: const Text('Cancelar'),
+              ),
+              ElevatedButton(
+                onPressed: () => Navigator.of(context).pop(true),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.red,
+                  foregroundColor: Colors.white,
+                ),
+                child: const Text('Rechazar'),
+              ),
+            ],
           ),
-        ],
-      ),
     );
 
     if (confirmar == true) {
@@ -392,10 +417,14 @@ class _PrestamoViewScreenState extends ConsumerState<PrestamoViewScreen> {
       if (success) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Solicitud #${solicitud.idSolicitud} rechazada exitosamente'),
+            content: Text(
+              'Solicitud #${solicitud.idSolicitud} rechazada exitosamente',
+            ),
             backgroundColor: Colors.red,
             behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
           ),
         );
         // Recargar la lista
@@ -404,10 +433,14 @@ class _PrestamoViewScreenState extends ConsumerState<PrestamoViewScreen> {
         final state = ref.read(solicitudesPrestamosNotifierProvider);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error al rechazar solicitud: ${state.errorMessage ?? "Error desconocido"}'),
+            content: Text(
+              'Error al rechazar solicitud: ${state.errorMessage ?? "Error desconocido"}',
+            ),
             backgroundColor: Theme.of(context).colorScheme.error,
             behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
           ),
         );
       }
@@ -417,7 +450,9 @@ class _PrestamoViewScreenState extends ConsumerState<PrestamoViewScreen> {
   void _entregarVehiculo(dynamic solicitud) async {
     // Si requiere chofer, cargar la lista de choferes primero
     if (solicitud.requiereChofer == 1) {
-      await ref.read(solicitudesPrestamosNotifierProvider.notifier).cargarChoferes();
+      await ref
+          .read(solicitudesPrestamosNotifierProvider.notifier)
+          .cargarChoferes();
     }
 
     // Mostrar el diálogo y esperar los datos de entrega
@@ -425,20 +460,22 @@ class _PrestamoViewScreenState extends ConsumerState<PrestamoViewScreen> {
       context: context,
       builder: (context) => EntregaPrestamoDialog(solicitud: solicitud),
     );
-    
+
     if (entrega != null) {
       // Registrar la entrega usando el método del provider
       final success = await ref
           .read(solicitudesPrestamosNotifierProvider.notifier)
           .registrarEntregaPrestamo(entrega);
-          
+
       if (success) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: const Text('Entrega registrada exitosamente'),
             backgroundColor: Theme.of(context).colorScheme.primary,
             behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
           ),
         );
         // Recargar la lista
@@ -447,10 +484,14 @@ class _PrestamoViewScreenState extends ConsumerState<PrestamoViewScreen> {
         final state = ref.read(solicitudesPrestamosNotifierProvider);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error al registrar entrega: ${state.errorMessage ?? "Error desconocido"}'),
+            content: Text(
+              'Error al registrar entrega: ${state.errorMessage ?? "Error desconocido"}',
+            ),
             backgroundColor: Theme.of(context).colorScheme.error,
             behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
           ),
         );
       }
@@ -463,20 +504,22 @@ class _PrestamoViewScreenState extends ConsumerState<PrestamoViewScreen> {
       context: context,
       builder: (context) => RecepcionPrestamoDialog(solicitud: solicitud),
     );
-    
+
     if (recepcion != null) {
       // Registrar la recepción usando el método del provider
       final success = await ref
           .read(solicitudesPrestamosNotifierProvider.notifier)
           .registrarRecepcionPrestamo(recepcion);
-          
+
       if (success) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: const Text('Recepción registrada exitosamente'),
             backgroundColor: Theme.of(context).colorScheme.primary,
             behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
           ),
         );
         // Recargar la lista
@@ -485,10 +528,14 @@ class _PrestamoViewScreenState extends ConsumerState<PrestamoViewScreen> {
         final state = ref.read(solicitudesPrestamosNotifierProvider);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error al registrar recepción: ${state.errorMessage ?? "Error desconocido"}'),
+            content: Text(
+              'Error al registrar recepción: ${state.errorMessage ?? "Error desconocido"}',
+            ),
             backgroundColor: Theme.of(context).colorScheme.error,
             behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
           ),
         );
       }
@@ -499,19 +546,26 @@ class _PrestamoViewScreenState extends ConsumerState<PrestamoViewScreen> {
     if (_estadoFiltro == 'TODOS') {
       return solicitudes;
     }
-    return solicitudes.where((s) => s.estadoDisponibilidad == _estadoFiltro).toList();
+    return solicitudes
+        .where((s) => s.estadoDisponibilidad == _estadoFiltro)
+        .toList();
   }
 
-  Widget _buildDesktopTable(List<dynamic> solicitudes, ColorScheme colorScheme) {
+  Widget _buildDesktopTable(
+    List<dynamic> solicitudes,
+    ColorScheme colorScheme,
+  ) {
     return Card(
-      margin: EdgeInsets.all(ResponsiveUtilsBosque.getHorizontalPadding(context)),
+      margin: EdgeInsets.all(
+        ResponsiveUtilsBosque.getHorizontalPadding(context),
+      ),
       child: Column(
         children: [
           // Header
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: colorScheme.primaryContainer.withOpacity(0.3),
+              color: colorScheme.primaryContainer.withValues(alpha: 0.3),
               borderRadius: const BorderRadius.only(
                 topLeft: Radius.circular(12),
                 topRight: Radius.circular(12),
@@ -529,7 +583,10 @@ class _PrestamoViewScreenState extends ConsumerState<PrestamoViewScreen> {
                   ),
                 ),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
+                  ),
                   decoration: BoxDecoration(
                     color: colorScheme.primary,
                     borderRadius: BorderRadius.circular(16),
@@ -549,7 +606,9 @@ class _PrestamoViewScreenState extends ConsumerState<PrestamoViewScreen> {
           Expanded(
             child: SingleChildScrollView(
               child: DataTable(
-                headingRowColor: WidgetStateProperty.all(colorScheme.primaryContainer),
+                headingRowColor: WidgetStateProperty.all(
+                  colorScheme.primaryContainer,
+                ),
                 columns: const [
                   DataColumn(label: Text('ID')),
                   DataColumn(label: Text('Fecha Solicitud')),
@@ -560,113 +619,142 @@ class _PrestamoViewScreenState extends ConsumerState<PrestamoViewScreen> {
                   DataColumn(label: Text('Chofer')),
                   DataColumn(label: Text('Acciones')),
                 ],
-                rows: solicitudes.map((solicitud) {
-                  return DataRow(
-                    cells: [
-                      DataCell(Text('#${solicitud.idSolicitud}')),
-                      DataCell(Text(
-                        DateFormat('dd/MM/yyyy').format(
-                          DateTime.parse(solicitud.fechaSolicitud)
-                        )
-                      )),
-                      DataCell(
-                        Tooltip(
-                          message: '${solicitud.solicitante} - ${solicitud.cargo}',
-                          child: SizedBox(
-                            width: 150,
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              mainAxisAlignment: MainAxisAlignment.center,
+                rows:
+                    solicitudes.map((solicitud) {
+                      return DataRow(
+                        cells: [
+                          DataCell(Text('#${solicitud.idSolicitud}')),
+                          DataCell(
+                            Text(
+                              DateFormat('dd/MM/yyyy').format(
+                                DateTime.parse(solicitud.fechaSolicitud),
+                              ),
+                            ),
+                          ),
+                          DataCell(
+                            Tooltip(
+                              message:
+                                  '${solicitud.solicitante} - ${solicitud.cargo}',
+                              child: SizedBox(
+                                width: 150,
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Text(
+                                      solicitud.solicitante,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                    Text(
+                                      solicitud.cargo,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: colorScheme.onSurfaceVariant,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                          DataCell(
+                            Tooltip(
+                              message: solicitud.motivo,
+                              child: SizedBox(
+                                width: 120,
+                                child: Text(
+                                  solicitud.motivo,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ),
+                          ),
+                          DataCell(
+                            Tooltip(
+                              message: solicitud.coche,
+                              child: SizedBox(
+                                width: 150,
+                                child: Text(
+                                  solicitud.coche,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ),
+                          ),
+                          DataCell(
+                            _buildEstadoChip(
+                              solicitud.estadoDisponibilidad,
+                              colorScheme,
+                            ),
+                          ),
+                          DataCell(
+                            Icon(
+                              solicitud.requiereChofer == 1
+                                  ? Icons.person
+                                  : Icons.person_off,
+                              color:
+                                  solicitud.requiereChofer == 1
+                                      ? Colors.blue
+                                      : Colors.grey,
+                              size: 20,
+                            ),
+                          ),
+                          DataCell(
+                            Row(
+                              mainAxisSize: MainAxisSize.min,
                               children: [
-                                Text(
-                                  solicitud.solicitante,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: const TextStyle(fontWeight: FontWeight.w500),
-                                ),
-                                Text(
-                                  solicitud.cargo,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    color: colorScheme.onSurfaceVariant,
+                                if (solicitud.estadoDisponibilidad ==
+                                    'Disponible - Pendiente Aprobación') ...[
+                                  IconButton(
+                                    icon: const Icon(
+                                      Icons.check_circle,
+                                      color: Colors.green,
+                                    ),
+                                    onPressed:
+                                        () => _aprobarSolicitud(solicitud),
+                                    tooltip: 'Aprobar',
                                   ),
-                                ),
+                                  IconButton(
+                                    icon: const Icon(
+                                      Icons.cancel,
+                                      color: Colors.red,
+                                    ),
+                                    onPressed:
+                                        () => _rechazarSolicitud(solicitud),
+                                    tooltip: 'Rechazar',
+                                  ),
+                                ] else if (solicitud.estadoDisponibilidad ==
+                                    'Aprobado - Pendiente Entrega')
+                                  IconButton(
+                                    icon: const Icon(
+                                      Icons.delivery_dining,
+                                      color: Colors.blue,
+                                    ),
+                                    onPressed:
+                                        () => _entregarVehiculo(solicitud),
+                                    tooltip: 'Entregar Vehículo',
+                                  )
+                                else if (solicitud.estadoDisponibilidad ==
+                                    'Aprobado - En Uso - Pendiente Devolución')
+                                  IconButton(
+                                    icon: const Icon(
+                                      Icons.assignment_return,
+                                      color: Colors.orange,
+                                    ),
+                                    onPressed:
+                                        () => _recibirVehiculo(solicitud),
+                                    tooltip: 'Recibir Vehículo',
+                                  ),
                               ],
                             ),
                           ),
-                        ),
-                      ),
-                      DataCell(
-                        Tooltip(
-                          message: solicitud.motivo,
-                          child: SizedBox(
-                            width: 120,
-                            child: Text(
-                              solicitud.motivo,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                        ),
-                      ),
-                      DataCell(
-                        Tooltip(
-                          message: solicitud.coche,
-                          child: SizedBox(
-                            width: 150,
-                            child: Text(
-                              solicitud.coche,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                        ),
-                      ),
-                      DataCell(_buildEstadoChip(solicitud.estadoDisponibilidad, colorScheme)),
-                      DataCell(
-                        Icon(
-                          solicitud.requiereChofer == 1 
-                              ? Icons.person 
-                              : Icons.person_off,
-                          color: solicitud.requiereChofer == 1 
-                              ? Colors.blue
-                              : Colors.grey,
-                          size: 20,
-                        ),
-                      ),
-                      DataCell(
-                        Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            if (solicitud.estadoDisponibilidad == 'Disponible - Pendiente Aprobación')
-                              ...[
-                                IconButton(
-                                  icon: const Icon(Icons.check_circle, color: Colors.green),
-                                  onPressed: () => _aprobarSolicitud(solicitud),
-                                  tooltip: 'Aprobar',
-                                ),
-                                IconButton(
-                                  icon: const Icon(Icons.cancel, color: Colors.red),
-                                  onPressed: () => _rechazarSolicitud(solicitud),
-                                  tooltip: 'Rechazar',
-                                ),
-                              ]
-                            else if (solicitud.estadoDisponibilidad == 'Aprobado - Pendiente Entrega')
-                              IconButton(
-                                icon: const Icon(Icons.delivery_dining, color: Colors.blue),
-                                onPressed: () => _entregarVehiculo(solicitud),
-                                tooltip: 'Entregar Vehículo',
-                              )
-                            else if (solicitud.estadoDisponibilidad == 'Aprobado - En Uso - Pendiente Devolución')
-                              IconButton(
-                                icon: const Icon(Icons.assignment_return, color: Colors.orange),
-                                onPressed: () => _recibirVehiculo(solicitud),
-                                tooltip: 'Recibir Vehículo',
-                              ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  );
-                }).toList(),
+                        ],
+                      );
+                    }).toList(),
               ),
             ),
           ),
@@ -677,16 +765,18 @@ class _PrestamoViewScreenState extends ConsumerState<PrestamoViewScreen> {
 
   Widget _buildMobileList(List<dynamic> solicitudes, ColorScheme colorScheme) {
     print('🔍 BuildMobileList - Solicitudes: ${solicitudes.length}');
-    
+
     return Column(
       children: [
         // Header para móvil simplificado
         Container(
           width: double.infinity,
-          margin: EdgeInsets.all(ResponsiveUtilsBosque.getHorizontalPadding(context)),
+          margin: EdgeInsets.all(
+            ResponsiveUtilsBosque.getHorizontalPadding(context),
+          ),
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: colorScheme.primaryContainer.withOpacity(0.3),
+            color: colorScheme.primaryContainer.withValues(alpha: 0.3),
             borderRadius: BorderRadius.circular(12),
           ),
           child: Row(
@@ -722,7 +812,7 @@ class _PrestamoViewScreenState extends ConsumerState<PrestamoViewScreen> {
             ],
           ),
         ),
-        
+
         // Lista con scroll
         Expanded(
           child: ListView.builder(
@@ -733,7 +823,7 @@ class _PrestamoViewScreenState extends ConsumerState<PrestamoViewScreen> {
             itemBuilder: (context, index) {
               final solicitud = solicitudes[index];
               print('🔍 Construyendo item $index: ${solicitud.idSolicitud}');
-              
+
               return Container(
                 width: double.infinity,
                 margin: const EdgeInsets.only(bottom: 8),
@@ -757,26 +847,41 @@ class _PrestamoViewScreenState extends ConsumerState<PrestamoViewScreen> {
                               ),
                             ),
                             const SizedBox(width: 8),
-                            _buildMobileEstadoChip(solicitud.estadoDisponibilidad, colorScheme),
+                            _buildMobileEstadoChip(
+                              solicitud.estadoDisponibilidad,
+                              colorScheme,
+                            ),
                           ],
                         ),
-                        
+
                         const Divider(height: 20),
-                        
+
                         // Información básica
-                        _buildSimpleInfoRow('Fecha:', DateFormat('dd/MM/yyyy').format(
-                          DateTime.parse(solicitud.fechaSolicitud)
-                        )),
+                        _buildSimpleInfoRow(
+                          'Fecha:',
+                          DateFormat(
+                            'dd/MM/yyyy',
+                          ).format(DateTime.parse(solicitud.fechaSolicitud)),
+                        ),
                         const SizedBox(height: 4),
-                        _buildSimpleInfoRow('Solicitante:', solicitud.solicitante ?? 'N/A'),
+                        _buildSimpleInfoRow(
+                          'Solicitante:',
+                          solicitud.solicitante ?? 'N/A',
+                        ),
                         const SizedBox(height: 4),
                         _buildSimpleInfoRow('Cargo:', solicitud.cargo ?? 'N/A'),
                         const SizedBox(height: 4),
-                        _buildSimpleInfoRow('Motivo:', solicitud.motivo ?? 'N/A'),
+                        _buildSimpleInfoRow(
+                          'Motivo:',
+                          solicitud.motivo ?? 'N/A',
+                        ),
                         const SizedBox(height: 4),
-                        _buildSimpleInfoRow('Vehículo:', solicitud.coche ?? 'N/A'),
+                        _buildSimpleInfoRow(
+                          'Vehículo:',
+                          solicitud.coche ?? 'N/A',
+                        ),
                         const SizedBox(height: 4),
-                        
+
                         // Chofer
                         Row(
                           children: [
@@ -785,20 +890,28 @@ class _PrestamoViewScreenState extends ConsumerState<PrestamoViewScreen> {
                               style: TextStyle(fontWeight: FontWeight.w500),
                             ),
                             Icon(
-                              solicitud.requiereChofer == 1 ? Icons.check_circle : Icons.cancel,
-                              color: solicitud.requiereChofer == 1 ? Colors.green : Colors.red,
+                              solicitud.requiereChofer == 1
+                                  ? Icons.check_circle
+                                  : Icons.cancel,
+                              color:
+                                  solicitud.requiereChofer == 1
+                                      ? Colors.green
+                                      : Colors.red,
                               size: 16,
                             ),
                             const SizedBox(width: 4),
                             Text(
                               solicitud.requiereChofer == 1 ? 'Sí' : 'No',
                               style: TextStyle(
-                                color: solicitud.requiereChofer == 1 ? Colors.green : Colors.red,
+                                color:
+                                    solicitud.requiereChofer == 1
+                                        ? Colors.green
+                                        : Colors.red,
                               ),
                             ),
                           ],
                         ),
-                        
+
                         // Botones de acción
                         const SizedBox(height: 12),
                         _buildSimpleActionButtons(solicitud, colorScheme),
@@ -839,7 +952,7 @@ class _PrestamoViewScreenState extends ConsumerState<PrestamoViewScreen> {
 
   Widget _buildMobileEstadoChip(String estado, ColorScheme colorScheme) {
     Color chipColor;
-    
+
     switch (estado) {
       case 'Disponible - Pendiente Aprobación':
         chipColor = Colors.orange;
@@ -907,7 +1020,8 @@ class _PrestamoViewScreenState extends ConsumerState<PrestamoViewScreen> {
           ),
         ],
       );
-    } else if (solicitud.estadoDisponibilidad == 'Aprobado - Pendiente Entrega') {
+    } else if (solicitud.estadoDisponibilidad ==
+        'Aprobado - Pendiente Entrega') {
       return SizedBox(
         width: double.infinity,
         child: ElevatedButton(
@@ -919,7 +1033,8 @@ class _PrestamoViewScreenState extends ConsumerState<PrestamoViewScreen> {
           child: const Text('Entregar Vehículo'),
         ),
       );
-    } else if (solicitud.estadoDisponibilidad == 'Aprobado - En Uso - Pendiente Devolución') {
+    } else if (solicitud.estadoDisponibilidad ==
+        'Aprobado - En Uso - Pendiente Devolución') {
       return SizedBox(
         width: double.infinity,
         child: ElevatedButton(
@@ -932,7 +1047,7 @@ class _PrestamoViewScreenState extends ConsumerState<PrestamoViewScreen> {
         ),
       );
     }
-    
+
     return Container(
       padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
@@ -950,7 +1065,7 @@ class _PrestamoViewScreenState extends ConsumerState<PrestamoViewScreen> {
   Widget _buildEstadoChip(String estado, ColorScheme colorScheme) {
     Color chipColor;
     IconData icon;
-    
+
     switch (estado) {
       case 'Disponible - Pendiente Aprobación':
         chipColor = Colors.orange;

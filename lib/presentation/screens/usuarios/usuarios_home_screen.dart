@@ -950,7 +950,7 @@ class _UsuariosHomeScreenState extends ConsumerState<UsuariosHomeScreen> {
                                           backgroundColor:
                                               i == _currentPage
                                                   ? colorScheme.primary
-                                                      .withOpacity(0.15)
+                                                      .withValues(alpha: 0.15)
                                                   : null,
                                           minimumSize: const Size(32, 32),
                                           padding: EdgeInsets.zero,
@@ -1703,7 +1703,7 @@ class _CopyPermissionsDialogState extends State<_CopyPermissionsDialog> {
                                     color:
                                         isSelected
                                             ? widget.colorScheme.primary
-                                                .withOpacity(0.1)
+                                                .withValues(alpha: 0.1)
                                             : null,
                                     child: Column(
                                       crossAxisAlignment:
@@ -1808,7 +1808,9 @@ class _CopyPermissionsDialogState extends State<_CopyPermissionsDialog> {
                         // Header
                         TableRow(
                           decoration: BoxDecoration(
-                            color: widget.colorScheme.primary.withOpacity(0.1),
+                            color: widget.colorScheme.primary.withValues(
+                              alpha: 0.1,
+                            ),
                           ),
                           children: [
                             _buildTableCell('Campo', isBold: true),
@@ -2219,7 +2221,9 @@ class _AssignPermissionsDialogState
                     color: widget.colorScheme.primaryContainer,
                     border: Border(
                       bottom: BorderSide(
-                        color: widget.colorScheme.primary.withOpacity(0.3),
+                        color: widget.colorScheme.primary.withValues(
+                          alpha: 0.3,
+                        ),
                         width: 2,
                       ),
                     ),
@@ -2413,11 +2417,13 @@ class _AssignPermissionsDialogState
             decoration: BoxDecoration(
               color:
                   level == 0
-                      ? widget.colorScheme.surfaceVariant.withOpacity(0.3)
+                      ? widget.colorScheme.surfaceVariant.withValues(alpha: 0.3)
                       : null,
               border: Border(
                 bottom: BorderSide(
-                  color: widget.colorScheme.outlineVariant.withOpacity(0.5),
+                  color: widget.colorScheme.outlineVariant.withValues(
+                    alpha: 0.5,
+                  ),
                   width: 0.5,
                 ),
               ),
@@ -2587,7 +2593,7 @@ class _AssignPermissionsDialogState
                                     boxShadow: [
                                       BoxShadow(
                                         color: widget.colorScheme.shadow
-                                            .withOpacity(0.3),
+                                            .withValues(alpha: 0.3),
                                         blurRadius: 10,
                                         spreadRadius: 2,
                                       ),

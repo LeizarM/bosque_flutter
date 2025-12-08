@@ -24,16 +24,16 @@ class EmpleadosDependientesView extends ConsumerStatefulWidget {
 
 class _EmpleadosDependientesViewState
     extends ConsumerState<EmpleadosDependientesView> {
-      bool _isListenerAdded = false;
+  bool _isListenerAdded = false;
   Timer? _debounce;
-  String _searchTerm = ""; 
+  String _searchTerm = "";
   final ScrollController _scrollController = ScrollController();
   //checkpoint
   int _currentPage = 0;
   final int _itemsPerPage = 10;
-    bool _didRefresh = false;
-int _filtroActivo = 1;
-int? _codEmpleadoUsuario;
+  bool _didRefresh = false;
+  int _filtroActivo = 1;
+  int? _codEmpleadoUsuario;
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
@@ -41,30 +41,30 @@ int? _codEmpleadoUsuario;
       _didRefresh = true;
       Future.microtask(() {
         if (_codEmpleadoUsuario != null) {
-  ref.refresh(empleadosDependientesProvider(_codEmpleadoUsuario!));
-}
+          ref.refresh(empleadosDependientesProvider(_codEmpleadoUsuario!));
+        }
         ref.read(imageVersionProvider.notifier).state++;
       });
     }
   }
-  @override
-void initState() {
-  super.initState();
-  ref.read(userProvider.notifier).getCodEmpleado().then((cod) {
-    setState(() {
-      _codEmpleadoUsuario = cod;
-    });
-  });
-   
 
-}
- 
+  @override
+  void initState() {
+    super.initState();
+    ref.read(userProvider.notifier).getCodEmpleado().then((cod) {
+      setState(() {
+        _codEmpleadoUsuario = cod;
+      });
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
-    final codEmpleado =  ref.read(userProvider.notifier).getCodEmpleado();
-    final empleadosAsync = _codEmpleadoUsuario == null
-    ? const AsyncValue.loading()
-    : ref.watch(empleadosDependientesProvider(_codEmpleadoUsuario!));
+    final codEmpleado = ref.read(userProvider.notifier).getCodEmpleado();
+    final empleadosAsync =
+        _codEmpleadoUsuario == null
+            ? const AsyncValue.loading()
+            : ref.watch(empleadosDependientesProvider(_codEmpleadoUsuario!));
     final screenWidth = MediaQuery.of(context).size.width;
     final isDesktop = ResponsiveUtilsBosque.isDesktop(context);
     final isTablet = ResponsiveUtilsBosque.isTablet(context);
@@ -83,25 +83,22 @@ void initState() {
         centerTitle: true,
         elevation: 2,
         actions: [
-  _buildNotificacionesDropdown(), 
-  IconButton(
-    icon: const Icon(Icons.refresh),
-    tooltip: 'Refrescar',
-    onPressed: () async{
-      ref.invalidate(empleadosDependientesProvider);
-      ref.read(imageVersionProvider.notifier).state++;
-      ref.invalidate(documentosPendientesProvider);
-      
-     
-    },
-  ),
-],
+          _buildNotificacionesDropdown(),
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            tooltip: 'Refrescar',
+            onPressed: () async {
+              ref.invalidate(empleadosDependientesProvider);
+              ref.read(imageVersionProvider.notifier).state++;
+              ref.invalidate(documentosPendientesProvider);
+            },
+          ),
+        ],
       ),
       body: Container(
         color: isDark ? Colors.grey[900] : Colors.grey[50],
         child: Column(
           children: [
-            
             // Header section with search
             Container(
               width: double.infinity,
@@ -114,8 +111,8 @@ void initState() {
                   BoxShadow(
                     color:
                         isDark
-                            ? Colors.black.withOpacity(0.2)
-                            : Colors.black.withOpacity(0.05),
+                            ? Colors.black.withValues(alpha: 0.2)
+                            : Colors.black.withValues(alpha: 0.05),
                     blurRadius: 5,
                     offset: const Offset(0, 2),
                   ),
@@ -163,21 +160,24 @@ void initState() {
                         color: isDark ? Colors.white : Colors.black87,
                       ),
                       onChanged: (value) {
-    if (_debounce?.isActive ?? false) _debounce!.cancel();
-    _debounce = Timer(const Duration(milliseconds: 300), () {
-      setState(() => _searchTerm = value);
-    });
-  },
+                        if (_debounce?.isActive ?? false) _debounce!.cancel();
+                        _debounce = Timer(
+                          const Duration(milliseconds: 300),
+                          () {
+                            setState(() => _searchTerm = value);
+                          },
+                        );
+                      },
                       //onChanged: (value) => setState(() => _searchTerm = value),
                     ),
                   ),
                   const SizedBox(height: 8),
                   _buildFiltroEmpleados(isWeb: isDesktop || isTablet),
-const SizedBox(height: 8),
+                  const SizedBox(height: 8),
                 ],
               ),
             ),
-           
+
             // Main content
             Expanded(
               child: empleadosAsync.when(
@@ -325,7 +325,7 @@ const SizedBox(height: 8),
                                               ),
                                             ),
                                           ),
-                                         
+
                                           DataColumn(
                                             label: Text(
                                               'Acciones',
@@ -336,122 +336,221 @@ const SizedBox(height: 8),
                                             ),
                                           ),
                                         ],
-                                        rows: (
-    _searchTerm.isEmpty
-      ? filtered.skip(_currentPage * _itemsPerPage).take(_itemsPerPage).toList()
-      : filtered
-  )
-      .asMap()
-      .entries
-      .map((entry) {
-        final index = entry.key;
-        final empleado = entry.value;
-        final numeroFila = _searchTerm.isEmpty
-            ? (_currentPage * _itemsPerPage) + index + 1
-            : index + 1;
-            //comprobar si el empleado es el usuario logueado
-        final esUsuarioLogeado = empleado.codEmpleado == _codEmpleadoUsuario;
+                                        rows:
+                                            (_searchTerm.isEmpty
+                                                    ? filtered
+                                                        .skip(
+                                                          _currentPage *
+                                                              _itemsPerPage,
+                                                        )
+                                                        .take(_itemsPerPage)
+                                                        .toList()
+                                                    : filtered)
+                                                .asMap()
+                                                .entries
+                                                .map((entry) {
+                                                  final index = entry.key;
+                                                  final empleado = entry.value;
+                                                  final numeroFila =
+                                                      _searchTerm.isEmpty
+                                                          ? (_currentPage *
+                                                                  _itemsPerPage) +
+                                                              index +
+                                                              1
+                                                          : index + 1;
+                                                  //comprobar si el empleado es el usuario logueado
+                                                  final esUsuarioLogeado =
+                                                      empleado.codEmpleado ==
+                                                      _codEmpleadoUsuario;
 
-        return DataRow(
-          //resaltar fila si es el usuario logueado
-          color: esUsuarioLogeado
-  ? WidgetStateProperty.all(
-      Colors.blueAccent.withAlpha(25), // Sutil, no llamativo
-    )
-  : null,//fin resaltar fila
-          cells: [
-            DataCell(
-              Text(
-                numeroFila.toString(),
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  color: Theme.of(context).colorScheme.primary,
-                ),
-              ),
-            ),
-            DataCell(
-              Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  border: Border.all(
-                    color: Colors.teal.shade100,
-                    width: 2,
-                  ),
-                ),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(20),
-                  child: _buildEmpleadoAvatar(empleado.codEmpleado),
-                ),
-              ),
-            ),
-            DataCell(
-              Text(
-                empleado.persona.datoPersona ?? 'N/A',
-                style: const TextStyle(
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ),
-            DataCell(
-              Text(
-                empleado.empleadoCargo.cargoSucursal.cargo.descripcion ?? 'N/A',
-              ),
-            ),
-            DataCell(
-              Text(
-                empleado.empresa.nombre ?? 'N/A',
-              ),
-            ),
-            DataCell(
-              Text(
-                (empleado.sucursal.nombre ?? 'N/A').toUpperCase(),
-              ),
-            ),
-            DataCell(
-              Text(
-                (empleado.relEmpEmpr.esActivo == 1
-                    ? 'Activo'
-                    : 'Inactivo'),
-                    //cambiar a color rojo si es inactivo
-                    style: TextStyle(
-                      color: empleado.relEmpEmpr.esActivo == 1
-                          ? Colors.green
-                          : Colors.red,
-                    ),
-              ),
-            ),
-            DataCell(
-              FittedBox(
-                fit: BoxFit.scaleDown,
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    _buildReferenciasButton(empleado.codEmpleado, empleado.dependiente.codEmpleado ?? 0),
-                    const SizedBox(width: 8),
-                    TextButton.icon(
-  onPressed: () => _navigateToDetails(empleado.codEmpleado),
-  icon: const Icon(Icons.info_outline, color: Colors.teal),
-  label: const Text('Ver detalles'),
-  style: TextButton.styleFrom(
-    foregroundColor: Colors.teal,
-    backgroundColor: Colors.teal.withOpacity(0.08),
-    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-    shape: RoundedRectangleBorder(
-      borderRadius: BorderRadius.circular(10),
-    ),
-    textStyle: const TextStyle(fontWeight: FontWeight.w600),
-  ),
-),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        );
-      })
-      .toList(),
+                                                  return DataRow(
+                                                    //resaltar fila si es el usuario logueado
+                                                    color:
+                                                        esUsuarioLogeado
+                                                            ? WidgetStateProperty.all(
+                                                              Colors.blueAccent
+                                                                  .withAlpha(
+                                                                    25,
+                                                                  ), // Sutil, no llamativo
+                                                            )
+                                                            : null, //fin resaltar fila
+                                                    cells: [
+                                                      DataCell(
+                                                        Text(
+                                                          numeroFila.toString(),
+                                                          style: TextStyle(
+                                                            fontWeight:
+                                                                FontWeight.bold,
+                                                            color:
+                                                                Theme.of(
+                                                                      context,
+                                                                    )
+                                                                    .colorScheme
+                                                                    .primary,
+                                                          ),
+                                                        ),
+                                                      ),
+                                                      DataCell(
+                                                        Container(
+                                                          width: 40,
+                                                          height: 40,
+                                                          decoration: BoxDecoration(
+                                                            shape:
+                                                                BoxShape.circle,
+                                                            border: Border.all(
+                                                              color:
+                                                                  Colors
+                                                                      .teal
+                                                                      .shade100,
+                                                              width: 2,
+                                                            ),
+                                                          ),
+                                                          child: ClipRRect(
+                                                            borderRadius:
+                                                                BorderRadius.circular(
+                                                                  20,
+                                                                ),
+                                                            child: _buildEmpleadoAvatar(
+                                                              empleado
+                                                                  .codEmpleado,
+                                                            ),
+                                                          ),
+                                                        ),
+                                                      ),
+                                                      DataCell(
+                                                        Text(
+                                                          empleado
+                                                                  .persona
+                                                                  .datoPersona ??
+                                                              'N/A',
+                                                          style:
+                                                              const TextStyle(
+                                                                fontWeight:
+                                                                    FontWeight
+                                                                        .w500,
+                                                              ),
+                                                        ),
+                                                      ),
+                                                      DataCell(
+                                                        Text(
+                                                          empleado
+                                                                  .empleadoCargo
+                                                                  .cargoSucursal
+                                                                  .cargo
+                                                                  .descripcion ??
+                                                              'N/A',
+                                                        ),
+                                                      ),
+                                                      DataCell(
+                                                        Text(
+                                                          empleado
+                                                                  .empresa
+                                                                  .nombre ??
+                                                              'N/A',
+                                                        ),
+                                                      ),
+                                                      DataCell(
+                                                        Text(
+                                                          (empleado
+                                                                      .sucursal
+                                                                      .nombre ??
+                                                                  'N/A')
+                                                              .toUpperCase(),
+                                                        ),
+                                                      ),
+                                                      DataCell(
+                                                        Text(
+                                                          (empleado
+                                                                      .relEmpEmpr
+                                                                      .esActivo ==
+                                                                  1
+                                                              ? 'Activo'
+                                                              : 'Inactivo'),
+                                                          //cambiar a color rojo si es inactivo
+                                                          style: TextStyle(
+                                                            color:
+                                                                empleado.relEmpEmpr.esActivo ==
+                                                                        1
+                                                                    ? Colors
+                                                                        .green
+                                                                    : Colors
+                                                                        .red,
+                                                          ),
+                                                        ),
+                                                      ),
+                                                      DataCell(
+                                                        FittedBox(
+                                                          fit: BoxFit.scaleDown,
+                                                          child: Row(
+                                                            mainAxisSize:
+                                                                MainAxisSize
+                                                                    .min,
+                                                            children: [
+                                                              _buildReferenciasButton(
+                                                                empleado
+                                                                    .codEmpleado,
+                                                                empleado
+                                                                        .dependiente
+                                                                        .codEmpleado ??
+                                                                    0,
+                                                              ),
+                                                              const SizedBox(
+                                                                width: 8,
+                                                              ),
+                                                              TextButton.icon(
+                                                                onPressed:
+                                                                    () => _navigateToDetails(
+                                                                      empleado
+                                                                          .codEmpleado,
+                                                                    ),
+                                                                icon: const Icon(
+                                                                  Icons
+                                                                      .info_outline,
+                                                                  color:
+                                                                      Colors
+                                                                          .teal,
+                                                                ),
+                                                                label: const Text(
+                                                                  'Ver detalles',
+                                                                ),
+                                                                style: TextButton.styleFrom(
+                                                                  foregroundColor:
+                                                                      Colors
+                                                                          .teal,
+                                                                  backgroundColor: Colors
+                                                                      .teal
+                                                                      .withValues(
+                                                                        alpha:
+                                                                            0.08,
+                                                                      ),
+                                                                  padding:
+                                                                      const EdgeInsets.symmetric(
+                                                                        horizontal:
+                                                                            12,
+                                                                        vertical:
+                                                                            10,
+                                                                      ),
+                                                                  shape: RoundedRectangleBorder(
+                                                                    borderRadius:
+                                                                        BorderRadius.circular(
+                                                                          10,
+                                                                        ),
+                                                                  ),
+                                                                  textStyle: const TextStyle(
+                                                                    fontWeight:
+                                                                        FontWeight
+                                                                            .w600,
+                                                                  ),
+                                                                ),
+                                                              ),
+                                                            ],
+                                                          ),
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  );
+                                                })
+                                                .toList(),
                                       ),
                                     ),
                                     Container(
@@ -501,33 +600,61 @@ const SizedBox(height: 8),
                                                         : null,
                                               ),
                                               const SizedBox(width: 16),
-                                               
-          
-          // ...List.generate(
-          //   (filtered.length / _itemsPerPage).ceil(),
-          //   (index) => _buildNumberButton(index, filtered.length),
-          // ),
-          
-          ...(() {
-            int totalPages = (filtered.length / _itemsPerPage).ceil();
-            int start = (_currentPage - 2).clamp(0, totalPages - 1);
-            int end = (_currentPage + 2).clamp(0, totalPages - 1);
 
-            List<Widget> pageButtons = [];
-            if (start > 0) {
-              pageButtons.add(_buildNumberButton(0, filtered.length));
-              if (start > 1) pageButtons.add(const Text('...'));
-            }
-            for (int i = start; i <= end; i++) {
-              pageButtons.add(_buildNumberButton(i, filtered.length));
-            }
-            if (end < totalPages - 1) {
-              if (end < totalPages - 2) pageButtons.add(const Text('...'));
-              pageButtons.add(_buildNumberButton(totalPages - 1, filtered.length));
-            }
-            return pageButtons;
-          })(),
-         
+                                              // ...List.generate(
+                                              //   (filtered.length / _itemsPerPage).ceil(),
+                                              //   (index) => _buildNumberButton(index, filtered.length),
+                                              // ),
+                                              ...(() {
+                                                int totalPages =
+                                                    (filtered.length /
+                                                            _itemsPerPage)
+                                                        .ceil();
+                                                int start = (_currentPage - 2)
+                                                    .clamp(0, totalPages - 1);
+                                                int end = (_currentPage + 2)
+                                                    .clamp(0, totalPages - 1);
+
+                                                List<Widget> pageButtons = [];
+                                                if (start > 0) {
+                                                  pageButtons.add(
+                                                    _buildNumberButton(
+                                                      0,
+                                                      filtered.length,
+                                                    ),
+                                                  );
+                                                  if (start > 1)
+                                                    pageButtons.add(
+                                                      const Text('...'),
+                                                    );
+                                                }
+                                                for (
+                                                  int i = start;
+                                                  i <= end;
+                                                  i++
+                                                ) {
+                                                  pageButtons.add(
+                                                    _buildNumberButton(
+                                                      i,
+                                                      filtered.length,
+                                                    ),
+                                                  );
+                                                }
+                                                if (end < totalPages - 1) {
+                                                  if (end < totalPages - 2)
+                                                    pageButtons.add(
+                                                      const Text('...'),
+                                                    );
+                                                  pageButtons.add(
+                                                    _buildNumberButton(
+                                                      totalPages - 1,
+                                                      filtered.length,
+                                                    ),
+                                                  );
+                                                }
+                                                return pageButtons;
+                                              })(),
+
                                               const SizedBox(width: 16),
                                               _buildPageButton(
                                                 icon: Icons.chevron_right,
@@ -572,167 +699,235 @@ const SizedBox(height: 8),
                   }
 
                   // Mobile View with reorganized content
-                 return RefreshIndicator(
-  onRefresh: () async {
-  ref.invalidate(empleadosDependientesProvider);
-  ref.read(imageVersionProvider.notifier).state++;
-  await Future.delayed(const Duration(milliseconds: 500));
-},
-  child: ListView.builder(
-    padding: const EdgeInsets.symmetric(
-      vertical: 8,
-      horizontal: 12,
-    ),
-    itemCount: filtered.length,
-    itemBuilder: (context, index) {
-      final empleado = filtered[index];
-      final theme = Theme.of(context);
-      final isDark = theme.brightness == Brightness.dark;
+                  return RefreshIndicator(
+                    onRefresh: () async {
+                      ref.invalidate(empleadosDependientesProvider);
+                      ref.read(imageVersionProvider.notifier).state++;
+                      await Future.delayed(const Duration(milliseconds: 500));
+                    },
+                    child: ListView.builder(
+                      padding: const EdgeInsets.symmetric(
+                        vertical: 8,
+                        horizontal: 12,
+                      ),
+                      itemCount: filtered.length,
+                      itemBuilder: (context, index) {
+                        final empleado = filtered[index];
+                        final theme = Theme.of(context);
+                        final isDark = theme.brightness == Brightness.dark;
 
-      return Container(
-        margin: const EdgeInsets.only(bottom: 8),
-        decoration: BoxDecoration(
-          color: theme.cardColor,
-          borderRadius: BorderRadius.circular(12),
-          boxShadow: [
-            BoxShadow(
-              color: theme.shadowColor.withOpacity(0.1),
-              blurRadius: 4,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // Header with avatar and name
-            ListTile(
-              contentPadding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-              leading: Container(
-                padding: const EdgeInsets.all(2),
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  border: Border.all(
-                    color: isDark ? Colors.teal.shade700 : Colors.teal.shade100,
-                  ),
-                ),
-                child: CircleAvatar(
-                  radius: 20,
-                  backgroundColor: isDark ? Colors.teal.shade900 : Colors.teal.shade50,
-                  child: _buildEmpleadoAvatar(empleado.codEmpleado),
-                ),
-              ),
-              title: Text(
-                empleado.persona.datoPersona ?? '',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: isDark ? Colors.white : Colors.black87,
-                ),
-                overflow: TextOverflow.visible,
-                softWrap: true,
-                maxLines: 2,
-              ),
-              subtitle: Column(
-  crossAxisAlignment: CrossAxisAlignment.start,
-  children: [
-    Text(
-      empleado.empleadoCargo.cargoSucursal.cargo.descripcion ?? '-',
-      style: theme.textTheme.bodySmall?.copyWith(
-        fontSize: 13,
-        color: isDark ? Colors.grey[300] : Colors.grey[700],
-      ),
-      overflow: TextOverflow.visible,
-      softWrap: true,
-      maxLines: 2,
-    ),
-    const SizedBox(height: 2),
-    Row(
-      children: [
-        Icon(
-          empleado.relEmpEmpr.esActivo == 1 ? Icons.check_circle : Icons.cancel,
-          color: empleado.relEmpEmpr.esActivo == 1 ? Colors.green : Colors.red,
-          size: 16,
-        ),
-        const SizedBox(width: 4),
-        Text(
-          empleado.relEmpEmpr.esActivo == 1 ? 'Activo' : 'Inactivo',
-          style: TextStyle(
-            color: empleado.relEmpEmpr.esActivo == 1 ? Colors.green : Colors.red,
-            fontWeight: FontWeight.w600,
-            fontSize: 12,
-          ),
-        ),
-      ],
-    ),
-  ],
-),
-            ),
-            // Two-column info grid
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-              child: Column(
-                children: [
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _buildCompactInfo(
-                          context,
-                          icon: Icons.business_outlined,
-                          label: 'Empresa',
-                          value: empleado.empresa.nombre ?? '-',
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: _buildCompactInfo(
-                          context,
-                          icon: Icons.location_on_outlined,
-                          label: 'Sucursal',
-                          value: (empleado.sucursal.nombre ?? '-').toUpperCase(),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Container(
-                          margin: const EdgeInsets.only(right: 6),
-                          child: _buildReferenciasButton(empleado.codEmpleado, empleado.dependiente.codEmpleado ?? 0),
-                        ),
-                      ),
-                      Expanded(
-                        child: Container(
-                          margin: const EdgeInsets.only(left: 6),
-                          child: TextButton.icon(
-  onPressed: () => _navigateToDetails(empleado.codEmpleado),
-  icon: const Icon(Icons.info_outline, color: Colors.teal),
-  label: const Text('Ver detalles'),
-  style: TextButton.styleFrom(
-    foregroundColor: Colors.teal,
-    backgroundColor: Colors.teal.withOpacity(0.08),
-    textStyle: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
-    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
-    shape: RoundedRectangleBorder(
-      borderRadius: BorderRadius.circular(12),
-    ),
-  ),
-),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      );
-    },
-  ),
-);
+                        return Container(
+                          margin: const EdgeInsets.only(bottom: 8),
+                          decoration: BoxDecoration(
+                            color: theme.cardColor,
+                            borderRadius: BorderRadius.circular(12),
+                            boxShadow: [
+                              BoxShadow(
+                                color: theme.shadowColor.withValues(alpha: 0.1),
+                                blurRadius: 4,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
+                          ),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              // Header with avatar and name
+                              ListTile(
+                                contentPadding: const EdgeInsets.fromLTRB(
+                                  16,
+                                  8,
+                                  16,
+                                  8,
+                                ),
+                                leading: Container(
+                                  padding: const EdgeInsets.all(2),
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    border: Border.all(
+                                      color:
+                                          isDark
+                                              ? Colors.teal.shade700
+                                              : Colors.teal.shade100,
+                                    ),
+                                  ),
+                                  child: CircleAvatar(
+                                    radius: 20,
+                                    backgroundColor:
+                                        isDark
+                                            ? Colors.teal.shade900
+                                            : Colors.teal.shade50,
+                                    child: _buildEmpleadoAvatar(
+                                      empleado.codEmpleado,
+                                    ),
+                                  ),
+                                ),
+                                title: Text(
+                                  empleado.persona.datoPersona ?? '',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                    color:
+                                        isDark ? Colors.white : Colors.black87,
+                                  ),
+                                  overflow: TextOverflow.visible,
+                                  softWrap: true,
+                                  maxLines: 2,
+                                ),
+                                subtitle: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      empleado
+                                              .empleadoCargo
+                                              .cargoSucursal
+                                              .cargo
+                                              .descripcion ??
+                                          '-',
+                                      style: theme.textTheme.bodySmall
+                                          ?.copyWith(
+                                            fontSize: 13,
+                                            color:
+                                                isDark
+                                                    ? Colors.grey[300]
+                                                    : Colors.grey[700],
+                                          ),
+                                      overflow: TextOverflow.visible,
+                                      softWrap: true,
+                                      maxLines: 2,
+                                    ),
+                                    const SizedBox(height: 2),
+                                    Row(
+                                      children: [
+                                        Icon(
+                                          empleado.relEmpEmpr.esActivo == 1
+                                              ? Icons.check_circle
+                                              : Icons.cancel,
+                                          color:
+                                              empleado.relEmpEmpr.esActivo == 1
+                                                  ? Colors.green
+                                                  : Colors.red,
+                                          size: 16,
+                                        ),
+                                        const SizedBox(width: 4),
+                                        Text(
+                                          empleado.relEmpEmpr.esActivo == 1
+                                              ? 'Activo'
+                                              : 'Inactivo',
+                                          style: TextStyle(
+                                            color:
+                                                empleado.relEmpEmpr.esActivo ==
+                                                        1
+                                                    ? Colors.green
+                                                    : Colors.red,
+                                            fontWeight: FontWeight.w600,
+                                            fontSize: 12,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              // Two-column info grid
+                              Padding(
+                                padding: const EdgeInsets.fromLTRB(
+                                  16,
+                                  0,
+                                  16,
+                                  12,
+                                ),
+                                child: Column(
+                                  children: [
+                                    Row(
+                                      children: [
+                                        Expanded(
+                                          child: _buildCompactInfo(
+                                            context,
+                                            icon: Icons.business_outlined,
+                                            label: 'Empresa',
+                                            value:
+                                                empleado.empresa.nombre ?? '-',
+                                          ),
+                                        ),
+                                        const SizedBox(width: 12),
+                                        Expanded(
+                                          child: _buildCompactInfo(
+                                            context,
+                                            icon: Icons.location_on_outlined,
+                                            label: 'Sucursal',
+                                            value:
+                                                (empleado.sucursal.nombre ??
+                                                        '-')
+                                                    .toUpperCase(),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 8),
+                                    Row(
+                                      children: [
+                                        Expanded(
+                                          child: Container(
+                                            margin: const EdgeInsets.only(
+                                              right: 6,
+                                            ),
+                                            child: _buildReferenciasButton(
+                                              empleado.codEmpleado,
+                                              empleado
+                                                      .dependiente
+                                                      .codEmpleado ??
+                                                  0,
+                                            ),
+                                          ),
+                                        ),
+                                        Expanded(
+                                          child: Container(
+                                            margin: const EdgeInsets.only(
+                                              left: 6,
+                                            ),
+                                            child: TextButton.icon(
+                                              onPressed:
+                                                  () => _navigateToDetails(
+                                                    empleado.codEmpleado,
+                                                  ),
+                                              icon: const Icon(
+                                                Icons.info_outline,
+                                                color: Colors.teal,
+                                              ),
+                                              label: const Text('Ver detalles'),
+                                              style: TextButton.styleFrom(
+                                                foregroundColor: Colors.teal,
+                                                backgroundColor: Colors.teal
+                                                    .withValues(alpha: 0.08),
+                                                textStyle: const TextStyle(
+                                                  fontSize: 15,
+                                                  fontWeight: FontWeight.w600,
+                                                ),
+                                                padding:
+                                                    const EdgeInsets.symmetric(
+                                                      horizontal: 8,
+                                                      vertical: 12,
+                                                    ),
+                                                shape: RoundedRectangleBorder(
+                                                  borderRadius:
+                                                      BorderRadius.circular(12),
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
+                  );
                 },
               ),
             ),
@@ -754,7 +949,9 @@ const SizedBox(height: 8),
         backgroundColor:
             onPressed != null
                 ? Theme.of(context).colorScheme.surface
-                : Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.1),
+                : Theme.of(
+                  context,
+                ).colorScheme.surfaceVariant.withValues(alpha: 0.1),
         padding: const EdgeInsets.all(8),
       ),
     );
@@ -793,7 +990,6 @@ const SizedBox(height: 8),
       ),
     );
   }
-
 
   Widget _buildCompactInfo(
     BuildContext context, {
@@ -863,125 +1059,123 @@ const SizedBox(height: 8),
       ),
     );
   }
-Widget _buildReferenciasButton(int codEmpleado, int totalReferencias) {
-  return TextButton.icon(
-    onPressed: () => _navigateToDependientes(codEmpleado),
-    icon: const Icon(Icons.people, color: Colors.teal),
-    label: Text(
-      'Referencias: $totalReferencias',
-      style: const TextStyle(
-        color: Colors.teal,
-        fontWeight: FontWeight.bold,
+
+  Widget _buildReferenciasButton(int codEmpleado, int totalReferencias) {
+    return TextButton.icon(
+      onPressed: () => _navigateToDependientes(codEmpleado),
+      icon: const Icon(Icons.people, color: Colors.teal),
+      label: Text(
+        'Referencias: $totalReferencias',
+        style: const TextStyle(color: Colors.teal, fontWeight: FontWeight.bold),
       ),
-    ),
-    style: TextButton.styleFrom(
-      foregroundColor: Colors.teal,
-      backgroundColor: Colors.teal.withOpacity(0.08),
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(10),
+      style: TextButton.styleFrom(
+        foregroundColor: Colors.teal,
+        backgroundColor: Colors.teal.withValues(alpha: 0.08),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        textStyle: const TextStyle(fontWeight: FontWeight.w600),
       ),
-      textStyle: const TextStyle(fontWeight: FontWeight.w600),
-    ),
-  );
-}
- 
+    );
+  }
 
   // Navigation methods
- void _navigateToDetails(int codEmpleado) async {
-  if (!mounted) return;
-  await Navigator.push(
-    context,
-    MaterialPageRoute(
-      builder: (context) => InfoEmpleadoScreen(codEmpleado: codEmpleado),
-    ),
-  );
-  // Al volver, refresca empleados y la imagen
-  if (_codEmpleadoUsuario != null) {
-  ref.refresh(empleadosDependientesProvider(_codEmpleadoUsuario!));
-}
-  ref.read(imageVersionProvider.notifier).state++;
-}
+  void _navigateToDetails(int codEmpleado) async {
+    if (!mounted) return;
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => InfoEmpleadoScreen(codEmpleado: codEmpleado),
+      ),
+    );
+    // Al volver, refresca empleados y la imagen
+    if (_codEmpleadoUsuario != null) {
+      ref.refresh(empleadosDependientesProvider(_codEmpleadoUsuario!));
+    }
+    ref.read(imageVersionProvider.notifier).state++;
+  }
 
   void _navigateToDependientes(int codEmpleado) {
-  if (!mounted) return;
-  Navigator.push(
-    context,
-    MaterialPageRoute(
-      builder: (context) => DependienteScreen(codEmpleado: codEmpleado),
-    ),
-  );
-}
+    if (!mounted) return;
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => DependienteScreen(codEmpleado: codEmpleado),
+      ),
+    );
+  }
 
   // Existing methods remain unchanged
- List<EmpleadoEntity> _filterEmpleados(
-  List<EmpleadoEntity> empleados,
-  String searchTerm,
-) {
-  List<EmpleadoEntity> filtrados = empleados;
-  if (_filtroActivo == 1) {
-    filtrados = filtrados.where((e) => e.relEmpEmpr.esActivo == 1).toList();
-  } else if (_filtroActivo == 2) {
-    filtrados = filtrados.where((e) => e.relEmpEmpr.esActivo != 1).toList();
-  }
-  if (searchTerm.isNotEmpty) {
-    filtrados = filtrados.where((empleado) {
-      final nombre = empleado.persona.datoPersona!.toLowerCase();
-      return nombre.contains(searchTerm.toLowerCase());
-    }).toList();
-  }
-
-  // Mover el usuario logueado al primer lugar SIN ordenar la lista completa
-  if (_codEmpleadoUsuario != null) {
-    final idx = filtrados.indexWhere((e) => e.codEmpleado == _codEmpleadoUsuario);
-    if (idx > 0) {
-      final usuario = filtrados.removeAt(idx);
-      filtrados.insert(0, usuario);
+  List<EmpleadoEntity> _filterEmpleados(
+    List<EmpleadoEntity> empleados,
+    String searchTerm,
+  ) {
+    List<EmpleadoEntity> filtrados = empleados;
+    if (_filtroActivo == 1) {
+      filtrados = filtrados.where((e) => e.relEmpEmpr.esActivo == 1).toList();
+    } else if (_filtroActivo == 2) {
+      filtrados = filtrados.where((e) => e.relEmpEmpr.esActivo != 1).toList();
     }
-  }
+    if (searchTerm.isNotEmpty) {
+      filtrados =
+          filtrados.where((empleado) {
+            final nombre = empleado.persona.datoPersona!.toLowerCase();
+            return nombre.contains(searchTerm.toLowerCase());
+          }).toList();
+    }
 
-  return filtrados;
-}
+    // Mover el usuario logueado al primer lugar SIN ordenar la lista completa
+    if (_codEmpleadoUsuario != null) {
+      final idx = filtrados.indexWhere(
+        (e) => e.codEmpleado == _codEmpleadoUsuario,
+      );
+      if (idx > 0) {
+        final usuario = filtrados.removeAt(idx);
+        filtrados.insert(0, usuario);
+      }
+    }
+
+    return filtrados;
+  }
 
   Widget _buildEmpleadoAvatar(int codEmpleado) {
-  return Hero(
-    tag: 'empleado-imagen-$codEmpleado',
-    child: GestureDetector(
-      onTap: () => _mostrarImagenCompleta(context, codEmpleado),
-      child: ClipOval(
-        child: Image.network(
-          getImageUrl(codEmpleado),
-          width: 40,
-          height: 40,
-          fit: BoxFit.cover,
-          // Placeholder mientras carga
-          loadingBuilder: (context, child, loadingProgress) {
-            if (loadingProgress == null) return child;
-            return Container(
-              width: 40,
-              height: 40,
-              color: Colors.grey[200],
-              child: const Center(
-                child: Icon(Icons.person, color: Colors.grey, size: 28),
-              ),
-            );
-          },
-          // Imagen de error si falla la carga
-          errorBuilder: (context, error, stackTrace) {
-            return Container(
-              width: 40,
-              height: 40,
-              color: Colors.grey[200],
-              child: const Center(
-                child: Icon(Icons.person_off, color: Colors.red, size: 28),
-              ),
-            );
-          },
+    return Hero(
+      tag: 'empleado-imagen-$codEmpleado',
+      child: GestureDetector(
+        onTap: () => _mostrarImagenCompleta(context, codEmpleado),
+        child: ClipOval(
+          child: Image.network(
+            getImageUrl(codEmpleado),
+            width: 40,
+            height: 40,
+            fit: BoxFit.cover,
+            // Placeholder mientras carga
+            loadingBuilder: (context, child, loadingProgress) {
+              if (loadingProgress == null) return child;
+              return Container(
+                width: 40,
+                height: 40,
+                color: Colors.grey[200],
+                child: const Center(
+                  child: Icon(Icons.person, color: Colors.grey, size: 28),
+                ),
+              );
+            },
+            // Imagen de error si falla la carga
+            errorBuilder: (context, error, stackTrace) {
+              return Container(
+                width: 40,
+                height: 40,
+                color: Colors.grey[200],
+                child: const Center(
+                  child: Icon(Icons.person_off, color: Colors.red, size: 28),
+                ),
+              );
+            },
+          ),
         ),
       ),
-    ),
-  );
-}
+    );
+  }
 
   String getImageUrl(int codEmpleado) {
     final imageVersion = ref.watch(imageVersionProvider);
@@ -1062,80 +1256,87 @@ Widget _buildReferenciasButton(int codEmpleado, int totalReferencias) {
       },
     );
   }
+
   Widget _buildFiltroEmpleados({required bool isWeb}) {
-  if (isWeb) {
-    // Web/desktop: horizontal
-    return Row(
-      children: [
-        const Text('Ver empleados: ', style: TextStyle(fontWeight: FontWeight.w600)),
-        /*ChoiceChip(
+    if (isWeb) {
+      // Web/desktop: horizontal
+      return Row(
+        children: [
+          const Text(
+            'Ver empleados: ',
+            style: TextStyle(fontWeight: FontWeight.w600),
+          ),
+          /*ChoiceChip(
           label: const Text('Todos'),
           selected: _filtroActivo == 0,
           onSelected: (_) => setState(() => _filtroActivo = 0),
         ),*/
-        PermissionWidget(
-          buttonName: 'btnVerTodosEmpleados',
-           child: ChoiceChip(
-            label: const Text ('Todos'),
-            selected: _filtroActivo == 0,
-            onSelected: (_)=> setState (()=> _filtroActivo = 0),
-           ),
-        ),
-        const SizedBox(width: 8),
-        ChoiceChip(
-          label: const Text('Activos'),
-          selected: _filtroActivo == 1,
-          onSelected: (_) => setState(() => _filtroActivo = 1),
-        ),
-       /* const SizedBox(width: 8),
+          PermissionWidget(
+            buttonName: 'btnVerTodosEmpleados',
+            child: ChoiceChip(
+              label: const Text('Todos'),
+              selected: _filtroActivo == 0,
+              onSelected: (_) => setState(() => _filtroActivo = 0),
+            ),
+          ),
+          const SizedBox(width: 8),
+          ChoiceChip(
+            label: const Text('Activos'),
+            selected: _filtroActivo == 1,
+            onSelected: (_) => setState(() => _filtroActivo = 1),
+          ),
+          /* const SizedBox(width: 8),
         ChoiceChip(
           label: const Text('Inactivos'),
           selected: _filtroActivo == 2,
           onSelected: (_) => setState(() => _filtroActivo = 2),
         ),*/
-        //envolver choicechip en PermissionWidget
-        const SizedBox(width: 8),
-        PermissionWidget(
-          buttonName: 'btnVerEmpleadosInactivos',
-           child: ChoiceChip(
-            label: const Text ('Inactivos'),
-            selected: _filtroActivo == 2,
-            onSelected: (_)=> setState (()=> _filtroActivo = 2),
-           ),
-        )
-      ],
-    );
-  } else {
-    // Móvil: vertical y más amigable
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text('Ver empleados:', style: TextStyle(fontWeight: FontWeight.w600)),
-        const SizedBox(height: 6),
-        Wrap(
-          spacing: 8,
-          children: [
-            ChoiceChip(
-              label: const Text('Todos'),
-              selected: _filtroActivo == 0,
-              onSelected: (_) => setState(() => _filtroActivo = 0),
-            ),
-            ChoiceChip(
-              label: const Text('Activos'),
-              selected: _filtroActivo == 1,
-              onSelected: (_) => setState(() => _filtroActivo = 1),
-            ),
-            ChoiceChip(
+          //envolver choicechip en PermissionWidget
+          const SizedBox(width: 8),
+          PermissionWidget(
+            buttonName: 'btnVerEmpleadosInactivos',
+            child: ChoiceChip(
               label: const Text('Inactivos'),
               selected: _filtroActivo == 2,
               onSelected: (_) => setState(() => _filtroActivo = 2),
             ),
-          ],
-        ),
-      ],
-    );
+          ),
+        ],
+      );
+    } else {
+      // Móvil: vertical y más amigable
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Ver empleados:',
+            style: TextStyle(fontWeight: FontWeight.w600),
+          ),
+          const SizedBox(height: 6),
+          Wrap(
+            spacing: 8,
+            children: [
+              ChoiceChip(
+                label: const Text('Todos'),
+                selected: _filtroActivo == 0,
+                onSelected: (_) => setState(() => _filtroActivo = 0),
+              ),
+              ChoiceChip(
+                label: const Text('Activos'),
+                selected: _filtroActivo == 1,
+                onSelected: (_) => setState(() => _filtroActivo = 1),
+              ),
+              ChoiceChip(
+                label: const Text('Inactivos'),
+                selected: _filtroActivo == 2,
+                onSelected: (_) => setState(() => _filtroActivo = 2),
+              ),
+            ],
+          ),
+        ],
+      );
+    }
   }
-}
 
   @override
   void dispose() {
@@ -1143,235 +1344,375 @@ Widget _buildReferenciasButton(int codEmpleado, int totalReferencias) {
     _scrollController.dispose();
     super.dispose();
   }
-  Widget _buildNotificacionesDropdown() {
-  final pendientesAsync = ref.watch(documentosPendientesProvider);
-  final repo = FichaTrabajadorImpl();
-  final imageVersion = ref.watch(imageVersionProvider);
 
-  return PermissionWidget(
-    buttonName: 'btnDocumentosPendientes',
-    child: pendientesAsync.when(
-      loading: () => IconButton(
-        icon: const Icon(Icons.notifications, color: Colors.orange),
-        onPressed: null,
-      ),
-      error: (e, _) => IconButton(
-        icon: const Icon(Icons.notifications_off, color: Colors.red),
-        onPressed: null,
-      ),
-      data: (docs) => IconButton(
-        icon: Stack(
-          children: [
-            const Icon(Icons.notifications, color: Colors.orange, size: 28),
-            if (docs.isNotEmpty)
-              Positioned(
-                right: 0,
-                top: 0,
-                child: Container(
-                  padding: const EdgeInsets.all(2),
-                  decoration: BoxDecoration(
-                    color: Colors.red,
-                    shape: BoxShape.circle,
-                    border: Border.all(color: Colors.white, width: 1.5),
+  Widget _buildNotificacionesDropdown() {
+    final pendientesAsync = ref.watch(documentosPendientesProvider);
+    final repo = FichaTrabajadorImpl();
+    final imageVersion = ref.watch(imageVersionProvider);
+
+    return PermissionWidget(
+      buttonName: 'btnDocumentosPendientes',
+      child: pendientesAsync.when(
+        loading:
+            () => IconButton(
+              icon: const Icon(Icons.notifications, color: Colors.orange),
+              onPressed: null,
+            ),
+        error:
+            (e, _) => IconButton(
+              icon: const Icon(Icons.notifications_off, color: Colors.red),
+              onPressed: null,
+            ),
+        data:
+            (docs) => IconButton(
+              icon: Stack(
+                children: [
+                  const Icon(
+                    Icons.notifications,
+                    color: Colors.orange,
+                    size: 28,
                   ),
-                  constraints: const BoxConstraints(minWidth: 18, minHeight: 18),
-                  child: Text(
-                    '${docs.length}',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 11,
-                      fontWeight: FontWeight.bold,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                ),
-              ),
-          ],
-        ),
-        tooltip: 'Documentos pendientes',
-        onPressed: docs.isEmpty
-            ? null
-            : () {
-                showDialog(
-                  context: context,
-                  barrierDismissible: false,
-                  builder: (ctx) {
-                    return Consumer(
-                      builder: (context, ref, _) {
-                        final docs = ref.watch(documentosPendientesProvider).maybeWhen(
-                          data: (d) => d,
-                          orElse: () => [],
-                        );
-                        return AlertDialog(
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                          title: Row(
-                            children: [
-                              const Icon(Icons.notifications_active, color: Colors.orange, size: 22),
-                              const SizedBox(width: 10),
-                              Text(
-                                'Documentos pendientes',
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 16,
-                                  color: Colors.orange.shade800,
-                                ),
-                              ),
-                            ],
+                  if (docs.isNotEmpty)
+                    Positioned(
+                      right: 0,
+                      top: 0,
+                      child: Container(
+                        padding: const EdgeInsets.all(2),
+                        decoration: BoxDecoration(
+                          color: Colors.red,
+                          shape: BoxShape.circle,
+                          border: Border.all(color: Colors.white, width: 1.5),
+                        ),
+                        constraints: const BoxConstraints(
+                          minWidth: 18,
+                          minHeight: 18,
+                        ),
+                        child: Text(
+                          '${docs.length}',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
                           ),
-                          content: SizedBox(
-                            width: 380,
-                            height: 420,
-                            child: docs.isEmpty
-                                ? const Center(child: Text('No hay documentos pendientes'))
-                                : Scrollbar(
-                                    thumbVisibility: true,
-                                    radius: const Radius.circular(8),
-                                    thickness: 6,
-                                    child: ListView.separated(
-                                      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 0),
-                                      itemCount: docs.length,
-                                      separatorBuilder: (_, __) => Divider(height: 18, color: Colors.grey[200]),
-                                      itemBuilder: (context, i) {
-                                        final doc = docs[i];
-                                        return Padding(
-                                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 2),
-                                          child: Material(
-                                            color: Colors.transparent,
-                                            borderRadius: BorderRadius.circular(10),
-                                            child: InkWell(
-                                              borderRadius: BorderRadius.circular(10),
-                                              onTap: () {},
-                                              child: Row(
-                                                crossAxisAlignment: CrossAxisAlignment.start,
-                                                children: [
-                                                  GestureDetector(
-                                                    onTap: () {
-                                                      showDialog(
-                                                        context: context,
-                                                        builder: (ctx) => Dialog(
-                                                          backgroundColor: Colors.transparent,
-                                                          child: InteractiveViewer(
-                                                            child: Image.network(
-                                                              '${AppConstants.baseUrl}${AppConstants.getDocPendienteImageUrl}${doc['codEmpleado']}/${doc['tipoDocumento']}/${doc['nombreArchivo']}?v=$imageVersion',
-                                                              fit: BoxFit.contain,
-                                                            ),
-                                                          ),
-                                                        ),
-                                                      );
-                                                    },
-                                                    child: ClipRRect(
-                                                      borderRadius: BorderRadius.circular(8),
-                                                      child: Image.network(
-                                                        '${AppConstants.baseUrl}${AppConstants.getDocPendienteImageUrl}${doc['codEmpleado']}/${doc['tipoDocumento']}/${doc['nombreArchivo']}?v=$imageVersion',
-                                                        width: 54,
-                                                        height: 54,
-                                                        fit: BoxFit.cover,
-                                                      ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+              tooltip: 'Documentos pendientes',
+              onPressed:
+                  docs.isEmpty
+                      ? null
+                      : () {
+                        showDialog(
+                          context: context,
+                          barrierDismissible: false,
+                          builder: (ctx) {
+                            return Consumer(
+                              builder: (context, ref, _) {
+                                final docs = ref
+                                    .watch(documentosPendientesProvider)
+                                    .maybeWhen(
+                                      data: (d) => d,
+                                      orElse: () => [],
+                                    );
+                                return AlertDialog(
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(16),
+                                  ),
+                                  title: Row(
+                                    children: [
+                                      const Icon(
+                                        Icons.notifications_active,
+                                        color: Colors.orange,
+                                        size: 22,
+                                      ),
+                                      const SizedBox(width: 10),
+                                      Text(
+                                        'Documentos pendientes',
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 16,
+                                          color: Colors.orange.shade800,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  content: SizedBox(
+                                    width: 380,
+                                    height: 420,
+                                    child:
+                                        docs.isEmpty
+                                            ? const Center(
+                                              child: Text(
+                                                'No hay documentos pendientes',
+                                              ),
+                                            )
+                                            : Scrollbar(
+                                              thumbVisibility: true,
+                                              radius: const Radius.circular(8),
+                                              thickness: 6,
+                                              child: ListView.separated(
+                                                padding:
+                                                    const EdgeInsets.symmetric(
+                                                      vertical: 10,
+                                                      horizontal: 0,
                                                     ),
-                                                  ),
-                                                  const SizedBox(width: 14),
-                                                  Expanded(
-                                                    child: Column(
-                                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                                      children: [
-                                                        Text(
-                                                          doc['nombreCompleto'] ?? 'Empleado ${doc['codEmpleado']}',
-                                                          style: const TextStyle(
-                                                            fontWeight: FontWeight.w700,
-                                                            fontSize: 14,
-                                                            color: Colors.black87,
-                                                          ),
-                                                          overflow: TextOverflow.ellipsis,
+                                                itemCount: docs.length,
+                                                separatorBuilder:
+                                                    (_, __) => Divider(
+                                                      height: 18,
+                                                      color: Colors.grey[200],
+                                                    ),
+                                                itemBuilder: (context, i) {
+                                                  final doc = docs[i];
+                                                  return Padding(
+                                                    padding:
+                                                        const EdgeInsets.symmetric(
+                                                          horizontal: 14,
+                                                          vertical: 2,
                                                         ),
-                                                        const SizedBox(height: 2),
-                                                        Text(
-                                                          '${doc['tipoDocumento']}',
-                                                          style: const TextStyle(
-                                                            fontSize: 12,
-                                                            color: Colors.black54,
+                                                    child: Material(
+                                                      color: Colors.transparent,
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                            10,
                                                           ),
-                                                          overflow: TextOverflow.ellipsis,
-                                                        ),
-                                                        const SizedBox(height: 4),
-                                                        Row(
+                                                      child: InkWell(
+                                                        borderRadius:
+                                                            BorderRadius.circular(
+                                                              10,
+                                                            ),
+                                                        onTap: () {},
+                                                        child: Row(
+                                                          crossAxisAlignment:
+                                                              CrossAxisAlignment
+                                                                  .start,
                                                           children: [
-                                                            Tooltip(
-                                                              message: 'Aprobar',
-                                                              child: IconButton(
-                                                                icon: const Icon(Icons.check_circle, color: Colors.green, size: 22),
-                                                                onPressed: () async {
-                                                                  await repo.aprobarDocumentoPendiente(doc);
-                                                                  ref.invalidate(documentosPendientesProvider);
-                                                                  //refresr fotos de perfil
-                                                                  ref.read(imageVersionProvider.notifier).state++;
-                                                                  ScaffoldMessenger.of(context).showSnackBar(
-                                                                    const SnackBar(content: Text('Documento aprobado')),
-                                                                  );
-                                                                },
+                                                            GestureDetector(
+                                                              onTap: () {
+                                                                showDialog(
+                                                                  context:
+                                                                      context,
+                                                                  builder:
+                                                                      (
+                                                                        ctx,
+                                                                      ) => Dialog(
+                                                                        backgroundColor:
+                                                                            Colors.transparent,
+                                                                        child: InteractiveViewer(
+                                                                          child: Image.network(
+                                                                            '${AppConstants.baseUrl}${AppConstants.getDocPendienteImageUrl}${doc['codEmpleado']}/${doc['tipoDocumento']}/${doc['nombreArchivo']}?v=$imageVersion',
+                                                                            fit:
+                                                                                BoxFit.contain,
+                                                                          ),
+                                                                        ),
+                                                                      ),
+                                                                );
+                                                              },
+                                                              child: ClipRRect(
+                                                                borderRadius:
+                                                                    BorderRadius.circular(
+                                                                      8,
+                                                                    ),
+                                                                child: Image.network(
+                                                                  '${AppConstants.baseUrl}${AppConstants.getDocPendienteImageUrl}${doc['codEmpleado']}/${doc['tipoDocumento']}/${doc['nombreArchivo']}?v=$imageVersion',
+                                                                  width: 54,
+                                                                  height: 54,
+                                                                  fit:
+                                                                      BoxFit
+                                                                          .cover,
+                                                                ),
                                                               ),
                                                             ),
-                                                            Tooltip(
-                                                              message: 'Rechazar',
-                                                              child: IconButton(
-                                                                icon: const Icon(Icons.cancel, color: Colors.red, size: 22),
-                                                                onPressed: () async {
-                                                                  final confirm = await showDialog<bool>(
-                                                                    context: context,
-                                                                    builder: (ctx) => AlertDialog(
-                                                                      title: const Text('Rechazar documento'),
-                                                                      content: const Text('¿Estás seguro de rechazar este documento?'),
-                                                                      actions: [
-                                                                        TextButton(
-                                                                          child: const Text('Cancelar'),
-                                                                          onPressed: () => Navigator.pop(ctx, false),
-                                                                        ),
-                                                                        ElevatedButton(
-                                                                          child: const Text('Rechazar'),
-                                                                          style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-                                                                          onPressed: () => Navigator.pop(ctx, true),
-                                                                        ),
-                                                                      ],
+                                                            const SizedBox(
+                                                              width: 14,
+                                                            ),
+                                                            Expanded(
+                                                              child: Column(
+                                                                crossAxisAlignment:
+                                                                    CrossAxisAlignment
+                                                                        .start,
+                                                                children: [
+                                                                  Text(
+                                                                    doc['nombreCompleto'] ??
+                                                                        'Empleado ${doc['codEmpleado']}',
+                                                                    style: const TextStyle(
+                                                                      fontWeight:
+                                                                          FontWeight
+                                                                              .w700,
+                                                                      fontSize:
+                                                                          14,
+                                                                      color:
+                                                                          Colors
+                                                                              .black87,
                                                                     ),
-                                                                  );
-                                                                  if (confirm == true) {
-                                                                    await repo.rechazarDocumentoPendiente(doc);
-                                                                    ref.invalidate(documentosPendientesProvider);
-                                                                    ScaffoldMessenger.of(context).showSnackBar(
-                                                                      const SnackBar(content: Text('Documento rechazado')),
-                                                                    );
-                                                                  }
-                                                                },
+                                                                    overflow:
+                                                                        TextOverflow
+                                                                            .ellipsis,
+                                                                  ),
+                                                                  const SizedBox(
+                                                                    height: 2,
+                                                                  ),
+                                                                  Text(
+                                                                    '${doc['tipoDocumento']}',
+                                                                    style: const TextStyle(
+                                                                      fontSize:
+                                                                          12,
+                                                                      color:
+                                                                          Colors
+                                                                              .black54,
+                                                                    ),
+                                                                    overflow:
+                                                                        TextOverflow
+                                                                            .ellipsis,
+                                                                  ),
+                                                                  const SizedBox(
+                                                                    height: 4,
+                                                                  ),
+                                                                  Row(
+                                                                    children: [
+                                                                      Tooltip(
+                                                                        message:
+                                                                            'Aprobar',
+                                                                        child: IconButton(
+                                                                          icon: const Icon(
+                                                                            Icons.check_circle,
+                                                                            color:
+                                                                                Colors.green,
+                                                                            size:
+                                                                                22,
+                                                                          ),
+                                                                          onPressed: () async {
+                                                                            await repo.aprobarDocumentoPendiente(
+                                                                              doc,
+                                                                            );
+                                                                            ref.invalidate(
+                                                                              documentosPendientesProvider,
+                                                                            );
+                                                                            //refresr fotos de perfil
+                                                                            ref
+                                                                                .read(
+                                                                                  imageVersionProvider.notifier,
+                                                                                )
+                                                                                .state++;
+                                                                            ScaffoldMessenger.of(
+                                                                              context,
+                                                                            ).showSnackBar(
+                                                                              const SnackBar(
+                                                                                content: Text(
+                                                                                  'Documento aprobado',
+                                                                                ),
+                                                                              ),
+                                                                            );
+                                                                          },
+                                                                        ),
+                                                                      ),
+                                                                      Tooltip(
+                                                                        message:
+                                                                            'Rechazar',
+                                                                        child: IconButton(
+                                                                          icon: const Icon(
+                                                                            Icons.cancel,
+                                                                            color:
+                                                                                Colors.red,
+                                                                            size:
+                                                                                22,
+                                                                          ),
+                                                                          onPressed: () async {
+                                                                            final confirm = await showDialog<
+                                                                              bool
+                                                                            >(
+                                                                              context:
+                                                                                  context,
+                                                                              builder:
+                                                                                  (
+                                                                                    ctx,
+                                                                                  ) => AlertDialog(
+                                                                                    title: const Text(
+                                                                                      'Rechazar documento',
+                                                                                    ),
+                                                                                    content: const Text(
+                                                                                      '¿Estás seguro de rechazar este documento?',
+                                                                                    ),
+                                                                                    actions: [
+                                                                                      TextButton(
+                                                                                        child: const Text(
+                                                                                          'Cancelar',
+                                                                                        ),
+                                                                                        onPressed:
+                                                                                            () => Navigator.pop(
+                                                                                              ctx,
+                                                                                              false,
+                                                                                            ),
+                                                                                      ),
+                                                                                      ElevatedButton(
+                                                                                        child: const Text(
+                                                                                          'Rechazar',
+                                                                                        ),
+                                                                                        style: ElevatedButton.styleFrom(
+                                                                                          backgroundColor:
+                                                                                              Colors.red,
+                                                                                        ),
+                                                                                        onPressed:
+                                                                                            () => Navigator.pop(
+                                                                                              ctx,
+                                                                                              true,
+                                                                                            ),
+                                                                                      ),
+                                                                                    ],
+                                                                                  ),
+                                                                            );
+                                                                            if (confirm ==
+                                                                                true) {
+                                                                              await repo.rechazarDocumentoPendiente(
+                                                                                doc,
+                                                                              );
+                                                                              ref.invalidate(
+                                                                                documentosPendientesProvider,
+                                                                              );
+                                                                              ScaffoldMessenger.of(
+                                                                                context,
+                                                                              ).showSnackBar(
+                                                                                const SnackBar(
+                                                                                  content: Text(
+                                                                                    'Documento rechazado',
+                                                                                  ),
+                                                                                ),
+                                                                              );
+                                                                            }
+                                                                          },
+                                                                        ),
+                                                                      ),
+                                                                    ],
+                                                                  ),
+                                                                ],
                                                               ),
                                                             ),
                                                           ],
                                                         ),
-                                                      ],
+                                                      ),
                                                     ),
-                                                  ),
-                                                ],
+                                                  );
+                                                },
                                               ),
                                             ),
-                                          ),
-                                        );
-                                      },
-                                    ),
                                   ),
-                          ),
-                          actions: [
-                            TextButton(
-                              child: const Text('Cerrar'),
-                              onPressed: () => Navigator.pop(ctx),
-                            ),
-                          ],
+                                  actions: [
+                                    TextButton(
+                                      child: const Text('Cerrar'),
+                                      onPressed: () => Navigator.pop(ctx),
+                                    ),
+                                  ],
+                                );
+                              },
+                            );
+                          },
                         );
                       },
-                    );
-                  },
-                );
-              },
+            ),
       ),
-    ),
-  );
-}
-
+    );
+  }
 }

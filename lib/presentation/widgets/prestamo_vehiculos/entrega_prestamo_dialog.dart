@@ -11,7 +11,8 @@ class EntregaPrestamoDialog extends ConsumerStatefulWidget {
   const EntregaPrestamoDialog({super.key, required this.solicitud});
 
   @override
-  ConsumerState<EntregaPrestamoDialog> createState() => _EntregaPrestamoDialogState();
+  ConsumerState<EntregaPrestamoDialog> createState() =>
+      _EntregaPrestamoDialogState();
 }
 
 class _EntregaPrestamoDialogState extends ConsumerState<EntregaPrestamoDialog> {
@@ -25,7 +26,8 @@ class _EntregaPrestamoDialogState extends ConsumerState<EntregaPrestamoDialog> {
   List<String> _estadoTrasera = [];
   List<String> _estadoCapote = [];
 
-  List<EstadoChoferEntity> _estadosDisponibles = []; // Cambiar a entidades completas
+  List<EstadoChoferEntity> _estadosDisponibles =
+      []; // Cambiar a entidades completas
   bool _loadingEstados = false;
   String? _errorEstados;
 
@@ -82,7 +84,8 @@ class _EntregaPrestamoDialogState extends ConsumerState<EntregaPrestamoDialog> {
       "idCoche": widget.solicitud.idCoche,
       "idSolicitud": widget.solicitud.idSolicitud,
       "codSucursal": user.codSucursal,
-      "codEmpChoferSolicitado": widget.solicitud.requiereChofer == 1 ? _selectedChofer : 0,
+      "codEmpChoferSolicitado":
+          widget.solicitud.requiereChofer == 1 ? _selectedChofer : 0,
       "codEmpEntregadoPor": user.codEmpleado,
       "kilometrajeEntrega": double.tryParse(_kmEntregaController.text) ?? 0.0,
       "nivelCombustibleEntrega": _nivelCombustible.round(),
@@ -98,23 +101,29 @@ class _EntregaPrestamoDialogState extends ConsumerState<EntregaPrestamoDialog> {
     Navigator.of(context).pop(entrega);
   }
 
-  Future<void> _showEstadosDialog(List<String> selected, ValueChanged<List<String>> onChanged) async {
+  Future<void> _showEstadosDialog(
+    List<String> selected,
+    ValueChanged<List<String>> onChanged,
+  ) async {
     // Crear una copia mutable de la lista seleccionada
     List<String> tempSelected = List<String>.from(selected);
-    
+
     final result = await showDialog<List<String>>(
       context: context,
       builder: (context) {
         return StatefulBuilder(
           builder: (context, setStateDialog) {
             return AlertDialog(
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(24),
+              ),
               title: const Text('Seleccionar Estados'),
-              content: _loadingEstados
-                  ? const Center(child: CircularProgressIndicator())
-                  : _errorEstados != null
-                    ? Text(_errorEstados!)
-                    : SizedBox(
+              content:
+                  _loadingEstados
+                      ? const Center(child: CircularProgressIndicator())
+                      : _errorEstados != null
+                      ? Text(_errorEstados!)
+                      : SizedBox(
                         width: double.maxFinite,
                         height: 300, // Altura fija para el scroll
                         child: ListView.builder(
@@ -122,8 +131,10 @@ class _EntregaPrestamoDialogState extends ConsumerState<EntregaPrestamoDialog> {
                           itemCount: _estadosDisponibles.length,
                           itemBuilder: (context, index) {
                             final estado = _estadosDisponibles[index];
-                            final isSelected = tempSelected.contains(estado.estado);
-                            
+                            final isSelected = tempSelected.contains(
+                              estado.estado,
+                            );
+
                             return CheckboxListTile(
                               value: isSelected,
                               title: Text(estado.estado),
@@ -144,11 +155,15 @@ class _EntregaPrestamoDialogState extends ConsumerState<EntregaPrestamoDialog> {
                       ),
               actions: [
                 TextButton(
-                  onPressed: () => Navigator.of(context).pop(), // Cancelar sin cambios
+                  onPressed:
+                      () => Navigator.of(context).pop(), // Cancelar sin cambios
                   child: const Text('Cancelar'),
                 ),
                 TextButton(
-                  onPressed: () => Navigator.of(context).pop(tempSelected), // Devolver selección
+                  onPressed:
+                      () => Navigator.of(
+                        context,
+                      ).pop(tempSelected), // Devolver selección
                   child: const Text('Aceptar'),
                 ),
               ],
@@ -157,80 +172,101 @@ class _EntregaPrestamoDialogState extends ConsumerState<EntregaPrestamoDialog> {
         );
       },
     );
-    
+
     // Solo actualizar si se devolvió un resultado (no se canceló)
     if (result != null) {
       onChanged(result);
     }
   }
 
-  Widget _buildEstadoSelector(String label, List<String> selected, ValueChanged<List<String>> onChanged) {
+  Widget _buildEstadoSelector(
+    String label,
+    List<String> selected,
+    ValueChanged<List<String>> onChanged,
+  ) {
     return Card(
       margin: const EdgeInsets.symmetric(vertical: 8),
       child: ListTile(
         title: Text(label),
-        subtitle: selected.isEmpty
-            ? Text('Seleccionar $label')
-            : Wrap(
-                spacing: 4,
-                runSpacing: 2,
-                children: selected.map((e) => Chip(
-                  label: Text(e, style: const TextStyle(fontSize: 11)),
-                  visualDensity: VisualDensity.compact,
-                  materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                  padding: const EdgeInsets.symmetric(horizontal: 4),
-                  backgroundColor: Theme.of(context).colorScheme.primaryContainer,
-                )).toList(),
-              ),
+        subtitle:
+            selected.isEmpty
+                ? Text('Seleccionar $label')
+                : Wrap(
+                  spacing: 4,
+                  runSpacing: 2,
+                  children:
+                      selected
+                          .map(
+                            (e) => Chip(
+                              label: Text(
+                                e,
+                                style: const TextStyle(fontSize: 11),
+                              ),
+                              visualDensity: VisualDensity.compact,
+                              materialTapTargetSize:
+                                  MaterialTapTargetSize.shrinkWrap,
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 4,
+                              ),
+                              backgroundColor:
+                                  Theme.of(
+                                    context,
+                                  ).colorScheme.primaryContainer,
+                            ),
+                          )
+                          .toList(),
+                ),
         trailing: const Icon(Icons.chevron_right),
-        onTap: _loadingEstados
-            ? null
-            : () async {
-                // Llamar al diálogo y esperar el resultado
-                await _showEstadosDialog(selected, (newSelected) {
-                  // Actualizar el estado cuando se seleccionen nuevos valores
-                  onChanged(newSelected);
-                  // Forzar rebuild del widget padre
-                  setState(() {});
-                });
-              },
+        onTap:
+            _loadingEstados
+                ? null
+                : () async {
+                  // Llamar al diálogo y esperar el resultado
+                  await _showEstadosDialog(selected, (newSelected) {
+                    // Actualizar el estado cuando se seleccionen nuevos valores
+                    onChanged(newSelected);
+                    // Forzar rebuild del widget padre
+                    setState(() {});
+                  });
+                },
       ),
     );
   }
 
   Widget _buildChoferSelector(ColorScheme colorScheme) {
     final state = ref.watch(solicitudesPrestamosNotifierProvider);
-    
+
     return DropdownButtonFormField<int>(
       value: _selectedChofer,
       decoration: InputDecoration(
         labelText: 'Chofer Asignado',
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
         filled: true,
-        fillColor: colorScheme.surfaceContainerHighest.withOpacity(0.3),
+        fillColor: colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
       ),
       isExpanded: true,
-      items: state.choferes.map((chofer) {
-        return DropdownMenuItem<int>(
-          value: chofer.codEmpleado,
-          child: Text(
-            chofer.nombreCompleto,
-            overflow: TextOverflow.ellipsis,
-          ),
-        );
-      }).toList(),
-      onChanged: state.choferesStatus == FetchStatus.loading
-          ? null
-          : (value) {
-              setState(() {
-                _selectedChofer = value;
-              });
-            },
-      validator: widget.solicitud.requiereChofer == 1
-          ? (value) => value == null ? 'Seleccione un chofer' : null
-          : null,
+      items:
+          state.choferes.map((chofer) {
+            return DropdownMenuItem<int>(
+              value: chofer.codEmpleado,
+              child: Text(
+                chofer.nombreCompleto,
+                overflow: TextOverflow.ellipsis,
+              ),
+            );
+          }).toList(),
+      onChanged:
+          state.choferesStatus == FetchStatus.loading
+              ? null
+              : (value) {
+                setState(() {
+                  _selectedChofer = value;
+                });
+              },
+      validator:
+          widget.solicitud.requiereChofer == 1
+              ? (value) => value == null ? 'Seleccione un chofer' : null
+              : null,
     );
   }
 
@@ -258,21 +294,28 @@ class _EntregaPrestamoDialogState extends ConsumerState<EntregaPrestamoDialog> {
                   labelText: 'Kilometraje Entrega',
                   border: OutlineInputBorder(),
                 ),
-                validator: (v) => v == null || v.isEmpty ? 'Ingrese el kilometraje' : null,
+                validator:
+                    (v) =>
+                        v == null || v.isEmpty
+                            ? 'Ingrese el kilometraje'
+                            : null,
               ),
               const SizedBox(height: 16),
-              
+
               // Mostrar selector de chofer solo si requiere chofer
               if (widget.solicitud.requiereChofer == 1) ...[
                 _buildChoferSelector(colorScheme),
                 const SizedBox(height: 16),
               ],
-              
+
               Align(
                 alignment: Alignment.centerLeft,
                 child: Text(
                   'Nivel de Combustible (%)',
-                  style: TextStyle(fontWeight: FontWeight.w500, color: colorScheme.primary),
+                  style: TextStyle(
+                    fontWeight: FontWeight.w500,
+                    color: colorScheme.primary,
+                  ),
                 ),
               ),
               Row(
@@ -309,14 +352,37 @@ class _EntregaPrestamoDialogState extends ConsumerState<EntregaPrestamoDialog> {
                 alignment: Alignment.centerLeft,
                 child: Text(
                   'Estado de la Carrocería',
-                  style: TextStyle(fontWeight: FontWeight.bold, color: colorScheme.primary),
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: colorScheme.primary,
+                  ),
                 ),
               ),
-              _buildEstadoSelector('Estado Lateral', _estadoLaterales, (v) => setState(() => _estadoLaterales = v)),
-              _buildEstadoSelector('Estado Interior', _estadoInterior, (v) => setState(() => _estadoInterior = v)),
-              _buildEstadoSelector('Estado Delantera', _estadoDelantera, (v) => setState(() => _estadoDelantera = v)),
-              _buildEstadoSelector('Estado Trasera', _estadoTrasera, (v) => setState(() => _estadoTrasera = v)),
-              _buildEstadoSelector('Estado Capote', _estadoCapote, (v) => setState(() => _estadoCapote = v)),
+              _buildEstadoSelector(
+                'Estado Lateral',
+                _estadoLaterales,
+                (v) => setState(() => _estadoLaterales = v),
+              ),
+              _buildEstadoSelector(
+                'Estado Interior',
+                _estadoInterior,
+                (v) => setState(() => _estadoInterior = v),
+              ),
+              _buildEstadoSelector(
+                'Estado Delantera',
+                _estadoDelantera,
+                (v) => setState(() => _estadoDelantera = v),
+              ),
+              _buildEstadoSelector(
+                'Estado Trasera',
+                _estadoTrasera,
+                (v) => setState(() => _estadoTrasera = v),
+              ),
+              _buildEstadoSelector(
+                'Estado Capote',
+                _estadoCapote,
+                (v) => setState(() => _estadoCapote = v),
+              ),
               const SizedBox(height: 24),
               Row(
                 children: [

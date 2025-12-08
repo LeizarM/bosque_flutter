@@ -9,11 +9,12 @@ class SolicitudVehiculosScreen extends ConsumerStatefulWidget {
   const SolicitudVehiculosScreen({super.key});
 
   @override
-  ConsumerState<SolicitudVehiculosScreen> createState() => _SolicitudVehiculosScreenState();
+  ConsumerState<SolicitudVehiculosScreen> createState() =>
+      _SolicitudVehiculosScreenState();
 }
 
-class _SolicitudVehiculosScreenState extends ConsumerState<SolicitudVehiculosScreen> {
-  
+class _SolicitudVehiculosScreenState
+    extends ConsumerState<SolicitudVehiculosScreen> {
   @override
   void initState() {
     super.initState();
@@ -27,8 +28,9 @@ class _SolicitudVehiculosScreenState extends ConsumerState<SolicitudVehiculosScr
     try {
       final userNotifier = ref.read(userProvider.notifier);
       final codEmpleado = await userNotifier.getCodEmpleado();
-      
-      ref.read(solicitudesNotifierProvider.notifier)
+
+      ref
+          .read(solicitudesNotifierProvider.notifier)
           .cargarSolicitudesEmpleado(codEmpleado);
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -44,7 +46,7 @@ class _SolicitudVehiculosScreenState extends ConsumerState<SolicitudVehiculosScr
   Widget build(BuildContext context) {
     final state = ref.watch(solicitudesNotifierProvider);
     final colorScheme = Theme.of(context).colorScheme;
-    
+
     return Scaffold(
       backgroundColor: colorScheme.surface,
       appBar: AppBar(
@@ -104,7 +106,7 @@ class _SolicitudVehiculosScreenState extends ConsumerState<SolicitudVehiculosScr
             Icon(
               Icons.assignment_outlined,
               size: 80,
-              color: colorScheme.primary.withOpacity(0.5),
+              color: colorScheme.primary.withValues(alpha: 0.5),
             ),
             const SizedBox(height: 24),
             Text(
@@ -124,7 +126,7 @@ class _SolicitudVehiculosScreenState extends ConsumerState<SolicitudVehiculosScr
                 'Cuando realices una solicitud, aparecerá aquí con su estado actual.',
                 style: TextStyle(
                   fontSize: 14,
-                  color: colorScheme.onSurfaceVariant.withOpacity(0.8),
+                  color: colorScheme.onSurfaceVariant.withValues(alpha: 0.8),
                   height: 1.4,
                 ),
                 textAlign: TextAlign.center,
@@ -138,7 +140,10 @@ class _SolicitudVehiculosScreenState extends ConsumerState<SolicitudVehiculosScr
               style: ElevatedButton.styleFrom(
                 backgroundColor: colorScheme.primary,
                 foregroundColor: colorScheme.onPrimary,
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 8,
+                ),
               ),
             ),
           ],
@@ -151,16 +156,21 @@ class _SolicitudVehiculosScreenState extends ConsumerState<SolicitudVehiculosScr
         : _buildMobileList(state.solicitudes, colorScheme);
   }
 
-  Widget _buildDesktopTable(List<SolicitudChoferEntity> solicitudes, ColorScheme colorScheme) {
+  Widget _buildDesktopTable(
+    List<SolicitudChoferEntity> solicitudes,
+    ColorScheme colorScheme,
+  ) {
     return Card(
-      margin: EdgeInsets.all(ResponsiveUtilsBosque.getHorizontalPadding(context)),
+      margin: EdgeInsets.all(
+        ResponsiveUtilsBosque.getHorizontalPadding(context),
+      ),
       child: Column(
         children: [
           // Header
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: colorScheme.primaryContainer.withOpacity(0.3),
+              color: colorScheme.primaryContainer.withValues(alpha: 0.3),
               borderRadius: const BorderRadius.only(
                 topLeft: Radius.circular(12),
                 topRight: Radius.circular(12),
@@ -178,7 +188,10 @@ class _SolicitudVehiculosScreenState extends ConsumerState<SolicitudVehiculosScr
                   ),
                 ),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
+                  ),
                   decoration: BoxDecoration(
                     color: colorScheme.primary,
                     borderRadius: BorderRadius.circular(16),
@@ -202,10 +215,14 @@ class _SolicitudVehiculosScreenState extends ConsumerState<SolicitudVehiculosScr
                 scrollDirection: Axis.horizontal,
                 child: ConstrainedBox(
                   constraints: BoxConstraints(
-                    minWidth: MediaQuery.of(context).size.width * 0.7, // Reducir de 0.9 a 0.7
+                    minWidth:
+                        MediaQuery.of(context).size.width *
+                        0.7, // Reducir de 0.9 a 0.7
                   ),
                   child: DataTable(
-                    headingRowColor: WidgetStateProperty.all(colorScheme.primaryContainer),
+                    headingRowColor: WidgetStateProperty.all(
+                      colorScheme.primaryContainer,
+                    ),
                     dataRowMinHeight: 56,
                     dataRowMaxHeight: 72,
                     horizontalMargin: 16,
@@ -252,61 +269,73 @@ class _SolicitudVehiculosScreenState extends ConsumerState<SolicitudVehiculosScr
                         ),
                       ),
                     ],
-                    rows: solicitudes.map((solicitud) {
-                      return DataRow(
-                        cells: [
-                          DataCell(
-                            SizedBox(
-                              width: 60,
-                              child: Text(solicitud.idSolicitud.toString()),
-                            ),
-                          ),
-                          DataCell(
-                            SizedBox(
-                              width: 100,
-                              child: Text(solicitud.fechaSolicitudCad.isNotEmpty 
-                                  ? solicitud.fechaSolicitudCad.split(' ')[0] 
-                                  : 'N/A'),
-                            ),
-                          ),
-                          DataCell(
-                            Container(
-                              constraints: const BoxConstraints(maxWidth: 250), // Reducir de 300 a 250
-                              child: Tooltip(
-                                message: solicitud.motivo,
-                                child: Text(
-                                  solicitud.motivo,
-                                  overflow: TextOverflow.ellipsis,
-                                  maxLines: 2,
+                    rows:
+                        solicitudes.map((solicitud) {
+                          return DataRow(
+                            cells: [
+                              DataCell(
+                                SizedBox(
+                                  width: 60,
+                                  child: Text(solicitud.idSolicitud.toString()),
                                 ),
                               ),
-                            ),
-                          ),
-                          DataCell(
-                            SizedBox(
-                              width: 100,
-                              child: _buildEstadoChip(solicitud.estadoCad, colorScheme),
-                            ),
-                          ),
-                          DataCell(
-                            SizedBox(
-                              width: 120,
-                              child: Text(
-                                solicitud.requiereChofer == 1 ? 'Sí' : 'No',
-                                style: TextStyle(
-                                  color: solicitud.requiereChofer == 1 
-                                      ? colorScheme.primary 
-                                      : colorScheme.onSurfaceVariant,
-                                  fontWeight: solicitud.requiereChofer == 1 
-                                      ? FontWeight.bold 
-                                      : FontWeight.normal,
+                              DataCell(
+                                SizedBox(
+                                  width: 100,
+                                  child: Text(
+                                    solicitud.fechaSolicitudCad.isNotEmpty
+                                        ? solicitud.fechaSolicitudCad.split(
+                                          ' ',
+                                        )[0]
+                                        : 'N/A',
+                                  ),
                                 ),
                               ),
-                            ),
-                          ),
-                        ],
-                      );
-                    }).toList(),
+                              DataCell(
+                                Container(
+                                  constraints: const BoxConstraints(
+                                    maxWidth: 250,
+                                  ), // Reducir de 300 a 250
+                                  child: Tooltip(
+                                    message: solicitud.motivo,
+                                    child: Text(
+                                      solicitud.motivo,
+                                      overflow: TextOverflow.ellipsis,
+                                      maxLines: 2,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              DataCell(
+                                SizedBox(
+                                  width: 100,
+                                  child: _buildEstadoChip(
+                                    solicitud.estadoCad,
+                                    colorScheme,
+                                  ),
+                                ),
+                              ),
+                              DataCell(
+                                SizedBox(
+                                  width: 120,
+                                  child: Text(
+                                    solicitud.requiereChofer == 1 ? 'Sí' : 'No',
+                                    style: TextStyle(
+                                      color:
+                                          solicitud.requiereChofer == 1
+                                              ? colorScheme.primary
+                                              : colorScheme.onSurfaceVariant,
+                                      fontWeight:
+                                          solicitud.requiereChofer == 1
+                                              ? FontWeight.bold
+                                              : FontWeight.normal,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          );
+                        }).toList(),
                   ),
                 ),
               ),
@@ -317,15 +346,20 @@ class _SolicitudVehiculosScreenState extends ConsumerState<SolicitudVehiculosScr
     );
   }
 
-  Widget _buildMobileList(List<SolicitudChoferEntity> solicitudes, ColorScheme colorScheme) {
+  Widget _buildMobileList(
+    List<SolicitudChoferEntity> solicitudes,
+    ColorScheme colorScheme,
+  ) {
     return Column(
       children: [
         // Header para móvil
         Container(
-          margin: EdgeInsets.all(ResponsiveUtilsBosque.getHorizontalPadding(context)),
+          margin: EdgeInsets.all(
+            ResponsiveUtilsBosque.getHorizontalPadding(context),
+          ),
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: colorScheme.primaryContainer.withOpacity(0.3),
+            color: colorScheme.primaryContainer.withValues(alpha: 0.3),
             borderRadius: BorderRadius.circular(12),
           ),
           child: Row(
@@ -340,7 +374,10 @@ class _SolicitudVehiculosScreenState extends ConsumerState<SolicitudVehiculosScr
                 ),
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
                 decoration: BoxDecoration(
                   color: colorScheme.primary,
                   borderRadius: BorderRadius.circular(16),
@@ -387,12 +424,18 @@ class _SolicitudVehiculosScreenState extends ConsumerState<SolicitudVehiculosScr
                         ],
                       ),
                       const Divider(height: 20),
-                      _buildInfoRow('Fecha:', solicitud.fechaSolicitudCad.isNotEmpty 
-                          ? solicitud.fechaSolicitudCad.split(' ')[0] 
-                          : 'N/A'),
+                      _buildInfoRow(
+                        'Fecha:',
+                        solicitud.fechaSolicitudCad.isNotEmpty
+                            ? solicitud.fechaSolicitudCad.split(' ')[0]
+                            : 'N/A',
+                      ),
                       _buildInfoRow('Motivo:', solicitud.motivo),
                       _buildInfoRow('Cargo:', solicitud.cargo),
-                      _buildInfoRow('Requiere Chofer:', solicitud.requiereChofer == 1 ? 'Sí' : 'No'),
+                      _buildInfoRow(
+                        'Requiere Chofer:',
+                        solicitud.requiereChofer == 1 ? 'Sí' : 'No',
+                      ),
                     ],
                   ),
                 ),
@@ -448,9 +491,7 @@ class _SolicitudVehiculosScreenState extends ConsumerState<SolicitudVehiculosScr
               style: const TextStyle(fontWeight: FontWeight.w500),
             ),
           ),
-          Expanded(
-            child: Text(value),
-          ),
+          Expanded(child: Text(value)),
         ],
       ),
     );

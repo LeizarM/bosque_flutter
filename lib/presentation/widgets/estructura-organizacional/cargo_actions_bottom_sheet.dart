@@ -68,13 +68,13 @@ class CargoActionsBottomSheet extends StatelessWidget {
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 colors: [
-                  Theme.of(context).primaryColor.withOpacity(0.1),
-                  Theme.of(context).primaryColor.withOpacity(0.05),
+                  Theme.of(context).primaryColor.withValues(alpha: 0.1),
+                  Theme.of(context).primaryColor.withValues(alpha: 0.05),
                 ],
               ),
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
-                color: Theme.of(context).primaryColor.withOpacity(0.3),
+                color: Theme.of(context).primaryColor.withValues(alpha: 0.3),
                 width: 2,
               ),
             ),
@@ -111,13 +111,13 @@ class CargoActionsBottomSheet extends StatelessWidget {
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 colors: [
-                  Colors.green.withOpacity(0.1),
-                  Colors.green.withOpacity(0.05),
+                  Colors.green.withValues(alpha: 0.1),
+                  Colors.green.withValues(alpha: 0.05),
                 ],
               ),
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
-                color: Colors.green.withOpacity(0.3),
+                color: Colors.green.withValues(alpha: 0.3),
                 width: 2,
               ),
             ),

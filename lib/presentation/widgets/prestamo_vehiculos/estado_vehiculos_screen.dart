@@ -8,7 +8,8 @@ class EstadoVehiculosScreen extends ConsumerStatefulWidget {
   const EstadoVehiculosScreen({super.key});
 
   @override
-  ConsumerState<EstadoVehiculosScreen> createState() => _EstadoVehiculosScreenState();
+  ConsumerState<EstadoVehiculosScreen> createState() =>
+      _EstadoVehiculosScreenState();
 }
 
 class _EstadoVehiculosScreenState extends ConsumerState<EstadoVehiculosScreen> {
@@ -32,7 +33,7 @@ class _EstadoVehiculosScreenState extends ConsumerState<EstadoVehiculosScreen> {
   Widget build(BuildContext context) {
     final cochesAsync = ref.watch(cochesDisponiblesProvider);
     final colorScheme = Theme.of(context).colorScheme;
-    
+
     return Scaffold(
       backgroundColor: colorScheme.surface,
       appBar: AppBar(
@@ -57,7 +58,8 @@ class _EstadoVehiculosScreenState extends ConsumerState<EstadoVehiculosScreen> {
             child: cochesAsync.when(
               data: (coches) => _buildContent(coches, colorScheme),
               loading: () => const Center(child: CircularProgressIndicator()),
-              error: (error, stack) => _buildError(error.toString(), colorScheme),
+              error:
+                  (error, stack) => _buildError(error.toString(), colorScheme),
             ),
           ),
         ],
@@ -67,26 +69,29 @@ class _EstadoVehiculosScreenState extends ConsumerState<EstadoVehiculosScreen> {
 
   Widget _buildFiltros(ColorScheme colorScheme) {
     final isDesktop = ResponsiveUtilsBosque.isDesktop(context);
-    
+
     return Card(
-      margin: EdgeInsets.all(ResponsiveUtilsBosque.getHorizontalPadding(context)),
+      margin: EdgeInsets.all(
+        ResponsiveUtilsBosque.getHorizontalPadding(context),
+      ),
       child: Padding(
         padding: const EdgeInsets.all(16.0),
-        child: isDesktop
-            ? Row(
-                children: [
-                  Expanded(child: _buildFiltroEstado(colorScheme)),
-                  const SizedBox(width: 16),
-                  Expanded(child: _buildFiltroSucursal(colorScheme)),
-                ],
-              )
-            : Column(
-                children: [
-                  _buildFiltroEstado(colorScheme),
-                  const SizedBox(height: 16),
-                  _buildFiltroSucursal(colorScheme),
-                ],
-              ),
+        child:
+            isDesktop
+                ? Row(
+                  children: [
+                    Expanded(child: _buildFiltroEstado(colorScheme)),
+                    const SizedBox(width: 16),
+                    Expanded(child: _buildFiltroSucursal(colorScheme)),
+                  ],
+                )
+                : Column(
+                  children: [
+                    _buildFiltroEstado(colorScheme),
+                    const SizedBox(height: 16),
+                    _buildFiltroSucursal(colorScheme),
+                  ],
+                ),
       ),
     );
   }
@@ -96,11 +101,9 @@ class _EstadoVehiculosScreenState extends ConsumerState<EstadoVehiculosScreen> {
       value: _filtroEstado,
       decoration: InputDecoration(
         labelText: 'Estado',
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
         filled: true,
-        fillColor: colorScheme.surfaceContainerHighest.withOpacity(0.3),
+        fillColor: colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
       ),
       items: const [
         DropdownMenuItem(value: 'TODOS', child: Text('TODOS')),
@@ -118,7 +121,7 @@ class _EstadoVehiculosScreenState extends ConsumerState<EstadoVehiculosScreen> {
 
   Widget _buildFiltroSucursal(ColorScheme colorScheme) {
     final cochesAsync = ref.watch(cochesDisponiblesProvider);
-    
+
     return cochesAsync.when(
       data: (coches) {
         // Extraer sucursales únicas de los vehículos
@@ -136,15 +139,21 @@ class _EstadoVehiculosScreenState extends ConsumerState<EstadoVehiculosScreen> {
           value: _filtroSucursal,
           decoration: InputDecoration(
             labelText: 'Sucursal',
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
             filled: true,
-            fillColor: colorScheme.surfaceContainerHighest.withOpacity(0.3),
+            fillColor: colorScheme.surfaceContainerHighest.withValues(
+              alpha: 0.3,
+            ),
           ),
-          items: sucursales.map((sucursal) => 
-            DropdownMenuItem(value: sucursal, child: Text(sucursal))
-          ).toList(),
+          items:
+              sucursales
+                  .map(
+                    (sucursal) => DropdownMenuItem(
+                      value: sucursal,
+                      child: Text(sucursal),
+                    ),
+                  )
+                  .toList(),
           onChanged: (value) {
             setState(() {
               _filtroSucursal = value!;
@@ -152,42 +161,51 @@ class _EstadoVehiculosScreenState extends ConsumerState<EstadoVehiculosScreen> {
           },
         );
       },
-      loading: () => DropdownButtonFormField<String>(
-        value: _filtroSucursal,
-        decoration: InputDecoration(
-          labelText: 'Sucursal',
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
+      loading:
+          () => DropdownButtonFormField<String>(
+            value: _filtroSucursal,
+            decoration: InputDecoration(
+              labelText: 'Sucursal',
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              filled: true,
+              fillColor: colorScheme.surfaceContainerHighest.withValues(
+                alpha: 0.3,
+              ),
+            ),
+            items: const [
+              DropdownMenuItem(value: 'TODAS', child: Text('TODAS')),
+            ],
+            onChanged: null,
           ),
-          filled: true,
-          fillColor: colorScheme.surfaceContainerHighest.withOpacity(0.3),
-        ),
-        items: const [
-          DropdownMenuItem(value: 'TODAS', child: Text('TODAS')),
-        ],
-        onChanged: null,
-      ),
-      error: (_, __) => DropdownButtonFormField<String>(
-        value: _filtroSucursal,
-        decoration: InputDecoration(
-          labelText: 'Sucursal',
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
+      error:
+          (_, __) => DropdownButtonFormField<String>(
+            value: _filtroSucursal,
+            decoration: InputDecoration(
+              labelText: 'Sucursal',
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              filled: true,
+              fillColor: colorScheme.surfaceContainerHighest.withValues(
+                alpha: 0.3,
+              ),
+            ),
+            items: const [
+              DropdownMenuItem(value: 'TODAS', child: Text('TODAS')),
+            ],
+            onChanged: null,
           ),
-          filled: true,
-          fillColor: colorScheme.surfaceContainerHighest.withOpacity(0.3),
-        ),
-        items: const [
-          DropdownMenuItem(value: 'TODAS', child: Text('TODAS')),
-        ],
-        onChanged: null,
-      ),
     );
   }
 
-  Widget _buildContent(List<SolicitudChoferEntity> coches, ColorScheme colorScheme) {
+  Widget _buildContent(
+    List<SolicitudChoferEntity> coches,
+    ColorScheme colorScheme,
+  ) {
     final vehiculosFiltrados = _filtrarVehiculos(coches);
-    
+
     if (vehiculosFiltrados.isEmpty) {
       return Center(
         child: Column(
@@ -196,11 +214,11 @@ class _EstadoVehiculosScreenState extends ConsumerState<EstadoVehiculosScreen> {
             Icon(
               Icons.directions_car_outlined,
               size: 80,
-              color: colorScheme.primary.withOpacity(0.5),
+              color: colorScheme.primary.withValues(alpha: 0.5),
             ),
             const SizedBox(height: 24),
             Text(
-              _filtroEstado == 'TODOS' 
+              _filtroEstado == 'TODOS'
                   ? 'No hay vehículos registrados'
                   : 'Sin vehículos para: $_filtroEstado',
               style: TextStyle(
@@ -214,12 +232,12 @@ class _EstadoVehiculosScreenState extends ConsumerState<EstadoVehiculosScreen> {
             Container(
               constraints: const BoxConstraints(maxWidth: 300),
               child: Text(
-                _filtroEstado == 'TODOS' 
+                _filtroEstado == 'TODOS'
                     ? 'No hay vehículos disponibles en el sistema. Contacte al administrador.'
                     : 'No se encontraron vehículos con el estado seleccionado. Intente cambiar el filtro.',
                 style: TextStyle(
                   fontSize: 14,
-                  color: colorScheme.onSurfaceVariant.withOpacity(0.8),
+                  color: colorScheme.onSurfaceVariant.withValues(alpha: 0.8),
                   height: 1.4,
                 ),
                 textAlign: TextAlign.center,
@@ -236,7 +254,10 @@ class _EstadoVehiculosScreenState extends ConsumerState<EstadoVehiculosScreen> {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: colorScheme.primary,
                     foregroundColor: colorScheme.onPrimary,
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
+                    ),
                   ),
                 ),
                 if (_filtroEstado != 'TODOS' || _filtroSucursal != 'TODAS') ...[
@@ -252,7 +273,10 @@ class _EstadoVehiculosScreenState extends ConsumerState<EstadoVehiculosScreen> {
                     label: const Text('Limpiar Filtros'),
                     style: OutlinedButton.styleFrom(
                       foregroundColor: colorScheme.primary,
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 8,
+                      ),
                     ),
                   ),
                 ],
@@ -300,13 +324,17 @@ class _EstadoVehiculosScreenState extends ConsumerState<EstadoVehiculosScreen> {
     );
   }
 
-  List<SolicitudChoferEntity> _filtrarVehiculos(List<SolicitudChoferEntity> coches) {
+  List<SolicitudChoferEntity> _filtrarVehiculos(
+    List<SolicitudChoferEntity> coches,
+  ) {
     return coches.where((coche) {
       // Filtrar por estado
       bool pasaFiltroEstado = true;
       if (_filtroEstado != 'TODOS') {
         final estado = _extraerEstado(coche.coche);
-        pasaFiltroEstado = estado.toLowerCase().contains(_filtroEstado.toLowerCase());
+        pasaFiltroEstado = estado.toLowerCase().contains(
+          _filtroEstado.toLowerCase(),
+        );
       }
 
       // Filtrar por sucursal
@@ -339,16 +367,21 @@ class _EstadoVehiculosScreenState extends ConsumerState<EstadoVehiculosScreen> {
     return match?.group(1) ?? coche;
   }
 
-  Widget _buildDesktopTable(List<SolicitudChoferEntity> vehiculos, ColorScheme colorScheme) {
+  Widget _buildDesktopTable(
+    List<SolicitudChoferEntity> vehiculos,
+    ColorScheme colorScheme,
+  ) {
     return Card(
-      margin: EdgeInsets.all(ResponsiveUtilsBosque.getHorizontalPadding(context)),
+      margin: EdgeInsets.all(
+        ResponsiveUtilsBosque.getHorizontalPadding(context),
+      ),
       child: Column(
         children: [
           // Header
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: colorScheme.primaryContainer.withOpacity(0.3),
+              color: colorScheme.primaryContainer.withValues(alpha: 0.3),
               borderRadius: const BorderRadius.only(
                 topLeft: Radius.circular(12),
                 topRight: Radius.circular(12),
@@ -366,7 +399,10 @@ class _EstadoVehiculosScreenState extends ConsumerState<EstadoVehiculosScreen> {
                   ),
                 ),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
+                  ),
                   decoration: BoxDecoration(
                     color: colorScheme.primary,
                     borderRadius: BorderRadius.circular(16),
@@ -393,7 +429,9 @@ class _EstadoVehiculosScreenState extends ConsumerState<EstadoVehiculosScreen> {
                     minWidth: MediaQuery.of(context).size.width * 0.8,
                   ),
                   child: DataTable(
-                    headingRowColor: WidgetStateProperty.all(colorScheme.primaryContainer),
+                    headingRowColor: WidgetStateProperty.all(
+                      colorScheme.primaryContainer,
+                    ),
                     dataRowMinHeight: 56,
                     dataRowMaxHeight: 72,
                     horizontalMargin: 16,
@@ -409,80 +447,70 @@ class _EstadoVehiculosScreenState extends ConsumerState<EstadoVehiculosScreen> {
                       color: colorScheme.onSurface,
                     ),
                     columns: const [
+                      DataColumn(label: SizedBox(width: 80, child: Text('ID'))),
                       DataColumn(
-                        label: SizedBox(
-                          width: 80,
-                          child: Text('ID'),
-                        ),
+                        label: SizedBox(width: 120, child: Text('Sucursal')),
                       ),
                       DataColumn(
-                        label: SizedBox(
-                          width: 120,
-                          child: Text('Sucursal'),
-                        ),
+                        label: SizedBox(width: 250, child: Text('Vehículo')),
                       ),
                       DataColumn(
-                        label: SizedBox(
-                          width: 250,
-                          child: Text('Vehículo'),
-                        ),
-                      ),
-                      DataColumn(
-                        label: SizedBox(
-                          width: 120,
-                          child: Text('Estado'),
-                        ),
+                        label: SizedBox(width: 120, child: Text('Estado')),
                       ),
                     ],
-                    rows: vehiculos.map((vehiculo) {
-                      final estado = _extraerEstado(vehiculo.coche ?? '');
-                      final sucursal = _extraerSucursal(vehiculo.coche ?? '');
-                      final vehiculoInfo = _extraerVehiculo(vehiculo.coche ?? '');
+                    rows:
+                        vehiculos.map((vehiculo) {
+                          final estado = _extraerEstado(vehiculo.coche ?? '');
+                          final sucursal = _extraerSucursal(
+                            vehiculo.coche ?? '',
+                          );
+                          final vehiculoInfo = _extraerVehiculo(
+                            vehiculo.coche ?? '',
+                          );
 
-                      return DataRow(
-                        color: WidgetStateProperty.resolveWith<Color?>(
-                          (Set<WidgetState> states) {
-                            if (estado.toLowerCase().contains('uso')) {
-                              return Colors.orange.withOpacity(0.1);
-                            }
-                            return null;
-                          },
-                        ),
-                        cells: [
-                          DataCell(
-                            SizedBox(
-                              width: 80,
-                              child: Text(vehiculo.idCocheSol.toString()),
-                            ),
-                          ),
-                          DataCell(
-                            SizedBox(
-                              width: 120,
-                              child: Text(sucursal),
-                            ),
-                          ),
-                          DataCell(
-                            Container(
-                              constraints: const BoxConstraints(maxWidth: 250),
-                              child: Tooltip(
-                                message: vehiculoInfo,
-                                child: Text(
-                                  vehiculoInfo,
-                                  overflow: TextOverflow.ellipsis,
-                                  maxLines: 2,
+                          return DataRow(
+                            color: WidgetStateProperty.resolveWith<Color?>((
+                              Set<WidgetState> states,
+                            ) {
+                              if (estado.toLowerCase().contains('uso')) {
+                                return Colors.orange.withValues(alpha: 0.1);
+                              }
+                              return null;
+                            }),
+                            cells: [
+                              DataCell(
+                                SizedBox(
+                                  width: 80,
+                                  child: Text(vehiculo.idCocheSol.toString()),
                                 ),
                               ),
-                            ),
-                          ),
-                          DataCell(
-                            SizedBox(
-                              width: 120,
-                              child: _buildEstadoChip(estado, colorScheme),
-                            ),
-                          ),
-                        ],
-                      );
-                    }).toList(),
+                              DataCell(
+                                SizedBox(width: 120, child: Text(sucursal)),
+                              ),
+                              DataCell(
+                                Container(
+                                  constraints: const BoxConstraints(
+                                    maxWidth: 250,
+                                  ),
+                                  child: Tooltip(
+                                    message: vehiculoInfo,
+                                    child: Text(
+                                      vehiculoInfo,
+                                      overflow: TextOverflow.ellipsis,
+                                      maxLines: 2,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              DataCell(
+                                SizedBox(
+                                  width: 120,
+                                  child: _buildEstadoChip(estado, colorScheme),
+                                ),
+                              ),
+                            ],
+                          );
+                        }).toList(),
                   ),
                 ),
               ),
@@ -493,15 +521,20 @@ class _EstadoVehiculosScreenState extends ConsumerState<EstadoVehiculosScreen> {
     );
   }
 
-  Widget _buildMobileList(List<SolicitudChoferEntity> vehiculos, ColorScheme colorScheme) {
+  Widget _buildMobileList(
+    List<SolicitudChoferEntity> vehiculos,
+    ColorScheme colorScheme,
+  ) {
     return Column(
       children: [
         // Header para móvil
         Container(
-          margin: EdgeInsets.all(ResponsiveUtilsBosque.getHorizontalPadding(context)),
+          margin: EdgeInsets.all(
+            ResponsiveUtilsBosque.getHorizontalPadding(context),
+          ),
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: colorScheme.primaryContainer.withOpacity(0.3),
+            color: colorScheme.primaryContainer.withValues(alpha: 0.3),
             borderRadius: BorderRadius.circular(12),
           ),
           child: Row(
@@ -516,7 +549,10 @@ class _EstadoVehiculosScreenState extends ConsumerState<EstadoVehiculosScreen> {
                 ),
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
                 decoration: BoxDecoration(
                   color: colorScheme.primary,
                   borderRadius: BorderRadius.circular(16),
@@ -549,7 +585,7 @@ class _EstadoVehiculosScreenState extends ConsumerState<EstadoVehiculosScreen> {
               return Card(
                 margin: const EdgeInsets.only(bottom: 8),
                 elevation: 2,
-                color: enUso ? Colors.orange.withOpacity(0.1) : null,
+                color: enUso ? Colors.orange.withValues(alpha: 0.1) : null,
                 child: Padding(
                   padding: const EdgeInsets.all(16),
                   child: Column(
@@ -576,13 +612,19 @@ class _EstadoVehiculosScreenState extends ConsumerState<EstadoVehiculosScreen> {
                           margin: const EdgeInsets.only(top: 8),
                           padding: const EdgeInsets.all(8),
                           decoration: BoxDecoration(
-                            color: Colors.orange.withOpacity(0.2),
+                            color: Colors.orange.withValues(alpha: 0.2),
                             borderRadius: BorderRadius.circular(8),
-                            border: Border.all(color: Colors.orange.withOpacity(0.5)),
+                            border: Border.all(
+                              color: Colors.orange.withValues(alpha: 0.5),
+                            ),
                           ),
                           child: Row(
                             children: [
-                              Icon(Icons.warning, color: Colors.orange[700], size: 16),
+                              Icon(
+                                Icons.warning,
+                                color: Colors.orange[700],
+                                size: 16,
+                              ),
                               const SizedBox(width: 8),
                               Text(
                                 'Vehículo actualmente en uso',
@@ -650,9 +692,7 @@ class _EstadoVehiculosScreenState extends ConsumerState<EstadoVehiculosScreen> {
               style: const TextStyle(fontWeight: FontWeight.w500),
             ),
           ),
-          Expanded(
-            child: Text(value),
-          ),
+          Expanded(child: Text(value)),
         ],
       ),
     );

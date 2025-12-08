@@ -20,11 +20,7 @@ class CumpleanosBanner extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 24),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
-          colors: [
-            Color(0xFFE1E3F6),
-            Color(0xFFD1F5E0),
-            Colors.white,
-          ],
+          colors: [Color(0xFFE1E3F6), Color(0xFFD1F5E0), Colors.white],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -32,7 +28,7 @@ class CumpleanosBanner extends StatelessWidget {
         border: Border.all(color: Color(0xFF6C3483), width: 2),
         boxShadow: [
           BoxShadow(
-            color: Color(0xFF6C3483).withOpacity(0.10),
+            color: Color(0xFF6C3483).withValues(alpha: 0.10),
             blurRadius: 12,
             offset: const Offset(0, 6),
           ),
@@ -53,7 +49,7 @@ class CumpleanosBanner extends StatelessWidget {
                     color: Color(0xFF6C3483),
                     shadows: [
                       Shadow(
-                        color: Color(0xFF2ECC71).withOpacity(0.13),
+                        color: Color(0xFF2ECC71).withValues(alpha: 0.13),
                         blurRadius: 4,
                         offset: const Offset(1, 1),
                       ),
@@ -62,7 +58,11 @@ class CumpleanosBanner extends StatelessWidget {
                 ),
               ),
               IconButton(
-                icon: const Icon(Icons.close, color: Color(0xFF6C3483), size: 28),
+                icon: const Icon(
+                  Icons.close,
+                  color: Color(0xFF6C3483),
+                  size: 28,
+                ),
                 tooltip: "Cerrar",
                 onPressed: onClose,
               ),
@@ -75,29 +75,34 @@ class CumpleanosBanner extends StatelessWidget {
             decoration: BoxDecoration(
               color: Color(0xFFF8F9FA),
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: Color(0xFF2ECC71).withOpacity(0.18), width: 1.2),
+              border: Border.all(
+                color: Color(0xFF2ECC71).withValues(alpha: 0.18),
+                width: 1.2,
+              ),
             ),
             child: Column(
               children: [
-                ...cumpleMensajes.map((mensaje) => Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 4),
-                  child: Row(
-                    children: [
-                      const Text('🎉', style: TextStyle(fontSize: 22)),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          mensaje,
-                          style: const TextStyle(
-                            fontWeight: FontWeight.w600,
-                            fontSize: 16,
-                            color: Color(0xFF512DA8),
+                ...cumpleMensajes.map(
+                  (mensaje) => Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 4),
+                    child: Row(
+                      children: [
+                        const Text('🎉', style: TextStyle(fontSize: 22)),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            mensaje,
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w600,
+                              fontSize: 16,
+                              color: Color(0xFF512DA8),
+                            ),
                           ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                )),
+                ),
               ],
             ),
           ),
@@ -105,12 +110,15 @@ class CumpleanosBanner extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: const [
-              Text('¡Felicidades!', style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-                color: Color(0xFF2ECC71),
-                letterSpacing: 1.2,
-              )),
+              Text(
+                '¡Felicidades!',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF2ECC71),
+                  letterSpacing: 1.2,
+                ),
+              ),
               SizedBox(width: 8),
               Text('🥳', style: TextStyle(fontSize: 22)),
             ],

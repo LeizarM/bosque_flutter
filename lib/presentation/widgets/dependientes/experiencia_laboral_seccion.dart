@@ -37,12 +37,16 @@ class ExperienciaLaboralSeccion extends ConsumerWidget {
   }
 
   String _capitalizeWords(String text) {
-    return text.split(' ').map((word) {
-      if (word.isEmpty) return word;
-      final especiales = ['s.a.', 's.r.l.', 'ipx', 'esppapel'];
-      if (especiales.contains(word.toLowerCase())) return word.toUpperCase();
-      return _capitalize(word);
-    }).join(' ');
+    return text
+        .split(' ')
+        .map((word) {
+          if (word.isEmpty) return word;
+          final especiales = ['s.a.', 's.r.l.', 'ipx', 'esppapel'];
+          if (especiales.contains(word.toLowerCase()))
+            return word.toUpperCase();
+          return _capitalize(word);
+        })
+        .join(' ');
   }
 
   String formatText(String text, bool isDesktop) {
@@ -59,8 +63,10 @@ class ExperienciaLaboralSeccion extends ConsumerWidget {
     final colorScheme = theme.colorScheme;
     final bool isDark = theme.brightness == Brightness.dark;
     final Color icono = isDark ? colorScheme.primary : Colors.teal.shade700;
-    final Color textoPrincipal = isDark ? colorScheme.onSurface : Colors.grey.shade900;
-    final Color textoSecundario = isDark ? colorScheme.onSurfaceVariant : Colors.grey.shade600;
+    final Color textoPrincipal =
+        isDark ? colorScheme.onSurface : Colors.grey.shade900;
+    final Color textoSecundario =
+        isDark ? colorScheme.onSurfaceVariant : Colors.grey.shade600;
 
     return Padding(
       padding: EdgeInsets.symmetric(
@@ -89,7 +95,8 @@ class ExperienciaLaboralSeccion extends ConsumerWidget {
                   visible: habilitarEdicion,
                   nombreSeccion: 'experienciaLaboral',
                   onEditar: onEditar,
-                  onAgregar: () => _mostrarDialogoAgregarExpLaboral(context, ref),
+                  onAgregar:
+                      () => _mostrarDialogoAgregarExpLaboral(context, ref),
                   onEliminar: onEliminar,
                   updateOperation: onUpdateOperation,
                   operacionHabilitada: const ['editar', 'agregar', 'eliminar'],
@@ -97,7 +104,7 @@ class ExperienciaLaboralSeccion extends ConsumerWidget {
                 ),
             ],
           ),
-          Divider(height: 20, color: Colors.grey.withOpacity(0.18)),
+          Divider(height: 20, color: Colors.grey.withValues(alpha: 0.18)),
           cargarExpLaboral.when(
             data: (expLaboral) {
               if (expLaboral.isEmpty) {
@@ -105,7 +112,10 @@ class ExperienciaLaboralSeccion extends ConsumerWidget {
                   padding: const EdgeInsets.symmetric(vertical: 12),
                   child: Center(
                     child: Text(
-                      formatText('No hay experiencia laboral registrada', isDesktop),
+                      formatText(
+                        'No hay experiencia laboral registrada',
+                        isDesktop,
+                      ),
                       style: TextStyle(
                         color: textoSecundario,
                         fontSize: isDesktop ? 15 : 14,
@@ -118,9 +128,10 @@ class ExperienciaLaboralSeccion extends ConsumerWidget {
               final showScroll = expLaboral.length > 4;
               final expList = ListView.builder(
                 shrinkWrap: true,
-                physics: showScroll
-                    ? const AlwaysScrollableScrollPhysics()
-                    : const NeverScrollableScrollPhysics(),
+                physics:
+                    showScroll
+                        ? const AlwaysScrollableScrollPhysics()
+                        : const NeverScrollableScrollPhysics(),
                 itemCount: expLaboral.length,
                 itemBuilder: (context, index) {
                   final experiencia = expLaboral[index];
@@ -137,13 +148,12 @@ class ExperienciaLaboralSeccion extends ConsumerWidget {
               );
 
               return showScroll
-                  ? SizedBox(
-                      height: (4 * 150.0) + 16,
-                      child: expList,
-                    )
+                  ? SizedBox(height: (4 * 150.0) + 16, child: expList)
                   : Column(
-                      children: expLaboral
-                          .map((experiencia) => _buildExperienciaTile(
+                    children:
+                        expLaboral
+                            .map(
+                              (experiencia) => _buildExperienciaTile(
                                 context,
                                 ref,
                                 experiencia,
@@ -151,21 +161,24 @@ class ExperienciaLaboralSeccion extends ConsumerWidget {
                                 icono,
                                 textoPrincipal,
                                 textoSecundario,
-                              ))
-                          .toList(),
-                    );
+                              ),
+                            )
+                            .toList(),
+                  );
             },
-            loading: () => const Padding(
-              padding: EdgeInsets.all(16),
-              child: Center(child: CircularProgressIndicator()),
-            ),
-            error: (error, _) => Padding(
-              padding: const EdgeInsets.all(16),
-              child: Text(
-                'Error al cargar Experiencia Laboral: $error',
-                style: const TextStyle(color: Colors.red),
-              ),
-            ),
+            loading:
+                () => const Padding(
+                  padding: EdgeInsets.all(16),
+                  child: Center(child: CircularProgressIndicator()),
+                ),
+            error:
+                (error, _) => Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Text(
+                    'Error al cargar Experiencia Laboral: $error',
+                    style: const TextStyle(color: Colors.red),
+                  ),
+                ),
           ),
         ],
       ),
@@ -194,7 +207,11 @@ class ExperienciaLaboralSeccion extends ConsumerWidget {
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Icon(Icons.business_rounded, color: icono, size: isDesktop ? 22 : 18),
+                Icon(
+                  Icons.business_rounded,
+                  color: icono,
+                  size: isDesktop ? 22 : 18,
+                ),
                 const SizedBox(width: 8),
                 Expanded(
                   child: _datoConEtiqueta(
@@ -212,26 +229,43 @@ class ExperienciaLaboralSeccion extends ConsumerWidget {
                     IconButton(
                       icon: Icon(Icons.edit, color: icono),
                       tooltip: 'Editar',
-                      onPressed: () => _mostrarDialogoEditarExpLaboral(context, ref, exp),
+                      onPressed:
+                          () => _mostrarDialogoEditarExpLaboral(
+                            context,
+                            ref,
+                            exp,
+                          ),
                     ),
                   if (selectedOperation['experienciaLaboral'] == 'eliminar')
                     IconButton(
                       icon: const Icon(Icons.delete, color: Colors.red),
                       tooltip: 'Eliminar',
-                      onPressed: () => ConfirmDialog.show(
-                        context,
-                        title: 'Eliminar Experiencia Laboral',
-                        content: '¿Está seguro que desea eliminar esta Experiencia Laboral?',
-                        confirmText: 'Eliminar',
-                        cancelText: 'Cancelar',
-                        confirmColor: Colors.red,
-                      ).then((confirmed) async {
-                        if (confirmed == true && context.mounted) {
-                          await ref.read(eliminarExperienciaLaboralProvider(exp.codExperienciaLaboral).future);
-                          final _ = await ref.refresh(experienciaLaboralProvider(codEmpleado).future);
-                          if (context.mounted) AppSnackbarCustom.showDelete(context, 'Experiencia Laboral eliminada correctamente');
-                        }
-                      }),
+                      onPressed:
+                          () => ConfirmDialog.show(
+                            context,
+                            title: 'Eliminar Experiencia Laboral',
+                            content:
+                                '¿Está seguro que desea eliminar esta Experiencia Laboral?',
+                            confirmText: 'Eliminar',
+                            cancelText: 'Cancelar',
+                            confirmColor: Colors.red,
+                          ).then((confirmed) async {
+                            if (confirmed == true && context.mounted) {
+                              await ref.read(
+                                eliminarExperienciaLaboralProvider(
+                                  exp.codExperienciaLaboral,
+                                ).future,
+                              );
+                              final _ = await ref.refresh(
+                                experienciaLaboralProvider(codEmpleado).future,
+                              );
+                              if (context.mounted)
+                                AppSnackbarCustom.showDelete(
+                                  context,
+                                  'Experiencia Laboral eliminada correctamente',
+                                );
+                            }
+                          }),
                     ),
                 ],
               ],
@@ -272,7 +306,11 @@ class ExperienciaLaboralSeccion extends ConsumerWidget {
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Icon(Icons.description, color: icono, size: isDesktop ? 18 : 16),
+                Icon(
+                  Icons.description,
+                  color: icono,
+                  size: isDesktop ? 18 : 16,
+                ),
                 const SizedBox(width: 4),
                 Expanded(
                   child: Column(
@@ -313,9 +351,10 @@ class ExperienciaLaboralSeccion extends ConsumerWidget {
                     context,
                     icon: Icons.calendar_today,
                     etiqueta: 'Fecha de inicio',
-                    valor: exp.fechaInicio != null
-                        ? DateFormat('dd-MM-yyyy').format(exp.fechaInicio!)
-                        : '',
+                    valor:
+                        exp.fechaInicio != null
+                            ? DateFormat('dd-MM-yyyy').format(exp.fechaInicio!)
+                            : '',
                     colorValor: textoPrincipal,
                     colorIcono: icono,
                     textoSecundario: textoSecundario,
@@ -328,9 +367,10 @@ class ExperienciaLaboralSeccion extends ConsumerWidget {
                     context,
                     icon: Icons.calendar_today,
                     etiqueta: 'Fecha de finalización',
-                    valor: exp.fechaFin != null
-                        ? DateFormat('dd-MM-yyyy').format(exp.fechaFin!)
-                        : '',
+                    valor:
+                        exp.fechaFin != null
+                            ? DateFormat('dd-MM-yyyy').format(exp.fechaFin!)
+                            : '',
                     colorValor: textoPrincipal,
                     colorIcono: icono,
                     textoSecundario: textoSecundario,
@@ -395,75 +435,77 @@ class ExperienciaLaboralSeccion extends ConsumerWidget {
   }
 
   void _mostrarDialogoAgregarExpLaboral(BuildContext context, WidgetRef ref) {
-  showDialog(
-    context: context,
-    barrierDismissible: false,
-    builder: (context) => Dialog(
-      backgroundColor: Colors.transparent,
-      insetPadding: EdgeInsets.zero,
-      child: FormularioExperienciaLaboral(
-        title: 'Agregar Experiencia Laboral',
-        codEmpleado: codEmpleado,
-        isEditing: false,
-        onSave: (expLaboral) async {
-          try {
-            await ref.read(registrarExperienciaLaboralProvider(expLaboral).future);
-            ref.invalidate(experienciaLaboralProvider(codEmpleado));
-            
-           
-          } catch (e) {
-            if (!context.mounted) return;
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('Error: ${e.toString()}'),
-                backgroundColor: Colors.red,
-              ),
-            );
-            rethrow;
-          }
-        },
-        onCancel: () => Navigator.of(context).pop(),
-      ),
-    ),
-  );
-}
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder:
+          (context) => Dialog(
+            backgroundColor: Colors.transparent,
+            insetPadding: EdgeInsets.zero,
+            child: FormularioExperienciaLaboral(
+              title: 'Agregar Experiencia Laboral',
+              codEmpleado: codEmpleado,
+              isEditing: false,
+              onSave: (expLaboral) async {
+                try {
+                  await ref.read(
+                    registrarExperienciaLaboralProvider(expLaboral).future,
+                  );
+                  ref.invalidate(experienciaLaboralProvider(codEmpleado));
+                } catch (e) {
+                  if (!context.mounted) return;
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Error: ${e.toString()}'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                  rethrow;
+                }
+              },
+              onCancel: () => Navigator.of(context).pop(),
+            ),
+          ),
+    );
+  }
 
-void _mostrarDialogoEditarExpLaboral(
-  BuildContext context,
-  WidgetRef ref,
-  ExperienciaLaboralEntity expLaboral,
-) {
-  showDialog(
-    context: context,
-    barrierDismissible: false,
-    builder: (context) => Dialog(
-      backgroundColor: Colors.transparent,
-      insetPadding: EdgeInsets.zero,
-      child: FormularioExperienciaLaboral(
-        title: 'Editar Experiencia Laboral',
-        codEmpleado: codEmpleado,
-        isEditing: true,
-        experienciaLaboral: expLaboral,
-        onSave: (expLaboral) async {
-          try {
-            await ref.read(registrarExperienciaLaboralProvider(expLaboral).future);
-            ref.invalidate(experienciaLaboralProvider(codEmpleado));
-            
-           
-          } catch (e) {
-            if (!context.mounted) return;
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('Error al editar experiencia laboral: $e'),
-                backgroundColor: Colors.red,
-              ),
-            );
-            rethrow;
-          }
-        },
-        onCancel: () => Navigator.of(context).pop(),
-      ),
-    ),
-  );
-}
+  void _mostrarDialogoEditarExpLaboral(
+    BuildContext context,
+    WidgetRef ref,
+    ExperienciaLaboralEntity expLaboral,
+  ) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder:
+          (context) => Dialog(
+            backgroundColor: Colors.transparent,
+            insetPadding: EdgeInsets.zero,
+            child: FormularioExperienciaLaboral(
+              title: 'Editar Experiencia Laboral',
+              codEmpleado: codEmpleado,
+              isEditing: true,
+              experienciaLaboral: expLaboral,
+              onSave: (expLaboral) async {
+                try {
+                  await ref.read(
+                    registrarExperienciaLaboralProvider(expLaboral).future,
+                  );
+                  ref.invalidate(experienciaLaboralProvider(codEmpleado));
+                } catch (e) {
+                  if (!context.mounted) return;
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Error al editar experiencia laboral: $e'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                  rethrow;
+                }
+              },
+              onCancel: () => Navigator.of(context).pop(),
+            ),
+          ),
+    );
+  }
 }

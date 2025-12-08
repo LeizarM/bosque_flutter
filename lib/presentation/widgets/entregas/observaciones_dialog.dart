@@ -3,10 +3,7 @@ import 'package:flutter/material.dart';
 class ObservacionesDialog extends StatefulWidget {
   final String direccion;
 
-  const ObservacionesDialog({
-    super.key,
-    required this.direccion,
-  });
+  const ObservacionesDialog({super.key, required this.direccion});
 
   @override
   State<ObservacionesDialog> createState() => _ObservacionesDialogState();
@@ -30,7 +27,7 @@ class _ObservacionesDialogState extends State<ObservacionesDialog> {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    
+
     return AlertDialog(
       title: Text(
         'Confirmar entrega',
@@ -45,16 +42,22 @@ class _ObservacionesDialogState extends State<ObservacionesDialog> {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: colorScheme.primaryContainer.withOpacity(0.5),
+                color: colorScheme.primaryContainer.withValues(alpha: 0.5),
                 borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: colorScheme.primary.withOpacity(0.3)),
+                border: Border.all(
+                  color: colorScheme.primary.withValues(alpha: 0.3),
+                ),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
                     children: [
-                      Icon(Icons.info_outline, color: colorScheme.primary, size: 16),
+                      Icon(
+                        Icons.info_outline,
+                        color: colorScheme.primary,
+                        size: 16,
+                      ),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
@@ -70,12 +73,15 @@ class _ObservacionesDialogState extends State<ObservacionesDialog> {
                   const SizedBox(height: 8),
                   Text(
                     'La ubicación se obtendrá automáticamente de su dispositivo para registrar la entrega.',
-                    style: TextStyle(fontSize: 13, color: colorScheme.onSurface),
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: colorScheme.onSurface,
+                    ),
                   ),
                 ],
               ),
             ),
-            
+
             const SizedBox(height: 16),
             Text(
               'Observaciones (opcional):',
@@ -102,17 +108,15 @@ class _ObservacionesDialogState extends State<ObservacionesDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
-          style: TextButton.styleFrom(
-            foregroundColor: colorScheme.primary,
-          ),
+          style: TextButton.styleFrom(foregroundColor: colorScheme.primary),
           child: const Text('Cancelar'),
         ),
         ElevatedButton(
           onPressed: () {
             // Devolver solo las observaciones, la dirección se obtendrá automáticamente
-            Navigator.of(context).pop({
-              'observaciones': _observacionesController.text,
-            });
+            Navigator.of(
+              context,
+            ).pop({'observaciones': _observacionesController.text});
           },
           style: ElevatedButton.styleFrom(
             backgroundColor: colorScheme.primary,

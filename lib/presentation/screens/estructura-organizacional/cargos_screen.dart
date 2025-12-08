@@ -2648,16 +2648,16 @@ class _CargosScreenState extends ConsumerState<CargosScreen> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
             decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
+              color: color.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(4),
-              border: Border.all(color: color.withOpacity(0.3)),
+              border: Border.all(color: color.withValues(alpha: 0.3)),
             ),
             child: Text(
               key,
               style: TextStyle(
                 fontSize: 11,
                 fontWeight: FontWeight.bold,
-                color: color.withOpacity(0.9),
+                color: color.withValues(alpha: 0.9),
                 fontFamily: 'monospace',
               ),
             ),
@@ -3791,9 +3791,9 @@ class _CargoDetailsDialog extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.05),
+        color: color.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: color.withOpacity(0.2)),
+        border: Border.all(color: color.withValues(alpha: 0.2)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -4293,7 +4293,7 @@ class _EmpleadosBottomSheetState extends ConsumerState<_EmpleadosBottomSheet> {
                       shape: BoxShape.circle,
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.green.withOpacity(0.4),
+                          color: Colors.green.withValues(alpha: 0.4),
                           blurRadius: 4,
                           spreadRadius: 1,
                         ),

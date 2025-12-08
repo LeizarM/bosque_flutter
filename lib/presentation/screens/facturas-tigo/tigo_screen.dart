@@ -21,75 +21,90 @@ class _FacturasTigoViewState extends ConsumerState<FacturasTigoView> {
   String? fileNameSocios;
   bool isLoading = false;
 
- @override
-Widget build(BuildContext context) {
-  return Stack(
-    children: [
-      Scaffold(
-        backgroundColor: Colors.blueGrey[50],
-        appBar: AppBar(
-          title: const Text('Subir Facturas Tigo'),
-          centerTitle: true,
-          backgroundColor: Colors.blue[700],
-        ),
-        body: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(32.0),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Icon(Icons.upload_file, size: 90, color: Colors.blue),
-                const SizedBox(height: 24),
-                _buildFacturasTigoInstructions(),
-                const SizedBox(height: 32),
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      children: [
+        Scaffold(
+          backgroundColor: Colors.blueGrey[50],
+          appBar: AppBar(
+            title: const Text('Subir Facturas Tigo'),
+            centerTitle: true,
+            backgroundColor: Colors.blue[700],
+          ),
+          body: Center(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(32.0),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.upload_file, size: 90, color: Colors.blue),
+                  const SizedBox(height: 24),
+                  _buildFacturasTigoInstructions(),
+                  const SizedBox(height: 32),
 
-                // --- Cards en fila para escritorio/tablet, columna en móvil ---
-                LayoutBuilder(
-                  builder: (context, constraints) {
-                    final isWide = constraints.maxWidth > 700;
-                    return Flex(
-                      direction: isWide ? Axis.horizontal : Axis.vertical,
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Card Facturas
-                        Expanded(
-                          child: Card(
-                            margin: const EdgeInsets.all(12),
-                            elevation: 3,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                            child: Padding(
-                              padding: const EdgeInsets.all(18.0),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Row(
-                                    children: [
-                                      Icon(Icons.receipt_long, color: Colors.blue[700], size: 28),
-                                      const SizedBox(width: 10),
-                                      Text('Facturas', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.blue[800])),
-                                    ],
-                                  ),
-                                  const SizedBox(height: 14),
-                                 // _buildSeleccionarFacturaButton(),
-                                  if (fileNameFacturas != null)
-                                    Padding(
-                                      padding: const EdgeInsets.only(top: 10.0),
-                                      child: _buildArchivoSeleccionadoCard(
-                                        fileNameFacturas!,
-                                        Colors.lightBlue[50]!,
-                                        Icons.insert_drive_file,
-                                      ),
+                  // --- Cards en fila para escritorio/tablet, columna en móvil ---
+                  LayoutBuilder(
+                    builder: (context, constraints) {
+                      final isWide = constraints.maxWidth > 700;
+                      return Flex(
+                        direction: isWide ? Axis.horizontal : Axis.vertical,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Card Facturas
+                          Expanded(
+                            child: Card(
+                              margin: const EdgeInsets.all(12),
+                              elevation: 3,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(14),
+                              ),
+                              child: Padding(
+                                padding: const EdgeInsets.all(18.0),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
+                                      children: [
+                                        Icon(
+                                          Icons.receipt_long,
+                                          color: Colors.blue[700],
+                                          size: 28,
+                                        ),
+                                        const SizedBox(width: 10),
+                                        Text(
+                                          'Facturas',
+                                          style: TextStyle(
+                                            fontSize: 20,
+                                            fontWeight: FontWeight.bold,
+                                            color: Colors.blue[800],
+                                          ),
+                                        ),
+                                      ],
                                     ),
-                                  const SizedBox(height: 10),
-                                  _buildSubirFacturasButton(ref),
-                                ],
+                                    const SizedBox(height: 14),
+                                    // _buildSeleccionarFacturaButton(),
+                                    if (fileNameFacturas != null)
+                                      Padding(
+                                        padding: const EdgeInsets.only(
+                                          top: 10.0,
+                                        ),
+                                        child: _buildArchivoSeleccionadoCard(
+                                          fileNameFacturas!,
+                                          Colors.lightBlue[50]!,
+                                          Icons.insert_drive_file,
+                                        ),
+                                      ),
+                                    const SizedBox(height: 10),
+                                    _buildSubirFacturasButton(ref),
+                                  ],
+                                ),
                               ),
                             ),
                           ),
-                        ),
-                        // Card Socios
-                       /* Expanded(
+                          // Card Socios
+                          /* Expanded(
                           child: Card(
                             margin: const EdgeInsets.all(12),
                             elevation: 3,
@@ -124,53 +139,53 @@ Widget build(BuildContext context) {
                             ),
                           ),
                         ),*/
-                      ],
-                    );
-                  },
-                ),
-
-                const SizedBox(height: 24),
-
-                // Botón para ver facturas/socios
-                _buildVerFacturasSociosButton(),
-                const SizedBox(height: 24),
-
-                // Ayuda
-                _buildAyudaBox(),
-              ],
-            ),
-          ),
-        ),
-      ),
-      if (isLoading)
-        Container(
-          color: Colors.black.withOpacity(0.4),
-          child: const Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                CircularProgressIndicator(
-                  color: Colors.white,
-                  strokeWidth: 6,
-                ),
-                SizedBox(height: 24),
-                Text(
-                  'Subiendo archivo...',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold,
+                        ],
+                      );
+                    },
                   ),
-                ),
-              ],
+
+                  const SizedBox(height: 24),
+
+                  // Botón para ver facturas/socios
+                  _buildVerFacturasSociosButton(),
+                  const SizedBox(height: 24),
+
+                  // Ayuda
+                  _buildAyudaBox(),
+                ],
+              ),
             ),
           ),
         ),
-    ],
-  );
-}
+        if (isLoading)
+          Container(
+            color: Colors.black.withValues(alpha: 0.4),
+            child: const Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  CircularProgressIndicator(
+                    color: Colors.white,
+                    strokeWidth: 6,
+                  ),
+                  SizedBox(height: 24),
+                  Text(
+                    'Subiendo archivo...',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+      ],
+    );
+  }
 
- /* Future<void> seleccionarArchivoExcel() async {
+  /* Future<void> seleccionarArchivoExcel() async {
     final result = await FilePicker.platform.pickFiles(
       type: FileType.custom,
       allowedExtensions: ['xlsx', 'xlsm'],
@@ -188,8 +203,6 @@ Widget build(BuildContext context) {
       });
     }
   }*/
-
-  
 
   Widget _buildFacturasTigoInstructions() {
     return Container(
@@ -262,7 +275,7 @@ Widget build(BuildContext context) {
     );
   }
 
- /* Widget _buildSeleccionarFacturaButton() {
+  /* Widget _buildSeleccionarFacturaButton() {
     return ElevatedButton.icon(
       icon: const Icon(Icons.folder_open, size: 28),
       label: const Text('Seleccionar factura', style: TextStyle(fontSize: 20)),
@@ -445,7 +458,7 @@ Widget build(BuildContext context) {
     );
   }
 
- /* Future<void> seleccionarArchivoFacturas() async {
+  /* Future<void> seleccionarArchivoFacturas() async {
     final result = await FilePicker.platform.pickFiles(
       type: FileType.custom,
       allowedExtensions: ['xlsx', 'xlsm'],

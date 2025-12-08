@@ -36,7 +36,6 @@ class PersonaSection extends ConsumerStatefulWidget {
   static final MapController _mapController = MapController();
 
   const PersonaSection({
-    
     required this.empleado,
     super.key,
     //this.ocultarCamposSensibles = false,
@@ -54,17 +53,11 @@ class PersonaSection extends ConsumerStatefulWidget {
 }
 
 class _PersonaSectionState extends ConsumerState<PersonaSection> {
-    String? _advertenciaMensaje;
+  String? _advertenciaMensaje;
   Color? _advertenciaColor;
   IconData? _advertenciaIcon;
-   bool _habilitarEdicion = false;
-   final Set<int> _docsAllowedEmployees = {
-    2, 
-    218,
-    21,
-    50,
-    47
-  };
+  bool _habilitarEdicion = false;
+  final Set<int> _docsAllowedEmployees = {2, 218, 21, 50, 47};
   //checkpoint
   String _capitalize(String text) {
     if (text.isEmpty) return text;
@@ -88,23 +81,25 @@ class _PersonaSectionState extends ConsumerState<PersonaSection> {
     if (isDesktop) return text.toUpperCase();
     return _capitalizeWords(text);
   }
+
   Future<void> guardarFechaAdvertencia() async {
-  final prefs = await SharedPreferences.getInstance();
-  prefs.setString('fechaAdvertenciaDatos', DateTime.now().toIso8601String());
-}
+    final prefs = await SharedPreferences.getInstance();
+    prefs.setString('fechaAdvertenciaDatos', DateTime.now().toIso8601String());
+  }
 
-Future<DateTime?> obtenerFechaAdvertencia() async {
-  final prefs = await SharedPreferences.getInstance();
-  final fechaStr = prefs.getString('fechaAdvertenciaDatos');
-  if (fechaStr == null) return null;
-  return DateTime.tryParse(fechaStr);
-}
+  Future<DateTime?> obtenerFechaAdvertencia() async {
+    final prefs = await SharedPreferences.getInstance();
+    final fechaStr = prefs.getString('fechaAdvertenciaDatos');
+    if (fechaStr == null) return null;
+    return DateTime.tryParse(fechaStr);
+  }
 
-Future<void> limpiarFechaAdvertencia() async {
-  final prefs = await SharedPreferences.getInstance();
-  prefs.remove('fechaAdvertenciaDatos');
-}
- Future<void> _verificarPermisosEdicion() async {
+  Future<void> limpiarFechaAdvertencia() async {
+    final prefs = await SharedPreferences.getInstance();
+    prefs.remove('fechaAdvertenciaDatos');
+  }
+
+  Future<void> _verificarPermisosEdicion() async {
     try {
       final permissionService = ref.read(permissionServiceProvider);
       final hasPermission = await permissionService.verificarPermisosEdicion(
@@ -131,11 +126,13 @@ Future<void> limpiarFechaAdvertencia() async {
     final isDesktop = ResponsiveUtilsBosque.isDesktop(context);
     final personaAsync = ref.watch(obtenerPersonaProvider(widget.codPersona));
     final currentUser = ref.watch(userProvider);
-   final bool canSeeDocs = widget.habilitarEdicion ||
-        (currentUser != null && _docsAllowedEmployees.contains(currentUser.codEmpleado));
-    
-final warningCount = ref.watch(warningCounterProvider);
-final warningLimit = ref.watch(warningLimitProvider);
+    final bool canSeeDocs =
+        widget.habilitarEdicion ||
+        (currentUser != null &&
+            _docsAllowedEmployees.contains(currentUser.codEmpleado));
+
+    final warningCount = ref.watch(warningCounterProvider);
+    final warningLimit = ref.watch(warningLimitProvider);
     // MapController persistente para evitar reinicialización en cada build
     // Puedes declararlo como variable de instancia en la clase si lo prefieres
     // Aquí lo hacemos estático para mantenerlo entre builds
@@ -160,86 +157,98 @@ final warningLimit = ref.watch(warningLimitProvider);
         // Mueve el mapa a la ubicación de la persona después de construir el widget
         WidgetsBinding.instance.addPostFrameCallback((_) async {
           final codEmpleadoActual =
-      await ref.read(userProvider.notifier).getCodEmpleado();
-  final codPersonaActual = await ref.read(
-    empObtenerDatosEmpleados(codEmpleadoActual).future,
-  );
-if (!mounted) return; // <-- Agrega esto aquí
-  if (widget.codPersona == codPersonaActual) {
-  // Prioridad: CI vencido > Ubicación por defecto
-  if (ciVencido) {
-    if (_advertenciaMensaje != 'Su carnet de identidad está vencido. Por favor, actualice sus datos.') {
-      setState(() {
-        _advertenciaMensaje = 'Su carnet de identidad está vencido. Por favor, actualice sus datos.';
-        _advertenciaColor = Colors.red;
-        _advertenciaIcon = Icons.warning;
-      });
-      // INCREMENTA EL CONTADOR SOLO SI ES NUEVA
-      
-      if (warningCount < ref.read(warningLimitProvider)) {
-        await ref.read(warningCounterProvider.notifier).increment();
-      }
-    }
-  } else {
-    final ubicacionPorDefecto = _isLatLngDefecto(persona.lat, persona.lng);
-    if (ubicacionPorDefecto) {
-      if (_advertenciaMensaje != 'Por favor, actualice su ubicación.') {
-        setState(() {
-          _advertenciaMensaje = 'Por favor, actualice su ubicación.';
-          _advertenciaColor = Colors.red;
-          _advertenciaIcon = Icons.location_on;
-        });
-        // INCREMENTA EL CONTADOR SOLO SI ES NUEVA
-       
-if (warningCount < warningLimit) {
- await ref.read(warningCounterProvider.notifier).increment();
-   print('Advertencia sumada. Nuevo valor: ${ref.read(warningCounterProvider)}');
-  // Mostrar advertencia especial si solo queda una antes del bloqueo
-  if (warningCount + 1 == warningLimit) {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(
-              '¡Atención! Su usuario será bloqueado si no actualiza sus datos.',
-              style: TextStyle(fontWeight: FontWeight.bold),
-            ),
-            backgroundColor: Colors.orange,
-            duration: Duration(seconds: 4),
-          ),
-        );
-      }
-    });
-  }
-}
-      }
-    } else {
-      if (_advertenciaMensaje != null) {
-        setState(() {
-          _advertenciaMensaje = null;
-          _advertenciaColor = null;
-          _advertenciaIcon = null;
-        });
-      }
-    }
-  }
-} else {
-  if (_advertenciaMensaje != null) {
-    setState(() {
-      _advertenciaMensaje = null;
-      _advertenciaColor = null;
-      _advertenciaIcon = null;
-    });
-  }
-}
+              await ref.read(userProvider.notifier).getCodEmpleado();
+          final codPersonaActual = await ref.read(
+            empObtenerDatosEmpleados(codEmpleadoActual).future,
+          );
+          if (!mounted) return; // <-- Agrega esto aquí
+          if (widget.codPersona == codPersonaActual) {
+            // Prioridad: CI vencido > Ubicación por defecto
+            if (ciVencido) {
+              if (_advertenciaMensaje !=
+                  'Su carnet de identidad está vencido. Por favor, actualice sus datos.') {
+                setState(() {
+                  _advertenciaMensaje =
+                      'Su carnet de identidad está vencido. Por favor, actualice sus datos.';
+                  _advertenciaColor = Colors.red;
+                  _advertenciaIcon = Icons.warning;
+                });
+                // INCREMENTA EL CONTADOR SOLO SI ES NUEVA
+
+                if (warningCount < ref.read(warningLimitProvider)) {
+                  await ref.read(warningCounterProvider.notifier).increment();
+                }
+              }
+            } else {
+              final ubicacionPorDefecto = _isLatLngDefecto(
+                persona.lat,
+                persona.lng,
+              );
+              if (ubicacionPorDefecto) {
+                if (_advertenciaMensaje !=
+                    'Por favor, actualice su ubicación.') {
+                  setState(() {
+                    _advertenciaMensaje = 'Por favor, actualice su ubicación.';
+                    _advertenciaColor = Colors.red;
+                    _advertenciaIcon = Icons.location_on;
+                  });
+                  // INCREMENTA EL CONTADOR SOLO SI ES NUEVA
+
+                  if (warningCount < warningLimit) {
+                    await ref.read(warningCounterProvider.notifier).increment();
+                    print(
+                      'Advertencia sumada. Nuevo valor: ${ref.read(warningCounterProvider)}',
+                    );
+                    // Mostrar advertencia especial si solo queda una antes del bloqueo
+                    if (warningCount + 1 == warningLimit) {
+                      WidgetsBinding.instance.addPostFrameCallback((_) {
+                        if (mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text(
+                                '¡Atención! Su usuario será bloqueado si no actualiza sus datos.',
+                                style: TextStyle(fontWeight: FontWeight.bold),
+                              ),
+                              backgroundColor: Colors.orange,
+                              duration: Duration(seconds: 4),
+                            ),
+                          );
+                        }
+                      });
+                    }
+                  }
+                }
+              } else {
+                if (_advertenciaMensaje != null) {
+                  setState(() {
+                    _advertenciaMensaje = null;
+                    _advertenciaColor = null;
+                    _advertenciaIcon = null;
+                  });
+                }
+              }
+            }
+          } else {
+            if (_advertenciaMensaje != null) {
+              setState(() {
+                _advertenciaMensaje = null;
+                _advertenciaColor = null;
+                _advertenciaIcon = null;
+              });
+            }
+          }
 
           // Mueve el mapa si la ubicación es válida
-          if (widget.empleado.persona.lat != null && widget.empleado.persona.lng != null) {
-    PersonaSection._mapController.move(
-      LatLng(widget.empleado.persona.lat!, widget.empleado.persona.lng!),  // Usa valores restringidos
-      13.0,
-    );
-  }
+          if (widget.empleado.persona.lat != null &&
+              widget.empleado.persona.lng != null) {
+            PersonaSection._mapController.move(
+              LatLng(
+                widget.empleado.persona.lat!,
+                widget.empleado.persona.lng!,
+              ), // Usa valores restringidos
+              13.0,
+            );
+          }
         });
 
         final camposCol1 = <Widget>[
@@ -265,19 +274,22 @@ if (warningCount < warningLimit) {
             isDesktop,
           ),
           _infoField(
-  theme,
-  'C.I NÚMERO',
-  widget.empleado.persona.ciNumero ,
-  Icons.pin,
-  isDesktop,
-),
+            theme,
+            'C.I NÚMERO',
+            widget.empleado.persona.ciNumero,
+            Icons.pin,
+            isDesktop,
+          ),
           Consumer(
             builder:
                 (context, ref, _) => _infoField(
                   theme,
                   'C.I EXPEDIDO',
                   //widget.ocultarCamposSensibles? '*****':
-                  formatText(_getCiExpedido(ref, widget.empleado.persona), isDesktop),
+                  formatText(
+                    _getCiExpedido(ref, widget.empleado.persona),
+                    isDesktop,
+                  ),
                   Icons.badge,
                   isDesktop,
                 ),
@@ -286,8 +298,10 @@ if (warningCount < warningLimit) {
             theme,
             'FECHA DE NACIMIENTO',
             widget.empleado.persona.fechaNacimiento != null
-           ?DateFormat('dd-MM-yyyy').format(widget.empleado.persona.fechaNacimiento!)
-           :'NO AUTORIZADO',
+                ? DateFormat(
+                  'dd-MM-yyyy',
+                ).format(widget.empleado.persona.fechaNacimiento!)
+                : 'NO AUTORIZADO',
             Icons.cake,
             isDesktop,
           ),
@@ -305,8 +319,10 @@ if (warningCount < warningLimit) {
             theme,
             'FECHA DE VENCIMIENTO C.I',
             widget.empleado.persona.ciFechaVencimiento != null
-                 ?DateFormat('dd-MM-yyyy').format(widget.empleado.persona.ciFechaVencimiento!)
-                 :'NO AUTORIZADO',
+                ? DateFormat(
+                  'dd-MM-yyyy',
+                ).format(widget.empleado.persona.ciFechaVencimiento!)
+                : 'NO AUTORIZADO',
             Icons.event,
             isDesktop,
             valueColor:
@@ -317,7 +333,10 @@ if (warningCount < warningLimit) {
                 (context, ref, _) => _infoField(
                   theme,
                   'ESTADO CIVIL',
-                  formatText(_getEstadoCivil(ref, widget.empleado.persona), isDesktop),
+                  formatText(
+                    _getEstadoCivil(ref, widget.empleado.persona),
+                    isDesktop,
+                  ),
                   Icons.people,
                   isDesktop,
                 ),
@@ -374,18 +393,17 @@ if (warningCount < warningLimit) {
             vertical: isDesktop ? 12 : 4,
           ),
           child: Column(
-    children: [
-      if (_advertenciaMensaje != null)
-        BannerCustom(
-          message: _advertenciaMensaje!,
-          color: _advertenciaColor ?? Colors.red,
-          icon: _advertenciaIcon ?? Icons.warning,
-          maxLines: 2,
-          
-        ),
-         
-        // BOTÓN DE PRUEBA PARA RESETEAR ADVERTENCIAS
-  /*if (warningCount > 0)
+            children: [
+              if (_advertenciaMensaje != null)
+                BannerCustom(
+                  message: _advertenciaMensaje!,
+                  color: _advertenciaColor ?? Colors.red,
+                  icon: _advertenciaIcon ?? Icons.warning,
+                  maxLines: 2,
+                ),
+
+              // BOTÓN DE PRUEBA PARA RESETEAR ADVERTENCIAS
+              /*if (warningCount > 0)
     Padding(
       padding: const EdgeInsets.only(top: 16.0),
       child: ElevatedButton.icon(
@@ -407,180 +425,187 @@ if (warningCount < warningLimit) {
         },
       ),
     ),*/
-          Card(
-            elevation: 2,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-            margin: EdgeInsets.zero,
-            child: Padding(
-              padding: EdgeInsets.all(isDesktop ? 18 : 8),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Encabezado
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              Card(
+                elevation: 2,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                margin: EdgeInsets.zero,
+                child: Padding(
+                  padding: EdgeInsets.all(isDesktop ? 18 : 8),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        formatText('DATOS PERSONALES', isDesktop),
-                        style: theme.textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.bold,
-                          color: theme.colorScheme.primary,
-                        ),
-                      ),
+                      // Encabezado
                       Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                         //if(widget.habilitarEdicion)
-                         if (canSeeDocs)
-                          if (isDesktop)
-  TextButton.icon(
-    icon: Icon(
-      Icons.folder_shared_rounded,
-      color: theme.colorScheme.primary,
-      size: 20,
-    ),
-    label: Text(
-      'Ver Documentos',
-      style: TextStyle(
-        color: theme.colorScheme.primary,
-        fontWeight: FontWeight.w600,
-      ),
-    ),
-    onPressed: () => _mostrarGaleriaTodosDocumentos(
-      context,
-      widget.codEmpleado,
-    ),
-  )
-else // Si es móvil (isDesktop: false), usa IconButton con tooltip
-  IconButton(
-    tooltip: 'Ver documentos adjuntos',
-    icon: Icon(
-      Icons.folder_shared_rounded,
-      color: theme.colorScheme.primary,
-    ),
-    onPressed: () => _mostrarGaleriaTodosDocumentos(
-      context,
-      widget.codEmpleado,
-    ),
-  ),
-                          CustomSpeedDial(
-                            visible: widget.habilitarEdicion,
-                            nombreSeccion: 'persona',
-                            onEditar:
-                                () => _mostrarDialogoEditarPersona(
-                                  context,
-                                  persona,
-                                  ref,
-                                ),
-                            updateOperation: widget.onUpdateOperation,
-                            operacionHabilitada: const ['editar'],
-                            selectedOperation: widget.selectedOperation,
+                          Text(
+                            formatText('DATOS PERSONALES', isDesktop),
+                            style: theme.textTheme.titleLarge?.copyWith(
+                              fontWeight: FontWeight.bold,
+                              color: theme.colorScheme.primary,
+                            ),
+                          ),
+                          Row(
+                            children: [
+                              //if(widget.habilitarEdicion)
+                              if (canSeeDocs)
+                                if (isDesktop)
+                                  TextButton.icon(
+                                    icon: Icon(
+                                      Icons.folder_shared_rounded,
+                                      color: theme.colorScheme.primary,
+                                      size: 20,
+                                    ),
+                                    label: Text(
+                                      'Ver Documentos',
+                                      style: TextStyle(
+                                        color: theme.colorScheme.primary,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                    onPressed:
+                                        () => _mostrarGaleriaTodosDocumentos(
+                                          context,
+                                          widget.codEmpleado,
+                                        ),
+                                  )
+                                else // Si es móvil (isDesktop: false), usa IconButton con tooltip
+                                  IconButton(
+                                    tooltip: 'Ver documentos adjuntos',
+                                    icon: Icon(
+                                      Icons.folder_shared_rounded,
+                                      color: theme.colorScheme.primary,
+                                    ),
+                                    onPressed:
+                                        () => _mostrarGaleriaTodosDocumentos(
+                                          context,
+                                          widget.codEmpleado,
+                                        ),
+                                  ),
+                              CustomSpeedDial(
+                                visible: widget.habilitarEdicion,
+                                nombreSeccion: 'persona',
+                                onEditar:
+                                    () => _mostrarDialogoEditarPersona(
+                                      context,
+                                      persona,
+                                      ref,
+                                    ),
+                                updateOperation: widget.onUpdateOperation,
+                                operacionHabilitada: const ['editar'],
+                                selectedOperation: widget.selectedOperation,
+                              ),
+                            ],
                           ),
                         ],
                       ),
-                    ],
-                  ),
-                  Divider(color: theme.colorScheme.outline.withOpacity(0.2)),
-                  if (widget.estadoExpandido['empleado'] ?? true)
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Dos columnas para desktop, una para mobile
-                        LayoutBuilder(
-                          builder: (context, constraints) {
-                            final isWide =
-                                isDesktop || constraints.maxWidth > 700;
-                            if (isWide) {
-                              return Row(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: camposCol1,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 32),
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: camposCol2,
-                                    ),
-                                  ),
-                                ],
-                              );
-                            } else {
-                              // Mobile: una sola columna
-                              return Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [...camposCol1, ...camposCol2],
-                              );
-                            }
-                          },
-                        ),
-                        const SizedBox(height: 24),
-                        Text(
-                          formatText('UBICACIÓN', isDesktop),
-                          style: theme.textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.bold,
-                            color: theme.colorScheme.primary,
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(12),
-                          child: SizedBox(
-                            width: double.infinity,
-                            height: isDesktop ? 340 : 220,
-                            child: MapViewer(
-    mapController: PersonaSection._mapController,
-    latitude: widget.empleado.persona.lat!,
-    longitude: widget.empleado.persona.lng!,
-    isInteractive: true,
-    canChangeLocation: false,
-),
-                          ),
-                        ),
-                        //CHECKPOINT AQUI
-                        if (widget.empleado.persona.lat != null && widget.empleado.persona.lng != null) ...[
-                          const SizedBox(height: 6),
-                          Center(
-                            child: TextButton.icon(
-                              onPressed: () async {
-                                final Uri uri = Uri.parse(
-                                  '${AppConstants.googleMapsSearchBaseUrl}=${widget.empleado.persona.lat},${widget.empleado.persona.lng}',
-                                );
-                                if (await canLaunchUrl(uri)) {
-                                  await launchUrl(
-                                    uri,
-                                    mode: LaunchMode.externalApplication,
+                      Divider(
+                        color: theme.colorScheme.outline.withValues(alpha: 0.2),
+                      ),
+                      if (widget.estadoExpandido['empleado'] ?? true)
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // Dos columnas para desktop, una para mobile
+                            LayoutBuilder(
+                              builder: (context, constraints) {
+                                final isWide =
+                                    isDesktop || constraints.maxWidth > 700;
+                                if (isWide) {
+                                  return Row(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: camposCol1,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 32),
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: camposCol2,
+                                        ),
+                                      ),
+                                    ],
+                                  );
+                                } else {
+                                  // Mobile: una sola columna
+                                  return Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [...camposCol1, ...camposCol2],
                                   );
                                 }
                               },
-                              icon: Icon(
-                                Icons.map,
+                            ),
+                            const SizedBox(height: 24),
+                            Text(
+                              formatText('UBICACIÓN', isDesktop),
+                              style: theme.textTheme.titleMedium?.copyWith(
+                                fontWeight: FontWeight.bold,
                                 color: theme.colorScheme.primary,
                               ),
-                              label: Text(
-                                formatText('VER EN GOOGLE MAPS', isDesktop),
-                                style: TextStyle(
-                                  color: theme.colorScheme.primary,
+                            ),
+                            const SizedBox(height: 12),
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(12),
+                              child: SizedBox(
+                                width: double.infinity,
+                                height: isDesktop ? 340 : 220,
+                                child: MapViewer(
+                                  mapController: PersonaSection._mapController,
+                                  latitude: widget.empleado.persona.lat!,
+                                  longitude: widget.empleado.persona.lng!,
+                                  isInteractive: true,
+                                  canChangeLocation: false,
                                 ),
                               ),
                             ),
-                          ),
-                        ],
-                      ],
-                    ),
-                ],
+                            //CHECKPOINT AQUI
+                            if (widget.empleado.persona.lat != null &&
+                                widget.empleado.persona.lng != null) ...[
+                              const SizedBox(height: 6),
+                              Center(
+                                child: TextButton.icon(
+                                  onPressed: () async {
+                                    final Uri uri = Uri.parse(
+                                      '${AppConstants.googleMapsSearchBaseUrl}=${widget.empleado.persona.lat},${widget.empleado.persona.lng}',
+                                    );
+                                    if (await canLaunchUrl(uri)) {
+                                      await launchUrl(
+                                        uri,
+                                        mode: LaunchMode.externalApplication,
+                                      );
+                                    }
+                                  },
+                                  icon: Icon(
+                                    Icons.map,
+                                    color: theme.colorScheme.primary,
+                                  ),
+                                  label: Text(
+                                    formatText('VER EN GOOGLE MAPS', isDesktop),
+                                    style: TextStyle(
+                                      color: theme.colorScheme.primary,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                    ],
+                  ),
+                ),
               ),
-            ),
-          ),
-    ],
-          ),//aqui
+            ],
+          ), //aqui
         );
       },
       loading: () => const Center(child: CircularProgressIndicator()),
@@ -720,58 +745,69 @@ else // Si es móvil (isDesktop: false), usa IconButton con tooltip
                 );
                 ref.invalidate(obtenerPersonaProvider);
                 // Verifica si el CI ya no está vencido
-    final ciVencido = personaActualizada.ciFechaVencimiento != null &&
-      personaActualizada.ciFechaVencimiento!.isBefore(DateTime.now());
+                final ciVencido =
+                    personaActualizada.ciFechaVencimiento != null &&
+                    personaActualizada.ciFechaVencimiento!.isBefore(
+                      DateTime.now(),
+                    );
 
-    // Verifica si la ubicación ya no es la de defecto
-    bool isLatLngDefecto(double? lat, double? lng) {
-      const latDefecto = -16.516064;
-      const lngDefecto = -68.1354;
-      const margen = 0.0001;
-      if (lat == null || lng == null) return true;
-      return (lat - latDefecto).abs() < margen &&
-          (lng - lngDefecto).abs() < margen;
-    }
-    final ubicacionPorDefecto = isLatLngDefecto(personaActualizada.lat, personaActualizada.lng);
+                // Verifica si la ubicación ya no es la de defecto
+                bool isLatLngDefecto(double? lat, double? lng) {
+                  const latDefecto = -16.516064;
+                  const lngDefecto = -68.1354;
+                  const margen = 0.0001;
+                  if (lat == null || lng == null) return true;
+                  return (lat - latDefecto).abs() < margen &&
+                      (lng - lngDefecto).abs() < margen;
+                }
 
-    // Solo desbloquea y resetea si el CI ya no está vencido y la ubicación ya no es la de defecto
-    if (!ciVencido && !ubicacionPorDefecto) {
-      await ref.read(warningCounterProvider.notifier).reset();
-      final codUsuario = await ref.read(userProvider.notifier).getCodUsuario();
-      await ref.read(desbloquearUsuarioProvider(codUsuario).future);
-      await ref.read(menuProvider.notifier).fetchAndSaveMenu(codUsuario);
-      ref.invalidate(warningCounterProvider);
-      ref.invalidate(usuarioBloqueadoProvider(codUsuario));
-    }
+                final ubicacionPorDefecto = isLatLngDefecto(
+                  personaActualizada.lat,
+                  personaActualizada.lng,
+                );
+
+                // Solo desbloquea y resetea si el CI ya no está vencido y la ubicación ya no es la de defecto
+                if (!ciVencido && !ubicacionPorDefecto) {
+                  await ref.read(warningCounterProvider.notifier).reset();
+                  final codUsuario =
+                      await ref.read(userProvider.notifier).getCodUsuario();
+                  await ref.read(desbloquearUsuarioProvider(codUsuario).future);
+                  await ref
+                      .read(menuProvider.notifier)
+                      .fetchAndSaveMenu(codUsuario);
+                  ref.invalidate(warningCounterProvider);
+                  ref.invalidate(usuarioBloqueadoProvider(codUsuario));
+                }
                 if (!context.mounted) return;
                 Navigator.pop(context);
 
                 ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Datos actualizados correctamente'),
-                  backgroundColor: Colors.green,
-                ),
-              );
-            } catch (e) {
-              if (!context.mounted) return;
-              
-              // Manejo de errores mejorado
-              String mensajeError = 'El Ci ya existe o hubo un error al actualizar';
-              
-              if (e.toString().contains('409')) {
-                mensajeError = 'El CI ya se encuentra registrado';
-              } else if (e.toString().contains('ERROR:')) {
-                // Extraer solo el mensaje después de "ERROR:"
-                mensajeError = e.toString().split('ERROR:').last.trim();
-              }
+                  const SnackBar(
+                    content: Text('Datos actualizados correctamente'),
+                    backgroundColor: Colors.green,
+                  ),
+                );
+              } catch (e) {
+                if (!context.mounted) return;
 
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(mensajeError),
-                  backgroundColor: Colors.red,
-                ),
-              );
-            }
+                // Manejo de errores mejorado
+                String mensajeError =
+                    'El Ci ya existe o hubo un error al actualizar';
+
+                if (e.toString().contains('409')) {
+                  mensajeError = 'El CI ya se encuentra registrado';
+                } else if (e.toString().contains('ERROR:')) {
+                  // Extraer solo el mensaje después de "ERROR:"
+                  mensajeError = e.toString().split('ERROR:').last.trim();
+                }
+
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(mensajeError),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+              }
             },
           ),
         );
@@ -779,21 +815,28 @@ else // Si es móvil (isDesktop: false), usa IconButton con tooltip
     );
   }
 
-  void _mostrarGaleriaTodosDocumentos(BuildContext context, int codEmpleado) async {
+  void _mostrarGaleriaTodosDocumentos(
+    BuildContext context,
+    int codEmpleado,
+  ) async {
     final isMobile = ResponsiveUtilsBosque.isMobile(context);
     final userNotifier = ref.read(userProvider.notifier);
     final cargo = (await userNotifier.getCargo()).toLowerCase();
-    
+
     String? advertenciaMensaje;
     Color? advertenciaColor;
     IconData? advertenciaIcon;
 
     try {
-      final docsData = await ref.read(todosLosDocumentosProvider(codEmpleado).future);
+      final docsData = await ref.read(
+        todosLosDocumentosProvider(codEmpleado).future,
+      );
       if (cargo.contains('chofer')) {
-        final tieneLicencia = docsData['LICENCIA'] != null && docsData['LICENCIA']!.isNotEmpty;
+        final tieneLicencia =
+            docsData['LICENCIA'] != null && docsData['LICENCIA']!.isNotEmpty;
         if (!tieneLicencia) {
-          advertenciaMensaje = 'Para el cargo CHOFER es obligatorio adjuntar la Licencia de Conducir.';
+          advertenciaMensaje =
+              'Para el cargo CHOFER es obligatorio adjuntar la Licencia de Conducir.';
           advertenciaColor = Colors.red;
           advertenciaIcon = Icons.warning;
         }
@@ -810,14 +853,25 @@ else // Si es móvil (isDesktop: false), usa IconButton con tooltip
       builder: (galleryDialogContext) {
         return Consumer(
           builder: (context, ref, _) {
-            final docsAsync = ref.watch(todosLosDocumentosProvider(codEmpleado));
+            final docsAsync = ref.watch(
+              todosLosDocumentosProvider(codEmpleado),
+            );
             return Dialog(
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-              insetPadding: EdgeInsets.symmetric(horizontal: isMobile ? 8 : 48, vertical: isMobile ? 12 : 48),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(18),
+              ),
+              insetPadding: EdgeInsets.symmetric(
+                horizontal: isMobile ? 8 : 48,
+                vertical: isMobile ? 12 : 48,
+              ),
               child: Container(
                 width: isMobile ? double.infinity : 540,
-                height: isMobile ? MediaQuery.of(context).size.height * 0.85 : 650,
-                decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(18)),
+                height:
+                    isMobile ? MediaQuery.of(context).size.height * 0.85 : 650,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(18),
+                ),
                 child: Column(
                   children: [
                     if (advertenciaMensaje != null)
@@ -828,16 +882,26 @@ else // Si es móvil (isDesktop: false), usa IconButton con tooltip
                         maxLines: 3,
                       ),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 18,
+                        vertical: 14,
+                      ),
                       decoration: BoxDecoration(
                         color: Colors.blue[50],
-                        borderRadius: advertenciaMensaje == null
-                            ? const BorderRadius.vertical(top: Radius.circular(18))
-                            : null,
+                        borderRadius:
+                            advertenciaMensaje == null
+                                ? const BorderRadius.vertical(
+                                  top: Radius.circular(18),
+                                )
+                                : null,
                       ),
                       child: Row(
                         children: [
-                          Icon(Icons.folder_shared_rounded, color: Colors.blue[700], size: 28),
+                          Icon(
+                            Icons.folder_shared_rounded,
+                            color: Colors.blue[700],
+                            size: 28,
+                          ),
                           const SizedBox(width: 10),
                           Expanded(
                             child: Text(
@@ -852,7 +916,8 @@ else // Si es móvil (isDesktop: false), usa IconButton con tooltip
                           IconButton(
                             tooltip: 'Cerrar',
                             icon: const Icon(Icons.close, color: Colors.red),
-                            onPressed: () => Navigator.of(galleryDialogContext).pop(),
+                            onPressed:
+                                () => Navigator.of(galleryDialogContext).pop(),
                           ),
                         ],
                       ),
@@ -871,98 +936,165 @@ else // Si es móvil (isDesktop: false), usa IconButton con tooltip
                             };
 
                             // Creamos la lista de widgets iterando sobre TODOS los tipos posibles.
-                            final widgetsDeDocumentos = todosLosTipos.entries.map((entry) {
-                              final tipoClave = entry.key;
-                              final tipoDisplay = entry.value;
-                              
-                              // Obtenemos los archivos para este tipo, o una lista vacía si no existen.
-                              final archivos = mapaDeDocumentos[tipoClave] ?? [];
-                              final tieneArchivos = archivos.isNotEmpty;
+                            final widgetsDeDocumentos =
+                                todosLosTipos.entries.map((entry) {
+                                  final tipoClave = entry.key;
+                                  final tipoDisplay = entry.value;
 
-                              return Column(
-                                key: ValueKey(tipoClave), // Key para evitar problemas de estado
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Padding(
-                                    padding: const EdgeInsets.symmetric(vertical: 10),
-                                    child: Row(
-                                      children: [
-                                        Icon(Icons.label_important, color: Colors.blue[400], size: 20),
-                                        const SizedBox(width: 6),
-                                        Text(
-                                          tipoDisplay.toUpperCase(),
-                                          style: TextStyle(
-                                            fontWeight: FontWeight.bold,
-                                            fontSize: isMobile ? 15 : 17,
-                                            color: Colors.blue[700],
-                                          ),
+                                  // Obtenemos los archivos para este tipo, o una lista vacía si no existen.
+                                  final archivos =
+                                      mapaDeDocumentos[tipoClave] ?? [];
+                                  final tieneArchivos = archivos.isNotEmpty;
+
+                                  return Column(
+                                    key: ValueKey(
+                                      tipoClave,
+                                    ), // Key para evitar problemas de estado
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Padding(
+                                        padding: const EdgeInsets.symmetric(
+                                          vertical: 10,
                                         ),
-                                      ],
-                                    ),
-                                  ),
-                                  if (!tieneArchivos)
-                                    Padding(
-                                      padding: const EdgeInsets.only(left: 26, bottom: 12),
-                                      child: Text('No hay documentos.', style: TextStyle(color: Colors.grey[600])),
-                                    )
-                                  else
-                                    GridView.builder(
-                                      shrinkWrap: true,
-                                      physics: const NeverScrollableScrollPhysics(),
-                                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                                        crossAxisCount: isMobile ? 2 : 3,
-                                        mainAxisSpacing: 10,
-                                        crossAxisSpacing: 10,
-                                        childAspectRatio: 0.9,
-                                      ),
-                                      itemCount: archivos.length,
-                                      itemBuilder: (context, index) {
-                                        final nombreArchivo = archivos[index];
-                                        final url = '${AppConstants.baseUrl}${AppConstants.getDocImageUrl}$codEmpleado/$tipoClave/$nombreArchivo?ts=${DateTime.now().millisecondsSinceEpoch}';
-                                        final lado = (archivos.length > 1) ? (index == 0 ? 'Anverso' : 'Reverso') : 'Documento';
-                                        return _buildDocumentoItem(context, url, nombreArchivo, lado);
-                                      },
-                                    ),
-                                  const SizedBox(height: 12),
-                                  Center(
-                                    child: ElevatedButton.icon(
-                                      icon: const Icon(Icons.add_photo_alternate_outlined, size: 20),
-                                      label: Text(tieneArchivos ? 'Añadir o Reemplazar' : 'Subir $tipoDisplay'),
-                                      style: ElevatedButton.styleFrom(
-                                        backgroundColor: tieneArchivos ? Colors.green[700] : Colors.blue[600],
-                                        foregroundColor: Colors.white,
-                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                                      ),
-                                      onPressed: () {
-                                        // 1. Cierra el diálogo de la galería.
-                                        Navigator.of(galleryDialogContext).pop();
-                                        
-                                        // 2. Inmediatamente abre el diálogo de carga de archivos.
-                                        // Usamos el 'context' principal que es seguro.
-                                        showDialog(
-                                          context: context,
-                                          builder: (uploadDialogContext) => Dialog(
-                                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                                            child: Padding(
-                                              padding: const EdgeInsets.all(24),
-                                              child: SizedBox(
-                                                width: isMobile ? double.infinity : 400,
-                                                child: SeccionFotoDocsDropdown(
-                                                  habilitarEdicion: true,
-                                                  codEmpleado: codEmpleado,
-                                                  tipoDocumentoPreseleccionado: tipoDisplay,
-                                                ),
+                                        child: Row(
+                                          children: [
+                                            Icon(
+                                              Icons.label_important,
+                                              color: Colors.blue[400],
+                                              size: 20,
+                                            ),
+                                            const SizedBox(width: 6),
+                                            Text(
+                                              tipoDisplay.toUpperCase(),
+                                              style: TextStyle(
+                                                fontWeight: FontWeight.bold,
+                                                fontSize: isMobile ? 15 : 17,
+                                                color: Colors.blue[700],
                                               ),
                                             ),
+                                          ],
+                                        ),
+                                      ),
+                                      if (!tieneArchivos)
+                                        Padding(
+                                          padding: const EdgeInsets.only(
+                                            left: 26,
+                                            bottom: 12,
                                           ),
-                                        );
-                                      },
-                                    ),
-                                  ),
-                                  const Divider(height: 24, thickness: 1),
-                                ],
-                              );
-                            }).toList();
+                                          child: Text(
+                                            'No hay documentos.',
+                                            style: TextStyle(
+                                              color: Colors.grey[600],
+                                            ),
+                                          ),
+                                        )
+                                      else
+                                        GridView.builder(
+                                          shrinkWrap: true,
+                                          physics:
+                                              const NeverScrollableScrollPhysics(),
+                                          gridDelegate:
+                                              SliverGridDelegateWithFixedCrossAxisCount(
+                                                crossAxisCount:
+                                                    isMobile ? 2 : 3,
+                                                mainAxisSpacing: 10,
+                                                crossAxisSpacing: 10,
+                                                childAspectRatio: 0.9,
+                                              ),
+                                          itemCount: archivos.length,
+                                          itemBuilder: (context, index) {
+                                            final nombreArchivo =
+                                                archivos[index];
+                                            final url =
+                                                '${AppConstants.baseUrl}${AppConstants.getDocImageUrl}$codEmpleado/$tipoClave/$nombreArchivo?ts=${DateTime.now().millisecondsSinceEpoch}';
+                                            final lado =
+                                                (archivos.length > 1)
+                                                    ? (index == 0
+                                                        ? 'Anverso'
+                                                        : 'Reverso')
+                                                    : 'Documento';
+                                            return _buildDocumentoItem(
+                                              context,
+                                              url,
+                                              nombreArchivo,
+                                              lado,
+                                            );
+                                          },
+                                        ),
+                                      const SizedBox(height: 12),
+                                      Center(
+                                        child: ElevatedButton.icon(
+                                          icon: const Icon(
+                                            Icons.add_photo_alternate_outlined,
+                                            size: 20,
+                                          ),
+                                          label: Text(
+                                            tieneArchivos
+                                                ? 'Añadir o Reemplazar'
+                                                : 'Subir $tipoDisplay',
+                                          ),
+                                          style: ElevatedButton.styleFrom(
+                                            backgroundColor:
+                                                tieneArchivos
+                                                    ? Colors.green[700]
+                                                    : Colors.blue[600],
+                                            foregroundColor: Colors.white,
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(10),
+                                            ),
+                                          ),
+                                          onPressed: () {
+                                            // 1. Cierra el diálogo de la galería.
+                                            Navigator.of(
+                                              galleryDialogContext,
+                                            ).pop();
+
+                                            // 2. Inmediatamente abre el diálogo de carga de archivos.
+                                            // Usamos el 'context' principal que es seguro.
+                                            showDialog(
+                                              context: context,
+                                              builder:
+                                                  (
+                                                    uploadDialogContext,
+                                                  ) => Dialog(
+                                                    shape: RoundedRectangleBorder(
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                            16,
+                                                          ),
+                                                    ),
+                                                    child: Padding(
+                                                      padding:
+                                                          const EdgeInsets.all(
+                                                            24,
+                                                          ),
+                                                      child: SizedBox(
+                                                        width:
+                                                            isMobile
+                                                                ? double
+                                                                    .infinity
+                                                                : 400,
+                                                        child: SeccionFotoDocsDropdown(
+                                                          habilitarEdicion:
+                                                              true,
+                                                          codEmpleado:
+                                                              codEmpleado,
+                                                          tipoDocumentoPreseleccionado:
+                                                              tipoDisplay,
+                                                        ),
+                                                      ),
+                                                    ),
+                                                  ),
+                                            );
+                                          },
+                                        ),
+                                      ),
+                                      const Divider(height: 24, thickness: 1),
+                                    ],
+                                  );
+                                }).toList();
 
                             return SingleChildScrollView(
                               child: Column(
@@ -971,7 +1103,10 @@ else // Si es móvil (isDesktop: false), usa IconButton con tooltip
                               ),
                             );
                           },
-                          loading: () => const Center(child: CircularProgressIndicator()),
+                          loading:
+                              () => const Center(
+                                child: CircularProgressIndicator(),
+                              ),
                           error: (e, _) => Center(child: Text('Error: $e')),
                         ),
                       ),
@@ -986,35 +1121,51 @@ else // Si es móvil (isDesktop: false), usa IconButton con tooltip
     );
   }
 
-  Widget _buildDocumentoItem(BuildContext context, String url, String tag, String lado) {
-   return GestureDetector(
-     onTap: () => _mostrarImagenCompletaGaleria(context, url, tag),
-     child: Card(
-       clipBehavior: Clip.antiAlias,
-       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-       elevation: 3,
-       child: GridTile( // Eliminamos la propiedad 'footer' para quitar la etiqueta.
-         child: Hero(
-           tag: tag,
-           child: Image.network(
-             url,
-             fit: BoxFit.cover,
-             loadingBuilder: (context, child, progress) {
-               return progress == null ? child : const Center(child: CircularProgressIndicator());
-             },
-             errorBuilder: (context, error, stackTrace) {
-               // ignore: avoid_print
-               print('Error al cargar imagen: $url, Error: $error');
-               return const Icon(Icons.broken_image, size: 40, color: Colors.grey);
-             },
-           ),
-         ),
-       ),
-     ),
-   );
- }
+  Widget _buildDocumentoItem(
+    BuildContext context,
+    String url,
+    String tag,
+    String lado,
+  ) {
+    return GestureDetector(
+      onTap: () => _mostrarImagenCompletaGaleria(context, url, tag),
+      child: Card(
+        clipBehavior: Clip.antiAlias,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        elevation: 3,
+        child: GridTile(
+          // Eliminamos la propiedad 'footer' para quitar la etiqueta.
+          child: Hero(
+            tag: tag,
+            child: Image.network(
+              url,
+              fit: BoxFit.cover,
+              loadingBuilder: (context, child, progress) {
+                return progress == null
+                    ? child
+                    : const Center(child: CircularProgressIndicator());
+              },
+              errorBuilder: (context, error, stackTrace) {
+                // ignore: avoid_print
+                print('Error al cargar imagen: $url, Error: $error');
+                return const Icon(
+                  Icons.broken_image,
+                  size: 40,
+                  color: Colors.grey,
+                );
+              },
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 
-  void _mostrarImagenCompletaGaleria(BuildContext context, String url, String tag) {
+  void _mostrarImagenCompletaGaleria(
+    BuildContext context,
+    String url,
+    String tag,
+  ) {
     showDialog(
       context: context,
       barrierDismissible: true,

@@ -145,7 +145,7 @@ class EstructuraOrganizacionalEmpresaScreen extends ConsumerWidget {
                                   Theme.of(context).primaryColor,
                                   Theme.of(
                                     context,
-                                  ).primaryColor.withOpacity(0.7),
+                                  ).primaryColor.withValues(alpha: 0.7),
                                 ],
                               ),
                               borderRadius: BorderRadius.circular(12),
@@ -153,7 +153,7 @@ class EstructuraOrganizacionalEmpresaScreen extends ConsumerWidget {
                                 BoxShadow(
                                   color: Theme.of(
                                     context,
-                                  ).primaryColor.withOpacity(0.3),
+                                  ).primaryColor.withValues(alpha: 0.3),
                                   blurRadius: 8,
                                   offset: const Offset(0, 4),
                                 ),

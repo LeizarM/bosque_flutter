@@ -500,7 +500,7 @@ class _ControlCombustibleViewScreenState
                           size: 48,
                           color: Theme.of(
                             context,
-                          ).colorScheme.onSurface.withOpacity(0.4),
+                          ).colorScheme.onSurface.withValues(alpha: 0.4),
                         ),
                         const SizedBox(width: 16),
                         Text(
@@ -509,7 +509,7 @@ class _ControlCombustibleViewScreenState
                             fontSize: 16,
                             color: Theme.of(
                               context,
-                            ).colorScheme.onSurface.withOpacity(0.4),
+                            ).colorScheme.onSurface.withValues(alpha: 0.4),
                           ),
                         ),
                       ],
@@ -540,7 +540,9 @@ class _ControlCombustibleViewScreenState
                               child: Text(
                                 'No hay registros de combustible para este vehículo.',
                                 style: TextStyle(
-                                  color: colorScheme.onSurface.withOpacity(0.7),
+                                  color: colorScheme.onSurface.withValues(
+                                    alpha: 0.7,
+                                  ),
                                 ),
                               ),
                             );
@@ -589,7 +591,7 @@ class _ControlCombustibleViewScreenState
                                                       : '',
                                                   style: TextStyle(
                                                     color: colorScheme.onSurface
-                                                        .withOpacity(0.6),
+                                                        .withValues(alpha: 0.6),
                                                   ),
                                                 ),
                                               ],
@@ -653,7 +655,7 @@ class _ControlCombustibleViewScreenState
                                                   ),
                                                   backgroundColor: colorScheme
                                                       .primary
-                                                      .withOpacity(0.08),
+                                                      .withValues(alpha: 0.08),
                                                 ),
                                               ],
                                             ),
@@ -761,7 +763,9 @@ class _ControlCombustibleViewScreenState
                                                             FontWeight.w500,
                                                         color: colorScheme
                                                             .onSurface
-                                                            .withOpacity(0.8),
+                                                            .withValues(
+                                                              alpha: 0.8,
+                                                            ),
                                                         fontSize: 12,
                                                       ),
                                                     ),
@@ -771,7 +775,9 @@ class _ControlCombustibleViewScreenState
                                                       style: TextStyle(
                                                         color: colorScheme
                                                             .onSurface
-                                                            .withOpacity(0.7),
+                                                            .withValues(
+                                                              alpha: 0.7,
+                                                            ),
                                                         fontSize: 13,
                                                       ),
                                                     ),
@@ -826,7 +832,9 @@ class _ControlCombustibleViewScreenState
                                   borderRadius: BorderRadius.circular(18),
                                   boxShadow: [
                                     BoxShadow(
-                                      color: Colors.black.withOpacity(0.07),
+                                      color: Colors.black.withValues(
+                                        alpha: 0.07,
+                                      ),
                                       blurRadius: 12,
                                       offset: const Offset(0, 4),
                                     ),
@@ -1084,7 +1092,9 @@ class _ControlCombustibleViewScreenState
                                                         (c.obs ?? '').isEmpty
                                                             ? colorScheme.onSurface
                                                             // ignore: deprecated_member_use
-                                                            .withOpacity(0.5)
+                                                            .withValues(
+                                                              alpha: 0.5,
+                                                            )
                                                             : colorScheme
                                                                 .onSurface
                                                                 .withOpacity(
@@ -1135,7 +1145,9 @@ class _ControlCombustibleViewScreenState
                                                     style: TextStyle(
                                                       color: colorScheme
                                                           .onSurface
-                                                          .withOpacity(0.5),
+                                                          .withValues(
+                                                            alpha: 0.5,
+                                                          ),
                                                       fontStyle:
                                                           FontStyle.italic,
                                                     ),

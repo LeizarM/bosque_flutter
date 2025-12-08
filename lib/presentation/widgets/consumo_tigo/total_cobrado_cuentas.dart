@@ -2,14 +2,16 @@ import 'package:bosque_flutter/core/state/Consumo_tigo_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-
 class FacturasTigoCalculoScreen extends ConsumerWidget {
   final String periodoCobrado;
-  const FacturasTigoCalculoScreen({Key? key, required this.periodoCobrado}) : super(key: key);
+  const FacturasTigoCalculoScreen({Key? key, required this.periodoCobrado})
+    : super(key: key);
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    print('Entrando a FacturasTigoCalculoScreen con periodoCobrado: $periodoCobrado');
+    print(
+      'Entrando a FacturasTigoCalculoScreen con periodoCobrado: $periodoCobrado',
+    );
     final tigoAsync = ref.watch(tigoTotalXCuenta(periodoCobrado));
     return Padding(
       padding: const EdgeInsets.all(24.0),
@@ -31,7 +33,11 @@ class FacturasTigoCalculoScreen extends ConsumerWidget {
                   children: [
                     Row(
                       children: [
-                        Icon(Icons.account_balance, color: Colors.green[700], size: 32),
+                        Icon(
+                          Icons.account_balance,
+                          color: Colors.green[700],
+                          size: 32,
+                        ),
                         const SizedBox(width: 10),
                         Text(
                           'Cálculo Total por Cuenta',
@@ -52,7 +58,10 @@ class FacturasTigoCalculoScreen extends ConsumerWidget {
                         final periodo = lista.first.periodoCobrado;
                         return Container(
                           margin: const EdgeInsets.only(bottom: 18),
-                          padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 22),
+                          padding: const EdgeInsets.symmetric(
+                            vertical: 10,
+                            horizontal: 22,
+                          ),
                           decoration: BoxDecoration(
                             color: Colors.green[100],
                             borderRadius: BorderRadius.circular(12),
@@ -60,7 +69,10 @@ class FacturasTigoCalculoScreen extends ConsumerWidget {
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              const Icon(Icons.calendar_month, color: Colors.green),
+                              const Icon(
+                                Icons.calendar_month,
+                                color: Colors.green,
+                              ),
                               const SizedBox(width: 10),
                               Text(
                                 'Período cobrado: ',
@@ -85,13 +97,20 @@ class FacturasTigoCalculoScreen extends ConsumerWidget {
                     ),
                     Expanded(
                       child: tigoAsync.when(
-                        loading: () => const Center(child: CircularProgressIndicator()),
-                        error: (err, _) => Center(
-                          child: Text(
-                            'Error: $err',
-                            style: const TextStyle(fontSize: 18, color: Colors.red),
-                          ),
-                        ),
+                        loading:
+                            () => const Center(
+                              child: CircularProgressIndicator(),
+                            ),
+                        error:
+                            (err, _) => Center(
+                              child: Text(
+                                'Error: $err',
+                                style: const TextStyle(
+                                  fontSize: 18,
+                                  color: Colors.red,
+                                ),
+                              ),
+                            ),
                         data: (lista) {
                           if (lista.isEmpty) {
                             return const Center(
@@ -108,20 +127,28 @@ class FacturasTigoCalculoScreen extends ConsumerWidget {
                               child: SingleChildScrollView(
                                 scrollDirection: Axis.horizontal,
                                 child: DataTable(
-                                  headingRowColor: MaterialStateProperty.all(Colors.green[100]),
-                                  dataRowColor: MaterialStateProperty.all(Colors.white),
+                                  headingRowColor: MaterialStateProperty.all(
+                                    Colors.green[100],
+                                  ),
+                                  dataRowColor: MaterialStateProperty.all(
+                                    Colors.white,
+                                  ),
                                   columnSpacing: 28,
                                   columns: const [
                                     DataColumn(
                                       label: Text(
                                         'Nombre Completo',
-                                        style: TextStyle(fontWeight: FontWeight.bold),
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                        ),
                                       ),
                                     ),
                                     DataColumn(
                                       label: Text(
                                         'Carnet de Identidad',
-                                        style: TextStyle(fontWeight: FontWeight.bold),
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                        ),
                                       ),
                                     ),
                                     /* DataColumn(
@@ -133,32 +160,62 @@ class FacturasTigoCalculoScreen extends ConsumerWidget {
                                     DataColumn(
                                       label: Text(
                                         'Total Cobrado por Cuenta',
-                                        style: TextStyle(fontWeight: FontWeight.bold),
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                        ),
                                       ),
                                     ),
                                     DataColumn(
                                       label: Text(
                                         'Monto Cubierto por Empresa',
-                                        style: TextStyle(fontWeight: FontWeight.bold),
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                        ),
                                       ),
                                     ),
                                     DataColumn(
                                       label: Text(
                                         'Monto por Empleado',
-                                        style: TextStyle(fontWeight: FontWeight.bold),
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                        ),
                                       ),
                                     ),
                                   ],
-                                  rows: lista.map((e) => DataRow(
-                                    cells: [
-                                      DataCell(Text(e.nombreCompleto)),
-                                      DataCell(Text(e.ciNumero ?? '')),
-                                      // DataCell(Text(e.periodoCobrado)),
-                                      DataCell(Text(e.totalCobradoXCuenta.toStringAsFixed(2))),
-                                      DataCell(Text(e.montoCubiertoXEmpresa.toStringAsFixed(2))),
-                                      DataCell(Text(e.montoEmpleado.toStringAsFixed(2))),
-                                    ],
-                                  )).toList(),
+                                  rows:
+                                      lista
+                                          .map(
+                                            (e) => DataRow(
+                                              cells: [
+                                                DataCell(
+                                                  Text(e.nombreCompleto),
+                                                ),
+                                                DataCell(
+                                                  Text(e.ciNumero ?? ''),
+                                                ),
+                                                // DataCell(Text(e.periodoCobrado)),
+                                                DataCell(
+                                                  Text(
+                                                    e.totalCobradoXCuenta
+                                                        .toStringAsFixed(2),
+                                                  ),
+                                                ),
+                                                DataCell(
+                                                  Text(
+                                                    e.montoCubiertoXEmpresa
+                                                        .toStringAsFixed(2),
+                                                  ),
+                                                ),
+                                                DataCell(
+                                                  Text(
+                                                    e.montoEmpleado
+                                                        .toStringAsFixed(2),
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          )
+                                          .toList(),
                                 ),
                               ),
                             ),
@@ -184,7 +241,7 @@ class FacturasTigoCalculoScreen extends ConsumerWidget {
               ),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.green.withOpacity(0.13),
+                  color: Colors.green.withValues(alpha: 0.13),
                   blurRadius: 16,
                   offset: const Offset(4, 8),
                 ),

@@ -19,8 +19,8 @@ class EmailSeccion extends ConsumerStatefulWidget {
   final Function(String) onToggleSeccion;
   final Function(String?) onUpdateOperation;
   final VoidCallback onEditar;
-  final VoidCallback onAgregar; 
-  final VoidCallback onEliminar; 
+  final VoidCallback onAgregar;
+  final VoidCallback onEliminar;
 
   const EmailSeccion({
     super.key,
@@ -31,19 +31,25 @@ class EmailSeccion extends ConsumerStatefulWidget {
     required this.onToggleSeccion,
     required this.onUpdateOperation,
     required this.onEditar,
-    required this.onAgregar, 
-    required this.onEliminar, 
+    required this.onAgregar,
+    required this.onEliminar,
   });
   @override
   ConsumerState<EmailSeccion> createState() => _EmailSeccionState();
 }
+
 class _EmailSeccionState extends ConsumerState<EmailSeccion> {
   String? _bannerMensaje;
   Color? _bannerColor;
   IconData? _bannerIcon;
   bool _advertenciaMostrada = false;
 
-    Widget autoText(String text, TextStyle style, {int maxLines = 1, TextAlign? textAlign}) {
+  Widget autoText(
+    String text,
+    TextStyle style, {
+    int maxLines = 1,
+    TextAlign? textAlign,
+  }) {
     return FittedBox(
       fit: BoxFit.scaleDown,
       alignment: Alignment.centerLeft,
@@ -70,8 +76,10 @@ class _EmailSeccionState extends ConsumerState<EmailSeccion> {
 
     // Colores igual que en relacion_laboral_seccion.dart
     final Color icono = isDark ? colorScheme.primary : Colors.teal.shade700;
-    final Color textoPrincipal = isDark ? colorScheme.onSurface : Colors.grey.shade900;
-    final Color textoSecundario = isDark ? colorScheme.onSurfaceVariant : Colors.grey.shade600;
+    final Color textoPrincipal =
+        isDark ? colorScheme.onSurface : Colors.grey.shade900;
+    final Color textoSecundario =
+        isDark ? colorScheme.onSurfaceVariant : Colors.grey.shade600;
 
     return Padding(
       padding: EdgeInsets.symmetric(
@@ -83,12 +91,12 @@ class _EmailSeccionState extends ConsumerState<EmailSeccion> {
         children: [
           // Header
           if (_bannerMensaje != null)
-        BannerCustom(
-          message: _bannerMensaje!,
-          color: _bannerColor ?? Colors.red,
-          icon: _bannerIcon ?? Icons.warning,
-          maxLines: 2,
-        ),
+            BannerCustom(
+              message: _bannerMensaje!,
+              color: _bannerColor ?? Colors.red,
+              icon: _bannerIcon ?? Icons.warning,
+              maxLines: 2,
+            ),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -115,12 +123,12 @@ class _EmailSeccionState extends ConsumerState<EmailSeccion> {
                 ),
             ],
           ),
-          Divider(height: 20, color: Colors.grey.withOpacity(0.18)),
+          Divider(height: 20, color: Colors.grey.withValues(alpha: 0.18)),
           emailAsync.when(
             data: (emails) {
               WidgetsBinding.instance.addPostFrameCallback((_) {
-  _advertirSiSinEmails(ref, emails);
-});
+                _advertirSiSinEmails(ref, emails);
+              });
               if (emails.isEmpty) {
                 return Padding(
                   padding: const EdgeInsets.symmetric(vertical: 12),
@@ -139,9 +147,10 @@ class _EmailSeccionState extends ConsumerState<EmailSeccion> {
               final showScroll = emails.length > 4;
               final emailList = ListView.builder(
                 shrinkWrap: true,
-                physics: showScroll
-                    ? const AlwaysScrollableScrollPhysics()
-                    : const NeverScrollableScrollPhysics(),
+                physics:
+                    showScroll
+                        ? const AlwaysScrollableScrollPhysics()
+                        : const NeverScrollableScrollPhysics(),
                 itemCount: emails.length,
                 itemBuilder: (context, index) {
                   final email = emails[index];
@@ -150,61 +159,80 @@ class _EmailSeccionState extends ConsumerState<EmailSeccion> {
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
-                        Icon(Icons.email, color: icono, size: isDesktop ? 18 : 16),
+                        Icon(
+                          Icons.email,
+                          color: icono,
+                          size: isDesktop ? 18 : 16,
+                        ),
                         const SizedBox(width: 5),
                         Expanded(
                           child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 1, vertical: 7),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 1,
+                              vertical: 7,
+                            ),
                             child: Row(
-  children: [
-    Expanded(
-      child: GestureDetector(
-        onTap: () async {
-          final emailAddress = email.email;
-          final gmailUrl = Uri.parse('googlegmail://co?to=$emailAddress');
-          if (await canLaunchUrl(gmailUrl)) {
-            await launchUrl(gmailUrl);
-            return;
-          }
-          final gmailWeb = Uri.parse('https://mail.google.com/mail/?view=cm&to=$emailAddress');
-          if (await canLaunchUrl(gmailWeb)) {
-            await launchUrl(gmailWeb, mode: LaunchMode.externalApplication);
-            return;
-          }
-          final mailtoUri = Uri(
-            scheme: 'mailto',
-            path: emailAddress,
-          );
-          if (await canLaunchUrl(mailtoUri)) {
-            await launchUrl(mailtoUri);
-          }
-        },
-        child: autoText(
-          email.email,
-          TextStyle(
-            fontSize: isDesktop ? 16 : 15,
-            color: textoPrincipal,
-            fontWeight: FontWeight.w600,
-            fontFamily: 'Montserrat',
-            letterSpacing: 0.1,
-            decoration: TextDecoration.underline,
-          ),
-          maxLines: 1,
-        ),
-      ),
-    ),
-    IconButton(
-      icon: const Icon(Icons.copy, size: 18),
-      tooltip: 'Copiar',
-      onPressed: () async {
-        await Clipboard.setData(ClipboardData(text: email.email));
-        if (context.mounted) {
-  AppSnackbarCustom.showSuccess(context, 'Email copiado');
-}
-      },
-    ),
-  ],
-),
+                              children: [
+                                Expanded(
+                                  child: GestureDetector(
+                                    onTap: () async {
+                                      final emailAddress = email.email;
+                                      final gmailUrl = Uri.parse(
+                                        'googlegmail://co?to=$emailAddress',
+                                      );
+                                      if (await canLaunchUrl(gmailUrl)) {
+                                        await launchUrl(gmailUrl);
+                                        return;
+                                      }
+                                      final gmailWeb = Uri.parse(
+                                        'https://mail.google.com/mail/?view=cm&to=$emailAddress',
+                                      );
+                                      if (await canLaunchUrl(gmailWeb)) {
+                                        await launchUrl(
+                                          gmailWeb,
+                                          mode: LaunchMode.externalApplication,
+                                        );
+                                        return;
+                                      }
+                                      final mailtoUri = Uri(
+                                        scheme: 'mailto',
+                                        path: emailAddress,
+                                      );
+                                      if (await canLaunchUrl(mailtoUri)) {
+                                        await launchUrl(mailtoUri);
+                                      }
+                                    },
+                                    child: autoText(
+                                      email.email,
+                                      TextStyle(
+                                        fontSize: isDesktop ? 16 : 15,
+                                        color: textoPrincipal,
+                                        fontWeight: FontWeight.w600,
+                                        fontFamily: 'Montserrat',
+                                        letterSpacing: 0.1,
+                                        decoration: TextDecoration.underline,
+                                      ),
+                                      maxLines: 1,
+                                    ),
+                                  ),
+                                ),
+                                IconButton(
+                                  icon: const Icon(Icons.copy, size: 18),
+                                  tooltip: 'Copiar',
+                                  onPressed: () async {
+                                    await Clipboard.setData(
+                                      ClipboardData(text: email.email),
+                                    );
+                                    if (context.mounted) {
+                                      AppSnackbarCustom.showSuccess(
+                                        context,
+                                        'Email copiado',
+                                      );
+                                    }
+                                  },
+                                ),
+                              ],
+                            ),
                           ),
                         ),
                         if (widget.habilitarEdicion) ...[
@@ -212,26 +240,43 @@ class _EmailSeccionState extends ConsumerState<EmailSeccion> {
                             IconButton(
                               icon: Icon(Icons.edit, color: icono),
                               tooltip: 'Editar',
-                              onPressed: () => _mostrarDialogoEditarEmail(context, ref, email),
+                              onPressed:
+                                  () => _mostrarDialogoEditarEmail(
+                                    context,
+                                    ref,
+                                    email,
+                                  ),
                             ),
                           if (widget.selectedOperation['email'] == 'eliminar')
                             IconButton(
                               icon: const Icon(Icons.delete, color: Colors.red),
                               tooltip: 'Eliminar',
-                              onPressed: () => ConfirmDialog.show(
-                                context,
-                                title: 'Eliminar Email',
-                                content: '¿Está seguro que desea eliminar este Email?',
-                                confirmText: 'Eliminar',
-                                cancelText: 'Cancelar',
-                                confirmColor: Colors.red,
-                              ).then((confirmed) async {
-                                if (confirmed == true && context.mounted) {
-                                  await ref.read(eliminarEmailProvider(email.codEmail).future);
-                                  final _ = await ref.refresh(emailProvider(widget.codPersona).future);
-                                  if (context.mounted) AppSnackbarCustom.showDelete(context, 'Email eliminado correctamente');
-                                }
-                              }),
+                              onPressed:
+                                  () => ConfirmDialog.show(
+                                    context,
+                                    title: 'Eliminar Email',
+                                    content:
+                                        '¿Está seguro que desea eliminar este Email?',
+                                    confirmText: 'Eliminar',
+                                    cancelText: 'Cancelar',
+                                    confirmColor: Colors.red,
+                                  ).then((confirmed) async {
+                                    if (confirmed == true && context.mounted) {
+                                      await ref.read(
+                                        eliminarEmailProvider(
+                                          email.codEmail,
+                                        ).future,
+                                      );
+                                      final _ = await ref.refresh(
+                                        emailProvider(widget.codPersona).future,
+                                      );
+                                      if (context.mounted)
+                                        AppSnackbarCustom.showDelete(
+                                          context,
+                                          'Email eliminado correctamente',
+                                        );
+                                    }
+                                  }),
                             ),
                         ],
                       ],
@@ -241,116 +286,183 @@ class _EmailSeccionState extends ConsumerState<EmailSeccion> {
               );
 
               return showScroll
-                  ? SizedBox(
-                      height: (4 * 48.0) + 16,
-                      child: emailList,
-                    )
+                  ? SizedBox(height: (4 * 48.0) + 16, child: emailList)
                   : Column(
-                      children: emails.map((email) => Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 8),
-                        child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [
-                            Icon(Icons.email, color: icono, size: isDesktop ? 18 : 16),
-                            const SizedBox(width: 5),
-                            Expanded(
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 1, vertical: 7),
+                    children:
+                        emails
+                            .map(
+                              (email) => Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 8,
+                                ),
                                 child: Row(
-  children: [
-    Expanded(
-      child: GestureDetector(
-        onTap: () async {
-          final emailAddress = email.email;
-          final gmailUrl = Uri.parse('googlegmail://co?to=$emailAddress');
-          if (await canLaunchUrl(gmailUrl)) {
-            await launchUrl(gmailUrl);
-            return;
-          }
-          final gmailWeb = Uri.parse('https://mail.google.com/mail/?view=cm&to=$emailAddress');
-          if (await canLaunchUrl(gmailWeb)) {
-            await launchUrl(gmailWeb, mode: LaunchMode.externalApplication);
-            return;
-          }
-          final mailtoUri = Uri(
-            scheme: 'mailto',
-            path: emailAddress,
-          );
-          if (await canLaunchUrl(mailtoUri)) {
-            await launchUrl(mailtoUri);
-          }
-        },
-        child: autoText(
-          email.email,
-          TextStyle(
-            fontSize: isDesktop ? 16 : 15,
-            color: textoPrincipal,
-            fontWeight: FontWeight.w600,
-            fontFamily: 'Montserrat',
-            letterSpacing: 0.1,
-            decoration: TextDecoration.underline,
-          ),
-          maxLines: 1,
-        ),
-      ),
-    ),
-    IconButton(
-      icon: const Icon(Icons.copy, size: 18),
-      tooltip: 'Copiar',
-      onPressed: () async {
-        await Clipboard.setData(ClipboardData(text: email.email));
-       if (context.mounted) {
-  AppSnackbarCustom.showSuccess(context, 'Email copiado');
-}
-      },
-    ),
-  ],
-),
+                                  crossAxisAlignment: CrossAxisAlignment.center,
+                                  children: [
+                                    Icon(
+                                      Icons.email,
+                                      color: icono,
+                                      size: isDesktop ? 18 : 16,
+                                    ),
+                                    const SizedBox(width: 5),
+                                    Expanded(
+                                      child: Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 1,
+                                          vertical: 7,
+                                        ),
+                                        child: Row(
+                                          children: [
+                                            Expanded(
+                                              child: GestureDetector(
+                                                onTap: () async {
+                                                  final emailAddress =
+                                                      email.email;
+                                                  final gmailUrl = Uri.parse(
+                                                    'googlegmail://co?to=$emailAddress',
+                                                  );
+                                                  if (await canLaunchUrl(
+                                                    gmailUrl,
+                                                  )) {
+                                                    await launchUrl(gmailUrl);
+                                                    return;
+                                                  }
+                                                  final gmailWeb = Uri.parse(
+                                                    'https://mail.google.com/mail/?view=cm&to=$emailAddress',
+                                                  );
+                                                  if (await canLaunchUrl(
+                                                    gmailWeb,
+                                                  )) {
+                                                    await launchUrl(
+                                                      gmailWeb,
+                                                      mode:
+                                                          LaunchMode
+                                                              .externalApplication,
+                                                    );
+                                                    return;
+                                                  }
+                                                  final mailtoUri = Uri(
+                                                    scheme: 'mailto',
+                                                    path: emailAddress,
+                                                  );
+                                                  if (await canLaunchUrl(
+                                                    mailtoUri,
+                                                  )) {
+                                                    await launchUrl(mailtoUri);
+                                                  }
+                                                },
+                                                child: autoText(
+                                                  email.email,
+                                                  TextStyle(
+                                                    fontSize:
+                                                        isDesktop ? 16 : 15,
+                                                    color: textoPrincipal,
+                                                    fontWeight: FontWeight.w600,
+                                                    fontFamily: 'Montserrat',
+                                                    letterSpacing: 0.1,
+                                                    decoration:
+                                                        TextDecoration
+                                                            .underline,
+                                                  ),
+                                                  maxLines: 1,
+                                                ),
+                                              ),
+                                            ),
+                                            IconButton(
+                                              icon: const Icon(
+                                                Icons.copy,
+                                                size: 18,
+                                              ),
+                                              tooltip: 'Copiar',
+                                              onPressed: () async {
+                                                await Clipboard.setData(
+                                                  ClipboardData(
+                                                    text: email.email,
+                                                  ),
+                                                );
+                                                if (context.mounted) {
+                                                  AppSnackbarCustom.showSuccess(
+                                                    context,
+                                                    'Email copiado',
+                                                  );
+                                                }
+                                              },
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                    if (widget.habilitarEdicion) ...[
+                                      if (widget.selectedOperation['email'] ==
+                                          'editar')
+                                        IconButton(
+                                          icon: Icon(Icons.edit, color: icono),
+                                          tooltip: 'Editar',
+                                          onPressed:
+                                              () => _mostrarDialogoEditarEmail(
+                                                context,
+                                                ref,
+                                                email,
+                                              ),
+                                        ),
+                                      if (widget.selectedOperation['email'] ==
+                                          'eliminar')
+                                        IconButton(
+                                          icon: const Icon(
+                                            Icons.delete,
+                                            color: Colors.red,
+                                          ),
+                                          tooltip: 'Eliminar',
+                                          onPressed:
+                                              () => ConfirmDialog.show(
+                                                context,
+                                                title: 'Eliminar Email',
+                                                content:
+                                                    '¿Está seguro que desea eliminar este Email?',
+                                                confirmText: 'Eliminar',
+                                                cancelText: 'Cancelar',
+                                                confirmColor: Colors.red,
+                                              ).then((confirmed) async {
+                                                if (confirmed == true &&
+                                                    context.mounted) {
+                                                  await ref.read(
+                                                    eliminarEmailProvider(
+                                                      email.codEmail,
+                                                    ).future,
+                                                  );
+                                                  final _ = await ref.refresh(
+                                                    emailProvider(
+                                                      widget.codPersona,
+                                                    ).future,
+                                                  );
+                                                  if (context.mounted)
+                                                    AppSnackbarCustom.showDelete(
+                                                      context,
+                                                      'Email eliminado correctamente',
+                                                    );
+                                                }
+                                              }),
+                                        ),
+                                    ],
+                                  ],
+                                ),
                               ),
-                            ),
-                            if (widget.habilitarEdicion) ...[
-                              if (widget.selectedOperation['email'] == 'editar')
-                                IconButton(
-                                  icon: Icon(Icons.edit, color: icono),
-                                  tooltip: 'Editar',
-                                  onPressed: () => _mostrarDialogoEditarEmail(context, ref, email),
-                                ),
-                              if (widget.selectedOperation['email'] == 'eliminar')
-                                IconButton(
-                                  icon: const Icon(Icons.delete, color: Colors.red),
-                                  tooltip: 'Eliminar',
-                                  onPressed: () => ConfirmDialog.show(
-                                    context,
-                                    title: 'Eliminar Email',
-                                    content: '¿Está seguro que desea eliminar este Email?',
-                                    confirmText: 'Eliminar',
-                                    cancelText: 'Cancelar',
-                                    confirmColor: Colors.red,
-                                  ).then((confirmed) async {
-                                    if (confirmed == true && context.mounted) {
-                                      await ref.read(eliminarEmailProvider(email.codEmail).future);
-                                      final _ = await ref.refresh(emailProvider(widget.codPersona).future);
-                                      if (context.mounted) AppSnackbarCustom.showDelete(context, 'Email eliminado correctamente');
-                                    }
-                                  }),
-                                ),
-                            ],
-                          ],
-                        ),
-                      )).toList(),
-                    );
+                            )
+                            .toList(),
+                  );
             },
-            loading: () => const Padding(
-              padding: EdgeInsets.all(16),
-              child: Center(child: CircularProgressIndicator()),
-            ),
-            error: (error, _) => Padding(
-              padding: const EdgeInsets.all(16),
-              child: Text(
-                'Error al cargar los correos: $error',
-                style: const TextStyle(color: Colors.red),
-              ),
-            ),
+            loading:
+                () => const Padding(
+                  padding: EdgeInsets.all(16),
+                  child: Center(child: CircularProgressIndicator()),
+                ),
+            error:
+                (error, _) => Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Text(
+                    'Error al cargar los correos: $error',
+                    style: const TextStyle(color: Colors.red),
+                  ),
+                ),
           ),
         ],
       ),
@@ -371,7 +483,6 @@ class _EmailSeccionState extends ConsumerState<EmailSeccion> {
                 try {
                   await ref.read(registrarEmailProvider(email).future);
                   ref.invalidate(emailProvider(widget.codPersona));
-                  
                 } catch (e) {
                   if (!context.mounted) return;
                   ScaffoldMessenger.of(context).showSnackBar(
@@ -385,56 +496,79 @@ class _EmailSeccionState extends ConsumerState<EmailSeccion> {
           ),
     );
   }
-  void _mostrarDialogoEditarEmail(BuildContext context, WidgetRef ref, EmailEntity email) {
+
+  void _mostrarDialogoEditarEmail(
+    BuildContext context,
+    WidgetRef ref,
+    EmailEntity email,
+  ) {
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) => Dialog(
-        child: FormularioEmail(
-          title: 'Editar Email',
-          email: email,
-          codPersona: widget.codPersona,
-          isEditing: true,
-          onSave: (email) async {
-            try {
-              await ref.read(registrarEmailProvider(email).future);
-              ref.invalidate(emailProvider(widget.codPersona));
-            } catch (e) {
-              if (!context.mounted) return;
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('Error al actualizar el email: $e')),
-              );
-            }
-          },
-          onCancel: () => Navigator.of(context).pop(),
-        ),
-      ),
+      builder:
+          (context) => Dialog(
+            child: FormularioEmail(
+              title: 'Editar Email',
+              email: email,
+              codPersona: widget.codPersona,
+              isEditing: true,
+              onSave: (email) async {
+                try {
+                  await ref.read(registrarEmailProvider(email).future);
+                  ref.invalidate(emailProvider(widget.codPersona));
+                } catch (e) {
+                  if (!context.mounted) return;
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Error al actualizar el email: $e')),
+                  );
+                }
+              },
+              onCancel: () => Navigator.of(context).pop(),
+            ),
+          ),
     );
   }
-  Future<void> _advertirSiSinEmails(WidgetRef ref, List<EmailEntity> emails) async {
-  final codEmpleadoActual = await ref.read(userProvider.notifier).getCodEmpleado();
-  final codPersonaActual = await ref.read(empObtenerDatosEmpleados(codEmpleadoActual).future);
 
-  if (widget.codPersona == codPersonaActual) {
-    String? mensaje;
-    Color color = Colors.red;
-    IconData icon = Icons.warning;
+  Future<void> _advertirSiSinEmails(
+    WidgetRef ref,
+    List<EmailEntity> emails,
+  ) async {
+    final codEmpleadoActual =
+        await ref.read(userProvider.notifier).getCodEmpleado();
+    final codPersonaActual = await ref.read(
+      empObtenerDatosEmpleados(codEmpleadoActual).future,
+    );
 
-    if (emails.isEmpty) {
-      mensaje = 'Por favor, registre un email.';
-    } else if (emails.length < 2) {
-      mensaje = 'Debe registrar al menos dos emails.';
-      color = Colors.orange;
-    }
+    if (widget.codPersona == codPersonaActual) {
+      String? mensaje;
+      Color color = Colors.red;
+      IconData icon = Icons.warning;
 
-    if (mensaje != null) {
-      if (!_advertenciaMostrada || _bannerMensaje != mensaje) {
-        setState(() {
-          _advertenciaMostrada = true;
-          _bannerMensaje = mensaje;
-          _bannerColor = color;
-          _bannerIcon = icon;
-        });
+      if (emails.isEmpty) {
+        mensaje = 'Por favor, registre un email.';
+      } else if (emails.length < 2) {
+        mensaje = 'Debe registrar al menos dos emails.';
+        color = Colors.orange;
+      }
+
+      if (mensaje != null) {
+        if (!_advertenciaMostrada || _bannerMensaje != mensaje) {
+          setState(() {
+            _advertenciaMostrada = true;
+            _bannerMensaje = mensaje;
+            _bannerColor = color;
+            _bannerIcon = icon;
+          });
+        }
+      } else {
+        if (_advertenciaMostrada || _bannerMensaje != null) {
+          setState(() {
+            _advertenciaMostrada = false;
+            _bannerMensaje = null;
+            _bannerColor = null;
+            _bannerIcon = null;
+          });
+        }
       }
     } else {
       if (_advertenciaMostrada || _bannerMensaje != null) {
@@ -446,15 +580,5 @@ class _EmailSeccionState extends ConsumerState<EmailSeccion> {
         });
       }
     }
-  } else {
-    if (_advertenciaMostrada || _bannerMensaje != null) {
-      setState(() {
-        _advertenciaMostrada = false;
-        _bannerMensaje = null;
-        _bannerColor = null;
-        _bannerIcon = null;
-      });
-    }
   }
-}
 }

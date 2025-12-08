@@ -24,7 +24,7 @@ class EntregaCardView extends StatelessWidget {
           child: Text(
             'No hay entregas pendientes',
             style: TextStyle(
-              color: colorScheme.onSurface.withOpacity(0.6),
+              color: colorScheme.onSurface.withValues(alpha: 0.6),
               fontSize: 16,
             ),
           ),
@@ -44,34 +44,40 @@ class EntregaCardView extends StatelessWidget {
         // Verificar estados de entrega
         final todosEntregados = entregas.every((e) => e.fueEntregado == 1);
         final algunoEntregado = entregas.any((e) => e.fueEntregado == 1);
-        
+
         // Determinar estado visual
-        final estadoColor = todosEntregados
-            ? colorScheme.primary
-            : algunoEntregado
+        final estadoColor =
+            todosEntregados
+                ? colorScheme.primary
+                : algunoEntregado
                 ? colorScheme.secondary
                 : colorScheme.outline;
-        
-        final estadoTexto = todosEntregados
-            ? 'Entregado'
-            : algunoEntregado
+
+        final estadoTexto =
+            todosEntregados
+                ? 'Entregado'
+                : algunoEntregado
                 ? 'Parcial'
                 : 'Pendiente';
-                
+
         // Obtener dirección
-        final direccion = entrega.addressEntregaMat.isNotEmpty
-            ? entrega.addressEntregaMat
-            : entrega.addressEntregaFac;
+        final direccion =
+            entrega.addressEntregaMat.isNotEmpty
+                ? entrega.addressEntregaMat
+                : entrega.addressEntregaFac;
 
         return Card(
           margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           elevation: 2,
-          surfaceTintColor: colorScheme.surfaceTint.withOpacity(0.1),
+          surfaceTintColor: colorScheme.surfaceTint.withValues(alpha: 0.1),
           shadowColor: Colors.black26,
           child: Theme(
             data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
             child: ExpansionTile(
-              tilePadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              tilePadding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 8,
+              ),
               childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
               title: Row(
                 children: [
@@ -134,14 +140,14 @@ class EntregaCardView extends StatelessWidget {
                     children: [
                       // Estado
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
                         decoration: BoxDecoration(
-                          color: estadoColor.withOpacity(0.2),
+                          color: estadoColor.withValues(alpha: 0.2),
                           borderRadius: BorderRadius.circular(12),
-                          border: Border.all(
-                            color: estadoColor,
-                            width: 1,
-                          ),
+                          border: Border.all(color: estadoColor, width: 1),
                         ),
                         child: Text(
                           estadoTexto,
@@ -155,9 +161,14 @@ class EntregaCardView extends StatelessWidget {
                       const SizedBox(width: 8),
                       // Fecha
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
                         decoration: BoxDecoration(
-                          color: colorScheme.surfaceContainerHighest.withOpacity(0.3),
+                          color: colorScheme.surfaceContainerHighest.withValues(
+                            alpha: 0.3,
+                          ),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Text(
@@ -171,9 +182,14 @@ class EntregaCardView extends StatelessWidget {
                       const Spacer(),
                       // Contador de productos
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
                         decoration: BoxDecoration(
-                          color: colorScheme.primaryContainer.withOpacity(0.3),
+                          color: colorScheme.primaryContainer.withValues(
+                            alpha: 0.3,
+                          ),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Row(
@@ -209,18 +225,25 @@ class EntregaCardView extends StatelessWidget {
                   itemBuilder: (context, productIndex) {
                     final producto = entregas[productIndex];
                     final entregado = producto.fueEntregado == 1;
-                    
+
                     return Container(
                       margin: const EdgeInsets.only(bottom: 8),
                       decoration: BoxDecoration(
-                        color: entregado
-                            ? colorScheme.primaryContainer.withOpacity(0.1)
-                            : colorScheme.surfaceContainerHighest.withOpacity(0.1),
+                        color:
+                            entregado
+                                ? colorScheme.primaryContainer.withValues(
+                                  alpha: 0.1,
+                                )
+                                : colorScheme.surfaceContainerHighest
+                                    .withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(8),
                         border: Border.all(
-                          color: entregado
-                              ? colorScheme.primary.withOpacity(0.3)
-                              : colorScheme.outlineVariant.withOpacity(0.5),
+                          color:
+                              entregado
+                                  ? colorScheme.primary.withValues(alpha: 0.3)
+                                  : colorScheme.outlineVariant.withValues(
+                                    alpha: 0.5,
+                                  ),
                         ),
                       ),
                       child: Padding(
@@ -233,9 +256,14 @@ class EntregaCardView extends StatelessWidget {
                               children: [
                                 // Código del producto
                                 Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 4,
+                                  ),
                                   decoration: BoxDecoration(
-                                    color: colorScheme.primary.withOpacity(0.1),
+                                    color: colorScheme.primary.withValues(
+                                      alpha: 0.1,
+                                    ),
                                     borderRadius: BorderRadius.circular(4),
                                   ),
                                   child: Text(
@@ -303,25 +331,35 @@ class EntregaCardView extends StatelessWidget {
                                 ),
                                 // Estado
                                 Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 4,
+                                  ),
                                   decoration: BoxDecoration(
-                                    color: entregado
-                                        ? colorScheme.primary.withOpacity(0.1)
-                                        : colorScheme.outline.withOpacity(0.1),
+                                    color:
+                                        entregado
+                                            ? colorScheme.primary.withValues(
+                                              alpha: 0.1,
+                                            )
+                                            : colorScheme.outline.withValues(
+                                              alpha: 0.1,
+                                            ),
                                     borderRadius: BorderRadius.circular(12),
                                     border: Border.all(
-                                      color: entregado
-                                          ? colorScheme.primary
-                                          : colorScheme.outline,
+                                      color:
+                                          entregado
+                                              ? colorScheme.primary
+                                              : colorScheme.outline,
                                       width: 1,
                                     ),
                                   ),
                                   child: Text(
                                     entregado ? 'Entregado' : 'Pendiente',
                                     style: TextStyle(
-                                      color: entregado
-                                          ? colorScheme.primary
-                                          : colorScheme.outline,
+                                      color:
+                                          entregado
+                                              ? colorScheme.primary
+                                              : colorScheme.outline,
                                       fontWeight: FontWeight.bold,
                                       fontSize: 12,
                                     ),
@@ -335,7 +373,7 @@ class EntregaCardView extends StatelessWidget {
                     );
                   },
                 ),
-                
+
                 // Observaciones si existen
                 if (entregas.first.obsF.isNotEmpty)
                   Padding(
@@ -365,10 +403,14 @@ class EntregaCardView extends StatelessWidget {
                           width: double.infinity,
                           padding: const EdgeInsets.all(12),
                           decoration: BoxDecoration(
-                            color: colorScheme.secondaryContainer.withOpacity(0.2),
+                            color: colorScheme.secondaryContainer.withValues(
+                              alpha: 0.2,
+                            ),
                             borderRadius: BorderRadius.circular(8),
                             border: Border.all(
-                              color: colorScheme.secondary.withOpacity(0.3),
+                              color: colorScheme.secondary.withValues(
+                                alpha: 0.3,
+                              ),
                             ),
                           ),
                           child: Text(entregas.first.obsF),
@@ -376,7 +418,7 @@ class EntregaCardView extends StatelessWidget {
                       ],
                     ),
                   ),
-                
+
                 // Botón de acción si hay entregas pendientes
                 if (!todosEntregados && rutaIniciada)
                   Padding(

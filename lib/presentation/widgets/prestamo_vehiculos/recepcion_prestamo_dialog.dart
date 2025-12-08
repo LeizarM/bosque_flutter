@@ -10,10 +10,12 @@ class RecepcionPrestamoDialog extends ConsumerStatefulWidget {
   const RecepcionPrestamoDialog({super.key, required this.solicitud});
 
   @override
-  ConsumerState<RecepcionPrestamoDialog> createState() => _RecepcionPrestamoDialogState();
+  ConsumerState<RecepcionPrestamoDialog> createState() =>
+      _RecepcionPrestamoDialogState();
 }
 
-class _RecepcionPrestamoDialogState extends ConsumerState<RecepcionPrestamoDialog> {
+class _RecepcionPrestamoDialogState
+    extends ConsumerState<RecepcionPrestamoDialog> {
   final _formKey = GlobalKey<FormState>();
   final _kmRecepcionController = TextEditingController();
 
@@ -24,7 +26,8 @@ class _RecepcionPrestamoDialogState extends ConsumerState<RecepcionPrestamoDialo
   List<String> _estadoTrasera = [];
   List<String> _estadoCapote = [];
 
-  List<EstadoChoferEntity> _estadosDisponibles = []; // Cambiar a entidades completas
+  List<EstadoChoferEntity> _estadosDisponibles =
+      []; // Cambiar a entidades completas
   bool _loadingEstados = false;
   String? _errorEstados;
 
@@ -77,7 +80,8 @@ class _RecepcionPrestamoDialogState extends ConsumerState<RecepcionPrestamoDialo
 
     final recepcion = {
       "idPrestamo": widget.solicitud.idPrestamo,
-      "kilometrajeRecepcion": double.tryParse(_kmRecepcionController.text) ?? 0.0,
+      "kilometrajeRecepcion":
+          double.tryParse(_kmRecepcionController.text) ?? 0.0,
       "nivelCombustibleRecepcion": _nivelCombustible.round(),
       // Enviar IDs de estado en lugar de labels
       "estadoLateralRecepcionAux": joinEstadosIds(_estadoLaterales),
@@ -91,22 +95,28 @@ class _RecepcionPrestamoDialogState extends ConsumerState<RecepcionPrestamoDialo
     Navigator.of(context).pop(recepcion);
   }
 
-  Future<void> _showEstadosDialog(List<String> selected, ValueChanged<List<String>> onChanged) async {
+  Future<void> _showEstadosDialog(
+    List<String> selected,
+    ValueChanged<List<String>> onChanged,
+  ) async {
     List<String> tempSelected = List<String>.from(selected);
-    
+
     final result = await showDialog<List<String>>(
       context: context,
       builder: (context) {
         return StatefulBuilder(
           builder: (context, setStateDialog) {
             return AlertDialog(
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(24),
+              ),
               title: const Text('Seleccionar Estados'),
-              content: _loadingEstados
-                  ? const Center(child: CircularProgressIndicator())
-                  : _errorEstados != null
-                    ? Text(_errorEstados!)
-                    : SizedBox(
+              content:
+                  _loadingEstados
+                      ? const Center(child: CircularProgressIndicator())
+                      : _errorEstados != null
+                      ? Text(_errorEstados!)
+                      : SizedBox(
                         width: double.maxFinite,
                         height: 300,
                         child: ListView.builder(
@@ -114,8 +124,10 @@ class _RecepcionPrestamoDialogState extends ConsumerState<RecepcionPrestamoDialo
                           itemCount: _estadosDisponibles.length,
                           itemBuilder: (context, index) {
                             final estado = _estadosDisponibles[index];
-                            final isSelected = tempSelected.contains(estado.estado);
-                            
+                            final isSelected = tempSelected.contains(
+                              estado.estado,
+                            );
+
                             return CheckboxListTile(
                               value: isSelected,
                               title: Text(estado.estado),
@@ -149,39 +161,59 @@ class _RecepcionPrestamoDialogState extends ConsumerState<RecepcionPrestamoDialo
         );
       },
     );
-    
+
     if (result != null) {
       onChanged(result);
     }
   }
 
-  Widget _buildEstadoSelector(String label, List<String> selected, ValueChanged<List<String>> onChanged) {
+  Widget _buildEstadoSelector(
+    String label,
+    List<String> selected,
+    ValueChanged<List<String>> onChanged,
+  ) {
     return Card(
       margin: const EdgeInsets.symmetric(vertical: 8),
       child: ListTile(
         title: Text(label),
-        subtitle: selected.isEmpty
-            ? Text('Seleccionar $label')
-            : Wrap(
-                spacing: 4,
-                runSpacing: 2,
-                children: selected.map((e) => Chip(
-                  label: Text(e, style: const TextStyle(fontSize: 11)),
-                  visualDensity: VisualDensity.compact,
-                  materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                  padding: const EdgeInsets.symmetric(horizontal: 4),
-                  backgroundColor: Theme.of(context).colorScheme.primaryContainer,
-                )).toList(),
-              ),
+        subtitle:
+            selected.isEmpty
+                ? Text('Seleccionar $label')
+                : Wrap(
+                  spacing: 4,
+                  runSpacing: 2,
+                  children:
+                      selected
+                          .map(
+                            (e) => Chip(
+                              label: Text(
+                                e,
+                                style: const TextStyle(fontSize: 11),
+                              ),
+                              visualDensity: VisualDensity.compact,
+                              materialTapTargetSize:
+                                  MaterialTapTargetSize.shrinkWrap,
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 4,
+                              ),
+                              backgroundColor:
+                                  Theme.of(
+                                    context,
+                                  ).colorScheme.primaryContainer,
+                            ),
+                          )
+                          .toList(),
+                ),
         trailing: const Icon(Icons.chevron_right),
-        onTap: _loadingEstados
-            ? null
-            : () async {
-                await _showEstadosDialog(selected, (newSelected) {
-                  onChanged(newSelected);
-                  setState(() {});
-                });
-              },
+        onTap:
+            _loadingEstados
+                ? null
+                : () async {
+                  await _showEstadosDialog(selected, (newSelected) {
+                    onChanged(newSelected);
+                    setState(() {});
+                  });
+                },
       ),
     );
   }
@@ -213,14 +245,18 @@ class _RecepcionPrestamoDialogState extends ConsumerState<RecepcionPrestamoDialo
                 ],
               ),
               const SizedBox(height: 16),
-              
+
               // Información del préstamo
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: colorScheme.surfaceContainerHighest.withOpacity(0.3),
+                  color: colorScheme.surfaceContainerHighest.withValues(
+                    alpha: 0.3,
+                  ),
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: colorScheme.outline.withOpacity(0.2)),
+                  border: Border.all(
+                    color: colorScheme.outline.withValues(alpha: 0.2),
+                  ),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -240,9 +276,9 @@ class _RecepcionPrestamoDialogState extends ConsumerState<RecepcionPrestamoDialo
                   ],
                 ),
               ),
-              
+
               const SizedBox(height: 16),
-              
+
               TextFormField(
                 controller: _kmRecepcionController,
                 keyboardType: TextInputType.number,
@@ -251,15 +287,22 @@ class _RecepcionPrestamoDialogState extends ConsumerState<RecepcionPrestamoDialo
                   border: OutlineInputBorder(),
                   prefixIcon: Icon(Icons.speed),
                 ),
-                validator: (v) => v == null || v.isEmpty ? 'Ingrese el kilometraje' : null,
+                validator:
+                    (v) =>
+                        v == null || v.isEmpty
+                            ? 'Ingrese el kilometraje'
+                            : null,
               ),
               const SizedBox(height: 16),
-              
+
               Align(
                 alignment: Alignment.centerLeft,
                 child: Text(
                   'Nivel de Combustible (%)',
-                  style: TextStyle(fontWeight: FontWeight.w500, color: colorScheme.primary),
+                  style: TextStyle(
+                    fontWeight: FontWeight.w500,
+                    color: colorScheme.primary,
+                  ),
                 ),
               ),
               Row(
@@ -292,21 +335,44 @@ class _RecepcionPrestamoDialogState extends ConsumerState<RecepcionPrestamoDialo
                 ],
               ),
               const SizedBox(height: 16),
-              
+
               Align(
                 alignment: Alignment.centerLeft,
                 child: Text(
                   'Estado de la Carrocería en Recepción',
-                  style: TextStyle(fontWeight: FontWeight.bold, color: colorScheme.primary),
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: colorScheme.primary,
+                  ),
                 ),
               ),
-              _buildEstadoSelector('Estado Lateral', _estadoLaterales, (v) => setState(() => _estadoLaterales = v)),
-              _buildEstadoSelector('Estado Interior', _estadoInterior, (v) => setState(() => _estadoInterior = v)),
-              _buildEstadoSelector('Estado Delantera', _estadoDelantera, (v) => setState(() => _estadoDelantera = v)),
-              _buildEstadoSelector('Estado Trasera', _estadoTrasera, (v) => setState(() => _estadoTrasera = v)),
-              _buildEstadoSelector('Estado Capote', _estadoCapote, (v) => setState(() => _estadoCapote = v)),
+              _buildEstadoSelector(
+                'Estado Lateral',
+                _estadoLaterales,
+                (v) => setState(() => _estadoLaterales = v),
+              ),
+              _buildEstadoSelector(
+                'Estado Interior',
+                _estadoInterior,
+                (v) => setState(() => _estadoInterior = v),
+              ),
+              _buildEstadoSelector(
+                'Estado Delantera',
+                _estadoDelantera,
+                (v) => setState(() => _estadoDelantera = v),
+              ),
+              _buildEstadoSelector(
+                'Estado Trasera',
+                _estadoTrasera,
+                (v) => setState(() => _estadoTrasera = v),
+              ),
+              _buildEstadoSelector(
+                'Estado Capote',
+                _estadoCapote,
+                (v) => setState(() => _estadoCapote = v),
+              ),
               const SizedBox(height: 24),
-              
+
               Row(
                 children: [
                   Expanded(
@@ -349,9 +415,7 @@ class _RecepcionPrestamoDialogState extends ConsumerState<RecepcionPrestamoDialo
               style: const TextStyle(fontWeight: FontWeight.w500),
             ),
           ),
-          Expanded(
-            child: Text(value),
-          ),
+          Expanded(child: Text(value)),
         ],
       ),
     );

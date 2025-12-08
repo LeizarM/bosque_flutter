@@ -993,7 +993,9 @@ class _ControlCombustibleScreenState
       decoration: BoxDecoration(
         color: colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: colorScheme.outlineVariant.withOpacity(0.5)),
+        border: Border.all(
+          color: colorScheme.outlineVariant.withValues(alpha: 0.5),
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1029,7 +1031,7 @@ class _ControlCombustibleScreenState
                                 ? LinearGradient(
                                   colors: [
                                     colorScheme.primary,
-                                    colorScheme.primary.withOpacity(0.8),
+                                    colorScheme.primary.withValues(alpha: 0.8),
                                   ],
                                   begin: Alignment.topLeft,
                                   end: Alignment.bottomRight,
@@ -1041,7 +1043,7 @@ class _ControlCombustibleScreenState
                           color:
                               isSelected
                                   ? colorScheme.primary
-                                  : colorScheme.outline.withOpacity(0.3),
+                                  : colorScheme.outline.withValues(alpha: 0.3),
                           width: isSelected ? 2 : 1,
                         ),
                         boxShadow:
@@ -1058,7 +1060,7 @@ class _ControlCombustibleScreenState
                                 ]
                                 : [
                                   BoxShadow(
-                                    color: Colors.black.withOpacity(0.05),
+                                    color: Colors.black.withValues(alpha: 0.05),
                                     blurRadius: 4,
                                     offset: const Offset(0, 2),
                                   ),
@@ -1072,9 +1074,12 @@ class _ControlCombustibleScreenState
                             decoration: BoxDecoration(
                               color:
                                   isSelected
-                                      ? colorScheme.onPrimary.withOpacity(0.2)
-                                      : colorScheme.primaryContainer
-                                          .withOpacity(0.3),
+                                      ? colorScheme.onPrimary.withValues(
+                                        alpha: 0.2,
+                                      )
+                                      : colorScheme.primaryContainer.withValues(
+                                        alpha: 0.3,
+                                      ),
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: Icon(
@@ -1313,7 +1318,7 @@ class _BidonListWidget extends ConsumerWidget {
                             decoration: BoxDecoration(
                               color: Theme.of(
                                 context,
-                              ).primaryColor.withOpacity(0.1),
+                              ).primaryColor.withValues(alpha: 0.1),
                               shape: BoxShape.circle,
                             ),
                             child: Icon(

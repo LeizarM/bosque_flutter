@@ -14,10 +14,12 @@ class EditableSaldoPendienteCell extends StatefulWidget {
   });
 
   @override
-  State<EditableSaldoPendienteCell> createState() => _EditableSaldoPendienteCellState();
+  State<EditableSaldoPendienteCell> createState() =>
+      _EditableSaldoPendienteCellState();
 }
 
-class _EditableSaldoPendienteCellState extends State<EditableSaldoPendienteCell> {
+class _EditableSaldoPendienteCellState
+    extends State<EditableSaldoPendienteCell> {
   late TextEditingController _controller;
   bool _hasError = false;
   final FocusNode _focusNode = FocusNode();
@@ -28,7 +30,7 @@ class _EditableSaldoPendienteCellState extends State<EditableSaldoPendienteCell>
   void initState() {
     super.initState();
     _controller = TextEditingController(text: widget.valorActual);
-    
+
     // Agregar listeners para mejor gestión del estado de edición
     _focusNode.addListener(_onFocusChange);
   }
@@ -52,7 +54,7 @@ class _EditableSaldoPendienteCellState extends State<EditableSaldoPendienteCell>
   Widget build(BuildContext context) {
     final isDesktop = MediaQuery.of(context).size.width > 1100;
     final isMobile = MediaQuery.of(context).size.width < 600;
-    
+
     return MouseRegion(
       onEnter: (_) => setState(() => _isHovering = true),
       onExit: (_) => setState(() => _isHovering = false),
@@ -65,13 +67,16 @@ class _EditableSaldoPendienteCellState extends State<EditableSaldoPendienteCell>
             Container(
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(8),
-                boxShadow: _isEditing || _isHovering 
-                    ? [BoxShadow(
-                        color: Colors.blue.withOpacity(0.2),
-                        blurRadius: 4,
-                        offset: Offset(0, 2),
-                      )]
-                    : null,
+                boxShadow:
+                    _isEditing || _isHovering
+                        ? [
+                          BoxShadow(
+                            color: Colors.blue.withValues(alpha: 0.2),
+                            blurRadius: 4,
+                            offset: Offset(0, 2),
+                          ),
+                        ]
+                        : null,
               ),
               child: TextFormField(
                 controller: _controller,
@@ -83,26 +88,38 @@ class _EditableSaldoPendienteCellState extends State<EditableSaldoPendienteCell>
                 style: TextStyle(
                   fontWeight: _isEditing ? FontWeight.bold : FontWeight.normal,
                   fontSize: isDesktop ? 15 : (isMobile ? 13 : 14),
-                  color: _hasError 
-                      ? Colors.red.shade700 
-                      : (_isEditing ? Colors.blue.shade800 : Colors.black87),
+                  color:
+                      _hasError
+                          ? Colors.red.shade700
+                          : (_isEditing
+                              ? Colors.blue.shade800
+                              : Colors.black87),
                 ),
                 decoration: InputDecoration(
                   isDense: true,
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 10,
+                  ),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
                     borderSide: BorderSide(
-                      color: _hasError 
-                          ? Colors.red.shade400 
-                          : (_isEditing ? Colors.blue.shade400 : Colors.grey.shade400),
+                      color:
+                          _hasError
+                              ? Colors.red.shade400
+                              : (_isEditing
+                                  ? Colors.blue.shade400
+                                  : Colors.grey.shade400),
                       width: _isEditing ? 2 : 1,
                     ),
                   ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
                     borderSide: BorderSide(
-                      color: _isHovering ? Colors.blue.shade300 : Colors.grey.shade400,
+                      color:
+                          _isHovering
+                              ? Colors.blue.shade300
+                              : Colors.grey.shade400,
                     ),
                   ),
                   focusedBorder: OutlineInputBorder(
@@ -114,19 +131,24 @@ class _EditableSaldoPendienteCellState extends State<EditableSaldoPendienteCell>
                   ),
                   errorBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
-                    borderSide: BorderSide(color: Colors.red.shade400, width: 2),
+                    borderSide: BorderSide(
+                      color: Colors.red.shade400,
+                      width: 2,
+                    ),
                   ),
                   filled: true,
-                  fillColor: _isEditing 
-                      ? Colors.blue.shade50 
-                      : (_isHovering ? Colors.grey.shade50 : Colors.white),
-                  suffixIcon: _isEditing 
-                      ? Icon(
-                          Icons.edit, 
-                          size: 16, 
-                          color: Colors.blue.shade400,
-                        ) 
-                      : null,
+                  fillColor:
+                      _isEditing
+                          ? Colors.blue.shade50
+                          : (_isHovering ? Colors.grey.shade50 : Colors.white),
+                  suffixIcon:
+                      _isEditing
+                          ? Icon(
+                            Icons.edit,
+                            size: 16,
+                            color: Colors.blue.shade400,
+                          )
+                          : null,
                 ),
                 onChanged: (value) {
                   // Pasar el valor completo del campo, no solo el último caracter
@@ -150,7 +172,7 @@ class _EditableSaldoPendienteCellState extends State<EditableSaldoPendienteCell>
                 child: Text(
                   'No puede ser mayor al saldo original',
                   style: TextStyle(
-                    color: Colors.red.shade700, 
+                    color: Colors.red.shade700,
                     fontSize: isDesktop ? 11 : 10,
                     fontStyle: FontStyle.italic,
                   ),
@@ -163,15 +185,15 @@ class _EditableSaldoPendienteCellState extends State<EditableSaldoPendienteCell>
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Icon(
-                      Icons.info_outline, 
-                      size: 12, 
+                      Icons.info_outline,
+                      size: 12,
                       color: Colors.blue.shade400,
                     ),
                     SizedBox(width: 4),
                     Text(
                       'Máx: ${widget.valorOriginal.toStringAsFixed(2)}',
                       style: TextStyle(
-                        color: Colors.blue.shade700, 
+                        color: Colors.blue.shade700,
                         fontSize: isDesktop ? 11 : 10,
                       ),
                     ),

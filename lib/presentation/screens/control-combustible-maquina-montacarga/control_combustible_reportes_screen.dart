@@ -93,7 +93,7 @@ class _ControlCombustibleReportesScreenState
         ),
 
         // Divisor vertical
-        Container(width: 1, color: colorScheme.outline.withOpacity(0.3)),
+        Container(width: 1, color: colorScheme.outline.withValues(alpha: 0.3)),
 
         // Panel de resultados (derecho)
         Expanded(child: _buildResultsSection(context, state, colorScheme)),
@@ -725,7 +725,9 @@ class _ControlCombustibleReportesScreenState
         Expanded(
           child: Container(
             decoration: BoxDecoration(
-              border: Border.all(color: colorScheme.outline.withOpacity(0.3)),
+              border: Border.all(
+                color: colorScheme.outline.withValues(alpha: 0.3),
+              ),
             ),
             child: Scrollbar(
               child: SingleChildScrollView(
@@ -819,7 +821,7 @@ class _ControlCombustibleReportesScreenState
                                     vertical: 4,
                                   ),
                                   decoration: BoxDecoration(
-                                    color: tipoColor.withOpacity(0.1),
+                                    color: tipoColor.withValues(alpha: 0.1),
                                     borderRadius: BorderRadius.circular(4),
                                     border: Border.all(color: tipoColor),
                                   ),
@@ -977,7 +979,7 @@ class _ControlCombustibleReportesScreenState
                     vertical: 4,
                   ),
                   decoration: BoxDecoration(
-                    color: tipoColor.withOpacity(0.1),
+                    color: tipoColor.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(4),
                     border: Border.all(color: tipoColor),
                   ),

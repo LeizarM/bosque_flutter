@@ -15,7 +15,7 @@ class SeccionFoto extends ConsumerStatefulWidget {
   final bool habilitarEdicion;
   final Map<String, bool> estadoExpandido;
   final Function(String) onToggleSeccion;
-  
+
   const SeccionFoto({
     Key? key,
     required this.codEmpleado,
@@ -33,67 +33,72 @@ class _SeccionFotoState extends ConsumerState<SeccionFoto> {
   int _imageTimestamp = DateTime.now().millisecondsSinceEpoch;
   XFile? imagenSeleccionada;
   Uint8List? _webImageBytes;
-   bool _alertaMostrada = false;
-   // BannerCustom
+  bool _alertaMostrada = false;
+  // BannerCustom
   String? _bannerMensaje;
   Color? _bannerColor;
   IconData? _bannerIcon;
 
   String _getImageUrl() {
-  final imageVersion = ref.watch(imageVersionProvider); // ✅ Aquí sí
-  return AppConstants.baseUrl +
-      AppConstants.getImageUrl +
-      '/${widget.codEmpleado}.jpg?v=$imageVersion';
-}
- @override
-void didChangeDependencies() {
-  super.didChangeDependencies();
-}
+    final imageVersion = ref.watch(imageVersionProvider); // ✅ Aquí sí
+    return AppConstants.baseUrl +
+        AppConstants.getImageUrl +
+        '/${widget.codEmpleado}.jpg?v=$imageVersion';
+  }
 
-@override
-void initState() {
-  super.initState();
-  WidgetsBinding.instance.addPostFrameCallback((_) {
-    _revisarFotoYAdvertir();
-  });
-}
-Future<void> _revisarFotoYAdvertir() async {
-  // Obtén el codEmpleado actual usando el mismo patrón que permisos_edicion.dart
-  final codEmpleadoActual = await ref.read(userProvider.notifier).getCodEmpleado();
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+  }
 
-  // Solo muestra la alerta si el codEmpleado coincide
-  if (widget.codEmpleado != codEmpleadoActual) return;
-
-  try {
-    final url = Uri.parse(_getImageUrl());
-    final response = await http.get(url);
-
-    final contentDisposition = response.headers['content-disposition'];
-    if (contentDisposition != null && contentDisposition.contains('icon.png')) {
-  if (mounted && !_alertaMostrada) {
-    setState(() {
-      _alertaMostrada = true;
-      _bannerMensaje = 'Por favor, actualice su foto de perfil.';
-      _bannerColor = Colors.red;
-      _bannerIcon = Icons.warning;
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _revisarFotoYAdvertir();
     });
   }
-}else {
-      // Si la foto ya se actualizo, cierra el banner
-      if (_alertaMostrada || _bannerMensaje != null) {
-        setState(() {
-          _alertaMostrada = false;
-          _bannerMensaje = null;
-          _bannerColor = null;
-          _bannerIcon = null;
-        });
+
+  Future<void> _revisarFotoYAdvertir() async {
+    // Obtén el codEmpleado actual usando el mismo patrón que permisos_edicion.dart
+    final codEmpleadoActual =
+        await ref.read(userProvider.notifier).getCodEmpleado();
+
+    // Solo muestra la alerta si el codEmpleado coincide
+    if (widget.codEmpleado != codEmpleadoActual) return;
+
+    try {
+      final url = Uri.parse(_getImageUrl());
+      final response = await http.get(url);
+
+      final contentDisposition = response.headers['content-disposition'];
+      if (contentDisposition != null &&
+          contentDisposition.contains('icon.png')) {
+        if (mounted && !_alertaMostrada) {
+          setState(() {
+            _alertaMostrada = true;
+            _bannerMensaje = 'Por favor, actualice su foto de perfil.';
+            _bannerColor = Colors.red;
+            _bannerIcon = Icons.warning;
+          });
+        }
+      } else {
+        // Si la foto ya se actualizo, cierra el banner
+        if (_alertaMostrada || _bannerMensaje != null) {
+          setState(() {
+            _alertaMostrada = false;
+            _bannerMensaje = null;
+            _bannerColor = null;
+            _bannerIcon = null;
+          });
+        }
       }
+    } catch (e) {
+      print('Error revisando foto: $e');
     }
-  } catch (e) {
-    print('Error revisando foto: $e');
   }
-}
- //checkpoint
+
+  //checkpoint
   Future<void> _seleccionarImagen() async {
     final ImagePicker picker = ImagePicker();
     try {
@@ -145,40 +150,41 @@ Future<void> _revisarFotoYAdvertir() async {
   }
 
   Future<void> _uploadImage() async {
-  if (_imageBytes == null) {
-    _showMessage('Seleccione una imagen primero');
-    return;
+    if (_imageBytes == null) {
+      _showMessage('Seleccione una imagen primero');
+      return;
+    }
+
+    try {
+      // 1. Llamada a la subida (espera 200, 201, o 202)
+      await ref.read(
+        subirFotoProvider((widget.codEmpleado, _imageBytes!)).future,
+      );
+
+      setState(() {
+        // 2. Limpiar el estado local (la imagen pendiente desaparece de la vista previa)
+        _imageTimestamp = DateTime.now().millisecondsSinceEpoch;
+        _imageBytes = null;
+        _webImageBytes = null; // También limpia el webImageBytes
+        imagenSeleccionada = null;
+      });
+
+      // 3. MUY IMPORTANTE: COMENTAR o ELIMINAR esta línea para la aprobación
+      // Si la imagen está pendiente, NO se debe incrementar el versionProvider,
+      // ya que esto forzaría a cargar la foto final que aún no existe.
+      // ref.read(imageVersionProvider.notifier).state++;
+      ref.invalidate(documentosPendientesProvider);
+      if (!mounted) return;
+
+      // 4. MOSTRAR EL MENSAJE CLAVE
+      _showMessage(
+        'Imagen subida correctamente, espere aprobación.',
+        isError: false, // Muestra el mensaje con estilo de éxito
+      );
+    } catch (e) {
+      _showMessage('Error al subir la imagen: $e');
+    }
   }
-
-  try {
-    // 1. Llamada a la subida (espera 200, 201, o 202)
-    await ref.read(subirFotoProvider((widget.codEmpleado, _imageBytes!)).future);
-
-    setState(() {
-      // 2. Limpiar el estado local (la imagen pendiente desaparece de la vista previa)
-      _imageTimestamp = DateTime.now().millisecondsSinceEpoch;
-      _imageBytes = null;
-      _webImageBytes = null; // También limpia el webImageBytes
-      imagenSeleccionada = null;
-    });
-
-    // 3. MUY IMPORTANTE: COMENTAR o ELIMINAR esta línea para la aprobación
-    // Si la imagen está pendiente, NO se debe incrementar el versionProvider,
-    // ya que esto forzaría a cargar la foto final que aún no existe.
-    // ref.read(imageVersionProvider.notifier).state++; 
-    ref.invalidate(documentosPendientesProvider);
-    if (!mounted) return;
-    
-    // 4. MOSTRAR EL MENSAJE CLAVE
-    _showMessage(
-      'Imagen subida correctamente, espere aprobación.', 
-      isError: false // Muestra el mensaje con estilo de éxito
-    );
-
-  } catch (e) {
-    _showMessage('Error al subir la imagen: $e');
-  }
-}
 
   void _showMessage(String message, {bool isError = true}) {
     if (!mounted) return;
@@ -197,16 +203,17 @@ Future<void> _revisarFotoYAdvertir() async {
   @override
   Widget build(BuildContext context) {
     ref.listen<int>(imageVersionProvider, (previous, next) {
-    if (previous != next) {
-      _revisarFotoYAdvertir();
-    }
-  });
+      if (previous != next) {
+        _revisarFotoYAdvertir();
+      }
+    });
     final isDesktop = MediaQuery.of(context).size.width > 900;
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final bool isDark = theme.brightness == Brightness.dark;
     final Color cardColor = isDark ? colorScheme.surface : Colors.white;
-    final Color borderColor = isDark ? colorScheme.primary : Colors.teal.shade700;
+    final Color borderColor =
+        isDark ? colorScheme.primary : Colors.teal.shade700;
 
     return Padding(
       padding: EdgeInsets.symmetric(
@@ -218,11 +225,11 @@ Future<void> _revisarFotoYAdvertir() async {
         children: [
           //header
           if (_bannerMensaje != null)
-        BannerCustom(
-          message: _bannerMensaje!,
-          color: _bannerColor ?? Colors.red,
-          icon: _bannerIcon ?? Icons.warning,
-        ),
+            BannerCustom(
+              message: _bannerMensaje!,
+              color: _bannerColor ?? Colors.red,
+              icon: _bannerIcon ?? Icons.warning,
+            ),
           const SizedBox(height: 16),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -239,38 +246,42 @@ Future<void> _revisarFotoYAdvertir() async {
               ),
             ],
           ),
-          Divider(height: 20, color: Colors.grey.withOpacity(0.18)),
+          Divider(height: 20, color: Colors.grey.withValues(alpha: 0.18)),
           Center(
             child: LayoutBuilder(
               builder: (context, constraints) {
-                final double photoSize = constraints.maxWidth.clamp(120.0, 260.0);
+                final double photoSize = constraints.maxWidth.clamp(
+                  120.0,
+                  260.0,
+                );
 
                 return Stack(
                   alignment: Alignment.center,
                   children: [
                     // Foto circular
                     Hero(
-  tag: 'empleado-imagen-${widget.codEmpleado}',
-  child: GestureDetector(
-    onTap: () => _mostrarImagenCompleta(context, photoSize),
-    child: _imageBytes != null
-        ? ClipOval(
-            child: Image.memory(
-              _imageBytes!,
-              fit: BoxFit.cover,
-              width: photoSize,
-              height: photoSize,
-            ),
-          )
-        : CircleAvatar(
-            radius: photoSize / 2,
-            backgroundImage: NetworkImage(_getImageUrl()),
-            onBackgroundImageError: (_, __) {
-              setState(() => _imageBytes = null);
-            },
-          ),
-  ),
-),
+                      tag: 'empleado-imagen-${widget.codEmpleado}',
+                      child: GestureDetector(
+                        onTap: () => _mostrarImagenCompleta(context, photoSize),
+                        child:
+                            _imageBytes != null
+                                ? ClipOval(
+                                  child: Image.memory(
+                                    _imageBytes!,
+                                    fit: BoxFit.cover,
+                                    width: photoSize,
+                                    height: photoSize,
+                                  ),
+                                )
+                                : CircleAvatar(
+                                  radius: photoSize / 2,
+                                  backgroundImage: NetworkImage(_getImageUrl()),
+                                  onBackgroundImageError: (_, __) {
+                                    setState(() => _imageBytes = null);
+                                  },
+                                ),
+                      ),
+                    ),
 
                     // Botón para seleccionar imagen (galería)
                     if (widget.habilitarEdicion)
@@ -283,7 +294,7 @@ Future<void> _revisarFotoYAdvertir() async {
                             shape: BoxShape.circle,
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withOpacity(0.18),
+                                color: Colors.black.withValues(alpha: 0.18),
                                 spreadRadius: 1,
                                 blurRadius: 3,
                                 offset: const Offset(0, 2),
@@ -310,7 +321,7 @@ Future<void> _revisarFotoYAdvertir() async {
                             shape: BoxShape.circle,
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withOpacity(0.18),
+                                color: Colors.black.withValues(alpha: 0.18),
                                 spreadRadius: 1,
                                 blurRadius: 3,
                                 offset: const Offset(0, 2),
@@ -340,7 +351,7 @@ Future<void> _revisarFotoYAdvertir() async {
                                 shape: BoxShape.circle,
                                 boxShadow: [
                                   BoxShadow(
-                                    color: Colors.black.withOpacity(0.18),
+                                    color: Colors.black.withValues(alpha: 0.18),
                                     spreadRadius: 1,
                                     blurRadius: 3,
                                     offset: const Offset(0, 2),
@@ -361,7 +372,7 @@ Future<void> _revisarFotoYAdvertir() async {
                                 shape: BoxShape.circle,
                                 boxShadow: [
                                   BoxShadow(
-                                    color: Colors.black.withOpacity(0.18),
+                                    color: Colors.black.withValues(alpha: 0.18),
                                     spreadRadius: 1,
                                     blurRadius: 3,
                                     offset: const Offset(0, 2),
@@ -371,11 +382,12 @@ Future<void> _revisarFotoYAdvertir() async {
                               child: IconButton(
                                 icon: const Icon(Icons.close),
                                 color: Colors.white,
-                                onPressed: () => setState(() {
-                                  _imageBytes = null;
-                                  _webImageBytes = null;
-                                  imagenSeleccionada = null;
-                                }),
+                                onPressed:
+                                    () => setState(() {
+                                      _imageBytes = null;
+                                      _webImageBytes = null;
+                                      imagenSeleccionada = null;
+                                    }),
                                 tooltip: 'Cancelar',
                               ),
                             ),
@@ -391,36 +403,34 @@ Future<void> _revisarFotoYAdvertir() async {
       ),
     );
   }
+
   void _mostrarImagenCompleta(BuildContext context, double photoSize) {
-  showDialog(
-    context: context,
-    barrierDismissible: true,
-    barrierColor: Colors.black87,
-    builder: (BuildContext context) {
-      return Dialog(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        insetPadding: const EdgeInsets.all(16),
-        child: GestureDetector(
-          onTap: () => Navigator.of(context).pop(),
-          child: InteractiveViewer(
-            panEnabled: true,
-            minScale: 0.5,
-            maxScale: 4,
-            child: Hero(
-              tag: 'empleado-imagen-${widget.codEmpleado}',
-              child: _imageBytes != null
-                  ? Image.memory(_imageBytes!, fit: BoxFit.contain)
-                  : Image.network(_getImageUrl(), fit: BoxFit.contain),
+    showDialog(
+      context: context,
+      barrierDismissible: true,
+      barrierColor: Colors.black87,
+      builder: (BuildContext context) {
+        return Dialog(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          insetPadding: const EdgeInsets.all(16),
+          child: GestureDetector(
+            onTap: () => Navigator.of(context).pop(),
+            child: InteractiveViewer(
+              panEnabled: true,
+              minScale: 0.5,
+              maxScale: 4,
+              child: Hero(
+                tag: 'empleado-imagen-${widget.codEmpleado}',
+                child:
+                    _imageBytes != null
+                        ? Image.memory(_imageBytes!, fit: BoxFit.contain)
+                        : Image.network(_getImageUrl(), fit: BoxFit.contain),
+              ),
             ),
           ),
-        ),
-      );
-    },
-  );
-}
-
-  
-
- 
+        );
+      },
+    );
+  }
 }

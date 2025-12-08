@@ -40,12 +40,16 @@ class GaranteReferenciaSeccion extends ConsumerWidget {
   }
 
   String _capitalizeWords(String text) {
-    return text.split(' ').map((word) {
-      if (word.isEmpty) return word;
-      final especiales = ['s.a.', 's.r.l.', 'ipx', 'esppapel'];
-      if (especiales.contains(word.toLowerCase())) return word.toUpperCase();
-      return _capitalize(word);
-    }).join(' ');
+    return text
+        .split(' ')
+        .map((word) {
+          if (word.isEmpty) return word;
+          final especiales = ['s.a.', 's.r.l.', 'ipx', 'esppapel'];
+          if (especiales.contains(word.toLowerCase()))
+            return word.toUpperCase();
+          return _capitalize(word);
+        })
+        .join(' ');
   }
 
   String formatText(String text, bool isDesktop) {
@@ -55,162 +59,194 @@ class GaranteReferenciaSeccion extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final cargarGarRef = ref.watch(obtenerGaranteReferenciaProvider(codEmpleado));
+    final cargarGarRef = ref.watch(
+      obtenerGaranteReferenciaProvider(codEmpleado),
+    );
     final isDesktop = MediaQuery.of(context).size.width > 900;
 
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final bool isDark = theme.brightness == Brightness.dark;
     final Color icono = isDark ? colorScheme.primary : Colors.teal.shade700;
-    final Color textoPrincipal = isDark ? colorScheme.onSurface : Colors.grey.shade900;
-    final Color textoSecundario = isDark ? colorScheme.onSurfaceVariant : Colors.grey.shade600;
+    final Color textoPrincipal =
+        isDark ? colorScheme.onSurface : Colors.grey.shade900;
+    final Color textoSecundario =
+        isDark ? colorScheme.onSurfaceVariant : Colors.grey.shade600;
 
     return Padding(
       padding: EdgeInsets.symmetric(
         horizontal: isDesktop ? 24 : 8,
         vertical: isDesktop ? 16 : 8,
       ),
-      child:SingleChildScrollView(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Header
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                formatText('Garante/Referencia', isDesktop),
-                style: TextStyle(
-                  fontSize: isDesktop ? 18 : 16,
-                  fontWeight: FontWeight.bold,
-                  color: textoPrincipal,
-                  fontFamily: 'Montserrat',
-                  letterSpacing: 0.5,
+      child: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Header
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  formatText('Garante/Referencia', isDesktop),
+                  style: TextStyle(
+                    fontSize: isDesktop ? 18 : 16,
+                    fontWeight: FontWeight.bold,
+                    color: textoPrincipal,
+                    fontFamily: 'Montserrat',
+                    letterSpacing: 0.5,
+                  ),
                 ),
-              ),
-              if (habilitarEdicion)
-                CustomSpeedDial(
-                  visible: habilitarEdicion,
-                  nombreSeccion: 'garanteReferencia',
-                  onEditar: onEditar,
-                  updateOperation: onUpdateOperation,
-                  operacionHabilitada: const [
-                    'editar',
-                    'agregar',
-                    'eliminar',
-                  ],
-                  onAgregar: () => _mostrarDialogoAgregarGarRef(context, ref),
-                  onEliminar: onEliminar,
-                  selectedOperation: selectedOperation,
-                ),
-            ],
-          ),
-          Divider(height: 20, color: Colors.grey.withOpacity(0.18)),
-          cargarGarRef.when(
-            // Dentro del cargarGarRef.when(data: ...)
-data: (garanteRef) {
-   print('GARANTE REF: $garanteRef');
-  // Si quieres filtrar por tipo desde un filtro externo:
-  List<GaranteReferenciaEntity> listaFiltrada = garanteRef;
-  if (filtroTipo == 'gar') {
-    listaFiltrada = garanteRef.where((g) => g.tipo == 'gar').toList();
-  } else if (filtroTipo == 'ref') {
-    listaFiltrada = garanteRef.where((g) => g.tipo == 'ref').toList();
-  }
-
-  // Si quieres mostrar ambos bloques separados:
-  final garantes = garanteRef.where((g) => g.tipo == 'gar').toList();
-  final referencias = garanteRef.where((g) => g.tipo == 'ref').toList();
-
-   if (filtroTipo == 'gar') {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        if (garantes.isNotEmpty) ...[
-          Text('GARANTES', style: TextStyle(fontWeight: FontWeight.bold)),
-          ...garantes.map((garante) => _buildGaranteTile(
-                context,
-                ref,
-                garante,
-                isDesktop,
-                icono,
-                textoPrincipal,
-                textoSecundario,
-              )),
-        ] else
-          const Text('No hay garantes registrados.'),
-      ],
-    );
-  } else if (filtroTipo == 'ref') {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        if (referencias.isNotEmpty) ...[
-          Text('REFERENCIAS', style: TextStyle(fontWeight: FontWeight.bold)),
-          ...referencias.map((referencia) => _buildGaranteTile(
-                context,
-                ref,
-                referencia,
-                isDesktop,
-                icono,
-                textoPrincipal,
-                textoSecundario,
-              )),
-        ] else
-          const Text('No hay referencias registradas.'),
-      ],
-    );
-  } else {
-    // Mostrar ambos si filtroTipo == 'todos'
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        if (garantes.isNotEmpty) ...[
-          Text('GARANTES', style: TextStyle(fontWeight: FontWeight.bold)),
-          ...garantes.map((garante) => _buildGaranteTile(
-                context,
-                ref,
-                garante,
-                isDesktop,
-                icono,
-                textoPrincipal,
-                textoSecundario,
-              )),
-        ],
-        if (referencias.isNotEmpty) ...[
-          const SizedBox(height: 24),
-          Text('REFERENCIAS', style: TextStyle(fontWeight: FontWeight.bold)),
-          ...referencias.map((referencia) => _buildGaranteTile(
-                context,
-                ref,
-                referencia,
-                isDesktop,
-                icono,
-                textoPrincipal,
-                textoSecundario,
-              )),
-        ],
-        if (garantes.isEmpty && referencias.isEmpty)
-          const Text('No hay garantes ni referencias registrados.'),
-      ],
-    );
-  }
-},
-            loading: () => const Padding(
-              padding: EdgeInsets.all(16),
-              child: Center(child: CircularProgressIndicator()),
+                if (habilitarEdicion)
+                  CustomSpeedDial(
+                    visible: habilitarEdicion,
+                    nombreSeccion: 'garanteReferencia',
+                    onEditar: onEditar,
+                    updateOperation: onUpdateOperation,
+                    operacionHabilitada: const [
+                      'editar',
+                      'agregar',
+                      'eliminar',
+                    ],
+                    onAgregar: () => _mostrarDialogoAgregarGarRef(context, ref),
+                    onEliminar: onEliminar,
+                    selectedOperation: selectedOperation,
+                  ),
+              ],
             ),
-            error: (error, _) => Padding(
-              padding: const EdgeInsets.all(16),
-              child: Text(
-                'Error al cargar los datos: $error',
-                style: const TextStyle(color: Colors.red),
-              ),
+            Divider(height: 20, color: Colors.grey.withValues(alpha: 0.18)),
+            cargarGarRef.when(
+              // Dentro del cargarGarRef.when(data: ...)
+              data: (garanteRef) {
+                print('GARANTE REF: $garanteRef');
+                // Si quieres filtrar por tipo desde un filtro externo:
+                List<GaranteReferenciaEntity> listaFiltrada = garanteRef;
+                if (filtroTipo == 'gar') {
+                  listaFiltrada =
+                      garanteRef.where((g) => g.tipo == 'gar').toList();
+                } else if (filtroTipo == 'ref') {
+                  listaFiltrada =
+                      garanteRef.where((g) => g.tipo == 'ref').toList();
+                }
+
+                // Si quieres mostrar ambos bloques separados:
+                final garantes =
+                    garanteRef.where((g) => g.tipo == 'gar').toList();
+                final referencias =
+                    garanteRef.where((g) => g.tipo == 'ref').toList();
+
+                if (filtroTipo == 'gar') {
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      if (garantes.isNotEmpty) ...[
+                        Text(
+                          'GARANTES',
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                        ...garantes.map(
+                          (garante) => _buildGaranteTile(
+                            context,
+                            ref,
+                            garante,
+                            isDesktop,
+                            icono,
+                            textoPrincipal,
+                            textoSecundario,
+                          ),
+                        ),
+                      ] else
+                        const Text('No hay garantes registrados.'),
+                    ],
+                  );
+                } else if (filtroTipo == 'ref') {
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      if (referencias.isNotEmpty) ...[
+                        Text(
+                          'REFERENCIAS',
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                        ...referencias.map(
+                          (referencia) => _buildGaranteTile(
+                            context,
+                            ref,
+                            referencia,
+                            isDesktop,
+                            icono,
+                            textoPrincipal,
+                            textoSecundario,
+                          ),
+                        ),
+                      ] else
+                        const Text('No hay referencias registradas.'),
+                    ],
+                  );
+                } else {
+                  // Mostrar ambos si filtroTipo == 'todos'
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      if (garantes.isNotEmpty) ...[
+                        Text(
+                          'GARANTES',
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                        ...garantes.map(
+                          (garante) => _buildGaranteTile(
+                            context,
+                            ref,
+                            garante,
+                            isDesktop,
+                            icono,
+                            textoPrincipal,
+                            textoSecundario,
+                          ),
+                        ),
+                      ],
+                      if (referencias.isNotEmpty) ...[
+                        const SizedBox(height: 24),
+                        Text(
+                          'REFERENCIAS',
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                        ...referencias.map(
+                          (referencia) => _buildGaranteTile(
+                            context,
+                            ref,
+                            referencia,
+                            isDesktop,
+                            icono,
+                            textoPrincipal,
+                            textoSecundario,
+                          ),
+                        ),
+                      ],
+                      if (garantes.isEmpty && referencias.isEmpty)
+                        const Text(
+                          'No hay garantes ni referencias registrados.',
+                        ),
+                    ],
+                  );
+                }
+              },
+              loading:
+                  () => const Padding(
+                    padding: EdgeInsets.all(16),
+                    child: Center(child: CircularProgressIndicator()),
+                  ),
+              error:
+                  (error, _) => Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Text(
+                      'Error al cargar los datos: $error',
+                      style: const TextStyle(color: Colors.red),
+                    ),
+                  ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
-    ),
     );
   }
 
@@ -236,7 +272,11 @@ data: (garanteRef) {
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Icon(Icons.person_rounded, color: icono, size: isDesktop ? 22 : 18),
+                Icon(
+                  Icons.person_rounded,
+                  color: icono,
+                  size: isDesktop ? 22 : 18,
+                ),
                 const SizedBox(width: 8),
                 Expanded(
                   child: _datoConEtiqueta(
@@ -254,30 +294,50 @@ data: (garanteRef) {
                     IconButton(
                       icon: Icon(Icons.edit, color: icono),
                       tooltip: 'Editar',
-                      onPressed: () => _mostrarDialogoEditarFGaranteRef(context, ref, garante),
+                      onPressed:
+                          () => _mostrarDialogoEditarFGaranteRef(
+                            context,
+                            ref,
+                            garante,
+                          ),
                     ),
                   if (selectedOperation['garanteReferencia'] == 'eliminar')
                     PermissionWidget(
-  buttonName: 'btnEliminarGaranteReferencia', // Usa el nombre exacto de tu BD
-  child: IconButton(
-    icon: const Icon(Icons.delete, color: Colors.red),
-    tooltip: 'Eliminar',
-    onPressed: () => ConfirmDialog.show(
-      context,
-      title: 'Eliminar Garante/Referencia',
-      content: '¿Está seguro que desea eliminar esta Garante/Referencia?',
-      confirmText: 'Eliminar',
-      cancelText: 'Cancelar',
-      confirmColor: Colors.red,
-    ).then((confirmed) async {
-      if (confirmed == true && context.mounted) {
-        await ref.read(eliminarGaranteReferenciaProvider(garante.codGarante).future);
-        final _ = await ref.refresh(obtenerGaranteReferenciaProvider(codEmpleado).future);
-        if (context.mounted) AppSnackbarCustom.showDelete(context, 'Garante/Referencia eliminada correctamente');
-      }
-    }),
-  ),
-),
+                      buttonName:
+                          'btnEliminarGaranteReferencia', // Usa el nombre exacto de tu BD
+                      child: IconButton(
+                        icon: const Icon(Icons.delete, color: Colors.red),
+                        tooltip: 'Eliminar',
+                        onPressed:
+                            () => ConfirmDialog.show(
+                              context,
+                              title: 'Eliminar Garante/Referencia',
+                              content:
+                                  '¿Está seguro que desea eliminar esta Garante/Referencia?',
+                              confirmText: 'Eliminar',
+                              cancelText: 'Cancelar',
+                              confirmColor: Colors.red,
+                            ).then((confirmed) async {
+                              if (confirmed == true && context.mounted) {
+                                await ref.read(
+                                  eliminarGaranteReferenciaProvider(
+                                    garante.codGarante,
+                                  ).future,
+                                );
+                                final _ = await ref.refresh(
+                                  obtenerGaranteReferenciaProvider(
+                                    codEmpleado,
+                                  ).future,
+                                );
+                                if (context.mounted)
+                                  AppSnackbarCustom.showDelete(
+                                    context,
+                                    'Garante/Referencia eliminada correctamente',
+                                  );
+                              }
+                            }),
+                      ),
+                    ),
                 ],
               ],
             ),
@@ -294,7 +354,7 @@ data: (garanteRef) {
                     colorIcono: icono,
                     textoSecundario: textoSecundario,
                     isDesktop: isDesktop,
-                    maxLines: 3
+                    maxLines: 3,
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -307,7 +367,7 @@ data: (garanteRef) {
                     colorIcono: icono,
                     textoSecundario: textoSecundario,
                     isDesktop: isDesktop,
-                    maxLines: 3
+                    maxLines: 3,
                   ),
                 ),
               ],
@@ -331,7 +391,9 @@ data: (garanteRef) {
                 Expanded(
                   child: Consumer(
                     builder: (context, ref, child) {
-                      final tipoGarante = ref.watch(obtenerTipoGaranteReferenciaProvider);
+                      final tipoGarante = ref.watch(
+                        obtenerTipoGaranteReferenciaProvider,
+                      );
                       return _datoConEtiqueta(
                         icon: Icons.group_rounded,
                         etiqueta: 'Tipo garante/referencia',
@@ -339,12 +401,13 @@ data: (garanteRef) {
                           data: (tipos) {
                             final tipoGarRef = tipos.firstWhere(
                               (t) => t.codTipos == garante.tipo,
-                              orElse: () => TipoGaranteReferenciaEntity(
-                                codTipos: '',
-                                nombre: 'No encontrado',
-                                codGrupo: 0,
-                                listTipos: [],
-                              ),
+                              orElse:
+                                  () => TipoGaranteReferenciaEntity(
+                                    codTipos: '',
+                                    nombre: 'No encontrado',
+                                    codGrupo: 0,
+                                    listTipos: [],
+                                  ),
                             );
                             return tipoGarRef.nombre;
                           },
@@ -374,7 +437,7 @@ data: (garanteRef) {
                     colorIcono: icono,
                     textoSecundario: textoSecundario,
                     isDesktop: isDesktop,
-                    maxLines: 5, 
+                    maxLines: 5,
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -484,83 +547,81 @@ data: (garanteRef) {
   }
 
   void _mostrarDialogoAgregarGarRef(BuildContext context, WidgetRef ref) {
-  showDialog(
-    context: context,
-    barrierDismissible: false,
-    builder: (context) => Dialog(
-      backgroundColor: Colors.transparent,
-      insetPadding: EdgeInsets.zero,
-      child: FormularioGaranteReferencia(
-        title: 'Agregar Garante/Referencia',
-        codEmpleado: codEmpleado,
-        isEditing: false,
-        onSave: (garanteReferencia) async {
-          try {
-            await ref.read(
-              registrarGaranteReferenciaProvider(
-                garanteReferencia,
-              ).future,
-            );
-            ref.invalidate(obtenerGaranteReferenciaProvider(codEmpleado));
-            
-           
-          } catch (e) {
-            if (!context.mounted) return;
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('Error: ${e.toString()}'),
-                backgroundColor: Colors.red,
-              ),
-            );
-            rethrow;
-          }
-        },
-        onCancel: () => Navigator.of(context).pop(),
-      ),
-    ),
-  );
-}
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder:
+          (context) => Dialog(
+            backgroundColor: Colors.transparent,
+            insetPadding: EdgeInsets.zero,
+            child: FormularioGaranteReferencia(
+              title: 'Agregar Garante/Referencia',
+              codEmpleado: codEmpleado,
+              isEditing: false,
+              onSave: (garanteReferencia) async {
+                try {
+                  await ref.read(
+                    registrarGaranteReferenciaProvider(
+                      garanteReferencia,
+                    ).future,
+                  );
+                  ref.invalidate(obtenerGaranteReferenciaProvider(codEmpleado));
+                } catch (e) {
+                  if (!context.mounted) return;
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Error: ${e.toString()}'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                  rethrow;
+                }
+              },
+              onCancel: () => Navigator.of(context).pop(),
+            ),
+          ),
+    );
+  }
 
-void _mostrarDialogoEditarFGaranteRef(
-  BuildContext context,
-  WidgetRef ref,
-  GaranteReferenciaEntity garanteReferencia,
-) {
-  showDialog(
-    context: context,
-    barrierDismissible: false,
-    builder: (context) => Dialog(
-      backgroundColor: Colors.transparent,
-      insetPadding: EdgeInsets.zero,
-      child: FormularioGaranteReferencia(
-        title: 'Editar Garante/Referencia',
-        codEmpleado: codEmpleado,
-        isEditing: true,
-        garanteReferencia: garanteReferencia,
-        onSave: (garanteReferencia) async {
-          try {
-            await ref.read(
-              registrarGaranteReferenciaProvider(
-                garanteReferencia,
-              ).future,
-            );
-            ref.invalidate(obtenerGaranteReferenciaProvider(codEmpleado));
-            
-            
-          } catch (e) {
-            if (!context.mounted) return;
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('Error al editar garante/referencia: $e'),
-                backgroundColor: Colors.red,
-              ),
-            );
-            rethrow;
-          }
-        },
-        onCancel: () => Navigator.of(context).pop(),
-      ),
-    ),
-  );
-}
+  void _mostrarDialogoEditarFGaranteRef(
+    BuildContext context,
+    WidgetRef ref,
+    GaranteReferenciaEntity garanteReferencia,
+  ) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder:
+          (context) => Dialog(
+            backgroundColor: Colors.transparent,
+            insetPadding: EdgeInsets.zero,
+            child: FormularioGaranteReferencia(
+              title: 'Editar Garante/Referencia',
+              codEmpleado: codEmpleado,
+              isEditing: true,
+              garanteReferencia: garanteReferencia,
+              onSave: (garanteReferencia) async {
+                try {
+                  await ref.read(
+                    registrarGaranteReferenciaProvider(
+                      garanteReferencia,
+                    ).future,
+                  );
+                  ref.invalidate(obtenerGaranteReferenciaProvider(codEmpleado));
+                } catch (e) {
+                  if (!context.mounted) return;
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Error al editar garante/referencia: $e'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                  rethrow;
+                }
+              },
+              onCancel: () => Navigator.of(context).pop(),
+            ),
+          ),
+    );
+  }
 }

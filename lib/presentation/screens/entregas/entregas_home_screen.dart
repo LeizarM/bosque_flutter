@@ -54,7 +54,9 @@ class _EntregasHomeScreenState extends ConsumerState<EntregasHomeScreen> {
 
   Future<void> _iniciarRuta() async {
     if (!_isLocationEnabled) {
-      _controller.mostrarMensajeError('Debe activar los servicios de ubicación para iniciar entregas');
+      _controller.mostrarMensajeError(
+        'Debe activar los servicios de ubicación para iniciar entregas',
+      );
       return;
     }
     setState(() {
@@ -67,7 +69,9 @@ class _EntregasHomeScreenState extends ConsumerState<EntregasHomeScreen> {
       }
     } catch (e) {
       if (mounted) {
-        _controller.mostrarMensajeError('Error al iniciar ruta: ${e.toString()}');
+        _controller.mostrarMensajeError(
+          'Error al iniciar ruta: ${e.toString()}',
+        );
       }
     } finally {
       final locationEnabled = await _controller.checkLocationPermission();
@@ -82,7 +86,9 @@ class _EntregasHomeScreenState extends ConsumerState<EntregasHomeScreen> {
 
   Future<void> _finalizarRuta() async {
     if (!_isLocationEnabled) {
-      _controller.mostrarMensajeError('Debe activar los servicios de ubicación para finalizar entregas');
+      _controller.mostrarMensajeError(
+        'Debe activar los servicios de ubicación para finalizar entregas',
+      );
       return;
     }
     setState(() {
@@ -95,7 +101,9 @@ class _EntregasHomeScreenState extends ConsumerState<EntregasHomeScreen> {
       }
     } catch (e) {
       if (mounted) {
-        _controller.mostrarMensajeError('Error al finalizar ruta: ${e.toString()}');
+        _controller.mostrarMensajeError(
+          'Error al finalizar ruta: ${e.toString()}',
+        );
       }
     } finally {
       final locationEnabled = await _controller.checkLocationPermission();
@@ -110,33 +118,43 @@ class _EntregasHomeScreenState extends ConsumerState<EntregasHomeScreen> {
 
   Future<void> _mostrarDialogoDireccion(EntregaEntity entrega) async {
     if (!_isLocationEnabled) {
-      _controller.mostrarMensajeError('Debe activar los servicios de ubicación para marcar entregas');
+      _controller.mostrarMensajeError(
+        'Debe activar los servicios de ubicación para marcar entregas',
+      );
       return;
     }
     final state = ref.read(entregasNotifierProvider);
     if (!state.rutaIniciada) {
-      _controller.mostrarMensajeError('Debe iniciar la ruta antes de marcar entregas');
+      _controller.mostrarMensajeError(
+        'Debe iniciar la ruta antes de marcar entregas',
+      );
       return;
     }
     final resultado = await showDialog<Map<String, String>>(
       context: context,
       barrierDismissible: false,
-      builder: (context) => ObservacionesDialog(
-        direccion: entrega.direccionEntrega ?? entrega.addressEntregaMat,
-      ),
+      builder:
+          (context) => ObservacionesDialog(
+            direccion: entrega.direccionEntrega ?? entrega.addressEntregaMat,
+          ),
     );
     if (resultado != null && resultado['observaciones'] != null) {
       setState(() {
         _isProcesingAction = true;
       });
       try {
-        await _controller.marcarEntregaCompletada(entrega, resultado['observaciones']);
+        await _controller.marcarEntregaCompletada(
+          entrega,
+          resultado['observaciones'],
+        );
         if (mounted) {
           _controller.mostrarMensajeExito('Entrega marcada correctamente');
         }
       } catch (e) {
         if (mounted) {
-          _controller.mostrarMensajeError('Error al marcar la entrega: ${e.toString()}');
+          _controller.mostrarMensajeError(
+            'Error al marcar la entrega: ${e.toString()}',
+          );
         }
       } finally {
         if (mounted) {
@@ -147,7 +165,7 @@ class _EntregasHomeScreenState extends ConsumerState<EntregasHomeScreen> {
       }
     }
   }
-  
+
   Future<void> _verificarPermisos() async {
     final enabled = await _controller.solicitarPermisosUbicacion();
     if (mounted) {
@@ -163,24 +181,24 @@ class _EntregasHomeScreenState extends ConsumerState<EntregasHomeScreen> {
     final colorScheme = Theme.of(context).colorScheme;
     final isDesktop = ResponsiveUtilsBosque.isDesktop(context);
     final isTablet = ResponsiveUtilsBosque.isTablet(context);
-    final horizontalPadding = ResponsiveUtilsBosque.getHorizontalPadding(context);
+    final horizontalPadding = ResponsiveUtilsBosque.getHorizontalPadding(
+      context,
+    );
     final verticalPadding = ResponsiveUtilsBosque.getVerticalPadding(context);
 
     if (_isInitializing) {
-      return const Scaffold(
-        body: Center(
-          child: CircularProgressIndicator(),
-        ),
-      );
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
-    final entregasAgrupadas = EntregasFilterUtils.agruparEntregas(state.entregas);
+    final entregasAgrupadas = EntregasFilterUtils.agruparEntregas(
+      state.entregas,
+    );
     final listaEntregasAgrupadas = entregasAgrupadas.entries.toList();
     final filteredEntregas = EntregasFilterUtils.getFilteredAndSortedEntregas(
       listaEntregasAgrupadas,
       _searchText,
       _sortColumnIndex,
-      _sortAscending
+      _sortAscending,
     );
 
     return Scaffold(
@@ -206,7 +224,8 @@ class _EntregasHomeScreenState extends ConsumerState<EntregasHomeScreen> {
                 rutaIniciada: state.rutaIniciada,
                 fechaInicio: state.fechaInicio,
                 isLocationEnabled: _isLocationEnabled,
-                isProcessing: state.sincronizacionEnProceso || _isProcesingAction,
+                isProcessing:
+                    state.sincronizacionEnProceso || _isProcesingAction,
                 entregasVacias: state.entregas.isEmpty,
                 onIniciarRuta: _iniciarRuta,
                 onFinalizarRuta: _finalizarRuta,
@@ -261,12 +280,17 @@ class _EntregasHomeScreenState extends ConsumerState<EntregasHomeScreen> {
               // Barra de búsqueda solo en desktop
               if (isDesktop)
                 Padding(
-                  padding: EdgeInsets.symmetric(horizontal: horizontalPadding, vertical: 8),
+                  padding: EdgeInsets.symmetric(
+                    horizontal: horizontalPadding,
+                    vertical: 8,
+                  ),
                   child: TextField(
                     decoration: InputDecoration(
                       hintText: 'Buscar por cliente, factura o dirección...',
                       prefixIcon: const Icon(Icons.search),
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
                     ),
                     onChanged: (value) => setState(() => _searchText = value),
                   ),
@@ -274,85 +298,99 @@ class _EntregasHomeScreenState extends ConsumerState<EntregasHomeScreen> {
 
               // Contenido principal responsivo
               Expanded(
-                child: state.isLoading
-                    ? Center(child: CircularProgressIndicator(color: colorScheme.primary))
-                    : state.error != null
+                child:
+                    state.isLoading
                         ? Center(
-                            child: Padding(
-                              padding: EdgeInsets.all(horizontalPadding),
-                              child: Column(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(
-                                    Icons.error_outline,
-                                    color: colorScheme.error,
-                                    size: 48,
-                                  ),
-                                  const SizedBox(height: 16),
-                                  Text(
-                                    'Error: ${state.error}',
-                                    style: TextStyle(color: colorScheme.error),
-                                    textAlign: TextAlign.center,
-                                  ),
-                                  const SizedBox(height: 16),
-                                  ElevatedButton(
-                                    onPressed: () => _controller.cargarEntregas(_codEmpleado),
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: colorScheme.surfaceBright,
-                                    ),
-                                    child: const Text('Reintentar'),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          )
-                        : state.entregas.isEmpty
-                            ? const Center(
-                                child: Text('No hay entregas pendientes'),
-                              )
-                            : isDesktop
-                                ? EntregasDesktopView(
-                                    filteredEntregas: filteredEntregas,
-                                    rutaIniciada: state.rutaIniciada,
-                                    onMarcarEntrega: _mostrarDialogoDireccion,
-                                    sortColumnIndex: _sortColumnIndex,
-                                    sortAscending: _sortAscending,
-                                    onSort: (columnIndex, ascending) {
-                                      setState(() {
-                                        _sortColumnIndex = columnIndex;
-                                        _sortAscending = ascending;
-                                      });
-                                    },
-                                  )
-                                : isTablet
-                                    ? Padding(
-                                        padding: EdgeInsets.symmetric(horizontal: horizontalPadding / 2),
-                                        child: GridView.builder(
-                                          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                                            crossAxisCount: 2,
-                                            crossAxisSpacing: 16,
-                                            mainAxisSpacing: 16,
-                                            childAspectRatio: 1.0, // Ajusta si quieres más alto o más ancho
-                                          ),
-                                          itemCount: filteredEntregas.length,
-                                          itemBuilder: (context, index) {
-                                            final facturaData = filteredEntregas[index];
-                                            final cliente = facturaData.key;
-                                            final entregas = facturaData.value;
-                                            // Usa el mismo widget de tarjeta que en móvil
-                                            return EntregasMobileView(
-                                              entregasAgrupadas: [MapEntry(cliente, entregas)],
-                                              rutaIniciada: state.rutaIniciada,
-                                              onMarcarEntrega: _mostrarDialogoDireccion,
-                                            );
-                                          },
-                                        ),
-                                      )
-                                    : EntregasMobileView(
-                                        entregasAgrupadas: filteredEntregas,
-                                        rutaIniciada: state.rutaIniciada,
-                                        onMarcarEntrega: _mostrarDialogoDireccion,
+                          child: CircularProgressIndicator(
+                            color: colorScheme.primary,
+                          ),
+                        )
+                        : state.error != null
+                        ? Center(
+                          child: Padding(
+                            padding: EdgeInsets.all(horizontalPadding),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  Icons.error_outline,
+                                  color: colorScheme.error,
+                                  size: 48,
+                                ),
+                                const SizedBox(height: 16),
+                                Text(
+                                  'Error: ${state.error}',
+                                  style: TextStyle(color: colorScheme.error),
+                                  textAlign: TextAlign.center,
+                                ),
+                                const SizedBox(height: 16),
+                                ElevatedButton(
+                                  onPressed:
+                                      () => _controller.cargarEntregas(
+                                        _codEmpleado,
                                       ),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: colorScheme.surfaceBright,
+                                  ),
+                                  child: const Text('Reintentar'),
+                                ),
+                              ],
+                            ),
+                          ),
+                        )
+                        : state.entregas.isEmpty
+                        ? const Center(
+                          child: Text('No hay entregas pendientes'),
+                        )
+                        : isDesktop
+                        ? EntregasDesktopView(
+                          filteredEntregas: filteredEntregas,
+                          rutaIniciada: state.rutaIniciada,
+                          onMarcarEntrega: _mostrarDialogoDireccion,
+                          sortColumnIndex: _sortColumnIndex,
+                          sortAscending: _sortAscending,
+                          onSort: (columnIndex, ascending) {
+                            setState(() {
+                              _sortColumnIndex = columnIndex;
+                              _sortAscending = ascending;
+                            });
+                          },
+                        )
+                        : isTablet
+                        ? Padding(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: horizontalPadding / 2,
+                          ),
+                          child: GridView.builder(
+                            gridDelegate:
+                                const SliverGridDelegateWithFixedCrossAxisCount(
+                                  crossAxisCount: 2,
+                                  crossAxisSpacing: 16,
+                                  mainAxisSpacing: 16,
+                                  childAspectRatio:
+                                      1.0, // Ajusta si quieres más alto o más ancho
+                                ),
+                            itemCount: filteredEntregas.length,
+                            itemBuilder: (context, index) {
+                              final facturaData = filteredEntregas[index];
+                              final cliente = facturaData.key;
+                              final entregas = facturaData.value;
+                              // Usa el mismo widget de tarjeta que en móvil
+                              return EntregasMobileView(
+                                entregasAgrupadas: [
+                                  MapEntry(cliente, entregas),
+                                ],
+                                rutaIniciada: state.rutaIniciada,
+                                onMarcarEntrega: _mostrarDialogoDireccion,
+                              );
+                            },
+                          ),
+                        )
+                        : EntregasMobileView(
+                          entregasAgrupadas: filteredEntregas,
+                          rutaIniciada: state.rutaIniciada,
+                          onMarcarEntrega: _mostrarDialogoDireccion,
+                        ),
               ),
 
               // Banner de ubicación
@@ -365,7 +403,7 @@ class _EntregasHomeScreenState extends ConsumerState<EntregasHomeScreen> {
 
           if (_isProcesingAction)
             Container(
-              color: Colors.black.withOpacity(0.3),
+              color: Colors.black.withValues(alpha: 0.3),
               child: Center(
                 child: Container(
                   padding: const EdgeInsets.all(20),
@@ -374,7 +412,7 @@ class _EntregasHomeScreenState extends ConsumerState<EntregasHomeScreen> {
                     borderRadius: BorderRadius.circular(8),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.2),
+                        color: Colors.black.withValues(alpha: 0.2),
                         blurRadius: 10,
                         offset: const Offset(0, 5),
                       ),

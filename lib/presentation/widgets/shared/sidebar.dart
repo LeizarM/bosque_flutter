@@ -30,15 +30,15 @@ class _AppSidebarState extends ConsumerState<AppSidebar> {
       final menuNotifier = ref.read(menuProvider.notifier);
       // Primero cargar el estado de expansión
       final savedExpandedState = await menuNotifier.loadExpandedState();
-      
+
       // IMPORTANTE: Cargar menú desde caché inmediatamente
       await menuNotifier.loadMenuFromCacheOnly();
-      
+
       setState(() {
         _expandedItems = savedExpandedState;
         _isInitialized = true;
       });
-      
+
       // Después actualizar desde el servidor
       WidgetsBinding.instance.addPostFrameCallback((_) {
         final user = ref.read(userProvider);
@@ -56,39 +56,41 @@ class _AppSidebarState extends ConsumerState<AppSidebar> {
     final user = ref.watch(userProvider);
     final menuState = ref.watch(menuProvider);
     final sidebarItems = ref.watch(sidebarMenuProvider);
-    
+
     final isSmallScreen = ResponsiveBreakpoints.of(context).smallerThan(TABLET);
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
-    
+
     // Colores temáticos para el sidebar
     final theme = Theme.of(context);
     final primaryColor = theme.colorScheme.primary;
     final surfaceColor = theme.colorScheme.surface;
     final onSurfaceColor = theme.colorScheme.onSurface;
     final errorColor = theme.colorScheme.error;
-    
+
     // Obtener la ruta actual para resaltar el ítem activo
     final currentRoute = GoRouterState.of(context).uri.toString();
-    
+
     // Widget para construir un ítem del menú (con o sin submenús)
-    Widget buildMenuItem(SidebarMenuItem item, bool isActive, {bool isSubmenu = false}) {
+    Widget buildMenuItem(
+      SidebarMenuItem item,
+      bool isActive, {
+      bool isSubmenu = false,
+    }) {
       final hasChildren = item.children != null && item.children!.isNotEmpty;
       final isExpanded = _expandedItems[item.id] ?? false;
-      
+
       return AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-        margin: EdgeInsets.only(
-          left: isSubmenu ? 4.0 : 0.0,
-          bottom: 2.0,
-        ),
+        margin: EdgeInsets.only(left: isSubmenu ? 4.0 : 0.0, bottom: 2.0),
         child: Column(
           children: [
             ClipRRect(
               borderRadius: BorderRadius.circular(10),
               child: Material(
-                color: isActive 
-                    ? primaryColor.withOpacity(0.15) 
-                    : Colors.transparent,
+                color:
+                    isActive
+                        ? primaryColor.withValues(alpha: 0.15)
+                        : Colors.transparent,
                 borderRadius: BorderRadius.circular(10),
                 child: InkWell(
                   onTap: () {
@@ -97,7 +99,9 @@ class _AppSidebarState extends ConsumerState<AppSidebar> {
                       setState(() {
                         _expandedItems[item.id] = !isExpanded;
                         // Guardar el estado de expansión
-                        ref.read(menuProvider.notifier).saveExpandedState(_expandedItems);
+                        ref
+                            .read(menuProvider.notifier)
+                            .saveExpandedState(_expandedItems);
                       });
                     } else {
                       // Navegar a la ruta correspondiente
@@ -118,12 +122,17 @@ class _AppSidebarState extends ConsumerState<AppSidebar> {
                     child: Row(
                       children: [
                         Icon(
-                          hasChildren 
-                              ? (isExpanded ? Icons.keyboard_arrow_down : Icons.keyboard_arrow_right) 
+                          hasChildren
+                              ? (isExpanded
+                                  ? Icons.keyboard_arrow_down
+                                  : Icons.keyboard_arrow_right)
                               : item.icon,
-                          color: isActive 
-                              ? primaryColor 
-                              : isDarkMode ? Colors.grey.shade300 : Colors.grey.shade700,
+                          color:
+                              isActive
+                                  ? primaryColor
+                                  : isDarkMode
+                                  ? Colors.grey.shade300
+                                  : Colors.grey.shade700,
                           size: isSubmenu ? 18 : 22,
                         ),
                         SizedBox(width: isSubmenu ? 8 : 12),
@@ -132,7 +141,8 @@ class _AppSidebarState extends ConsumerState<AppSidebar> {
                             item.title,
                             style: TextStyle(
                               fontSize: isSubmenu ? 13 : 14,
-                              fontWeight: isActive ? FontWeight.w600 : FontWeight.w500,
+                              fontWeight:
+                                  isActive ? FontWeight.w600 : FontWeight.w500,
                               color: isActive ? primaryColor : onSurfaceColor,
                               letterSpacing: isActive ? 0.2 : 0,
                             ),
@@ -161,24 +171,32 @@ class _AppSidebarState extends ConsumerState<AppSidebar> {
                 decoration: BoxDecoration(
                   border: Border(
                     left: BorderSide(
-                      color: isDarkMode ? Colors.grey.shade700 : Colors.grey.shade300,
+                      color:
+                          isDarkMode
+                              ? Colors.grey.shade700
+                              : Colors.grey.shade300,
                       width: 1,
                     ),
                   ),
                 ),
                 child: Column(
-                  children: item.children!.map<Widget>((child) {
-                    // Verificar si la ruta actual coincide con la ruta del hijo
-                    final isChildActive = currentRoute == child.route;
-                    return buildMenuItem(child, isChildActive, isSubmenu: true);
-                  }).toList(),
+                  children:
+                      item.children!.map<Widget>((child) {
+                        // Verificar si la ruta actual coincide con la ruta del hijo
+                        final isChildActive = currentRoute == child.route;
+                        return buildMenuItem(
+                          child,
+                          isChildActive,
+                          isSubmenu: true,
+                        );
+                      }).toList(),
                 ),
               ),
           ],
         ),
       );
     }
-    
+
     // Construir el sidebar basado en el estado del menú
     Widget buildSidebarContent() {
       if (menuState.status == MenuStatus.loading && !_isInitialized) {
@@ -198,7 +216,8 @@ class _AppSidebarState extends ConsumerState<AppSidebar> {
               Text(
                 'Cargando menú...',
                 style: TextStyle(
-                  color: isDarkMode ? Colors.grey.shade300 : Colors.grey.shade600,
+                  color:
+                      isDarkMode ? Colors.grey.shade300 : Colors.grey.shade600,
                   fontSize: 14,
                 ),
               ),
@@ -212,11 +231,7 @@ class _AppSidebarState extends ConsumerState<AppSidebar> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(
-                  Icons.error_outline,
-                  color: errorColor,
-                  size: 32
-                ),
+                Icon(Icons.error_outline, color: errorColor, size: 32),
                 const SizedBox(height: 16),
                 Text(
                   'Error al cargar el menú',
@@ -231,7 +246,10 @@ class _AppSidebarState extends ConsumerState<AppSidebar> {
                 Text(
                   menuState.errorMessage ?? 'Intente nuevamente',
                   style: TextStyle(
-                    color: isDarkMode ? Colors.grey.shade300 : Colors.grey.shade700,
+                    color:
+                        isDarkMode
+                            ? Colors.grey.shade300
+                            : Colors.grey.shade700,
                     fontSize: 13,
                   ),
                   textAlign: TextAlign.center,
@@ -240,20 +258,26 @@ class _AppSidebarState extends ConsumerState<AppSidebar> {
                 ElevatedButton.icon(
                   onPressed: () {
                     if (user != null) {
-                      ref.read(menuProvider.notifier).loadUserMenu(user.codUsuario);
+                      ref
+                          .read(menuProvider.notifier)
+                          .loadUserMenu(user.codUsuario);
                     }
                   },
                   icon: const Icon(Icons.refresh, size: 18),
                   label: const Text('Reintentar'),
                   style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 10,
+                    ),
                   ),
                 ),
               ],
             ),
           ),
         );
-      } else if (menuState.status == MenuStatus.loaded || sidebarItems.isNotEmpty) {
+      } else if (menuState.status == MenuStatus.loaded ||
+          sidebarItems.isNotEmpty) {
         return ListView(
           padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
           children: [
@@ -268,12 +292,12 @@ class _AppSidebarState extends ConsumerState<AppSidebar> {
               ),
               currentRoute == '/dashboard',
             ),
-            
+
             const Padding(
               padding: EdgeInsets.symmetric(vertical: 12, horizontal: 16),
               child: Divider(height: 1),
             ),
-            
+
             // Label para la sección principal
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
@@ -283,11 +307,12 @@ class _AppSidebarState extends ConsumerState<AppSidebar> {
                   fontSize: 11,
                   fontWeight: FontWeight.bold,
                   letterSpacing: 0.5,
-                  color: isDarkMode ? Colors.grey.shade400 : Colors.grey.shade600,
+                  color:
+                      isDarkMode ? Colors.grey.shade400 : Colors.grey.shade600,
                 ),
               ),
             ),
-            
+
             // Items dinámicos del menú
             ...sidebarItems.map((item) {
               final isActive = currentRoute == item.route;
@@ -306,7 +331,8 @@ class _AppSidebarState extends ConsumerState<AppSidebar> {
                 Icon(
                   Icons.menu_open,
                   size: 48,
-                  color: isDarkMode ? Colors.grey.shade400 : Colors.grey.shade500,
+                  color:
+                      isDarkMode ? Colors.grey.shade400 : Colors.grey.shade500,
                 ),
                 const SizedBox(height: 16),
                 Text(
@@ -332,7 +358,7 @@ class _AppSidebarState extends ConsumerState<AppSidebar> {
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(10),
           border: Border.all(
-            color: errorColor.withOpacity(0.3),
+            color: errorColor.withValues(alpha: 0.3),
             width: 1,
           ),
         ),
@@ -353,11 +379,7 @@ class _AppSidebarState extends ConsumerState<AppSidebar> {
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
             child: Row(
               children: [
-                Icon(
-                  Icons.logout_rounded,
-                  color: errorColor,
-                  size: 20,
-                ),
+                Icon(Icons.logout_rounded, color: errorColor, size: 20),
                 const SizedBox(width: 12),
                 Text(
                   'Cerrar Sesión',
@@ -396,7 +418,7 @@ class _AppSidebarState extends ConsumerState<AppSidebar> {
         backgroundColor: surfaceColor,
         shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.only(
-            topRight: Radius.circular(20), 
+            topRight: Radius.circular(20),
             bottomRight: Radius.circular(20),
           ),
         ),
@@ -425,7 +447,7 @@ class _AppSidebarState extends ConsumerState<AppSidebar> {
                       radius: 30,
                       backgroundColor: Colors.white,
                       child: Text(
-                        (user?.nombreCompleto.isNotEmpty ?? false) 
+                        (user?.nombreCompleto.isNotEmpty ?? false)
                             ? user!.nombreCompleto.substring(0, 1).toUpperCase()
                             : 'U',
                         style: TextStyle(
@@ -451,9 +473,12 @@ class _AppSidebarState extends ConsumerState<AppSidebar> {
                           ),
                           const SizedBox(height: 4),
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 2,
+                            ),
                             decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.2),
+                              color: Colors.white.withValues(alpha: 0.2),
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: Text(
@@ -472,20 +497,21 @@ class _AppSidebarState extends ConsumerState<AppSidebar> {
                 ),
               ),
             ),
-            
+
             // Contenido del menú
-            Expanded(
-              child: buildSidebarContent(),
-            ),
-            
+            Expanded(child: buildSidebarContent()),
+
             // Divider + Botón de cerrar sesión + Versión
-            Divider(height: 1, color: isDarkMode ? Colors.grey.shade800 : Colors.grey.shade200),
+            Divider(
+              height: 1,
+              color: isDarkMode ? Colors.grey.shade800 : Colors.grey.shade200,
+            ),
             logoutButton,
             versionFooter,
           ],
         ),
       );
-    } 
+    }
     // Layout desktop (Sidebar)
     else {
       return Container(
@@ -494,10 +520,10 @@ class _AppSidebarState extends ConsumerState<AppSidebar> {
           color: surfaceColor,
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.05),
+              color: Colors.black.withValues(alpha: 0.05),
               blurRadius: 10,
               offset: const Offset(0, 0),
-            )
+            ),
           ],
           borderRadius: const BorderRadius.only(
             topRight: Radius.circular(16),
@@ -510,9 +536,10 @@ class _AppSidebarState extends ConsumerState<AppSidebar> {
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: isDarkMode 
-                    ? theme.colorScheme.primary.withOpacity(0.12)
-                    : theme.colorScheme.primary.withOpacity(0.08),
+                color:
+                    isDarkMode
+                        ? theme.colorScheme.primary.withValues(alpha: 0.12)
+                        : theme.colorScheme.primary.withValues(alpha: 0.08),
                 borderRadius: const BorderRadius.only(
                   topRight: Radius.circular(16),
                 ),
@@ -535,7 +562,7 @@ class _AppSidebarState extends ConsumerState<AppSidebar> {
                       borderRadius: BorderRadius.circular(14),
                       boxShadow: [
                         BoxShadow(
-                          color: primaryColor.withOpacity(0.3),
+                          color: primaryColor.withValues(alpha: 0.3),
                           blurRadius: 8,
                           offset: const Offset(0, 3),
                         ),
@@ -567,11 +594,15 @@ class _AppSidebarState extends ConsumerState<AppSidebar> {
                   ),
                   const SizedBox(height: 4),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 4,
+                    ),
                     decoration: BoxDecoration(
-                      color: isDarkMode
-                          ? primaryColor.withOpacity(0.15)
-                          : primaryColor.withOpacity(0.1),
+                      color:
+                          isDarkMode
+                              ? primaryColor.withValues(alpha: 0.15)
+                              : primaryColor.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Text(
@@ -586,14 +617,15 @@ class _AppSidebarState extends ConsumerState<AppSidebar> {
                 ],
               ),
             ),
-            
+
             // Contenido del menú
-            Expanded(
-              child: buildSidebarContent(),
-            ),
-            
+            Expanded(child: buildSidebarContent()),
+
             // Divider + Botón de cerrar sesión + Versión
-            Divider(height: 1, color: isDarkMode ? Colors.grey.shade800 : Colors.grey.shade200),
+            Divider(
+              height: 1,
+              color: isDarkMode ? Colors.grey.shade800 : Colors.grey.shade200,
+            ),
             logoutButton,
             versionFooter,
           ],

@@ -403,7 +403,7 @@ class _OrganigramaCustomState extends State<OrganigramaCustom> {
         border: Border(left: BorderSide(color: Colors.orange, width: 3)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: Colors.black.withValues(alpha: 0.1),
             blurRadius: 8,
             offset: const Offset(-2, 0),
           ),
@@ -418,7 +418,7 @@ class _OrganigramaCustomState extends State<OrganigramaCustom> {
               color: Colors.orange,
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.1),
+                  color: Colors.black.withValues(alpha: 0.1),
                   blurRadius: 4,
                   offset: const Offset(0, 2),
                 ),
@@ -595,7 +595,7 @@ class _OrganigramaCustomState extends State<OrganigramaCustom> {
           border: Border.all(color: borderColor, width: isInactive ? 2 : 1),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.1),
+              color: Colors.black.withValues(alpha: 0.1),
               blurRadius: 4,
               offset: const Offset(0, 2),
             ),

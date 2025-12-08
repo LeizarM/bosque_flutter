@@ -51,7 +51,9 @@ class _VentasArticulosViewState extends ConsumerState<VentasArticulosView> {
     final isMobile = ResponsiveUtilsBosque.isMobile(context);
 
     // Padding optimizado según tipo de dispositivo
-    final horizontalPadding = ResponsiveUtilsBosque.getHorizontalPadding(context);
+    final horizontalPadding = ResponsiveUtilsBosque.getHorizontalPadding(
+      context,
+    );
     final verticalPadding = ResponsiveUtilsBosque.getVerticalPadding(context);
 
     return Padding(
@@ -373,7 +375,7 @@ class _VentasArticulosViewState extends ConsumerState<VentasArticulosView> {
                               size: 64,
                               color: Theme.of(
                                 context,
-                              ).colorScheme.onSurface.withOpacity(0.4),
+                              ).colorScheme.onSurface.withValues(alpha: 0.4),
                             ),
                             const SizedBox(height: 16),
                             Text(
@@ -389,7 +391,7 @@ class _VentasArticulosViewState extends ConsumerState<VentasArticulosView> {
                               style: TextStyle(
                                 color: Theme.of(
                                   context,
-                                ).colorScheme.onSurface.withOpacity(0.7),
+                                ).colorScheme.onSurface.withValues(alpha: 0.7),
                               ),
                             ),
                           ],
@@ -448,7 +450,9 @@ class _VentasArticulosViewState extends ConsumerState<VentasArticulosView> {
             Icon(
               Icons.search_off,
               size: 64,
-              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.4),
+              color: Theme.of(
+                context,
+              ).colorScheme.onSurface.withValues(alpha: 0.4),
             ),
             const SizedBox(height: 16),
             Text(
@@ -462,7 +466,9 @@ class _VentasArticulosViewState extends ConsumerState<VentasArticulosView> {
             Text(
               'Intenta con otros criterios de búsqueda',
               style: TextStyle(
-                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                color: Theme.of(
+                  context,
+                ).colorScheme.onSurface.withValues(alpha: 0.7),
               ),
             ),
           ],
@@ -526,7 +532,7 @@ class _VentasArticulosViewState extends ConsumerState<VentasArticulosView> {
       child: Text(
         'Mostrando ${codigosOrdenados.length} artículos con ${filteredArticulos.length} variantes',
         style: TextStyle(
-          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
           fontWeight: FontWeight.w500,
         ),
       ),
@@ -562,11 +568,12 @@ class _VentasArticulosViewState extends ConsumerState<VentasArticulosView> {
   ) {
     // Obtenemos el ancho de la pantalla para determinar el número de columnas
     final screenWidth = MediaQuery.of(context).size.width;
-    
+
     // Definimos el número de columnas basado en el ancho de la pantalla
     int crossAxisCount = 3; // Por defecto 3 columnas para escritorio
-    double childAspectRatio = 1.8; // Proporción reducida para aumentar el alto de las tarjetas
-    
+    double childAspectRatio =
+        1.8; // Proporción reducida para aumentar el alto de las tarjetas
+
     // Ajustes para pantallas muy grandes o pequeñas
     if (screenWidth > 1800) {
       crossAxisCount = 4; // 4 columnas para pantallas muy anchas
@@ -580,7 +587,8 @@ class _VentasArticulosViewState extends ConsumerState<VentasArticulosView> {
       padding: const EdgeInsets.only(top: 8),
       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: crossAxisCount, // Número de columnas según ancho
-        childAspectRatio: childAspectRatio, // Proporción reducida para hacer las tarjetas más altas
+        childAspectRatio:
+            childAspectRatio, // Proporción reducida para hacer las tarjetas más altas
         crossAxisSpacing: 16,
         mainAxisSpacing: 16,
       ),
@@ -590,7 +598,8 @@ class _VentasArticulosViewState extends ConsumerState<VentasArticulosView> {
         final variantes = articulosAgrupados[codigoArticulo]!;
 
         // Para cada variante, organizamos por base de datos y lista de precio
-        Map<String?, Map<int?, ArticulosxCiudadEntity>> variantesPorDbYLista = {};
+        Map<String?, Map<int?, ArticulosxCiudadEntity>> variantesPorDbYLista =
+            {};
 
         for (var variante in variantes) {
           if (!variantesPorDbYLista.containsKey(variante.db)) {
@@ -762,18 +771,14 @@ class _VentasArticulosViewState extends ConsumerState<VentasArticulosView> {
                                     ),
                                     child: Row(
                                       children: [
-                                        
                                         // Lista de precios
                                         // Código de la variante
                                         Text(
                                           'Lista ${articulo.listaPrecio}: ',
-                                          style: const TextStyle(
-                                            fontSize: 13,
-                                          ),
+                                          style: const TextStyle(fontSize: 13),
                                           overflow: TextOverflow.ellipsis,
                                         ),
 
-                                        
                                         // Condición
                                         Expanded(
                                           flex: 3,
@@ -867,7 +872,7 @@ class _VentasArticulosViewState extends ConsumerState<VentasArticulosView> {
   ) {
     // No es necesario calcular la disponibilidad total, ya viene del backend
     int disponibilidadTotal = articuloPrincipal.disponible;
-    
+
     // Obtener el precio mínimo para mostrar destacado
     double precioMinimo = double.infinity;
     String? monedaPrecioMinimo;
@@ -1168,19 +1173,28 @@ class _VentasArticulosViewState extends ConsumerState<VentasArticulosView> {
                                 text: 'Disponibilidad',
                               ),
                             ],
-                            indicatorColor: Theme.of(context).colorScheme.primary,
+                            indicatorColor:
+                                Theme.of(context).colorScheme.primary,
                             labelColor: Theme.of(context).colorScheme.primary,
                           ),
-                          
+
                           // Contenido de los tabs
                           Expanded(
                             child: TabBarView(
                               children: [
                                 // TAB 1: PRECIOS
-                                _buildPreciosTab(context, variantesPorDbYLista, scrollController),
-                                
+                                _buildPreciosTab(
+                                  context,
+                                  variantesPorDbYLista,
+                                  scrollController,
+                                ),
+
                                 // TAB 2: DISPONIBILIDAD
-                                _buildDisponibilidadTab(context, articuloPrincipal, scrollController),
+                                _buildDisponibilidadTab(
+                                  context,
+                                  articuloPrincipal,
+                                  scrollController,
+                                ),
                               ],
                             ),
                           ),
@@ -1210,7 +1224,8 @@ class _VentasArticulosViewState extends ConsumerState<VentasArticulosView> {
           final db = dbEntry.key ?? '';
           final variantes = dbEntry.value;
           final listasPrecio =
-              variantes.keys.toList()..sort((a, b) => (a ?? 0).compareTo(b ?? 0));
+              variantes.keys.toList()
+                ..sort((a, b) => (a ?? 0).compareTo(b ?? 0));
 
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -1264,20 +1279,15 @@ class _VentasArticulosViewState extends ConsumerState<VentasArticulosView> {
                                 color: Theme.of(context).colorScheme.secondary,
                               ),
                             ),
-                            
                           ],
                         ),
 
                         // Condición de precio
                         Padding(
-                          padding: const EdgeInsets.symmetric(
-                            vertical: 6,
-                          ),
+                          padding: const EdgeInsets.symmetric(vertical: 6),
                           child: Text(
                             'Condición: ${articulo.condicionPrecio}',
-                            style: const TextStyle(
-                              fontSize: 14,
-                            ),
+                            style: const TextStyle(fontSize: 14),
                           ),
                         ),
 
@@ -1315,29 +1325,24 @@ class _VentasArticulosViewState extends ConsumerState<VentasArticulosView> {
     return Consumer(
       builder: (context, ref, child) {
         final articleStockAsyncValue = ref.watch(
-          articuloAlmacenProvider((
-            articulo.codArticulo,
-            widget.codCiudad,
-          )),
+          articuloAlmacenProvider((articulo.codArticulo, widget.codCiudad)),
         );
-        
+
         return articleStockAsyncValue.when(
           data: (articles) {
             if (articles.isEmpty) {
               return Center(
                 child: Text(
                   'No hay stock disponible para este artículo',
-                  style: TextStyle(
-                    color: Theme.of(context).colorScheme.error,
-                  ),
+                  style: TextStyle(color: Theme.of(context).colorScheme.error),
                 ),
               );
             }
-            
+
             // No necesitamos calcular la disponibilidad total, ya viene del backend
             // Usamos directamente el valor de disponibilidad del artículo principal
             int totalGeneral = articulo.disponible;
-            
+
             return Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -1363,7 +1368,7 @@ class _VentasArticulosViewState extends ConsumerState<VentasArticulosView> {
                     ),
                   ),
                 ),
-                
+
                 // Lista de inventario por base de datos y ciudad
                 Expanded(
                   child: _buildStockContent(
@@ -1375,17 +1380,14 @@ class _VentasArticulosViewState extends ConsumerState<VentasArticulosView> {
               ],
             );
           },
-          loading: () => const Center(
-            child: CircularProgressIndicator(),
-          ),
-          error: (error, stackTrace) => Center(
-            child: Text(
-              'Error al cargar datos: ${error.toString()}',
-              style: TextStyle(
-                color: Theme.of(context).colorScheme.error,
+          loading: () => const Center(child: CircularProgressIndicator()),
+          error:
+              (error, stackTrace) => Center(
+                child: Text(
+                  'Error al cargar datos: ${error.toString()}',
+                  style: TextStyle(color: Theme.of(context).colorScheme.error),
+                ),
               ),
-            ),
-          ),
         );
       },
     );
@@ -1418,7 +1420,9 @@ class _VentasArticulosViewState extends ConsumerState<VentasArticulosView> {
           // Group by city within this database
           final articlesByCity = <String, List<ArticulosxAlmacenEntity>>{};
           for (final article in dbArticles) {
-            final city = article.ciudad; // Removed ?? 'Sin Ciudad' as ciudad can't be null
+            final city =
+                article
+                    .ciudad; // Removed ?? 'Sin Ciudad' as ciudad can't be null
             if (!articlesByCity.containsKey(city)) {
               articlesByCity[city] = [];
             }

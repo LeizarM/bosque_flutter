@@ -30,7 +30,7 @@ class InfoRow extends StatelessWidget {
       color: theme.colorScheme.onSurface,
     );
     final defaultValueStyle = theme.textTheme.bodyMedium?.copyWith(
-      color: theme.colorScheme.onSurface.withOpacity(0.8),
+      color: theme.colorScheme.onSurface.withValues(alpha: 0.8),
     );
 
     return Padding(
@@ -39,24 +39,16 @@ class InfoRow extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           if (icon != null) ...[
-            Icon(
-              icon, 
-              size: 20, 
-              color: iconColor ?? theme.colorScheme.primary,
-            ),
+            Icon(icon, size: 20, color: iconColor ?? theme.colorScheme.primary),
             const SizedBox(width: 8),
           ],
-          Text(
-            label,
-            style: labelStyle ?? defaultLabelStyle,
-          ),
+          Text(label, style: labelStyle ?? defaultLabelStyle),
           const SizedBox(width: 8),
           Expanded(
             child: Text(
               value.isEmpty ? 'SIN REGISTROS' : value,
               style: valueStyle ?? defaultValueStyle,
               overflow: TextOverflow.ellipsis,
-              
             ),
           ),
         ],

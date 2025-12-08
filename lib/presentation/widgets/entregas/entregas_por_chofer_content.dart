@@ -102,9 +102,9 @@ class _EntregasPorChoferContentState
   Color _getRowBackgroundColor(EntregaEntity entrega) {
     final colorScheme = Theme.of(context).colorScheme;
     if (entrega.docEntry == -1) {
-      return colorScheme.tertiaryContainer.withOpacity(0.5);
+      return colorScheme.tertiaryContainer.withValues(alpha: 0.5);
     } else if (entrega.docEntry == 0) {
-      return colorScheme.primaryContainer.withOpacity(0.5);
+      return colorScheme.primaryContainer.withValues(alpha: 0.5);
     } else {
       return colorScheme.surface;
     }
@@ -475,17 +475,18 @@ class _EntregasPorChoferContentState
         renderer: (rendererContext) {
           final int rowIdx = rendererContext.rowIdx;
           final int realIdx = rowIdx;
-          final bool isValidIdx = realIdx >= 0 && realIdx < paginatedData.length;
+          final bool isValidIdx =
+              realIdx >= 0 && realIdx < paginatedData.length;
           return Center(
             child: IconButton(
-              icon: const Icon(
-                Icons.remove_red_eye,
-                size: 20,
-              ),
+              icon: const Icon(Icons.remove_red_eye, size: 20),
               color: Theme.of(context).colorScheme.primary,
-              onPressed: isValidIdx ? () {
-                _onVerEntrega(paginatedData[realIdx]);
-              } : null,
+              onPressed:
+                  isValidIdx
+                      ? () {
+                        _onVerEntrega(paginatedData[realIdx]);
+                      }
+                      : null,
               tooltip: 'Ver detalles',
             ),
           );
@@ -516,7 +517,10 @@ class _EntregasPorChoferContentState
                 resizeMode: PlutoResizeMode.normal,
               ),
               style: PlutoGridStyleConfig(
-                cellTextStyle: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurface),
+                cellTextStyle: TextStyle(
+                  fontSize: 12,
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
                 columnTextStyle: TextStyle(
                   fontWeight: FontWeight.bold,
                   fontSize: 12,
@@ -540,23 +544,28 @@ class _EntregasPorChoferContentState
               WidgetsBinding.instance.addPostFrameCallback((_) {
                 for (var column in event.stateManager.columns) {
                   double maxWidth = column.width;
-                  final double titleWidth = _estimateTextWidth(
-                    column.title,
-                    const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
-                  ) + 32;
+                  final double titleWidth =
+                      _estimateTextWidth(
+                        column.title,
+                        const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 12,
+                        ),
+                      ) +
+                      32;
                   maxWidth = max(maxWidth, titleWidth);
                   for (var row in event.stateManager.rows) {
-                    final cellValue = row.cells[column.field]?.value?.toString() ?? '';
-                    final double cellWidth = _estimateTextWidth(
-                      cellValue,
-                      const TextStyle(fontSize: 12),
-                    ) + 16;
+                    final cellValue =
+                        row.cells[column.field]?.value?.toString() ?? '';
+                    final double cellWidth =
+                        _estimateTextWidth(
+                          cellValue,
+                          const TextStyle(fontSize: 12),
+                        ) +
+                        16;
                     maxWidth = max(maxWidth, cellWidth);
                   }
-                  event.stateManager.resizeColumn(
-                    column,
-                    min(maxWidth, 300),
-                  );
+                  event.stateManager.resizeColumn(column, min(maxWidth, 300));
                 }
               });
             },
@@ -600,15 +609,11 @@ class _EntregasPorChoferContentState
           ),
           'cliente': PlutoCell(value: entrega.cardName),
           'fechaNota': PlutoCell(value: _formatDate(entrega.fechaNota)),
-          'fechaEntrega': PlutoCell(
-            value: _formatDate(entrega.fechaEntrega),
-          ),
+          'fechaEntrega': PlutoCell(value: _formatDate(entrega.fechaEntrega)),
           'diferenciaMinutos': PlutoCell(
             value: entrega.diferenciaMinutos.toString(),
           ),
-          'direccion': PlutoCell(
-            value: entrega.direccionEntrega,
-          ),
+          'direccion': PlutoCell(value: entrega.direccionEntrega),
           'vendedor': PlutoCell(value: entrega.vendedor),
           'chofer': PlutoCell(value: entrega.nombreCompleto),
           'coche': PlutoCell(value: entrega.cochePlaca ?? '-'),
@@ -659,65 +664,76 @@ class _EntregasPorChoferContentState
           const Spacer(),
           IconButton(
             icon: Icon(Icons.first_page, color: colorScheme.primary),
-            onPressed: _currentPage > 1
-                ? () {
-                    setState(() {
-                      _currentPage = 1;
-                    });
-                  }
-                : null,
+            onPressed:
+                _currentPage > 1
+                    ? () {
+                      setState(() {
+                        _currentPage = 1;
+                      });
+                    }
+                    : null,
             tooltip: 'Primera página',
           ),
           IconButton(
             icon: Icon(Icons.chevron_left, color: colorScheme.primary),
-            onPressed: _currentPage > 1
-                ? () {
-                    setState(() {
-                      _currentPage--;
-                    });
-                  }
-                : null,
+            onPressed:
+                _currentPage > 1
+                    ? () {
+                      setState(() {
+                        _currentPage--;
+                      });
+                    }
+                    : null,
             tooltip: 'Página anterior',
           ),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Text(
               'Página $_currentPage de $totalPages',
-              style: TextStyle(fontWeight: FontWeight.bold, color: colorScheme.primary),
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                color: colorScheme.primary,
+              ),
             ),
           ),
           IconButton(
             icon: Icon(Icons.chevron_right, color: colorScheme.primary),
-            onPressed: _currentPage < totalPages
-                ? () {
-                    setState(() {
-                      _currentPage++;
-                    });
-                  }
-                : null,
+            onPressed:
+                _currentPage < totalPages
+                    ? () {
+                      setState(() {
+                        _currentPage++;
+                      });
+                    }
+                    : null,
             tooltip: 'Página siguiente',
           ),
           IconButton(
             icon: Icon(Icons.last_page, color: colorScheme.primary),
-            onPressed: _currentPage < totalPages
-                ? () {
-                    setState(() {
-                      _currentPage = totalPages;
-                    });
-                  }
-                : null,
+            onPressed:
+                _currentPage < totalPages
+                    ? () {
+                      setState(() {
+                        _currentPage = totalPages;
+                      });
+                    }
+                    : null,
             tooltip: 'Última página',
           ),
           const SizedBox(width: 16),
           DropdownButton<int>(
             value: _itemsPerPage,
             dropdownColor: colorScheme.surface,
-            items: [10, 25, 50, 100].map((int value) {
-              return DropdownMenuItem<int>(
-                value: value,
-                child: Text('$value por página', style: TextStyle(color: colorScheme.onSurface)),
-              );
-            }).toList(),
+            items:
+                [10, 25, 50, 100].map((int value) {
+                  return DropdownMenuItem<int>(
+                    value: value,
+                    child: Text(
+                      '$value por página',
+                      style: TextStyle(color: colorScheme.onSurface),
+                    ),
+                  );
+                }).toList(),
             onChanged: (int? newValue) {
               if (newValue != null) {
                 setState(() {
@@ -734,9 +750,7 @@ class _EntregasPorChoferContentState
 
   void _onVerEntrega(EntregaEntity entrega) {
     Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) => EntregaDetalleScreen(entrega: entrega),
-      ),
+      MaterialPageRoute(builder: (_) => EntregaDetalleScreen(entrega: entrega)),
     );
   }
 
@@ -750,7 +764,10 @@ class _EntregasPorChoferContentState
           color: _getRowBackgroundColor(entrega),
           margin: const EdgeInsets.symmetric(vertical: 8),
           child: ListTile(
-            title: Text(entrega.cardName ?? '-', style: TextStyle(color: colorScheme.onSurface)),
+            title: Text(
+              entrega.cardName ?? '-',
+              style: TextStyle(color: colorScheme.onSurface),
+            ),
             subtitle: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -758,7 +775,10 @@ class _EntregasPorChoferContentState
                   'Factura: ${entrega.factura > 0 ? entrega.factura.toString() : '-'}',
                   style: TextStyle(color: colorScheme.onSurfaceVariant),
                 ),
-                Text('Fecha Entrega: ${_formatDate(entrega.fechaEntrega)}', style: TextStyle(color: colorScheme.onSurfaceVariant)),
+                Text(
+                  'Fecha Entrega: ${_formatDate(entrega.fechaEntrega)}',
+                  style: TextStyle(color: colorScheme.onSurfaceVariant),
+                ),
                 Text(
                   'Dirección: ${entrega.direccionEntrega ?? entrega.addressEntregaFac ?? '-'}',
                   style: TextStyle(color: colorScheme.onSurfaceVariant),
