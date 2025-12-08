@@ -393,10 +393,8 @@ class DepositosChequesNotifier extends StateNotifier<DepositosChequesState> {
   }
 
   void seleccionarNota(int docNum, bool selected) {
-    debugPrint('⭐ INICIO seleccionarNota: docNum=$docNum, selected=$selected');
-    debugPrint(
-      '  Estado ANTES: notasSeleccionadas=${state.notasSeleccionadas}',
-    );
+    console('⭐ INICIO seleccionarNota: docNum=$docNum, selected=$selected');
+    console('  Estado ANTES: notasSeleccionadas=${state.notasSeleccionadas}');
 
     // Crear una nueva lista para evitar problemas de mutación
     final List<int> nuevasSeleccionadas = List<int>.from(
@@ -406,16 +404,16 @@ class DepositosChequesNotifier extends StateNotifier<DepositosChequesState> {
     if (selected) {
       if (!nuevasSeleccionadas.contains(docNum)) {
         nuevasSeleccionadas.add(docNum);
-        debugPrint('  ✅ Añadido $docNum a la lista');
+        console('  ✅ Añadido $docNum a la lista');
       } else {
-        debugPrint('  ⚠️ El docNum $docNum ya estaba en la lista');
+        console('  ⚠️ El docNum $docNum ya estaba en la lista');
       }
     } else {
       if (nuevasSeleccionadas.contains(docNum)) {
         nuevasSeleccionadas.remove(docNum);
-        debugPrint('  ❌ Eliminado $docNum de la lista');
+        console('  ❌ Eliminado $docNum de la lista');
       } else {
-        debugPrint('  ⚠️ El docNum $docNum no estaba en la lista');
+        console('  ⚠️ El docNum $docNum no estaba en la lista');
       }
     }
 
@@ -537,7 +535,7 @@ class DepositosChequesNotifier extends StateNotifier<DepositosChequesState> {
       try {
         result = await _repo.registrarDeposito(deposito, imagen);
       } catch (e, st) {
-        debugPrint(
+        console(
           '[DEBUG][provider] Error al registrar depósito: $e; ${st.toString()}',
         );
       }

@@ -1,5 +1,6 @@
 import 'package:bosque_flutter/core/state/articulo_almacen_provider.dart';
 import 'package:bosque_flutter/core/state/articulo_ciudad_provider.dart';
+import 'package:bosque_flutter/core/utils/console_log.dart';
 import 'package:bosque_flutter/core/utils/responsive_utils_bosque.dart';
 import 'package:bosque_flutter/domain/entities/articulos_almacen_entity.dart';
 import 'package:bosque_flutter/domain/entities/articulos_ciudad_entity.dart';
@@ -271,7 +272,7 @@ class _VentasArticulosViewState extends ConsumerState<VentasArticulosView> {
                   },
                   // Si ocurre un error
                   error: (error, stack) {
-                    debugPrint('Error cargando artículos: $error');
+                    console('Error cargando artículos: $error');
 
                     if (_articulosCache.isNotEmpty) {
                       // Si hay error pero tenemos datos en caché, mostrar los datos de caché

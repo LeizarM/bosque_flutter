@@ -1,5 +1,5 @@
+import 'package:bosque_flutter/core/utils/console_log.dart';
 import 'package:dio/dio.dart';
-import 'package:flutter/material.dart';
 import 'package:bosque_flutter/core/constants/app_constants.dart';
 import 'package:bosque_flutter/core/network/dio_client.dart';
 import 'package:bosque_flutter/data/models/chofer_model.dart';
@@ -40,10 +40,10 @@ class ChoferRepositoryImpl implements ChoferRepository {
         errorMessage =
             'Error del servidor: ${e.response!.statusCode} - ${e.response!.data.toString()}';
       }
-      debugPrint(errorMessage);
+      console(errorMessage);
       throw Exception(errorMessage);
     } catch (e) {
-      debugPrint('Error desconocido: ${e.toString()}');
+      console('Error desconocido: ${e.toString()}');
       throw Exception('Error desconocido: ${e.toString()}');
     }
   }
@@ -62,7 +62,7 @@ class ChoferRepositoryImpl implements ChoferRepository {
                 ),
       );
     } catch (e) {
-      debugPrint(' Error al buscar chofer por ID: ${e.toString()}');
+      console(' Error al buscar chofer por ID: ${e.toString()}');
       return null;
     }
   }

@@ -1,19 +1,14 @@
 import 'dart:convert';
 
+import 'package:bosque_flutter/core/utils/console_log.dart';
 import 'package:bosque_flutter/data/repositories/chofer_repository_impl.dart';
 import 'package:bosque_flutter/domain/entities/chofer_entity.dart';
 import 'package:bosque_flutter/domain/repositories/chofer_repository.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 // Estados para los choferes
-enum ChoferesStatus {
-  initial,
-  loading,
-  loaded,
-  error,
-}
+enum ChoferesStatus { initial, loading, loaded, error }
 
 // Clase que define el estado de los choferes
 class ChoferesState {
@@ -30,10 +25,10 @@ class ChoferesState {
   });
 
   ChoferesState.initial()
-      : status = ChoferesStatus.initial,
-        choferes = [],
-        errorMessage = null,
-        lastUpdated = null;
+    : status = ChoferesStatus.initial,
+      choferes = [],
+      errorMessage = null,
+      lastUpdated = null;
 
   ChoferesState copyWith({
     ChoferesStatus? status,
@@ -53,7 +48,7 @@ class ChoferesState {
 // Notifier para manejar el estado de los choferes
 class ChoferesNotifier extends StateNotifier<ChoferesState> {
   final ChoferRepository _repository;
-  
+
   // Claves para SharedPreferences
   static const String _choferesCacheKey = 'choferes_cache';
   static const String _choferesLastUpdateKey = 'choferes_last_update';
@@ -71,17 +66,17 @@ class ChoferesNotifier extends StateNotifier<ChoferesState> {
       if (state.choferes.isEmpty || state.status == ChoferesStatus.initial) {
         state = state.copyWith(status: ChoferesStatus.loading);
       }
-      
+
       // Si no se fuerza refresh, intentar cargar desde caché primero
       if (!forceRefresh) {
         final cachedChoferes = await _loadChoferesFromCache();
-        
+
         if (cachedChoferes != null && cachedChoferes.isNotEmpty) {
           state = state.copyWith(
             status: ChoferesStatus.loaded,
             choferes: cachedChoferes,
           );
-          
+
           // Verificar si la caché es reciente o necesita actualización
           final lastUpdate = await _getLastUpdateTime();
           final now = DateTime.now();
@@ -92,12 +87,12 @@ class ChoferesNotifier extends StateNotifier<ChoferesState> {
           // Caché expirada, se actualizará en segundo plano
         }
       }
-      
+
       // Cargar desde servidor
       await _fetchAndSaveChoferes();
     } catch (e) {
-      debugPrint('❌ Error cargando choferes: $e');
-      
+      console('❌ Error cargando choferes: $e');
+
       // Solo actualizar estado a error si no hay datos en caché
       if (state.choferes.isEmpty) {
         state = state.copyWith(
@@ -111,15 +106,17 @@ class ChoferesNotifier extends StateNotifier<ChoferesState> {
   // Obtener y guardar choferes desde el servidor
   Future<void> _fetchAndSaveChoferes() async {
     try {
-      debugPrint('🔄 Solicitando choferes al servidor');
+      console('🔄 Solicitando choferes al servidor');
       final choferesList = await _repository.getChoferes();
-      
+
       if (choferesList.isNotEmpty) {
-        debugPrint('✅ Choferes obtenidos con éxito: ${choferesList.length} registros');
-        
+        console(
+          '✅ Choferes obtenidos con éxito: ${choferesList.length} registros',
+        );
+
         // Guardar en caché
         await _saveChoferesToCache(choferesList);
-        
+
         // Actualizar estado
         state = state.copyWith(
           status: ChoferesStatus.loaded,
@@ -127,67 +124,80 @@ class ChoferesNotifier extends StateNotifier<ChoferesState> {
           lastUpdated: DateTime.now(),
         );
       } else {
-        debugPrint('⚠️ La lista de choferes está vacía');
+        console('⚠️ La lista de choferes está vacía');
       }
     } catch (e) {
-      debugPrint('❌ Error obteniendo choferes del servidor: $e');
+      console('❌ Error obteniendo choferes del servidor: $e');
       rethrow;
     }
   }
-  
+
   // Guardar choferes en caché
   Future<void> _saveChoferesToCache(List<ChoferEntity> choferes) async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      
+
       // Serializar datos de choferes
-      final choferesData = choferes.map((chofer) => {
-        'codEmpleado': chofer.codEmpleado,
-        'nombreCompleto': chofer.nombreCompleto,
-        'cargo': chofer.cargo,
-      }).toList();
-      
+      final choferesData =
+          choferes
+              .map(
+                (chofer) => {
+                  'codEmpleado': chofer.codEmpleado,
+                  'nombreCompleto': chofer.nombreCompleto,
+                  'cargo': chofer.cargo,
+                },
+              )
+              .toList();
+
       // Guardar como JSON string
       await prefs.setString(_choferesCacheKey, jsonEncode(choferesData));
-      
+
       // Guardar fecha de última actualización
-      await prefs.setString(_choferesLastUpdateKey, DateTime.now().toIso8601String());
-      
-      debugPrint('✅ Choferes guardados en caché: ${choferes.length} registros');
+      await prefs.setString(
+        _choferesLastUpdateKey,
+        DateTime.now().toIso8601String(),
+      );
+
+      console('✅ Choferes guardados en caché: ${choferes.length} registros');
     } catch (e) {
-      debugPrint('❌ Error guardando choferes en caché: $e');
+      console('❌ Error guardando choferes en caché: $e');
     }
   }
-  
+
   // Cargar choferes desde caché (uso interno)
   Future<List<ChoferEntity>?> _loadChoferesFromCache() async {
     try {
       final prefs = await SharedPreferences.getInstance();
       final choferesJson = prefs.getString(_choferesCacheKey);
-      
+
       if (choferesJson == null) {
-        debugPrint('⚠️ No hay caché de choferes disponible');
+        console('⚠️ No hay caché de choferes disponible');
         return null;
       }
-      
+
       // Deserializar lista
       final choferesData = jsonDecode(choferesJson) as List<dynamic>;
-      
+
       // Convertir a entidades
-      final choferes = choferesData.map((item) => ChoferEntity(
-        codEmpleado: item['codEmpleado'],
-        nombreCompleto: item['nombreCompleto'],
-        cargo: item['cargo'],
-      )).toList();
-      
-      debugPrint('✅ Choferes cargados de caché: ${choferes.length} registros');
+      final choferes =
+          choferesData
+              .map(
+                (item) => ChoferEntity(
+                  codEmpleado: item['codEmpleado'],
+                  nombreCompleto: item['nombreCompleto'],
+                  cargo: item['cargo'],
+                ),
+              )
+              .toList();
+
+      console('✅ Choferes cargados de caché: ${choferes.length} registros');
       return choferes;
     } catch (e) {
-      debugPrint('❌ Error cargando choferes desde caché: $e');
+      console('❌ Error cargando choferes desde caché: $e');
       return null;
     }
   }
-  
+
   // Método público para cargar desde caché (útil al iniciar la aplicación)
   Future<void> loadChoferesFromCache() async {
     try {
@@ -197,29 +207,29 @@ class ChoferesNotifier extends StateNotifier<ChoferesState> {
           status: ChoferesStatus.loaded,
           choferes: cachedChoferes,
         );
-        debugPrint('✅ Estado actualizado con choferes desde caché');
+        console('✅ Estado actualizado con choferes desde caché');
       }
     } catch (e) {
-      debugPrint('❌ Error cargando choferes desde caché: $e');
+      console('❌ Error cargando choferes desde caché: $e');
     }
   }
-  
+
   // Obtener fecha de última actualización
   Future<DateTime?> _getLastUpdateTime() async {
     try {
       final prefs = await SharedPreferences.getInstance();
       final lastUpdateStr = prefs.getString(_choferesLastUpdateKey);
-      
+
       if (lastUpdateStr != null) {
         return DateTime.parse(lastUpdateStr);
       }
       return null;
     } catch (e) {
-      debugPrint('❌ Error obteniendo fecha de última actualización: $e');
+      console('❌ Error obteniendo fecha de última actualización: $e');
       return null;
     }
   }
-  
+
   // Buscar un chofer por ID
   Future<ChoferEntity?> getChoferById(int codEmpleado) async {
     // Primero buscar en el estado actual
@@ -230,26 +240,26 @@ class ChoferesNotifier extends StateNotifier<ChoferesState> {
           orElse: () => throw Exception(),
         );
       }
-      
+
       // Si no está en el estado, buscar desde el repositorio
       return await _repository.getChoferById(codEmpleado);
     } catch (e) {
-      debugPrint('⚠️ Chofer no encontrado: $codEmpleado');
+      console('⚠️ Chofer no encontrado: $codEmpleado');
       return null;
     }
   }
-  
+
   // Limpiar caché (útil al cerrar sesión)
   Future<void> clearCache() async {
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.remove(_choferesCacheKey);
       await prefs.remove(_choferesLastUpdateKey);
-      
+
       state = ChoferesState.initial();
-      debugPrint('✅ Caché de choferes limpiada');
+      console('✅ Caché de choferes limpiada');
     } catch (e) {
-      debugPrint('❌ Error limpiando caché de choferes: $e');
+      console('❌ Error limpiando caché de choferes: $e');
     }
   }
 }
@@ -260,10 +270,12 @@ final choferRepositoryProvider = Provider<ChoferRepository>((ref) {
 });
 
 // Provider para el estado de los choferes (con notifier)
-final choferesProvider = StateNotifierProvider<ChoferesNotifier, ChoferesState>((ref) {
-  final repository = ref.watch(choferRepositoryProvider);
-  return ChoferesNotifier(repository);
-});
+final choferesProvider = StateNotifierProvider<ChoferesNotifier, ChoferesState>(
+  (ref) {
+    final repository = ref.watch(choferRepositoryProvider);
+    return ChoferesNotifier(repository);
+  },
+);
 
 // Provider sencillo para acceder a la lista de choferes (sin necesidad de manejar el estado)
 final choferesListProvider = Provider<List<ChoferEntity>>((ref) {
@@ -272,28 +284,39 @@ final choferesListProvider = Provider<List<ChoferEntity>>((ref) {
 });
 
 // Provider para obtener un chofer por su ID
-final choferByIdProvider = FutureProvider.family<ChoferEntity?, int>((ref, codEmpleado) async {
+final choferByIdProvider = FutureProvider.family<ChoferEntity?, int>((
+  ref,
+  codEmpleado,
+) async {
   final choferesNotifier = ref.watch(choferesProvider.notifier);
   return choferesNotifier.getChoferById(codEmpleado);
 });
 
 // Provider para filtrar choferes por cargo
-final choferesByCargoPredicate = Provider.family<List<ChoferEntity>, String>((ref, cargo) {
+final choferesByCargoPredicate = Provider.family<List<ChoferEntity>, String>((
+  ref,
+  cargo,
+) {
   final choferes = ref.watch(choferesListProvider);
   if (cargo.isEmpty) return choferes;
-  
-  return choferes.where((chofer) => 
-    chofer.cargo.toLowerCase().contains(cargo.toLowerCase())
-  ).toList();
+
+  return choferes
+      .where(
+        (chofer) => chofer.cargo.toLowerCase().contains(cargo.toLowerCase()),
+      )
+      .toList();
 });
 
 // Provider para búsqueda de choferes por nombre
-final choferesSearchProvider = Provider.family<List<ChoferEntity>, String>((ref, searchQuery) {
+final choferesSearchProvider = Provider.family<List<ChoferEntity>, String>((
+  ref,
+  searchQuery,
+) {
   final choferes = ref.watch(choferesListProvider);
   if (searchQuery.isEmpty) return choferes;
-  
+
   final query = searchQuery.toLowerCase();
-  return choferes.where((chofer) => 
-    chofer.nombreCompleto.toLowerCase().contains(query)
-  ).toList();
+  return choferes
+      .where((chofer) => chofer.nombreCompleto.toLowerCase().contains(query))
+      .toList();
 });

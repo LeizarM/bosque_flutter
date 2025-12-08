@@ -822,7 +822,7 @@ class _PersonaSectionState extends ConsumerState<PersonaSection> {
         }
       }
     } catch (e) {
-      debugPrint("Error al verificar documentos para advertencia: $e");
+      console("Error al verificar documentos para advertencia: $e");
     }
 
     // Se muestra el diálogo de la galería.

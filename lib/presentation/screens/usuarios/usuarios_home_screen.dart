@@ -229,7 +229,6 @@ class _UsuariosHomeScreenState extends ConsumerState<UsuariosHomeScreen> {
                 );
               });
             } catch (e) {
-              debugPrint('Error al copiar permisos: $e');
               Navigator.of(dialogContext).pop();
               Future.delayed(const Duration(milliseconds: 300), () {
                 ScaffoldMessenger.of(context).showSnackBar(

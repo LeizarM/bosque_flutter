@@ -1,3 +1,4 @@
+import 'package:bosque_flutter/core/utils/console_log.dart';
 import 'package:bosque_flutter/presentation/widgets/entregas/entrega_detalle_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -89,7 +90,7 @@ class _EntregasPorChoferContentState
         return DateFormat('dd/MM/yyyy HH:mm').format(fecha);
       }
     } catch (e) {
-      debugPrint('Error formateando fecha: $e');
+      console('Error formateando fecha: $e');
     }
     return '-';
   }

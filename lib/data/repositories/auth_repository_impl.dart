@@ -1,3 +1,4 @@
+import 'package:bosque_flutter/core/utils/console_log.dart';
 import 'package:bosque_flutter/data/models/empleado_model.dart';
 import 'package:bosque_flutter/data/models/usuarioBtn_model.dart';
 import 'package:bosque_flutter/data/models/vista_usuario_model.dart';
@@ -11,7 +12,6 @@ import 'package:bosque_flutter/core/utils/secure_storage.dart';
 import 'package:bosque_flutter/data/models/login_model.dart';
 import 'package:bosque_flutter/domain/entities/login_entity.dart';
 import 'package:bosque_flutter/domain/repositories/auth_repository.dart';
-import 'package:flutter/material.dart';
 
 class AuthRepositoryImpl implements AuthRepository {
   final Dio _dio = DioClient.getInstance();
@@ -93,17 +93,17 @@ class AuthRepositoryImpl implements AuthRepository {
         return response.statusCode == 200 || response.statusCode == 201;
       } on DioException catch (e) {
         if (e.response != null) {
-          debugPrint('CÓDIGO DE ESTADO: ${e.response?.statusCode}');
-          debugPrint('DATOS DE RESPUESTA: ${e.response?.data}');
+          console('CÓDIGO DE ESTADO: ${e.response?.statusCode}');
+          console('DATOS DE RESPUESTA: ${e.response?.data}');
         }
         if (e.error != null) {
-          debugPrint('ERROR DETALLADO: ${e.error}');
+          console('ERROR DETALLADO: ${e.error}');
         }
 
         return false;
       }
     } catch (e) {
-      debugPrint('Error desconocido al marcar documento: ${e.toString()}');
+      console('Error desconocido al marcar documento: ${e.toString()}');
       // Intentamos guardar localmente para sincronizar después
 
       return false;
@@ -140,7 +140,7 @@ class AuthRepositoryImpl implements AuthRepository {
         return [];
       }
     } catch (e) {
-      debugPrint('Error al cargar permisos de botones: ${e.toString()}');
+      console('Error al cargar permisos de botones: ${e.toString()}');
       return [];
     }
   }
@@ -309,7 +309,7 @@ class AuthRepositoryImpl implements AuthRepository {
         return [];
       }
     } catch (e) {
-      debugPrint('Error al cargar permisos de vista: ${e.toString()}');
+      console('Error al cargar permisos de vista: ${e.toString()}');
       return [];
     }
   }
@@ -337,9 +337,7 @@ class AuthRepositoryImpl implements AuthRepository {
         return [];
       }
     } catch (e) {
-      debugPrint(
-        'Error al cargar permisos de vista jerárquico: ${e.toString()}',
-      );
+      console('Error al cargar permisos de vista jerárquico: ${e.toString()}');
       return [];
     }
   }

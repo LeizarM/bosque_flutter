@@ -1,10 +1,10 @@
 import 'dart:convert';
 import 'package:bosque_flutter/core/constants/app_constants.dart';
 import 'package:bosque_flutter/core/state/button_permissions_provider.dart';
+import 'package:bosque_flutter/core/utils/console_log.dart';
 import 'package:bosque_flutter/domain/entities/empleado_entity.dart';
 import 'package:bosque_flutter/domain/entities/login_entity.dart';
 import 'package:bosque_flutter/core/utils/secure_storage.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:bosque_flutter/domain/repositories/auth_repository.dart';
 import 'package:bosque_flutter/data/repositories/auth_repository_impl.dart';
@@ -93,7 +93,7 @@ class UserStateNotifier extends StateNotifier<LoginEntity?> {
           .clearPermisos();
       providerContainer.refresh(buttonPermissionsProvider);
     } catch (e) {
-      debugPrint('Error al limpiar permisos: $e');
+      console('Error al limpiar permisos: $e');
     }
   }
 

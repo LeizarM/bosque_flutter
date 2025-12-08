@@ -1,5 +1,6 @@
+import 'package:bosque_flutter/core/utils/console_log.dart';
 import 'package:dio/dio.dart';
-import 'package:flutter/material.dart';
+
 import 'package:bosque_flutter/core/constants/app_constants.dart';
 import 'package:bosque_flutter/data/models/entregas_model.dart';
 import 'package:bosque_flutter/core/network/dio_client.dart';
@@ -77,10 +78,10 @@ class EntregasImpl implements EntregasRepository {
       return response.statusCode == 200;
     } on DioException catch (e) {
       // Manejar errores de red o del servidor
-      debugPrint('Error al sincronizar entregas: ${e.message}');
+      console('Error al sincronizar entregas: ${e.message}');
       return false;
     } catch (e) {
-      debugPrint('Error desconocido: ${e.toString()}');
+      console('Error desconocido: ${e.toString()}');
       return false;
     }
   }
@@ -160,11 +161,11 @@ class EntregasImpl implements EntregasRepository {
         return response.statusCode == 200 || response.statusCode == 201;
       } on DioException catch (e) {
         if (e.response != null) {
-          debugPrint('CÓDIGO DE ESTADO: ${e.response?.statusCode}');
-          debugPrint('DATOS DE RESPUESTA: ${e.response?.data}');
+          console('CÓDIGO DE ESTADO: ${e.response?.statusCode}');
+          console('DATOS DE RESPUESTA: ${e.response?.data}');
         }
         if (e.error != null) {
-          debugPrint('ERROR DETALLADO: ${e.error}');
+          console('ERROR DETALLADO: ${e.error}');
         }
 
         // Intentamos guardar localmente para sincronizar después
@@ -185,7 +186,7 @@ class EntregasImpl implements EntregasRepository {
         return false;
       }
     } catch (e) {
-      debugPrint('Error desconocido al marcar documento: ${e.toString()}');
+      console('Error desconocido al marcar documento: ${e.toString()}');
       // Intentamos guardar localmente para sincronizar después
       _guardarEntregaLocalPendiente(
         docNum,
@@ -219,9 +220,7 @@ class EntregasImpl implements EntregasRepository {
     String direccionEntrega,
   ) {
     try {
-      debugPrint(
-        'Guardando entrega localmente para sincronización posterior...',
-      );
+      console('Guardando entrega localmente para sincronización posterior...');
       // Aquí podrías implementar la lógica para guardar en SharedPreferences o SQLite
       // Incluimos la dirección en los datos guardados localmente
       final datosLocales = {
@@ -238,9 +237,9 @@ class EntregasImpl implements EntregasRepository {
         'codSucursalChofer': codSucursalChofer,
         'codCiudadChofer': codCiudadChofer,
       };
-      debugPrint('Datos guardados localmente: $datosLocales');
+      console('Datos guardados localmente: $datosLocales');
     } catch (e) {
-      debugPrint('Error al guardar entrega localmente: ${e.toString()}');
+      console('Error al guardar entrega localmente: ${e.toString()}');
     }
   }
 
@@ -262,7 +261,7 @@ class EntregasImpl implements EntregasRepository {
         ),
       );
 
-      debugPrint(
+      console(
         'Obteniendo dirección para coordenadas: ${latitud.toStringAsFixed(6)}, ${longitud.toStringAsFixed(6)}',
       );
 
@@ -308,7 +307,7 @@ class EntregasImpl implements EntregasRepository {
           // Crear dirección formateada
           final direccionDetallada = filteredComponents.join(', ');
 
-          debugPrint('DIRECCIÓN OBTENIDA DE API: $direccionDetallada');
+          console('DIRECCIÓN OBTENIDA DE API: $direccionDetallada');
 
           return direccionDetallada.isNotEmpty
               ? direccionDetallada
@@ -319,7 +318,7 @@ class EntregasImpl implements EntregasRepository {
         // Si no hay address details, usar display_name (dirección completa formateada)
         final direccion = data['display_name'] as String? ?? '';
 
-        debugPrint('DIRECCIÓN OBTENIDA DE API (display_name): $direccion');
+        console('DIRECCIÓN OBTENIDA DE API (display_name): $direccion');
 
         return direccion.isNotEmpty
             ? direccion
@@ -328,7 +327,7 @@ class EntregasImpl implements EntregasRepository {
 
       return 'Ubicación marcada en ${latitud.toStringAsFixed(6)}, ${longitud.toStringAsFixed(6)}';
     } catch (e) {
-      debugPrint('Error al obtener dirección desde API: ${e.toString()}');
+      console('Error al obtener dirección desde API: ${e.toString()}');
       return 'Ubicación marcada en ${latitud.toStringAsFixed(6)}, ${longitud.toStringAsFixed(6)}';
     }
   }
@@ -391,17 +390,17 @@ class EntregasImpl implements EntregasRepository {
         return response.statusCode == 200 || response.statusCode == 201;
       } on DioException catch (e) {
         if (e.response != null) {
-          debugPrint('CÓDIGO DE ESTADO: ${e.response?.statusCode}');
-          debugPrint('DATOS DE RESPUESTA: ${e.response?.data}');
+          console('CÓDIGO DE ESTADO: ${e.response?.statusCode}');
+          console('DATOS DE RESPUESTA: ${e.response?.data}');
         }
         if (e.error != null) {
-          debugPrint('ERROR DETALLADO: ${e.error}');
+          console('ERROR DETALLADO: ${e.error}');
         }
 
         return false;
       }
     } catch (e) {
-      debugPrint('Error desconocido al marcar documento: ${e.toString()}');
+      console('Error desconocido al marcar documento: ${e.toString()}');
       // Intentamos guardar localmente para sincronizar después
 
       return false;
@@ -414,45 +413,50 @@ class EntregasImpl implements EntregasRepository {
     int codEmpleado,
   ) async {
     // Formatear la fecha al formato esperado por el backend: "yyyy-MM-dd"
-    final fechaFormateada = "${fecha.year}-${fecha.month.toString().padLeft(2, '0')}-${fecha.day.toString().padLeft(2, '0')}";
-    
-    debugPrint('Consultando historial de ruta para fecha $fechaFormateada y chofer $codEmpleado');
+    final fechaFormateada =
+        "${fecha.year}-${fecha.month.toString().padLeft(2, '0')}-${fecha.day.toString().padLeft(2, '0')}";
+
+    console(
+      'Consultando historial de ruta para fecha $fechaFormateada y chofer $codEmpleado',
+    );
 
     try {
       final response = await _dio.post(
         AppConstants.rutaChoferEndpoint,
-        data: {
-          'fechaEntrega': fechaFormateada,
-          'codEmpleado': codEmpleado,
-        },
+        data: {'fechaEntrega': fechaFormateada, 'codEmpleado': codEmpleado},
       );
 
       if (response.statusCode == 200) {
-        
         final List<dynamic> jsonList = response.data as List<dynamic>;
-        
+
         try {
-          final items = jsonList.map((json) {
-            try {
-              return EntregaModel.fromJson(json);
-            } catch (e) {
-              debugPrint('⚠️ Error al parsear elemento: ${e.toString()}');
-              debugPrint('⚠️ Elemento con error: ${json.toString()}');
-              return null;
-            }
-          })
-          .where((model) => model != null)
-          .cast<EntregaModel>()
-          .toList();
-          
-          debugPrint('✅ Modelos procesados correctamente: ${items.length}');
+          final items =
+              jsonList
+                  .map((json) {
+                    try {
+                      return EntregaModel.fromJson(json);
+                    } catch (e) {
+                      console('⚠️ Error al parsear elemento: ${e.toString()}');
+                      console('⚠️ Elemento con error: ${json.toString()}');
+                      return null;
+                    }
+                  })
+                  .where((model) => model != null)
+                  .cast<EntregaModel>()
+                  .toList();
+
+          console('✅ Modelos procesados correctamente: ${items.length}');
           return items.map((model) => model.toEntity()).toList();
         } catch (e) {
-          debugPrint('❌ Error al procesar los datos: ${e.toString()}');
-          throw Exception('Error al procesar datos de historial: ${e.toString()}');
+          console('❌ Error al procesar los datos: ${e.toString()}');
+          throw Exception(
+            'Error al procesar datos de historial: ${e.toString()}',
+          );
         }
       } else {
-        debugPrint('❌ Error al obtener el historial: Código ${response.statusCode}');
+        console(
+          '❌ Error al obtener el historial: Código ${response.statusCode}',
+        );
         throw Exception('Error al obtener el historial de ruta por chofer');
       }
     } on DioException catch (e) {
@@ -462,22 +466,18 @@ class EntregasImpl implements EntregasRepository {
         errorMessage =
             'Error del servidor: ${e.response!.statusCode} - ${e.response!.data.toString()}';
       }
-      debugPrint('❌ DioException: $errorMessage');
+      console('❌ DioException: $errorMessage');
       throw Exception(errorMessage);
     } catch (e) {
-      debugPrint('❌ Error desconocido: ${e.toString()}');
+      console('❌ Error desconocido: ${e.toString()}');
       throw Exception('Error desconocido: ${e.toString()}');
     }
   }
-  
+
   @override
   Future<List<EntregaEntity>> getChoferes() async {
-    
     try {
-      final response = await _dio.post(
-        AppConstants.choferesEndPoint,
-        data: {}
-      );
+      final response = await _dio.post(AppConstants.choferesEndPoint, data: {});
 
       if (response.statusCode == 200 && response.data != null) {
         final items =
@@ -499,22 +499,22 @@ class EntregasImpl implements EntregasRepository {
     } catch (e) {
       throw Exception('Error desconocido: ${e.toString()}');
     }
-
   }
-  
-  @override
-  Future<List<EntregaEntity>> getExtractoRutas( DateTime fechaInicio, DateTime fechaFin ) async {
-    
 
+  @override
+  Future<List<EntregaEntity>> getExtractoRutas(
+    DateTime fechaInicio,
+    DateTime fechaFin,
+  ) async {
     try {
       final response = await _dio.post(
         AppConstants.entregasRutasChoferes,
         data: {
-          'fechaInicio': "${fechaInicio.year}-${fechaInicio.month.toString().padLeft(2, '0')}-${fechaInicio.day.toString().padLeft(2, '0')}",
-          'fechaFin': "${fechaFin.year}-${fechaFin.month.toString().padLeft(2, '0')}-${fechaFin.day.toString().padLeft(2, '0')}",
-        }
-
-        
+          'fechaInicio':
+              "${fechaInicio.year}-${fechaInicio.month.toString().padLeft(2, '0')}-${fechaInicio.day.toString().padLeft(2, '0')}",
+          'fechaFin':
+              "${fechaFin.year}-${fechaFin.month.toString().padLeft(2, '0')}-${fechaFin.day.toString().padLeft(2, '0')}",
+        },
       );
 
       if (response.statusCode == 200 && response.data != null) {
@@ -537,6 +537,5 @@ class EntregasImpl implements EntregasRepository {
     } catch (e) {
       throw Exception('Error desconocido: ${e.toString()}');
     }
-
   }
 }

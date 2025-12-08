@@ -1,3 +1,4 @@
+import 'package:bosque_flutter/core/utils/console_log.dart';
 import 'package:bosque_flutter/data/models/compra_garrafa_model.dart';
 import 'package:bosque_flutter/data/models/contenedor_model.dart';
 import 'package:bosque_flutter/data/models/movimiento_model.dart';
@@ -8,7 +9,6 @@ import 'package:bosque_flutter/domain/entities/contenedor_entity.dart';
 import 'package:bosque_flutter/domain/entities/movimiento_entity.dart';
 import 'package:bosque_flutter/domain/entities/tipo_contenedor_entity.dart';
 import 'package:dio/dio.dart';
-import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:bosque_flutter/core/constants/app_constants.dart';
 import 'package:bosque_flutter/core/network/dio_client.dart';
@@ -152,30 +152,30 @@ class ControlCombustibleMaquinaMontacargaImpl
       'codSucursalMaqVehiDestino': codSucursal,
     };
 
-    debugPrint('Data para lstRptMovBidonesXTipoTransaccion: $data');
+    console('Data para lstRptMovBidonesXTipoTransaccion: $data');
     try {
       final response = await _dio.post(AppConstants.listarBidones, data: data);
 
       if (response.statusCode == 200 && response.data != null) {
         final data = response.data['data'] ?? [];
-        debugPrint('Raw data from API: $data'); // Debug
+        console('Raw data from API: $data'); // Debug
 
         final items =
             (data as List<dynamic>).map((json) {
-              debugPrint('Processing item: $json'); // Debug
+              console('Processing item: $json'); // Debug
               return ControlCombustibleMaquinaMontacargaModel.fromJson(json);
             }).toList();
 
         final entities =
             items.map((model) {
               final entity = model.toEntity();
-              debugPrint(
+              console(
                 'Entity created - tipoTransaccion: "${entity.tipoTransaccion}" (length: ${entity.tipoTransaccion.length}), nombreCompleto: "${entity.nombreCompleto}"',
               ); // Debug
 
               // Debug adicional para TRASPASO específicamente
               if (entity.tipoTransaccion.toUpperCase().contains('TRASPASO')) {
-                debugPrint('TRASPASO encontrado: "${entity.tipoTransaccion}"');
+                console('TRASPASO encontrado: "${entity.tipoTransaccion}"');
               }
 
               return entity;
@@ -187,9 +187,9 @@ class ControlCombustibleMaquinaMontacargaImpl
           final tipo = entity.tipoTransaccion.trim().toUpperCase();
           tiposCounts[tipo] = (tiposCounts[tipo] ?? 0) + 1;
         }
-        debugPrint('Tipos de transacción encontrados: $tiposCounts');
+        console('Tipos de transacción encontrados: $tiposCounts');
 
-        debugPrint('Movimientos obtenidos: ${entities.length} registros');
+        console('Movimientos obtenidos: ${entities.length} registros');
         return entities;
       } else {
         throw Exception(

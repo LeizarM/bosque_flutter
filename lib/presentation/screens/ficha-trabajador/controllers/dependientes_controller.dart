@@ -1,3 +1,4 @@
+import 'package:bosque_flutter/core/utils/console_log.dart';
 import 'package:bosque_flutter/presentation/widgets/dependientes/confirm_dialogs.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -25,29 +26,27 @@ class DependienteController {
             .eliminarDependiente(dependiente.codDependiente);
 
         if (context.mounted) {
-  if (success) {
-    ref.invalidate(dependientesProvider(codEmpleado));
-    AppSnackbarCustom.showDelete(
-      context,
-      'Dependiente eliminado correctamente',
-    );
-  } else {
-    AppSnackbarCustom.showError(
-      context,
-      'Error al eliminar dependiente',
-    );
-  }
-}
+          if (success) {
+            ref.invalidate(dependientesProvider(codEmpleado));
+            AppSnackbarCustom.showDelete(
+              context,
+              'Dependiente eliminado correctamente',
+            );
+          } else {
+            AppSnackbarCustom.showError(
+              context,
+              'Error al eliminar dependiente',
+            );
+          }
+        }
       } catch (e) {
         if (context.mounted) {
-          AppSnackbarCustom.showError(
-            context,
-            'Error: $e',
-          );
+          AppSnackbarCustom.showError(context, 'Error: $e');
         }
       }
     }
   }
+
   // Manejo de edición de dependientes
   static Future<void> editarDependiente({
     required BuildContext context,
@@ -55,8 +54,6 @@ class DependienteController {
     required DependienteEntity dependiente,
     required int codEmpleado,
   }) async {
-    debugPrint('🔄 Controller: Iniciando proceso de edición');
-    
     try {
       final dependientesActualizados = await ref
           .read(dependientesNotifierProvider.notifier)
@@ -67,19 +64,16 @@ class DependienteController {
       if (dependientesActualizados.isNotEmpty) {
         // Refrescar la lista de dependientes
         ref.invalidate(dependientesProvider(codEmpleado));
-        
+
         AppSnackbar.showSuccess(
-          context, 
-          'Dependiente actualizado correctamente'
+          context,
+          'Dependiente actualizado correctamente',
         );
       } else {
-        AppSnackbar.showError(
-          context, 
-          'No se pudo actualizar el dependiente'
-        );
+        AppSnackbar.showError(context, 'No se pudo actualizar el dependiente');
       }
     } catch (e) {
-      debugPrint('⚠️ Controller: Error en edición: $e');
+      console('⚠️ Controller: Error en edición: $e');
       if (!context.mounted) return;
       AppSnackbar.showError(context, 'Error: $e');
     }

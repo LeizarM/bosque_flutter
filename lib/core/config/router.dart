@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:bosque_flutter/core/network/dio_client.dart';
 import 'package:bosque_flutter/core/state/user_provider.dart';
+import 'package:bosque_flutter/core/utils/console_log.dart';
 import 'package:bosque_flutter/core/utils/secure_storage.dart';
 import 'package:bosque_flutter/domain/entities/login_entity.dart';
 import 'package:flutter/material.dart';
@@ -491,7 +492,7 @@ class AppRouter {
 
         // Si el token expiró, limpiar datos y redirigir al login
         if (isTokenExpired) {
-          debugPrint('🔑 Token expirado detectado en AppRouter.getRouter');
+          console('🔑 Token expirado detectado en AppRouter.getRouter');
           // Limpiar datos de sesión
           await secureStorage.clearSession();
 

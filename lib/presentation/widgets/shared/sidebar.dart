@@ -1,5 +1,6 @@
 import 'package:bosque_flutter/core/state/menu_provider.dart';
 import 'package:bosque_flutter/core/state/user_provider.dart';
+import 'package:bosque_flutter/core/utils/console_log.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -48,7 +49,7 @@ class _AppSidebarState extends ConsumerState<AppSidebar> {
         }
       });
     } catch (e) {
-      debugPrint('Error inicializando menú: $e');
+      console('Error inicializando menú: $e');
     }
   }
 

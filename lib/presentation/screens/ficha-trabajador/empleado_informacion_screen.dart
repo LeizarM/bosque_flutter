@@ -116,7 +116,7 @@ class _InfoEmpleadoScreenState extends ConsumerState<InfoEmpleadoScreen> {
         });
       }
     } catch (e) {
-      debugPrint('Error al verificar permisos: $e');
+      console('Error al verificar permisos: $e');
       if (mounted) {
         setState(() {
           _habilitarEdicion = false;
