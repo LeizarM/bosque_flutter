@@ -75,8 +75,45 @@ class _OrganigramaCustomState extends State<OrganigramaCustom> {
 
     aplanarCargos(widget.cargos);
 
-    // Crear nodos: OCULTAR solo cargos REALES inactivos
-    // MOSTRAR: cargos activos + cargos ficticios (aunque estén inactivos)
+    // Primero, identificar qué cargos REALES ACTIVOS existen
+    final cargosRealesActivos = <int>{};
+    for (var cargo in todosLosCargos) {
+      final esFicticio =
+          cargo.descripcion.contains('[Ficticio') ||
+          cargo.descripcion.toLowerCase().contains('ficticio');
+      if (!esFicticio && cargo.estado == 1) {
+        cargosRealesActivos.add(cargo.codCargo);
+      }
+    }
+
+    // Construir mapa de padres para rastrear cadenas ficticias
+    final mapaPadres = <int, int>{};
+    for (var cargo in todosLosCargos) {
+      mapaPadres[cargo.codCargo] = cargo.codCargoPadre;
+    }
+
+    // Función para verificar si un nodo ficticio lleva a un cargo real activo
+    bool ficticioPadreDeCargoActivo(int codCargo) {
+      for (var cargo in todosLosCargos) {
+        if (cargo.codCargoPadre == codCargo) {
+          final esFicticioHijo =
+              cargo.descripcion.contains('[Ficticio') ||
+              cargo.descripcion.toLowerCase().contains('ficticio');
+          if (!esFicticioHijo && cargo.estado == 1) {
+            // El hijo es un cargo real activo
+            return true;
+          } else if (esFicticioHijo) {
+            // Seguir la cadena ficticia
+            if (ficticioPadreDeCargoActivo(cargo.codCargo)) {
+              return true;
+            }
+          }
+        }
+      }
+      return false;
+    }
+
+    // Crear nodos: OCULTAR cargos REALES inactivos Y ficticios que no llevan a activos
     for (var cargo in todosLosCargos) {
       final esFicticio =
           cargo.descripcion.contains('[Ficticio') ||
@@ -84,12 +121,20 @@ class _OrganigramaCustomState extends State<OrganigramaCustom> {
       final esRealInactivo = !esFicticio && cargo.estado == 0;
 
       // Si es REAL Y está INACTIVO -> NO MOSTRAR
-      if (!esRealInactivo) {
-        final node = Node.Id(cargo.codCargo);
-        nodeMap[cargo.codCargo] = node;
-        cargoMap[cargo.codCargo] = cargo;
-        graph.addNode(node);
+      if (esRealInactivo) continue;
+
+      // Si es FICTICIO, verificar que su cadena lleve a un cargo real activo
+      if (esFicticio) {
+        if (!ficticioPadreDeCargoActivo(cargo.codCargo)) {
+          // Este ficticio no lleva a ningún cargo real activo, no mostrarlo
+          continue;
+        }
       }
+
+      final node = Node.Id(cargo.codCargo);
+      nodeMap[cargo.codCargo] = node;
+      cargoMap[cargo.codCargo] = cargo;
+      graph.addNode(node);
     }
 
     // Detectar TODAS las RAÍCES (codCargoPadre = 0) visibles en el grafo
@@ -142,47 +187,71 @@ class _OrganigramaCustomState extends State<OrganigramaCustom> {
     BuildContext? dialogContext;
 
     try {
-      // Mostrar loading
+      // Verificar que el contexto del organigrama esté disponible ANTES de mostrar el diálogo
+      final currentContext = _organigramaKey.currentContext;
+      if (currentContext == null) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                'Error: El organigrama no está listo para exportar. Intente de nuevo.',
+              ),
+              backgroundColor: Colors.orange,
+              duration: Duration(seconds: 3),
+            ),
+          );
+        }
+        return;
+      }
+
+      final renderObject = currentContext.findRenderObject();
+      if (renderObject == null || renderObject is! RenderRepaintBoundary) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                'Error: No se pudo acceder al renderizado del organigrama.',
+              ),
+              backgroundColor: Colors.orange,
+              duration: Duration(seconds: 3),
+            ),
+          );
+        }
+        return;
+      }
+
+      // Mostrar loading con indicador que no depende del hilo principal
       showDialog(
         context: context,
         barrierDismissible: false,
         builder: (BuildContext ctx) {
           dialogContext = ctx;
-          return const Center(
-            child: Card(
-              child: Padding(
-                padding: EdgeInsets.all(20),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    CircularProgressIndicator(),
-                    SizedBox(height: 16),
-                    Text('Generando imagen ...'),
-                  ],
-                ),
-              ),
-            ),
-          );
+          return const _ExportLoadingDialog();
         },
       );
 
-      // Esperar un frame
-      await Future.delayed(const Duration(milliseconds: 200));
+      // Esperar a que el diálogo se renderice completamente
+      await Future.delayed(const Duration(milliseconds: 150));
 
-      // Encontrar el RenderRepaintBoundary
-      RenderRepaintBoundary boundary =
-          _organigramaKey.currentContext!.findRenderObject()
-              as RenderRepaintBoundary;
+      // Usar el RenderRepaintBoundary ya validado
+      RenderRepaintBoundary boundary = renderObject;
 
-      // Capturar la imagen COMPLETA con ALTA CALIDAD (pixelRatio: 3.0 para mejor resolución)
-      // Esto capturará todo el contenido del RepaintBoundary, no solo lo visible
-      ui.Image originalImage = await boundary.toImage(pixelRatio: 3.0);
+      // Capturar la imagen (en web usamos menor resolución para evitar problemas)
+      final double pixelRatio = kIsWeb ? 2.0 : 3.0;
+      ui.Image originalImage = await boundary.toImage(pixelRatio: pixelRatio);
 
-      // Convertir directamente a PNG sin redimensionar (mantener calidad original)
+      // Convertir directamente a PNG
       ByteData? byteData = await originalImage.toByteData(
         format: ui.ImageByteFormat.png,
       );
-      Uint8List pngBytes = byteData!.buffer.asUint8List();
+
+      // Verificar que byteData no sea null
+      if (byteData == null) {
+        originalImage.dispose();
+        throw Exception('No se pudo convertir la imagen a bytes');
+      }
+
+      Uint8List pngBytes = byteData.buffer.asUint8List();
 
       // Información del tamaño para el usuario
       final int ancho = originalImage.width;
@@ -305,47 +374,11 @@ class _OrganigramaCustomState extends State<OrganigramaCustom> {
                 minScale: 0.1,
                 maxScale: 5.0,
                 transformationController: _transformationController,
-                child: Container(
-                  color: Colors.white,
-                  child: GraphView(
-                    graph: graph,
-                    algorithm: BuchheimWalkerAlgorithm(
-                      builder,
-                      TreeEdgeRenderer(builder),
-                    ),
-                    paint:
-                        Paint()
-                          ..color = Colors.grey.shade400
-                          ..strokeWidth = 2
-                          ..style = PaintingStyle.stroke,
-                    builder: (Node node) {
-                      final codCargo = node.key!.value as int;
-                      // Si es el nodo virtual raíz, no mostrarlo
-                      if (codCargo == -1) {
-                        return Container(
-                          width: 1,
-                          height: 1,
-                          color: Colors.transparent,
-                        );
-                      }
-                      final cargo = cargoMap[codCargo];
-                      if (cargo == null) return const SizedBox.shrink();
-                      return _buildNodeWidget(cargo);
-                    },
-                  ),
-                ),
-              ),
-              // Organigrama invisible pero completo para captura (fuera de pantalla)
-              Positioned(
-                left: -50000, // Fuera de la vista
-                top: -50000,
                 child: RepaintBoundary(
                   key: _organigramaKey,
                   child: Container(
                     color: Colors.white,
-                    padding: const EdgeInsets.all(
-                      50,
-                    ), // Padding para que no se corten los bordes
+                    padding: const EdgeInsets.all(20),
                     child: GraphView(
                       graph: graph,
                       algorithm: BuchheimWalkerAlgorithm(
@@ -359,6 +392,7 @@ class _OrganigramaCustomState extends State<OrganigramaCustom> {
                             ..style = PaintingStyle.stroke,
                       builder: (Node node) {
                         final codCargo = node.key!.value as int;
+                        // Si es el nodo virtual raíz, no mostrarlo
                         if (codCargo == -1) {
                           return Container(
                             width: 1,
@@ -694,4 +728,136 @@ class _OrganigramaCustomState extends State<OrganigramaCustom> {
     _transformationController.dispose();
     super.dispose();
   }
+}
+
+/// Widget de loading con animación propia que no se bloquea
+/// durante operaciones pesadas en el hilo principal
+class _ExportLoadingDialog extends StatefulWidget {
+  const _ExportLoadingDialog();
+
+  @override
+  State<_ExportLoadingDialog> createState() => _ExportLoadingDialogState();
+}
+
+class _ExportLoadingDialogState extends State<_ExportLoadingDialog>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _rotationAnimation;
+  int _dotCount = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      duration: const Duration(milliseconds: 1000),
+      vsync: this,
+    )..repeat();
+
+    _rotationAnimation = Tween<double>(begin: 0, end: 1).animate(_controller);
+
+    // Animar los puntos suspensivos
+    _startDotAnimation();
+  }
+
+  void _startDotAnimation() async {
+    while (mounted) {
+      await Future.delayed(const Duration(milliseconds: 400));
+      if (mounted) {
+        setState(() {
+          _dotCount = (_dotCount + 1) % 4;
+        });
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final dots = '.' * _dotCount;
+    final spaces = ' ' * (3 - _dotCount);
+
+    return Center(
+      child: Card(
+        elevation: 8,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Indicador de carga rotatorio personalizado
+              AnimatedBuilder(
+                animation: _rotationAnimation,
+                builder: (context, child) {
+                  return Transform.rotate(
+                    angle: _rotationAnimation.value * 2 * 3.14159,
+                    child: Container(
+                      width: 48,
+                      height: 48,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: Colors.grey.shade300,
+                          width: 4,
+                        ),
+                      ),
+                      child: CustomPaint(
+                        painter: _ArcPainter(
+                          color: Theme.of(context).primaryColor,
+                          strokeWidth: 4,
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              ),
+              const SizedBox(height: 20),
+              Text(
+                'Generando imagen$dots$spaces',
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Por favor espere',
+                style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Painter para dibujar un arco (parte del círculo de carga)
+class _ArcPainter extends CustomPainter {
+  final Color color;
+  final double strokeWidth;
+
+  _ArcPainter({required this.color, required this.strokeWidth});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint =
+        Paint()
+          ..color = color
+          ..strokeWidth = strokeWidth
+          ..style = PaintingStyle.stroke
+          ..strokeCap = StrokeCap.round;
+
+    final rect = Rect.fromLTWH(0, 0, size.width, size.height);
+    // Dibujar solo una porción del círculo (90 grados)
+    canvas.drawArc(rect, -0.5, 1.5, false, paint);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }

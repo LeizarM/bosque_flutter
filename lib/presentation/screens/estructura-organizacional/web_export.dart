@@ -1,8 +1,5 @@
-// Implementación web usando dart:html
-// ignore_for_file: avoid_web_libraries_in_flutter, deprecated_member_use
-
 import 'dart:typed_data';
-import 'dart:html' as html;
+import 'package:universal_html/html.dart' as html;
 import 'web_export_stub.dart';
 
 /// Implementación web que realmente descarga archivos
@@ -10,21 +7,23 @@ class WebExportManager implements ExportManager {
   @override
   Future<void> descargarPNG(Uint8List bytes, String nombreArchivo) async {
     try {
-      final blob = html.Blob([bytes]);
+      // Crear un Blob con los bytes de la imagen
+      final blob = html.Blob([bytes], 'image/png');
       final url = html.Url.createObjectUrlFromBlob(blob);
 
+      // Crear elemento anchor para descarga
       final anchor =
-          html.document.createElement('a') as html.AnchorElement
+          html.AnchorElement()
             ..href = url
             ..download = nombreArchivo
             ..style.display = 'none';
 
-      html.document.body?.children.add(anchor);
+      html.document.body?.append(anchor);
       anchor.click();
 
       // Limpiar después de un momento
       await Future.delayed(const Duration(milliseconds: 500));
-      html.document.body?.children.remove(anchor);
+      anchor.remove();
       html.Url.revokeObjectUrl(url);
     } catch (e) {
       rethrow;
