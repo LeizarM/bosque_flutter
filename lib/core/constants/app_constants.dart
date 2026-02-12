@@ -2,9 +2,29 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class AppConstants {
-  static final String baseUrl = kReleaseMode
-      ? (dotenv.env['BASE_URL_PROD'] ?? 'https://app.esppapel.com:8443')
-      : (dotenv.env['BASE_URL_DEV'] ?? 'http://192.168.3.107:9223');
+  // Variables de compilación para web con fallback
+  static const String _compiledBaseUrlProd = String.fromEnvironment(
+    'BASE_URL_PROD',
+    defaultValue: 'https://app.esppapel.com:8443',
+  );
+  
+  static const String _compiledBaseUrlDev = String.fromEnvironment(
+    'BASE_URL_DEV',
+    defaultValue: 'http://192.168.3.107:9223',
+  );
+
+  // Selector inteligente de URL base
+  static String get baseUrl {
+    if (kIsWeb) {
+      // Para web: usa variables de compilación
+      return kReleaseMode ? _compiledBaseUrlProd : _compiledBaseUrlDev;
+    } else {
+      // Para móvil/desktop: usa .env con fallback a variables de compilación
+      return kReleaseMode
+          ? (dotenv.env['BASE_URL_PROD'] ?? _compiledBaseUrlProd)
+          : (dotenv.env['BASE_URL_DEV'] ?? _compiledBaseUrlDev);
+    }
+  }
 
   static const String APP_VERSION = "1.0.1";
 

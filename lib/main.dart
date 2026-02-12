@@ -1,3 +1,5 @@
+import 'package:bosque_flutter/core/utils/console_log.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -11,14 +13,33 @@ import 'package:bosque_flutter/data/repositories/entregas_impl.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await dotenv.load(fileName: '.env');
 
-  runApp(ProviderScope(
-    overrides: [
-      entregasRepositoryProvider.overrideWithValue(EntregasImpl()),
-    ],
-    child: const MyApp(),
-  ));
+  // Solo cargar .env en plataformas móviles y desktop (no web)
+  if (!kIsWeb) {
+    try {
+      await dotenv.load(fileName: '.env');
+      if (kDebugMode) {
+        console('✅ .env loaded successfully');
+        console('BASE_URL_PROD: ${dotenv.env['BASE_URL_PROD']}');
+        console('BASE_URL_DEV: ${dotenv.env['BASE_URL_DEV']}');
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        console('⚠️ .env not found, using default values: $e');
+      }
+    }
+  } else {
+    if (kDebugMode) {
+      console('🌐 Web platform detected - using compile-time variables');
+    }
+  }
+
+  runApp(
+    ProviderScope(
+      overrides: [entregasRepositoryProvider.overrideWithValue(EntregasImpl())],
+      child: const MyApp(),
+    ),
+  );
 }
 
 class MyApp extends ConsumerWidget {
