@@ -99,6 +99,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
       if (loginEntity != null) {
         if (loginEntity.versionApp != AppConstants.APP_VERSION) {
           context.go('/change-password', extra: loginEntity);
+        } else if (_passwordController.text == '123456789') {
+          // Contraseña por defecto, obligar cambio
+          await ref.read(userProvider.notifier).setUser(loginEntity);
+          context.go('/change-password', extra: loginEntity);
         } else {
           ref.read(userProvider.notifier).setUser(loginEntity);
           context.go('/dashboard');
