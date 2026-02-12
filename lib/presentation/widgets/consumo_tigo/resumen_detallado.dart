@@ -1,4 +1,4 @@
-import 'package:bosque_flutter/core/state/Consumo_tigo_provider.dart';
+import 'package:bosque_flutter/core/state/consumo_tigo_provider.dart';
 import 'package:bosque_flutter/core/state/user_provider.dart';
 import 'package:bosque_flutter/core/utils/responsive_utils_bosque.dart';
 import 'package:bosque_flutter/domain/entities/tigo_ejecutado_entity.dart';
@@ -161,6 +161,34 @@ class _ResumenDetalladoScreenState
                       );
                     }
                   },
+                ),
+                PermissionWidget(
+                  buttonName:
+                      'btnReporteCambiosTigo', // ✅ NUEVO BOTÓN CON PERMISO
+                  child: IconButton(
+                    icon: const Icon(Icons.description, color: Colors.teal),
+                    tooltip: 'Reporte Líneas Corporativas',
+                    onPressed: () async {
+                      ref.invalidate(rptCambiosTigo(widget.periodoCobrado));
+                      try {
+                        final pdfBytes = await ref.read(
+                          rptCambiosTigo(widget.periodoCobrado).future,
+                        );
+                        await Printing.layoutPdf(
+                          onLayout: (format) async => pdfBytes,
+                          name: 'RptCambiosTigo',
+                        );
+                      } catch (e) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(
+                              'No se pudo descargar el reporte: $e',
+                            ),
+                          ),
+                        );
+                      }
+                    },
+                  ),
                 ),
 
                 PermissionWidget(
@@ -717,6 +745,25 @@ class _ResumenDetalladoScreenState
                       );
                     }
                   },
+                  onGenerarReporteCambios: () async {
+                    // ✅ NUEVO CALLBACK
+                    ref.invalidate(rptCambiosTigo(widget.periodoCobrado));
+                    try {
+                      final pdfBytes = await ref.read(
+                        rptCambiosTigo(widget.periodoCobrado).future,
+                      );
+                      await Printing.layoutPdf(
+                        onLayout: (format) async => pdfBytes,
+                        name: 'RptCambiosTigo',
+                      );
+                    } catch (e) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('No se pudo descargar el reporte PDF'),
+                        ),
+                      );
+                    }
+                  },
                   onEjecutar: () async {
                     final confirmar = await showDialog<bool>(
                       context: context,
@@ -1000,6 +1047,7 @@ class _ResumenDetalladoScreenState
     required String periodoCobrado,
     required VoidCallback onVerGrupos,
     required VoidCallback onGenerarReporte,
+    required VoidCallback onGenerarReporteCambios, // ✅ NUEVO PARÁMETRO
     required VoidCallback onEjecutar,
   }) {
     return Column(
@@ -1031,6 +1079,23 @@ class _ResumenDetalladoScreenState
             ),
           ),
           onPressed: onGenerarReporte,
+        ),
+        const SizedBox(height: 18),
+        PermissionWidget(
+          buttonName: 'btnReporteCambiosTigo', // ✅ NUEVO BOTÓN CON PERMISO
+          child: ElevatedButton.icon(
+            icon: const Icon(Icons.description),
+            label: const Text('Reporte Líneas Corporativas'),
+            style: ElevatedButton.styleFrom(
+              minimumSize: const Size.fromHeight(48),
+              backgroundColor: Colors.tealAccent[700],
+              foregroundColor: Colors.black,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+            onPressed: onGenerarReporteCambios,
+          ),
         ),
         const SizedBox(height: 18),
         PermissionWidget(

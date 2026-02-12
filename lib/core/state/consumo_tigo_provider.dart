@@ -103,3 +103,8 @@ final tigoArbolDetallado = FutureProvider.family<List<TigoEjecutadoEntity>,(Stri
   final arbolResumenDetallado = await repo.obtenerArbolDetallado(params.$1,params.$2);
   return arbolResumenDetallado;
 });
+//descargar reporte cambios tigo
+final rptCambiosTigo = FutureProvider.family<Uint8List,String>((ref,periodoCobrado) async {
+  final repo = ConsumoTigoImpl();
+  return await repo.descargarRptCambiosTigo(periodoCobrado); // Este método debe retornar Uint8List
+});

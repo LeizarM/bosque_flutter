@@ -519,4 +519,20 @@ Future<bool> insertarTigoEjectuado(
       return [];
     }
   }
+    //DESCARGAR REPORTE CAMBIOS TIGO
+  Future<Uint8List> descargarRptCambiosTigo(String periodoCobrado) async {
+    final response = await _dio.post(
+      AppConstants.tigoRptCambiosTigo, // Cambia esto por la URL de tu endpoint
+      data: {'periodoCobrado': periodoCobrado}, // No envíes parámetros
+      options: Options(
+        headers: {'Content-Type': 'application/json'},
+        responseType: ResponseType.bytes,
+      ),
+    );
+    if (response.statusCode == 200) {
+      return response.data;
+    } else {
+      throw Exception('No se pudo descargar el PDF');
+    }
+  }
 }
