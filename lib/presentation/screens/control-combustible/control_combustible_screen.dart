@@ -262,6 +262,7 @@ class _ControlCombustibleScreenState
       context: context,
       barrierDismissible: false,
       builder: (BuildContext context) {
+        final colorScheme = Theme.of(context).colorScheme;
         return Dialog(
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
@@ -277,7 +278,7 @@ class _ControlCombustibleScreenState
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: Theme.of(context).primaryColor,
+                    color: colorScheme.primary,
                     borderRadius: const BorderRadius.only(
                       topLeft: Radius.circular(16),
                       topRight: Radius.circular(16),
@@ -287,7 +288,7 @@ class _ControlCombustibleScreenState
                     children: [
                       Icon(
                         Icons.local_gas_station,
-                        color: Colors.white,
+                        color: colorScheme.onPrimary,
                         size: 24,
                       ),
                       const SizedBox(width: 12),
@@ -295,7 +296,7 @@ class _ControlCombustibleScreenState
                         child: Text(
                           'Selección de Bidón',
                           style: TextStyle(
-                            color: Colors.white,
+                            color: colorScheme.onPrimary,
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
                           ),
@@ -1302,7 +1303,7 @@ class _BidonListWidget extends ConsumerWidget {
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(6),
                 child: Material(
-                  color: Colors.white,
+                  color: Theme.of(context).cardColor,
                   child: InkWell(
                     onTap: () async {
                       final selectedBidonId = await onBidonSelected(bidon);

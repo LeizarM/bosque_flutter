@@ -104,4 +104,32 @@ class SecureStorage {
     await deleteToken();
     await deleteUserData();
   }
+
+  // =========================================================================
+  // Métodos para persistir preferencias de tema
+  // =========================================================================
+  static const _themeColorKey = 'theme_color_index';
+  static const _themeDarkModeKey = 'theme_dark_mode';
+
+  /// Guarda el índice del color seleccionado
+  Future<void> saveThemeColor(int colorIndex) async {
+    await _storage.write(key: _themeColorKey, value: colorIndex.toString());
+  }
+
+  /// Obtiene el índice del color guardado (default: 2 = green)
+  Future<int> getThemeColor() async {
+    final value = await _storage.read(key: _themeColorKey);
+    return value != null ? int.tryParse(value) ?? 2 : 2;
+  }
+
+  /// Guarda la preferencia de modo oscuro
+  Future<void> saveThemeDarkMode(bool isDark) async {
+    await _storage.write(key: _themeDarkModeKey, value: isDark.toString());
+  }
+
+  /// Obtiene la preferencia de modo oscuro (default: false)
+  Future<bool> getThemeDarkMode() async {
+    final value = await _storage.read(key: _themeDarkModeKey);
+    return value == 'true';
+  }
 }

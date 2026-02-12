@@ -266,30 +266,30 @@ class ConsumoTigoImpl implements ConsumoTigoRepository {
 
   //INSERTAR ANTICIPO TIGO tigoInsertarAnticipo
   @override
-  Future<bool> generarAnticiposTigo(String periodoCobrado) async {
-    try {
-      final response = await _dio.post(
-        AppConstants.tigoInsertarAnticipo, // URL del endpoint backend
-        data: {'periodoCobrado': periodoCobrado},
-      );
+Future<bool> generarAnticiposTigo(String periodoCobrado) async {
+  try {
+    final response = await _dio.post(
+      AppConstants.tigoInsertarAnticipo,
+      data: {'periodoCobrado': periodoCobrado},
+      // ✅ ESTO ES LO QUE ARREGLA EL ERROR 500
+      options: Options(
+        receiveTimeout: const Duration(seconds: 120), // 2 minutos para el SP
+        sendTimeout: const Duration(seconds: 60),
+      ),
+    );
 
-      console('Respuesta del servidor: ${response.data}');
-
-      if (response.statusCode == 200) {
-        return true;
-      } else {
-        throw Exception(
-          'Error al generar anticipos: ${response.statusCode} - ${response.data}',
-        );
-      }
-    } on DioException catch (e) {
-      console('DioException: ${e.response?.data}');
-      throw Exception('Error de conexión: ${e.message}');
-    } catch (e) {
-      console('Error inesperado: $e');
-      throw Exception('Error inesperado: $e');
+    if (response.statusCode == 200) {
+      return true;
+    } 
+    return false;
+  } on DioException catch (e) {
+    // Si el error es por tiempo, lo capturamos aquí
+    if (e.type == DioExceptionType.receiveTimeout) {
+      throw Exception('El proceso de anticipos tardó más de 2 minutos. Verifique en SQL.');
     }
+    rethrow;
   }
+}
 
   //DESCARGAR REPORTE TIGO
   Future<Uint8List> descargarReporteFacturasTigo(String periodoCobrado) async {
@@ -372,47 +372,56 @@ class ConsumoTigoImpl implements ConsumoTigoRepository {
 
   //insertar tigo ejectuado
   @override
-  Future<bool> insertarTigoEjectuado(
-    String periodoCobrado,
-    int audUsuario,
-  ) async {
-    try {
-      final response = await _dio.post(
-        AppConstants.tigoEjecutarTigo,
-        data: {'periodoCobrado': periodoCobrado, 'audUsuario': audUsuario},
+Future<bool> insertarTigoEjectuado(
+  String periodoCobrado,
+  int audUsuario,
+) async {
+  try {
+    final response = await _dio.post(
+      AppConstants.tigoEjecutarTigo,
+      data: {'periodoCobrado': periodoCobrado, 'audUsuario': audUsuario},
+      // ✅ CAMBIO 1: Aumentar el tiempo de espera a 2 minutos
+      // Esto evita que la app "cuelgue" la conexión a los 10 segundos
+      options: Options(
+        receiveTimeout: const Duration(seconds: 120),
+        sendTimeout: const Duration(seconds: 60),
+      ),
+    );
+
+    console('Respuesta del servidor: ${response.data}');
+
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      return true;
+    } else {
+      throw Exception(
+        'Error al ejecutar: ${response.statusCode} - ${response.data}',
       );
-
-      console('Respuesta del servidor: ${response.data}');
-
-      if (response.statusCode == 200 || response.statusCode == 201) {
-        return true;
-      } else {
-        throw Exception(
-          'Error al generar anticipos: ${response.statusCode} - ${response.data}',
-        );
-      }
-    } on DioException catch (e) {
-      final response = e.response;
-
-      // CLAVE: Chequeo y extracción del error 400
-      if (response != null && response.statusCode == 400) {
-        final data = response.data;
-        // Asumimos que el JSON del backend tiene el campo "msg"
-        if (data is Map && data.containsKey('msg')) {
-          final errorMessage = data['msg'] as String;
-          // Lanzar una Exception con el mensaje limpio para el Provider/UI
-          throw Exception(errorMessage);
-        }
-      }
-
-      // Para cualquier otro error (500, red, etc.)
-      console('DioException genérica: ${response?.data ?? e.message}');
-      throw Exception('Error de conexión o servidor. Intente más tarde.');
-    } catch (e) {
-      console('Error inesperado: $e');
-      rethrow;
     }
+  } on DioException catch (e) {
+    final response = e.response;
+
+    // ✅ CAMBIO 2: Manejo de Timeout específico
+    if (e.type == DioExceptionType.receiveTimeout) {
+      throw Exception('El servidor tardó demasiado en procesar la ejecución (Timeout de 2 min).');
+    }
+
+    // ✅ CAMBIO 3: Mejorar la extracción del mensaje de error
+    // Ahora también revisamos errores 500, no solo 400
+    if (response != null && (response.statusCode == 400 || response.statusCode == 500)) {
+      final data = response.data;
+      if (data is Map && data.containsKey('msg')) {
+        final errorMessage = data['msg'] as String;
+        throw Exception(errorMessage);
+      }
+    }
+
+    console('DioException genérica: ${response?.data ?? e.message}');
+    throw Exception('Error de conexión o servidor. Intente más tarde.');
+  } catch (e) {
+    console('Error inesperado: $e');
+    rethrow;
   }
+}
 
   //obtener tigo ejecutado
   @override

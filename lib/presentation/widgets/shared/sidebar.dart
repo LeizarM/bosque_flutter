@@ -18,12 +18,55 @@ class _AppSidebarState extends ConsumerState<AppSidebar> {
   // Mapa para controlar la expansión de cada elemento con submenús
   Map<int, bool> _expandedItems = {};
   bool _isInitialized = false;
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
 
   @override
   void initState() {
     super.initState();
     // Cargar el menú y el estado de expansión al iniciar
     _initializeMenu();
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  /// Aplana recursivamente el árbol de menú y filtra por query
+  List<SidebarMenuItem> _filterMenuItems(
+    List<SidebarMenuItem> items,
+    String query,
+  ) {
+    final List<SidebarMenuItem> results = [];
+    for (final item in items) {
+      final matchesTitle = item.title.toLowerCase().contains(
+        query.toLowerCase(),
+      );
+      final filteredChildren =
+          item.children != null
+              ? _filterMenuItems(item.children!, query)
+              : <SidebarMenuItem>[];
+
+      if (matchesTitle || filteredChildren.isNotEmpty) {
+        // Si tiene hijos filtrados, mostrar el padre con solo los hijos que coinciden
+        if (filteredChildren.isNotEmpty) {
+          results.add(
+            SidebarMenuItem(
+              id: item.id,
+              title: item.title,
+              icon: item.icon,
+              route: item.route,
+              children: filteredChildren,
+            ),
+          );
+        } else {
+          results.add(item);
+        }
+      }
+    }
+    return results;
   }
 
   Future<void> _initializeMenu() async {
@@ -199,6 +242,80 @@ class _AppSidebarState extends ConsumerState<AppSidebar> {
       );
     }
 
+    // Widget de búsqueda para el menú
+    Widget buildSearchBar() {
+      return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        child: TextField(
+          controller: _searchController,
+          onChanged: (value) {
+            setState(() {
+              _searchQuery = value;
+            });
+          },
+          style: TextStyle(fontSize: 14, color: onSurfaceColor),
+          decoration: InputDecoration(
+            hintText: 'Buscar en el menú...',
+            hintStyle: TextStyle(
+              fontSize: 13,
+              color: isDarkMode ? Colors.grey.shade500 : Colors.grey.shade400,
+            ),
+            prefixIcon: Icon(
+              Icons.search,
+              size: 20,
+              color: primaryColor.withValues(alpha: 0.7),
+            ),
+            suffixIcon:
+                _searchQuery.isNotEmpty
+                    ? IconButton(
+                      icon: Icon(
+                        Icons.close,
+                        size: 18,
+                        color:
+                            isDarkMode
+                                ? Colors.grey.shade400
+                                : Colors.grey.shade600,
+                      ),
+                      onPressed: () {
+                        setState(() {
+                          _searchController.clear();
+                          _searchQuery = '';
+                        });
+                      },
+                    )
+                    : null,
+            filled: true,
+            fillColor:
+                isDarkMode
+                    ? primaryColor.withValues(alpha: 0.08)
+                    : primaryColor.withValues(alpha: 0.05),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 12,
+              vertical: 10,
+            ),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide.none,
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(
+                color: primaryColor.withValues(alpha: 0.15),
+                width: 1,
+              ),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(
+                color: primaryColor.withValues(alpha: 0.5),
+                width: 1.5,
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
     // Construir el sidebar basado en el estado del menú
     Widget buildSidebarContent() {
       if (menuState.status == MenuStatus.loading && !_isInitialized) {
@@ -280,46 +397,107 @@ class _AppSidebarState extends ConsumerState<AppSidebar> {
         );
       } else if (menuState.status == MenuStatus.loaded ||
           sidebarItems.isNotEmpty) {
-        return ListView(
-          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+        final bool isSearching = _searchQuery.isNotEmpty;
+        final filteredItems =
+            isSearching
+                ? _filterMenuItems(sidebarItems, _searchQuery)
+                : sidebarItems;
+
+        return Column(
           children: [
-            // Dashboard siempre visible
-            buildMenuItem(
-              SidebarMenuItem(
-                id: 0,
-                title: 'Dashboard',
-                icon: Icons.dashboard_outlined,
-                route: '/dashboard',
-                children: [],
-              ),
-              currentRoute == '/dashboard',
-            ),
+            buildSearchBar(),
+            Expanded(
+              child:
+                  filteredItems.isEmpty && isSearching
+                      ? Center(
+                        child: Padding(
+                          padding: const EdgeInsets.all(24.0),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.search_off,
+                                size: 40,
+                                color:
+                                    isDarkMode
+                                        ? Colors.grey.shade500
+                                        : Colors.grey.shade400,
+                              ),
+                              const SizedBox(height: 12),
+                              Text(
+                                'Sin resultados para\n"$_searchQuery"',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  color:
+                                      isDarkMode
+                                          ? Colors.grey.shade400
+                                          : Colors.grey.shade600,
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                            ],
+                          ),
+                        ),
+                      )
+                      : ListView(
+                        padding: const EdgeInsets.symmetric(
+                          vertical: 4,
+                          horizontal: 8,
+                        ),
+                        children: [
+                          if (!isSearching) ...[
+                            // Dashboard siempre visible
+                            buildMenuItem(
+                              SidebarMenuItem(
+                                id: 0,
+                                title: 'Dashboard',
+                                icon: Icons.dashboard_outlined,
+                                route: '/dashboard',
+                                children: [],
+                              ),
+                              currentRoute == '/dashboard',
+                            ),
 
-            const Padding(
-              padding: EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-              child: Divider(height: 1),
-            ),
+                            const Padding(
+                              padding: EdgeInsets.symmetric(
+                                vertical: 12,
+                                horizontal: 16,
+                              ),
+                              child: Divider(height: 1),
+                            ),
 
-            // Label para la sección principal
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
-              child: Text(
-                'PRINCIPAL',
-                style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: 0.5,
-                  color:
-                      isDarkMode ? Colors.grey.shade400 : Colors.grey.shade600,
-                ),
-              ),
-            ),
+                            // Label para la sección principal
+                            Padding(
+                              padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+                              child: Text(
+                                'PRINCIPAL',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.bold,
+                                  letterSpacing: 0.5,
+                                  color:
+                                      isDarkMode
+                                          ? Colors.grey.shade400
+                                          : Colors.grey.shade600,
+                                ),
+                              ),
+                            ),
+                          ],
 
-            // Items dinámicos del menú
-            ...sidebarItems.map((item) {
-              final isActive = currentRoute == item.route;
-              return buildMenuItem(item, isActive);
-            }),
+                          // Items del menú (filtrados o completos)
+                          ...filteredItems.map((item) {
+                            final isActive = currentRoute == item.route;
+                            // Al buscar, expandir automáticamente padres con hijos filtrados
+                            if (isSearching &&
+                                item.children != null &&
+                                item.children!.isNotEmpty) {
+                              _expandedItems[item.id] = true;
+                            }
+                            return buildMenuItem(item, isActive);
+                          }),
+                        ],
+                      ),
+            ),
           ],
         );
       } else {

@@ -10,6 +10,7 @@ dependencies:
   awesome_snackbar_content: ^0.1.1
   dio: ^5.8.0+1
   dropdown_search: ^5.0.6
+  flutter_dotenv: ^5.2.1
   flutter:
     sdk: flutter
   flutter_launcher_icons: ^0.14.3
@@ -56,6 +57,7 @@ flutter_launcher_icons:
 flutter:
   uses-material-design: true
   assets:
+    - .env
     - assets/fonts/
     - assets/icon/
     - assets/icon/whatsapp.png

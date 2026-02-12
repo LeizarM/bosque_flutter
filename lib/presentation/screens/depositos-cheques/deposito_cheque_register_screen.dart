@@ -36,6 +36,7 @@ class _DepositoChequeRegisterScreenState
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     final state = ref.watch(depositosChequesRegisterProvider);
     final notifier = ref.read(depositosChequesRegisterProvider.notifier);
     final imageBytes = ref.watch(imageBytesProvider);
@@ -52,9 +53,9 @@ class _DepositoChequeRegisterScreenState
     return Scaffold(
       appBar: AppBar(
         title: const Text('Registro de Depósitos'),
-        backgroundColor: Colors.white,
+        backgroundColor: colorScheme.surface,
         elevation: 0,
-        foregroundColor: Colors.teal,
+        foregroundColor: colorScheme.onSurface,
       ),
       body:
           state.cargando
@@ -66,7 +67,7 @@ class _DepositoChequeRegisterScreenState
                 ),
                 child: Container(
                   decoration: BoxDecoration(
-                    color: Colors.teal.shade50,
+                    color: colorScheme.surfaceVariant.withValues(alpha: 0.4),
                     borderRadius: BorderRadius.circular(
                       ResponsiveUtilsBosque.getResponsiveValue(
                         context: context,
@@ -875,7 +876,7 @@ class _DepositoChequeRegisterScreenState
                   mobile: 12.0,
                   desktop: 16.0,
                 ),
-                backgroundColor: Colors.white,
+                backgroundColor: Theme.of(context).colorScheme.surface,
                 child: Icon(
                   Icons.close,
                   size: ResponsiveUtilsBosque.getResponsiveValue(
@@ -915,7 +916,7 @@ class _DepositoChequeRegisterScreenState
                   mobile: 12.0,
                   desktop: 16.0,
                 ),
-                backgroundColor: Colors.white,
+                backgroundColor: Theme.of(context).colorScheme.surface,
                 child: Icon(
                   Icons.close,
                   size: ResponsiveUtilsBosque.getResponsiveValue(
@@ -1006,6 +1007,7 @@ class _DepositoChequeRegisterScreenState
     dynamic state,
     dynamic notifier,
   ) {
+    final colorScheme = Theme.of(context).colorScheme;
     final notas = state.notasRemision;
     final seleccionadas = state.notasSeleccionadas;
     final saldosEditados = state.saldosEditados;
@@ -1043,7 +1045,7 @@ class _DepositoChequeRegisterScreenState
               children: [
                 // Encabezados
                 Container(
-                  color: Colors.teal.shade50,
+                  color: colorScheme.surfaceVariant.withValues(alpha: 0.4),
                   child: Row(
                     children: [
                       _buildTableHeader('Selección', 80),
@@ -1067,7 +1069,7 @@ class _DepositoChequeRegisterScreenState
                     color:
                         seleccionado
                             ? Colors.green.withValues(alpha: 0.1)
-                            : Colors.white,
+                            : colorScheme.surface,
                     child: Row(
                       children: [
                         // Cambia aquí: usa Checkbox real

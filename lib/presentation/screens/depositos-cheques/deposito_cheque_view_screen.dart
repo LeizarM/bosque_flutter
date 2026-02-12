@@ -295,6 +295,7 @@ class DepositoChequeViewScreen extends ConsumerWidget {
     DepositosChequesState state,
     DepositosChequesNotifier notifier,
   ) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Row(
       children: [
         // Cliente
@@ -325,14 +326,15 @@ class DepositoChequeViewScreen extends ConsumerWidget {
         // Botón Buscar
         ElevatedButton.icon(
           style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFF6C63FF),
+            backgroundColor: colorScheme.primary,
+            foregroundColor: colorScheme.onPrimary,
             padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 18),
           ),
           onPressed: notifier.buscarDepositos,
-          icon: const Icon(Icons.search, color: Colors.white),
-          label: const Text(
+          icon: Icon(Icons.search, color: colorScheme.onPrimary),
+          label: Text(
             'Buscar/Actualizar',
-            style: TextStyle(color: Colors.white),
+            style: TextStyle(color: colorScheme.onPrimary),
           ),
         ),
       ],
@@ -450,6 +452,7 @@ class DepositoChequeViewScreen extends ConsumerWidget {
     DepositosChequesState state,
     DepositosChequesNotifier notifier,
   ) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -476,14 +479,15 @@ class DepositoChequeViewScreen extends ConsumerWidget {
         // Botón Buscar
         ElevatedButton.icon(
           style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFF6C63FF),
+            backgroundColor: colorScheme.primary,
+            foregroundColor: colorScheme.onPrimary,
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
           ),
           onPressed: notifier.buscarDepositos,
-          icon: const Icon(Icons.search, color: Colors.white),
-          label: const Text(
+          icon: Icon(Icons.search, color: colorScheme.onPrimary),
+          label: Text(
             'Buscar/Actualizar',
-            style: TextStyle(color: Colors.white),
+            style: TextStyle(color: colorScheme.onPrimary),
           ),
         ),
       ],
@@ -494,6 +498,7 @@ class DepositoChequeViewScreen extends ConsumerWidget {
     BuildContext context,
     DepositosChequesState state,
   ) {
+    final colorScheme = Theme.of(context).colorScheme;
     final isDesktop = ResponsiveUtilsBosque.isDesktop(context);
     final isMobile = ResponsiveUtilsBosque.isMobile(context);
 
@@ -507,9 +512,9 @@ class DepositoChequeViewScreen extends ConsumerWidget {
           const Spacer(),
           ElevatedButton.icon(
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.white,
-              foregroundColor: const Color(0xFF6C63FF),
-              side: const BorderSide(color: Color(0xFF6C63FF)),
+              backgroundColor: colorScheme.surface,
+              foregroundColor: colorScheme.primary,
+              side: BorderSide(color: colorScheme.primary),
               padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
             ),
             onPressed:
@@ -565,7 +570,7 @@ class DepositoChequeViewScreen extends ConsumerWidget {
               Text(
                 '${state.totalRegistros} registros',
                 style: TextStyle(
-                  color: Colors.black54,
+                  color: colorScheme.onSurface.withValues(alpha: 0.6),
                   fontSize: isMobile ? 13 : 14,
                 ),
               ),
@@ -576,9 +581,9 @@ class DepositoChequeViewScreen extends ConsumerWidget {
             width: double.infinity,
             child: ElevatedButton.icon(
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.white,
-                foregroundColor: const Color(0xFF6C63FF),
-                side: const BorderSide(color: Color(0xFF6C63FF)),
+                backgroundColor: colorScheme.surface,
+                foregroundColor: colorScheme.primary,
+                side: BorderSide(color: colorScheme.primary),
                 padding: const EdgeInsets.symmetric(
                   horizontal: 16,
                   vertical: 10,
@@ -1215,9 +1220,11 @@ class _DepositosTableState extends ConsumerState<_DepositosTable> {
                                                                             backgroundColor:
                                                                                 Theme.of(
                                                                                   context,
-                                                                                ).primaryColor,
+                                                                                ).colorScheme.primary,
                                                                             foregroundColor:
-                                                                                Colors.white,
+                                                                                Theme.of(
+                                                                                  context,
+                                                                                ).colorScheme.onPrimary,
                                                                           ),
                                                                           onPressed: () async {
                                                                             if (localBancoSeleccionado !=
@@ -1300,9 +1307,13 @@ class _DepositosTableState extends ConsumerState<_DepositosTable> {
                                                                     ElevatedButton(
                                                                       style: ElevatedButton.styleFrom(
                                                                         backgroundColor:
-                                                                            Colors.red,
+                                                                            Theme.of(
+                                                                              context,
+                                                                            ).colorScheme.error,
                                                                         foregroundColor:
-                                                                            Colors.white,
+                                                                            Theme.of(
+                                                                              context,
+                                                                            ).colorScheme.onError,
                                                                       ),
                                                                       onPressed:
                                                                           () => Navigator.pop(

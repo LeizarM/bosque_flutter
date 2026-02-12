@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:responsive_framework/responsive_framework.dart';
 import 'package:bosque_flutter/core/config/router.dart';
@@ -10,19 +11,17 @@ import 'package:bosque_flutter/data/repositories/entregas_impl.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
-  
+  await dotenv.load(fileName: '.env');
+
   runApp(ProviderScope(
     overrides: [
       entregasRepositoryProvider.overrideWithValue(EntregasImpl()),
-
     ],
-    child: const MyApp(), 
+    child: const MyApp(),
   ));
 }
 
 class MyApp extends ConsumerWidget {
-
   const MyApp({super.key});
 
   @override
@@ -39,7 +38,7 @@ class MyApp extends ConsumerWidget {
           child: child!,
           breakpoints: ResponsiveUtilsBosque.breakpoints,
         );
-        
+
         return MouseRegion(
           opaque: false,
           hitTestBehavior: HitTestBehavior.translucent,

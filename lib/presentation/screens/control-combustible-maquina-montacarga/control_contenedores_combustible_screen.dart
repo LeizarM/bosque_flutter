@@ -1330,6 +1330,7 @@ class _ControlContenedoresCombustibleScreenState
   }
 
   Widget _buildButtonsSection(bool isMediumOrLargeScreen) {
+    final colorScheme = Theme.of(context).colorScheme;
     if (isMediumOrLargeScreen) {
       return Row(
         mainAxisAlignment: MainAxisAlignment.end,
@@ -1347,18 +1348,18 @@ class _ControlContenedoresCombustibleScreenState
             child: ElevatedButton(
               onPressed: _isLoading ? null : _mostrarConfirmacion,
               style: ElevatedButton.styleFrom(
-                backgroundColor: Theme.of(context).primaryColor,
-                foregroundColor: Colors.white,
+                backgroundColor: colorScheme.primary,
+                foregroundColor: colorScheme.onPrimary,
               ),
               child:
                   _isLoading
-                      ? const SizedBox(
+                      ? SizedBox(
                         height: 20,
                         width: 20,
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
                           valueColor: AlwaysStoppedAnimation<Color>(
-                            Colors.white,
+                            colorScheme.onPrimary,
                           ),
                         ),
                       )
@@ -1384,18 +1385,19 @@ class _ControlContenedoresCombustibleScreenState
           child: ElevatedButton(
             onPressed: _isLoading ? null : _mostrarConfirmacion,
             style: ElevatedButton.styleFrom(
-              backgroundColor: Theme.of(context).primaryColor,
-              foregroundColor: Colors.white,
+              backgroundColor: colorScheme.primary,
+              foregroundColor: colorScheme.onPrimary,
               padding: const EdgeInsets.symmetric(vertical: 16),
             ),
             child:
                 _isLoading
-                    ? const SizedBox(
+                    ? SizedBox(
                       height: 20,
                       width: 20,
                       child: CircularProgressIndicator(
                         strokeWidth: 2,
-                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                        valueColor:
+                            AlwaysStoppedAnimation<Color>(colorScheme.onPrimary),
                       ),
                     )
                     : const Text('Registrar Movimiento'),
@@ -1584,8 +1586,8 @@ class _ControlContenedoresCombustibleScreenState
                 _registrarMovimiento();
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor: Theme.of(context).primaryColor,
-                foregroundColor: Colors.white,
+                backgroundColor: Theme.of(context).colorScheme.primary,
+                foregroundColor: Theme.of(context).colorScheme.onPrimary,
               ),
               child: const Text('Confirmar Registro'),
             ),

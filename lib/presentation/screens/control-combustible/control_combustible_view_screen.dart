@@ -57,6 +57,7 @@ class _ControlCombustibleViewScreenState
     showDialog(
       context: context,
       builder: (BuildContext context) {
+        final colorScheme = Theme.of(context).colorScheme;
         return Dialog(
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
@@ -69,7 +70,7 @@ class _ControlCombustibleViewScreenState
                 Container(
                   padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
-                    color: Theme.of(context).primaryColor,
+                    color: colorScheme.primary,
                     borderRadius: const BorderRadius.only(
                       topLeft: Radius.circular(16),
                       topRight: Radius.circular(16),
@@ -79,15 +80,15 @@ class _ControlCombustibleViewScreenState
                     children: [
                       Icon(
                         Icons.local_gas_station,
-                        color: Colors.white,
+                        color: colorScheme.onPrimary,
                         size: 24,
                       ),
                       const SizedBox(width: 12),
                       Expanded(
                         child: Text(
                           'Detalles del Bidón',
-                          style: const TextStyle(
-                            color: Colors.white,
+                          style: TextStyle(
+                            color: colorScheme.onPrimary,
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
                           ),
@@ -805,7 +806,7 @@ class _ControlCombustibleViewScreenState
                                                     backgroundColor:
                                                         colorScheme.secondary,
                                                     foregroundColor:
-                                                        Colors.white,
+                                                        colorScheme.onSecondary,
                                                     padding:
                                                         const EdgeInsets.symmetric(
                                                           vertical: 8,
@@ -1128,7 +1129,7 @@ class _ControlCombustibleViewScreenState
                                                       backgroundColor:
                                                           colorScheme.secondary,
                                                       foregroundColor:
-                                                          Colors.white,
+                                                          colorScheme.onSecondary,
                                                       padding:
                                                           const EdgeInsets.symmetric(
                                                             horizontal: 8,

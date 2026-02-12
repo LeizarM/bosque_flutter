@@ -12,6 +12,7 @@ class DepositoChequeIdentificarScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final colorScheme = Theme.of(context).colorScheme;
     final state = ref.watch(depositosChequesIdentificarRegisterProvider);
     final notifier = ref.read(depositosChequesIdentificarRegisterProvider.notifier);
     final isMobile = ResponsiveUtilsBosque.isMobile(context);
@@ -21,9 +22,9 @@ class DepositoChequeIdentificarScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Registro de Depósitos por Identificar'),
-        backgroundColor: Colors.white,
+        backgroundColor: colorScheme.surface,
         elevation: 0,
-        foregroundColor: Colors.teal,
+        foregroundColor: colorScheme.onSurface,
       ),
       body: state.cargando
           ? const Center(child: CircularProgressIndicator())
@@ -34,7 +35,7 @@ class DepositoChequeIdentificarScreen extends ConsumerWidget {
               ),
               child: Container(
                 decoration: BoxDecoration(
-                  color: Colors.teal.shade50,
+                  color: colorScheme.surfaceVariant.withValues(alpha: 0.4),
                   borderRadius: BorderRadius.circular(
                     ResponsiveUtilsBosque.getResponsiveValue(
                       context: context,

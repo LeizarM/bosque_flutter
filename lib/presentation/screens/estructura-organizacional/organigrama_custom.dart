@@ -39,10 +39,11 @@ class _OrganigramaCustomState extends State<OrganigramaCustom> {
   @override
   void initState() {
     super.initState();
+    // Layout ultra compacto para carta horizontal
     builder
-      ..siblingSeparation = 80
-      ..levelSeparation = 120
-      ..subtreeSeparation = 80
+      ..siblingSeparation = 12
+      ..levelSeparation = 30
+      ..subtreeSeparation = 12
       ..orientation = BuchheimWalkerConfiguration.ORIENTATION_TOP_BOTTOM;
   }
 
@@ -601,7 +602,7 @@ class _OrganigramaCustomState extends State<OrganigramaCustom> {
   Widget _buildNodeWidget(CargoEntity cargo) {
     // Si esVisible == 0, hacer el nodo completamente transparente
     if (cargo.esVisible == 0) {
-      return Container(width: 180, height: 95, color: Colors.transparent);
+      return Container(width: 75, height: 48, color: Colors.transparent);
     }
 
     final isInactive = cargo.estado == 0;
@@ -620,79 +621,62 @@ class _OrganigramaCustomState extends State<OrganigramaCustom> {
     return InkWell(
       onTap: () => widget.onNodeTap(cargo),
       child: Container(
-        width: 180,
-        height: 95,
-        padding: const EdgeInsets.all(8),
+        width: 75,
+        height: 48,
+        padding: const EdgeInsets.all(2),
         decoration: BoxDecoration(
           color: backgroundColor,
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: borderColor, width: isInactive ? 2 : 1),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.1),
-              blurRadius: 4,
-              offset: const Offset(0, 2),
-            ),
-          ],
+          borderRadius: BorderRadius.circular(3),
+          border: Border.all(color: borderColor, width: isInactive ? 1 : 0.5),
         ),
-        child: ClipRect(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Flexible(
-                child: Text(
-                  cargo.descripcion,
-                  style: TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.bold,
-                    color: isInactive ? Colors.red.shade900 : Colors.black87,
-                    height: 1.2,
-                  ),
-                  textAlign: TextAlign.center,
-                  maxLines: 3,
-                  overflow: TextOverflow.ellipsis,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Flexible(
+              child: Text(
+                cargo.descripcion,
+                style: TextStyle(
+                  fontSize: 5,
+                  fontWeight: FontWeight.bold,
+                  color: isInactive ? Colors.red.shade900 : Colors.black87,
+                  height: 1.0,
                 ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                'Nivel: ${cargo.nivel} | Pos: ${cargo.posicion}',
-                style: TextStyle(fontSize: 9, color: Colors.grey.shade600),
-                maxLines: 1,
+                textAlign: TextAlign.center,
+                maxLines: 2,
                 overflow: TextOverflow.ellipsis,
               ),
-              if (cargo.tieneEmpleadosActivos > 0)
-                Material(
-                  color: Colors.transparent,
-                  child: InkWell(
-                    onTap:
-                        widget.onEmpleadosTap != null
-                            ? () => widget.onEmpleadosTap!(cargo)
-                            : null,
-                    borderRadius: BorderRadius.circular(8),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 6,
-                        vertical: 2,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.green.shade100,
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: Colors.green.shade400),
-                      ),
-                      child: Text(
-                        '👤 ${cargo.tieneEmpleadosActivos}',
-                        style: TextStyle(
-                          fontSize: 9,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.green.shade800,
-                        ),
+            ),
+            Text(
+              'N${cargo.nivel}|P${cargo.posicion}',
+              style: TextStyle(fontSize: 4.5, color: Colors.grey.shade800),
+            ),
+            if (cargo.tieneEmpleadosActivos > 0)
+              Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  onTap:
+                      widget.onEmpleadosTap != null
+                          ? () => widget.onEmpleadosTap!(cargo)
+                          : null,
+                  borderRadius: BorderRadius.circular(2),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 2),
+                    decoration: BoxDecoration(
+                      color: Colors.green.shade200,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                    child: Text(
+                      '👤${cargo.tieneEmpleadosActivos}',
+                      style: TextStyle(
+                        fontSize: 4.5,
+                        color: Colors.green.shade900,
                       ),
                     ),
                   ),
                 ),
-            ],
-          ),
+              ),
+          ],
         ),
       ),
     );

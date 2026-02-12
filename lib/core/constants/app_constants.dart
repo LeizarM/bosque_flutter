@@ -1,6 +1,10 @@
+import 'package:flutter/foundation.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+
 class AppConstants {
-  static const String baseUrl = 'https://app.esppapel.com:8443';
-  //static const String baseUrl = 'http://192.168.3.107:9223';
+  static final String baseUrl = kReleaseMode
+      ? (dotenv.env['BASE_URL_PROD'] ?? 'https://app.esppapel.com:8443')
+      : (dotenv.env['BASE_URL_DEV'] ?? 'http://192.168.3.107:9223');
 
   static const String APP_VERSION = "1.0.1";
 
