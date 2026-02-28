@@ -1,6 +1,7 @@
 import 'package:bosque_flutter/domain/entities/articulos_almacen_entity.dart';
 import 'package:bosque_flutter/presentation/widgets/ventas/city_section.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 
 class DatabaseSection extends StatelessWidget {
   final String dbName;
@@ -14,7 +15,8 @@ class DatabaseSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Calcular total por base de datos
+    final colorScheme = Theme.of(context).colorScheme;
+
     int totalDisponibleDb = 0;
     articlesByCity.forEach((_, articles) {
       for (var article in articles) {
@@ -25,38 +27,66 @@ class DatabaseSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Encabezado de base de datos
+        // DB header
         Container(
-          margin: const EdgeInsets.only(bottom: 12),
-          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+          margin: const EdgeInsets.only(bottom: 10, top: 8),
+          padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 14),
           decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.primaryContainer,
-            borderRadius: BorderRadius.circular(8),
+            color: colorScheme.primaryContainer,
+            borderRadius: BorderRadius.circular(12),
           ),
           child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                'BASE DE DATOS: $dbName',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16,
-                  color: Theme.of(context).colorScheme.onPrimaryContainer,
+              Icon(
+                Icons.dns_rounded,
+                size: 18,
+                color: colorScheme.onPrimaryContainer,
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  dbName,
+                  style: TextStyle(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 14,
+                    color: colorScheme.onPrimaryContainer,
+                  ),
                 ),
               ),
-              Text(
-                'Total: $totalDisponibleDb',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16,
-                  color: Theme.of(context).colorScheme.onPrimaryContainer,
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 4,
+                ),
+                decoration: BoxDecoration(
+                  color: colorScheme.onPrimaryContainer.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.inventory_rounded,
+                      size: 14,
+                      color: colorScheme.onPrimaryContainer,
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      '${NumberFormat('#,##0', 'en_US').format(totalDisponibleDb)}',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w700,
+                        fontSize: 13,
+                        color: colorScheme.onPrimaryContainer,
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ],
           ),
         ),
 
-        // Secciones de ciudades
+        // City sections
         ...articlesByCity.entries.map((cityEntry) {
           return CitySection(
             cityName: cityEntry.key,
@@ -64,7 +94,7 @@ class DatabaseSection extends StatelessWidget {
           );
         }),
 
-        const SizedBox(height: 20),
+        const SizedBox(height: 12),
       ],
     );
   }
