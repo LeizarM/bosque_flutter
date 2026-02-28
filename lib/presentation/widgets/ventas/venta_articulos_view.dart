@@ -9,7 +9,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
-import 'package:responsive_framework/responsive_framework.dart';
 
 class VentasArticulosView extends ConsumerStatefulWidget {
   final int codCiudad;
@@ -663,11 +662,12 @@ class _VentasArticulosViewState extends ConsumerState<VentasArticulosView> {
     const spacing = 10.0;
 
     // Build cards list
-    final cards = codigosOrdenados.map((codigo) {
-      final variantes = articulosAgrupados[codigo]!;
-      final variantesPorDbYLista = _agruparVariantes(variantes);
-      return _buildArticuloCard(variantes.first, variantesPorDbYLista);
-    }).toList();
+    final cards =
+        codigosOrdenados.map((codigo) {
+          final variantes = articulosAgrupados[codigo]!;
+          final variantesPorDbYLista = _agruparVariantes(variantes);
+          return _buildArticuloCard(variantes.first, variantesPorDbYLista);
+        }).toList();
 
     // Split into rows of crossAxisCount
     final List<List<Widget>> rows = [];
@@ -681,7 +681,9 @@ class _VentasArticulosViewState extends ConsumerState<VentasArticulosView> {
       itemBuilder: (context, rowIndex) {
         final row = rows[rowIndex];
         return Padding(
-          padding: EdgeInsets.only(bottom: rowIndex < rows.length - 1 ? spacing : 0),
+          padding: EdgeInsets.only(
+            bottom: rowIndex < rows.length - 1 ? spacing : 0,
+          ),
           child: IntrinsicHeight(
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -840,9 +842,7 @@ class _VentasArticulosViewState extends ConsumerState<VentasArticulosView> {
               decoration: BoxDecoration(
                 color: dispColor.withValues(alpha: 0.12),
                 border: Border(
-                  bottom: BorderSide(
-                    color: dispColor.withValues(alpha: 0.2),
-                  ),
+                  bottom: BorderSide(color: dispColor.withValues(alpha: 0.2)),
                 ),
               ),
               child: Row(
@@ -903,7 +903,7 @@ class _VentasArticulosViewState extends ConsumerState<VentasArticulosView> {
                         ),
                         const SizedBox(width: 3),
                         Text(
-                          '${_formatNumber(disponibilidad)}',
+                          _formatNumber(disponibilidad),
                           style: TextStyle(
                             fontWeight: FontWeight.w700,
                             fontSize: 11,

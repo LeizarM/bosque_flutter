@@ -72,7 +72,7 @@ class DatabaseSection extends StatelessWidget {
                     ),
                     const SizedBox(width: 4),
                     Text(
-                      '${NumberFormat('#,##0', 'en_US').format(totalDisponibleDb)}',
+                      NumberFormat('#,##0', 'en_US').format(totalDisponibleDb),
                       style: TextStyle(
                         fontWeight: FontWeight.w700,
                         fontSize: 13,
