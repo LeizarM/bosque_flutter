@@ -98,7 +98,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
 
       if (loginEntity != null) {
         if (loginEntity.versionApp != AppConstants.APP_VERSION) {
-          context.go('/change-password', extra: loginEntity);
+          setState(
+            () =>
+                _message =
+                    'Tu versión de la app (${AppConstants.APP_VERSION}) está desactualizada. '
+                    'Por favor actualiza a la versión ${loginEntity.versionApp} para continuar.',
+          );
+          return;
         } else if (_passwordController.text == '123456789') {
           // Contraseña por defecto, obligar cambio
           await ref.read(userProvider.notifier).setUser(loginEntity);

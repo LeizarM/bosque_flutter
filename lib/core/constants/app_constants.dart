@@ -7,7 +7,7 @@ class AppConstants {
     'BASE_URL_PROD',
     defaultValue: 'https://app.esppapel.com:8443',
   );
-  
+
   static const String _compiledBaseUrlDev = String.fromEnvironment(
     'BASE_URL_DEV',
     defaultValue: 'http://192.168.3.107:9223',
@@ -220,11 +220,12 @@ class AppConstants {
   static const String tigoObtenerEjecutado = '/tigo/obtenerTigoEjecutado';
   static const String tigoObtenerNrosSinAsignar = '/tigo/obtenerNroSinAsignar';
   static const String tigoObtenerArbolDetallado = '/tigo/obtenerArboldetallado';
-    static const String tigoRptCambiosTigo = '/tigo/RptCambiosTigo';
-//ENDPOINT PARA LA GESTION DE EMPLEADOS - RRHH
+  static const String tigoRptCambiosTigo = '/tigo/RptCambiosTigo';
+  //ENDPOINT PARA LA GESTION DE EMPLEADOS - RRHH
   static const String rrhhObtenerLstEmpleados = '/rrhh/obtenerLstEmpleados';
   static const String rrhhRegistroEmpleado = '/rrhh/registroEmpleado';
-  static const String rrhhObtenerLstPersonas = '/rrhh/obtenerLstPersonaNoEmpleado';
+  static const String rrhhObtenerLstPersonas =
+      '/rrhh/obtenerLstPersonaNoEmpleado';
   static const String rrhhObtenerDatoPersona = '/rrhh/datosPersonales';
   static const String rrhhRegistroEducacion = '/rrhh/registroEducacion';
   static const String rrhhObtenerEducacion = '/rrhh/obtenerEducacion';
@@ -239,27 +240,44 @@ class AppConstants {
   static const String rrhhObtenerCargosXEmpresa = '/rrhh/cargoXSucursal';
   static const String rrhhRegistrarRelacionLaboral = '/rrhh/registroRelEmp';
   static const String bncGetBancos = '/banco/bancosX';
-  static const String rrhhGetCuentaBancoXEmpleado = '/rrhh/obtenerNroCuentaBanco';
+  static const String rrhhGetCuentaBancoXEmpleado =
+      '/rrhh/obtenerNroCuentaBanco';
   static const String rrhhRegistrarCuentaBancaria = '/rrhh/registroCuentaBanco';
-  static const String rrhhEliminarCuentaBancaria = '/rrhh/eliminarCuentaBancaria';
+  static const String rrhhEliminarCuentaBancaria =
+      '/rrhh/eliminarCuentaBancaria';
   static const String rrhhTipoRealacionLaboral = '/rrhh/tipoRelacionLaboral';
   static const String pdfRptNominaEmpleados = '/rrhh/pdfNominaEmpleados';
-  static const String rrhhRegistrarEmpleadoCargo = '/rrhh/registroEmpleadoCargo';
+  static const String rrhhRegistrarEmpleadoCargo =
+      '/rrhh/registroEmpleadoCargo';
   static const String rrhhObtenerUltimoCodEmpleado = '/rrhh/ultimoCodEmpleado';
-  static const String rrhhEliminarRelacionLaboral = '/rrhh/eliminarRelacionLaboral';
+  static const String rrhhEliminarRelacionLaboral =
+      '/rrhh/eliminarRelacionLaboral';
   static const String rrhhDetalleEmpleado = '/rrhh/detalleEmpleado';
   static const String rrhhObtenerCargoActual = '/rrhh/ultimoCargoEmpleado';
-  static const String rrhhObtenerHistorialCargosEmpleado= '/rrhh/obtenerCargosEmpleado';
-  static const String rrhhObtenerHistorialRelacionLaboral= '/rrhh/fechasBeneficio';
-  static const String rrhhEliminarEmpleadoCargo= '/rrhh/eliminarCargoEmpleado';
-  static const String rrhhObtenerUltimaRelacionLaboral= '/rrhh/obtenerUltimaRelacionLaboral';
-  static const String licenciasConducir= '/rrhh/licenciaPersona';
-  static const String registrarLicencia= '/rrhh/registrarLicencia';
-  static const String eliminarLicencia= '/rrhh/eliminarLicenciaConducir';
-  static const String tiposLicencia= '/rrhh/tipoLicencia';
-  static const String eliminarFoto= '/rrhh/eliminarFoto';
-  static const String cargoXempresa= '/rrhh/obtenerCargosXEmpresa';
+  static const String rrhhObtenerHistorialCargosEmpleado =
+      '/rrhh/obtenerCargosEmpleado';
+  static const String rrhhObtenerHistorialRelacionLaboral =
+      '/rrhh/fechasBeneficio';
+  static const String rrhhEliminarEmpleadoCargo = '/rrhh/eliminarCargoEmpleado';
+  static const String rrhhObtenerUltimaRelacionLaboral =
+      '/rrhh/obtenerUltimaRelacionLaboral';
+  static const String licenciasConducir = '/rrhh/licenciaPersona';
+  static const String registrarLicencia = '/rrhh/registrarLicencia';
+  static const String eliminarLicencia = '/rrhh/eliminarLicenciaConducir';
+  static const String tiposLicencia = '/rrhh/tipoLicencia';
+  static const String eliminarFoto = '/rrhh/eliminarFoto';
+  static const String cargoXempresa = '/rrhh/obtenerCargosXEmpresa';
 
+  // ═══════════════════════════════════════════════════════════════════════════════
+  // RUTAS MODULO DE PAGOS AL EXTRANJERO
+  // ═══════════════════════════════════════════════════════════════════════════════
+
+  static const String registrarSolicitudPago =
+      '/pagos-extranjeros/registrar-solicitud';
+  static const String registrarSolicitudProveedor =
+      '/pagos-extranjeros/registrar-solicitud-proveedor';
+  static const String registrarDetalleSolicitud =
+      '/pagos-extranjeros/registrar-detalle-solicitud';
 
   //Para cargar permisos de botones por usuario
   static const String ubtnPermisosBotones = '/view/vistaBtn';
