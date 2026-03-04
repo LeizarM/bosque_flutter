@@ -379,33 +379,11 @@ final routerProvider = Provider<GoRouter>((ref) {
       // Usar el router para navegar
       _router?.go('/login');
     });
-
-    // Inicializar el estado de autenticación
-    //_initAuthState(ref);
   }
 
   return _router!;
 });
 
-// Función para inicializar el estado de autenticación
-/*void _initAuthState(Ref ref) async {
-  final secureStorage = SecureStorage();
-  final isTokenExpired = await secureStorage.isTokenExpired();
-
-  if (!isTokenExpired) {
-    // Solo marcar como autenticado si el token es válido
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(authStateProvider.notifier).state = true;
-    });
-  } else {
-    // Limpiar la sesión si el token expiró
-    await secureStorage.clearSession();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(userProvider.notifier).clearUser();
-    });
-  }
-}
-*/
 // Clase para notificar cambios de estado de autenticación al router
 class GoRouterRefreshStream extends ChangeNotifier {
   GoRouterRefreshStream(Stream<bool> stream) {

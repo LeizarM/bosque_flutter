@@ -278,6 +278,10 @@ class AppConstants {
       '/pagos-extranjeros/registrar-solicitud-proveedor';
   static const String registrarDetalleSolicitud =
       '/pagos-extranjeros/registrar-detalle-solicitud';
+  static const String lstProveedoresXEmpresa =
+      '/pagos-extranjeros/obtener-proveedores-empresa';
+  static const String lstFacProvYOrdCompra =
+      '/pagos-extranjeros/obtener-docnum-empresa';
 
   //Para cargar permisos de botones por usuario
   static const String ubtnPermisosBotones = '/view/vistaBtn';

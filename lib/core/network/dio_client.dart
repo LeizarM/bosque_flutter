@@ -1,22 +1,26 @@
 import 'dart:typed_data';
-
 import 'package:bosque_flutter/core/constants/app_constants.dart';
 import 'package:bosque_flutter/core/utils/console_log.dart';
 import 'package:bosque_flutter/core/utils/secure_storage.dart';
 import 'package:dio/dio.dart';
 
-// Callback global para redirección al login cuando el token expira
 typedef AuthErrorCallback = void Function();
-AuthErrorCallback? _onAuthError;
 
 class DioClient {
-  // Método para establecer el callback de error de autenticación
+  static AuthErrorCallback? _onAuthError;
+
+  // 1. Instancia estática privada para el Singleton
+  static Dio? _dioInstance;
+
   static void setAuthErrorCallback(AuthErrorCallback callback) {
     _onAuthError = callback;
   }
 
+  // 2. Método getInstance optimizado (retorna la instancia existente)
   static Dio getInstance() {
-    final dio = Dio(
+    if (_dioInstance != null) return _dioInstance!;
+
+    _dioInstance = Dio(
       BaseOptions(
         baseUrl: AppConstants.baseUrl,
         connectTimeout: const Duration(seconds: 10),
@@ -24,33 +28,26 @@ class DioClient {
       ),
     );
 
-    dio.interceptors.add(
+    _dioInstance!.interceptors.add(
       InterceptorsWrapper(
         onRequest: (options, handler) async {
-          // Obtener el token almacenado
           final token = await SecureStorage().getToken();
-
           if (token != null) {
             options.headers['Authorization'] = 'Bearer $token';
           }
           return handler.next(options);
         },
         onError: (DioException e, handler) async {
-          // Manejo global de errores
           if (e.response?.statusCode == 401) {
-            // Token expirado o inválido
-            console('🔑 Token expirado o inválido, limpiando sesión');
+            console('oken expirado o inválido, limpiando sesión');
             await SecureStorage().deleteToken();
             await SecureStorage().deleteUserData();
 
-            // Activar callback de error de autenticación si está configurado
             if (_onAuthError != null) {
-              console('🔄 Redirigiendo al login debido a token expirado');
+              console('Redirigiendo al login debido a token expirado');
               _onAuthError!();
             } else {
-              console(
-                '⚠️ No hay callback configurado para redirección al login',
-              );
+              console('No hay callback configurado para redirección al login');
             }
           }
           return handler.next(e);
@@ -58,28 +55,33 @@ class DioClient {
       ),
     );
 
-    return dio;
+    return _dioInstance!;
   }
 
-  //FUNCION PARA DESCARGAR EL PDF
+  // 3. Centralizamos la extracción del mensaje de error
+  static String handleDioError(DioException e, String defaultMsg) {
+    if (e.response?.data is Map) {
+      return e.response!.data['message'] ?? 'Error de red';
+    }
+    return 'Error de conexión: ${e.message}';
+  }
+
   static Future<Uint8List> descargarReportePdf({
-    required String endpoint, // URL específica del reporte
-    Map<String, dynamic>? data, // Opcional: parámetros para el body
+    required String endpoint,
+    Map<String, dynamic>? data,
   }) async {
-    // 1. Obtenemos la instancia de Dio para asegurar que se usen los interceptores
-    final dio = getInstance();
+    final dio = getInstance(); // Ahora reutiliza la instancia
 
     final response = await dio.post(
       endpoint,
       data: data,
       options: Options(
         headers: {'Content-Type': 'application/json'},
-        responseType: ResponseType.bytes, // Esencial para recibir el archivo
+        responseType: ResponseType.bytes,
       ),
     );
 
     if (response.statusCode == 200) {
-      // El cast es seguro si responseType es bytes
       return response.data as Uint8List;
     } else {
       throw Exception(

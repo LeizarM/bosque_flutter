@@ -1,7 +1,10 @@
 import 'package:bosque_flutter/core/state/pagos_extranjeros_provider.dart';
 import 'package:bosque_flutter/core/state/user_provider.dart';
 import 'package:bosque_flutter/core/utils/responsive_utils_bosque.dart';
+import 'package:bosque_flutter/domain/entities/detalle_solicitud_entity.dart';
 import 'package:bosque_flutter/domain/entities/empresa_entity.dart';
+import 'package:bosque_flutter/domain/entities/proveedor_empresa_entity.dart';
+import 'package:dropdown_search/dropdown_search.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -208,6 +211,7 @@ class _PagosExtranjerosRegisterScreenState
                         context,
                         notifier,
                         isMobile: false,
+                        codEmpresa: state.empresaSeleccionada?.codEmpresa ?? 0,
                       ),
                   icon: const Icon(Icons.add, size: 18),
                   label: const Text('Agregar Proveedor'),
@@ -226,6 +230,8 @@ class _PagosExtranjerosRegisterScreenState
                               notifier: notifier,
                               colorScheme: colorScheme,
                               isMobile: false,
+                              codEmpresa:
+                                  state.empresaSeleccionada?.codEmpresa ?? 0,
                             ),
                           ),
                         ),
@@ -293,6 +299,7 @@ class _PagosExtranjerosRegisterScreenState
                   context,
                   notifier,
                   isMobile: isMobile,
+                  codEmpresa: state.empresaSeleccionada?.codEmpresa ?? 0,
                 ),
             icon: const Icon(Icons.add),
             label: const Text('Agregar Proveedor'),
@@ -309,6 +316,7 @@ class _PagosExtranjerosRegisterScreenState
                         notifier: notifier,
                         colorScheme: colorScheme,
                         isMobile: isMobile,
+                        codEmpresa: state.empresaSeleccionada?.codEmpresa ?? 0,
                       ),
                     ),
                   ),
@@ -336,6 +344,7 @@ class _PagosExtranjerosRegisterScreenState
     BuildContext context,
     PagosExtranjerosNotifier notifier, {
     required bool isMobile,
+    required int codEmpresa,
     int? indexEditar,
     ProveedorFormItem? proveedorActual,
   }) {
@@ -347,6 +356,7 @@ class _PagosExtranjerosRegisterScreenState
             indexEditar: indexEditar,
             proveedorActual: proveedorActual,
             isMobile: isMobile,
+            codEmpresa: codEmpresa,
           ),
     );
   }
@@ -453,6 +463,7 @@ class _ProveedorTile extends StatelessWidget {
   final PagosExtranjerosNotifier notifier;
   final ColorScheme colorScheme;
   final bool isMobile;
+  final int codEmpresa;
 
   const _ProveedorTile({
     required this.proveedor,
@@ -460,6 +471,7 @@ class _ProveedorTile extends StatelessWidget {
     required this.notifier,
     required this.colorScheme,
     required this.isMobile,
+    required this.codEmpresa,
   });
 
   @override
@@ -520,6 +532,7 @@ class _ProveedorTile extends StatelessWidget {
                         indexEditar: index,
                         proveedorActual: proveedor,
                         isMobile: isMobile,
+                        codEmpresa: codEmpresa,
                       ),
                 );
               },
@@ -559,6 +572,7 @@ class _ProveedorTile extends StatelessWidget {
                   notifier: notifier,
                   colorScheme: colorScheme,
                   isMobile: isMobile,
+                  codEmpresa: codEmpresa,
                 ),
 
                 // Botón agregar factura
@@ -573,6 +587,7 @@ class _ProveedorTile extends StatelessWidget {
                               notifier: notifier,
                               proveedorIndex: index,
                               isMobile: isMobile,
+                              codEmpresa: codEmpresa,
                             ),
                       );
                     },
@@ -681,6 +696,7 @@ class _DetallesList extends StatelessWidget {
   final PagosExtranjerosNotifier notifier;
   final ColorScheme colorScheme;
   final bool isMobile;
+  final int codEmpresa;
 
   const _DetallesList({
     required this.proveedorIndex,
@@ -688,6 +704,7 @@ class _DetallesList extends StatelessWidget {
     required this.notifier,
     required this.colorScheme,
     required this.isMobile,
+    required this.codEmpresa,
   });
 
   @override
@@ -770,6 +787,7 @@ class _DetallesList extends StatelessWidget {
                               isMobile: isMobile,
                               indexEditar: di,
                               detalleActual: det,
+                              codEmpresa: codEmpresa,
                             ),
                       );
                     },
@@ -1093,63 +1111,75 @@ class _EmptyState extends StatelessWidget {
 // ─────────────────────────────────────────────────────────────────────────────
 // Dialog: Agregar / Editar Proveedor
 // ─────────────────────────────────────────────────────────────────────────────
-class _ProveedorDialog extends StatefulWidget {
+class _ProveedorDialog extends ConsumerStatefulWidget {
   final PagosExtranjerosNotifier notifier;
   final int? indexEditar;
   final ProveedorFormItem? proveedorActual;
   final bool isMobile;
+  final int codEmpresa;
 
   const _ProveedorDialog({
     required this.notifier,
     this.indexEditar,
     this.proveedorActual,
     required this.isMobile,
+    required this.codEmpresa,
   });
 
   @override
-  State<_ProveedorDialog> createState() => _ProveedorDialogState();
+  ConsumerState<_ProveedorDialog> createState() => _ProveedorDialogState();
 }
 
-class _ProveedorDialogState extends State<_ProveedorDialog> {
+class _ProveedorDialogState extends ConsumerState<_ProveedorDialog> {
   final _formKey = GlobalKey<FormState>();
-  late final TextEditingController _cardCodeCtrl;
-  late final TextEditingController _cardNameCtrl;
   late final TextEditingController _obsCtrl;
+  ProveedorEmpresaEntity? _proveedorSeleccionado;
+  String? _duplicadoError;
 
   @override
   void initState() {
     super.initState();
-    _cardCodeCtrl = TextEditingController(
-      text: widget.proveedorActual?.cardCode ?? '',
-    );
-    _cardNameCtrl = TextEditingController(
-      text: widget.proveedorActual?.cardName ?? '',
-    );
     _obsCtrl = TextEditingController(text: widget.proveedorActual?.obs ?? '');
+    // Pre-seleccionar proveedor en modo edición
+    if (widget.proveedorActual != null &&
+        widget.proveedorActual!.cardCode.isNotEmpty) {
+      _proveedorSeleccionado = ProveedorEmpresaEntity(
+        cardCode: widget.proveedorActual!.cardCode,
+        cardName: widget.proveedorActual!.cardName,
+      );
+    }
   }
 
   @override
   void dispose() {
-    _cardCodeCtrl.dispose();
-    _cardNameCtrl.dispose();
     _obsCtrl.dispose();
     super.dispose();
   }
 
   void _guardar() {
     if (!_formKey.currentState!.validate()) return;
+    if (_proveedorSeleccionado == null) return;
 
     final proveedor = ProveedorFormItem(
-      cardCode: _cardCodeCtrl.text.trim(),
-      cardName: _cardNameCtrl.text.trim(),
+      cardCode: _proveedorSeleccionado!.cardCode,
+      cardName: _proveedorSeleccionado!.cardName,
       obs: _obsCtrl.text.trim(),
       detalles: widget.proveedorActual?.detalles ?? [],
     );
 
+    bool ok;
     if (widget.indexEditar != null) {
-      widget.notifier.actualizarProveedor(widget.indexEditar!, proveedor);
+      ok = widget.notifier.actualizarProveedor(widget.indexEditar!, proveedor);
     } else {
-      widget.notifier.agregarProveedor(proveedor);
+      ok = widget.notifier.agregarProveedor(proveedor);
+    }
+
+    if (!ok) {
+      setState(() {
+        _duplicadoError =
+            'Este proveedor ya está en la lista. No se permiten duplicados.';
+      });
+      return;
     }
 
     Navigator.pop(context);
@@ -1159,6 +1189,11 @@ class _ProveedorDialogState extends State<_ProveedorDialog> {
   Widget build(BuildContext context) {
     final isEdicion = widget.indexEditar != null;
     final colorScheme = Theme.of(context).colorScheme;
+
+    final proveedoresAsync = ref.watch(
+      proveedoresXEmpresaProvider(widget.codEmpresa),
+    );
+
     return AlertDialog(
       backgroundColor: colorScheme.surface,
       surfaceTintColor: colorScheme.surfaceTint,
@@ -1180,34 +1215,80 @@ class _ProveedorDialogState extends State<_ProveedorDialog> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              TextFormField(
-                controller: _cardCodeCtrl,
-                decoration: const InputDecoration(
-                  labelText: 'Código SAP (CardCode) *',
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.qr_code_outlined),
-                ),
-                textCapitalization: TextCapitalization.characters,
-                validator:
-                    (v) =>
-                        (v == null || v.trim().isEmpty)
-                            ? 'Campo requerido'
-                            : null,
+              // ── Buscador de proveedor ────────────────────────────
+              proveedoresAsync.when(
+                loading:
+                    () => const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 8),
+                      child: LinearProgressIndicator(),
+                    ),
+                error:
+                    (_, __) => Text(
+                      'Error al cargar proveedores',
+                      style: TextStyle(color: colorScheme.error),
+                    ),
+                data:
+                    (lista) => DropdownSearch<ProveedorEmpresaEntity>(
+                      selectedItem: _proveedorSeleccionado,
+                      items: lista,
+                      itemAsString: (p) => '${p.cardCode} - ${p.cardName}',
+                      onChanged:
+                          (p) => setState(() {
+                            _proveedorSeleccionado = p;
+                            _duplicadoError = null; // limpiar error al cambiar
+                          }),
+                      validator:
+                          (_) =>
+                              _proveedorSeleccionado == null
+                                  ? 'Seleccione un proveedor'
+                                  : null,
+                      dropdownDecoratorProps: DropDownDecoratorProps(
+                        dropdownSearchDecoration: InputDecoration(
+                          labelText: 'Proveedor *',
+                          border: const OutlineInputBorder(),
+                          prefixIcon: const Icon(Icons.business_outlined),
+                          filled: true,
+                          fillColor: colorScheme.surface,
+                        ),
+                      ),
+                      popupProps: PopupProps.menu(
+                        showSearchBox: true,
+                        fit: FlexFit.loose,
+                        constraints: const BoxConstraints(maxHeight: 320),
+                        searchFieldProps: const TextFieldProps(
+                          decoration: InputDecoration(
+                            labelText: 'Buscar por código o nombre',
+                            border: OutlineInputBorder(),
+                            prefixIcon: Icon(Icons.search),
+                          ),
+                        ),
+                      ),
+                    ),
               ),
-              const SizedBox(height: 12),
-              TextFormField(
-                controller: _cardNameCtrl,
-                decoration: const InputDecoration(
-                  labelText: 'Nombre del Proveedor *',
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.business_outlined),
+              // Error de proveedor duplicado
+              if (_duplicadoError != null)
+                Padding(
+                  padding: const EdgeInsets.only(top: 6),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.warning_amber_rounded,
+                        size: 16,
+                        color: colorScheme.error,
+                      ),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: Text(
+                          _duplicadoError!,
+                          style: TextStyle(
+                            color: colorScheme.error,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-                validator:
-                    (v) =>
-                        (v == null || v.trim().isEmpty)
-                            ? 'Campo requerido'
-                            : null,
-              ),
               const SizedBox(height: 12),
               TextFormField(
                 controller: _obsCtrl,
@@ -1239,12 +1320,13 @@ class _ProveedorDialogState extends State<_ProveedorDialog> {
 // ─────────────────────────────────────────────────────────────────────────────
 // Dialog: Agregar / Editar Detalle (Factura)
 // ─────────────────────────────────────────────────────────────────────────────
-class _DetalleDialog extends StatefulWidget {
+class _DetalleDialog extends ConsumerStatefulWidget {
   final PagosExtranjerosNotifier notifier;
   final int proveedorIndex;
   final int? indexEditar;
   final DetalleFormItem? detalleActual;
   final bool isMobile;
+  final int codEmpresa;
 
   const _DetalleDialog({
     required this.notifier,
@@ -1252,18 +1334,17 @@ class _DetalleDialog extends StatefulWidget {
     this.indexEditar,
     this.detalleActual,
     required this.isMobile,
+    required this.codEmpresa,
   });
 
   @override
-  State<_DetalleDialog> createState() => _DetalleDialogState();
+  ConsumerState<_DetalleDialog> createState() => _DetalleDialogState();
 }
 
-class _DetalleDialogState extends State<_DetalleDialog> {
+class _DetalleDialogState extends ConsumerState<_DetalleDialog> {
   final _formKey = GlobalKey<FormState>();
 
-  late final TextEditingController _tipoDocCtrl;
   late final TextEditingController _nroDocCtrl;
-  late final TextEditingController _facturaSapCtrl;
   late final TextEditingController _codImportCtrl;
   late final TextEditingController _montoFacturaCtrl;
   late final TextEditingController _montoAmortCtrl;
@@ -1274,20 +1355,19 @@ class _DetalleDialogState extends State<_DetalleDialog> {
   late DateTime _fechaFactura;
   late DateTime _fechaVencimiento;
 
+  String? _selectedTipoDoc;
+  DetalleSolicitudEntity? _selectedFacturaSap;
+  bool _initialSelectionDone = false;
+
   final _dateFormat = DateFormat('dd/MM/yyyy');
 
   @override
   void initState() {
     super.initState();
     final d = widget.detalleActual;
-    _tipoDocCtrl = TextEditingController(text: d?.tipoDocumento ?? '');
+    _selectedTipoDoc =
+        d != null && d.tipoDocumento.isNotEmpty ? d.tipoDocumento : null;
     _nroDocCtrl = TextEditingController(text: d?.numeroDocumento ?? '');
-    _facturaSapCtrl = TextEditingController(
-      text:
-          d?.facturaProvSap != null && d!.facturaProvSap != 0
-              ? d.facturaProvSap.toString()
-              : '',
-    );
     _codImportCtrl = TextEditingController(text: d?.codigoImportacion ?? '');
     _montoFacturaCtrl = TextEditingController(
       text: d != null ? d.montoFacturaUsd.toStringAsFixed(2) : '',
@@ -1306,9 +1386,7 @@ class _DetalleDialogState extends State<_DetalleDialog> {
 
   @override
   void dispose() {
-    _tipoDocCtrl.dispose();
     _nroDocCtrl.dispose();
-    _facturaSapCtrl.dispose();
     _codImportCtrl.dispose();
     _montoFacturaCtrl.dispose();
     _montoAmortCtrl.dispose();
@@ -1343,17 +1421,17 @@ class _DetalleDialogState extends State<_DetalleDialog> {
   void _calcularMontoPagar() {
     final factura = double.tryParse(_montoFacturaCtrl.text) ?? 0.0;
     final amort = double.tryParse(_montoAmortCtrl.text) ?? 0.0;
-    final pagar = factura - amort;
-    _montoPagarCtrl.text = pagar.toStringAsFixed(2);
+    _montoPagarCtrl.text = (factura - amort).toStringAsFixed(2);
   }
 
   void _guardar() {
     if (!_formKey.currentState!.validate()) return;
+    if (_selectedTipoDoc == null || _selectedTipoDoc!.isEmpty) return;
 
     final detalle = DetalleFormItem(
-      tipoDocumento: _tipoDocCtrl.text.trim(),
+      tipoDocumento: _selectedTipoDoc!,
       numeroDocumento: _nroDocCtrl.text.trim(),
-      facturaProvSap: int.tryParse(_facturaSapCtrl.text.trim()) ?? 0,
+      facturaProvSap: _selectedFacturaSap?.facturaProvSap ?? 0,
       codigoImportacion: _codImportCtrl.text.trim(),
       montoFacturaUsd: double.tryParse(_montoFacturaCtrl.text) ?? 0.0,
       montoAmortizadoUsd: double.tryParse(_montoAmortCtrl.text) ?? 0.0,
@@ -1380,8 +1458,41 @@ class _DetalleDialogState extends State<_DetalleDialog> {
   @override
   Widget build(BuildContext context) {
     final isEdicion = widget.indexEditar != null;
-
     final colorScheme = Theme.of(context).colorScheme;
+
+    final facturasAsync = ref.watch(
+      facProvYOrdCompraProvider(widget.codEmpresa),
+    );
+    final facturas = facturasAsync.valueOrNull ?? [];
+    final isLoadingFacturas = facturasAsync.isLoading;
+    final errorFacturas =
+        facturasAsync.hasError
+            ? facturasAsync.error.toString().replaceFirst('Exception: ', '')
+            : null;
+
+    // Pre-selección en modo edición: una sola vez cuando la lista carga.
+    if (!_initialSelectionDone && facturas.isNotEmpty) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        setState(() {
+          final sap = widget.detalleActual?.facturaProvSap ?? 0;
+          if (sap != 0) {
+            _selectedFacturaSap =
+                facturas.where((e) => e.facturaProvSap == sap).firstOrNull;
+          }
+          _initialSelectionDone = true;
+        });
+      });
+    } else if (!_initialSelectionDone && !isLoadingFacturas) {
+      _initialSelectionDone = true;
+    }
+
+    // Valores únicos de tipo documento para el dropdown
+    final tiposDoc =
+        facturas.map((e) => e.tipoDocumento).toSet().toList()..sort();
+    final tipoDocValue =
+        tiposDoc.contains(_selectedTipoDoc) ? _selectedTipoDoc : null;
+
     return Dialog(
       clipBehavior: Clip.antiAlias,
       backgroundColor: colorScheme.surface,
@@ -1424,23 +1535,45 @@ class _DetalleDialogState extends State<_DetalleDialog> {
                   key: _formKey,
                   child: Column(
                     children: [
-                      // Tipo doc + Nro doc
+                      // ── Fila 1: Tipo Documento + Número de Documento ──
                       _buildRow(
                         widget.isMobile,
-                        TextFormField(
-                          controller: _tipoDocCtrl,
-                          decoration: const InputDecoration(
-                            labelText: 'Tipo Documento *',
-                            border: OutlineInputBorder(),
-                            hintText: 'ej: FACTURA',
-                          ),
-                          textCapitalization: TextCapitalization.characters,
-                          validator:
-                              (v) =>
-                                  v == null || v.trim().isEmpty
-                                      ? 'Requerido'
-                                      : null,
-                        ),
+                        isLoadingFacturas
+                            ? const _FieldLoading(label: 'Tipo Documento *')
+                            : errorFacturas != null
+                            ? _FieldError(
+                              label: 'Tipo Documento *',
+                              error: errorFacturas,
+                              onRetry:
+                                  () => ref.invalidate(
+                                    facProvYOrdCompraProvider(
+                                      widget.codEmpresa,
+                                    ),
+                                  ),
+                            )
+                            : DropdownButtonFormField<String>(
+                              value: tipoDocValue,
+                              decoration: const InputDecoration(
+                                labelText: 'Tipo Documento *',
+                                border: OutlineInputBorder(),
+                              ),
+                              items:
+                                  tiposDoc
+                                      .map(
+                                        (t) => DropdownMenuItem(
+                                          value: t,
+                                          child: Text(t),
+                                        ),
+                                      )
+                                      .toList(),
+                              onChanged:
+                                  (v) => setState(() => _selectedTipoDoc = v),
+                              validator:
+                                  (v) =>
+                                      v == null || v.isEmpty
+                                          ? 'Requerido'
+                                          : null,
+                            ),
                         TextFormField(
                           controller: _nroDocCtrl,
                           decoration: const InputDecoration(
@@ -1455,20 +1588,64 @@ class _DetalleDialogState extends State<_DetalleDialog> {
                         ),
                       ),
                       const SizedBox(height: 12),
-                      // Factura SAP + Código importación
+                      // ── Fila 2: Factura Prov. SAP (dropdown buscable) + Cód. Importación ──
                       _buildRow(
                         widget.isMobile,
-                        TextFormField(
-                          controller: _facturaSapCtrl,
-                          decoration: const InputDecoration(
-                            labelText: 'Factura Prov. SAP',
-                            border: OutlineInputBorder(),
-                          ),
-                          keyboardType: TextInputType.number,
-                          inputFormatters: [
-                            FilteringTextInputFormatter.digitsOnly,
-                          ],
-                        ),
+                        isLoadingFacturas
+                            ? const _FieldLoading(label: 'Factura Prov. SAP')
+                            : errorFacturas != null
+                            ? _FieldError(
+                              label: 'Factura Prov. SAP',
+                              error: errorFacturas,
+                              onRetry:
+                                  () => ref.invalidate(
+                                    facProvYOrdCompraProvider(
+                                      widget.codEmpresa,
+                                    ),
+                                  ),
+                            )
+                            : DropdownSearch<DetalleSolicitudEntity>(
+                              items: facturas,
+                              selectedItem: _selectedFacturaSap,
+                              itemAsString: (e) => e.facturaProvSap.toString(),
+                              filterFn:
+                                  (item, filter) => item.facturaProvSap
+                                      .toString()
+                                      .contains(filter.trim()),
+                              onChanged:
+                                  (item) => setState(() {
+                                    _selectedFacturaSap = item;
+                                    // Sincroniza tipo doc automáticamente
+                                    if (item != null) {
+                                      _selectedTipoDoc = item.tipoDocumento;
+                                    }
+                                  }),
+                              dropdownDecoratorProps:
+                                  const DropDownDecoratorProps(
+                                    dropdownSearchDecoration: InputDecoration(
+                                      labelText: 'Factura Prov. SAP',
+                                      border: OutlineInputBorder(),
+                                    ),
+                                  ),
+                              popupProps: PopupProps.menu(
+                                showSearchBox: true,
+                                searchFieldProps: const TextFieldProps(
+                                  decoration: InputDecoration(
+                                    hintText: 'Buscar número...',
+                                    border: OutlineInputBorder(),
+                                    prefixIcon: Icon(Icons.search),
+                                    isDense: true,
+                                  ),
+                                ),
+                                emptyBuilder:
+                                    (_, __) => const Center(
+                                      child: Padding(
+                                        padding: EdgeInsets.all(16),
+                                        child: Text('Sin resultados'),
+                                      ),
+                                    ),
+                              ),
+                            ),
                         TextFormField(
                           controller: _codImportCtrl,
                           decoration: const InputDecoration(
@@ -1478,7 +1655,7 @@ class _DetalleDialogState extends State<_DetalleDialog> {
                         ),
                       ),
                       const SizedBox(height: 12),
-                      // Fechas
+                      // ── Fila 3: Fechas ──
                       _buildRow(
                         widget.isMobile,
                         InkWell(
@@ -1506,7 +1683,7 @@ class _DetalleDialogState extends State<_DetalleDialog> {
                         ),
                       ),
                       const SizedBox(height: 12),
-                      // Montos
+                      // ── Monto factura ──
                       TextFormField(
                         controller: _montoFacturaCtrl,
                         decoration: const InputDecoration(
@@ -1532,6 +1709,7 @@ class _DetalleDialogState extends State<_DetalleDialog> {
                         },
                       ),
                       const SizedBox(height: 12),
+                      // ── Fila 4: Amortizado + A pagar ──
                       _buildRow(
                         widget.isMobile,
                         TextFormField(
@@ -1574,7 +1752,7 @@ class _DetalleDialogState extends State<_DetalleDialog> {
                         ),
                       ),
                       const SizedBox(height: 12),
-                      // Concepto + obs
+                      // ── Concepto ──
                       TextFormField(
                         controller: _conceptoCtrl,
                         decoration: const InputDecoration(
@@ -1583,6 +1761,7 @@ class _DetalleDialogState extends State<_DetalleDialog> {
                         ),
                       ),
                       const SizedBox(height: 12),
+                      // ── Observaciones ──
                       TextFormField(
                         controller: _obsCtrl,
                         decoration: const InputDecoration(
@@ -1621,7 +1800,6 @@ class _DetalleDialogState extends State<_DetalleDialog> {
     );
   }
 
-  /// Construye un Row en desktop y una Column en móvil con dos widgets.
   Widget _buildRow(bool isMobile, Widget left, Widget right) {
     if (isMobile) {
       return Column(children: [left, const SizedBox(height: 12), right]);
@@ -1633,6 +1811,57 @@ class _DetalleDialogState extends State<_DetalleDialog> {
         const SizedBox(width: 12),
         Expanded(child: right),
       ],
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Helper: placeholder de carga para un campo
+// ─────────────────────────────────────────────────────────────────────────────
+class _FieldLoading extends StatelessWidget {
+  final String label;
+  const _FieldLoading({required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return InputDecorator(
+      decoration: InputDecoration(
+        labelText: label,
+        border: const OutlineInputBorder(),
+      ),
+      child: const SizedBox(height: 18, child: LinearProgressIndicator()),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Helper: placeholder de error para un campo (con botón reintentar)
+// ─────────────────────────────────────────────────────────────────────────────
+class _FieldError extends StatelessWidget {
+  final String label;
+  final String error;
+  final VoidCallback onRetry;
+  const _FieldError({
+    required this.label,
+    required this.error,
+    required this.onRetry,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return InputDecorator(
+      decoration: InputDecoration(
+        labelText: label,
+        border: const OutlineInputBorder(),
+        errorText: error,
+        suffixIcon: IconButton(
+          tooltip: 'Reintentar',
+          icon: Icon(Icons.refresh, color: colorScheme.error),
+          onPressed: onRetry,
+        ),
+      ),
+      child: const SizedBox(height: 18),
     );
   }
 }
