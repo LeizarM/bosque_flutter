@@ -96,7 +96,7 @@ class _PagosExtranjerosRegisterScreenState
                 onPressed:
                     state.cargando
                         ? null
-                        : () => _guardar(notifier, user?.audUsuarioI ?? 0),
+                        : () => _guardar(notifier, user?.codUsuario ?? 0),
                 icon:
                     state.cargando
                         ? SizedBox(
@@ -158,7 +158,7 @@ class _PagosExtranjerosRegisterScreenState
                               notifier,
                               colorScheme,
                               vPad,
-                              user?.audUsuarioI ?? 0,
+                              user?.codUsuario ?? 0,
                             )
                             : _buildMobileLayout(
                               context,
@@ -167,7 +167,7 @@ class _PagosExtranjerosRegisterScreenState
                               colorScheme,
                               isMobile,
                               vPad,
-                              user?.audUsuarioI ?? 0,
+                              user?.codUsuario ?? 0,
                             ),
                   ),
                 ),
@@ -904,7 +904,7 @@ class _ResumenMontos extends StatelessWidget {
                 height: 20,
               ),
               _ResumenRow(
-                label: 'Total a Pagar (USD)',
+                label: 'Total a Pagar',
                 valor: state.montoTotalSolicitud,
                 colorScheme: colorScheme,
                 bold: true,
@@ -950,7 +950,10 @@ class _ResumenRow extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label, style: style),
+          Flexible(
+            child: Text(label, style: style, overflow: TextOverflow.ellipsis),
+          ),
+          const SizedBox(width: 8),
           Text(
             valorText,
             style: style.copyWith(

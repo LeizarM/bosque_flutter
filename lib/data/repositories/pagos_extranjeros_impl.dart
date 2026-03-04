@@ -1,37 +1,21 @@
 import 'package:bosque_flutter/core/constants/app_constants.dart';
 import 'package:bosque_flutter/core/network/base_api_repository.dart';
-import 'package:bosque_flutter/core/network/dio_client.dart';
 import 'package:bosque_flutter/data/models/detalle_solicitud_model.dart';
-import 'package:dio/dio.dart';
 import 'package:bosque_flutter/data/models/empresa_model.dart';
 import 'package:bosque_flutter/data/models/proveedor_empresa_model.dart';
-import 'package:bosque_flutter/data/models/solicitud_pago_model.dart';
-import 'package:bosque_flutter/data/models/solicitud_proveedor_model.dart';
 import 'package:bosque_flutter/domain/entities/detalle_solicitud_entity.dart';
 import 'package:bosque_flutter/domain/entities/empresa_entity.dart';
 import 'package:bosque_flutter/domain/entities/proveedor_empresa_entity.dart';
-import 'package:bosque_flutter/domain/entities/solicitud_pago_entity.dart';
-import 'package:bosque_flutter/domain/entities/solicitud_proveedor_entity.dart';
 import 'package:bosque_flutter/domain/repositories/pagos_extranjeros_repository.dart';
 
 class PagosExtranjerosImpl extends BaseApiRepository
     implements PagosExtranjerosRepository {
   @override
-  Future<BigInt> registrarSolicitudPago(SolicitudPagoEntity entity) {
-    // 2. Usamos el método heredado directamente
+  Future<BigInt> guardarSolicitudCompleta(Map<String, dynamic> payload) {
     return postAndReturnId(
-      endpoint: AppConstants.registrarSolicitudPago,
-      data: SolicitudPagoModel.fromEntity(entity).toJson(),
-      errorMessage: 'Error al registrar la solicitud de pago',
-    );
-  }
-
-  @override
-  Future<BigInt> registrarSolicitudProveedor(SolicitudProveedorEntity entity) {
-    return postAndReturnId(
-      endpoint: AppConstants.registrarSolicitudProveedor,
-      data: SolicitudProveedorModel.fromEntity(entity).toJson(),
-      errorMessage: 'Error al registrar el proveedor',
+      endpoint: AppConstants.guardarSolicitudCompleta,
+      data: payload,
+      errorMessage: 'Error al guardar la solicitud completa',
     );
   }
 
@@ -56,15 +40,6 @@ class PagosExtranjerosImpl extends BaseApiRepository
       fromJson: (json) => ProveedorEmpresaModel.fromJson(json),
     );
     return modelos.map((m) => m.toEntity()).toList();
-  }
-
-  @override
-  Future<BigInt> registrarDetalleSolicitud(DetalleSolicitudEntity entity) {
-    return postAndReturnId(
-      endpoint: AppConstants.registrarDetalleSolicitud,
-      data: DetalleSolicitudModel.fromEntity(entity).toJson(),
-      errorMessage: 'Error al registrar el Detalle de la Solicitud',
-    );
   }
 
   @override

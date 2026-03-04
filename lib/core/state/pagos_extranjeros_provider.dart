@@ -3,8 +3,6 @@ import 'package:bosque_flutter/data/repositories/pagos_extranjeros_impl.dart';
 import 'package:bosque_flutter/domain/entities/detalle_solicitud_entity.dart';
 import 'package:bosque_flutter/domain/entities/empresa_entity.dart';
 import 'package:bosque_flutter/domain/entities/proveedor_empresa_entity.dart';
-import 'package:bosque_flutter/domain/entities/solicitud_pago_entity.dart';
-import 'package:bosque_flutter/domain/entities/solicitud_proveedor_entity.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -12,6 +10,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 // ═══════════════════════════════════════════════════════════════════════
 
 class DetalleFormItem {
+  final int idDetalle;
   final String tipoDocumento;
   final String numeroDocumento;
   final int facturaProvSap;
@@ -25,6 +24,7 @@ class DetalleFormItem {
   final String obs;
 
   DetalleFormItem({
+    this.idDetalle = 0,
     this.tipoDocumento = '',
     this.numeroDocumento = '',
     this.facturaProvSap = 0,
@@ -40,6 +40,7 @@ class DetalleFormItem {
        fechaVencimiento = fechaVencimiento ?? DateTime.now();
 
   DetalleFormItem copyWith({
+    int? idDetalle,
     String? tipoDocumento,
     String? numeroDocumento,
     int? facturaProvSap,
@@ -53,6 +54,7 @@ class DetalleFormItem {
     String? obs,
   }) {
     return DetalleFormItem(
+      idDetalle: idDetalle ?? this.idDetalle,
       tipoDocumento: tipoDocumento ?? this.tipoDocumento,
       numeroDocumento: numeroDocumento ?? this.numeroDocumento,
       facturaProvSap: facturaProvSap ?? this.facturaProvSap,
@@ -69,16 +71,20 @@ class DetalleFormItem {
 }
 
 class ProveedorFormItem {
+  final int idSolicitudProveedor;
   final String cardCode;
   final String cardName;
   final String obs;
   final List<DetalleFormItem> detalles;
+  final List<int> detallesAEliminar;
 
   ProveedorFormItem({
+    this.idSolicitudProveedor = 0,
     this.cardCode = '',
     this.cardName = '',
     this.obs = '',
     this.detalles = const [],
+    this.detallesAEliminar = const [],
   });
 
   double get totalFacturasUsd =>
@@ -89,16 +95,20 @@ class ProveedorFormItem {
       detalles.fold(0.0, (sum, d) => sum + d.montoAPagarUsd);
 
   ProveedorFormItem copyWith({
+    int? idSolicitudProveedor,
     String? cardCode,
     String? cardName,
     String? obs,
     List<DetalleFormItem>? detalles,
+    List<int>? detallesAEliminar,
   }) {
     return ProveedorFormItem(
+      idSolicitudProveedor: idSolicitudProveedor ?? this.idSolicitudProveedor,
       cardCode: cardCode ?? this.cardCode,
       cardName: cardName ?? this.cardName,
       obs: obs ?? this.obs,
       detalles: detalles ?? this.detalles,
+      detallesAEliminar: detallesAEliminar ?? this.detallesAEliminar,
     );
   }
 }
@@ -108,20 +118,24 @@ class ProveedorFormItem {
 // ═══════════════════════════════════════════════════════════════════════
 
 class PagosExtranjerosState {
+  final int idSolicitud;
   final List<EmpresaEntity> empresas;
   final EmpresaEntity? empresaSeleccionada;
   final DateTime fechaSolicitud;
   final List<ProveedorFormItem> proveedores;
+  final List<int> proveedoresAEliminar;
   final bool cargando;
   final bool cargandoEmpresas;
   final String? mensajeExito;
   final String? mensajeError;
 
   PagosExtranjerosState({
+    this.idSolicitud = 0,
     this.empresas = const [],
     this.empresaSeleccionada,
     DateTime? fechaSolicitud,
     this.proveedores = const [],
+    this.proveedoresAEliminar = const [],
     this.cargando = false,
     this.cargandoEmpresas = false,
     this.mensajeExito,
@@ -132,11 +146,13 @@ class PagosExtranjerosState {
       proveedores.fold(0.0, (sum, p) => sum + p.totalAPagarUsd);
 
   PagosExtranjerosState copyWith({
+    int? idSolicitud,
     List<EmpresaEntity>? empresas,
     EmpresaEntity? empresaSeleccionada,
     bool clearEmpresa = false,
     DateTime? fechaSolicitud,
     List<ProveedorFormItem>? proveedores,
+    List<int>? proveedoresAEliminar,
     bool? cargando,
     bool? cargandoEmpresas,
     String? mensajeExito,
@@ -145,6 +161,7 @@ class PagosExtranjerosState {
     bool clearMensajeError = false,
   }) {
     return PagosExtranjerosState(
+      idSolicitud: idSolicitud ?? this.idSolicitud,
       empresas: empresas ?? this.empresas,
       empresaSeleccionada:
           clearEmpresa
@@ -152,6 +169,7 @@ class PagosExtranjerosState {
               : (empresaSeleccionada ?? this.empresaSeleccionada),
       fechaSolicitud: fechaSolicitud ?? this.fechaSolicitud,
       proveedores: proveedores ?? this.proveedores,
+      proveedoresAEliminar: proveedoresAEliminar ?? this.proveedoresAEliminar,
       cargando: cargando ?? this.cargando,
       cargandoEmpresas: cargandoEmpresas ?? this.cargandoEmpresas,
       mensajeExito:
@@ -190,12 +208,13 @@ class PagosExtranjerosNotifier extends StateNotifier<PagosExtranjerosState> {
   // ── Datos cabecera ───────────────────────────────────────────────────
 
   void setEmpresa(EmpresaEntity empresa) {
-    // Si la empresa cambia, borrar todos los proveedores y facturas
+    // Si la empresa cambia, borrar todos los proveedores y las listas de eliminación
     final cambioEmpresa =
         state.empresaSeleccionada?.codEmpresa != empresa.codEmpresa;
     state = state.copyWith(
       empresaSeleccionada: empresa,
       proveedores: cambioEmpresa ? [] : state.proveedores,
+      proveedoresAEliminar: cambioEmpresa ? [] : state.proveedoresAEliminar,
     );
   }
 
@@ -235,9 +254,17 @@ class PagosExtranjerosNotifier extends StateNotifier<PagosExtranjerosState> {
   }
 
   void eliminarProveedor(int index) {
+    final prov = state.proveedores[index];
     final lista = [...state.proveedores];
     lista.removeAt(index);
-    state = state.copyWith(proveedores: lista);
+    final eliminados = [...state.proveedoresAEliminar];
+    if (prov.idSolicitudProveedor > 0) {
+      eliminados.add(prov.idSolicitudProveedor);
+    }
+    state = state.copyWith(
+      proveedores: lista,
+      proveedoresAEliminar: eliminados,
+    );
   }
 
   // ── Gestión de detalles de un proveedor ─────────────────────────────
@@ -267,9 +294,17 @@ class PagosExtranjerosNotifier extends StateNotifier<PagosExtranjerosState> {
   void eliminarDetalle(int proveedorIndex, int detalleIndex) {
     final proveedores = [...state.proveedores];
     final prov = proveedores[proveedorIndex];
+    final det = prov.detalles[detalleIndex];
     final detalles = [...prov.detalles];
     detalles.removeAt(detalleIndex);
-    proveedores[proveedorIndex] = prov.copyWith(detalles: detalles);
+    final eliminados = [...prov.detallesAEliminar];
+    if (det.idDetalle > 0) {
+      eliminados.add(det.idDetalle);
+    }
+    proveedores[proveedorIndex] = prov.copyWith(
+      detalles: detalles,
+      detallesAEliminar: eliminados,
+    );
     state = state.copyWith(proveedores: proveedores);
   }
 
@@ -287,13 +322,9 @@ class PagosExtranjerosNotifier extends StateNotifier<PagosExtranjerosState> {
     );
   }
 
-  // ── Guardar solicitud completa (flujo 3 endpoints) ──────────────────
+  // ── Guardar solicitud completa (endpoint único transaccional) ────────
 
-  /// Ejecuta el guardado en cascada:
-  /// 1. POST solicitud pago → obtiene idSolicitud
-  /// 2. Para cada proveedor: POST proveedor → obtiene idSolicitudProveedor
-  /// 3. Para cada detalle: POST detalle
-  ///
+  /// Construye el payload completo y lo envía en un único POST transaccional.
   /// [audUsuario] es el código del usuario autenticado.
   Future<bool> guardarSolicitud(int audUsuario) async {
     // Validaciones básicas
@@ -331,63 +362,60 @@ class PagosExtranjerosNotifier extends StateNotifier<PagosExtranjerosState> {
     );
 
     try {
-      // ── Paso 1: Registrar cabecera de solicitud ────────────────────
-      final idSolicitud = await _repo.registrarSolicitudPago(
-        SolicitudPagoEntity(
-          idSolicitud: BigInt.zero,
-          codEmpresa: state.empresaSeleccionada!.codEmpresa,
-          fechaSolicitud: state.fechaSolicitud,
-          montoTotalSolicitud: state.montoTotalSolicitud,
-          estado: 'PENDIENTE',
-          audUsuario: audUsuario,
-        ),
-      );
+      // Formatea una fecha como "yyyy-MM-ddT00:00:00.000" (sin componente horario)
+      String formatDate(DateTime d) =>
+          '${d.year.toString().padLeft(4, '0')}-'
+          '${d.month.toString().padLeft(2, '0')}-'
+          '${d.day.toString().padLeft(2, '0')}T00:00:00.000';
 
-      console('SolicitudPago creada con ID: $idSolicitud');
+      final payload = <String, dynamic>{
+        'idSolicitud': state.idSolicitud,
+        'codEmpresa': state.empresaSeleccionada!.codEmpresa,
+        'fechaSolicitud': formatDate(state.fechaSolicitud),
+        'montoTotalSolicitud': state.montoTotalSolicitud,
+        'estado': 'PENDIENTE',
+        'audUsuario': audUsuario,
+        'proveedoresAEliminar': state.proveedoresAEliminar,
+        'proveedores':
+            state.proveedores
+                .map(
+                  (prov) => {
+                    'idSolicitudProveedor': prov.idSolicitudProveedor,
+                    'cardCode': prov.cardCode,
+                    'cardName': prov.cardName,
+                    'totalFacturasUsd': prov.totalFacturasUsd,
+                    'totalAmortizadoUsd': prov.totalAmortizadoUsd,
+                    'totalAPagarUsd': prov.totalAPagarUsd,
+                    'obs': prov.obs,
+                    'detallesAEliminar': prov.detallesAEliminar,
+                    'detalles':
+                        prov.detalles
+                            .map(
+                              (det) => {
+                                'idDetalle': det.idDetalle,
+                                'tipoDocumento': det.tipoDocumento,
+                                'numeroDocumento': det.numeroDocumento,
+                                'facturaProvSap': det.facturaProvSap,
+                                'codigoImportacion': det.codigoImportacion,
+                                'montoFacturaUsd': det.montoFacturaUsd,
+                                'montoAmortizadoUsd': det.montoAmortizadoUsd,
+                                'montoAPagarUsd': det.montoAPagarUsd,
+                                'fechaFactura': formatDate(det.fechaFactura),
+                                'fechaVencimiento': formatDate(
+                                  det.fechaVencimiento,
+                                ),
+                                'concepto': det.concepto,
+                                'obs': det.obs,
+                              },
+                            )
+                            .toList(),
+                  },
+                )
+                .toList(),
+      };
 
-      // ── Paso 2 & 3: Proveedor + sus detalles ──────────────────────
-      for (final prov in state.proveedores) {
-        final idSolicitudProveedor = await _repo.registrarSolicitudProveedor(
-          SolicitudProveedorEntity(
-            idSolicitudProveedor: BigInt.zero,
-            idSolicitud: idSolicitud,
-            cardCode: prov.cardCode,
-            cardName: prov.cardName,
-            totalFacturasUsd: prov.totalFacturasUsd,
-            totalAmortizadoUsd: prov.totalAmortizadoUsd,
-            totalAPagarUsd: prov.totalAPagarUsd,
-            obs: prov.obs,
-            audUsuario: audUsuario,
-            codEmpresa: state.empresaSeleccionada!.codEmpresa,
-          ),
-        );
-
-        console('  Proveedor "${prov.cardCode}" → ID: $idSolicitudProveedor');
-
-        for (final det in prov.detalles) {
-          await _repo.registrarDetalleSolicitud(
-            DetalleSolicitudEntity(
-              idDetalle: BigInt.zero,
-              idSolicitudProveedor: idSolicitudProveedor,
-              tipoDocumento: det.tipoDocumento,
-              numeroDocumento: det.numeroDocumento,
-              facturaProvSap: det.facturaProvSap,
-              codigoImportacion: det.codigoImportacion,
-              montoFacturaUsd: det.montoFacturaUsd,
-              montoAmortizadoUsd: det.montoAmortizadoUsd,
-              montoAPagarUsd: det.montoAPagarUsd,
-              fechaFactura: det.fechaFactura,
-              fechaVencimiento: det.fechaVencimiento,
-              concepto: det.concepto,
-              obs: det.obs,
-              esAprobado: 0,
-              audUsuario: audUsuario,
-              codEmpresa: state.empresaSeleccionada!.codEmpresa,
-            ),
-          );
-        }
-        console('   ${prov.detalles.length} detalle(s) registrados');
-      }
+      final idSolicitud = await _repo.guardarSolicitudCompleta(payload);
+      console('Solicitud guardada con ID: $idSolicitud');
 
       state = state.copyWith(
         cargando: false,
@@ -395,7 +423,7 @@ class PagosExtranjerosNotifier extends StateNotifier<PagosExtranjerosState> {
       );
       return true;
     } catch (e) {
-      console(' Error en guardarSolicitud: $e');
+      console('Error en guardarSolicitud: $e');
       state = state.copyWith(
         cargando: false,
         mensajeError: e.toString().replaceFirst('Exception: ', ''),

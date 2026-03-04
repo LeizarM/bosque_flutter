@@ -284,12 +284,8 @@ class AppConstants {
   // RUTAS MODULO DE PAGOS AL EXTRANJERO
   // ═══════════════════════════════════════════════════════════════════════════════
 
-  static const String registrarSolicitudPago =
-      '/pagos-extranjeros/registrar-solicitud';
-  static const String registrarSolicitudProveedor =
-      '/pagos-extranjeros/registrar-solicitud-proveedor';
-  static const String registrarDetalleSolicitud =
-      '/pagos-extranjeros/registrar-detalle-solicitud';
+  static const String guardarSolicitudCompleta =
+      '/pagos-extranjeros/guardar-completo';
   static const String lstProveedoresXEmpresa =
       '/pagos-extranjeros/obtener-proveedores-empresa';
   static const String lstFacProvYOrdCompra =
