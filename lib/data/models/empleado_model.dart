@@ -5,14 +5,19 @@
 import 'dart:convert';
 
 import 'package:bosque_flutter/data/models/Persona_model.dart';
+import 'package:bosque_flutter/data/models/cargo_model.dart';
+import 'package:bosque_flutter/data/models/cargo_sucursal_model.dart';
 import 'package:bosque_flutter/data/models/ciudad_model.dart';
 import 'package:bosque_flutter/data/models/dependiente_model.dart';
 import 'package:bosque_flutter/data/models/email_model.dart';
+import 'package:bosque_flutter/data/models/empleado_cargo_model.dart';
+import 'package:bosque_flutter/data/models/empresa_model.dart';
 import 'package:bosque_flutter/data/models/experiencia_laboral_model.dart';
 import 'package:bosque_flutter/data/models/formacion_model.dart';
 import 'package:bosque_flutter/data/models/garante_referencia_model.dart';
 import 'package:bosque_flutter/data/models/pais_model.dart';
 import 'package:bosque_flutter/data/models/relacion_laboral_model.dart';
+import 'package:bosque_flutter/data/models/sucursal_model.dart';
 import 'package:bosque_flutter/data/models/telefono_model.dart';
 import 'package:bosque_flutter/data/models/zona_model.dart';
 import 'package:bosque_flutter/domain/entities/empleado_entity.dart';
@@ -23,6 +28,7 @@ List<EmpleadoModel> empleadoModelFromJson(String str) => List<EmpleadoModel>.fro
 String empleadoModelToJson(List<EmpleadoModel> data) => json.encode(List<dynamic>.from(data.map((x) => x.toJson())));
 
 class EmpleadoModel {
+    final int? fila;
     final int codPersona;
     final int codZona;
     final String nombres;
@@ -50,19 +56,21 @@ class EmpleadoModel {
     final int codRelPlanilla;
     final int codDependiente;
     final PersonaModel persona;
-    final EmpleadoCargo empleadoCargo;
+    final EmpleadoCargoModel empleadoCargo;
     final RelacionLaboralModel relEmpEmpr;
-    final DependienteModel dependiente;
+    final DependienteModel? dependiente;
     final dynamic esActivoString;
     final TelefonoModel telefono;
-    final Empresa empresa;
-    final Sucursal sucursal;
+    final EmpresaModel empresa;
+    final SucursalModel sucursal;
     final EmailModel email;
     final FormacionModel formacion;
     final ExperienciaLaboralModel experienciaLaboral;
     final GaranteReferenciaModel garanteReferencia;
+    final double? haberBasico;
 
     EmpleadoModel({
+        this.fila,
         required this.codPersona,
         required this.codZona,
         required this.nombres,
@@ -101,9 +109,11 @@ class EmpleadoModel {
         required this.formacion,
         required this.experienciaLaboral,
         required this.garanteReferencia,
+        this.haberBasico,
     });
 
     factory EmpleadoModel.fromJson(Map<String, dynamic> json) => EmpleadoModel(
+        fila: json["fila"]??0,
         codPersona: json["codPersona"] ?? 0,
         codZona: json["codZona"] ?? 0,
         nombres: json["nombres"]?? '',
@@ -131,20 +141,22 @@ class EmpleadoModel {
         codRelPlanilla: json["codRelPlanilla"]?? 0,
         codDependiente: json["codDependiente"]?? 0,
         persona: PersonaModel.fromJson(json["persona"]),
-        empleadoCargo: EmpleadoCargo.fromJson(json["empleadoCargo"]),
+        empleadoCargo: EmpleadoCargoModel.fromJson(json["empleadoCargo"]),
         relEmpEmpr: RelacionLaboralModel.fromJson(json["relEmpEmpr"]),
         dependiente: DependienteModel.fromJson(json["dependiente"]),
         esActivoString: json["esActivoString"]?? '',
         telefono: TelefonoModel.fromJson(json["telefono"]),
-        empresa: Empresa.fromJson(json["empresa"]),
-        sucursal: Sucursal.fromJson(json["sucursal"]),
+        empresa: EmpresaModel.fromJson(json["empresa"]),
+        sucursal: SucursalModel.fromJson(json["sucursal"]),
         email: EmailModel.fromJson(json["email"]),
         formacion: FormacionModel.fromJson(json["formacion"]),
         experienciaLaboral: ExperienciaLaboralModel.fromJson(json["experienciaLaboral"]),
         garanteReferencia: GaranteReferenciaModel.fromJson(json["garanteReferencia"]),
+        haberBasico: json["haberBasico"] ??0.0,
     );
 
     Map<String, dynamic> toJson() => {
+        "fila": fila,
         "codPersona": codPersona,
         "codZona": codZona,
         "nombres": nombres,
@@ -174,7 +186,7 @@ class EmpleadoModel {
         "persona": persona.toJson(),
         "empleadoCargo": empleadoCargo.toJson(),
         "relEmpEmpr": relEmpEmpr.toJson(),
-        "dependiente": dependiente.toJson(),
+        "dependiente": dependiente?.toJson(),
         "esActivoString": esActivoString,
         "telefono": telefono.toJson(),
         "empresa": empresa.toJson(),
@@ -183,8 +195,10 @@ class EmpleadoModel {
         "formacion": formacion.toJson(),
         "experienciaLaboral": experienciaLaboral.toJson(),
         "garanteReferencia": garanteReferencia.toJson(),
+        "haberBasico": haberBasico,
     };
   EmpleadoEntity toEntity()=> EmpleadoEntity(
+    fila: fila,
     codPersona: codPersona,
     codZona: codZona,
     nombres: nombres,
@@ -210,13 +224,15 @@ class EmpleadoModel {
     codDependiente: codDependiente,
     esActivoString: esActivoString,
     persona: persona.toEntity(),
-    empleadoCargo: empleadoCargo,
-    dependiente: dependiente.toEntity(),
-    empresa: empresa,
-    sucursal: sucursal,
+    empleadoCargo: empleadoCargo.toEntity(),
+    dependiente: dependiente?.toEntity(),
+    empresa: empresa.toEntity(),
+    sucursal: sucursal.toEntity(),
     relEmpEmpr: relEmpEmpr.toEntity(),
+    haberBasico: haberBasico,
   );
   factory EmpleadoModel.fromEntity(EmpleadoEntity entity) => EmpleadoModel(
+    fila: entity.fila,
     codPersona: entity.codPersona,
     codZona: entity.codZona,
     nombres: entity.nombres,
@@ -242,246 +258,27 @@ class EmpleadoModel {
     codDependiente: entity.codDependiente,
     esActivoString: entity.esActivoString,
     persona: PersonaModel(codPersona: 0,codZona: 0,zona: ZonaModel(codZona: 0, codCiudad: 0, zona: '', audUsuario: 0), nombres: '', apPaterno: '', apMaterno: '', ciExpedido: '', ciFechaVencimiento: DateTime.now(), ciNumero: '', direccion: '', estadoCivil: '', fechaNacimiento: DateTime.now(), lugarNacimiento: '', nacionalidad: 0, sexo: '', lat: 0.0, lng: 0.0, audUsuarioI: 0, datoPersona: '',pais: PaisModel(codPais: 0, pais: '', audUsuario: 0),ciudad: CiudadModel(codCiudad: 0, ciudad: '', codPais: 0, audUsuario: 0)),
-    empleadoCargo: EmpleadoCargo(codEmpleado: 0, codCargoSucursal: 0, codCargoSucPlanilla: 0, fechaInicio: DateTime.now(), audUsuario: 0, cargoSucursal: CargoSucursal(codCargoSucursal: 0, codSucursal: 0, codCargo: 0, audUsuario: 0, datoCargo: '', sucursal: Sucursal(codSucursal: 0, nombre: '', codEmpresa: 0, codCiudad: 0, audUsuarioI: 0, empresa: Empresa(codEmpresa: 0, nombre: '', codPadre: 0, sigla: '', audUsuario: 0), nombreCiudad: ''), cargo: Cargo(codCargo: 0, codCargoPadre: 0, descripcion: '', codEmpresa: 0, codNivel: 0, posicion: 0, audUsuario: 0, sucursal: '', sucursalPlanilla: '', nombreEmpresa: '', nombreEmpresaPlanilla: '', codEmpresaPlanilla: 0, codCargoPlanilla: 0, descripcionPlanilla: '')), cargoPlanilla: '', existe: 0),
+    empleadoCargo: EmpleadoCargoModel(codEmpleado: 0, codCargoSucursal: 0, codCargoSucPlanilla: 0, fechaInicio: DateTime.now(), audUsuario: 0, cargoSucursal: CargoSucursalModel(codCargoSucursal: 0, codSucursal: 0, codCargo: 0, audUsuario: 0, datoCargo: '', sucursal: SucursalModel(codSucursal: 0, nombre: '', codEmpresa: 0, codCiudad: 0, audUsuarioI: 0,codSucursalPlanilla: 0,nombrePlanilla: '', empresa: EmpresaModel(codEmpresa: 0, nombre: '', codPadre: 0, sigla: '', audUsuario: 0), nombreCiudad: ''), cargo: CargoModel(nombreCompleto: '', codEmpleado: 0   ,codCargo: 0, codCargoPadre: 0, descripcion: '', codEmpresa: 0, codNivel: 0, posicion: 0, audUsuario: 0, sucursal: '', sucursalPlanilla: '', nombreEmpresa: '', nombreEmpresaPlanilla: '', codEmpresaPlanilla: 0, codCargoPlanilla: 0, descripcionPlanilla: '', estado: 0, nivel: 0, tieneEmpleadosActivos: 0, tieneEmpleadosTotales: 0, estaAsignadoSucursal: 0, canDeactivate: 0, numDependientes: 0, numDependenciasTotales: 0, numDependenciasCompletas: 0, numDeDependencias: 0, numHijosActivos: 0, numHijosTotal: 0, resumenCompleto: '', estadoPadre: '', esVisible: 0, items: [], codCargoPadreOriginal: 0, )), cargoPlanilla: '', existe: 0),
     relEmpEmpr: RelacionLaboralModel(codRelEmplEmpr: 0, codEmpleado: 0, esActivo: 0,tipoRel: '',nombreFileContrato: '', fechaIni: DateTime.now(), fechaFin: DateTime.now(), audUsuario: 0, motivoFin: '', cargo: '', fechaInicioBeneficio: DateTime.now(), fechaInicioPlanilla: DateTime.now(), datoFechasBeneficio: '', sucursal: '', empresaFiscal: '', empresaInterna: ''),
     dependiente: DependienteModel(codDependiente: 0, codPersona: 0,codEmpleado: 0, parentesco: '', esActivo: '', audUsuario: 0, nombreCompleto: '', descripcion: '', edad: 0),
     telefono: TelefonoModel(codTelefono: 0, codPersona: 0, codTipoTel: 0, telefono: '', tipo: '', audUsuario: 0),
-    empresa: Empresa(codEmpresa: 0, nombre: '', codPadre: 0, sigla: '', audUsuario: 0),
-    sucursal: Sucursal(codSucursal: 0, nombre: '', codEmpresa: 0, codCiudad: 0, audUsuarioI: 0, empresa: Empresa(codEmpresa: 0, nombre: '', codPadre: 0, sigla: '', audUsuario: 0), nombreCiudad: ''),
+    empresa: EmpresaModel(codEmpresa: 0, nombre: '', codPadre: 0, sigla: '', audUsuario: 0),
+    sucursal: SucursalModel(codSucursal: 0, nombre: '', codEmpresa: 0, codCiudad: 0, audUsuarioI: 0, codSucursalPlanilla: 0,nombrePlanilla: '' , empresa: EmpresaModel(codEmpresa: 0, nombre: '', codPadre: 0, sigla: '', audUsuario: 0), nombreCiudad: ''),
     email: EmailModel(codEmail: 0, codPersona: 0, email: '', audUsuario: 0),
-    formacion: FormacionModel(codFormacion: 0, codEmpleado: 0, descripcion: '', duracion: 0, fechaFormacion: DateTime.now(), audUsuario: 0, tipoDuracion: '', tipoFormacion: ''),
+    formacion: FormacionModel(codFormacion: 0, codEmpleado: 0, descripcion: '',institucion: '', duracion: 0, fechaFormacion: DateTime.now(), audUsuario: 0, tipoDuracion: '', tipoFormacion: ''),
     experienciaLaboral: ExperienciaLaboralModel(codExperienciaLaboral: 0, codEmpleado: 0, nombreEmpresa: '',cargo:'',descripcion: '', fechaInicio: DateTime.now(), fechaFin: DateTime.now(),nroReferencia: '', audUsuario: 0),
     garanteReferencia: GaranteReferenciaModel(codGarante: 0,codPersona: 0, codEmpleado: 0,direccionTrabajo: '',empresaTrabajo: '',tipo: '',observacion: '',audUsuario: 0, nombreCompleto:'',direccionDomicilio: '',telefonos: '',esEmpleado: ''),
     zona: ZonaModel(codZona: 0, codCiudad: 0, zona: '', audUsuario: 0),
     pais: PaisModel(codPais: 0, pais: '', audUsuario: 0),
     ciudad: CiudadModel(codCiudad: 0, ciudad: '', codPais: 0, audUsuario: 0),
+    haberBasico: entity.haberBasico
   );
 
 }
 
-class EmpleadoCargo {
-    final int codEmpleado;
-    final int codCargoSucursal;
-    final int codCargoSucPlanilla;
-    final DateTime fechaInicio;
-    final int audUsuario;
-    final CargoSucursal cargoSucursal;
-    final dynamic cargoPlanilla;
-    final int existe;
 
-    EmpleadoCargo({
-        required this.codEmpleado,
-        required this.codCargoSucursal,
-        required this.codCargoSucPlanilla,
-        required this.fechaInicio,
-        required this.audUsuario,
-        required this.cargoSucursal,
-        required this.cargoPlanilla,
-        required this.existe,
-    });
 
-    factory EmpleadoCargo.fromJson(Map<String, dynamic> json) => EmpleadoCargo(
-        codEmpleado: json["codEmpleado"]?? 0,
-        codCargoSucursal: json["codCargoSucursal"]?? 0,
-        codCargoSucPlanilla: json["codCargoSucPlanilla"]?? 0,
-        fechaInicio: json["fechaInicio"]!= null ? DateTime.parse(json["fechaInicio"]) : DateTime.now(),
-        audUsuario: json["audUsuario"]?? 0,
-        cargoSucursal: CargoSucursal.fromJson(json["cargoSucursal"]),
-        cargoPlanilla: json["cargoPlanilla"]?? '',
-        existe: json["existe"]??0,
-    );
 
-    Map<String, dynamic> toJson() => {
-        "codEmpleado": codEmpleado,
-        "codCargoSucursal": codCargoSucursal,
-        "codCargoSucPlanilla": codCargoSucPlanilla,
-        "fechaInicio": fechaInicio,
-        "audUsuario": audUsuario,
-        "cargoSucursal": cargoSucursal.toJson(),
-        "cargoPlanilla": cargoPlanilla,
-        "existe": existe,
-    };
-}
-
-class CargoSucursal {
-    final int codCargoSucursal;
-    final int codSucursal;
-    final int codCargo;
-    final int audUsuario;
-    final dynamic datoCargo;
-    final Sucursal sucursal;
-    final Cargo cargo;
-
-    CargoSucursal({
-        required this.codCargoSucursal,
-        required this.codSucursal,
-        required this.codCargo,
-        required this.audUsuario,
-        required this.datoCargo,
-        required this.sucursal,
-        required this.cargo,
-    });
-
-    factory CargoSucursal.fromJson(Map<String, dynamic> json) => CargoSucursal(
-        codCargoSucursal: json["codCargoSucursal"]?? 0,
-        codSucursal: json["codSucursal"]?? 0,
-        codCargo: json["codCargo"] ?? 0,
-        audUsuario: json["audUsuario"] ?? 0,
-        datoCargo: json["datoCargo"] ?? '',
-        sucursal: Sucursal.fromJson(json["sucursal"]),
-        cargo: Cargo.fromJson(json["cargo"]) ,
-    );
-
-    Map<String, dynamic> toJson() => {
-        "codCargoSucursal": codCargoSucursal,
-        "codSucursal": codSucursal,
-        "codCargo": codCargo,
-        "audUsuario": audUsuario,
-        "datoCargo": datoCargo,
-        "sucursal": sucursal.toJson(),
-        "cargo": cargo.toJson(),
-    };
-}
-
-class Cargo {
-    final int codCargo;
-    final int codCargoPadre;
-    final dynamic descripcion;
-    final int codEmpresa;
-    final int codNivel;
-    final int posicion;
-    final int audUsuario;
-    final dynamic sucursal;
-    final dynamic sucursalPlanilla;
-    final dynamic nombreEmpresa;
-    final dynamic nombreEmpresaPlanilla;
-    final int codEmpresaPlanilla;
-    final int codCargoPlanilla;
-    final dynamic descripcionPlanilla;
-
-    Cargo({
-        required this.codCargo,
-        required this.codCargoPadre,
-        required this.descripcion,
-        required this.codEmpresa,
-        required this.codNivel,
-        required this.posicion,
-        required this.audUsuario,
-        required this.sucursal,
-        required this.sucursalPlanilla,
-        required this.nombreEmpresa,
-        required this.nombreEmpresaPlanilla,
-        required this.codEmpresaPlanilla,
-        required this.codCargoPlanilla,
-        required this.descripcionPlanilla,
-    });
-
-    factory Cargo.fromJson(Map<String, dynamic> json) => Cargo(
-        codCargo: json["codCargo"] ?? 0,
-        codCargoPadre: json["codCargoPadre"] ?? 0,
-        descripcion: json["descripcion"] ?? '',
-        codEmpresa: json["codEmpresa"] ?? 0,
-        codNivel: json["codNivel"] ?? 0,
-        posicion: json["posicion"] ?? 0,
-        audUsuario: json["audUsuario"] ?? 0,
-        sucursal: json["sucursal"] ?? '',
-        sucursalPlanilla: json["sucursalPlanilla"] ?? '',
-        nombreEmpresa: json["nombreEmpresa"] ?? '',
-        nombreEmpresaPlanilla: json["nombreEmpresaPlanilla"] ?? '',
-        codEmpresaPlanilla: json["codEmpresaPlanilla"] ?? 0,
-        codCargoPlanilla: json["codCargoPlanilla"] ?? 0,
-        descripcionPlanilla: json["descripcionPlanilla"] ?? '',
-    );
-
-    Map<String, dynamic> toJson() => {
-        "codCargo": codCargo,
-        "codCargoPadre": codCargoPadre,
-        "descripcion": descripcion,
-        "codEmpresa": codEmpresa,
-        "codNivel": codNivel,
-        "posicion": posicion,
-        "audUsuario": audUsuario,
-        "sucursal": sucursal,
-        "sucursalPlanilla": sucursalPlanilla,
-        "nombreEmpresa": nombreEmpresa,
-        "nombreEmpresaPlanilla": nombreEmpresaPlanilla,
-        "codEmpresaPlanilla": codEmpresaPlanilla,
-        "codCargoPlanilla": codCargoPlanilla,
-        "descripcionPlanilla": descripcionPlanilla,
-    };
-}
-
-class Sucursal {
-    final int codSucursal;
-    final dynamic nombre;
-    final int codEmpresa;
-    final int codCiudad;
-    final int audUsuarioI;
-    final Empresa empresa;
-    final dynamic nombreCiudad;
-
-    Sucursal({
-        required this.codSucursal,
-        required this.nombre,
-        required this.codEmpresa,
-        required this.codCiudad,
-        required this.audUsuarioI,
-        required this.empresa,
-        required this.nombreCiudad,
-    });
-
-    factory Sucursal.fromJson(Map<String, dynamic> json) => Sucursal(
-        codSucursal: json["codSucursal"]?? 0,
-        nombre: json["nombre"]??'',
-        codEmpresa: json["codEmpresa"]?? 0,
-        codCiudad: json["codCiudad"]?? 0,
-        audUsuarioI: json["audUsuarioI"]?? 0,
-        empresa: Empresa.fromJson(json["empresa"]),
-        nombreCiudad: json["nombreCiudad"]?? '',
-    );
-
-    Map<String, dynamic> toJson() => {
-        "codSucursal": codSucursal,
-        "nombre": nombre,
-        "codEmpresa": codEmpresa,
-        "codCiudad": codCiudad,
-        "audUsuarioI": audUsuarioI,
-        "empresa": empresa.toJson(),
-        "nombreCiudad": nombreCiudad,
-    };
-}
-
-class Empresa {
-    final int codEmpresa;
-    final dynamic nombre;
-    final int codPadre;
-    final dynamic sigla;
-    final int audUsuario;
-
-    Empresa({
-        required this.codEmpresa,
-        required this.nombre,
-        required this.codPadre,
-        required this.sigla,
-        required this.audUsuario,
-    });
-
-    factory Empresa.fromJson(Map<String, dynamic> json) => Empresa(
-        codEmpresa: json["codEmpresa"]?? 0,
-        nombre: json["nombre"]??'',
-        codPadre: json["codPadre"]?? 0,
-        sigla: json["sigla"]??'',
-        audUsuario: json["audUsuario"]?? 0,
-    );
-
-    Map<String, dynamic> toJson() => {
-        "codEmpresa": codEmpresa,
-        "nombre": nombre,
-        "codPadre": codPadre,
-        "sigla": sigla,
-        "audUsuario": audUsuario,
-    };
-}
 
 
 

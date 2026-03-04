@@ -2,6 +2,7 @@ class FormacionEntity {
   final int codFormacion;
   final int codEmpleado;
   final String descripcion;
+  final String institucion;
   final int duracion;
   final String tipoDuracion;
   final String tipoFormacion;
@@ -11,6 +12,7 @@ class FormacionEntity {
     required this.codFormacion,
     required this.codEmpleado,
     required this.descripcion,
+    required this.institucion,
     required this.duracion,
     required this.tipoDuracion,
     required this.tipoFormacion,
@@ -22,6 +24,7 @@ class FormacionEntity {
       'codFormacion': codFormacion,
       'codEmpleado': codEmpleado,
       'descripcion': descripcion,
+      'institucion': institucion,
       'duracion': duracion,
       'tipoDuracion': tipoDuracion,
       'tipoFormacion': tipoFormacion,
@@ -34,6 +37,7 @@ class FormacionEntity {
     int? codFormacion,
     int? codEmpleado,
     String? descripcion,
+    String? institucion,
     int? duracion,
     String? tipoDuracion,
     String? tipoFormacion,
@@ -44,6 +48,7 @@ class FormacionEntity {
       codFormacion: codFormacion ?? this.codFormacion,
       codEmpleado: codEmpleado ?? this.codEmpleado,
       descripcion: descripcion ?? this.descripcion,
+      institucion: institucion ?? this.institucion,
       duracion: duracion ?? this.duracion,
       tipoDuracion: tipoDuracion ?? this.tipoDuracion,
       tipoFormacion: tipoFormacion ?? this.tipoFormacion,

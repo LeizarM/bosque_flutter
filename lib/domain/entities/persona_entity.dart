@@ -97,6 +97,9 @@ class PersonaEntity {
     double? lng,
     int? audUsuarioI,
     String? datoPersona,
+    PaisEntity? pais,
+    CiudadEntity? ciudad,
+    ZonaEntity? zona,
   }) {
     return PersonaEntity(
       codPersona: codPersona ?? this.codPersona,
@@ -117,6 +120,9 @@ class PersonaEntity {
       lng: lng ?? this.lng,
       audUsuarioI: audUsuarioI ?? this.audUsuarioI,
       datoPersona: datoPersona ?? this.datoPersona,
+      pais: pais ?? this.pais,
+      ciudad: ciudad ?? this.ciudad,
+      zona: zona ?? this.zona,
     );
   }
 }

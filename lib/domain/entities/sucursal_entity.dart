@@ -8,6 +8,8 @@ class SucursalEntity {
     final int audUsuarioI;
     final EmpresaEntity empresa;
     final String nombreCiudad;
+    final int codSucursalPlanilla;
+    final String nombrePlanilla;
 
     SucursalEntity({
         required this.codSucursal,
@@ -17,6 +19,8 @@ class SucursalEntity {
         required this.audUsuarioI,
         required this.empresa,
         required this.nombreCiudad,
+        required this.codSucursalPlanilla,
+        required this.nombrePlanilla,
     });
 
 }

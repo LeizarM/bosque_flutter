@@ -33,6 +33,7 @@ class FormularioFormacion extends ConsumerStatefulWidget {
 class FormularioFormacionState extends ConsumerState<FormularioFormacion> {
   final _formKey = GlobalKey<FormState>();
   final _descripcionController = TextEditingController();
+    final _institucionController = TextEditingController(); // ✅ AGREGAR
   final _duracionController = TextEditingController();
   final _tipoDuracionController = TextEditingController();
   final _tipoFormacionController = TextEditingController();
@@ -44,6 +45,7 @@ class FormularioFormacionState extends ConsumerState<FormularioFormacion> {
     super.initState();
     if (widget.isEditing && widget.formacion != null) {
       _descripcionController.text = widget.formacion!.descripcion;
+            _institucionController.text = widget.formacion!.institucion; // ✅ AGREGAR
       _duracionController.text = widget.formacion!.duracion.toString();
        // Asignar los valores seleccionados para los dropdowns
     _tipoFormacionSeleccionado = widget.formacion!.tipoFormacion;
@@ -60,6 +62,7 @@ class FormularioFormacionState extends ConsumerState<FormularioFormacion> {
   @override
   void dispose() {
     _descripcionController.dispose();
+        _institucionController.dispose(); // ✅ AGREGAR
     _duracionController.dispose();
     _tipoDuracionController.dispose();
     _tipoFormacionController.dispose();
@@ -80,6 +83,7 @@ class FormularioFormacionState extends ConsumerState<FormularioFormacion> {
                   codFormacion: widget.formacion!.codFormacion,
                   codEmpleado: widget.codEmpleado,
                   descripcion: _descripcionController.text,
+                                  institucion: _institucionController.text.trim(), // ✅ AGREGAR
                   duracion: int.parse(_duracionController.text),
                   tipoDuracion:
                       _tipoDuracionSeleccionado ?? _tipoDuracionController.text,
@@ -93,6 +97,7 @@ class FormularioFormacionState extends ConsumerState<FormularioFormacion> {
                   codFormacion: 0, // Asignar un valor por defecto si es nuevo
                   codEmpleado: widget.codEmpleado,
                   descripcion: _descripcionController.text,
+                  institucion: _institucionController.text.trim(), // ✅ AGREGAR
                   duracion: int.parse(_duracionController.text),
                   tipoDuracion:
                       _tipoDuracionSeleccionado ?? _tipoDuracionController.text,
@@ -177,6 +182,7 @@ class FormularioFormacionState extends ConsumerState<FormularioFormacion> {
           child: ListView(
             shrinkWrap: true,
             children: [
+              _buildInstitucionField(), // ✅ AGREGAR
               _buildDescripcionField(),
               _buildTipoFormacionDropdown(),
               if (isDesktop) ...[
@@ -209,6 +215,23 @@ class FormularioFormacionState extends ConsumerState<FormularioFormacion> {
       widget.title,
       style: ResponsiveUtilsBosque.getTitleStyle(context),
       textAlign: TextAlign.center,
+    );
+  }
+    // ✅ AGREGAR CAMPO INSTITUCIÓN
+  Widget _buildInstitucionField() {
+    return TextFormField(
+      controller: _institucionController,
+      decoration: InputDecoration(
+        labelText: 'INSTITUCIÓN',
+        border: const OutlineInputBorder(),
+        contentPadding: EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: ResponsiveUtilsBosque.getVerticalPadding(context),
+        ),
+      ),
+      maxLines: null,
+      validator: (value) => validarTextoMixto(value, esObligatorio: true),
+      inputFormatters: bloquearEspacios,
     );
   }
 

@@ -160,7 +160,8 @@ class AppConstants {
   static const String empEliminarGaranteReferencia = '/fichaTrabajador/garante';
   static const String empObtenerTipoGaranteReferencia =
       '/fichaTrabajador/tiposGarRef';
-  static const String perObtenerRelacionLaboral = '/rrhh/fechasBeneficio';
+  static const String perObtenerRelacionLaboral =
+      '/rrhh/obtenerRelacionLaboral';
   static const String empSubirImagen = '/fichaTrabajador/upload';
   static const String empObtenerDatosEmpleado =
       '/fichaTrabajador/obtenerDatosEmp';
@@ -221,6 +222,7 @@ class AppConstants {
   static const String tigoObtenerNrosSinAsignar = '/tigo/obtenerNroSinAsignar';
   static const String tigoObtenerArbolDetallado = '/tigo/obtenerArboldetallado';
   static const String tigoRptCambiosTigo = '/tigo/RptCambiosTigo';
+  static const String tigoActualizarEmpresaLote = '/tigo/actualizarEmpresaLote';
   //ENDPOINT PARA LA GESTION DE EMPLEADOS - RRHH
   static const String rrhhObtenerLstEmpleados = '/rrhh/obtenerLstEmpleados';
   static const String rrhhRegistroEmpleado = '/rrhh/registroEmpleado';
@@ -267,6 +269,16 @@ class AppConstants {
   static const String tiposLicencia = '/rrhh/tipoLicencia';
   static const String eliminarFoto = '/rrhh/eliminarFoto';
   static const String cargoXempresa = '/rrhh/obtenerCargosXEmpresa';
+  static const String obtenerSeguro = '/rrhh/obtenerSeguros';
+  static const String obtenerAfiliacionSeguro = '/rrhh/obtenerAfiliacionSeguro';
+  static const String registrarAfiliacionSeguro =
+      '/rrhh/registroAfiliacionSeguro';
+  static const String eliminarAfiliacionSeguro =
+      '/rrhh/eliminarAfiliacionSeguro';
+  static const String registrarAseguradora = '/rrhh/registroAseguradora';
+  static const String eliminarAseguradora = '/rrhh/eliminarAseguradora';
+  static const String obtenerTipoSeguro = '/rrhh/tipoSeguro';
+  static const String obtenerHaberBasico = '/rrhh/obtenerHaberBasico';
 
   // ═══════════════════════════════════════════════════════════════════════════════
   // RUTAS MODULO DE PAGOS AL EXTRANJERO

@@ -13,6 +13,7 @@ import 'package:bosque_flutter/presentation/widgets/dependientes/cronometro_bloq
 import 'package:bosque_flutter/presentation/widgets/dependientes/email_seccion.dart';
 import 'package:bosque_flutter/presentation/widgets/dependientes/experiencia_laboral_seccion.dart';
 import 'package:bosque_flutter/presentation/widgets/dependientes/formacion_secccion.dart';
+import 'package:bosque_flutter/presentation/widgets/dependientes/licencia_conducir_seccion.dart';
 import 'package:bosque_flutter/presentation/widgets/dependientes/persona_seccion.dart';
 import 'package:bosque_flutter/presentation/widgets/dependientes/relacion_laboral_seccion.dart';
 import 'package:bosque_flutter/presentation/widgets/dependientes/seccion_foto.dart';
@@ -58,6 +59,7 @@ class _InfoEmpleadoScreenState extends ConsumerState<InfoEmpleadoScreen> {
     'garanteReferenciaExp': true,
     'relEmpExp': true,
     'foto': true,
+    'licenciaConducir': true, 
   };
 
   Map<String, String?> selectedOperation = {
@@ -67,6 +69,7 @@ class _InfoEmpleadoScreenState extends ConsumerState<InfoEmpleadoScreen> {
     'formacion': null,
     'experienciaLaboral': null,
     'garanteReferencia': null,
+    'licenciaConducir': null, 
   };
 
   bool _habilitarEdicion = false;
@@ -710,6 +713,21 @@ class _InfoEmpleadoScreenState extends ConsumerState<InfoEmpleadoScreen> {
                       //ocultarCamposSensibles: !esAutoConsulta,
                     ),
                   ),
+                    const SizedBox(height: 16),
+_buildSection(
+  child: LicenciaConducirSeccion(
+    codPersona: empleado.codPersona,
+    habilitarEdicion: _habilitarEdicion,
+    estadoExpandido: estadoExpandido,
+    selectedOperation: selectedOperation,
+    onToggleSeccion: toggleSeccion,
+    onUpdateOperation:
+        (op) => setState(() => selectedOperation['licenciaConducir'] = op),
+    onEditar: () => activarEdicion('licenciaConducir'),
+    onAgregar: () => (),
+    onEliminar: () => (),
+  ),
+),
                 ],
               ),
             ),
@@ -1170,6 +1188,21 @@ class _InfoEmpleadoScreenState extends ConsumerState<InfoEmpleadoScreen> {
               //ocultarCamposSensibles: !esAutoConsulta,
             ),
           ),
+          const SizedBox(height: 16),
+_buildSection(
+  child: LicenciaConducirSeccion(
+    codPersona: codPersona,
+    habilitarEdicion: _habilitarEdicion,
+    estadoExpandido: estadoExpandido,
+    selectedOperation: selectedOperation,
+    onToggleSeccion: toggleSeccion,
+    onUpdateOperation:
+        (op) => setState(() => selectedOperation['licenciaConducir'] = op),
+    onEditar: () => activarEdicion('licenciaConducir'),
+    onAgregar: () => (),
+    onEliminar: () => (),
+  ),
+),
         ],
       ),
     );

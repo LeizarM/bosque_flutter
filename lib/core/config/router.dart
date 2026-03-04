@@ -183,6 +183,11 @@ final routerProvider = Provider<GoRouter>((ref) {
               name: 'tb_facturasTigo',
               builder: (context, state) => const FacturasEjecutadasView(),
             ),
+            GoRoute(
+          path: '/dashboard/tbEmpleado/registroEmpleado',
+          name: 'tbEmpleado/registroEmpleado',
+          builder: (context, state) => const ListaEmpleados(),
+        ),
             // Pagos al extranjero
             GoRoute(
               path: '/dashboard/tpex_RegistroSolicitud/Registro',
@@ -290,6 +295,10 @@ final routerProvider = Provider<GoRouter>((ref) {
         GoRoute(
           path: '/tb_facturasTigo',
           redirect: (context, state) => '/dashboard/tb_facturasTigo',
+        ),
+        GoRoute(
+          path: '/tbEmpleado/registroEmpleado',
+          redirect: (context, state) => '/dashboard/tbEmpleado/registroEmpleado',
         ),
 
         // Pagos al extranjero

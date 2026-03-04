@@ -153,9 +153,13 @@ class PersonaModel {
         lng: entity.lng,
         audUsuarioI: entity.audUsuarioI,
         datoPersona: entity.datoPersona??'',
-        zona: ZonaModel(codZona: 0, codCiudad: 0, zona: '', audUsuario: 0), 
+       /* zona: ZonaModel(codZona: 0, codCiudad: 0, zona: '', audUsuario: 0), 
         pais: PaisModel(codPais: 0, pais: '', audUsuario: 0), 
-        ciudad: CiudadModel(codCiudad: 0, codPais: 0, ciudad: '', audUsuario: 0), 
+        ciudad: CiudadModel(codCiudad: 0, codPais: 0, ciudad: '', audUsuario: 0), */
+        // cambios para mantener la persistencia de datos en caso de que el entity no tenga la información de zona, pais o ciudad, se asignan valores por defecto para evitar errores al convertir a modelo.
+         zona: entity.zona != null ? ZonaModel.fromEntity(entity.zona!) : ZonaModel(codZona: 0, codCiudad: 0, zona: '', audUsuario: 0),
+    pais: entity.pais != null ? PaisModel.fromEntity(entity.pais!) : PaisModel(codPais: 0, pais: '', audUsuario: 0),
+    ciudad: entity.ciudad != null ? CiudadModel.fromEntity(entity.ciudad!) : CiudadModel(codCiudad: 0, codPais: 0, ciudad: '', audUsuario: 0),
     );
 }
 

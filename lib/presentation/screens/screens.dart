@@ -24,4 +24,5 @@ export 'package:bosque_flutter/presentation/screens/prestamo_vehiculos/prestamo_
 export 'package:bosque_flutter/presentation/screens/usuarios/usuarios_home_screen.dart';
 export 'package:bosque_flutter/presentation/screens/ventas/ventas_home_screen.dart';
 export 'package:bosque_flutter/presentation/screens/facturas-tigo/ver_factura.dart';
+export 'package:bosque_flutter/presentation/screens/registro_empleado/lista_empleados.dart';
 export 'package:bosque_flutter/presentation/screens/pagos-extranjeros/pagos_extranjeros_register_screen.dart';

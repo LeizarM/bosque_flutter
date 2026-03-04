@@ -14,6 +14,7 @@ class FormacionModel {
     final int codFormacion;
     final int codEmpleado;
     final String descripcion;
+    final String institucion;
     final int duracion;
     final String tipoDuracion;
     final String tipoFormacion;
@@ -24,6 +25,7 @@ class FormacionModel {
         required this.codFormacion,
         required this.codEmpleado,
         required this.descripcion,
+        required this.institucion,
         required this.duracion,
         required this.tipoDuracion,
         required this.tipoFormacion,
@@ -35,6 +37,7 @@ class FormacionModel {
         codFormacion: json["codFormacion"]?? 0,
         codEmpleado: json["codEmpleado"]?? 0,
         descripcion: json["descripcion"]?? '',
+        institucion: json["institucion"]?? '',
         duracion: json["duracion"]?? 0,
         tipoDuracion: json["tipoDuracion"]?? '',
         tipoFormacion: json["tipoFormacion"]?? '',
@@ -46,6 +49,7 @@ class FormacionModel {
         "codFormacion": codFormacion,
         "codEmpleado": codEmpleado,
         "descripcion": descripcion,
+        "institucion": institucion,
         "duracion": duracion,
         "tipoDuracion": tipoDuracion,
         "tipoFormacion": tipoFormacion,
@@ -56,6 +60,7 @@ class FormacionModel {
         codFormacion: codFormacion,
         codEmpleado: codEmpleado,
         descripcion: descripcion,
+        institucion: institucion,
         duracion: duracion,
         tipoDuracion: tipoDuracion,
         tipoFormacion: tipoFormacion,
@@ -66,6 +71,7 @@ class FormacionModel {
         codFormacion: entity.codFormacion,
         codEmpleado: entity.codEmpleado,
         descripcion: entity.descripcion,
+        institucion: entity.institucion,
         duracion: entity.duracion,
         tipoDuracion: entity.tipoDuracion,
         tipoFormacion: entity.tipoFormacion,

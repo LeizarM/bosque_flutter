@@ -28,4 +28,11 @@ class PaisEntity {
       audUsuario: audUsuario ?? this.audUsuario,
     );
   }
+  factory PaisEntity.vacio() {
+  return PaisEntity(
+    codPais: 0,
+    pais: '',
+    audUsuario: 0,
+  );
+}
 }

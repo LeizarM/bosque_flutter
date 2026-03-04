@@ -433,8 +433,8 @@ class _EmpleadosDependientesViewState
                                                         Text(
                                                           empleado
                                                                   .empleadoCargo
-                                                                  .cargoSucursal
-                                                                  .cargo
+                                                                  .cargoSucursal!
+                                                                  .cargo!
                                                                   .descripcion ??
                                                               'N/A',
                                                         ),
@@ -488,7 +488,7 @@ class _EmpleadosDependientesViewState
                                                                 empleado
                                                                     .codEmpleado,
                                                                 empleado
-                                                                    .dependiente
+                                                                    .dependiente!
                                                                     .codEmpleado,
                                                               ),
                                                               const SizedBox(
@@ -779,8 +779,8 @@ class _EmpleadosDependientesViewState
                                     Text(
                                       empleado
                                               .empleadoCargo
-                                              .cargoSucursal
-                                              .cargo
+                                              .cargoSucursal!
+                                              .cargo!
                                               .descripcion ??
                                           '-',
                                       style: theme.textTheme.bodySmall
@@ -873,7 +873,7 @@ class _EmpleadosDependientesViewState
                                             ),
                                             child: _buildReferenciasButton(
                                               empleado.codEmpleado,
-                                              empleado.dependiente.codEmpleado,
+                                              empleado.dependiente!.codEmpleado,
                                             ),
                                           ),
                                         ),

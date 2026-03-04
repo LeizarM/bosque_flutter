@@ -23,11 +23,11 @@ class EmpresaModel {
   });
 
   factory EmpresaModel.fromJson(Map<String, dynamic> json) => EmpresaModel(
-    codEmpresa: json["codEmpresa"],
-    nombre: json["nombre"],
-    codPadre: json["codPadre"],
+    codEmpresa: json["codEmpresa"]??0,
+    nombre: json["nombre"]??'',
+    codPadre: json["codPadre"]??0,
     sigla: json["sigla"] ?? "",
-    audUsuario: json["audUsuario"],
+    audUsuario: json["audUsuario"]??0,
   );
 
   Map<String, dynamic> toJson() => {

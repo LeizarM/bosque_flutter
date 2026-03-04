@@ -33,4 +33,12 @@ class ZonaEntity {
       audUsuario: audUsuario ?? this.audUsuario,
     );
   }
+  factory ZonaEntity.vacio() {
+  return ZonaEntity(
+    codZona: 0,
+    codCiudad: 0,
+    zona: '',
+    audUsuario: 0,
+  );
+}
 }

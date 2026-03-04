@@ -33,4 +33,12 @@ class CiudadEntity {
       audUsuario: audUsuario ?? this.audUsuario,
     );
   }
+  factory CiudadEntity.vacio() {
+  return CiudadEntity(
+    codCiudad: 0,
+    codPais: 0,
+    ciudad: '',
+    audUsuario: 0,
+  );
+}
 }

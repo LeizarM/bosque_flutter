@@ -594,29 +594,20 @@ class _ResumenDetalladoScreenState
                                       ),
                                     ),
                                 data: (arbol) {
-                                  final arbolFiltrado =
-                                      filtrarArbolPorEmpresa(
-                                            arbol,
-                                            _empresaSeleccionada,
-                                          )
-                                          .where(
-                                            (e) =>
-                                                e.nombreCompleto
-                                                    .toLowerCase()
-                                                    .contains(_buscadorTexto) ||
-                                                (e.corporativo ?? '')
-                                                    .toLowerCase()
-                                                    .contains(_buscadorTexto) ||
-                                                (e.empresa ?? '')
-                                                    .toLowerCase()
-                                                    .contains(_buscadorTexto),
-                                          )
-                                          .toList();
+  // ✅ PASO 1: Filtrar por empresa
+  final arbolPorEmpresa = filtrarArbolPorEmpresa(
+    arbol,
+    _empresaSeleccionada,
+  );
+  
+  // ✅ PASO 2: Buscar recursivamente en TODO el árbol
+  final arbolFiltrado = filtrarArbolPorBuscador(
+    arbolPorEmpresa,
+    _buscadorTexto,
+  );
 
-                                  return _buildArbolTablaTigoEjecutado(
-                                    arbolFiltrado,
-                                  );
-                                },
+  return _buildArbolTablaSimulada(arbolFiltrado);
+},
                               );
                             } else {
                               // Mostrar el árbol normal
@@ -639,29 +630,20 @@ class _ResumenDetalladoScreenState
                                       ),
                                     ),
                                 data: (arbol) {
-                                  final arbolFiltrado =
-                                      filtrarArbolPorEmpresa(
-                                            arbol,
-                                            _empresaSeleccionada,
-                                          )
-                                          .where(
-                                            (e) =>
-                                                e.nombreCompleto
-                                                    .toLowerCase()
-                                                    .contains(_buscadorTexto) ||
-                                                (e.corporativo ?? '')
-                                                    .toLowerCase()
-                                                    .contains(_buscadorTexto) ||
-                                                (e.empresa ?? '')
-                                                    .toLowerCase()
-                                                    .contains(_buscadorTexto),
-                                          )
-                                          .toList();
+  // ✅ PASO 1: Filtrar por empresa
+  final arbolPorEmpresa = filtrarArbolPorEmpresa(
+    arbol,
+    _empresaSeleccionada,
+  );
+  
+  // ✅ PASO 2: Buscar recursivamente en 
+  final arbolFiltrado = filtrarArbolPorBuscador(
+    arbolPorEmpresa,
+    _buscadorTexto,
+  );
 
-                                  return _buildArbolTablaSimulada(
-                                    arbolFiltrado,
-                                  );
-                                },
+  return _buildArbolTablaTigoEjecutado(arbolFiltrado);
+},
                               );
                             }
                           },
@@ -1742,6 +1724,36 @@ class _ResumenDetalladoScreenState
     }
     return rows;
   }
+  // ✅ NUEVA FUNCIÓN RECURSIVA PARA BUSCAR EN EL ÁRBOL
+List<TigoEjecutadoEntity> filtrarArbolPorBuscador(
+  List<TigoEjecutadoEntity> arbol,
+  String textoBuscador,
+) {
+  if (textoBuscador.isEmpty) return arbol;
+
+  List<TigoEjecutadoEntity> resultado = [];
+  
+  for (final nodo in arbol) {
+    // Verifica si el nodo actual coincide con la búsqueda
+    final coincide =
+        nodo.nombreCompleto.toLowerCase().contains(textoBuscador) ||
+        (nodo.corporativo ?? '').toLowerCase().contains(textoBuscador) ||
+        (nodo.empresa ?? '').toLowerCase().contains(textoBuscador) ||
+        nodo.descripcion.toLowerCase().contains(textoBuscador);
+
+    // Recursivamente busca en los hijos
+    final hijosFiltrados = filtrarArbolPorBuscador(nodo.items, textoBuscador);
+
+    // Incluye el nodo si coincide O si tiene hijos que coincidieron
+    if (coincide || hijosFiltrados.isNotEmpty) {
+      resultado.add(
+        nodo.copyWith(items: hijosFiltrados),
+      );
+    }
+  }
+  
+  return resultado;
+}
 }
 
 // Celda de tabla con mejor diseño

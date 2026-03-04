@@ -16,12 +16,12 @@ class RelacionLaboralModel {
     final int esActivo;
     final String tipoRel;
     final String nombreFileContrato;
-    final DateTime fechaIni;
-    final DateTime fechaFin;
+    final DateTime? fechaIni;
+    final DateTime? fechaFin;
     final String motivoFin;
     final int audUsuario;
-    final DateTime fechaInicioBeneficio;
-    final DateTime fechaInicioPlanilla;
+    final DateTime? fechaInicioBeneficio;
+    final DateTime? fechaInicioPlanilla;
     final dynamic datoFechasBeneficio;
     final String cargo;
     final String sucursal;
@@ -35,11 +35,11 @@ class RelacionLaboralModel {
         required this.tipoRel,
         required this.nombreFileContrato,
         required this.fechaIni,
-        required this.fechaFin,
+        this.fechaFin,
         required this.motivoFin,
         required this.audUsuario,
-        required this.fechaInicioBeneficio,
-        required this.fechaInicioPlanilla,
+        this.fechaInicioBeneficio,
+        this.fechaInicioPlanilla,
         required this.datoFechasBeneficio,
         required this.cargo,
         required this.sucursal,
@@ -53,12 +53,12 @@ class RelacionLaboralModel {
         esActivo: json["esActivo"]??0,
         tipoRel: json["tipoRel"]?? '',
         nombreFileContrato: json["nombreFileContrato"]?? '',
-        fechaIni: json["fechaIni"] != null ? DateTime.parse(json["fechaIni"]) : DateTime.now(),
-        fechaFin: json["fechaFin"]!= null ? DateTime.parse(json["fechaFin"]) : DateTime.now(),
+        fechaIni: json["fechaIni"] != null ? DateTime.parse(json["fechaIni"]) : null,
+        fechaFin: json["fechaFin"]!= null ? DateTime.parse(json["fechaFin"]) : null,
         motivoFin: json["motivoFin"]?? '',
         audUsuario: json["audUsuario"]?? 0,
-        fechaInicioBeneficio: json["fechaInicioBeneficio"]!= null ? DateTime.parse(json["fechaInicioBeneficio"]) : DateTime.now(),
-        fechaInicioPlanilla: json["fechaInicioPlanilla"]!= null ? DateTime.parse(json["fechaInicioPlanilla"]) : DateTime.now(),
+        fechaInicioBeneficio: json["fechaInicioBeneficio"]!= null ? DateTime.parse(json["fechaInicioBeneficio"]) : null,
+        fechaInicioPlanilla: json["fechaInicioPlanilla"]!= null ? DateTime.parse(json["fechaInicioPlanilla"]) : null,
         datoFechasBeneficio: json["datoFechasBeneficio"]?? '',
         cargo: json["cargo"]??'',
         sucursal: json["sucursal"]??'',
@@ -72,12 +72,14 @@ class RelacionLaboralModel {
         "esActivo": esActivo,
         "tipoRel": tipoRel,
         "nombreFileContrato": nombreFileContrato,
-        "fechaIni": "${fechaIni.year.toString().padLeft(4, '0')}-${fechaIni.month.toString().padLeft(2, '0')}-${fechaIni.day.toString().padLeft(2, '0')}",
-        "fechaFin": "${fechaFin.year.toString().padLeft(4, '0')}-${fechaFin.month.toString().padLeft(2, '0')}-${fechaFin.day.toString().padLeft(2, '0')}",
+        //"fechaIni": "${fechaIni.year.toString().padLeft(4, '0')}-${fechaIni.month.toString().padLeft(2, '0')}-${fechaIni.day.toString().padLeft(2, '0')}",
+        //"fechaFin": "${fechaFin?.year.toString().padLeft(4, '0')}-${fechaFin?.month.toString().padLeft(2, '0')}-${fechaFin?.day.toString().padLeft(2, '0')}",
+        "fechaIni": fechaIni?.toIso8601String(),
+        "fechaFin": fechaFin?.toIso8601String(),
         "motivoFin": motivoFin,
         "audUsuario": audUsuario,
-        "fechaInicioBeneficio": fechaInicioBeneficio,
-        "fechaInicioPlanilla": fechaInicioPlanilla,
+        "fechaInicioBeneficio": fechaInicioBeneficio?.toIso8601String(),
+        "fechaInicioPlanilla": fechaInicioPlanilla?.toIso8601String(),
         "datoFechasBeneficio": datoFechasBeneficio,
         "cargo": cargo,
         "sucursal": sucursal,
@@ -112,8 +114,8 @@ class RelacionLaboralModel {
         fechaFin: entity.fechaFin,
         motivoFin: entity.motivoFin,
         audUsuario: entity.audUsuario,
-        fechaInicioBeneficio: entity.fechaInicioBeneficio?? DateTime.now(),
-        fechaInicioPlanilla: entity.fechaInicioPlanilla ?? DateTime.now(),
+        fechaInicioBeneficio: entity.fechaInicioBeneficio,
+        fechaInicioPlanilla: entity.fechaInicioPlanilla ,
         datoFechasBeneficio: entity.datoFechasBeneficio,
         cargo: entity.cargo,
         sucursal: entity.sucursal,

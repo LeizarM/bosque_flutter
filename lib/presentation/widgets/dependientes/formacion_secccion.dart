@@ -305,6 +305,18 @@ class FormacionSecccion extends ConsumerWidget {
                 ],
               ],
             ),
+             const SizedBox(height: 10),
+            // ✅ AGREGAR CAMPO INSTITUCIÓN
+            _datoConEtiqueta(
+              context,
+              icon: Icons.business,
+              etiqueta: 'Institución',
+              valor: formacion.institucion,
+              color: icono,
+              textoPrincipal: textoPrincipal,
+              textoSecundario: textoSecundario,
+              isDesktop: isDesktop,
+            ),
             const SizedBox(height: 10),
             // Línea 2: Dos columnas de datos principales
             Row(

@@ -1,5 +1,8 @@
 import 'package:bosque_flutter/core/state/empleados_dependientes_provider.dart';
+import 'package:bosque_flutter/core/state/registro_empleado_provider.dart';
 import 'package:bosque_flutter/core/utils/responsive_utils_bosque.dart';
+import 'package:bosque_flutter/domain/entities/tipo_relacion_laboral_entity.dart';
+import 'package:bosque_flutter/presentation/widgets/registro_empleado/registro_empleado_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -154,7 +157,7 @@ class RelacionLaboralSeccion extends ConsumerWidget {
                                       relacionLaboral.fechaIni != null
                                           ? DateFormat(
                                             'dd-MM-yyyy',
-                                          ).format(relacionLaboral.fechaIni)
+                                          ).format(relacionLaboral.fechaIni!)
                                           : '',
                                   colorValor: textoPrincipal,
                                   colorIcono: icono,
@@ -165,11 +168,19 @@ class RelacionLaboralSeccion extends ConsumerWidget {
                                 _datoConEtiqueta(
                                   icon: Icons.business_rounded,
                                   etiqueta: 'Tipo',
-                                  valor: formatText(
-                                    relacionLaboral.tipoRel,
-                                    isDesktop,
+                                  widget: DisplayValue<TipoRelacionLaboralEntity>(
+                                    code: relacionLaboral.tipoRel,
+                                    provider: getTipoRelacionLaboral,
+                                    getCode: (tipo) => tipo.codTipos,
+                                    getDescription: (tipo) => tipo.nombre,
+                                    fallback: relacionLaboral.tipoRel,
+                                    style: TextStyle(
+                                      fontSize: isDesktop ? 14 : 13,
+                                      color: textoPrincipal,
+                                      fontFamily: 'Montserrat',
+                                      fontWeight: FontWeight.w600,
+                                    ),
                                   ),
-                                  colorValor: textoPrincipal,
                                   colorIcono: icono,
                                   textoSecundario: textoSecundario,
                                   isDesktop: isDesktop,
@@ -262,11 +273,12 @@ class RelacionLaboralSeccion extends ConsumerWidget {
   Widget _datoConEtiqueta({
     IconData? icon,
     required String etiqueta,
-    required String valor,
-    required Color colorValor,
+    String? valor,
+    Widget? widget,
     required Color colorIcono,
     required Color textoSecundario,
     required bool isDesktop,
+    Color? colorValor,
     int maxLines = 1,
   }) {
     return Row(
@@ -289,16 +301,20 @@ class RelacionLaboralSeccion extends ConsumerWidget {
                   fontWeight: FontWeight.w500,
                 ),
               ),
-              autoText(
-                valor,
-                TextStyle(
-                  fontSize: isDesktop ? 14 : 13,
-                  color: colorValor,
-                  fontFamily: 'Montserrat',
-                  fontWeight: FontWeight.w600,
+              // Si hay widget, usalo; si no, usa el valor
+              if (widget != null)
+                widget
+              else if (valor != null)
+                autoText(
+                  valor,
+                  TextStyle(
+                    fontSize: isDesktop ? 14 : 13,
+                    color: colorValor ?? Colors.black,
+                    fontFamily: 'Montserrat',
+                    fontWeight: FontWeight.w600,
+                  ),
+                  maxLines: maxLines,
                 ),
-                maxLines: maxLines,
-              ),
             ],
           ),
         ),
