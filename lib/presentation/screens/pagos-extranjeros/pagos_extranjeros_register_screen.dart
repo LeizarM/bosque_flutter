@@ -42,46 +42,86 @@ class _PagosExtranjerosRegisterScreenState
     final isDesktop = ResponsiveUtilsBosque.isDesktop(context);
     final hPad = ResponsiveUtilsBosque.getHorizontalPadding(context);
     final vPad = ResponsiveUtilsBosque.getVerticalPadding(context);
-    final user = ref.read(userProvider);
+    final user = ref.watch(userProvider);
 
     // Mostrar mensajes de éxito/error tras el rebuild
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (state.mensajeExito != null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Row(
-              children: [
-                Icon(Icons.check_circle_outline, color: colorScheme.onPrimary),
-                const SizedBox(width: 8),
-                Expanded(child: Text(state.mensajeExito!)),
-              ],
+        ScaffoldMessenger.of(context)
+          ..hideCurrentSnackBar()
+          ..showSnackBar(
+            SnackBar(
+              content: Row(
+                children: [
+                  const Icon(
+                    Icons.check_circle_rounded,
+                    color: Colors.white,
+                    size: 22,
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      state.mensajeExito!,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              backgroundColor: const Color(0xFF2E7D32),
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              duration: const Duration(seconds: 5),
+              action: SnackBarAction(
+                label: 'OK',
+                textColor: Colors.white,
+                onPressed: () {},
+              ),
             ),
-            backgroundColor: colorScheme.primary,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10),
-            ),
-          ),
-        );
+          );
         notifier.limpiarMensajes();
         notifier.resetState();
       } else if (state.mensajeError != null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Row(
-              children: [
-                Icon(Icons.error_outline, color: colorScheme.onError),
-                const SizedBox(width: 8),
-                Expanded(child: Text(state.mensajeError!)),
-              ],
+        ScaffoldMessenger.of(context)
+          ..hideCurrentSnackBar()
+          ..showSnackBar(
+            SnackBar(
+              content: Row(
+                children: [
+                  const Icon(
+                    Icons.error_rounded,
+                    color: Colors.white,
+                    size: 22,
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      state.mensajeError!,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              backgroundColor: colorScheme.error,
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              duration: const Duration(seconds: 6),
+              action: SnackBarAction(
+                label: 'Cerrar',
+                textColor: Colors.white,
+                onPressed: () {},
+              ),
             ),
-            backgroundColor: colorScheme.error,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10),
-            ),
-          ),
-        );
+          );
         notifier.limpiarMensajes();
       }
     });
@@ -92,37 +132,73 @@ class _PagosExtranjerosRegisterScreenState
       floatingActionButton:
           isDesktop
               ? null
-              : FloatingActionButton.extended(
-                onPressed:
-                    state.cargando
-                        ? null
-                        : () => _guardar(notifier, user?.codUsuario ?? 0),
-                icon:
-                    state.cargando
-                        ? SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: colorScheme.onPrimaryContainer,
-                          ),
-                        )
-                        : const Icon(Icons.save_rounded),
-                label: const Text('Guardar Solicitud'),
-                backgroundColor:
-                    state.cargando
-                        ? colorScheme.surfaceContainerHighest
-                        : colorScheme.primary,
-                foregroundColor: colorScheme.onPrimary,
+              : Badge(
+                isLabelVisible: state.proveedores.isNotEmpty,
+                label: Text('${state.proveedores.length}'),
+                child: FloatingActionButton.extended(
+                  onPressed:
+                      state.cargando
+                          ? null
+                          : () => _guardar(notifier, user?.codUsuario ?? 0),
+                  icon:
+                      state.cargando
+                          ? SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: colorScheme.onPrimaryContainer,
+                            ),
+                          )
+                          : const Icon(Icons.save_rounded),
+                  label: const Text('Guardar Solicitud'),
+                  backgroundColor:
+                      state.cargando
+                          ? colorScheme.surfaceContainerHighest
+                          : colorScheme.primary,
+                  foregroundColor: colorScheme.onPrimary,
+                ),
               ),
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
       appBar: AppBar(
-        title: const Text('Solicitud de Pago al Extranjero'),
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text(
+              'Solicitud de Pago al Extranjero',
+              style: TextStyle(fontWeight: FontWeight.w600),
+            ),
+            if (state.empresaSeleccionada != null)
+              Text(
+                state.empresaSeleccionada!.nombre,
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w400,
+                  color:
+                      isDesktop
+                          ? colorScheme.onPrimaryContainer.withValues(
+                            alpha: 0.75,
+                          )
+                          : colorScheme.onSurfaceVariant,
+                ),
+              ),
+          ],
+        ),
         backgroundColor:
             isDesktop ? colorScheme.primaryContainer : colorScheme.surface,
         foregroundColor:
             isDesktop ? colorScheme.onPrimaryContainer : colorScheme.onSurface,
         elevation: 0,
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(3),
+          child: LinearProgressIndicator(
+            value: _calcularProgreso(state),
+            backgroundColor: colorScheme.surfaceContainerHighest,
+            color: colorScheme.primary,
+            minHeight: 3,
+          ),
+        ),
       ),
       body:
           state.cargando
@@ -130,11 +206,30 @@ class _PagosExtranjerosRegisterScreenState
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    CircularProgressIndicator(color: colorScheme.primary),
-                    const SizedBox(height: 16),
+                    SizedBox(
+                      width: 60,
+                      height: 60,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 5,
+                        color: colorScheme.primary,
+                      ),
+                    ),
+                    const SizedBox(height: 24),
                     Text(
                       'Guardando solicitud...',
-                      style: TextStyle(color: colorScheme.onSurfaceVariant),
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w500,
+                        color: colorScheme.onSurface,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Por favor espere',
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: colorScheme.onSurfaceVariant,
+                      ),
                     ),
                   ],
                 ),
@@ -192,9 +287,13 @@ class _PagosExtranjerosRegisterScreenState
           flex: 3,
           child: Column(
             children: [
+              _WorkflowStepsCard(state: state, colorScheme: colorScheme),
+              SizedBox(height: vPad),
               _SectionCard(
                 title: 'Datos Generales de la Solicitud',
                 icon: Icons.description_rounded,
+                stepNumber: 1,
+                isComplete: state.empresaSeleccionada != null,
                 child: _DatosGeneralesForm(
                   state: state,
                   notifier: notifier,
@@ -205,6 +304,10 @@ class _PagosExtranjerosRegisterScreenState
               _SectionCard(
                 title: 'Proveedores y Facturas',
                 icon: Icons.business_rounded,
+                stepNumber: 2,
+                isComplete:
+                    state.proveedores.isNotEmpty &&
+                    state.proveedores.every((p) => p.detalles.isNotEmpty),
                 trailing: FilledButton.tonalIcon(
                   onPressed:
                       () => _mostrarDialogProveedor(
@@ -220,6 +323,8 @@ class _PagosExtranjerosRegisterScreenState
                     state.proveedores.isEmpty
                         ? const _EmptyState(
                           message: 'No hay proveedores agregados.',
+                          hint:
+                              'Use el botón "Agregar Proveedor" para comenzar.',
                         )
                         : Column(
                           children: List.generate(
@@ -277,10 +382,15 @@ class _PagosExtranjerosRegisterScreenState
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        _WorkflowStepsCard(state: state, colorScheme: colorScheme),
+        SizedBox(height: vPad),
+
         // ── Sección 1: Datos generales ──────────────────
         _SectionCard(
           title: 'Datos Generales de la Solicitud',
           icon: Icons.description_rounded,
+          stepNumber: 1,
+          isComplete: state.empresaSeleccionada != null,
           child: _DatosGeneralesForm(
             state: state,
             notifier: notifier,
@@ -293,6 +403,10 @@ class _PagosExtranjerosRegisterScreenState
         _SectionCard(
           title: 'Proveedores y Facturas',
           icon: Icons.business_rounded,
+          stepNumber: 2,
+          isComplete:
+              state.proveedores.isNotEmpty &&
+              state.proveedores.every((p) => p.detalles.isNotEmpty),
           trailing: TextButton.icon(
             onPressed:
                 () => _mostrarDialogProveedor(
@@ -306,7 +420,11 @@ class _PagosExtranjerosRegisterScreenState
           ),
           child:
               state.proveedores.isEmpty
-                  ? const _EmptyState(message: 'No hay proveedores agregados.')
+                  ? const _EmptyState(
+                    message: 'No hay proveedores agregados.',
+                    hint:
+                        'Primero seleccione una empresa, luego agregue proveedores.',
+                  )
                   : Column(
                     children: List.generate(
                       state.proveedores.length,
@@ -340,6 +458,16 @@ class _PagosExtranjerosRegisterScreenState
     notifier.guardarSolicitud(audUsuario);
   }
 
+  double _calcularProgreso(PagosExtranjerosState state) {
+    int pasos = 0;
+    if (state.empresaSeleccionada != null) pasos++;
+    if (state.proveedores.isNotEmpty) pasos++;
+    if (state.proveedores.isNotEmpty &&
+        state.proveedores.every((p) => p.detalles.isNotEmpty))
+      pasos++;
+    return pasos / 3.0;
+  }
+
   void _mostrarDialogProveedor(
     BuildContext context,
     PagosExtranjerosNotifier notifier, {
@@ -358,6 +486,130 @@ class _PagosExtranjerosRegisterScreenState
             isMobile: isMobile,
             codEmpresa: codEmpresa,
           ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Widget: Banner de progreso por pasos
+// ─────────────────────────────────────────────────────────────────────────────
+class _WorkflowStepsCard extends StatelessWidget {
+  final PagosExtranjerosState state;
+  final ColorScheme colorScheme;
+  const _WorkflowStepsCard({required this.state, required this.colorScheme});
+
+  @override
+  Widget build(BuildContext context) {
+    final step1 = state.empresaSeleccionada != null;
+    final step2 = state.proveedores.isNotEmpty;
+    final step3 =
+        step2 && state.proveedores.every((p) => p.detalles.isNotEmpty);
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: colorScheme.outlineVariant.withValues(alpha: 0.4),
+        ),
+      ),
+      child: Row(
+        children: [
+          _StepDot(label: 'Empresa', done: step1, colorScheme: colorScheme),
+          _StepConnector(done: step1, colorScheme: colorScheme),
+          _StepDot(label: 'Proveedores', done: step2, colorScheme: colorScheme),
+          _StepConnector(done: step2, colorScheme: colorScheme),
+          _StepDot(label: 'Facturas', done: step3, colorScheme: colorScheme),
+          _StepConnector(done: step3, colorScheme: colorScheme),
+          _StepDot(
+            label: 'Listo',
+            done: step3,
+            last: true,
+            colorScheme: colorScheme,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _StepDot extends StatelessWidget {
+  final String label;
+  final bool done;
+  final bool last;
+  final ColorScheme colorScheme;
+  const _StepDot({
+    required this.label,
+    required this.done,
+    this.last = false,
+    required this.colorScheme,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    const doneColor = Color(0xFF2E7D32);
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        AnimatedContainer(
+          duration: const Duration(milliseconds: 400),
+          width: 28,
+          height: 28,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: done ? doneColor : colorScheme.surfaceContainerHighest,
+            border: Border.all(
+              color: done ? doneColor : colorScheme.outline,
+              width: 2,
+            ),
+          ),
+          child:
+              done
+                  ? const Icon(
+                    Icons.check_rounded,
+                    color: Colors.white,
+                    size: 16,
+                  )
+                  : Icon(
+                    Icons.circle_outlined,
+                    color: colorScheme.outline,
+                    size: 12,
+                  ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 10,
+            fontWeight: done ? FontWeight.w600 : FontWeight.normal,
+            color: done ? doneColor : colorScheme.onSurfaceVariant,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _StepConnector extends StatelessWidget {
+  final bool done;
+  final ColorScheme colorScheme;
+  const _StepConnector({required this.done, required this.colorScheme});
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: Padding(
+        padding: const EdgeInsets.only(bottom: 18),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 400),
+          height: 2,
+          decoration: BoxDecoration(
+            color: done ? const Color(0xFF2E7D32) : colorScheme.outlineVariant,
+            borderRadius: BorderRadius.circular(1),
+          ),
+        ),
+      ),
     );
   }
 }
@@ -401,32 +653,70 @@ class _DatosGeneralesForm extends StatelessWidget {
 
   Widget _buildEmpresaDropdown(BuildContext context, ColorScheme colorScheme) {
     if (state.cargandoEmpresas) {
-      return const Padding(
-        padding: EdgeInsets.symmetric(vertical: 8),
-        child: LinearProgressIndicator(),
+      return InputDecorator(
+        decoration: const InputDecoration(
+          labelText: 'Empresa *',
+          border: OutlineInputBorder(),
+          prefixIcon: Icon(Icons.business_outlined),
+        ),
+        child: const SizedBox(height: 20, child: LinearProgressIndicator()),
       );
     }
-    return DropdownButtonFormField<EmpresaEntity>(
-      value: state.empresaSeleccionada,
-      isExpanded: true,
-      decoration: const InputDecoration(
-        labelText: 'Empresa *',
-        border: OutlineInputBorder(),
-        prefixIcon: Icon(Icons.business_outlined),
-      ),
-      hint: const Text('Seleccione empresa'),
-      items:
-          state.empresas
-              .map(
-                (e) => DropdownMenuItem(
-                  value: e,
-                  child: Text(e.nombre, overflow: TextOverflow.ellipsis),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        DropdownButtonFormField<EmpresaEntity>(
+          value: state.empresaSeleccionada,
+          isExpanded: true,
+          decoration: InputDecoration(
+            labelText: 'Empresa *',
+            border: const OutlineInputBorder(),
+            prefixIcon: const Icon(Icons.business_outlined),
+            suffixIcon:
+                state.empresaSeleccionada != null
+                    ? const Icon(
+                      Icons.check_circle_rounded,
+                      color: Color(0xFF2E7D32),
+                    )
+                    : null,
+          ),
+          hint: const Text('Seleccione empresa'),
+          items:
+              state.empresas
+                  .map(
+                    (e) => DropdownMenuItem(
+                      value: e,
+                      child: Text(e.nombre, overflow: TextOverflow.ellipsis),
+                    ),
+                  )
+                  .toList(),
+          onChanged: (empresa) {
+            if (empresa != null) notifier.setEmpresa(empresa);
+          },
+        ),
+        if (state.empresaSeleccionada != null)
+          Padding(
+            padding: const EdgeInsets.only(top: 6, left: 4),
+            child: Row(
+              children: [
+                const Icon(
+                  Icons.info_outline_rounded,
+                  size: 13,
+                  color: Color(0xFF2E7D32),
                 ),
-              )
-              .toList(),
-      onChanged: (empresa) {
-        if (empresa != null) notifier.setEmpresa(empresa);
-      },
+                const SizedBox(width: 4),
+                Text(
+                  'Los proveedores se filtran por esta empresa',
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: colorScheme.onSurfaceVariant,
+                    fontStyle: FontStyle.italic,
+                  ),
+                ),
+              ],
+            ),
+          ),
+      ],
     );
   }
 
@@ -476,53 +766,157 @@ class _ProveedorTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      elevation: 1,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: ExpansionTile(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        collapsedShape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
+    final hasFacturas = proveedor.detalles.isNotEmpty;
+    final statusColor =
+        hasFacturas ? const Color(0xFF2E7D32) : Colors.orange.shade700;
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      decoration: BoxDecoration(
+        color: colorScheme.surface,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color:
+              hasFacturas
+                  ? const Color(0xFF2E7D32).withValues(alpha: 0.35)
+                  : Colors.orange.shade200,
+          width: 1.2,
         ),
-        leading: CircleAvatar(
-          backgroundColor: colorScheme.primaryContainer,
-          child: Text(
-            '${index + 1}',
-            style: TextStyle(
-              color: colorScheme.onPrimaryContainer,
-              fontWeight: FontWeight.bold,
+        boxShadow: [
+          BoxShadow(
+            color: colorScheme.shadow.withValues(alpha: 0.04),
+            blurRadius: 6,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: ExpansionTile(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+        collapsedShape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(14),
+        ),
+        tilePadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+        leading: Container(
+          width: 40,
+          height: 40,
+          decoration: BoxDecoration(
+            color: colorScheme.primaryContainer,
+            shape: BoxShape.circle,
+          ),
+          child: Center(
+            child: Text(
+              '${index + 1}',
+              style: TextStyle(
+                color: colorScheme.onPrimaryContainer,
+                fontWeight: FontWeight.bold,
+                fontSize: 15,
+              ),
             ),
           ),
         ),
-        title: Text(
-          proveedor.cardCode.isEmpty
-              ? 'Proveedor ${index + 1}'
-              : proveedor.cardCode,
-          style: const TextStyle(fontWeight: FontWeight.bold),
+        title: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    proveedor.cardCode.isEmpty
+                        ? 'Proveedor ${index + 1}'
+                        : proveedor.cardCode,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 14,
+                    ),
+                  ),
+                  Text(
+                    proveedor.cardName.isEmpty
+                        ? 'Sin nombre'
+                        : proveedor.cardName,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
-        subtitle: Text(
-          proveedor.cardName.isEmpty ? 'Sin nombre' : proveedor.cardName,
-          overflow: TextOverflow.ellipsis,
+        subtitle: Padding(
+          padding: const EdgeInsets.only(top: 4),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                decoration: BoxDecoration(
+                  color: statusColor.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      hasFacturas
+                          ? Icons.receipt_long_rounded
+                          : Icons.warning_amber_rounded,
+                      size: 12,
+                      color: statusColor,
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      hasFacturas
+                          ? '${proveedor.detalles.length} factura${proveedor.detalles.length == 1 ? '' : 's'}'
+                          : 'Sin facturas',
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                        color: statusColor,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              if (!isMobile && proveedor.detalles.isNotEmpty) ...[
+                const SizedBox(width: 8),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 2,
+                  ),
+                  decoration: BoxDecoration(
+                    color: colorScheme.primaryContainer,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    'USD ${_numberFormat.format(proveedor.totalAPagarUsd)}',
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                      color: colorScheme.onPrimaryContainer,
+                    ),
+                  ),
+                ),
+              ],
+            ],
+          ),
         ),
         trailing: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // Total a pagar
-            if (!isMobile)
-              Padding(
-                padding: const EdgeInsets.only(right: 8),
-                child: Chip(
-                  label: Text(
-                    'USD ${_numberFormat.format(proveedor.totalAPagarUsd)}',
-                    style: const TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  backgroundColor: colorScheme.secondaryContainer,
-                ),
-              ),
             IconButton(
               tooltip: 'Editar proveedor',
-              icon: Icon(Icons.edit_outlined, color: colorScheme.primary),
+              icon: Icon(
+                Icons.edit_outlined,
+                color: colorScheme.primary,
+                size: 20,
+              ),
+              style: IconButton.styleFrom(
+                backgroundColor: colorScheme.primaryContainer.withValues(
+                  alpha: 0.5,
+                ),
+              ),
               onPressed: () {
                 showDialog(
                   context: context,
@@ -537,34 +931,98 @@ class _ProveedorTile extends StatelessWidget {
                 );
               },
             ),
+            const SizedBox(width: 4),
             IconButton(
               tooltip: 'Eliminar proveedor',
-              icon: Icon(Icons.delete_outline, color: colorScheme.error),
+              icon: Icon(
+                Icons.delete_outline,
+                color: colorScheme.error,
+                size: 20,
+              ),
+              style: IconButton.styleFrom(
+                backgroundColor: colorScheme.errorContainer.withValues(
+                  alpha: 0.4,
+                ),
+              ),
               onPressed: () => _confirmarEliminar(context),
             ),
           ],
         ),
         children: [
+          Divider(
+            height: 1,
+            color: colorScheme.outlineVariant.withValues(alpha: 0.5),
+          ),
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Info adicional
-                if (proveedor.obs.isNotEmpty)
+                // Resumen de montos en tarjetas horizontales
+                if (proveedor.detalles.isNotEmpty)
                   Padding(
-                    padding: const EdgeInsets.only(bottom: 8),
+                    padding: const EdgeInsets.only(bottom: 12),
                     child: Row(
                       children: [
-                        const Icon(Icons.notes_outlined, size: 16),
-                        const SizedBox(width: 4),
-                        Expanded(child: Text(proveedor.obs)),
+                        _MiniStatCard(
+                          label: 'Facturas',
+                          value:
+                              'USD ${_numberFormat.format(proveedor.totalFacturasUsd)}',
+                          color: colorScheme.secondaryContainer,
+                          textColor: colorScheme.onSecondaryContainer,
+                        ),
+                        const SizedBox(width: 8),
+                        _MiniStatCard(
+                          label: 'Amortizado',
+                          value:
+                              'USD ${_numberFormat.format(proveedor.totalAmortizadoUsd)}',
+                          color: colorScheme.tertiaryContainer,
+                          textColor: colorScheme.onTertiaryContainer,
+                        ),
+                        const SizedBox(width: 8),
+                        _MiniStatCard(
+                          label: 'A Pagar',
+                          value:
+                              'USD ${_numberFormat.format(proveedor.totalAPagarUsd)}',
+                          color: colorScheme.primaryContainer,
+                          textColor: colorScheme.onPrimaryContainer,
+                          bold: true,
+                        ),
                       ],
                     ),
                   ),
-                // Totales móvil
-                if (isMobile) _ResumenProveedorRow(proveedor: proveedor),
-
+                // Info adicional
+                if (proveedor.obs.isNotEmpty)
+                  Container(
+                    margin: const EdgeInsets.only(bottom: 10),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 6,
+                    ),
+                    decoration: BoxDecoration(
+                      color: colorScheme.surfaceContainerHighest,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.notes_outlined,
+                          size: 15,
+                          color: colorScheme.onSurfaceVariant,
+                        ),
+                        const SizedBox(width: 6),
+                        Expanded(
+                          child: Text(
+                            proveedor.obs,
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 // Lista de detalles
                 _DetallesList(
                   proveedorIndex: index,
@@ -574,25 +1032,32 @@ class _ProveedorTile extends StatelessWidget {
                   isMobile: isMobile,
                   codEmpresa: codEmpresa,
                 ),
-
                 // Botón agregar factura
-                Align(
-                  alignment: Alignment.centerLeft,
-                  child: TextButton.icon(
-                    onPressed: () {
-                      showDialog(
-                        context: context,
-                        builder:
-                            (_) => _DetalleDialog(
-                              notifier: notifier,
-                              proveedorIndex: index,
-                              isMobile: isMobile,
-                              codEmpresa: codEmpresa,
-                            ),
-                      );
-                    },
-                    icon: const Icon(Icons.add),
-                    label: const Text('Agregar Factura'),
+                const SizedBox(height: 8),
+                OutlinedButton.icon(
+                  onPressed: () {
+                    showDialog(
+                      context: context,
+                      builder:
+                          (_) => _DetalleDialog(
+                            notifier: notifier,
+                            proveedorIndex: index,
+                            isMobile: isMobile,
+                            codEmpresa: codEmpresa,
+                          ),
+                    );
+                  },
+                  icon: const Icon(Icons.add, size: 16),
+                  label: const Text('Agregar Factura'),
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
+                    ),
+                    textStyle: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500,
+                    ),
                   ),
                 ),
               ],
@@ -630,59 +1095,53 @@ class _ProveedorTile extends StatelessWidget {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Widget: Resumen de totales de un proveedor (para móvil)
-// ─────────────────────────────────────────────────────────────────────────────
-class _ResumenProveedorRow extends StatelessWidget {
-  final ProveedorFormItem proveedor;
-  const _ResumenProveedorRow({required this.proveedor});
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
-      child: Wrap(
-        spacing: 8,
-        runSpacing: 4,
-        children: [
-          _MontoChip(label: 'Facturas', valor: proveedor.totalFacturasUsd),
-          _MontoChip(label: 'Amortizado', valor: proveedor.totalAmortizadoUsd),
-          _MontoChip(
-            label: 'A Pagar',
-            valor: proveedor.totalAPagarUsd,
-            highlight: true,
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _MontoChip extends StatelessWidget {
+class _MiniStatCard extends StatelessWidget {
   final String label;
-  final double valor;
-  final bool highlight;
-  const _MontoChip({
+  final String value;
+  final Color color;
+  final Color textColor;
+  final bool bold;
+  const _MiniStatCard({
     required this.label,
-    required this.valor,
-    this.highlight = false,
+    required this.value,
+    required this.color,
+    required this.textColor,
+    this.bold = false,
   });
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    return Chip(
-      label: Text(
-        '$label: USD ${_numberFormat.format(valor)}',
-        style: TextStyle(
-          fontSize: 11,
-          fontWeight: highlight ? FontWeight.bold : FontWeight.normal,
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.65),
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 10,
+                color: textColor.withValues(alpha: 0.8),
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              value,
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: bold ? FontWeight.bold : FontWeight.w600,
+                color: textColor,
+              ),
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
         ),
       ),
-      backgroundColor:
-          highlight
-              ? colorScheme.primaryContainer
-              : colorScheme.surfaceContainerHighest,
     );
   }
 }
@@ -712,9 +1171,10 @@ class _DetallesList extends StatelessWidget {
     if (proveedor.detalles.isEmpty) {
       return const Padding(
         padding: EdgeInsets.symmetric(vertical: 8),
-        child: Text(
-          'Sin facturas. Use el botón "Agregar Factura".',
-          style: TextStyle(fontStyle: FontStyle.italic),
+        child: _EmptyState(
+          message: 'Sin facturas registradas.',
+          hint:
+              'Use "Agregar Factura" para añadir documentos a este proveedor.',
         ),
       );
     }
@@ -1016,12 +1476,16 @@ class _SectionCard extends StatelessWidget {
   final IconData icon;
   final Widget child;
   final Widget? trailing;
+  final int? stepNumber;
+  final bool isComplete;
 
   const _SectionCard({
     required this.title,
     required this.icon,
     required this.child,
     this.trailing,
+    this.stepNumber,
+    this.isComplete = false,
   });
 
   @override
@@ -1029,10 +1493,27 @@ class _SectionCard extends StatelessWidget {
     final colorScheme = Theme.of(context).colorScheme;
     final isDesktop = ResponsiveUtilsBosque.isDesktop(context);
     final pad = isDesktop ? 24.0 : 16.0;
-    return Card(
-      elevation: 1,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      color: colorScheme.surface,
+    final completedColor = const Color(0xFF2E7D32);
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 300),
+      decoration: BoxDecoration(
+        color: colorScheme.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color:
+              isComplete
+                  ? completedColor.withValues(alpha: 0.5)
+                  : colorScheme.outlineVariant.withValues(alpha: 0.4),
+          width: isComplete ? 1.5 : 1,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: colorScheme.shadow.withValues(alpha: 0.05),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
       child: Padding(
         padding: EdgeInsets.all(pad),
         child: Column(
@@ -1040,34 +1521,95 @@ class _SectionCard extends StatelessWidget {
           children: [
             Row(
               children: [
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: colorScheme.primaryContainer,
-                    borderRadius: BorderRadius.circular(8),
+                // Step number or complete check
+                if (stepNumber != null)
+                  AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 400),
+                    child:
+                        isComplete
+                            ? Container(
+                              key: const ValueKey('check'),
+                              width: 32,
+                              height: 32,
+                              decoration: BoxDecoration(
+                                color: completedColor,
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(
+                                Icons.check_rounded,
+                                color: Colors.white,
+                                size: 18,
+                              ),
+                            )
+                            : Container(
+                              key: const ValueKey('step'),
+                              width: 32,
+                              height: 32,
+                              decoration: BoxDecoration(
+                                color: colorScheme.primaryContainer,
+                                shape: BoxShape.circle,
+                              ),
+                              child: Center(
+                                child: Text(
+                                  '$stepNumber',
+                                  style: TextStyle(
+                                    color: colorScheme.onPrimaryContainer,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 14,
+                                  ),
+                                ),
+                              ),
+                            ),
+                  )
+                else
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: colorScheme.primaryContainer,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Icon(
+                      icon,
+                      color: colorScheme.onPrimaryContainer,
+                      size: 20,
+                    ),
                   ),
-                  child: Icon(
-                    icon,
-                    color: colorScheme.onPrimaryContainer,
-                    size: 20,
-                  ),
-                ),
                 const SizedBox(width: 12),
                 Expanded(
-                  child: Text(
-                    title,
-                    style: TextStyle(
-                      fontSize: isDesktop ? 17 : 15,
-                      fontWeight: FontWeight.w600,
-                      color: colorScheme.onSurface,
-                    ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        style: TextStyle(
+                          fontSize: isDesktop ? 17 : 15,
+                          fontWeight: FontWeight.w600,
+                          color: colorScheme.onSurface,
+                        ),
+                      ),
+                      if (isComplete)
+                        Text(
+                          'Completado',
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: completedColor,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                    ],
                   ),
                 ),
                 if (trailing != null) trailing!,
               ],
             ),
             const SizedBox(height: 16),
-            Divider(color: colorScheme.outlineVariant, height: 1),
+            Divider(
+              color:
+                  isComplete
+                      ? completedColor.withValues(alpha: 0.3)
+                      : colorScheme.outlineVariant,
+              height: 1,
+            ),
             const SizedBox(height: 16),
             child,
           ],
@@ -1082,28 +1624,51 @@ class _SectionCard extends StatelessWidget {
 // ─────────────────────────────────────────────────────────────────────────────
 class _EmptyState extends StatelessWidget {
   final String message;
-  const _EmptyState({required this.message});
+  final String? hint;
+  const _EmptyState({required this.message, this.hint});
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 24),
+      padding: const EdgeInsets.symmetric(vertical: 28),
       child: Center(
         child: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              Icons.inbox_rounded,
-              size: 48,
-              color: Theme.of(context).colorScheme.outlineVariant,
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: colorScheme.surfaceContainerHighest,
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                Icons.inbox_rounded,
+                size: 36,
+                color: colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
+              ),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 14),
             Text(
               message,
               style: TextStyle(
-                color: Theme.of(context).colorScheme.outline,
-                fontStyle: FontStyle.italic,
+                color: colorScheme.onSurfaceVariant,
+                fontWeight: FontWeight.w500,
+                fontSize: 14,
               ),
             ),
+            if (hint != null) ...[
+              const SizedBox(height: 6),
+              Text(
+                hint!,
+                style: TextStyle(
+                  color: colorScheme.outline,
+                  fontStyle: FontStyle.italic,
+                  fontSize: 12,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ],
           ],
         ),
       ),

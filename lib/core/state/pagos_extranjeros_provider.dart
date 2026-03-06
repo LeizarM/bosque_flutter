@@ -387,6 +387,7 @@ class PagosExtranjerosNotifier extends StateNotifier<PagosExtranjerosState> {
                     'totalAmortizadoUsd': prov.totalAmortizadoUsd,
                     'totalAPagarUsd': prov.totalAPagarUsd,
                     'obs': prov.obs,
+                    'audUsuario': audUsuario,
                     'detallesAEliminar': prov.detallesAEliminar,
                     'detalles':
                         prov.detalles
@@ -406,6 +407,7 @@ class PagosExtranjerosNotifier extends StateNotifier<PagosExtranjerosState> {
                                 ),
                                 'concepto': det.concepto,
                                 'obs': det.obs,
+                                'audUsuario': audUsuario,
                               },
                             )
                             .toList(),
