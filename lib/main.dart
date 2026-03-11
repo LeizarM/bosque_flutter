@@ -10,6 +10,7 @@ import 'package:bosque_flutter/core/state/theme_mode_provider.dart';
 import 'package:bosque_flutter/core/theme/app_theme.dart';
 import 'package:bosque_flutter/core/utils/responsive_utils_bosque.dart';
 import 'package:bosque_flutter/data/repositories/entregas_impl.dart';
+import 'package:bosque_flutter/presentation/widgets/shared/connectivity_wrapper.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -63,7 +64,7 @@ class MyApp extends ConsumerWidget {
         return MouseRegion(
           opaque: false,
           hitTestBehavior: HitTestBehavior.translucent,
-          child: responsiveChild,
+          child: ConnectivityWrapper(child: responsiveChild),
         );
       },
       debugShowCheckedModeBanner: false,
