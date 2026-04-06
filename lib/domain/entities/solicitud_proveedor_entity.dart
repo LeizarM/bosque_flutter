@@ -1,3 +1,5 @@
+import 'package:bosque_flutter/domain/entities/detalle_solicitud_entity.dart';
+
 class SolicitudProveedorEntity {
   BigInt idSolicitudProveedor;
   BigInt idSolicitud;
@@ -11,6 +13,8 @@ class SolicitudProveedorEntity {
 
   int codEmpresa;
 
+  List<DetalleSolicitudEntity> detalles;
+
   SolicitudProveedorEntity({
     required this.idSolicitudProveedor,
     required this.idSolicitud,
@@ -23,5 +27,6 @@ class SolicitudProveedorEntity {
     required this.audUsuario,
 
     required this.codEmpresa,
+    this.detalles = const [],
   });
 }

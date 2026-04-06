@@ -160,113 +160,85 @@ class _PagosExtranjerosRegisterScreenState
                 ),
               ),
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
-      appBar: AppBar(
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text(
-              'Solicitud de Pago al Extranjero',
-              style: TextStyle(fontWeight: FontWeight.w600),
-            ),
-            if (state.empresaSeleccionada != null)
-              Text(
-                state.empresaSeleccionada!.nombre,
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w400,
-                  color:
-                      isDesktop
-                          ? colorScheme.onPrimaryContainer.withValues(
-                            alpha: 0.75,
-                          )
-                          : colorScheme.onSurfaceVariant,
-                ),
-              ),
-          ],
-        ),
-        backgroundColor:
-            isDesktop ? colorScheme.primaryContainer : colorScheme.surface,
-        foregroundColor:
-            isDesktop ? colorScheme.onPrimaryContainer : colorScheme.onSurface,
-        elevation: 0,
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(3),
-          child: LinearProgressIndicator(
+      body: Column(
+        children: [
+          // Barra de progreso sutil
+          LinearProgressIndicator(
             value: _calcularProgreso(state),
             backgroundColor: colorScheme.surfaceContainerHighest,
             color: colorScheme.primary,
             minHeight: 3,
           ),
-        ),
-      ),
-      body:
-          state.cargando
-              ? Center(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    SizedBox(
-                      width: 60,
-                      height: 60,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 5,
-                        color: colorScheme.primary,
-                      ),
-                    ),
-                    const SizedBox(height: 24),
-                    Text(
-                      'Guardando solicitud...',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w500,
-                        color: colorScheme.onSurface,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Por favor espere',
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                  ],
-                ),
-              )
-              : Center(
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 1200),
-                  child: SingleChildScrollView(
-                    // Padding inferior extra en móvil/tablet para que el FAB no tape contenido
-                    padding: EdgeInsets.only(
-                      left: hPad,
-                      right: hPad,
-                      top: vPad,
-                      bottom: isDesktop ? vPad : vPad + 80,
-                    ),
-                    child:
-                        isDesktop
-                            ? _buildDesktopLayout(
-                              context,
-                              state,
-                              notifier,
-                              colorScheme,
-                              vPad,
-                              user?.codUsuario ?? 0,
-                            )
-                            : _buildMobileLayout(
-                              context,
-                              state,
-                              notifier,
-                              colorScheme,
-                              isMobile,
-                              vPad,
-                              user?.codUsuario ?? 0,
+          Expanded(
+            child:
+                state.cargando
+                    ? Center(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          SizedBox(
+                            width: 60,
+                            height: 60,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 5,
+                              color: colorScheme.primary,
                             ),
-                  ),
-                ),
-              ),
+                          ),
+                          const SizedBox(height: 24),
+                          Text(
+                            'Guardando solicitud...',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w500,
+                              color: colorScheme.onSurface,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'Por favor espere',
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                        ],
+                      ),
+                    )
+                    : Center(
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 1200),
+                        child: SingleChildScrollView(
+                          padding: EdgeInsets.only(
+                            left: hPad,
+                            right: hPad,
+                            top: vPad,
+                            bottom: isDesktop ? vPad : vPad + 80,
+                          ),
+                          child:
+                              isDesktop
+                                  ? _buildDesktopLayout(
+                                    context,
+                                    state,
+                                    notifier,
+                                    colorScheme,
+                                    vPad,
+                                    user?.codUsuario ?? 0,
+                                  )
+                                  : _buildMobileLayout(
+                                    context,
+                                    state,
+                                    notifier,
+                                    colorScheme,
+                                    isMobile,
+                                    vPad,
+                                    user?.codUsuario ?? 0,
+                                  ),
+                        ),
+                      ),
+                    ),
+          ),
+        ],
+      ),
     );
   }
 

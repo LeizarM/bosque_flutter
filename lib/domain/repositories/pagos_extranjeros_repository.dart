@@ -1,19 +1,131 @@
+import 'package:bosque_flutter/domain/entities/cargo_pago_entity.dart';
+import 'package:bosque_flutter/domain/entities/canales_pago_entity.dart';
+import 'package:bosque_flutter/domain/entities/config_comisiones_banco_entity.dart';
+import 'package:bosque_flutter/domain/entities/cotizaciones_entity.dart';
 import 'package:bosque_flutter/domain/entities/detalle_solicitud_entity.dart';
 import 'package:bosque_flutter/domain/entities/empresa_entity.dart';
+import 'package:bosque_flutter/domain/entities/log_estados_entity.dart';
+import 'package:bosque_flutter/domain/entities/monedas_entity.dart';
 import 'package:bosque_flutter/domain/entities/proveedor_empresa_entity.dart';
+import 'package:bosque_flutter/domain/entities/solicitud_pago_entity.dart';
+import 'package:bosque_flutter/domain/entities/solicitud_proveedor_entity.dart';
+import 'package:bosque_flutter/domain/entities/tipos_cambio_entity.dart';
+import 'package:bosque_flutter/domain/entities/tipos_cargo_entity.dart';
+import 'package:bosque_flutter/domain/entities/tipos_transaccion_entity.dart';
+import 'package:bosque_flutter/domain/entities/transacciones_entity.dart';
 
 abstract class PagosExtranjerosRepository {
-  /// Guarda de forma atómica la solicitud completa (cabecera + proveedores +
-  /// detalles) en un único endpoint transaccional.
-  /// Retorna el ID de la solicitud generado/actualizado.
+  // ══ FASE 1 ─ Solicitud ════════════════════════════════════════════
+
+  /// Crea o actualiza la solicitud completa en una única TX ACID.
+  /// Retorna el idSolicitud generado/existente.
   Future<BigInt> guardarSolicitudCompleta(Map<String, dynamic> payload);
 
-  /// Obtiene la lista de empresas disponibles.
+  /// Cambia el estado de la solicitud (PENDIENTE → APROBADA, etc.) + log.
+  Future<BigInt> aprobarSolicitud(Map<String, dynamic> payload);
+
+  // ══ FASE 2 ─ Cotización ═════════════════════════════════════════
+
+  /// Registra una cotización con sus cargos en una única TX ACID.
+  Future<BigInt> guardarCotizacionCompleta(Map<String, dynamic> payload);
+
+  // ══ FASE 3 ─ Comparativa y elección ══════════════════════════════
+
+  /// Acepta la cotización ganadora. El SP rechaza las demás internamente.
+  Future<BigInt> aceptarCotizacion(Map<String, dynamic> payload);
+
+  /// Carga todas las cotizaciones de una solicitud para la comparativa.
+  Future<List<CotizacionesEntity>> getCotizacionesPorSolicitud(
+    BigInt idSolicitud,
+  );
+
+  // ══ FASE 4 ─ Transacción ═════════════════════════════════════════
+
+  /// Registra la transacción con sus cargos en una única TX ACID.
+  Future<BigInt> guardarTransaccionCompleta(Map<String, dynamic> payload);
+
+  /// Cambia el estado de la transacción (PENDIENTE → PROCESADO, etc.) + log.
+  Future<BigInt> cambiarEstadoTransaccion(Map<String, dynamic> payload);
+
+  /// Carga las transacciones de una solicitud.
+  Future<List<TransaccionesEntity>> getTransaccionesPorSolicitud(
+    BigInt idSolicitud, {
+    int codEmpresa = 0,
+  });
+
+  // ══ FASE 5 ─ Confirmación ═════════════════════════════════════════
+
+  /// Confirma el débito y cierra la solicitud como PAGADA en una TX ACID.
+  Future<BigInt> confirmarPago(Map<String, dynamic> payload);
+
+  // ══ Lecturas generales ═════════════════════════════════════════════
+
   Future<List<EmpresaEntity>> getEmpresas();
-
-  /// Obtiene la lista de proveedores filtrados por empresa.
   Future<List<ProveedorEmpresaEntity>> getProveedoresXEmpresa(int codEmpresa);
-
-  /// Obtiene las facturas de proveedor y órdenes de compra por empresa (SAP).
   Future<List<DetalleSolicitudEntity>> getFacProvYOrdCompra(int codEmpresa);
+  Future<List<SolicitudPagoEntity>> getSolicitudesRegistradas(
+    DateTime fechaInicio,
+    DateTime fechaFin,
+    int codEmpresa,
+  );
+
+  /// Obtener solicitudes por empresa (0 = todas).
+  Future<List<SolicitudPagoEntity>> getObtenerSolicitudes(int codEmpresa);
+
+  /// Proveedores de una solicitud.
+  Future<List<SolicitudProveedorEntity>> getSolicitudProveedores(
+    int idSolicitud,
+  );
+
+  /// Facturas/detalles de una solicitud.
+  Future<List<DetalleSolicitudEntity>> getDetalleSolicitud(int idSolicitud);
+
+  /// Cargos bancarios de una cotización.
+  Future<List<CargoPagoEntity>> getCargosCotizacion(int idCotizacion);
+
+  /// Detalle de una transacción individual.
+  Future<TransaccionesEntity?> getTransaccion({
+    required int idTransaccion,
+    required int codEmpresa,
+  });
+
+  /// Reporte de transacciones por rango de fechas.
+  Future<List<TransaccionesEntity>> getReporteTransaccionesFechas({
+    required DateTime fechaInicio,
+    required DateTime fechaFin,
+    required int codEmpresa,
+  });
+
+  /// Cargos de una transacción.
+  Future<List<CargoPagoEntity>> getCargosTransaccion(int idTransaccion);
+
+  Future<List<LogEstadosEntity>> getLogPorSolicitud(BigInt idSolicitud);
+  Future<List<LogEstadosEntity>> getLogPorTransaccion(BigInt idTransaccion);
+  Future<List<LogEstadosEntity>> getTimelineSolicitud(BigInt idSolicitud);
+
+  // ══ Catálogos de lectura (para dropdowns) ══════════════════════════════
+
+  Future<List<CanalesPagoEntity>> getCanalesPago();
+  Future<List<MonedasEntity>> getMonedas();
+  Future<List<TiposCambioEntity>> getTiposCambioPorBanco(int codBanco);
+  Future<List<TiposCargoEntity>> getTiposCargo();
+  Future<List<TiposTransaccionEntity>> getTiposTransaccion();
+  Future<List<ConfigComisionesBancoEntity>> getConfigComisionesPorBanco(
+    int codBanco,
+  );
+
+  // ══ Catálogos de escritura ════════════════════════════════════════════─
+
+  Future<BigInt> registrarCanalPago(Map<String, dynamic> payload);
+  Future<BigInt> eliminarCanalPago(Map<String, dynamic> payload);
+  Future<BigInt> registrarMoneda(Map<String, dynamic> payload);
+  Future<BigInt> eliminarMoneda(Map<String, dynamic> payload);
+  Future<BigInt> registrarTipoCambio(Map<String, dynamic> payload);
+  Future<BigInt> eliminarTipoCambio(Map<String, dynamic> payload);
+  Future<BigInt> registrarTipoCargo(Map<String, dynamic> payload);
+  Future<BigInt> eliminarTipoCargo(Map<String, dynamic> payload);
+  Future<BigInt> registrarTipoTransaccion(Map<String, dynamic> payload);
+  Future<BigInt> eliminarTipoTransaccion(Map<String, dynamic> payload);
+  Future<BigInt> registrarConfigComisiones(Map<String, dynamic> payload);
+  Future<BigInt> eliminarConfigComisiones(Map<String, dynamic> payload);
 }

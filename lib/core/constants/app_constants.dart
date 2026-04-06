@@ -285,11 +285,89 @@ class AppConstants {
   // ═══════════════════════════════════════════════════════════════════════════════
 
   static const String guardarSolicitudCompleta =
-      '/pagos-extranjeros/guardar-completo';
+      '/pagos-extranjeros/guardar-solicitud-completa';
   static const String lstProveedoresXEmpresa =
       '/pagos-extranjeros/obtener-proveedores-empresa';
   static const String lstFacProvYOrdCompra =
       '/pagos-extranjeros/obtener-docnum-empresa';
+
+  static const String lstSolPagosRegistrados =
+      '/pagos-extranjeros/reporte-solicitudes-fechas';
+
+  // ── TPEX: escrituras ACID ──────────────────────────────────────────────────
+  static const String tpexAprobarSolicitud =
+      '/pagos-extranjeros/aprobar-solicitud';
+  static const String tpexGuardarCotizacion =
+      '/pagos-extranjeros/guardar-cotizacion-completa';
+  static const String tpexAceptarCotizacion =
+      '/pagos-extranjeros/aceptar-cotizacion';
+  static const String tpexGuardarTransaccion =
+      '/pagos-extranjeros/guardar-transaccion-completa';
+  static const String tpexCambiarEstadoTransaccion =
+      '/pagos-extranjeros/cambiar-estado-transaccion';
+  static const String tpexConfirmarPago = '/pagos-extranjeros/confirmar-pago';
+
+  // ── TPEX: lecturas ─────────────────────────────────────────────────────────
+  static const String tpexObtenerSolicitudes =
+      '/pagos-extranjeros/obtener-solicitudes';
+  static const String tpexObtenerSolicitudProveedor =
+      '/pagos-extranjeros/obtener-solicitud-proveedor';
+  static const String tpexObtenerDetalleSolicitud =
+      '/pagos-extranjeros/obtener-detalle-solicitud';
+  static const String tpexObtenerCotizaciones =
+      '/pagos-extranjeros/obtener-cotizaciones-solicitud';
+  static const String tpexObtenerCargosCotizacion =
+      '/pagos-extranjeros/obtener-cargos-cotizacion';
+  static const String tpexObtenerTransaccionesSolicitud =
+      '/pagos-extranjeros/obtener-transacciones-solicitud';
+  static const String tpexObtenerTransaccion =
+      '/pagos-extranjeros/obtener-transaccion';
+  static const String tpexReporteTransaccionesFechas =
+      '/pagos-extranjeros/reporte-transacciones-fechas';
+  static const String tpexObtenerCargosTransaccion =
+      '/pagos-extranjeros/obtener-cargos-transaccion';
+  static const String tpexObtenerLogSolicitud =
+      '/pagos-extranjeros/obtener-log-solicitud';
+  static const String tpexObtenerLogTransaccion =
+      '/pagos-extranjeros/obtener-log-transaccion';
+  static const String tpexObtenerTimelineSolicitud =
+      '/pagos-extranjeros/obtener-timeline-solicitud';
+
+  // ── TPEX: catálogos ────────────────────────────────────────────────────────
+  static const String tpexObtenerCanales =
+      '/pagos-extranjeros/obtener-canales-pago';
+  static const String tpexRegistrarCanal =
+      '/pagos-extranjeros/registrar-canal-pago';
+  static const String tpexEliminarCanal =
+      '/pagos-extranjeros/eliminar-canal-pago';
+  static const String tpexObtenerMonedas = '/pagos-extranjeros/obtener-monedas';
+  static const String tpexRegistrarMoneda =
+      '/pagos-extranjeros/registrar-moneda';
+  static const String tpexEliminarMoneda = '/pagos-extranjeros/eliminar-moneda';
+  static const String tpexObtenerTipoCambioBanco =
+      '/pagos-extranjeros/obtener-tipos-cambio-banco';
+  static const String tpexRegistrarTipoCambio =
+      '/pagos-extranjeros/registrar-tipo-cambio';
+  static const String tpexEliminarTipoCambio =
+      '/pagos-extranjeros/eliminar-tipo-cambio';
+  static const String tpexObtenerTiposCargo =
+      '/pagos-extranjeros/obtener-tipos-cargo';
+  static const String tpexRegistrarTipoCargo =
+      '/pagos-extranjeros/registrar-tipo-cargo';
+  static const String tpexEliminarTipoCargo =
+      '/pagos-extranjeros/eliminar-tipo-cargo';
+  static const String tpexObtenerTiposTransaccion =
+      '/pagos-extranjeros/obtener-tipos-transaccion';
+  static const String tpexRegistrarTipoTransaccion =
+      '/pagos-extranjeros/registrar-tipo-transaccion';
+  static const String tpexEliminarTipoTransaccion =
+      '/pagos-extranjeros/eliminar-tipo-transaccion';
+  static const String tpexObtenerConfigBanco =
+      '/pagos-extranjeros/obtener-config-comisiones-banco';
+  static const String tpexRegistrarConfig =
+      '/pagos-extranjeros/registrar-config-comisiones';
+  static const String tpexEliminarConfig =
+      '/pagos-extranjeros/eliminar-config-comisiones';
 
   //Para cargar permisos de botones por usuario
   static const String ubtnPermisosBotones = '/view/vistaBtn';

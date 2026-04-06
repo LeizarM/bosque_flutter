@@ -184,16 +184,21 @@ final routerProvider = Provider<GoRouter>((ref) {
               builder: (context, state) => const FacturasEjecutadasView(),
             ),
             GoRoute(
-          path: '/dashboard/tbEmpleado/registroEmpleado',
-          name: 'tbEmpleado/registroEmpleado',
-          builder: (context, state) => const ListaEmpleados(),
-        ),
-            // Pagos al extranjero
+              path: '/dashboard/tbEmpleado/registroEmpleado',
+              name: 'tbEmpleado/registroEmpleado',
+              builder: (context, state) => const ListaEmpleados(),
+            ),
+            // Pagos al extranjero Registro
             GoRoute(
               path: '/dashboard/tpex_RegistroSolicitud/Registro',
               name: 'tpex_RegistroSolicitud',
-              builder:
-                  (context, state) => const PagosExtranjerosRegisterScreen(),
+              builder: (context, state) => const PagosExtranjerosScreen(),
+            ),
+            // Pagos al extranjero Vista
+            GoRoute(
+              path: '/dashboard/tpex_RegistroVer/View',
+              name: 'tpex_RegistroVerView',
+              builder: (context, state) => const PagosAlExtranjerosViewScreen(),
             ),
           ],
         ),
@@ -298,14 +303,21 @@ final routerProvider = Provider<GoRouter>((ref) {
         ),
         GoRoute(
           path: '/tbEmpleado/registroEmpleado',
-          redirect: (context, state) => '/dashboard/tbEmpleado/registroEmpleado',
+          redirect:
+              (context, state) => '/dashboard/tbEmpleado/registroEmpleado',
         ),
 
-        // Pagos al extranjero
+        // Pagos al extranjero Registro Solicitud
         GoRoute(
           path: '/tpex_RegistroSolicitud/Registro',
           redirect:
               (context, state) => '/dashboard/tpex_RegistroSolicitud/Registro',
+        ),
+
+        // Pagos al extranjero Registro Ver
+        GoRoute(
+          path: '/tpex_RegistroVer/View',
+          redirect: (context, state) => '/dashboard/tpex_RegistroVer/View',
         ),
 
         GoRoute(

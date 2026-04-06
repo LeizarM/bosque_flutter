@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:bosque_flutter/data/models/detalle_solicitud_model.dart';
 import 'package:bosque_flutter/domain/entities/solicitud_proveedor_entity.dart';
 
 SolicitudProveedorModel solicitudProveedorModelFromJson(String str) =>
@@ -19,6 +20,7 @@ class SolicitudProveedorModel {
   int audUsuario;
 
   int codEmpresa;
+  List<DetalleSolicitudModel> detalles;
 
   SolicitudProveedorModel({
     required this.idSolicitudProveedor,
@@ -31,27 +33,37 @@ class SolicitudProveedorModel {
     required this.obs,
     required this.audUsuario,
     required this.codEmpresa,
+    this.detalles = const [],
   });
 
-  factory SolicitudProveedorModel.fromJson(Map<String, dynamic> json) =>
-      SolicitudProveedorModel(
-        idSolicitudProveedor:
-            json["idSolicitudProveedor"] != null
-                ? BigInt.from(json["idSolicitudProveedor"])
-                : BigInt.zero,
-        idSolicitud:
-            json["idSolicitud"] != null
-                ? BigInt.from(json["idSolicitud"])
-                : BigInt.zero,
-        cardCode: json["cardCode"] ?? '',
-        cardName: json["cardName"] ?? '',
-        totalFacturasUsd: json["totalFacturasUsd"]?.toDouble() ?? 0.0,
-        totalAmortizadoUsd: json["totalAmortizadoUsd"]?.toDouble() ?? 0.0,
-        totalAPagarUsd: json["totalAPagarUsd"]?.toDouble() ?? 0.0,
-        obs: json["obs"] ?? '',
-        audUsuario: json["audUsuario"] ?? 0,
-        codEmpresa: json["codEmpresa"] ?? 0,
-      );
+  factory SolicitudProveedorModel.fromJson(Map<String, dynamic> json) {
+    final detallesJson = json["detalles"] as List<dynamic>? ?? [];
+    return SolicitudProveedorModel(
+      idSolicitudProveedor:
+          json["idSolicitudProveedor"] != null
+              ? BigInt.from(json["idSolicitudProveedor"])
+              : BigInt.zero,
+      idSolicitud:
+          json["idSolicitud"] != null
+              ? BigInt.from(json["idSolicitud"])
+              : BigInt.zero,
+      cardCode: json["cardCode"] ?? '',
+      cardName: json["cardName"] ?? '',
+      totalFacturasUsd: json["totalFacturasUsd"]?.toDouble() ?? 0.0,
+      totalAmortizadoUsd: json["totalAmortizadoUsd"]?.toDouble() ?? 0.0,
+      totalAPagarUsd: json["totalAPagarUsd"]?.toDouble() ?? 0.0,
+      obs: json["obs"] ?? '',
+      audUsuario: json["audUsuario"] ?? 0,
+      codEmpresa: json["codEmpresa"] ?? 0,
+      detalles:
+          detallesJson
+              .map(
+                (d) =>
+                    DetalleSolicitudModel.fromJson(d as Map<String, dynamic>),
+              )
+              .toList(),
+    );
+  }
 
   Map<String, dynamic> toJson() => {
     "idSolicitudProveedor": idSolicitudProveedor.toInt(),
@@ -64,6 +76,7 @@ class SolicitudProveedorModel {
     "obs": obs,
     "audUsuario": audUsuario,
     "codEmpresa": codEmpresa,
+    "detalles": detalles.map((d) => d.toJson()).toList(),
   };
 
   // Método para convertir de Model a Entity
@@ -78,6 +91,7 @@ class SolicitudProveedorModel {
     obs: obs,
     audUsuario: audUsuario,
     codEmpresa: codEmpresa,
+    detalles: detalles.map((d) => d.toEntity()).toList(),
   );
 
   // Método factory para convertir de Entity a Model
