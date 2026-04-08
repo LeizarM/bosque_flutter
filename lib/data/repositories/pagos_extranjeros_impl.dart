@@ -47,7 +47,7 @@ class PagosExtranjerosImpl extends BaseApiRepository
       postAndReturnId(
         endpoint: AppConstants.guardarSolicitudCompleta,
         data: payload,
-        errorMessage: 'Error al guardar la solicitud',
+        errorMessage: 'Error al guardar  la solicitud',
       );
 
   @override

@@ -1,4 +1,7 @@
 import 'package:bosque_flutter/core/network/connectivity_service.dart';
+import 'package:bosque_flutter/core/network/web_version_checker.dart';
+import 'package:bosque_flutter/core/utils/web_reload.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -66,7 +69,7 @@ class _ConnectivityWrapperState extends ConsumerState<ConnectivityWrapper>
       child: Stack(
         children: [
           widget.child,
-          // Banner animado
+          // Banner de conectividad animado
           Positioned(
             top: 0,
             left: 0,
@@ -83,6 +86,8 @@ class _ConnectivityWrapperState extends ConsumerState<ConnectivityWrapper>
               ),
             ),
           ),
+          // Banner de nueva versión (solo web)
+          if (kIsWeb) _UpdateBanner(),
         ],
       ),
     );
@@ -157,6 +162,69 @@ class _ConnectivityBanner extends StatelessWidget {
                 ),
               ),
             ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Banner que aparece cuando se detecta una nueva versión en web.
+/// Se posiciona en la parte inferior de la pantalla.
+class _UpdateBanner extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final hasUpdate = ref.watch(webVersionProvider);
+    if (!hasUpdate) return const SizedBox.shrink();
+
+    return Positioned(
+      bottom: 0,
+      left: 0,
+      right: 0,
+      child: SafeArea(
+        top: false,
+        child: Material(
+          elevation: 6,
+          color: Colors.blue.shade700,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            child: Row(
+              children: [
+                const Icon(Icons.system_update, color: Colors.white, size: 22),
+                const SizedBox(width: 12),
+                const Expanded(
+                  child: Text(
+                    'Nueva versión disponible',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 13,
+                    ),
+                  ),
+                ),
+                TextButton.icon(
+                  onPressed: hardReloadWeb,
+                  icon: const Icon(
+                    Icons.refresh,
+                    color: Colors.white,
+                    size: 18,
+                  ),
+                  label: const Text(
+                    'Actualizar',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  style: TextButton.styleFrom(
+                    backgroundColor: Colors.white.withValues(alpha: 0.2),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),

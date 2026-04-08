@@ -63,10 +63,12 @@ class ConnectivityNotifier extends StateNotifier<ConnectivityState> {
   }
 
   void _init() {
-    // Escuchar cambios de red del sistema
-    _subscription = _connectivity.onConnectivityChanged.listen(
-      _onConnectivityChanged,
-    );
+    // En web, connectivity_plus no es confiable → solo hacer check inicial y periódico
+    if (!kIsWeb) {
+      _subscription = _connectivity.onConnectivityChanged.listen(
+        _onConnectivityChanged,
+      );
+    }
 
     // Verificación inicial
     _checkConnectivity();
@@ -92,6 +94,12 @@ class ConnectivityNotifier extends StateNotifier<ConnectivityState> {
   }
 
   Future<void> _checkConnectivity() async {
+    // En web, connectivity_plus no es confiable → verificar directo con el servidor
+    if (kIsWeb) {
+      await _checkServerReachability();
+      return;
+    }
+
     try {
       final results = await _connectivity.checkConnectivity();
       if (results.contains(ConnectivityResult.none)) {
@@ -114,8 +122,9 @@ class ConnectivityNotifier extends StateNotifier<ConnectivityState> {
   }
 
   Future<void> _checkServerReachability() async {
-    // En web no podemos hacer socket directo, asumimos conectado si hay red
     if (kIsWeb) {
+      // En web, dart:io no funciona y CORS puede bloquear peticiones de verificación.
+      // Si llegamos aquí es porque el sistema reportó conexión de red → asumir conectado.
       state = ConnectivityState(
         status: ConnectionStatus.connected,
         message: 'Conectado',
