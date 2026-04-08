@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:bosque_flutter/domain/entities/cargo_pago_entity.dart';
 import 'package:bosque_flutter/domain/entities/canales_pago_entity.dart';
 import 'package:bosque_flutter/domain/entities/config_comisiones_banco_entity.dart';
@@ -101,6 +103,24 @@ abstract class PagosExtranjerosRepository {
 
   Future<List<LogEstadosEntity>> getLogPorSolicitud(BigInt idSolicitud);
   Future<List<LogEstadosEntity>> getLogPorTransaccion(BigInt idTransaccion);
+
+  /// Sube un voucher (imagen/PDF) asociado a una transacción.
+  /// En móvil se usa [filePath]; en web se usa [fileBytes] + [fileName].
+  Future<void> subirVoucher({
+    required BigInt idTransaccion,
+    required int audUsuario,
+    String? filePath,
+    Uint8List? fileBytes,
+    required String fileName,
+  });
+
+  /// Descarga el voucher de una transacción vía POST (envía JWT).
+  /// Retorna los bytes crudos y el content-type.
+  Future<(Uint8List bytes, String contentType)> descargarVoucher(
+    BigInt idTransaccion, {
+    int codEmpresa = 0,
+  });
+
   Future<List<LogEstadosEntity>> getTimelineSolicitud(BigInt idSolicitud);
 
   // ══ Catálogos de lectura (para dropdowns) ══════════════════════════════

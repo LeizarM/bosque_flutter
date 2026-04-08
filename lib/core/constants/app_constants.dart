@@ -223,6 +223,25 @@ class AppConstants {
   static const String tigoObtenerArbolDetallado = '/tigo/obtenerArboldetallado';
   static const String tigoRptCambiosTigo = '/tigo/RptCambiosTigo';
   static const String tigoActualizarEmpresaLote = '/tigo/actualizarEmpresaLote';
+    // NUEVOS ENDPOINTS PARA TIGO
+  static const String tigoRegistrarCambioLinea = '/tigo/registrarCambioLinea';
+  static const String tigoEliminarCambioLinea = '/tigo/eliminarCambioLinea';
+  static const String tigoAplicarCambiosLinea = '/tigo/aplicarCambiosLinea';
+  static const String tigoListarNumerosAsignados = '/tigo/listarNumerosAsignados';
+  static const String tigoListarCambiosLinea = '/tigo/listarCambiosLinea';
+  static const String tigoListarDestinosLinea = '/tigo/listarDestinosLinea';
+  static const String tigoReasignarNumeroSinAsignar = '/tigo/reasignarNumeroSinAsignar';
+  static const String tigoListarPerdidasLinea = '/tigo/listarPerdidas';
+  static const String tigoRegistrarPerdidaLinea = '/tigo/registrarPerdidaChip';
+  static const String tigoEliminarPerdidaLinea = '/tigo/eliminarRegistroPerdida';
+  static const String tigoListarPeriodos = '/tigo/listarPeriodos';
+  static const String tigoObtenerTipoRenovacion = '/tigo/tipoRenovacion';
+  static const String tigoRptPerdidaLineas = '/tigo/RptPerdidaLineas';
+  static const String tigoListarPeriodosCambio = '/tigo/listarPeriodosCambio';
+  static const String tigoRptCambiosLineaTigo = '/tigo/RptCambiosLineaTigo';
+  static const String tigoEjecutarPeriodoTigo = '/tigo/ejecutarPeriodoTigo';
+  static const String tigoRptCorporativosPersonal= '/tigo/RptCorporativosPersonal';
+  static const String tigoRptComparacionEmpresas = '/tigo/RptComparacionEmpresas';
   //ENDPOINT PARA LA GESTION DE EMPLEADOS - RRHH
   static const String rrhhObtenerLstEmpleados = '/rrhh/obtenerLstEmpleados';
   static const String rrhhRegistroEmpleado = '/rrhh/registroEmpleado';
@@ -306,6 +325,7 @@ class AppConstants {
   static const String tpexCambiarEstadoTransaccion =
       '/pagos-extranjeros/cambiar-estado-transaccion';
   static const String tpexConfirmarPago = '/pagos-extranjeros/confirmar-pago';
+  static const String tpexSubirVoucher = '/pagos-extranjeros/transacciones';
 
   // ── TPEX: lecturas ─────────────────────────────────────────────────────────
   static const String tpexObtenerSolicitudes =

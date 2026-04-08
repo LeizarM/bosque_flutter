@@ -42,6 +42,8 @@ class TransaccionesModel {
   String estado;
   String observaciones;
   int audUsuario;
+  String? rutaVoucher;
+  bool tieneVoucher;
   List<CargoPagoModel> cargos;
 
   TransaccionesModel({
@@ -78,6 +80,8 @@ class TransaccionesModel {
     required this.estado,
     required this.observaciones,
     required this.audUsuario,
+    this.rutaVoucher,
+    this.tieneVoucher = false,
     this.cargos = const [],
   });
 
@@ -141,6 +145,8 @@ class TransaccionesModel {
       estado: json["estado"] ?? '',
       observaciones: json["observaciones"] ?? '',
       audUsuario: json["audUsuario"] ?? 0,
+      rutaVoucher: json["rutaVoucher"] as String?,
+      tieneVoucher: json["tieneVoucher"] == true || json["tieneVoucher"] == 1,
       cargos:
           cargosJson
               .map((c) => CargoPagoModel.fromJson(c as Map<String, dynamic>))
@@ -231,6 +237,8 @@ class TransaccionesModel {
     estado: estado,
     observaciones: observaciones,
     audUsuario: audUsuario,
+    rutaVoucher: rutaVoucher,
+    tieneVoucher: tieneVoucher,
     cargos: cargos.map((c) => c.toEntity()).toList(),
   );
 
@@ -269,5 +277,7 @@ class TransaccionesModel {
         estado: entity.estado,
         observaciones: entity.observaciones,
         audUsuario: entity.audUsuario,
+        rutaVoucher: entity.rutaVoucher,
+        tieneVoucher: entity.tieneVoucher,
       );
 }

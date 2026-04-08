@@ -1,10 +1,18 @@
+
+import 'dart:typed_data';
+
+
+
 import 'package:bosque_flutter/core/state/consumo_tigo_provider.dart';
 import 'package:bosque_flutter/core/state/user_provider.dart';
 import 'package:bosque_flutter/core/utils/responsive_utils_bosque.dart';
+import 'package:bosque_flutter/core/utils/tablas_utils.dart';
 import 'package:bosque_flutter/domain/entities/tigo_ejecutado_entity.dart';
-import 'package:bosque_flutter/presentation/screens/facturas-tigo/ver_grupos.dart';
+import 'package:bosque_flutter/presentation/widgets/consumo_tigo/cambios_linea_tigo.dart';
+import 'package:bosque_flutter/presentation/widgets/consumo_tigo/chips_tigo.dart';
 import 'package:bosque_flutter/presentation/widgets/dependientes/confirm_dialogs.dart';
 import 'package:bosque_flutter/presentation/widgets/shared/permission_widget.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:printing/printing.dart';
@@ -14,339 +22,273 @@ class ResumenDetalladoScreen extends ConsumerStatefulWidget {
   const ResumenDetalladoScreen({super.key, required this.periodoCobrado});
 
   @override
-  ConsumerState<ResumenDetalladoScreen> createState() =>
-      _ResumenDetalladoScreenState();
+  ConsumerState<ResumenDetalladoScreen> createState() => _ResumenDetalladoScreenState();
 }
 
-class _ResumenDetalladoScreenState
-    extends ConsumerState<ResumenDetalladoScreen> {
-  final Map<String, bool> expandedMap = {};
-  String? _empresaSeleccionada;
-  bool mostrarTigoEjecutado = false;
-  final TextEditingController _searchController = TextEditingController();
-
-  final Map<int, bool> expandedArbolMap = {};
+class _ResumenDetalladoScreenState extends ConsumerState<ResumenDetalladoScreen> {
   final TextEditingController _buscadorController = TextEditingController();
-  String _buscadorTexto = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _buscadorController.clear(); 
+    // Verificamos si ya está ejecutado al entrar a la pantalla para setear el provider
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final facturas = ref.read(facturasTigoProvider).asData?.value ?? [];
+      final isEjecutado = facturas.any((f) => f.periodoCobrado == widget.periodoCobrado && f.estado?.toUpperCase() == 'EJECUTADO');
+      if (isEjecutado) {
+        ref.read(resumenDetalladoProvider(widget.periodoCobrado).notifier).setMostrarEjecutado(true);
+      }
+    });
+  }
 
   @override
   void dispose() {
-    _searchController.dispose();
+    _buscadorController.dispose();
     super.dispose();
   }
+
+  // ═══════════════════════════════════════════════════════════════════
+  // LÓGICA DE NAVEGACIÓN Y REPORTES
+  // ═══════════════════════════════════════════════════════════════════
+
+  void _navegarCambiosLinea() {
+    Navigator.of(context).push(MaterialPageRoute(
+      builder: (_) => CambiosLineaScreen(periodoCobrado: widget.periodoCobrado),
+    ));
+  }
+
+  void _navegarChipsTigo() {
+    Navigator.of(context).push(MaterialPageRoute(
+      builder: (_) => const ChipTigoScreen(),
+    ));
+  }
+
+List<_ReporteItem> get _reportes => [
+    _ReporteItem(
+      label: 'Reporte General', icon: Icons.picture_as_pdf, color: Colors.deepPurple,
+      permissionName: null, pdfName: 'RptConsumoTigo',
+      getFuture: () {
+        ref.invalidate(jasperPdfFacturasTigoProvider(widget.periodoCobrado));
+        return ref.read(jasperPdfFacturasTigoProvider(widget.periodoCobrado).future);
+      },
+    ),
+    _ReporteItem(
+      label: 'Líneas Corporativas', icon: Icons.description, color: Colors.teal.shade700,
+      permissionName: 'btnReporteCambiosTigo', pdfName: 'RptCambiosTigo',
+      getFuture: () {
+        ref.invalidate(rptCambiosTigo(widget.periodoCobrado));
+        return ref.read(rptCambiosTigo(widget.periodoCobrado).future);
+      },
+    ),
+    _ReporteItem(
+      label: 'Corporativos Personal', icon: Icons.people_outline, color: Colors.indigo,
+      permissionName: 'btnRptCorporativosPersonal', pdfName: 'RptCorporativosPersonal',
+      getFuture: () {
+        ref.invalidate(rptCorporativosPersonal(widget.periodoCobrado));
+        return ref.read(rptCorporativosPersonal(widget.periodoCobrado).future);
+      },
+    ),
+    _ReporteItem(
+      label: 'Comparación Empresas', icon: Icons.business_center_outlined, color: Colors.orange.shade800,
+      permissionName: 'btnRptComparacionEmpresas', pdfName: 'RptComparacionEmpresas',
+      getFuture: () {
+        ref.invalidate(rptComparacionEmpresas);
+        return ref.read(rptComparacionEmpresas.future);
+      },
+    ),
+    // TODO: reemplaza label, icon, color, permissionName, pdfName y getFuture
+    // _ReporteItem(
+    //   label: 'Reporte Pendiente', icon: Icons.insert_chart_outlined, color: Colors.blueGrey,
+    //   permissionName: 'btnRptPlantilla', pdfName: 'RptPlantilla',
+    //   getFuture: () => Future.error('Reporte en construcción'),
+    // ),
+  ];
+
+  // Método genérico único — reemplaza todos los _generarRptXxx()
+  Future<void> _abrirReporte(_ReporteItem item) async {
+    try {
+      final bytes = await item.getFuture();
+      await Printing.layoutPdf(onLayout: (_) async => bytes, name: item.pdfName);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('${item.label}: $e')),
+      );
+      }
+    }
+  }
+
+  // Helper: tile con PermissionWidget opcional
+  Widget _buildReporteTile(_ReporteItem item, {VoidCallback? beforeOpen}) {
+    final tile = _ReporteTile(
+      icon: item.icon, label: item.label, color: item.color,
+      onTap: () { beforeOpen?.call(); _abrirReporte(item); },
+    );
+    return item.permissionName == null
+        ? tile
+        : PermissionWidget(buttonName: item.permissionName!, child: tile);
+  }
+
+  // Mobile: BottomSheet
+  void _mostrarMenuReportesMobile() {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (_) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const SizedBox(height: 8),
+            Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey[300], borderRadius: BorderRadius.circular(2))),
+            const SizedBox(height: 12),
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 20, vertical: 4),
+              child: Row(children: [
+                Icon(Icons.assessment, color: Colors.deepPurple),
+                SizedBox(width: 10),
+                Text('Reportes', style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold)),
+              ]),
+            ),
+            const Divider(height: 1),
+            ..._reportes.map((item) => _buildReporteTile(item, beforeOpen: () => Navigator.pop(context))),
+            const SizedBox(height: 8),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ═══════════════════════════════════════════════════════════════════
+  // EJECUCIÓN DEL PERIODO (NUEVO PROVIDER)
+  // ═══════════════════════════════════════════════════════════════════
+
+  Future<void> _ejecutarProceso(ResumenDetalladoState state, ResumenDetalladoNotifier notifier) async {
+    final confirmar = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Confirmar ejecución'),
+        content: const Text('Una vez ejecutado no se podrá volver a ejecutar esta operación.\n¿Desea continuar?'),
+        actions: [
+          TextButton(onPressed: () => Navigator.of(ctx).pop(false), child: const Text('Cancelar')),
+          ElevatedButton(onPressed: () => Navigator.of(ctx).pop(true), child: const Text('Ejecutar')),
+        ],
+      ),
+    );
+
+    if (confirmar == true) {
+      // // 1. Validar que no haya números "SIN ASIGNAR"
+      // final dataList = state.mostrarEjecutado 
+      //     ? ref.read(obtenerTigoEjecutado((state.empresaFiltro, widget.periodoCobrado))).asData?.value ?? []
+      //     : ref.read(tigoArbolDetallado((state.empresaFiltro, widget.periodoCobrado))).asData?.value ?? [];
+
+      // final tieneSinAsignar = dataList.any((r) => r.nombreCompleto.toUpperCase() == 'SIN ASIGNAR');
+      // if (tieneSinAsignar) {
+      //   AppSnackbarCustom.showError(context, 'No se puede ejecutar: Hay números sin asignar.');
+      //   return;
+      // }
+      
+      // 2. Llamar al nuevo método unificado del provider
+      final audUsuario = await ref.read(userProvider.notifier).getCodUsuario();
+      await notifier.ejecutarPeriodo(widget.periodoCobrado, audUsuario);
+      ref.invalidate(facturasTigoProvider); // Para actualizar el estado global de facturas y reflejar el cambio en el botón ejecutar
+    }
+  }
+
+  // ═══════════════════════════════════════════════════════════════════
+  // BUILD PRINCIPAL
+  // ═══════════════════════════════════════════════════════════════════
 
   @override
   Widget build(BuildContext context) {
     final isMobile = ResponsiveUtilsBosque.isMobile(context);
 
-    final tigoEjecutadoAsync = ref.watch(
-      obtenerTigoEjecutado((null, widget.periodoCobrado)),
-    );
-    // Validar solo una vez al entrar
-    final ejecutadoEnProvider =
-        tigoEjecutadoAsync.asData?.value.any(
-          (r) =>
-              r.estado.toUpperCase() == 'EJECUTADO' ||
-              r.estado.toUpperCase() == 'CONSOLIDADO',
-        ) ??
-        false;
+    // NUEVO ESTADO GLOBAL DE LA PANTALLA
+    final state = ref.watch(resumenDetalladoProvider(widget.periodoCobrado));
+    final notifier = ref.read(resumenDetalladoProvider(widget.periodoCobrado).notifier);
 
-    if (ejecutadoEnProvider && !mostrarTigoEjecutado) {
-      setState(() {
-        mostrarTigoEjecutado = true;
-      });
-    }
-    final resumenDetalladoAsync = ref.watch(
-      tigoResumenDetallado(widget.periodoCobrado),
-    );
+    // Listener para mostrar Snackbars basados en el nuevo provider
+    ref.listen<ResumenDetalladoState>(resumenDetalladoProvider(widget.periodoCobrado), (previous, next) {
+      if (next.mensajeError != null) {
+        AppSnackbarCustom.showError(context, 'Error: ${next.mensajeError}');
+        notifier.limpiarMensajes();
+      }
+      if (next.mensajeExito != null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(next.mensajeExito!), backgroundColor: Colors.green),
+        );
+        notifier.limpiarMensajes();
+      }
+    });
+
+    // Peticiones de datos
+    final ejecutadoAsync = ref.watch(obtenerTigoEjecutado((state.empresaFiltro, widget.periodoCobrado)));
+    final previewAsync = ref.watch(tigoArbolDetallado((state.empresaFiltro, widget.periodoCobrado)));
+    final resumenDetalladoAsync = ref.watch(tigoResumenDetallado(widget.periodoCobrado));
+
+    // Variable que decide qué árbol renderizar según el estado
+    final asyncArbolData = state.mostrarEjecutado ? ejecutadoAsync : previewAsync;
+
+    // Validación del botón ejecutar a nivel global (Si facturas dice que ya está)
     final facturasAsync = ref.watch(facturasTigoProvider);
-
-    final mostrarDatosTigoEjecutado =
-        mostrarTigoEjecutado ||
-        (tigoEjecutadoAsync.asData?.value != null &&
-            tigoEjecutadoAsync.asData!.value.isNotEmpty);
-
-    final datos =
-        mostrarDatosTigoEjecutado ? tigoEjecutadoAsync : resumenDetalladoAsync;
-
-    final tigoEjecutadoEstadoEjecutado = tigoEjecutadoAsync.maybeWhen(
-      data:
-          (lista) => lista.any(
-            (r) =>
-                r.estado.toUpperCase() == 'EJECUTADO' ||
-                r.estado.toUpperCase() == 'CONSOLIDADO',
-          ),
+    final bool yaEjecutadoGlobal = facturasAsync.maybeWhen(
+      data: (facturas) => facturas.any((f) => f.periodoCobrado == widget.periodoCobrado && f.estado?.toUpperCase() == 'EJECUTADO'),
       orElse: () => false,
     );
 
-    final bool ejecutado = facturasAsync.maybeWhen(
-      data:
-          (facturas) => facturas.any(
-            (f) =>
-                f.periodoCobrado == widget.periodoCobrado &&
-                f.estado?.toUpperCase() == 'EJECUTADO',
-          ),
-      orElse: () => false,
-    );
-
+    // ═══════════════════════════════════════════════════════════════════
     // --- LAYOUT MOBILE ---
+    // ═══════════════════════════════════════════════════════════════════
     if (isMobile) {
       return Scaffold(
         backgroundColor: Colors.grey[100],
         appBar: AppBar(
-          title: const Text('Detalle de Facturas Tigo'),
+          title: const Text('Detalle de Facturas', style: TextStyle(fontSize: 18)),
           backgroundColor: Colors.blue[800],
           iconTheme: const IconThemeData(color: Colors.white),
           actions: [
             _buildRefreshButtonResumen(
               onRefresh: () {
-                ref.invalidate(
-                  tigoArbolDetallado((
-                    _empresaSeleccionada,
-                    widget.periodoCobrado,
-                  )),
-                );
+                ref.invalidate(tigoArbolDetallado((state.empresaFiltro, widget.periodoCobrado)));
                 ref.invalidate(tigoResumenDetallado(widget.periodoCobrado));
               },
             ),
           ],
         ),
-        bottomNavigationBar: BottomAppBar(
-          color: Colors.blue[50],
-          elevation: 8,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 2),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                IconButton(
-                  icon: const Icon(Icons.person_add, color: Colors.blueGrey),
-                  tooltip: 'Ver Grupos',
-                  onPressed: () {
-                    Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder:
-                            (_) => GruposTigoScreen(
-                              periodoCobrado: widget.periodoCobrado,
-                            ),
-                      ),
-                    );
-                  },
-                ),
-                IconButton(
-                  icon: const Icon(
-                    Icons.picture_as_pdf,
+        bottomNavigationBar: SafeArea(
+          child: Container(
+            padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 4, offset: Offset(0, -2))],
+            ),
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: [
+                  _ActionButton(icon: Icons.swap_horiz, label: 'Cambios', color: Colors.blueGrey[700]!, onPressed: _navegarCambiosLinea),
+                  const SizedBox(width: 8),
+                  _ActionButton(icon: Icons.sim_card_alert_outlined, label: 'Chips', color: Colors.orange[800]!, onPressed: _navegarChipsTigo),
+                  const SizedBox(width: 8),
+                  _ActionButton(
+                    icon: Icons.assessment,
+                    label: 'Reportes',
                     color: Colors.deepPurple,
+                    onPressed: _mostrarMenuReportesMobile,
                   ),
-                  tooltip: 'Generar Reporte',
-                  onPressed: () async {
-                    ref.invalidate(
-                      jasperPdfFacturasTigoProvider(widget.periodoCobrado),
-                    );
-                    try {
-                      final pdfBytes = await ref.read(
-                        jasperPdfFacturasTigoProvider(
-                          widget.periodoCobrado,
-                        ).future,
-                      );
-                      await Printing.layoutPdf(
-                        onLayout: (format) async => pdfBytes,
-                        name: 'RptConsumoTigo',
-                      );
-                    } catch (e) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text('No se pudo descargar el reporte PDF'),
-                        ),
-                      );
-                    }
-                  },
-                ),
-                PermissionWidget(
-                  buttonName:
-                      'btnReporteCambiosTigo', // ✅ NUEVO BOTÓN CON PERMISO
-                  child: IconButton(
-                    icon: const Icon(Icons.description, color: Colors.teal),
-                    tooltip: 'Reporte Líneas Corporativas',
-                    onPressed: () async {
-                      ref.invalidate(rptCambiosTigo(widget.periodoCobrado));
-                      try {
-                        final pdfBytes = await ref.read(
-                          rptCambiosTigo(widget.periodoCobrado).future,
-                        );
-                        await Printing.layoutPdf(
-                          onLayout: (format) async => pdfBytes,
-                          name: 'RptCambiosTigo',
-                        );
-                      } catch (e) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(
-                              'No se pudo descargar el reporte: $e',
-                            ),
-                          ),
-                        );
-                      }
-                    },
+                  const SizedBox(width: 8),
+                  PermissionWidget(
+                    buttonName: 'btnEjecutarTigo',
+                    child: _ActionButton(
+                      icon: state.ejecutando ? Icons.hourglass_empty : Icons.play_circle_fill,
+                      label: state.ejecutando ? 'PROCESANDO...' : 'EJECUTAR',
+                      color: yaEjecutadoGlobal || state.ejecutando ? Colors.grey : Colors.red[700]!,
+                      isPrimary: true,
+                      onPressed: yaEjecutadoGlobal || state.ejecutando ? null : () => _ejecutarProceso(state, notifier),
+                    ),
                   ),
-                ),
-
-                PermissionWidget(
-                  buttonName: 'btnEjecutarTigo',
-                  child: IconButton(
-                    icon: const Icon(Icons.play_arrow, color: Colors.red),
-                    tooltip: 'Ejecutar',
-                    onPressed:
-                        ejecutado
-                            ? null
-                            : () async {
-                              final confirmar = await showDialog<bool>(
-                                context: context,
-                                builder:
-                                    (ctx) => AlertDialog(
-                                      title: const Text('Confirmar ejecución'),
-                                      content: const Text(
-                                        'Una vez ejecutado no se podrá volver a ejecutar esta operación.\n¿Desea continuar?',
-                                      ),
-                                      actions: [
-                                        TextButton(
-                                          onPressed:
-                                              () =>
-                                                  Navigator.of(ctx).pop(false),
-                                          child: const Text('Cancelar'),
-                                        ),
-                                        ElevatedButton(
-                                          onPressed:
-                                              () => Navigator.of(ctx).pop(true),
-                                          child: const Text('Ejecutar'),
-                                        ),
-                                      ],
-                                    ),
-                              );
-
-                              if (confirmar == true) {
-                                final resumen =
-                                    ref
-                                        .read(
-                                          tigoArbolDetallado((
-                                            null,
-                                            widget.periodoCobrado,
-                                          )),
-                                        )
-                                        .asData
-                                        ?.value ??
-                                    [];
-                                final tieneSinAsignar = resumen.any(
-                                  (r) =>
-                                      (r.nombreCompleto.toUpperCase()) ==
-                                      'SIN ASIGNAR',
-                                );
-                                if (tieneSinAsignar) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                      content: Text(
-                                        'No se puede ejecutar: Hay números sin asignar.',
-                                      ),
-                                      backgroundColor: Colors.red,
-                                    ),
-                                  );
-                                  return;
-                                }
-                                try {
-                                  final result = await ref.read(
-                                    insertarAnticipoTigo(
-                                      widget.periodoCobrado,
-                                    ).future,
-                                  );
-                                  ref.invalidate(facturasTigoProvider);
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: Text(
-                                        result
-                                            ? 'Anticipos generados correctamente.'
-                                            : 'No se pudo generar anticipos.',
-                                      ),
-                                      backgroundColor:
-                                          result
-                                              ? Colors.green
-                                              : const Color.fromARGB(
-                                                255,
-                                                235,
-                                                78,
-                                                67,
-                                              ),
-                                    ),
-                                  );
-                                } catch (e) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: Text('Error al ejecutar: $e'),
-                                    ),
-                                  );
-                                }
-                              }
-                            },
-                  ),
-                ),
-                /*IconButton(
-              icon: const Icon(Icons.save_alt, color: Colors.lightBlue),
-              tooltip: 'Insertar Datos',
-              onPressed: tigoEjecutadoEstadoEjecutado
-                  ? null
-                  : () async {
-                      final confirmar = await showDialog<bool>(
-                        context: context,
-                        builder: (ctx) => AlertDialog(
-                          title: const Text('Insertar datos'),
-                          content: const Text('¿Desea insertar los datos de la tabla?'),
-                          actions: [
-                            TextButton(
-                              onPressed: () => Navigator.of(ctx).pop(false),
-                              child: const Text('Cancelar'),
-                            ),
-                            ElevatedButton(
-                              onPressed: () => Navigator.of(ctx).pop(true),
-                              child: const Text('Insertar'),
-                            ),
-                          ],
-                        ),
-                      );
-                      if (confirmar == true) {
-                        final resumen = ref.read(tigoArbolDetallado((null,widget.periodoCobrado))).asData?.value ?? [];
-                        final tieneSinAsignar = resumen.any((r) => (r.nombreCompleto.toUpperCase() ) == 'SIN ASIGNAR');
-                        if (tieneSinAsignar) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('No se puede insertar: Hay números sin asignar.'),
-                              backgroundColor: Colors.red,
-                            ),
-                          );
-                          return;
-                        }
-                        try {
-                          final audUsuario = await ref.read(userProvider.notifier).getCodUsuario();
-                          final result = await ref.read(ejecutarTigo((widget.periodoCobrado, audUsuario)).future);
-                          setState(() {
-                            mostrarTigoEjecutado = true;
-                          });
-                          ref.invalidate(obtenerTigoEjecutado((_empresaSeleccionada, widget.periodoCobrado)));
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(result
-                                  ? '¡Datos insertados correctamente!'
-                                  : 'No se pudo insertar los datos.'),
-                              backgroundColor: result ? Colors.green : Colors.red,
-                            ),
-                          );
-                        } catch (e) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text('Error al insertar: $e')),
-                          );
-                        }
-                      }
-                    },
-            ),*/
-              ],
+                ],
+              ),
             ),
           ),
         ),
@@ -355,94 +297,54 @@ class _ResumenDetalladoScreenState
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const SizedBox(height: 10),
-              // Filtro de empresa en una fila aparte
               resumenDetalladoAsync.when(
                 loading: () => const SizedBox(),
                 error: (err, _) => const SizedBox(),
                 data: (resumen) {
-                  final empresas =
-                      resumen
-                          .map((e) => e.empresa ?? '')
-                          .where((e) => e.isNotEmpty)
-                          .toSet()
-                          .toList()
-                        ..sort();
-                  return empresas.isEmpty
-                      ? const SizedBox()
-                      : _buildEmpresaFiltro(
-                        empresas,
-                        _empresaSeleccionada,
-                        (value) => setState(() => _empresaSeleccionada = value),
-                      );
+                  final empresas = resumen.map((e) => e.empresa ?? '').where((e) => e.isNotEmpty).toSet().toList()..sort();
+                  return empresas.isEmpty ? const SizedBox() : _buildEmpresaFiltro(empresas, state.empresaFiltro, (val) => notifier.setEmpresa(val));
                 },
               ),
               const SizedBox(height: 10),
-              // Estado del periodo
-              if (mostrarDatosTigoEjecutado)
+              TextField(
+                controller: _buscadorController,
+                decoration: InputDecoration(
+                  hintText: 'Buscar nombre, teléfono...',
+                  prefixIcon: const Icon(Icons.search),
+                  filled: true,
+                  fillColor: Colors.white,
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey[300]!)),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+                ),
+                onChanged: (val) => notifier.setBuscador(val),
+              ),
+              const SizedBox(height: 10),
+              if (state.mostrarEjecutado)
                 Builder(
                   builder: (_) {
-                    final lista = tigoEjecutadoAsync.asData?.value ?? [];
-                    final estado = lista.isNotEmpty ? lista.first.estado : null;
-                    return _buildEstadoPeriodo(estado);
+                    final lista = ejecutadoAsync.asData?.value ?? [];
+                    final estadoStr = lista.isNotEmpty ? lista.first.estado : null;
+                    return Padding(padding: const EdgeInsets.only(bottom: 8.0), child: _buildEstadoPeriodo(estadoStr));
                   },
                 ),
-              // Panel de periodo cobrado
               resumenDetalladoAsync.when(
                 loading: () => const SizedBox(),
                 error: (err, _) => const SizedBox(),
                 data: (resumen) {
                   if (resumen.isEmpty) return const SizedBox();
-                  final periodo = resumen.first.periodoCobrado;
-                  return _buildPeriodoCobradoPanel(periodo);
+                  return Padding(padding: const EdgeInsets.only(bottom: 12.0), child: _buildPeriodoCobradoPanel(resumen.first.periodoCobrado));
                 },
               ),
-              const SizedBox(height: 10),
-              // Tabla responsiva
               Expanded(
-                child: datos.when(
-                  loading:
-                      () => const Center(child: CircularProgressIndicator()),
-                  error:
-                      (err, _) => Center(
-                        child: Text(
-                          'Error al cargar datos: $err',
-                          style: const TextStyle(
-                            fontSize: 18,
-                            color: Colors.red,
-                          ),
-                        ),
-                      ),
-                  data: (resumen) {
-                    final resumenFiltrado =
-                        _empresaSeleccionada == null
-                            ? resumen
-                            : resumen
-                                .where((r) => r.empresa == _empresaSeleccionada)
-                                .toList();
-
-                    if (resumenFiltrado.isEmpty) {
-                      return const Center(
-                        child: Text(
-                          'No hay datos detallados.',
-                          style: TextStyle(fontSize: 18),
-                        ),
-                      );
-                    }
-
-                    // Agrupa por codEmpleado y nombreCompleto
-                    final grupos = <String, List<TigoEjecutadoEntity>>{};
-                    for (final r in resumenFiltrado) {
-                      final key = '${r.codEmpleado}_${r.nombreCompleto}';
-                      grupos.putIfAbsent(key, () => []).add(r);
-                    }
-
-                    return _buildResumenTableMobile(
-                      grupos,
-                      expandedMap,
-                      (key) => setState(
-                        () => expandedMap[key] = !(expandedMap[key] ?? false),
-                      ),
+                child: asyncArbolData.when(
+                  loading: () => const Center(child: CircularProgressIndicator()),
+                  error: (err, _) => Center(child: Text('Error al cargar datos: $err', style: const TextStyle(color: Colors.red))),
+                  data: (arbol) {
+                    final arbolFiltrado = filtrarArbolPorBuscador(arbol, state.buscadorTexto); // Empresa filtrada por provider
+                    if (arbolFiltrado.isEmpty) return const Center(child: Text('No hay datos detallados.'));
+                    return ListView.builder(
+                      itemCount: arbolFiltrado.length,
+                      itemBuilder: (context, index) => _buildMobileTreeNode(arbolFiltrado[index]),
                     );
                   },
                 ),
@@ -453,466 +355,113 @@ class _ResumenDetalladoScreenState
       );
     }
 
+    // ═══════════════════════════════════════════════════════════════════
     // --- LAYOUT DESKTOP/TABLET ---
+    // ═══════════════════════════════════════════════════════════════════
     return Scaffold(
       appBar: AppBar(
-        leading:
-            Navigator.of(context).canPop()
-                ? IconButton(
-                  icon: const Icon(Icons.arrow_back),
-                  onPressed: () => Navigator.of(context).maybePop(),
-                )
-                : null,
+        leading: Navigator.of(context).canPop() ? IconButton(icon: const Icon(Icons.arrow_back), onPressed: () => Navigator.of(context).maybePop()) : null,
         title: const Text('Detalle de Facturas Tigo'),
         backgroundColor: Colors.blue[800],
         iconTheme: const IconThemeData(color: Colors.white),
         actions: [
           _buildRefreshButtonResumen(
             onRefresh: () {
-              ref.invalidate(
-                tigoArbolDetallado((
-                  _empresaSeleccionada,
-                  widget.periodoCobrado,
-                )),
-              );
-              ref.invalidate(insertarAnticipoTigo(widget.periodoCobrado));
-              ref.invalidate(ejecutarTigo((widget.periodoCobrado, 0)));
+              ref.invalidate(tigoArbolDetallado((state.empresaFiltro, widget.periodoCobrado)));
+              ref.invalidate(obtenerTigoEjecutado((state.empresaFiltro, widget.periodoCobrado)));
             },
           ),
         ],
       ),
       body: Padding(
-        padding: const EdgeInsets.all(24.0),
-        child: Row(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Panel principal
-            Expanded(
-              child: Card(
-                elevation: 10,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(22),
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.all(28.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Header y filtro de empresa
-                      Row(
-                        children: [
-                          const Spacer(),
-                          resumenDetalladoAsync.when(
-                            loading: () => const SizedBox(),
-                            error: (err, _) => const SizedBox(),
-                            data: (resumen) {
-                              final empresas =
-                                  resumen
-                                      .map((e) => e.empresa ?? '')
-                                      .where((e) => e.isNotEmpty)
-                                      .toSet()
-                                      .toList()
-                                    ..sort();
-                              return empresas.isEmpty
-                                  ? const SizedBox()
-                                  : _buildEmpresaFiltro(
-                                    empresas,
-                                    _empresaSeleccionada,
-                                    (value) => setState(
-                                      () => _empresaSeleccionada = value,
-                                    ),
-                                  );
-                            },
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 18),
-                      // Estado del periodo
-                      if (mostrarDatosTigoEjecutado)
-                        Builder(
-                          builder: (_) {
-                            final lista =
-                                tigoEjecutadoAsync.asData?.value ?? [];
-                            final estado =
-                                lista.isNotEmpty ? lista.first.estado : null;
-                            return _buildEstadoPeriodo(estado);
-                          },
-                        ),
-                      // Panel de periodo cobrado
-                      resumenDetalladoAsync.when(
-                        loading: () => const SizedBox(),
-                        error: (err, _) => const SizedBox(),
-                        data: (resumen) {
-                          if (resumen.isEmpty) return const SizedBox();
-                          final periodo = resumen.first.periodoCobrado;
-                          return _buildPeriodoCobradoPanel(periodo);
+            Card(
+              elevation: 2,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                child: Row(
+                  children: [
+                    resumenDetalladoAsync.when(
+                      loading: () => const SizedBox(),
+                      error: (err, _) => const SizedBox(),
+                      data: (resumen) {
+                        if (resumen.isEmpty) return const SizedBox();
+                        return _buildPeriodoCobradoPanel(resumen.first.periodoCobrado);
+                      },
+                    ),
+                    const SizedBox(width: 20),
+                    if (state.mostrarEjecutado)
+                      Builder(
+                        builder: (_) {
+                          final lista = ejecutadoAsync.asData?.value ?? [];
+                          return _buildEstadoPeriodo(lista.isNotEmpty ? lista.first.estado : null);
                         },
                       ),
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: 12.0),
-                        child: TextField(
-                          controller: _buscadorController,
-                          decoration: InputDecoration(
-                            hintText: 'Buscar por nombre, teléfono o empresa',
-                            prefixIcon: const Icon(Icons.search),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 12,
-                            ),
-                          ),
-                          onChanged: (value) {
-                            setState(() {
-                              _buscadorTexto = value.trim().toLowerCase();
-                            });
-                          },
-                        ),
-                      ),
-                      // Tabla principal
-                      Expanded(
-                        child: Builder(
-                          builder: (context) {
-                            if (mostrarTigoEjecutado) {
-                              // Mostrar el árbol ejecutado
-                              final ejecutadoAsync = ref.watch(
-                                obtenerTigoEjecutado((
-                                  null,
-                                  widget.periodoCobrado,
-                                )),
-                              );
-
-                              return ejecutadoAsync.when(
-                                loading:
-                                    () => const Center(
-                                      child: CircularProgressIndicator(),
-                                    ),
-                                error:
-                                    (err, _) => Center(
-                                      child: Text(
-                                        'Error al cargar datos: $err',
-                                      ),
-                                    ),
-                                data: (arbol) {
-  // ✅ PASO 1: Filtrar por empresa
-  final arbolPorEmpresa = filtrarArbolPorEmpresa(
-    arbol,
-    _empresaSeleccionada,
-  );
-  
-  // ✅ PASO 2: Buscar recursivamente en TODO el árbol
-  final arbolFiltrado = filtrarArbolPorBuscador(
-    arbolPorEmpresa,
-    _buscadorTexto,
-  );
-
-  return _buildArbolTablaSimulada(arbolFiltrado);
-},
-                              );
-                            } else {
-                              // Mostrar el árbol normal
-                              final arbolDetalladoAsync = ref.watch(
-                                tigoArbolDetallado((
-                                  _empresaSeleccionada,
-                                  widget.periodoCobrado,
-                                )),
-                              );
-
-                              return arbolDetalladoAsync.when(
-                                loading:
-                                    () => const Center(
-                                      child: CircularProgressIndicator(),
-                                    ),
-                                error:
-                                    (err, _) => Center(
-                                      child: Text(
-                                        'Error al cargar datos: $err',
-                                      ),
-                                    ),
-                                data: (arbol) {
-  // ✅ PASO 1: Filtrar por empresa
-  final arbolPorEmpresa = filtrarArbolPorEmpresa(
-    arbol,
-    _empresaSeleccionada,
-  );
-  
-  // ✅ PASO 2: Buscar recursivamente en 
-  final arbolFiltrado = filtrarArbolPorBuscador(
-    arbolPorEmpresa,
-    _buscadorTexto,
-  );
-
-  return _buildArbolTablaTigoEjecutado(arbolFiltrado);
-},
-                              );
-                            }
-                          },
-                        ),
-                      ),
-                    ],
-                  ),
+                    const Spacer(),
+                    resumenDetalladoAsync.when(
+                      loading: () => const SizedBox(),
+                      error: (err, _) => const SizedBox(),
+                      data: (resumen) {
+                        final empresas = resumen.map((e) => e.empresa ?? '').where((e) => e.isNotEmpty).toSet().toList()..sort();
+                        return empresas.isEmpty ? const SizedBox() : _buildEmpresaFiltro(empresas, state.empresaFiltro, (val) => notifier.setEmpresa(val));
+                      },
+                    ),
+                  ],
                 ),
               ),
             ),
-            const SizedBox(width: 36),
-            // Panel de operaciones
-            Container(
-              width: 340,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(22),
-                gradient: LinearGradient(
-                  colors: [Colors.blue[50]!, Colors.white],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.blue.withValues(alpha: 0.13),
-                    blurRadius: 16,
-                    offset: const Offset(4, 8),
-                  ),
-                ],
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(24.0),
-                child: _buildOperacionesPanel(
-                  context: context,
-                  ref: ref,
-                  ejecutado: ejecutado,
-                  tigoEjecutadoEstadoEjecutado: tigoEjecutadoEstadoEjecutado,
-                  periodoCobrado: widget.periodoCobrado,
-                  onVerGrupos: () {
-                    Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder:
-                            (_) => GruposTigoScreen(
-                              periodoCobrado: widget.periodoCobrado,
-                            ),
-                      ),
-                    );
-                  },
-                  onGenerarReporte: () async {
-                    // Elimina o comenta la validación:
-                    // final resumen = ref.read(tigoResumenDetallado(widget.periodoCobrado)).asData?.value ?? [];
-                    // final tieneSinAsignar = resumen.any((r) => (r.nombreCompleto?.toUpperCase() ?? '') == 'SIN ASIGNAR');
-                    // if (tieneSinAsignar) {
-                    //   ScaffoldMessenger.of(context).showSnackBar(
-                    //     const SnackBar(
-                    //       content: Text('No se puede generar el reporte: Hay números SIN ASIGNAR.'),
-                    //       backgroundColor: Colors.red,
-                    //     ),
-                    //   );
-                    //   return;
-                    // }
-
-                    // Ahora siempre permite imprimir:
-                    ref.invalidate(
-                      jasperPdfFacturasTigoProvider(widget.periodoCobrado),
-                    );
-                    try {
-                      final pdfBytes = await ref.read(
-                        jasperPdfFacturasTigoProvider(
-                          widget.periodoCobrado,
-                        ).future,
-                      );
-                      await Printing.layoutPdf(
-                        onLayout: (format) async => pdfBytes,
-                        name: 'RptConsumoTigo',
-                      );
-                    } catch (e) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text('No se pudo descargar el reporte PDF'),
+            const SizedBox(height: 12),
+            
+            // NUEVA BARRA HORIZONTAL
+            _buildHorizontalActionsBar(state: state, yaEjecutadoGlobal: yaEjecutadoGlobal, notifier: notifier),
+            
+            const SizedBox(height: 12),
+            Expanded(
+              child: Card(
+                elevation: 4,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
+                child: Padding(
+                  padding: const EdgeInsets.all(20.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      TextField(
+                        controller: _buscadorController,
+                        decoration: InputDecoration(
+                          hintText: 'Buscar por nombre, teléfono o empresa...',
+                          prefixIcon: const Icon(Icons.search),
+                          filled: true,
+                          fillColor: Colors.grey[50],
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 16),
                         ),
-                      );
-                    }
-                  },
-                  onGenerarReporteCambios: () async {
-                    // ✅ NUEVO CALLBACK
-                    ref.invalidate(rptCambiosTigo(widget.periodoCobrado));
-                    try {
-                      final pdfBytes = await ref.read(
-                        rptCambiosTigo(widget.periodoCobrado).future,
-                      );
-                      await Printing.layoutPdf(
-                        onLayout: (format) async => pdfBytes,
-                        name: 'RptCambiosTigo',
-                      );
-                    } catch (e) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text('No se pudo descargar el reporte PDF'),
-                        ),
-                      );
-                    }
-                  },
-                  onEjecutar: () async {
-                    final confirmar = await showDialog<bool>(
-                      context: context,
-                      builder:
-                          (ctx) => AlertDialog(
-                            title: const Text('Confirmar ejecución'),
-                            content: const Text(
-                              'Una vez ejecutado no se podrá volver a ejecutar esta operación.\n¿Desea continuar?',
-                            ),
-                            actions: [
-                              TextButton(
-                                onPressed: () => Navigator.of(ctx).pop(false),
-                                child: const Text('Cancelar'),
-                              ),
-                              ElevatedButton(
-                                onPressed: () => Navigator.of(ctx).pop(true),
-                                child: const Text('Ejecutar'),
-                              ),
-                            ],
-                          ),
-                    );
-
-                    if (confirmar == true) {
-                      final resumen =
-                          ref
-                              .read(tigoResumenDetallado(widget.periodoCobrado))
-                              .asData
-                              ?.value ??
-                          [];
-                      final tieneSinAsignar = resumen.any(
-                        (r) =>
-                            (r.nombreCompleto.toUpperCase()) == 'SIN ASIGNAR',
-                      );
-                      if (tieneSinAsignar) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text(
-                              'No se puede ejecutar: Hay números sin asignar.',
-                            ),
-                            backgroundColor: Colors.red,
-                          ),
-                        );
-                        return;
-                      }
-                      try {
-                        // 1. Ejecutar anticipos
-                        final resultEjecutar = await ref.read(
-                          insertarAnticipoTigo(widget.periodoCobrado).future,
-                        );
-                        ref.invalidate(facturasTigoProvider);
-
-                        // 2. Insertar datos (solo si ejecutar fue exitoso)
-                        if (resultEjecutar) {
-                          final audUsuario =
-                              await ref
-                                  .read(userProvider.notifier)
-                                  .getCodUsuario();
-                          final resultInsertar = await ref.read(
-                            ejecutarTigo((
-                              widget.periodoCobrado,
-                              audUsuario,
-                            )).future,
-                          );
-                          setState(() {
-                            mostrarTigoEjecutado = true;
-                          });
-                          ref.invalidate(
-                            obtenerTigoEjecutado((
-                              _empresaSeleccionada,
-                              widget.periodoCobrado,
-                            )),
-                          );
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(
-                                resultInsertar
-                                    ? '¡Anticipos y datos insertados correctamente!'
-                                    : 'Anticipos ejecutados, pero no se pudo insertar los datos.',
-                              ),
-                              backgroundColor:
-                                  resultInsertar ? Colors.green : Colors.red,
-                            ),
-                          );
-                        } else {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('No se pudo ejecutar anticipos.'),
-                              backgroundColor: Colors.red,
-                            ),
-                          );
-                        }
-                      } catch (e) {
-                        // 🚨 CAMBIO REQUERIDO: Manejar la excepción limpia y mostrar el SnackBar rojo
-
-                        // 1. Limpiamos el prefijo 'Exception: ' si existe
-                        String mensajeError =
-                            e.toString().contains('Exception: ')
-                                ? e.toString().replaceFirst('Exception: ', '')
-                                : e.toString();
-
-                        // 2. Mostramos el mensaje limpio en un SnackBar rojo
-                        /* ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                    content: Text('Error al ejecutar: $mensajeError'), // Muestra el mensaje exacto del SP
-                    backgroundColor: Colors.red,
-                    duration: const Duration(seconds: 8), // Lo hacemos visible más tiempo
-                ),
-            );*/
-                        AppSnackbarCustom.showError(
-                          context,
-                          'Error al ejecutar: $mensajeError',
-                        );
-                      }
-                    }
-                  },
-                  /*onInsertarDatos: () async {
-                final confirmar = await showDialog<bool>(
-                  context: context,
-                  builder: (ctx) => AlertDialog(
-                    title: const Text('Insertar datos'),
-                    content: const Text('¿Desea insertar los datos de la tabla?'),
-                    actions: [
-                      TextButton(
-                        onPressed: () => Navigator.of(ctx).pop(false),
-                        child: const Text('Cancelar'),
+                        onChanged: (val) => notifier.setBuscador(val),
                       ),
-                      ElevatedButton(
-                        onPressed: () => Navigator.of(ctx).pop(true),
-                        child: const Text('Insertar'),
+                      const SizedBox(height: 16),
+                      
+                      Expanded(
+                        child: asyncArbolData.when(
+                          loading: () => const Center(child: CircularProgressIndicator()),
+                          error: (err, _) => Center(child: Text('Error al cargar datos: $err')),
+                          data: (arbol) {
+                            final arbolFiltrado = filtrarArbolPorBuscador(arbol, state.buscadorTexto); // Empresa filtrada por provider
+
+                            return BosqueTreeTable<TigoEjecutadoEntity>(
+                              items: arbolFiltrado,
+                              idMapper: (e) => e.codEmpleado.toString(),
+                              childrenMapper: (e) => e.items,
+                              rowDecorationBuilder: _getTreeDecoration,
+                              columns: _getDesktopColumns(mostrarEstado: state.mostrarEjecutado), // Renderizado dinámico
+                            );
+                          },
+                        ),
                       ),
                     ],
                   ),
-                );
-                if (confirmar == true) {
-                  final resumen = ref.read(tigoResumenDetallado(widget.periodoCobrado)).asData?.value ?? [];
-                  final tieneSinAsignar = resumen.any((r) => (r.nombreCompleto?.toUpperCase() ?? '') == 'SIN ASIGNAR');
-                  if (tieneSinAsignar) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('No se puede insertar: Hay números sin asignar.'),
-                        backgroundColor: Colors.red,
-                      ),
-                    );
-                    return;
-                  }
-                  try {
-                    final audUsuario = await ref.read(userProvider.notifier).getCodUsuario();
-                    final result = await ref.read(ejecutarTigo((widget.periodoCobrado, audUsuario)).future);
-                    setState(() {
-                      mostrarTigoEjecutado = true;
-                    });
-                    ref.invalidate(obtenerTigoEjecutado(widget.periodoCobrado));
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(result
-                            ? '¡Datos insertados correctamente!'
-                            : 'No se pudo insertar los datos.'),
-                        backgroundColor: result ? Colors.green : Colors.red,
-                      ),
-                    );
-                  } catch (e) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('Error al insertar: $e')),
-                    );
-                  }
-                }
-              },*/
                 ),
               ),
             ),
@@ -921,13 +470,133 @@ class _ResumenDetalladoScreenState
       ),
     );
   }
-  // Dentro de _ResumenDetalladoScreenState
 
-  Widget _buildEmpresaFiltro(
-    List<String> empresas,
-    String? empresaSeleccionada,
-    ValueChanged<String?> onChanged,
-  ) {
+  // ═══════════════════════════════════════════════════════════════════
+  // WIDGETS AUXILIARES COMUNES Y LÓGICA DE FILTRADO
+  // ═══════════════════════════════════════════════════════════════════
+
+  BoxDecoration _getTreeDecoration(TigoEjecutadoEntity e, int index, int nivel) {
+    final esSinAsignar = e.nombreCompleto.trim().toUpperCase() == 'SIN ASIGNAR';
+    final isChild = nivel > 0;
+    return BoxDecoration(
+      color: esSinAsignar ? Colors.red[100] : isChild ? Colors.blue[50] : (index % 2 == 0 ? Colors.white : Colors.grey[200]),
+      border: Border(
+        left: (isChild && !esSinAsignar) ? BorderSide(color: Colors.blue[300]!, width: 4) : BorderSide.none,
+        bottom: const BorderSide(color: Colors.grey, width: 0.5),
+      ),
+    );
+  }
+
+  List<BosqueTreeColumn<TigoEjecutadoEntity>> _getDesktopColumns({required bool mostrarEstado}) {
+    return [
+      BosqueTreeColumn(
+        label: 'TELÉFONO', flex: 2,
+        cellBuilder: (e, nivel) => Text(e.corporativo ?? '', style: TextStyle(color: e.nombreCompleto.trim().toUpperCase() == 'SIN ASIGNAR' ? Colors.red[700] : null)),
+      ),
+      BosqueTreeColumn(
+        label: 'NOMBRE', flex: 4,
+        cellBuilder: (e, nivel) {
+          final nombre = e.nombreCompleto.startsWith('ZZZ') ? e.nombreCompleto.replaceFirst(RegExp(r'^ZZZ\s*'), '').trim() : e.nombreCompleto;
+          final esSin = e.nombreCompleto.trim().toUpperCase() == 'SIN ASIGNAR';
+          return Row(
+            children: [
+              if (esSin) const Icon(Icons.warning, color: Colors.red, size: 16),
+              if (esSin) const SizedBox(width: 4),
+              Expanded(child: Text(nombre, style: TextStyle(fontWeight: nivel == 0 ? FontWeight.bold : FontWeight.normal, color: esSin ? Colors.red[700] : Colors.black))),
+            ],
+          );
+        },
+      ),
+      BosqueTreeColumn(
+        label: 'DESCRIPCIÓN', flex: 3,
+        cellBuilder: (e, nivel) => Text(e.descripcion, style: TextStyle(fontWeight: nivel == 0 ? FontWeight.bold : FontWeight.normal, color: e.nombreCompleto.trim().toUpperCase() == 'SIN ASIGNAR' ? Colors.red[700] : Colors.black)),
+      ),
+      BosqueTreeColumn(
+        label: 'EMPRESA', flex: 2,
+        cellBuilder: (e, nivel) => Text(e.empresa ?? '', style: TextStyle(color: e.nombreCompleto.trim().toUpperCase() == 'SIN ASIGNAR' ? Colors.red[700] : Colors.black)),
+      ),
+      if (mostrarEstado)
+        BosqueTreeColumn(
+          label: 'ESTADO', flex: 2,
+          cellBuilder: (e, nivel) => Text(e.estado, style: TextStyle(color: e.nombreCompleto.trim().toUpperCase() == 'SIN ASIGNAR' ? Colors.red[700] : Colors.black)),
+        ),
+      BosqueTreeColumn(
+        label: 'TOTAL', flex: 2, alignment: Alignment.centerRight,
+        cellBuilder: (e, nivel) => Text(e.totalCobradoXCuenta.toStringAsFixed(2), style: TextStyle(color: e.nombreCompleto.trim().toUpperCase() == 'SIN ASIGNAR' ? Colors.red[700] : Colors.black)),
+      ),
+      BosqueTreeColumn(
+        label: 'EMPRESA', flex: 2, alignment: Alignment.centerRight,
+        cellBuilder: (e, nivel) => Text(e.montoCubiertoXEmpresa.toStringAsFixed(2), style: TextStyle(color: e.nombreCompleto.trim().toUpperCase() == 'SIN ASIGNAR' ? Colors.red[700] : Colors.black)),
+      ),
+      BosqueTreeColumn(
+        label: 'EMPLEADO', flex: 2, alignment: Alignment.centerRight,
+        cellBuilder: (e, nivel) => Text(e.montoEmpleado.toStringAsFixed(2), style: TextStyle(color: e.nombreCompleto.trim().toUpperCase() == 'SIN ASIGNAR' ? Colors.red[700] : Colors.black)),
+      ),
+    ];
+  }
+
+  Widget _buildMobileTreeNode(TigoEjecutadoEntity nodo, {int nivel = 0}) {
+    final esSinAsignar = nodo.nombreCompleto.trim().toUpperCase() == 'SIN ASIGNAR';
+    final isTotal = nodo.nombreCompleto.trim().startsWith('ZZZ TOTAL');
+    final nombre = nodo.nombreCompleto.replaceFirst(RegExp(r'^ZZZ\s*'), '').trim();
+
+    if (nodo.items.isEmpty) {
+      return Container(
+        margin: EdgeInsets.only(left: nivel > 0 ? 16.0 : 0.0, top: 4, bottom: 4),
+        decoration: BoxDecoration(
+          color: esSinAsignar ? Colors.red[50] : Colors.white,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: esSinAsignar ? Colors.red[200]! : Colors.grey[300]!),
+          boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 2, offset: Offset(0, 1))],
+        ),
+        child: ListTile(
+          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+          dense: true,
+          title: Text(nombre, style: TextStyle(color: esSinAsignar ? Colors.red[800] : Colors.black87, fontWeight: FontWeight.bold, fontSize: 14)),
+          subtitle: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (nodo.corporativo != null && nodo.corporativo!.isNotEmpty) Text('Cel: ${nodo.corporativo}', style: const TextStyle(fontSize: 13)),
+              Text('Desc: ${nodo.descripcion}', style: const TextStyle(fontSize: 13)),
+              const SizedBox(height: 6),
+              Text(
+                'Tot: Bs ${nodo.totalCobradoXCuenta.toStringAsFixed(2)}  |  Emp: Bs ${nodo.montoCubiertoXEmpresa.toStringAsFixed(2)}',
+                style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 12, color: Colors.indigo),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    return Card(
+      margin: EdgeInsets.only(left: nivel > 0 ? 16.0 : 0.0, top: 4, bottom: 4),
+      elevation: nivel == 0 ? 2 : 0,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+      color: esSinAsignar ? Colors.red[100] : (isTotal ? Colors.blue[100] : Colors.blue[50]),
+      child: Theme(
+        data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+        child: ExpansionTile(
+          initiallyExpanded: false,
+          tilePadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 0),
+          title: Row(
+            children: [
+              if (esSinAsignar) const Icon(Icons.warning, color: Colors.red, size: 18),
+              if (esSinAsignar) const SizedBox(width: 6),
+              Expanded(child: Text(nombre, style: TextStyle(color: esSinAsignar ? Colors.red[900] : Colors.black, fontWeight: FontWeight.bold, fontSize: 15))),
+            ],
+          ),
+          subtitle: Text(
+            '${nodo.corporativo ?? ''} | Tot: Bs ${nodo.totalCobradoXCuenta.toStringAsFixed(2)}',
+            style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: Colors.grey[800]),
+          ),
+          children: nodo.items.map((hijo) => _buildMobileTreeNode(hijo, nivel: nivel + 1)).toList(),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildEmpresaFiltro(List<String> empresas, String? empresaSeleccionada, ValueChanged<String?> onChanged) {
     return SizedBox(
       width: 220,
       child: DropdownButtonFormField<String>(
@@ -939,49 +608,25 @@ class _ResumenDetalladoScreenState
           contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         ),
         items: [
-          const DropdownMenuItem(
-            value: null,
-            child: Text('Todas las empresas'),
-          ),
-          ...empresas.map(
-            (empresa) => DropdownMenuItem(value: empresa, child: Text(empresa)),
-          ),
+          const DropdownMenuItem(value: null, child: Text('Todas las empresas')),
+          ...empresas.map((empresa) => DropdownMenuItem(value: empresa, child: Text(empresa))),
         ],
         onChanged: onChanged,
       ),
     );
   }
 
-  //widgets
   Widget _buildPeriodoCobradoPanel(String periodo) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 18),
       padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 22),
-      decoration: BoxDecoration(
-        color: Colors.blue[100],
-        borderRadius: BorderRadius.circular(12),
-      ),
+      decoration: BoxDecoration(color: Colors.blue[100], borderRadius: BorderRadius.circular(12)),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           const Icon(Icons.calendar_month, color: Colors.blue),
           const SizedBox(width: 10),
-          Text(
-            'Período cobrado: ',
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
-              color: Colors.blue[900],
-              fontSize: 16,
-            ),
-          ),
-          Text(
-            periodo,
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
-              color: Colors.blue[800],
-              fontSize: 16,
-            ),
-          ),
+          Text('Período cobrado: ', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.blue[900], fontSize: 16)),
+          Text(periodo, style: TextStyle(fontWeight: FontWeight.bold, color: Colors.blue[800], fontSize: 16)),
         ],
       ),
     );
@@ -989,844 +634,151 @@ class _ResumenDetalladoScreenState
 
   Widget _buildEstadoPeriodo(String? estado) {
     if (estado == null) return const SizedBox();
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8.0),
-      child: Row(
-        children: [
-          const Icon(Icons.info, color: Colors.blue),
-          const SizedBox(width: 8),
-          Text(
-            'Estado del periodo: $estado',
-            style: TextStyle(
-              color:
-                  estado.toUpperCase() == 'EJECUTADO'
-                      ? Colors.green
-                      : Colors.blue[800],
-              fontWeight: FontWeight.bold,
-              fontSize: 16,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildMensajeEjecutado() {
-    return Padding(
-      padding: const EdgeInsets.only(top: 8.0),
-      child: Text(
-        'Este periodo ya fue ejecutado.',
-        style: TextStyle(color: Colors.red[700], fontWeight: FontWeight.bold),
-      ),
-    );
-  }
-
-  Widget _buildOperacionesPanel({
-    required BuildContext context,
-    required WidgetRef ref,
-    required bool ejecutado,
-    required bool tigoEjecutadoEstadoEjecutado,
-    required String periodoCobrado,
-    required VoidCallback onVerGrupos,
-    required VoidCallback onGenerarReporte,
-    required VoidCallback onGenerarReporteCambios, // ✅ NUEVO PARÁMETRO
-    required VoidCallback onEjecutar,
-  }) {
-    return Column(
+    return Row(
       children: [
-        const SizedBox(height: 18),
-        ElevatedButton.icon(
-          icon: const Icon(Icons.person_add),
-          label: const Text('Ver Grupos'),
-          style: ElevatedButton.styleFrom(
-            minimumSize: const Size.fromHeight(48),
-            backgroundColor: Colors.blueGrey[100],
-            foregroundColor: Colors.black,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-          ),
-          onPressed: onVerGrupos,
-        ),
-        const SizedBox(height: 18),
-        ElevatedButton.icon(
-          icon: const Icon(Icons.picture_as_pdf),
-          label: const Text('Generar Reporte'),
-          style: ElevatedButton.styleFrom(
-            minimumSize: const Size.fromHeight(48),
-            backgroundColor: Colors.deepPurpleAccent,
-            foregroundColor: Colors.white,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-          ),
-          onPressed: onGenerarReporte,
-        ),
-        const SizedBox(height: 18),
-        PermissionWidget(
-          buttonName: 'btnReporteCambiosTigo', // ✅ NUEVO BOTÓN CON PERMISO
-          child: ElevatedButton.icon(
-            icon: const Icon(Icons.description),
-            label: const Text('Reporte Líneas Corporativas'),
-            style: ElevatedButton.styleFrom(
-              minimumSize: const Size.fromHeight(48),
-              backgroundColor: Colors.tealAccent[700],
-              foregroundColor: Colors.black,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-            ),
-            onPressed: onGenerarReporteCambios,
-          ),
-        ),
-        const SizedBox(height: 18),
-        PermissionWidget(
-          buttonName:
-              'btnEjecutarTigo', // <-- USA EL NOMBRE DEL PERMISO CORRECTO
-          child: ElevatedButton.icon(
-            icon: const Icon(Icons.play_arrow),
-            label: const Text('EJECUTAR'),
-            style: ElevatedButton.styleFrom(
-              minimumSize: const Size.fromHeight(48),
-              backgroundColor: ejecutado ? Colors.grey : Colors.red[100],
-              foregroundColor: Colors.black,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-            ),
-            onPressed: ejecutado ? null : onEjecutar,
-          ),
-        ),
-        if (ejecutado) _buildMensajeEjecutado(),
+        const Icon(Icons.info, color: Colors.blue),
+        const SizedBox(width: 8),
+        Text('Estado del periodo: $estado', style: TextStyle(color: estado.toUpperCase() == 'EJECUTADO' ? Colors.green : Colors.blue[800], fontWeight: FontWeight.bold, fontSize: 16)),
       ],
     );
   }
 
-  //dise;o movil
-  Widget _buildResumenTableMobile(
-    Map<String, List<TigoEjecutadoEntity>> grupos,
-    Map<String, bool> expandedMap,
-    void Function(String key) onExpand,
-  ) {
-    return Expanded(
-      child: Scrollbar(
-        thumbVisibility: true,
-        child: SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(minWidth: 900),
-            child: SingleChildScrollView(
-              scrollDirection: Axis.vertical,
-              child: DataTable(
-                headingRowColor: WidgetStateProperty.all(Colors.blue[100]),
-                dataRowColor: WidgetStateProperty.all(Colors.white),
-                columnSpacing: 18,
-                columns: const [
-                  DataColumn(label: SizedBox(width: 24)), // Expander
-                  DataColumn(
-                    label: Text(
-                      'TELÉFONO',
-                      style: TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                  ),
-                  DataColumn(
-                    label: Text(
-                      'NOMBRE COMPLETO',
-                      style: TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                  ),
-                  DataColumn(
-                    label: Text(
-                      'DESCRIPCIÓN',
-                      style: TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                  ),
-                  DataColumn(
-                    label: Text(
-                      'EMPRESA',
-                      style: TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                  ),
-                  DataColumn(
-                    label: Text(
-                      'TOTAL COBRADO',
-                      style: TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                  ),
-                  DataColumn(
-                    label: Text(
-                      'MONTO EMPRESA',
-                      style: TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                  ),
-                  DataColumn(
-                    label: Text(
-                      'MONTO EMPLEADO',
-                      style: TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                  ),
-                ],
-                rows:
-                    grupos.entries.expand((entry) {
-                      final key = entry.key;
-                      final grupo = entry.value;
-                      final principal = grupo.firstWhere(
-                        //(r) => r.descripcion == null || r.descripcion == r.nombreCompleto,
-                        (r) => r.descripcion == r.nombreCompleto,
-                        orElse: () => grupo.first,
-                      );
-                      final detalles =
-                          grupo.where((r) => r != principal).toList();
-                      final isExpanded = expandedMap[key] ?? false;
-                      final esSinAsignar =
-                          (principal.nombreCompleto).toUpperCase() ==
-                          'SIN ASIGNAR';
+  Widget _buildHorizontalActionsBar({required ResumenDetalladoState state, required bool yaEjecutadoGlobal, required ResumenDetalladoNotifier notifier}) {
+    return Wrap(
+      spacing: 12, runSpacing: 12,
+      crossAxisAlignment: WrapCrossAlignment.center,
+      children: [
+        _ActionButton(icon: Icons.swap_horiz, label: 'Cambios de Línea', color: Colors.blueGrey[700]!, onPressed: _navegarCambiosLinea),
+        PermissionWidget(
+          buttonName: 'btnVistaChipsTigo',
+          child: _ActionButton(icon: Icons.sim_card_alert_outlined, label: 'Chips Tigo', color: Colors.orange[800]!, onPressed: _navegarChipsTigo),
+        ),
+        Container(width: 1, height: 30, color: Colors.grey[300]),
 
-                      List<DataRow> rows = [
-                        DataRow(
-                          color:
-                              esSinAsignar
-                                  ? WidgetStateProperty.all(Colors.red[50])
-                                  : WidgetStateProperty.all(Colors.blue[50]),
-                          cells: [
-                            DataCell(
-                              detalles.isNotEmpty
-                                  ? IconButton(
-                                    icon: Icon(
-                                      isExpanded
-                                          ? Icons.expand_less
-                                          : Icons.expand_more,
-                                      color: Colors.blue,
-                                    ),
-                                    onPressed: () => onExpand(key),
-                                  )
-                                  : const SizedBox(width: 24),
-                            ),
-                            DataCell(
-                              Text(
-                                principal.corporativo.toString(),
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                            ),
-                            DataCell(
-                              Row(
-                                children: [
-                                  if (esSinAsignar)
-                                    const Icon(
-                                      Icons.warning,
-                                      color: Colors.red,
-                                      size: 18,
-                                    ),
-                                  Flexible(
-                                    child: Text(
-                                      principal.nombreCompleto,
-                                      style: TextStyle(
-                                        color:
-                                            esSinAsignar
-                                                ? Colors.red
-                                                : Colors.black,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            DataCell(
-                              Text(
-                                principal.descripcion,
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                            ),
-                            DataCell(
-                              Text(
-                                principal.empresa ?? '',
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                            ),
-                            DataCell(
-                              Text(
-                                principal.totalCobradoXCuenta.toStringAsFixed(
-                                  2,
-                                ),
-                                style: const TextStyle(color: Colors.green),
-                              ),
-                            ),
-                            DataCell(
-                              Text(
-                                principal.montoCubiertoXEmpresa.toStringAsFixed(
-                                  2,
-                                ),
-                                style: const TextStyle(
-                                  color: Colors.deepPurple,
-                                ),
-                              ),
-                            ),
-                            DataCell(
-                              Text(
-                                principal.montoEmpleado.toStringAsFixed(2),
-                                style: const TextStyle(color: Colors.indigo),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ];
-
-                      if (isExpanded) {
-                        rows.addAll(
-                          detalles.map((detalle) {
-                            return DataRow(
-                              color: MaterialStateProperty.all(
-                                const Color(0xFFFFF3E0),
-                              ), // naranja claro
-                              cells: [
-                                const DataCell(SizedBox(width: 24)),
-                                DataCell(
-                                  Padding(
-                                    padding: const EdgeInsets.only(left: 12.0),
-                                    child: Text(
-                                      detalle.corporativo?.toString() ?? '',
-                                      style: const TextStyle(fontSize: 13),
-                                    ),
-                                  ),
-                                ),
-                                const DataCell(
-                                  Text('', style: TextStyle(fontSize: 13)),
-                                ),
-                                DataCell(
-                                  Text(
-                                    detalle.descripcion,
-                                    style: const TextStyle(fontSize: 13),
-                                  ),
-                                ),
-                                DataCell(
-                                  Text(
-                                    detalle.empresa ?? '',
-                                    style: const TextStyle(fontSize: 13),
-                                  ),
-                                ),
-                                DataCell(
-                                  Text(
-                                    detalle.totalCobradoXCuenta.toStringAsFixed(
-                                      2,
-                                    ),
-                                    style: const TextStyle(
-                                      fontSize: 13,
-                                      color: Colors.green,
-                                    ),
-                                  ),
-                                ),
-                                DataCell(
-                                  Text(
-                                    detalle.montoCubiertoXEmpresa
-                                        .toStringAsFixed(2),
-                                    style: const TextStyle(
-                                      fontSize: 13,
-                                      color: Colors.deepPurple,
-                                    ),
-                                  ),
-                                ),
-                                DataCell(
-                                  Text(
-                                    detalle.montoEmpleado.toStringAsFixed(2),
-                                    style: const TextStyle(
-                                      fontSize: 13,
-                                      color: Colors.indigo,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            );
-                          }),
-                        );
-                      }
-
-                      return rows;
-                    }).toList(),
-              ),
-            ),
+        // ── Dropdown de reportes (desktop/web) ──
+        MenuAnchor(
+          menuChildren: _reportes.map((item) => _buildReporteTile(item)).toList(),
+          builder: (ctx, controller, _) => _ActionButton(
+            icon: Icons.assessment,
+            label: 'Reportes',
+            color: Colors.deepPurple,
+            onPressed: () => controller.isOpen ? controller.close() : controller.open(),
           ),
         ),
-      ),
+
+        Container(width: 1, height: 30, color: Colors.grey[300]),
+        PermissionWidget(
+          buttonName: 'btnEjecutarTigo',
+          child: _ActionButton(
+            icon: state.ejecutando ? Icons.hourglass_empty : Icons.play_circle_fill,
+            label: state.ejecutando ? 'PROCESANDO...' : 'EJECUTAR',
+            color: yaEjecutadoGlobal || state.ejecutando ? Colors.grey : Colors.red[700]!,
+            isPrimary: true,
+            onPressed: yaEjecutadoGlobal || state.ejecutando ? null : () => _ejecutarProceso(state, notifier),
+          ),
+        ),
+        if (yaEjecutadoGlobal || state.mostrarEjecutado)
+          Padding(padding: const EdgeInsets.only(left: 12.0), child: Text('Este periodo ya fue ejecutado.', style: TextStyle(color: Colors.red[700], fontWeight: FontWeight.bold))),
+      ],
     );
   }
 
-  /*Widget _buildBuscadorResumen({
-  required TextEditingController controller,
-  required ValueChanged<String> onChanged,
-}) {
-  return Padding(
-    padding: const EdgeInsets.symmetric(vertical: 8.0),
-    child: TextField(
-      controller: controller,
-      decoration: InputDecoration(
-        hintText: 'Buscar por nombre, teléfono o empresa',
-        prefixIcon: const Icon(Icons.search),
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 12),
-      ),
-      onChanged: onChanged,
-    ),
-  );
-}*/
-  Widget _buildRefreshButtonResumen({
-    required VoidCallback onRefresh,
-    String tooltip = 'Refrescar datos',
-  }) {
+  Widget _buildRefreshButtonResumen({required VoidCallback onRefresh, String tooltip = 'Refrescar datos'}) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 8.0),
-      child: IconButton(
-        icon: const Icon(Icons.refresh, color: Colors.white, size: 28),
-        tooltip: tooltip,
-        onPressed: onRefresh,
-      ),
+      child: IconButton(icon: const Icon(Icons.refresh, color: Colors.white, size: 28), tooltip: tooltip, onPressed: onRefresh),
     );
   }
 
-  // Encabezado y tabla
-  Widget _buildArbolTablaSimulada(List<TigoEjecutadoEntity> arbol) {
-    return Column(
-      children: [
-        Container(
-          decoration: BoxDecoration(
-            color: Colors.blue[800],
-            border: const Border(
-              bottom: BorderSide(color: Colors.blueGrey, width: 1),
-            ),
-          ),
-          child: Row(
-            children: const [
-              SizedBox(width: 40),
-              _TablaCell('TELÉFONO', isHeader: true),
-              _TablaCell('NOMBRE', isHeader: true),
-              _TablaCell('DESCRIPCIÓN', isHeader: true),
-              _TablaCell('EMPRESA', isHeader: true),
-              _TablaCell('TOTAL', isHeader: true),
-              _TablaCell('EMPRESA', isHeader: true),
-              _TablaCell('EMPLEADO', isHeader: true),
-            ],
-          ),
-        ),
-        Expanded(child: ListView(children: _buildArbolTablaRows(arbol, 0))),
-      ],
-    );
-  }
-
-  List<Widget> _buildArbolTablaRows(
-    List<TigoEjecutadoEntity> lista,
-    int nivel,
-  ) {
-    List<Widget> rows = [];
-    for (int i = 0; i < lista.length; i++) {
-      final e = lista[i];
-      final tieneHijos = e.items.isNotEmpty;
-      final isExpanded = expandedArbolMap[e.codEmpleado] ?? false;
-      final isChild = nivel > 0;
-      final esSinAsignar =
-          (e.nombreCompleto.trim().toUpperCase() == 'SIN ASIGNAR');
-
-      rows.add(
-        MouseRegion(
-          cursor: SystemMouseCursors.click,
-          child: Container(
-            decoration: BoxDecoration(
-              color:
-                  esSinAsignar
-                      ? Colors.red[100]
-                      : isChild
-                      ? Colors.blue[50]
-                      : (i % 2 == 0 ? Colors.white : Colors.grey[200]),
-              border: Border(
-                left:
-                    isChild && !esSinAsignar
-                        ? BorderSide(color: Colors.blue[300]!, width: 4)
-                        : BorderSide.none,
-                bottom: const BorderSide(color: Colors.grey, width: 0.5),
-              ),
-            ),
-            child: Row(
-              children: [
-                SizedBox(
-                  width: 40,
-                  child:
-                      tieneHijos
-                          ? IconButton(
-                            icon: Icon(
-                              isExpanded
-                                  ? Icons.expand_less
-                                  : Icons.expand_more,
-                              color:
-                                  esSinAsignar ? Colors.red : Colors.blue[800],
-                            ),
-                            onPressed: () {
-                              setState(() {
-                                expandedArbolMap[e.codEmpleado] = !isExpanded;
-                              });
-                            },
-                          )
-                          : null,
-                ),
-                _TablaCell(
-                  e.corporativo ?? '',
-                  nivel: nivel,
-                  isChild: isChild,
-                  textColor: esSinAsignar ? Colors.red[700] : null,
-                ),
-                _TablaCell(
-                  e.nombreCompleto.startsWith('ZZZ')
-                      ? e.nombreCompleto
-                          .replaceFirst(RegExp(r'^ZZZ\s*'), '')
-                          .trim()
-                      : e.nombreCompleto,
-                  nivel: nivel,
-                  isBold: nivel == 0,
-                  isChild: isChild,
-                  textColor: esSinAsignar ? Colors.red[700] : null,
-                  icon: esSinAsignar ? Icons.warning : null,
-                ),
-                _TablaCell(
-                  e.descripcion,
-                  nivel: nivel,
-                  isBold: nivel == 0,
-                  isChild: isChild,
-                  textColor: esSinAsignar ? Colors.red[700] : null,
-                  //icon: esSinAsignar ? Icons.warning : null,
-                ),
-                _TablaCell(
-                  e.empresa ?? '',
-                  nivel: nivel,
-                  isChild: isChild,
-                  textColor: esSinAsignar ? Colors.red[700] : null,
-                ),
-                _TablaCell(
-                  e.totalCobradoXCuenta.toStringAsFixed(2),
-                  nivel: nivel,
-                  align: TextAlign.right,
-                  isChild: isChild,
-                  textColor: esSinAsignar ? Colors.red[700] : null,
-                ),
-                _TablaCell(
-                  e.montoCubiertoXEmpresa.toStringAsFixed(2),
-                  nivel: nivel,
-                  align: TextAlign.right,
-                  isChild: isChild,
-                  textColor: esSinAsignar ? Colors.red[700] : null,
-                ),
-                _TablaCell(
-                  e.montoEmpleado.toStringAsFixed(2),
-                  nivel: nivel,
-                  align: TextAlign.right,
-                  isChild: isChild,
-                  textColor: esSinAsignar ? Colors.red[700] : null,
-                ),
-              ],
-            ),
-          ),
-        ),
-      );
-
-      if (tieneHijos && isExpanded) {
-        rows.addAll(_buildArbolTablaRows(e.items, nivel + 1));
-      }
-    }
-    return rows;
-  }
-
-  List<TigoEjecutadoEntity> filtrarArbolPorEmpresa(
-    List<TigoEjecutadoEntity> arbol,
-    String? empresa,
-  ) {
+  List<TigoEjecutadoEntity> filtrarArbolPorEmpresa(List<TigoEjecutadoEntity> arbol, String? empresa) {
     List<TigoEjecutadoEntity> resultado = [];
     for (final nodo in arbol) {
-      // Siempre incluye el nodo resumen
       if (nodo.nombreCompleto.trim().startsWith('ZZZ TOTAL')) {
         resultado.add(nodo);
         continue;
       }
-      // Si no hay empresa seleccionada, incluye todo
-      if (empresa == null || empresa.trim().isEmpty) {
-        resultado.add(
-          nodo.copyWith(items: filtrarArbolPorEmpresa(nodo.items, empresa)),
-        );
-      } else if ((nodo.empresa ?? '').trim() == empresa.trim()) {
-        resultado.add(
-          nodo.copyWith(items: filtrarArbolPorEmpresa(nodo.items, empresa)),
-        );
+      if (empresa == null || empresa.trim().isEmpty || (nodo.empresa ?? '').trim() == empresa.trim()) {
+        resultado.add(nodo.copyWith(items: filtrarArbolPorEmpresa(nodo.items, empresa)));
       } else {
-        // Si el nodo no es de la empresa, pero tiene hijos de la empresa, incluye solo los hijos
         final hijosFiltrados = filtrarArbolPorEmpresa(nodo.items, empresa);
-        if (hijosFiltrados.isNotEmpty) {
-          resultado.add(nodo.copyWith(items: hijosFiltrados));
-        }
+        if (hijosFiltrados.isNotEmpty) resultado.add(nodo.copyWith(items: hijosFiltrados));
       }
     }
     return resultado;
   }
 
-  //ARBOL TIGO EJECUTADO
-  Widget _buildArbolTablaTigoEjecutado(List<TigoEjecutadoEntity> arbol) {
-    return Column(
-      children: [
-        Container(
-          decoration: BoxDecoration(
-            color: Colors.blue[800],
-            border: const Border(
-              bottom: BorderSide(color: Colors.blueGrey, width: 1),
-            ),
-          ),
-          child: Row(
-            children: const [
-              SizedBox(width: 40),
-              _TablaCell('TELÉFONO', isHeader: true),
-              _TablaCell('NOMBRE', isHeader: true),
-              _TablaCell('DESCRIPCIÓN', isHeader: true),
-              _TablaCell('EMPRESA', isHeader: true),
-              _TablaCell('ESTADO', isHeader: true),
-              _TablaCell('TOTAL', isHeader: true),
-              _TablaCell('EMPRESA', isHeader: true),
-              _TablaCell('EMPLEADO', isHeader: true),
-            ],
-          ),
-        ),
-        Expanded(
-          child: ListView(children: _buildArbolTigoEjecutadoRows(arbol, 0)),
-        ),
-      ],
-    );
-  }
-
-  List<Widget> _buildArbolTigoEjecutadoRows(
-    List<TigoEjecutadoEntity> lista,
-    int nivel,
-  ) {
-    List<Widget> rows = [];
-    for (int i = 0; i < lista.length; i++) {
-      final e = lista[i];
-      final tieneHijos = e.items.isNotEmpty;
-      final isExpanded = expandedArbolMap[e.codEmpleado] ?? false;
-      final isChild = nivel > 0;
-      final esSinAsignar =
-          (e.nombreCompleto.trim().toUpperCase() == 'SIN ASIGNAR');
-
-      rows.add(
-        MouseRegion(
-          cursor: SystemMouseCursors.click,
-          child: Container(
-            decoration: BoxDecoration(
-              color:
-                  esSinAsignar
-                      ? Colors.red[100]
-                      : isChild
-                      ? Colors.blue[50]
-                      : (i % 2 == 0 ? Colors.white : Colors.grey[200]),
-              border: Border(
-                left:
-                    isChild && !esSinAsignar
-                        ? BorderSide(color: Colors.blue[300]!, width: 4)
-                        : BorderSide.none,
-                bottom: const BorderSide(color: Colors.grey, width: 0.5),
-              ),
-            ),
-            child: Row(
-              children: [
-                SizedBox(
-                  width: 40,
-                  child:
-                      tieneHijos
-                          ? IconButton(
-                            icon: Icon(
-                              isExpanded
-                                  ? Icons.expand_less
-                                  : Icons.expand_more,
-                              color:
-                                  esSinAsignar ? Colors.red : Colors.blue[800],
-                            ),
-                            onPressed: () {
-                              expandedArbolMap[e.codEmpleado] = !isExpanded;
-                              setState(() {});
-                            },
-                          )
-                          : null,
-                ),
-                _TablaCell(
-                  e.corporativo ?? '',
-                  nivel: nivel,
-                  isChild: isChild,
-                  textColor: esSinAsignar ? Colors.red[700] : null,
-                ),
-                _TablaCell(
-                  e.nombreCompleto.startsWith('ZZZ')
-                      ? e.nombreCompleto
-                          .replaceFirst(RegExp(r'^ZZZ\s*'), '')
-                          .trim()
-                      : e.nombreCompleto,
-                  nivel: nivel,
-                  isBold: nivel == 0,
-                  isChild: isChild,
-                  textColor: esSinAsignar ? Colors.red[700] : null,
-                  icon: esSinAsignar ? Icons.warning : null,
-                ),
-                _TablaCell(
-                  e.descripcion,
-                  nivel: nivel,
-                  isBold: nivel == 0,
-                  isChild: isChild,
-                  textColor: esSinAsignar ? Colors.red[700] : null,
-                ),
-                _TablaCell(
-                  e.empresa ?? '',
-                  nivel: nivel,
-                  isChild: isChild,
-                  textColor: esSinAsignar ? Colors.red[700] : null,
-                ),
-                _TablaCell(
-                  e.estado,
-                  nivel: nivel,
-                  isChild: isChild,
-                  textColor: esSinAsignar ? Colors.red[700] : null,
-                ),
-                _TablaCell(
-                  e.totalCobradoXCuenta.toStringAsFixed(2),
-                  nivel: nivel,
-                  align: TextAlign.right,
-                  isChild: isChild,
-                  textColor: esSinAsignar ? Colors.red[700] : null,
-                ),
-                _TablaCell(
-                  e.montoCubiertoXEmpresa.toStringAsFixed(2),
-                  nivel: nivel,
-                  align: TextAlign.right,
-                  isChild: isChild,
-                  textColor: esSinAsignar ? Colors.red[700] : null,
-                ),
-                _TablaCell(
-                  e.montoEmpleado.toStringAsFixed(2),
-                  nivel: nivel,
-                  align: TextAlign.right,
-                  isChild: isChild,
-                  textColor: esSinAsignar ? Colors.red[700] : null,
-                ),
-              ],
-            ),
-          ),
-        ),
-      );
-
-      if (tieneHijos && isExpanded) {
-        rows.addAll(_buildArbolTigoEjecutadoRows(e.items, nivel + 1));
-      }
+  List<TigoEjecutadoEntity> filtrarArbolPorBuscador(List<TigoEjecutadoEntity> arbol, String textoBuscador) {
+    if (textoBuscador.isEmpty) return arbol;
+    List<TigoEjecutadoEntity> resultado = [];
+    for (final nodo in arbol) {
+      final coincide = nodo.nombreCompleto.toLowerCase().contains(textoBuscador) || (nodo.corporativo ?? '').toLowerCase().contains(textoBuscador) || (nodo.empresa ?? '').toLowerCase().contains(textoBuscador) || nodo.descripcion.toLowerCase().contains(textoBuscador);
+      final hijosFiltrados = filtrarArbolPorBuscador(nodo.items, textoBuscador);
+      if (coincide || hijosFiltrados.isNotEmpty) resultado.add(nodo.copyWith(items: hijosFiltrados));
     }
-    return rows;
+    return resultado;
   }
-  // ✅ NUEVA FUNCIÓN RECURSIVA PARA BUSCAR EN EL ÁRBOL
-List<TigoEjecutadoEntity> filtrarArbolPorBuscador(
-  List<TigoEjecutadoEntity> arbol,
-  String textoBuscador,
-) {
-  if (textoBuscador.isEmpty) return arbol;
-
-  List<TigoEjecutadoEntity> resultado = [];
-  
-  for (final nodo in arbol) {
-    // Verifica si el nodo actual coincide con la búsqueda
-    final coincide =
-        nodo.nombreCompleto.toLowerCase().contains(textoBuscador) ||
-        (nodo.corporativo ?? '').toLowerCase().contains(textoBuscador) ||
-        (nodo.empresa ?? '').toLowerCase().contains(textoBuscador) ||
-        nodo.descripcion.toLowerCase().contains(textoBuscador);
-
-    // Recursivamente busca en los hijos
-    final hijosFiltrados = filtrarArbolPorBuscador(nodo.items, textoBuscador);
-
-    // Incluye el nodo si coincide O si tiene hijos que coincidieron
-    if (coincide || hijosFiltrados.isNotEmpty) {
-      resultado.add(
-        nodo.copyWith(items: hijosFiltrados),
-      );
-    }
-  }
-  
-  return resultado;
-}
 }
 
-// Celda de tabla con mejor diseño
-class _TablaCell extends StatelessWidget {
-  final String text;
-  final int nivel;
-  final bool isHeader;
-  final bool isBold;
-  final TextAlign align;
-  final bool isChild;
-  final Color? textColor;
-  final IconData? icon;
-  const _TablaCell(
-    this.text, {
-    this.nivel = 0,
-    this.isHeader = false,
-    this.isBold = false,
-    this.align = TextAlign.center,
-    this.isChild = false,
-    this.textColor,
-    this.icon,
-  });
+class _ActionButton extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final Color color;
+  final VoidCallback? onPressed;
+  final bool isPrimary;
+
+  const _ActionButton({required this.icon, required this.label, required this.color, this.onPressed, this.isPrimary = false});
+
   @override
   Widget build(BuildContext context) {
-    // Determina la alineación principal del Row basada en el parámetro 'align'
-    MainAxisAlignment rowAlignment;
-    if (align == TextAlign.right) {
-      rowAlignment = MainAxisAlignment.end; // 'end' alinea a la derecha
-    } else if (align == TextAlign.left) {
-      rowAlignment = MainAxisAlignment.start; // 'start' alinea a la izquierda
-    } else {
-      rowAlignment = MainAxisAlignment.center; // Por defecto o TextAlign.center
-    }
-
-    return Expanded(
-      child: Container(
-        decoration: BoxDecoration(
-          border: Border(
-            right: BorderSide(
-              color: isHeader ? Colors.blue[900]! : Colors.grey[300]!,
-              width: 1,
-            ),
-          ),
-        ),
-        padding: EdgeInsets.symmetric(
-          vertical: isHeader ? 14 : 10,
-          horizontal: isChild ? 32.0 : 8.0,
-        ),
-        // Elimina la propiedad 'alignment' del Container ya que el Row la controlará.
-        // alignment: Alignment.center, // <-- ELIMINADO
-
-        // El Row ahora usa la alineación dinámica
-        child: Row(
-          mainAxisAlignment: rowAlignment, // <-- PROPIEDAD CLAVE MODIFICADA
-          children: [
-            if (icon != null)
-              Icon(icon, color: textColor ?? Colors.red, size: 18),
-            Flexible(
-              child: Text(
-                text,
-                // Mantenemos textAlign: align para que el texto dentro del Flexible se alinee
-                textAlign: align,
-                style: TextStyle(
-                  fontWeight:
-                      isHeader || isBold ? FontWeight.bold : FontWeight.normal,
-                  fontSize: isHeader ? 16 : 14,
-                  color: textColor ?? (isHeader ? Colors.white : Colors.black),
-                ),
-              ),
-            ),
-          ],
-        ),
+    return ElevatedButton.icon(
+      icon: Icon(icon, size: 18),
+      label: Text(label, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+      style: ElevatedButton.styleFrom(
+        backgroundColor: isPrimary ? color : Colors.white,
+        foregroundColor: isPrimary ? Colors.white : color,
+        side: BorderSide(color: color, width: 1.2),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        elevation: isPrimary ? 3 : 0,
       ),
+      onPressed: onPressed,
+    );
+  }
+}
+class _ReporteItem {
+  final String label;
+  final IconData icon;
+  final Color color;
+  final String? permissionName; // null = sin PermissionWidget
+  final String pdfName;
+  final Future<Uint8List> Function() getFuture;
+
+  const _ReporteItem({
+    required this.label, required this.icon, required this.color,
+    required this.permissionName, required this.pdfName, required this.getFuture,
+  });
+}
+
+// Tile reutilizado en BottomSheet y MenuAnchor
+class _ReporteTile extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final Color color;
+  final VoidCallback onTap;
+
+  const _ReporteTile({required this.icon, required this.label, required this.color, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return ListTile(
+      leading: CircleAvatar(
+        radius: 18,
+        backgroundColor: color.withOpacity(0.12),
+        child: Icon(icon, color: color, size: 20),
+      ),
+      title: Text(label, style: TextStyle(fontWeight: FontWeight.w600, color: color)),
+      trailing: Icon(Icons.picture_as_pdf, color: Colors.grey[400], size: 18),
+      onTap: onTap,
     );
   }
 }

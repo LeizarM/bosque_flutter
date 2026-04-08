@@ -1,5 +1,5 @@
 import 'dart:io' as io;
-import 'package:bosque_flutter/core/state/Consumo_tigo_provider.dart';
+import 'package:bosque_flutter/core/state/consumo_tigo_provider.dart';
 import 'package:bosque_flutter/core/state/user_provider.dart';
 import 'package:bosque_flutter/core/utils/responsive_utils_bosque.dart';
 import 'package:bosque_flutter/domain/entities/factura_tigo_entity.dart';

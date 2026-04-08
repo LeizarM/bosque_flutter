@@ -1,5 +1,9 @@
+import 'dart:typed_data';
+
 import 'package:bosque_flutter/core/constants/app_constants.dart';
 import 'package:bosque_flutter/core/network/base_api_repository.dart';
+import 'package:bosque_flutter/core/network/dio_client.dart';
+import 'package:dio/dio.dart';
 import 'package:bosque_flutter/data/models/canales_pago_model.dart';
 import 'package:bosque_flutter/data/models/cargo_pago_model.dart';
 import 'package:bosque_flutter/data/models/config_comisiones_banco_model.dart';
@@ -499,5 +503,65 @@ class PagosExtranjerosImpl extends BaseApiRepository
       fromJson: (json) => CargoPagoModel.fromJson(json),
     );
     return modelos.map((m) => m.toEntity()).toList();
+  }
+
+  // ════════════════════════════════════════════════════════════════════
+  // Voucher de transacción
+  // ════════════════════════════════════════════════════════════════════
+
+  @override
+  Future<void> subirVoucher({
+    required BigInt idTransaccion,
+    required int audUsuario,
+    String? filePath,
+    Uint8List? fileBytes,
+    required String fileName,
+  }) async {
+    try {
+      late final MultipartFile multipartFile;
+      if (fileBytes != null) {
+        // Web: solo tenemos bytes
+        multipartFile = MultipartFile.fromBytes(fileBytes, filename: fileName);
+      } else if (filePath != null) {
+        // Móvil: tenemos ruta en disco
+        multipartFile = await MultipartFile.fromFile(
+          filePath,
+          filename: fileName,
+        );
+      } else {
+        throw Exception('Debe proveer filePath o fileBytes');
+      }
+      final formData = FormData.fromMap({
+        'file': multipartFile,
+        'audUsuario': audUsuario,
+      });
+      await dio.post(
+        '${AppConstants.tpexSubirVoucher}/${idTransaccion.toInt()}/voucher',
+        data: formData,
+      );
+    } on DioException catch (e) {
+      throw Exception(DioClient.handleDioError(e, 'Error al subir el voucher'));
+    }
+  }
+
+  @override
+  Future<(Uint8List bytes, String contentType)> descargarVoucher(
+    BigInt idTransaccion, {
+    int codEmpresa = 0,
+  }) async {
+    try {
+      final response = await dio.get(
+        '${AppConstants.tpexSubirVoucher}/${idTransaccion.toInt()}/voucher',
+        queryParameters: {'codEmpresa': codEmpresa},
+        options: Options(responseType: ResponseType.bytes),
+      );
+      final ct =
+          response.headers.value('content-type') ?? 'application/octet-stream';
+      return (response.data as Uint8List, ct);
+    } on DioException catch (e) {
+      throw Exception(
+        DioClient.handleDioError(e, 'Error al descargar el voucher'),
+      );
+    }
   }
 }

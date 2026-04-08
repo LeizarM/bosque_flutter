@@ -3,60 +3,84 @@ import 'package:bosque_flutter/presentation/screens/pagos-extranjeros/pagos_extr
 import 'package:bosque_flutter/presentation/screens/pagos-extranjeros/pagos_extranjeros_register_screen.dart';
 import 'package:flutter/material.dart';
 
-class PagosExtranjerosScreen extends StatelessWidget {
+class PagosExtranjerosScreen extends StatefulWidget {
   const PagosExtranjerosScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final isDesktop = ResponsiveUtilsBosque.isDesktop(context);
+  State<PagosExtranjerosScreen> createState() => _PagosExtranjerosScreenState();
+}
 
-    return DefaultTabController(
-      length: 2,
-      child: Scaffold(
-        backgroundColor: colorScheme.surfaceContainerLow,
-        appBar: AppBar(
-          title: const Text(
-            'Pagos al Extranjero',
-            style: TextStyle(fontWeight: FontWeight.w600),
-          ),
-          backgroundColor:
-              isDesktop ? colorScheme.primaryContainer : colorScheme.surface,
-          foregroundColor:
-              isDesktop
-                  ? colorScheme.onPrimaryContainer
-                  : colorScheme.onSurface,
-          elevation: 0,
-          bottom: TabBar(
-            indicatorColor: colorScheme.primary,
-            labelColor:
-                isDesktop
-                    ? colorScheme.onPrimaryContainer
-                    : colorScheme.primary,
-            unselectedLabelColor:
-                isDesktop
-                    ? colorScheme.onPrimaryContainer.withValues(alpha: 0.6)
-                    : colorScheme.onSurfaceVariant,
-            indicatorSize: TabBarIndicatorSize.label,
-            tabs: const [
-              Tab(
-                icon: Icon(Icons.add_circle_outline_rounded, size: 20),
-                text: 'Registro',
-              ),
-              Tab(
-                icon: Icon(Icons.list_alt_rounded, size: 20),
-                text: 'Consulta',
-              ),
-            ],
-          ),
-        ),
-        body: const TabBarView(
+class _PagosExtranjerosScreenState extends State<PagosExtranjerosScreen> {
+  int _selectedIndex = 0;
+
+  static const _screens = <Widget>[
+    PagosExtranjerosRegisterScreen(),
+    PagosExtranjerosListScreen(),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final isMobile = ResponsiveUtilsBosque.isMobile(context);
+
+    return Scaffold(
+      backgroundColor: cs.surfaceContainerLow,
+      appBar: AppBar(
+        title: Row(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            PagosExtranjerosRegisterScreen(),
-            PagosExtranjerosListScreen(),
+            Icon(Icons.payments_outlined, size: 22, color: cs.primary),
+            const SizedBox(width: 10),
+            const Text(
+              'Pagos al Extranjero',
+              style: TextStyle(fontWeight: FontWeight.w700, fontSize: 18),
+            ),
           ],
         ),
+        backgroundColor: cs.surface,
+        surfaceTintColor: Colors.transparent,
+        elevation: 0,
+        scrolledUnderElevation: 1,
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(56),
+          child: Padding(
+            padding: EdgeInsets.symmetric(
+              horizontal: isMobile ? 16 : 32,
+              vertical: 8,
+            ),
+            child: SizedBox(
+              width: isMobile ? double.infinity : 360,
+              child: SegmentedButton<int>(
+                segments: const [
+                  ButtonSegment(
+                    value: 0,
+                    label: Text('Nueva solicitud'),
+                    icon: Icon(Icons.add_circle_outline_rounded, size: 18),
+                  ),
+                  ButtonSegment(
+                    value: 1,
+                    label: Text('Mis solicitudes'),
+                    icon: Icon(Icons.list_alt_rounded, size: 18),
+                  ),
+                ],
+                selected: {_selectedIndex},
+                onSelectionChanged:
+                    (v) => setState(() => _selectedIndex = v.first),
+                showSelectedIcon: false,
+                style: ButtonStyle(
+                  visualDensity: VisualDensity.compact,
+                  shape: WidgetStatePropertyAll(
+                    RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
       ),
+      body: IndexedStack(index: _selectedIndex, children: _screens),
     );
   }
 }

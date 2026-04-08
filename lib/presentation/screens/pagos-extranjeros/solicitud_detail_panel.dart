@@ -1,11 +1,16 @@
+import 'dart:typed_data';
+
+import 'package:bosque_flutter/core/constants/app_constants.dart';
 import 'package:bosque_flutter/core/state/pagos_extranjeros_provider.dart';
 import 'package:bosque_flutter/core/utils/responsive_utils_bosque.dart';
+import 'package:bosque_flutter/data/repositories/pagos_extranjeros_impl.dart';
 import 'package:bosque_flutter/domain/entities/cargo_pago_entity.dart';
 import 'package:bosque_flutter/domain/entities/cotizaciones_entity.dart';
 import 'package:bosque_flutter/domain/entities/detalle_solicitud_entity.dart';
 import 'package:bosque_flutter/domain/entities/log_estados_entity.dart';
 import 'package:bosque_flutter/domain/entities/solicitud_pago_entity.dart';
 import 'package:bosque_flutter/domain/entities/transacciones_entity.dart';
+import 'package:printing/printing.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -13,6 +18,96 @@ import 'package:intl/intl.dart';
 final _numberFormat = NumberFormat('#,##0.00', 'es_BO');
 final _dateFormat = DateFormat('dd/MM/yyyy');
 final _dateTimeFormat = DateFormat('dd/MM/yyyy HH:mm');
+
+/// Descarga el voucher vía POST (con JWT) y lo muestra en un Dialog.
+Future<void> _verVoucherPost(
+  BuildContext context,
+  BigInt idTransaccion, {
+  int codEmpresa = 0,
+}) async {
+  showDialog(
+    context: context,
+    barrierDismissible: false,
+    builder: (_) => const Center(child: CircularProgressIndicator()),
+  );
+  try {
+    final repo = PagosExtranjerosImpl();
+    final (bytes, contentType) = await repo.descargarVoucher(
+      idTransaccion,
+      codEmpresa: codEmpresa,
+    );
+    if (!context.mounted) return;
+    Navigator.of(context).pop(); // quitar loading
+    final isImage = contentType.startsWith('image/');
+    showDialog(
+      context: context,
+      builder: (ctx) {
+        final cs = Theme.of(ctx).colorScheme;
+        return Dialog(
+          clipBehavior: Clip.antiAlias,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 600, maxHeight: 700),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
+                  color: cs.primaryContainer,
+                  child: Row(
+                    children: [
+                      Icon(Icons.receipt_long, color: cs.onPrimaryContainer),
+                      const SizedBox(width: 8),
+                      Text(
+                        'Voucher',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w600,
+                          color: cs.onPrimaryContainer,
+                        ),
+                      ),
+                      const Spacer(),
+                      IconButton(
+                        icon: const Icon(Icons.close),
+                        onPressed: () => Navigator.of(ctx).pop(),
+                      ),
+                    ],
+                  ),
+                ),
+                Flexible(
+                  child:
+                      isImage
+                          ? InteractiveViewer(
+                            child: Image.memory(bytes, fit: BoxFit.contain),
+                          )
+                          : PdfPreview(
+                            build: (_) async => bytes as Uint8List,
+                            canChangeOrientation: false,
+                            canChangePageFormat: false,
+                            canDebug: false,
+                            allowPrinting: false,
+                            allowSharing: false,
+                            pdfFileName: 'voucher.pdf',
+                          ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  } catch (e) {
+    if (!context.mounted) return;
+    Navigator.of(context).pop();
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text('Error al descargar voucher: $e')));
+  }
+}
 
 /// Abre el panel de detalle de una solicitud (tabs: Proveedores, Cotizaciones,
 /// Transacciones, Historial, Timeline). En desktop abre un Dialog; en móvil un BottomSheet.
@@ -284,35 +379,58 @@ class _TabProveedores extends StatelessWidget {
               prov.cardName,
               style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
             ),
-            subtitle: Text(
-              '${prov.cardCode}  ·  A pagar: \$ ${_numberFormat.format(prov.totalAPagarUsd)}',
-              style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant),
+            subtitle: Builder(
+              builder: (_) {
+                final aPagar = prov.detalles.fold<double>(
+                  0,
+                  (s, d) => s + d.montoAPagarUsd,
+                );
+                return Text(
+                  '${prov.cardCode}  ·  A pagar: \$ ${_numberFormat.format(aPagar)}',
+                  style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant),
+                );
+              },
             ),
             childrenPadding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
             children: [
-              // Stats
-              Wrap(
-                spacing: 8,
-                runSpacing: 6,
-                children: [
-                  _MiniChip(
-                    label: 'Facturas',
-                    value: '\$ ${_numberFormat.format(prov.totalFacturasUsd)}',
-                    cs: cs,
-                  ),
-                  _MiniChip(
-                    label: 'Amortizado',
-                    value:
-                        '\$ ${_numberFormat.format(prov.totalAmortizadoUsd)}',
-                    cs: cs,
-                  ),
-                  _MiniChip(
-                    label: 'A Pagar',
-                    value: '\$ ${_numberFormat.format(prov.totalAPagarUsd)}',
-                    cs: cs,
-                    bold: true,
-                  ),
-                ],
+              // Stats — computed from detalles (API returns 0 at provider level)
+              Builder(
+                builder: (_) {
+                  final totalFacturas = prov.detalles.fold<double>(
+                    0,
+                    (s, d) => s + d.montoFacturaUsd,
+                  );
+                  final totalAmort = prov.detalles.fold<double>(
+                    0,
+                    (s, d) => s + d.montoAmortizadoUsd,
+                  );
+                  final totalPagar = prov.detalles.fold<double>(
+                    0,
+                    (s, d) => s + d.montoAPagarUsd,
+                  );
+                  return Wrap(
+                    spacing: 8,
+                    runSpacing: 6,
+                    children: [
+                      _MiniChip(
+                        label: 'Facturas',
+                        value: '\$ ${_numberFormat.format(totalFacturas)}',
+                        cs: cs,
+                      ),
+                      _MiniChip(
+                        label: 'Amortizado',
+                        value: '\$ ${_numberFormat.format(totalAmort)}',
+                        cs: cs,
+                      ),
+                      _MiniChip(
+                        label: 'A Pagar',
+                        value: '\$ ${_numberFormat.format(totalPagar)}',
+                        cs: cs,
+                        bold: true,
+                      ),
+                    ],
+                  );
+                },
               ),
               if (prov.detalles.isNotEmpty) ...[
                 const SizedBox(height: 10),
@@ -867,6 +985,30 @@ class _TransaccionCardState extends ConsumerState<_TransaccionCard> {
             // Log de la transacción
             const SizedBox(height: 8),
             _TxnLogInline(idTransaccion: t.idTransaccion, cs: cs),
+            // Voucher
+            const SizedBox(height: 8),
+            if (t.tieneVoucher)
+              ActionChip(
+                avatar: Icon(Icons.check_circle, color: cs.primary, size: 18),
+                label: const Text('Ver Voucher'),
+                backgroundColor: cs.primaryContainer,
+                onPressed:
+                    () => _verVoucherPost(
+                      context,
+                      t.idTransaccion,
+                      codEmpresa:
+                          t.codEmpresa != 0 ? t.codEmpresa : widget.codEmpresa,
+                    ),
+              )
+            else
+              Text(
+                'Sin voucher adjunto',
+                style: TextStyle(
+                  fontSize: 11,
+                  color: cs.onSurfaceVariant,
+                  fontStyle: FontStyle.italic,
+                ),
+              ),
           ],
         ),
       ),

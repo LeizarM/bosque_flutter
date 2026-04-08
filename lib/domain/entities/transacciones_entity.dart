@@ -34,6 +34,8 @@ class TransaccionesEntity {
   String estado;
   String observaciones;
   int audUsuario;
+  String? rutaVoucher;
+  bool tieneVoucher;
   List<CargoPagoEntity> cargos;
 
   TransaccionesEntity({
@@ -70,6 +72,8 @@ class TransaccionesEntity {
     required this.estado,
     required this.observaciones,
     required this.audUsuario,
+    this.rutaVoucher,
+    this.tieneVoucher = false,
     this.cargos = const [],
   });
 }

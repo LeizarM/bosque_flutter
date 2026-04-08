@@ -11,10 +11,11 @@ class TigoEjecutadoEntity {
   final double totalCobradoXCuenta;
   final double montoCubiertoXEmpresa;
   final double montoEmpleado;
-  final int audUsuario;
+  final int audUsuarioI;
   final int fila;
   final int codEmpleadoPadre;
   final List<TigoEjecutadoEntity> items;
+  final String? listaCodEmpleado;
 
   TigoEjecutadoEntity({
     required this.codCuenta,
@@ -29,10 +30,11 @@ class TigoEjecutadoEntity {
     required this.totalCobradoXCuenta,
     required this.montoCubiertoXEmpresa,
     required this.montoEmpleado,
-    required this.audUsuario,
+    required this.audUsuarioI,
     required this.fila,
     required this.codEmpleadoPadre,
     required this.items,
+    this.listaCodEmpleado,
   });
   //metodo toJson
   Map<String, dynamic> toJson() {
@@ -49,10 +51,11 @@ class TigoEjecutadoEntity {
       'totalCobradoXCuenta': totalCobradoXCuenta,
       'montoCubiertoXEmpresa': montoCubiertoXEmpresa,
       'montoEmpleado': montoEmpleado,
-      'audUsuario': audUsuario,
+      'audUsuario': audUsuarioI,
       'fila': fila,
       'codEmpleadoPadre': codEmpleadoPadre,
       'items': items.map((item) => item.toJson()).toList(),
+      'listaCodEmpleado': listaCodEmpleado,
     };
   }
   //meoto copywith
@@ -69,10 +72,11 @@ class TigoEjecutadoEntity {
     double? totalCobradoXCuenta,
     double? montoCubiertoXEmpresa,
     double? montoEmpleado,
-    int? audUsuario,
+    int? audUsuarioI,
     int? fila,
     int? codEmpleadoPadre,
     List<TigoEjecutadoEntity>? items,
+    String? listaCodEmpleado,
   }) {
     return TigoEjecutadoEntity(
       codCuenta: codCuenta ?? this.codCuenta,
@@ -87,10 +91,11 @@ class TigoEjecutadoEntity {
       totalCobradoXCuenta: totalCobradoXCuenta ?? this.totalCobradoXCuenta,
       montoCubiertoXEmpresa: montoCubiertoXEmpresa ?? this.montoCubiertoXEmpresa,
       montoEmpleado: montoEmpleado ?? this.montoEmpleado,
-      audUsuario: audUsuario ?? this.audUsuario,
+      audUsuarioI: audUsuarioI ?? this.audUsuarioI,
       fila: fila ?? this.fila,
       codEmpleadoPadre: codEmpleadoPadre ?? this.codEmpleadoPadre,
       items: items ?? this.items,
+      listaCodEmpleado: listaCodEmpleado ?? this.listaCodEmpleado,
     );
   }
 }

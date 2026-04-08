@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:bosque_flutter/core/utils/console_log.dart';
 import 'package:bosque_flutter/data/repositories/pagos_extranjeros_impl.dart';
@@ -1021,8 +1023,11 @@ class TransaccionFormState {
   final List<CargoPagoFormItem> cargos;
   final bool cargando;
   final bool cargandoTcRef;
+  final bool subiendoVoucher;
+  final bool tieneVoucher;
   final String? mensajeExito;
   final String? mensajeError;
+  final String? errorVoucher;
 
   TransaccionFormState({
     this.idTransaccion = 0,
@@ -1053,8 +1058,11 @@ class TransaccionFormState {
     this.cargos = const [],
     this.cargando = false,
     this.cargandoTcRef = false,
+    this.subiendoVoucher = false,
+    this.tieneVoucher = false,
     this.mensajeExito,
     this.mensajeError,
+    this.errorVoucher,
   }) : idSolicitud = idSolicitud ?? BigInt.zero,
        idCotizacion = idCotizacion ?? BigInt.zero,
        idTipoTransaccion = idTipoTransaccion ?? BigInt.zero,
@@ -1099,10 +1107,14 @@ class TransaccionFormState {
     List<CargoPagoFormItem>? cargos,
     bool? cargando,
     bool? cargandoTcRef,
+    bool? subiendoVoucher,
+    bool? tieneVoucher,
     String? mensajeExito,
     bool clearMensajeExito = false,
     String? mensajeError,
     bool clearMensajeError = false,
+    String? errorVoucher,
+    bool clearErrorVoucher = false,
   }) {
     return TransaccionFormState(
       idTransaccion: idTransaccion ?? this.idTransaccion,
@@ -1134,10 +1146,14 @@ class TransaccionFormState {
       cargos: cargos ?? this.cargos,
       cargando: cargando ?? this.cargando,
       cargandoTcRef: cargandoTcRef ?? this.cargandoTcRef,
+      subiendoVoucher: subiendoVoucher ?? this.subiendoVoucher,
+      tieneVoucher: tieneVoucher ?? this.tieneVoucher,
       mensajeExito:
           clearMensajeExito ? null : (mensajeExito ?? this.mensajeExito),
       mensajeError:
           clearMensajeError ? null : (mensajeError ?? this.mensajeError),
+      errorVoucher:
+          clearErrorVoucher ? null : (errorVoucher ?? this.errorVoucher),
     );
   }
 }
@@ -1175,6 +1191,22 @@ class TransaccionNotifier extends StateNotifier<TransaccionFormState> {
   // ── PRE-CARGA 1b: desde transacción existente (para Fase 5 re-apertura) ──
 
   void precargarDesdeTransaccion(TransaccionesEntity txn) {
+    // Convert entity cargos → form items so totalCargos is computed correctly
+    final formCargos =
+        txn.cargos
+            .map(
+              (c) => CargoPagoFormItem(
+                idTipoCargo: c.idTipoCargo,
+                nombreCargo: c.descripcion,
+                esPorcentaje: c.porcentaje > 0,
+                porcentaje: c.porcentaje,
+                valorFijo: c.valorFijo,
+                baseCalculo: c.baseCalculo,
+                idMoneda: c.idMoneda,
+              ),
+            )
+            .toList();
+
     state = state.copyWith(
       idTransaccion: txn.idTransaccion.toInt(),
       idSolicitud: txn.idSolicitud,
@@ -1185,6 +1217,7 @@ class TransaccionNotifier extends StateNotifier<TransaccionFormState> {
       codEmpresa: txn.codEmpresa,
       cardCode: txn.cardCode,
       fechaTransaccion: txn.fechaTransaccion,
+      fechaValor: txn.fechaValor,
       montoOrigen: txn.montoOrigen,
       idMonedaOrigen: txn.idMonedaOrigen,
       tipoCambioAplicado: txn.tipoCambioAplicado,
@@ -1201,6 +1234,8 @@ class TransaccionNotifier extends StateNotifier<TransaccionFormState> {
       tcNegociadoExportadora: txn.tcNegociadoExportadora,
       comisionExportadora: txn.comisionExportadora,
       metodoExportadora: txn.metodoExportadora,
+      cargos: formCargos,
+      tieneVoucher: txn.tieneVoucher,
     );
   }
 
@@ -1546,11 +1581,48 @@ class TransaccionNotifier extends StateNotifier<TransaccionFormState> {
   }
 
   void limpiarMensajes() {
-    state = state.copyWith(clearMensajeExito: true, clearMensajeError: true);
+    state = state.copyWith(
+      clearMensajeExito: true,
+      clearMensajeError: true,
+      clearErrorVoucher: true,
+    );
   }
 
   void resetForm() {
     state = TransaccionFormState();
+  }
+
+  /// Sube un voucher (imagen/PDF) asociado a la transacción actual.
+  /// En móvil se usa [filePath]; en web se usa [fileBytes] + [fileName].
+  Future<bool> subirVoucher({
+    required BigInt idTransaccion,
+    required int audUsuario,
+    String? filePath,
+    Uint8List? fileBytes,
+    required String fileName,
+  }) async {
+    state = state.copyWith(subiendoVoucher: true, clearErrorVoucher: true);
+    try {
+      await _repo.subirVoucher(
+        idTransaccion: idTransaccion,
+        audUsuario: audUsuario,
+        filePath: filePath,
+        fileBytes: fileBytes,
+        fileName: fileName,
+      );
+      state = state.copyWith(
+        subiendoVoucher: false,
+        tieneVoucher: true,
+        mensajeExito: 'Voucher subido correctamente.',
+      );
+      return true;
+    } catch (e) {
+      state = state.copyWith(
+        subiendoVoucher: false,
+        errorVoucher: e.toString().replaceFirst('Exception: ', ''),
+      );
+      return false;
+    }
   }
 }
 
