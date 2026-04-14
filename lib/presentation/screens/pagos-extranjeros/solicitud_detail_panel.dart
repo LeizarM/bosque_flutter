@@ -1,6 +1,3 @@
-import 'dart:typed_data';
-
-import 'package:bosque_flutter/core/constants/app_constants.dart';
 import 'package:bosque_flutter/core/state/pagos_extranjeros_provider.dart';
 import 'package:bosque_flutter/core/utils/responsive_utils_bosque.dart';
 import 'package:bosque_flutter/data/repositories/pagos_extranjeros_impl.dart';
@@ -85,7 +82,7 @@ Future<void> _verVoucherPost(
                             child: Image.memory(bytes, fit: BoxFit.contain),
                           )
                           : PdfPreview(
-                            build: (_) async => bytes as Uint8List,
+                            build: (_) async => bytes,
                             canChangeOrientation: false,
                             canChangePageFormat: false,
                             canDebug: false,

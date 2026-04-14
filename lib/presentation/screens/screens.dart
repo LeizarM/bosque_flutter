@@ -29,3 +29,4 @@ export 'package:bosque_flutter/presentation/screens/pagos-extranjeros/pagos_extr
 export 'package:bosque_flutter/presentation/screens/pagos-extranjeros/pagos_extranjeros_list_screen.dart';
 export 'package:bosque_flutter/presentation/screens/pagos-extranjeros/pagos_extranjeros_screen.dart';
 export 'package:bosque_flutter/presentation/screens/pagos-extranjeros/pagos_extranjeros_view_screen.dart';
+export 'package:bosque_flutter/presentation/screens/informe-emp-descuentos/InformeEmpDescuentosScreen.dart';

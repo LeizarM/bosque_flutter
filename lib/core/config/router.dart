@@ -200,6 +200,12 @@ final routerProvider = Provider<GoRouter>((ref) {
               name: 'tpex_RegistroVerView',
               builder: (context, state) => const PagosAlExtranjerosViewScreen(),
             ),
+            // Descuentos Empleado
+            GoRoute(
+              path: '/dashboard/tdesc_EmpleadosDescuento/View',
+              name: 'tdesc_EmpleadosDescuentoView',
+              builder: (context, state) => const InformeEmpDescuentosScreen(),
+            ),
           ],
         ),
 
@@ -318,6 +324,12 @@ final routerProvider = Provider<GoRouter>((ref) {
         GoRoute(
           path: '/tpex_RegistroVer/View',
           redirect: (context, state) => '/dashboard/tpex_RegistroVer/View',
+        ),
+        // Empleados Descuentos
+        GoRoute(
+          path: '/tdesc_EmpleadosDescuento/View',
+          redirect:
+              (context, state) => '/dashboard/tdesc_EmpleadosDescuento/View',
         ),
 
         GoRoute(

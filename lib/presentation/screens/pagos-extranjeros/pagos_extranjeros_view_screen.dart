@@ -455,7 +455,6 @@ class _PagosAlExtranjerosViewScreenState
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    final isDesktop = ResponsiveUtilsBosque.isDesktop(context);
     final isMobile = ResponsiveUtilsBosque.isMobile(context);
     final asyncSolicitudes = ref.watch(solicitudesRegistradasProvider(_param));
     final hPad = isMobile ? 12.0 : 24.0;

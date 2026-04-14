@@ -393,6 +393,10 @@ class AppConstants {
   static const String tpexEliminarConfig =
       '/pagos-extranjeros/eliminar-config-comisiones';
 
+  // ── TDESC: Descuentos empleados ────────────────────────────────────────────────────────
+
+  static const String descObtenerDescuentosEmpleado = '/rrhh/prestamos-multas';
+
   //Para cargar permisos de botones por usuario
   static const String ubtnPermisosBotones = '/view/vistaBtn';
 

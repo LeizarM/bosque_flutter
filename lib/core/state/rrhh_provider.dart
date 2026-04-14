@@ -2,6 +2,7 @@ import 'package:bosque_flutter/data/repositories/rrhh_repository_impl.dart';
 import 'package:bosque_flutter/data/repositories/nivel_jerarquico_impl.dart';
 import 'package:bosque_flutter/domain/entities/cargo_entity.dart';
 import 'package:bosque_flutter/domain/entities/cargo_sucursal_entity.dart';
+import 'package:bosque_flutter/domain/entities/descuento_empleado_entity.dart';
 import 'package:bosque_flutter/domain/entities/empresa_entity.dart';
 import 'package:bosque_flutter/domain/entities/sucursal_entity.dart';
 import 'package:bosque_flutter/domain/entities/nivel_jerarquico_entity.dart';
@@ -295,4 +296,16 @@ final empleadosXCargoProvider = StateNotifierProvider.autoDispose
     ) {
       final repository = ref.watch(rrhhRepositoryProvider);
       return EmpleadosXCargoNotifier(repository, codCargo);
+    });
+
+// Provider para obtener descuentos de un empleado por mes y año
+// Params: (codEmpleado, mes, anio)
+final descuentosEmpleadoProvider = FutureProvider.autoDispose
+    .family<List<DescuentoEmpleadoEntity>, (int, int, int)>((ref, params) {
+      final repository = ref.watch(rrhhRepositoryProvider);
+      return repository.obtenerDescuentosEmpleado(
+        codEmpleado: params.$1,
+        mes: params.$2,
+        anio: params.$3,
+      );
     });
