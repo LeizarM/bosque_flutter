@@ -1222,12 +1222,17 @@ class _ArtChip extends StatelessWidget {
 }
 
 /// Chip de error para artículo de salida no encontrado
-class _ArtChipError extends StatelessWidget {
+class _ArtChipError extends StatefulWidget {
   final String tipo;
   final String mensaje;
 
   const _ArtChipError({required this.tipo, required this.mensaje});
 
+  @override
+  State<_ArtChipError> createState() => _ArtChipErrorState();
+}
+
+class _ArtChipErrorState extends State<_ArtChipError> {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
@@ -1248,7 +1253,7 @@ class _ArtChipError extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  tipo,
+                  widget.tipo,
                   style: TextStyle(
                     fontSize: 10,
                     fontWeight: FontWeight.bold,
@@ -1257,7 +1262,7 @@ class _ArtChipError extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                 ),
                 Text(
-                  mensaje,
+                  widget.mensaje,
                   style: TextStyle(
                     fontSize: 12,
                     color: colorScheme.onErrorContainer,
@@ -2938,24 +2943,6 @@ class _PreviewDialog extends StatelessWidget {
       ),
     );
   }
-
-  Widget _resumenRow(String label, String value, {Color? valueColor}) =>
-      Padding(
-        padding: const EdgeInsets.symmetric(vertical: 2),
-        child: Row(
-          children: [
-            Expanded(child: Text(label, style: const TextStyle(fontSize: 13))),
-            Text(
-              value,
-              style: TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.bold,
-                color: valueColor,
-              ),
-            ),
-          ],
-        ),
-      );
 
   Widget _cell(String text, TextStyle style, {bool right = false}) => Padding(
     padding: const EdgeInsets.all(4),
