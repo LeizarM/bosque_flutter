@@ -418,6 +418,15 @@ class AppConstants {
       '/loteProduccion/lstDocNumOrdFabXEmpresa';
 
   // ═══════════════════════════════════════════════════════════════════════════════
+  // RUTAS MODULO: REGISTRO DE RESMADO
+  // ═══════════════════════════════════════════════════════════════════════════════
+
+  static const String obtenerArticulosRes = '/resmado/articulos';
+  static const String obtenerGrupoProduccion = '/resmado/grupoProduccion';
+  static const String registrarResmado = '/resmado/registroResmado';
+  static const String registrarDetalleResmado = '/resmado/registroDetResmado';
+
+  // ═══════════════════════════════════════════════════════════════════════════════
   // RUTAS MODULO: PERMISOS / VACACION
   // ═══════════════════════════════════════════════════════════════════════════════
   static const String vacDiasDisponibles = '/vacacion/diasDisponibles';

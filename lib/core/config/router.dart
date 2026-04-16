@@ -213,6 +213,13 @@ final routerProvider = Provider<GoRouter>((ref) {
               name: 'tprod_loteProduccion',
               builder: (context, state) => const LoteProduccionRegistroScreen(),
             ),
+
+            //Registro de resmado
+            GoRoute(
+              path: '/dashboard/tprod_loteProduccion/Resmado',
+              name: 'tprod_loteProduccionResmado',
+              builder: (context, state) => const ResmadoRegistroScreen(),
+            ),
           ],
         ),
 
@@ -344,6 +351,12 @@ final routerProvider = Provider<GoRouter>((ref) {
           redirect:
               (context, state) =>
                   '/dashboard/tprod_loteProduccion/loteProduccion',
+        ),
+        // Registro de resmado
+        GoRoute(
+          path: '/tprod_loteProduccion/Resmado',
+          redirect:
+              (context, state) => '/dashboard/tprod_loteProduccion/Resmado',
         ),
 
         GoRoute(
