@@ -73,12 +73,12 @@ class _DetalleExperienciaLaboralState
 
     // Si tempExperienciaListProvider está vacío, cargar del servidor SOLO UNA VEZ
     if (listaExperiencia.isEmpty) {
-      final experienciaDelServidorAsync =
-          ref.watch(experienciaLaboralProvider(widget.codEmpleado));
+      final experienciaDelServidorAsync = ref.watch(
+        experienciaLaboralProvider(widget.codEmpleado),
+      );
 
       return experienciaDelServidorAsync.when(
-        loading: () =>
-            const Center(child: CircularProgressIndicator()),
+        loading: () => const Center(child: CircularProgressIndicator()),
         error: (err, _) => Center(child: Text('Error: $err')),
         data: (experienciaDelServidor) {
           // IMPORTANTE: Cargar en tempExperienciaListProvider SOLO una vez
@@ -103,14 +103,16 @@ class _DetalleExperienciaLaboralState
   // ============================================================================
 
   Widget _buildEdicionMode(BuildContext context) {
-    final experienciaAsync =
-        ref.watch(experienciaLaboralProvider(widget.codEmpleado));
+    final experienciaAsync = ref.watch(
+      experienciaLaboralProvider(widget.codEmpleado),
+    );
 
     return experienciaAsync.when(
       loading: () => const Center(child: CircularProgressIndicator()),
       error: (err, _) => Center(child: Text('Error: $err')),
-      data: (listaExperiencia) =>
-          _buildUI(context, listaExperiencia, isEdition: true),
+      data:
+          (listaExperiencia) =>
+              _buildUI(context, listaExperiencia, isEdition: true),
     );
   }
 
@@ -118,8 +120,11 @@ class _DetalleExperienciaLaboralState
   // UI PRINCIPAL
   // ============================================================================
 
-  Widget _buildUI(BuildContext context, List<ExperienciaLaboralEntity> lista,
-      {required bool isEdition}) {
+  Widget _buildUI(
+    BuildContext context,
+    List<ExperienciaLaboralEntity> lista, {
+    required bool isEdition,
+  }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -129,9 +134,15 @@ class _DetalleExperienciaLaboralState
             // Lista de experiencia
             ...List.generate(
               lista.length,
-              (idx) => _editingIndex == idx
-                  ? _buildEditForm(context, idx, lista, isEdition)
-                  : _buildExperienciaCard(context, idx, lista[idx], isEdition),
+              (idx) =>
+                  _editingIndex == idx
+                      ? _buildEditForm(context, idx, lista, isEdition)
+                      : _buildExperienciaCard(
+                        context,
+                        idx,
+                        lista[idx],
+                        isEdition,
+                      ),
             ),
             // Formulario nuevo si está activo
             if (_isAddingNew) _buildNewForm(context, isEdition),
@@ -154,17 +165,11 @@ class _DetalleExperienciaLaboralState
       padding: EdgeInsets.only(bottom: context.smallSpacing),
       child: Row(
         children: [
-          Icon(
-            Icons.work,
-            size: context.smallIconSize,
-            color: Colors.grey,
-          ),
+          Icon(Icons.work, size: context.smallIconSize, color: Colors.grey),
           SizedBox(width: context.smallSpacing),
           Text(
             'Experiencia Laboral',
-            style: context.subtitleStyle.copyWith(
-              fontWeight: FontWeight.bold,
-            ),
+            style: context.subtitleStyle.copyWith(fontWeight: FontWeight.bold),
           ),
         ],
       ),
@@ -175,8 +180,12 @@ class _DetalleExperienciaLaboralState
   // TARJETA DE EXPERIENCIA (LECTURA)
   // ============================================================================
 
-  Widget _buildExperienciaCard(BuildContext context, int index,
-      ExperienciaLaboralEntity experiencia, bool isEdition) {
+  Widget _buildExperienciaCard(
+    BuildContext context,
+    int index,
+    ExperienciaLaboralEntity experiencia,
+    bool isEdition,
+  ) {
     return Card(
       margin: EdgeInsets.symmetric(vertical: context.smallSpacing),
       elevation: 0,
@@ -209,8 +218,13 @@ class _DetalleExperienciaLaboralState
                   _buildDetailRow(
                     label: 'Cargo:',
                     child: Text(
-                      experiencia.cargo.isNotEmpty ? experiencia.cargo : 'Sin registrar',
-                      style: context.bodyStyle.copyWith(fontSize: 13, fontWeight: FontWeight.w600),
+                      experiencia.cargo.isNotEmpty
+                          ? experiencia.cargo
+                          : 'Sin registrar',
+                      style: context.bodyStyle.copyWith(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                      ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -220,7 +234,9 @@ class _DetalleExperienciaLaboralState
                   _buildDetailRow(
                     label: 'Empresa:',
                     child: Text(
-                      experiencia.nombreEmpresa.isNotEmpty ? experiencia.nombreEmpresa : 'Sin registrar',
+                      experiencia.nombreEmpresa.isNotEmpty
+                          ? experiencia.nombreEmpresa
+                          : 'Sin registrar',
                       style: context.bodyStyle.copyWith(fontSize: 13),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -231,7 +247,9 @@ class _DetalleExperienciaLaboralState
                   _buildDetailRow(
                     label: 'Descripción:',
                     child: Text(
-                      experiencia.descripcion.isNotEmpty ? experiencia.descripcion : 'Sin registrar',
+                      experiencia.descripcion.isNotEmpty
+                          ? experiencia.descripcion
+                          : 'Sin registrar',
                       style: context.bodyStyle.copyWith(fontSize: 13),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
@@ -266,9 +284,13 @@ class _DetalleExperienciaLaboralState
                           size: context.smallIconSize,
                           color: Colors.redAccent,
                         ),
-                        onPressed: () => isEdition
-                            ? _deleteFromServer(experiencia.codExperienciaLaboral)
-                            : _deleteFromList(index),
+                        onPressed:
+                            () =>
+                                isEdition
+                                    ? _deleteFromServer(
+                                      experiencia.codExperienciaLaboral,
+                                    )
+                                    : _deleteFromList(index),
                         tooltip: 'Eliminar',
                       ),
                     ],
@@ -302,52 +324,23 @@ class _DetalleExperienciaLaboralState
   }
 
   // Reemplazamos el subtitle original por compatibilidad (ya no se usa en la nueva tarjeta)
-  Widget _buildSubtitle(BuildContext context, ExperienciaLaboralEntity experiencia) {
-    return const SizedBox.shrink();
-  }
-
-  Widget _buildActions(BuildContext context, int index,
-      ExperienciaLaboralEntity experiencia, bool isEdition) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        IconButton(
-          icon: Icon(
-            Icons.edit_outlined,
-            size: context.smallIconSize,
-            color: Colors.blueGrey,
-          ),
-          onPressed: () => _startEditing(index),
-          tooltip: 'Editar',
-        ),
-        IconButton(
-          icon: Icon(
-            Icons.delete_outline,
-            size: context.smallIconSize,
-            color: Colors.redAccent,
-          ),
-          onPressed: () => isEdition
-              ? _deleteFromServer(experiencia.codExperienciaLaboral)
-              : _deleteFromList(index),
-          tooltip: 'Eliminar',
-        ),
-      ],
-    );
-  }
-
   // ============================================================================
   // FORMULARIOS
   // ============================================================================
 
-  Widget _buildEditForm(BuildContext context, int index,
-      List<ExperienciaLaboralEntity> lista, bool isEdition) {
+  Widget _buildEditForm(
+    BuildContext context,
+    int index,
+    List<ExperienciaLaboralEntity> lista,
+    bool isEdition,
+  ) {
     return FormExperienciaLaboral(
       key: ValueKey('edit_exp_${lista[index].codExperienciaLaboral}'),
       experienciaInicial: lista[index],
       codEmpleado: widget.codEmpleado,
       audUsuario: _audUsuario,
-      onSave: (exp) =>
-          isEdition ? _saveToServer(exp) : _updateInList(exp, index),
+      onSave:
+          (exp) => isEdition ? _saveToServer(exp) : _updateInList(exp, index),
       onCancel: () {
         FocusManager.instance.primaryFocus?.unfocus();
         setState(() => _editingIndex = -1);
@@ -423,7 +416,8 @@ class _DetalleExperienciaLaboralState
 
   void _addToList(ExperienciaLaboralEntity exp) {
     final list = List<ExperienciaLaboralEntity>.from(
-        ref.read(tempExperienciaListProvider));
+      ref.read(tempExperienciaListProvider),
+    );
     list.add(exp);
     ref.read(tempExperienciaListProvider.notifier).state = list;
     setState(() => _isAddingNew = false);
@@ -432,7 +426,8 @@ class _DetalleExperienciaLaboralState
 
   void _updateInList(ExperienciaLaboralEntity exp, int index) {
     final list = List<ExperienciaLaboralEntity>.from(
-        ref.read(tempExperienciaListProvider));
+      ref.read(tempExperienciaListProvider),
+    );
     list[index] = exp;
     ref.read(tempExperienciaListProvider.notifier).state = list;
     setState(() => _editingIndex = -1);
@@ -441,7 +436,8 @@ class _DetalleExperienciaLaboralState
 
   void _deleteFromList(int index) {
     final list = List<ExperienciaLaboralEntity>.from(
-        ref.read(tempExperienciaListProvider));
+      ref.read(tempExperienciaListProvider),
+    );
     list.removeAt(index);
     ref.read(tempExperienciaListProvider.notifier).state = list;
     _resetFormState();
@@ -456,8 +452,8 @@ class _DetalleExperienciaLaboralState
     await executeABM(
       ref: ref,
       context: context,
-      operation: () =>
-          ref.read(registrarExperienciaLaboralProvider(exp).future),
+      operation:
+          () => ref.read(registrarExperienciaLaboralProvider(exp).future),
       providersToInvalidate: [experienciaLaboralProvider(widget.codEmpleado)],
       successMessage: '✅ Experiencia guardada: ${exp.cargo}',
     );
@@ -471,8 +467,10 @@ class _DetalleExperienciaLaboralState
     final success = await executeABM(
       ref: ref,
       context: context,
-      operation: () => ref.read(
-          eliminarExperienciaLaboralProvider(codExperienciaLaboral).future),
+      operation:
+          () => ref.read(
+            eliminarExperienciaLaboralProvider(codExperienciaLaboral).future,
+          ),
       providersToInvalidate: [experienciaLaboralProvider(widget.codEmpleado)],
       successMessage: 'Experiencia eliminada correctamente',
       requireConfirmation: true,

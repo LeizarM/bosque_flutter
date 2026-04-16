@@ -432,27 +432,24 @@ class _EmpleadosDependientesViewState
                                                       DataCell(
                                                         Text(
                                                           empleado
-                                                                  .empleadoCargo
-                                                                  .cargoSucursal!
-                                                                  .cargo!
-                                                                  .descripcion ??
-                                                              'N/A',
+                                                              .empleadoCargo
+                                                              .cargoSucursal!
+                                                              .cargo!
+                                                              .descripcion,
                                                         ),
                                                       ),
                                                       DataCell(
                                                         Text(
                                                           empleado
-                                                                  .empresa
-                                                                  .nombre ??
-                                                              'N/A',
+                                                              .empresa
+                                                              .nombre,
                                                         ),
                                                       ),
                                                       DataCell(
                                                         Text(
                                                           (empleado
-                                                                      .sucursal
-                                                                      .nombre ??
-                                                                  'N/A')
+                                                                  .sucursal
+                                                                  .nombre)
                                                               .toUpperCase(),
                                                         ),
                                                       ),
@@ -778,11 +775,10 @@ class _EmpleadosDependientesViewState
                                   children: [
                                     Text(
                                       empleado
-                                              .empleadoCargo
-                                              .cargoSucursal!
-                                              .cargo!
-                                              .descripcion ??
-                                          '-',
+                                          .empleadoCargo
+                                          .cargoSucursal!
+                                          .cargo!
+                                          .descripcion,
                                       style: theme.textTheme.bodySmall
                                           ?.copyWith(
                                             fontSize: 13,
@@ -845,8 +841,7 @@ class _EmpleadosDependientesViewState
                                             context,
                                             icon: Icons.business_outlined,
                                             label: 'Empresa',
-                                            value:
-                                                empleado.empresa.nombre ?? '-',
+                                            value: empleado.empresa.nombre,
                                           ),
                                         ),
                                         const SizedBox(width: 12),
@@ -856,8 +851,7 @@ class _EmpleadosDependientesViewState
                                             icon: Icons.location_on_outlined,
                                             label: 'Sucursal',
                                             value:
-                                                (empleado.sucursal.nombre ??
-                                                        '-')
+                                                (empleado.sucursal.nombre)
                                                     .toUpperCase(),
                                           ),
                                         ),

@@ -36,29 +36,31 @@ class _FormSeguroState extends ConsumerState<FormSeguro> {
   late TextEditingController _nombreCtrl;
   late TextEditingController _nombreCortoCtrl;
   late TextEditingController _numeroCtrl;
-  late TextEditingController _regionalCtrl;
   String? _selectedTipo;
-    int? _selectedCiudadId; // ✅ CAMBIAR: En lugar de _regionalCtrl
+  int? _selectedCiudadId; // ✅ CAMBIAR: En lugar de _regionalCtrl
   CiudadEntity? _selectedCiudad; // ✅ Para guardar la ciudad seleccionada
 
   @override
   void initState() {
     super.initState();
     _formKey = GlobalKey<FormState>();
-    _nombreCtrl =
-        TextEditingController(text: widget.seguroInicial?.nombre ?? '');
-    _nombreCortoCtrl =
-        TextEditingController(text: widget.seguroInicial?.nombreCorto ?? '');
-    _numeroCtrl =
-        TextEditingController(text: widget.seguroInicial?.numero ?? '');
-    _regionalCtrl =
-        TextEditingController(text: widget.seguroInicial?.regional ?? '');
-    _selectedTipo = widget.seguroInicial?.tipo.isNotEmpty == true
-        ? widget.seguroInicial!.tipo
-        : null;
-            _selectedCiudadId = widget.seguroInicial?.codCiudad != 0
-        ? widget.seguroInicial?.codCiudad
-        : null; // ✅ CAMBIAR
+    _nombreCtrl = TextEditingController(
+      text: widget.seguroInicial?.nombre ?? '',
+    );
+    _nombreCortoCtrl = TextEditingController(
+      text: widget.seguroInicial?.nombreCorto ?? '',
+    );
+    _numeroCtrl = TextEditingController(
+      text: widget.seguroInicial?.numero ?? '',
+    );
+    _selectedTipo =
+        widget.seguroInicial?.tipo.isNotEmpty == true
+            ? widget.seguroInicial!.tipo
+            : null;
+    _selectedCiudadId =
+        widget.seguroInicial?.codCiudad != 0
+            ? widget.seguroInicial?.codCiudad
+            : null; // ✅ CAMBIAR
   }
 
   @override
@@ -66,7 +68,7 @@ class _FormSeguroState extends ConsumerState<FormSeguro> {
     _nombreCtrl.dispose();
     _nombreCortoCtrl.dispose();
     _numeroCtrl.dispose();
-   // _regionalCtrl.dispose();
+    // _regionalCtrl.dispose();
     super.dispose();
   }
 
@@ -136,13 +138,9 @@ class _FormSeguroState extends ConsumerState<FormSeguro> {
         Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Expanded(
-              child: _buildNombreCortoField(),
-            ),
+            Expanded(child: _buildNombreCortoField()),
             SizedBox(width: context.spacing),
-            Expanded(
-              child: _buildNumeroField(),
-            ),
+            Expanded(child: _buildNumeroField()),
           ],
         ),
         SizedBox(height: context.largeSpacing),
@@ -161,9 +159,7 @@ class _FormSeguroState extends ConsumerState<FormSeguro> {
       decoration: InputDecoration(
         labelText: 'Nombre *',
         hintText: 'Ingrese el nombre del seguro',
-        border: OutlineInputBorder(
-          borderRadius: context.borderRadius,
-        ),
+        border: OutlineInputBorder(borderRadius: context.borderRadius),
         prefixIcon: const Icon(Icons.shield),
       ),
       validator: validarNombreSeguro,
@@ -176,9 +172,7 @@ class _FormSeguroState extends ConsumerState<FormSeguro> {
       decoration: InputDecoration(
         labelText: 'Nombre Corto *',
         hintText: 'Ej: CCCS',
-        border: OutlineInputBorder(
-          borderRadius: context.borderRadius,
-        ),
+        border: OutlineInputBorder(borderRadius: context.borderRadius),
         prefixIcon: const Icon(Icons.badge),
       ),
       maxLength: 15,
@@ -192,43 +186,45 @@ class _FormSeguroState extends ConsumerState<FormSeguro> {
       decoration: InputDecoration(
         labelText: 'Número *',
         hintText: 'Ej: 001',
-        border: OutlineInputBorder(
-          borderRadius: context.borderRadius,
-        ),
+        border: OutlineInputBorder(borderRadius: context.borderRadius),
         prefixIcon: const Icon(Icons.numbers),
       ),
       validator: validarNumeroSeguro,
     );
   }
 
-Widget _buildRegionalDropdown() {
-  final ciudadesAsync = ref.watch(ciudadProvider(1));
+  Widget _buildRegionalDropdown() {
+    final ciudadesAsync = ref.watch(ciudadProvider(1));
 
-  return CustomDropdown<CiudadEntity>(
-    asyncValue: ciudadesAsync,
-    label: 'Regional *',
-    currentValue: _selectedCiudadId?.toString(), // ✅ Convertir int a String para el dropdown
-    getName: (e) => e.ciudad,
-    getCode: (e) => e.codCiudad.toString(), // ✅ Convertir int a String
-    onChanged: (val) {
-      // ❌ ELIMINAR int.tryParse
-      final codCiudad = int.parse(val ?? '0'); // ✅ O directamente int.parse si siempre es válido
-      
-      ciudadesAsync.whenData((lista) {
-        final ciudadSeleccionada = lista.firstWhere(
-          (c) => c.codCiudad == codCiudad, // ✅ Comparar int con int
-          orElse: () => lista.isNotEmpty ? lista.first : CiudadEntity.vacio(),
-        );
-        setState(() {
-          _selectedCiudadId = codCiudad; // ✅ Guardar int directamente
-          _selectedCiudad = ciudadSeleccionada;
+    return CustomDropdown<CiudadEntity>(
+      asyncValue: ciudadesAsync,
+      label: 'Regional *',
+      currentValue:
+          _selectedCiudadId
+              ?.toString(), // ✅ Convertir int a String para el dropdown
+      getName: (e) => e.ciudad,
+      getCode: (e) => e.codCiudad.toString(), // ✅ Convertir int a String
+      onChanged: (val) {
+        // ❌ ELIMINAR int.tryParse
+        final codCiudad = int.parse(
+          val ?? '0',
+        ); // ✅ O directamente int.parse si siempre es válido
+
+        ciudadesAsync.whenData((lista) {
+          final ciudadSeleccionada = lista.firstWhere(
+            (c) => c.codCiudad == codCiudad, // ✅ Comparar int con int
+            orElse: () => lista.isNotEmpty ? lista.first : CiudadEntity.vacio(),
+          );
+          setState(() {
+            _selectedCiudadId = codCiudad; // ✅ Guardar int directamente
+            _selectedCiudad = ciudadSeleccionada;
+          });
         });
-      });
-    },
-    validator: (v) =>
-        (v?.isEmpty ?? true) ? 'La regional es obligatoria' : null,
-  );
-}
+      },
+      validator:
+          (v) => (v?.isEmpty ?? true) ? 'La regional es obligatoria' : null,
+    );
+  }
 
   // ============================================================================
   // DROPDOWN TIPO SEGURO
@@ -256,10 +252,7 @@ Widget _buildRegionalDropdown() {
     return Row(
       mainAxisAlignment: MainAxisAlignment.end,
       children: [
-        TextButton(
-          onPressed: widget.onCancel,
-          child: const Text('Cancelar'),
-        ),
+        TextButton(onPressed: widget.onCancel, child: const Text('Cancelar')),
         SizedBox(width: context.spacing),
         ElevatedButton.icon(
           icon: const Icon(Icons.save),
@@ -295,7 +288,7 @@ Widget _buildRegionalDropdown() {
       nombre: _nombreCtrl.text.trim(),
       nombreCorto: _nombreCortoCtrl.text.trim(),
       numero: _numeroCtrl.text.trim(),
-      regional:_selectedCiudad?.ciudad ?? '',
+      regional: _selectedCiudad?.ciudad ?? '',
       tipo: _selectedTipo!,
       descripcion: widget.seguroInicial?.descripcion ?? '',
       audUsuarioI: widget.audUsuario,
@@ -305,12 +298,11 @@ Widget _buildRegionalDropdown() {
       ref: ref,
       context: context,
       operation: () => ref.read(registrarSeguro(seguro).future),
-      providersToInvalidate: [
-        obtenerSeguros,
-      ],
-      successMessage: widget.seguroInicial == null
-          ? '✅ Seguro creado correctamente'
-          : '✅ Seguro actualizado correctamente',
+      providersToInvalidate: [obtenerSeguros],
+      successMessage:
+          widget.seguroInicial == null
+              ? '✅ Seguro creado correctamente'
+              : '✅ Seguro actualizado correctamente',
     );
 
     if (success && mounted) {

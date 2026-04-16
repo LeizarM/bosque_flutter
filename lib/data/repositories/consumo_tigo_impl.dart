@@ -272,30 +272,32 @@ class ConsumoTigoImpl implements ConsumoTigoRepository {
 
   //INSERTAR ANTICIPO TIGO tigoInsertarAnticipo
   @override
-Future<bool> generarAnticiposTigo(String periodoCobrado) async {
-  try {
-    final response = await _dio.post(
-      AppConstants.tigoInsertarAnticipo,
-      data: {'periodoCobrado': periodoCobrado},
-      // ✅ ESTO ES LO QUE ARREGLA EL ERROR 500
-      options: Options(
-        receiveTimeout: const Duration(seconds: 120), // 2 minutos para el SP
-        sendTimeout: const Duration(seconds: 60),
-      ),
-    );
+  Future<bool> generarAnticiposTigo(String periodoCobrado) async {
+    try {
+      final response = await _dio.post(
+        AppConstants.tigoInsertarAnticipo,
+        data: {'periodoCobrado': periodoCobrado},
+        // ✅ ESTO ES LO QUE ARREGLA EL ERROR 500
+        options: Options(
+          receiveTimeout: const Duration(seconds: 120), // 2 minutos para el SP
+          sendTimeout: const Duration(seconds: 60),
+        ),
+      );
 
-    if (response.statusCode == 200) {
-      return true;
-    } 
-    return false;
-  } on DioException catch (e) {
-    // Si el error es por tiempo, lo capturamos aquí
-    if (e.type == DioExceptionType.receiveTimeout) {
-      throw Exception('El proceso de anticipos tardó más de 2 minutos. Verifique en SQL.');
+      if (response.statusCode == 200) {
+        return true;
+      }
+      return false;
+    } on DioException catch (e) {
+      // Si el error es por tiempo, lo capturamos aquí
+      if (e.type == DioExceptionType.receiveTimeout) {
+        throw Exception(
+          'El proceso de anticipos tardó más de 2 minutos. Verifique en SQL.',
+        );
+      }
+      rethrow;
     }
-    rethrow;
   }
-}
 
   //DESCARGAR REPORTE TIGO
   Future<Uint8List> descargarReporteFacturasTigo(String periodoCobrado) async {
@@ -378,67 +380,75 @@ Future<bool> generarAnticiposTigo(String periodoCobrado) async {
 
   //insertar tigo ejectuado
   @override
-Future<bool> insertarTigoEjectuado(
-  String periodoCobrado,
-  int audUsuario,
-) async {
-  try {
-    final response = await _dio.post(
-      AppConstants.tigoEjecutarTigo,
-      data: {'periodoCobrado': periodoCobrado, 'audUsuario': audUsuario},
-      // ✅ CAMBIO 1: Aumentar el tiempo de espera a 2 minutos
-      // Esto evita que la app "cuelgue" la conexión a los 10 segundos
-      options: Options(
-        receiveTimeout: const Duration(seconds: 120),
-        sendTimeout: const Duration(seconds: 60),
-      ),
-    );
-
-    console('Respuesta del servidor: ${response.data}');
-
-    if (response.statusCode == 200 || response.statusCode == 201) {
-      return true;
-    } else {
-      throw Exception(
-        'Error al ejecutar: ${response.statusCode} - ${response.data}',
+  Future<bool> insertarTigoEjectuado(
+    String periodoCobrado,
+    int audUsuario,
+  ) async {
+    try {
+      final response = await _dio.post(
+        AppConstants.tigoEjecutarTigo,
+        data: {'periodoCobrado': periodoCobrado, 'audUsuario': audUsuario},
+        // ✅ CAMBIO 1: Aumentar el tiempo de espera a 2 minutos
+        // Esto evita que la app "cuelgue" la conexión a los 10 segundos
+        options: Options(
+          receiveTimeout: const Duration(seconds: 120),
+          sendTimeout: const Duration(seconds: 60),
+        ),
       );
-    }
-  } on DioException catch (e) {
-    final response = e.response;
 
-    // ✅ CAMBIO 2: Manejo de Timeout específico
-    if (e.type == DioExceptionType.receiveTimeout) {
-      throw Exception('El servidor tardó demasiado en procesar la ejecución (Timeout de 2 min).');
-    }
+      console('Respuesta del servidor: ${response.data}');
 
-    // ✅ CAMBIO 3: Mejorar la extracción del mensaje de error
-    // Ahora también revisamos errores 500, no solo 400
-    if (response != null && (response.statusCode == 400 || response.statusCode == 500)) {
-      final data = response.data;
-      if (data is Map && data.containsKey('msg')) {
-        final errorMessage = data['msg'] as String;
-        throw Exception(errorMessage);
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        return true;
+      } else {
+        throw Exception(
+          'Error al ejecutar: ${response.statusCode} - ${response.data}',
+        );
       }
-    }
+    } on DioException catch (e) {
+      final response = e.response;
 
-    console('DioException genérica: ${response?.data ?? e.message}');
-    throw Exception('Error de conexión o servidor. Intente más tarde.');
-  } catch (e) {
-    console('Error inesperado: $e');
-    rethrow;
+      // ✅ CAMBIO 2: Manejo de Timeout específico
+      if (e.type == DioExceptionType.receiveTimeout) {
+        throw Exception(
+          'El servidor tardó demasiado en procesar la ejecución (Timeout de 2 min).',
+        );
+      }
+
+      // ✅ CAMBIO 3: Mejorar la extracción del mensaje de error
+      // Ahora también revisamos errores 500, no solo 400
+      if (response != null &&
+          (response.statusCode == 400 || response.statusCode == 500)) {
+        final data = response.data;
+        if (data is Map && data.containsKey('msg')) {
+          final errorMessage = data['msg'] as String;
+          throw Exception(errorMessage);
+        }
+      }
+
+      console('DioException genérica: ${response?.data ?? e.message}');
+      throw Exception('Error de conexión o servidor. Intente más tarde.');
+    } catch (e) {
+      console('Error inesperado: $e');
+      rethrow;
+    }
   }
-}
 
   //obtener tigo ejecutado
   @override
   Future<List<TigoEjecutadoEntity>> obtenerTigoEjecutado(
     String? empresa,
     String periodoCobrado,
+    String? search,
   ) async {
     try {
       final response = await _dio.post(
         AppConstants.tigoObtenerEjecutado,
-        data: {'empresa': empresa, 'periodoCobrado': periodoCobrado},
+        data: {
+          'empresa': empresa,
+          'periodoCobrado': periodoCobrado,
+          'search': search,
+        },
       );
       if (response.statusCode == 200 && response.data != null) {
         final data = response.data ?? [];
@@ -493,11 +503,16 @@ Future<bool> insertarTigoEjectuado(
   Future<List<TigoEjecutadoEntity>> obtenerArbolDetallado(
     String? empresa,
     String periodoCobrado,
+    String? search,
   ) async {
     try {
       final response = await _dio.post(
         AppConstants.tigoObtenerArbolDetallado,
-        data: {"empresa": empresa, "periodoCobrado": periodoCobrado},
+        data: {
+          "empresa": empresa,
+          "periodoCobrado": periodoCobrado,
+          "search": search,
+        },
       );
       //console('→ Respuesta cruda del backend: ${response.data}'); // Imprime el JSON recibido
 
@@ -525,7 +540,8 @@ Future<bool> insertarTigoEjectuado(
       return [];
     }
   }
-    //DESCARGAR REPORTE CAMBIOS TIGO
+
+  //DESCARGAR REPORTE CAMBIOS TIGO
   Future<Uint8List> descargarRptCambiosTigo(String periodoCobrado) async {
     final response = await _dio.post(
       AppConstants.tigoRptCambiosTigo, // Cambia esto por la URL de tu endpoint
@@ -541,33 +557,34 @@ Future<bool> insertarTigoEjectuado(
       throw Exception('No se pudo descargar el PDF');
     }
   }
+
   //ACTUALIZAR EMPRESA POR LOTE - TIGO
   @override
-Future<bool> actualizarEmpresaLote(TigoEjecutadoEntity tigoEjecutado) async {
-  try {
-    final response = await _dio.post(
-      AppConstants.tigoActualizarEmpresaLote,
-      data: tigoEjecutado.toJson(),
-    );
+  Future<bool> actualizarEmpresaLote(TigoEjecutadoEntity tigoEjecutado) async {
+    try {
+      final response = await _dio.post(
+        AppConstants.tigoActualizarEmpresaLote,
+        data: tigoEjecutado.toJson(),
+      );
 
-    console('Respuesta actualizar lote: ${response.data}');
+      console('Respuesta actualizar lote: ${response.data}');
 
-    if (response.statusCode == 200 && response.data?['ok'] == 'ok') {
-      return true;
-    } else {
-      throw Exception(response.data?['msg'] ?? 'Error desconocido');
+      if (response.statusCode == 200 && response.data?['ok'] == 'ok') {
+        return true;
+      } else {
+        throw Exception(response.data?['msg'] ?? 'Error desconocido');
+      }
+    } on DioException catch (e) {
+      console('DioException en actualizarEmpresaLote: ${e.message}');
+      throw Exception(e.response?.data?['msg'] ?? 'Error de conexión');
+    } catch (e) {
+      console('Error en actualizarEmpresaLote: $e');
+      rethrow;
     }
-  } on DioException catch (e) {
-    console('DioException en actualizarEmpresaLote: ${e.message}');
-    throw Exception(e.response?.data?['msg'] ?? 'Error de conexión');
-  } catch (e) {
-    console('Error en actualizarEmpresaLote: $e');
-    rethrow;
   }
-}
-// ═══════════════════════════════════════════════════════════════════════
+  // ═══════════════════════════════════════════════════════════════════════
   // CAMBIOS DE LINEAS CORPORATIVAS TIGO
-// ═══════════════════════════════════════════════════════════════════════
+  // ═══════════════════════════════════════════════════════════════════════
 
   /// Registrar o actualizar un cambio de linea (I o U segun codCambio)
   Future<BigInt> registrarCambioLinea(CambiosTigoEntity entity) async {
@@ -582,11 +599,11 @@ Future<bool> actualizarEmpresaLote(TigoEjecutadoEntity tigoEjecutado) async {
       if (response.statusCode == 200 || response.statusCode == 201) {
         final data = response.data;
         final msg = data?['message'] ?? '';
-    
-    // Si contiene ADVERTENCIA, lanzar excepción para que el provider la capture
-    if (msg.toUpperCase().contains('ADVERTENCIA')) {
-      throw Exception(msg);
-    }
+
+        // Si contiene ADVERTENCIA, lanzar excepción para que el provider la capture
+        if (msg.toUpperCase().contains('ADVERTENCIA')) {
+          throw Exception(msg);
+        }
         if (data != null && data['data'] != null) {
           return BigInt.from(data['data']);
         }
@@ -654,7 +671,7 @@ Future<bool> actualizarEmpresaLote(TigoEjecutadoEntity tigoEjecutado) async {
         data: CambiosTigoModel.fromEntity(entity).toJson(),
         options: Options(
           receiveTimeout: const Duration(seconds: 120),
-          sendTimeout:    const Duration(seconds: 60),
+          sendTimeout: const Duration(seconds: 60),
         ),
       );
 
@@ -667,9 +684,7 @@ Future<bool> actualizarEmpresaLote(TigoEjecutadoEntity tigoEjecutado) async {
         }
         return BigInt.zero;
       } else {
-        throw Exception(
-          'Error al aplicar cambios: ${response.statusCode}',
-        );
+        throw Exception('Error al aplicar cambios: ${response.statusCode}');
       }
     } on DioException catch (e) {
       if (e.type == DioExceptionType.receiveTimeout) {
@@ -704,9 +719,10 @@ Future<bool> actualizarEmpresaLote(TigoEjecutadoEntity tigoEjecutado) async {
       );
       if (response.statusCode == 200 && response.data != null) {
         final data = response.data['data'] ?? [];
-        final items = (data as List<dynamic>)
-            .map((json) => CambiosTigoModel.fromJson(json))
-            .toList();
+        final items =
+            (data as List<dynamic>)
+                .map((json) => CambiosTigoModel.fromJson(json))
+                .toList();
         return items.map((m) => m.toEntity()).toList();
       }
       return [];
@@ -731,9 +747,10 @@ Future<bool> actualizarEmpresaLote(TigoEjecutadoEntity tigoEjecutado) async {
       );
       if (response.statusCode == 200 && response.data != null) {
         final data = response.data['data'] ?? [];
-        final items = (data as List<dynamic>)
-            .map((json) => CambiosTigoModel.fromJson(json))
-            .toList();
+        final items =
+            (data as List<dynamic>)
+                .map((json) => CambiosTigoModel.fromJson(json))
+                .toList();
         return items.map((m) => m.toEntity()).toList();
       }
       return [];
@@ -759,9 +776,10 @@ Future<bool> actualizarEmpresaLote(TigoEjecutadoEntity tigoEjecutado) async {
       );
       if (response.statusCode == 200 && response.data != null) {
         final data = response.data['data'] ?? [];
-        final items = (data as List<dynamic>)
-            .map((json) => CambiosTigoModel.fromJson(json))
-            .toList();
+        final items =
+            (data as List<dynamic>)
+                .map((json) => CambiosTigoModel.fromJson(json))
+                .toList();
         return items.map((m) => m.toEntity()).toList();
       }
       return [];
@@ -773,28 +791,31 @@ Future<bool> actualizarEmpresaLote(TigoEjecutadoEntity tigoEjecutado) async {
       return [];
     }
   }
+
   //REASIGNAR NUMERO SIN ASIGNAR (EXTERNO O EMPLEADO SIN CORPORATIVO)
   Future<BigInt> reasignarNumeroSinAsignar(CambiosTigoEntity entity) async {
-  try {
-    final response = await _dio.post(
-      AppConstants.tigoReasignarNumeroSinAsignar,
-      data: CambiosTigoModel.fromEntity(entity).toJson(),
-    );
-    final msg = response.data['message'] ?? '';
-    if (msg.toUpperCase().contains('ADVERTENCIA')) throw Exception(msg);
-    return BigInt.from(response.data['data'] ?? 0);
-  } on DioException catch (e) {
-    final msg = e.response?.data['message'] ?? e.message;
-    throw Exception(msg);
+    try {
+      final response = await _dio.post(
+        AppConstants.tigoReasignarNumeroSinAsignar,
+        data: CambiosTigoModel.fromEntity(entity).toJson(),
+      );
+      final msg = response.data['message'] ?? '';
+      if (msg.toUpperCase().contains('ADVERTENCIA')) throw Exception(msg);
+      return BigInt.from(response.data['data'] ?? 0);
+    } on DioException catch (e) {
+      final msg = e.response?.data['message'] ?? e.message;
+      throw Exception(msg);
+    }
   }
-}
-// ═══════════════════════════════════════════════════════════════════════
-// MÓDULO: TIGO CHIP (CHIPS PERDIDOS / REPOSICIONES)
-// ═══════════════════════════════════════════════════════════════════════
+  // ═══════════════════════════════════════════════════════════════════════
+  // MÓDULO: TIGO CHIP (CHIPS PERDIDOS / REPOSICIONES)
+  // ═══════════════════════════════════════════════════════════════════════
 
-// LISTAR PERDIDAS
+  // LISTAR PERDIDAS
   @override
-  Future<List<ChipTigoEntity>> listarChipsPerdidos(ChipTigoEntity filtro) async {
+  Future<List<ChipTigoEntity>> listarChipsPerdidos(
+    ChipTigoEntity filtro,
+  ) async {
     try {
       final response = await _dio.post(
         AppConstants.tigoListarPerdidasLinea, // URL: /tigo/listarPerdidas
@@ -815,7 +836,7 @@ Future<bool> actualizarEmpresaLote(TigoEjecutadoEntity tigoEjecutado) async {
   }
 
   // REGISTRAR O ACTUALIZAR (El Controller decide si es I o U)
- @override
+  @override
   Future<String> registrarPerdidaChip(ChipTigoEntity entity) async {
     try {
       final response = await _dio.post(
@@ -826,7 +847,6 @@ Future<bool> actualizarEmpresaLote(TigoEjecutadoEntity tigoEjecutado) async {
       // Si todo sale bien (Status 200 o similar)
       final res = ChipTigoResponse.fromJson(response.data);
       return res.message;
-
     } on DioException catch (e) {
       // Si Java responde con un 400 (Validacion fallida), Dio entra aqui
       if (e.response != null && e.response?.data != null) {
@@ -834,7 +854,7 @@ Future<bool> actualizarEmpresaLote(TigoEjecutadoEntity tigoEjecutado) async {
         final resError = ChipTigoResponse.fromJson(e.response!.data);
         throw Exception(resError.message);
       }
-      
+
       // Error de red (servidor caido, timeout, etc.)
       throw Exception('Error de conexion: ${e.message}');
     } catch (e) {
@@ -848,7 +868,8 @@ Future<bool> actualizarEmpresaLote(TigoEjecutadoEntity tigoEjecutado) async {
   Future<bool> eliminarRegistroPerdida(ChipTigoEntity entity) async {
     try {
       final response = await _dio.post(
-        AppConstants.tigoEliminarPerdidaLinea, // URL: /tigo/eliminarRegistroPerdida
+        AppConstants
+            .tigoEliminarPerdidaLinea, // URL: /tigo/eliminarRegistroPerdida
         data: ChipTigoModel.fromEntity(entity).toJson(),
       );
       return response.statusCode == 200;
@@ -857,16 +878,15 @@ Future<bool> actualizarEmpresaLote(TigoEjecutadoEntity tigoEjecutado) async {
       return false;
     }
   }
+
   @override
   Future<List<String>> obtenerPeriodos() async {
     try {
-      final response = await _dio.post(
-        AppConstants.tigoListarPeriodos, 
-      );
+      final response = await _dio.post(AppConstants.tigoListarPeriodos);
 
       if (response.statusCode == 200 && response.data != null) {
         final List<dynamic> data = response.data['data'] ?? [];
-        
+
         // Convertimos la lista de JSON a modelos y extraemos solo el string 'periodo'
         return data
             .map((json) => ChipTigoModel.fromJson(json).periodo ?? '')
@@ -879,16 +899,18 @@ Future<bool> actualizarEmpresaLote(TigoEjecutadoEntity tigoEjecutado) async {
       return [];
     }
   }
-//OBTENDRA LOS TIPOS RENOVACION DE CHIP TIGO
-@override
-  Future<List<TipoRenovacionChipTigoEntity>> obtenerTipoRenovacion()async {
+
+  //OBTENDRA LOS TIPOS RENOVACION DE CHIP TIGO
+  @override
+  Future<List<TipoRenovacionChipTigoEntity>> obtenerTipoRenovacion() async {
     try {
       final response = await _dio.post(AppConstants.tigoObtenerTipoRenovacion);
       if (response.statusCode == 200 && response.data != null) {
         final data = response.data ?? [];
-        final items = (data as List<dynamic>)
-            .map((json) => TipoRenovacionChipModel.fromJson(json))
-            .toList();
+        final items =
+            (data as List<dynamic>)
+                .map((json) => TipoRenovacionChipModel.fromJson(json))
+                .toList();
         return items.map((model) => model.toEntity()).toList();
       } else {
         return [];
@@ -901,31 +923,31 @@ Future<bool> actualizarEmpresaLote(TigoEjecutadoEntity tigoEjecutado) async {
       return [];
     }
   }
+
   //RPT : REPORTE PERDIDA LINEA TIGO
-@override
-Future<Uint8List> descargarRptPerdidaLineas(String periodo) async {
-  try {
-    // USAMOS TU MÉTODO CENTRALIZADO QUE YA TIENE LAS OPTIONS CORRECTAS
-    return await DioClient.descargarReportePdf(
-      endpoint: AppConstants.tigoRptPerdidaLineas,
-      data: {'periodo': periodo},
-    );
-  } catch (e) {
-    console('Error descargarRptPerdidaLineas: $e');
-    throw Exception('No se pudo generar el reporte: $e');
+  @override
+  Future<Uint8List> descargarRptPerdidaLineas(String periodo) async {
+    try {
+      // USAMOS TU MÉTODO CENTRALIZADO QUE YA TIENE LAS OPTIONS CORRECTAS
+      return await DioClient.descargarReportePdf(
+        endpoint: AppConstants.tigoRptPerdidaLineas,
+        data: {'periodo': periodo},
+      );
+    } catch (e) {
+      console('Error descargarRptPerdidaLineas: $e');
+      throw Exception('No se pudo generar el reporte: $e');
+    }
   }
-}
-//OBTENER LISTA DE PERIODOS PARA FILTRAR EN CAMBIOS TIGO
+
+  //OBTENER LISTA DE PERIODOS PARA FILTRAR EN CAMBIOS TIGO
   @override
   Future<List<String>> obtenerPeriodosCambio() async {
     try {
-      final response = await _dio.post(
-        AppConstants.tigoListarPeriodosCambio, 
-      );
+      final response = await _dio.post(AppConstants.tigoListarPeriodosCambio);
 
       if (response.statusCode == 200 && response.data != null) {
         final List<dynamic> data = response.data['data'] ?? [];
-        
+
         // Convertimos la lista de JSON a modelos y extraemos solo el string 'periodo'
         return data
             .map((json) => CambiosTigoModel.fromJson(json).periodoCobrado)
@@ -938,21 +960,23 @@ Future<Uint8List> descargarRptPerdidaLineas(String periodo) async {
       return [];
     }
   }
-    //RPT : REPORTE CAMBIOS LINEA TIGO
-@override
-Future<Uint8List> descargarRptCambiosLineaTigo(String periodoCobrado) async {
-  try {
-    // USAMOS TU MÉTODO CENTRALIZADO QUE YA TIENE LAS OPTIONS CORRECTAS
-    return await DioClient.descargarReportePdf(
-      endpoint: AppConstants.tigoRptCambiosLineaTigo,
-      data: {'periodoCobrado': periodoCobrado},
-    );
-  } catch (e) {
-    console('Error descargarRptPerdidaLineas: $e');
-    throw Exception('No se pudo generar el reporte: $e');
+
+  //RPT : REPORTE CAMBIOS LINEA TIGO
+  @override
+  Future<Uint8List> descargarRptCambiosLineaTigo(String periodoCobrado) async {
+    try {
+      // USAMOS TU MÉTODO CENTRALIZADO QUE YA TIENE LAS OPTIONS CORRECTAS
+      return await DioClient.descargarReportePdf(
+        endpoint: AppConstants.tigoRptCambiosLineaTigo,
+        data: {'periodoCobrado': periodoCobrado},
+      );
+    } catch (e) {
+      console('Error descargarRptPerdidaLineas: $e');
+      throw Exception('No se pudo generar el reporte: $e');
+    }
   }
-}
-/// Ejecutar periodo Tigo completo — ACCION='E'
+
+  /// Ejecutar periodo Tigo completo — ACCION='E'
   /// Inserta en tTigo_ejecutado Y en [BOSQUE].dbo.Anticipo_2
   /// en una sola transacción con validaciones SQL.
   ///
@@ -963,16 +987,17 @@ Future<Uint8List> descargarRptCambiosLineaTigo(String periodoCobrado) async {
   ) async {
     try {
       final response = await _dio.post(
-        AppConstants.tigoEjecutarPeriodoTigo,     // '/tigo/ejecutarPeriodoTigo'
+        AppConstants.tigoEjecutarPeriodoTigo, // '/tigo/ejecutarPeriodoTigo'
         data: TigoEjecutadoModel.fromEntity(entity).toJson(),
         options: Options(
           // El SP puede tardar varios minutos al insertar en ambas BDs
           receiveTimeout: const Duration(seconds: 180),
-          sendTimeout:    const Duration(seconds:  60),
+          sendTimeout: const Duration(seconds: 60),
         ),
       );
-      return TigoEjecutadoResponse.fromJson(response.data as Map<String, dynamic>);
- 
+      return TigoEjecutadoResponse.fromJson(
+        response.data as Map<String, dynamic>,
+      );
     } on DioException catch (e) {
       if (e.type == DioExceptionType.receiveTimeout) {
         throw Exception(
@@ -985,39 +1010,84 @@ Future<Uint8List> descargarRptCambiosLineaTigo(String periodoCobrado) async {
         throw Exception(data['message']);
       }
       throw Exception('Error de conexión al ejecutar el periodo.');
- 
     } catch (e) {
       console('Error ejecutarPeriodoTigo: $e');
       rethrow;
     }
   }
+
   //RPT : LINEAS TIGO PERSONAL
   @override
-Future<Uint8List> descargarRptCorporativosPersonal(String periodoCobrado) async {
-  try {
-    // USAMOS TU MÉTODO CENTRALIZADO QUE YA TIENE LAS OPTIONS CORRECTAS
-    return await DioClient.descargarReportePdf(
-      endpoint: AppConstants.tigoRptCorporativosPersonal,
-      data: {'periodoCobrado': periodoCobrado},
-    );
-  } catch (e) {
-    console('Error descargarRptCorporativosPersonal: $e');
-    throw Exception('No se pudo generar el reporte: $e');
+  Future<Uint8List> descargarRptCorporativosPersonal(
+    String periodoCobrado,
+  ) async {
+    try {
+      // USAMOS TU MÉTODO CENTRALIZADO QUE YA TIENE LAS OPTIONS CORRECTAS
+      return await DioClient.descargarReportePdf(
+        endpoint: AppConstants.tigoRptCorporativosPersonal,
+        data: {'periodoCobrado': periodoCobrado},
+      );
+    } catch (e) {
+      console('Error descargarRptCorporativosPersonal: $e');
+      throw Exception('No se pudo generar el reporte: $e');
+    }
+  }
+
+  //RPT : COMPARACION EMPRESAS
+  @override
+  Future<Uint8List> descargarRptComparacionEmpresas() async {
+    try {
+      // USAMOS TU MÉTODO CENTRALIZADO QUE YA TIENE LAS OPTIONS CORRECTAS
+      return await DioClient.descargarReportePdf(
+        endpoint: AppConstants.tigoRptComparacionEmpresas,
+      );
+    } catch (e) {
+      console('Error descargarRptComparacionEmpresas: $e');
+      throw Exception('No se pudo generar el reporte: $e');
+    }
+  }
+
+  //OBTENER LISTA DE PERIODOS PARA FILTRAR EN CAMBIOS TIGO
+  @override
+  Future<List<String>> obtenerPeriodosFactura() async {
+    try {
+      final response = await _dio.post(AppConstants.tigoListarPeriodoFactura);
+
+      if (response.statusCode == 200 && response.data != null) {
+        final List<dynamic> data = response.data['data'] ?? [];
+
+        // Convertimos la lista de JSON a modelos y extraemos solo el string 'periodo'
+        return data
+            .map((json) => FacturaTigoModel.fromJson(json).periodoCobrado)
+            .where((p) => p.isNotEmpty) // Limpieza por seguridad
+            .toList();
+      }
+      return [];
+    } catch (e) {
+      console('Error obtenerPeriodos: $e');
+      return [];
+    }
+  }
+
+  //OBTENER LISTA DE EMPRESAS PARA CONSUMO TIGO
+  @override
+  Future<List<String>> listarEmpresasTigo() async {
+    try {
+      final response = await _dio.post(AppConstants.tigoListarEmpresas);
+
+      if (response.statusCode == 200 && response.data != null) {
+        final List<dynamic> data = response.data['data'] ?? [];
+
+        // Convertimos la lista de JSON a modelos y extraemos solo el string 'periodo'
+        return data
+            .map((json) => TigoEjecutadoModel.fromJson(json).empresa)
+            .where((p) => p.isNotEmpty) // Limpieza por seguridad
+            .toList();
+      }
+      return [];
+    } catch (e) {
+      console('Error listarEmpresasTigo: $e');
+      return [];
+    }
   }
 }
-//RPT : COMPARACION EMPRESAS
-@override
-Future<Uint8List> descargarRptComparacionEmpresas() async {
-  try {
-    // USAMOS TU MÉTODO CENTRALIZADO QUE YA TIENE LAS OPTIONS CORRECTAS
-    return await DioClient.descargarReportePdf(
-      endpoint: AppConstants.tigoRptComparacionEmpresas
-    );
-  } catch (e) {
-    console('Error descargarRptComparacionEmpresas: $e');
-    throw Exception('No se pudo generar el reporte: $e');
-  }
-}
-
-}
-

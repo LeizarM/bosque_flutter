@@ -1,7 +1,3 @@
-
-
-
-import 'package:bosque_flutter/data/models/empleado_model.dart';
 import 'package:bosque_flutter/domain/entities/empleado_cargo_entity.dart';
 import 'package:bosque_flutter/domain/entities/empresa_entity.dart';
 import 'package:bosque_flutter/domain/entities/persona_entity.dart';
@@ -36,7 +32,7 @@ class EmpleadoEntity {
   final int codDependiente;
   final dynamic esActivoString;
   final PersonaEntity persona;
-  final EmpleadoCargoEntity  empleadoCargo;
+  final EmpleadoCargoEntity empleadoCargo;
   final DependienteEntity? dependiente;
   final EmpresaEntity empresa;
   final SucursalEntity sucursal;
@@ -75,38 +71,37 @@ class EmpleadoEntity {
     required this.empresa,
     required this.sucursal,
     required this.relEmpEmpr,
-    this.haberBasico
-    
+    this.haberBasico,
   });
   //metodo tojson
   Map<String, dynamic> toJson() => {
-        "codPersona": codPersona,
-        "codZona": codZona,
-        "nombres": nombres,
-        "apPaterno": apPaterno,
-        "apMaterno": apMaterno,
-        "ciExpedido": ciExpedido,
-        "ciFechaVencimiento": ciFechaVencimiento.toIso8601String(),
-        "ciNumero": ciNumero,
-        "direccion": direccion,
-        "estadoCivil": estadoCivil,
-        "fechaNacimiento": fechaNacimiento.toIso8601String(),
-        "lugarNacimiento": lugarNacimiento,
-        "nacionalidad": nacionalidad,
-        "sexo": sexo,
-        "lat": lat,
-        "lng": lng,
-        "audUsuarioI": audUsuarioI,
-        "datoPersona": datoPersona,
-        "codEmpleado": codEmpleado,
-        "numCuenta": numCuenta,
-        "codRelBeneficios": codRelBeneficios,
-        "codRelPlanilla": codRelPlanilla,
-        "codDependiente": codDependiente,
-        "esActivoString": esActivoString,
-        "haberBasico": haberBasico,
-      };
-EmpleadoEntity copyWith({
+    "codPersona": codPersona,
+    "codZona": codZona,
+    "nombres": nombres,
+    "apPaterno": apPaterno,
+    "apMaterno": apMaterno,
+    "ciExpedido": ciExpedido,
+    "ciFechaVencimiento": ciFechaVencimiento.toIso8601String(),
+    "ciNumero": ciNumero,
+    "direccion": direccion,
+    "estadoCivil": estadoCivil,
+    "fechaNacimiento": fechaNacimiento.toIso8601String(),
+    "lugarNacimiento": lugarNacimiento,
+    "nacionalidad": nacionalidad,
+    "sexo": sexo,
+    "lat": lat,
+    "lng": lng,
+    "audUsuarioI": audUsuarioI,
+    "datoPersona": datoPersona,
+    "codEmpleado": codEmpleado,
+    "numCuenta": numCuenta,
+    "codRelBeneficios": codRelBeneficios,
+    "codRelPlanilla": codRelPlanilla,
+    "codDependiente": codDependiente,
+    "esActivoString": esActivoString,
+    "haberBasico": haberBasico,
+  };
+  EmpleadoEntity copyWith({
     int? fila,
     int? codPersona,
     int? codZona,

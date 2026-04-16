@@ -22,20 +22,20 @@ class CambiosLineaScreen extends ConsumerStatefulWidget {
 
 class _CambiosLineaScreenState extends ConsumerState<CambiosLineaScreen>
     with SingleTickerProviderStateMixin {
-
   final TextEditingController _buscadorController = TextEditingController();
+  final TextEditingController _buscadorCambiosController =
+      TextEditingController();
   Timer? _debounce;
+  Timer? _debounceCambios;
   String? _tipoSocioFiltro; // null=TODOS, 'EMPLEADO', 'EXTERNO'
   late TabController _tabController;
-
-  // Opciones de filas por página disponibles en el selector
-  static const List<int> _opcionesTamanoPagina = [10, 15, 25, 50];
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
     _buscadorController.clear();
+    _buscadorCambiosController.clear();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final notifier = ref.read(cambiosTigoProvider.notifier);
       //notifier.setPeriodoCobrado(widget.periodoCobrado);
@@ -48,7 +48,9 @@ class _CambiosLineaScreenState extends ConsumerState<CambiosLineaScreen>
   @override
   void dispose() {
     _buscadorController.dispose();
+    _buscadorCambiosController.dispose();
     _debounce?.cancel();
+    _debounceCambios?.cancel();
     _tabController.dispose();
     super.dispose();
   }
@@ -66,18 +68,32 @@ class _CambiosLineaScreenState extends ConsumerState<CambiosLineaScreen>
     });
   }
 
-  // ── Cambio de página ─────────────────────────────────────────────────
-  void _irAPagina(int pagina) {
-    ref.read(cambiosTigoProvider.notifier)
-      ..setPagina(pagina)
-      ..cargarNumerosAsignados();
+  // ── Búsqueda Historial con debounce — resetea a página 1 ──────────────────────
+  void _onSearchCambiosChanged(String valor) {
+    _debounceCambios?.cancel();
+    _debounceCambios = Timer(const Duration(milliseconds: 500), () {
+      ref.read(cambiosTigoProvider.notifier).setSearchCambios(valor);
+    });
   }
 
-  // ── Cambio de tamaño de página — resetea a página 1 (ya lo hace setTamanoPagina) ──
-  void _cambiarTamanoPagina(int nuevo) {
-    ref.read(cambiosTigoProvider.notifier)
-      ..setTamanoPagina(nuevo)   // ya incluye pagina: 1 internamente
-      ..cargarNumerosAsignados();
+  // ── Cambio de página Numeros─────────────────────────────────────────────────
+  void _irAPaginaNumeros(int pagina) {
+    ref.read(cambiosTigoProvider.notifier).setPaginaNumeros(pagina);
+  }
+
+  // ── Cambio de página Cambios─────────────────────────────────────────────────
+  void _irAPaginaCambios(int pagina) {
+    ref.read(cambiosTigoProvider.notifier).setPaginaCambios(pagina);
+  }
+
+  // ── Cambio de tamaño de página Numeros ──
+  void _cambiarTamanoPaginaNumeros(int nuevo) {
+    ref.read(cambiosTigoProvider.notifier).setTamanoPaginaNumeros(nuevo);
+  }
+
+  // ── Cambio de tamaño de página Cambios ──
+  void _cambiarTamanoPaginaCambios(int nuevo) {
+    ref.read(cambiosTigoProvider.notifier).setTamanoPaginaCambios(nuevo);
   }
 
   // ── Cambio de filtro tipoSocio — setTipoSocio ya llama cargarNumerosAsignados ──
@@ -88,14 +104,13 @@ class _CambiosLineaScreenState extends ConsumerState<CambiosLineaScreen>
 
   @override
   Widget build(BuildContext context) {
-    final state    = ref.watch(cambiosTigoProvider);
+    final state = ref.watch(cambiosTigoProvider);
     final isMobile = ResponsiveUtilsBosque.isMobile(context);
     final hPadding = ResponsiveUtilsBosque.getHorizontalPadding(context);
     final vPadding = ResponsiveUtilsBosque.getVerticalPadding(context);
 
-    final pendientes = state.cambiosRegistrados
-        .where((c) => c.estado == 'P')
-        .length;
+    final pendientes =
+        state.cambiosRegistrados.where((c) => c.estado == 'P').length;
 
     // Mostrar mensajes del SP
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -134,36 +149,48 @@ class _CambiosLineaScreenState extends ConsumerState<CambiosLineaScreen>
         iconTheme: const IconThemeData(color: Colors.white),
         actions: [
           IconButton(
-  icon: const Icon(Icons.refresh),
-  tooltip: 'Refrescar',
-  onPressed: () {
-    ref.read(cambiosTigoProvider.notifier).cargarNumerosAsignados();
-    ref.read(cambiosTigoProvider.notifier).cargarCambiosRegistrados();
-    
-    // Invalida el reporte para que la próxima vez que se abra, esté fresco
-    if (state.periodoCobrado != null) {
-      ref.invalidate(rptCambioLineaTigoProvider(state.periodoCobrado!));
-    }
-  },
-),
-         IconButton(
-  icon: const Icon(Icons.picture_as_pdf_outlined, color: Colors.white),
-  onPressed: (state.periodoCobrado == null)
-      ? null
-      : () async {
-          // 1. Limpiamos cualquier rastro del reporte para este periodo específico
-          ref.invalidate(rptCambioLineaTigoProvider(state.periodoCobrado!));
+            icon: const Icon(Icons.refresh),
+            tooltip: 'Refrescar',
+            onPressed: () {
+              ref.read(cambiosTigoProvider.notifier).cargarNumerosAsignados();
+              ref.read(cambiosTigoProvider.notifier).cargarCambiosRegistrados();
 
-          await mostrarReportePdf(
-            context: context,
-            filename: 'RptCambios_${state.periodoCobrado}.pdf',
-            downloadFunction: () async {
-              // 2. Ejecutamos la petición fresca
-              return await ref.read(rptCambioLineaTigoProvider(state.periodoCobrado!).future);
+              // Invalida el reporte para que la próxima vez que se abra, esté fresco
+              if (state.periodoCobrado != null) {
+                ref.invalidate(
+                  rptCambioLineaTigoProvider(state.periodoCobrado!),
+                );
+              }
             },
-          );
-        },
-),
+          ),
+          IconButton(
+            icon: const Icon(
+              Icons.picture_as_pdf_outlined,
+              color: Colors.white,
+            ),
+            onPressed:
+                (state.periodoCobrado == null)
+                    ? null
+                    : () async {
+                      // 1. Limpiamos cualquier rastro del reporte para este periodo específico
+                      ref.invalidate(
+                        rptCambioLineaTigoProvider(state.periodoCobrado!),
+                      );
+
+                      await mostrarReportePdf(
+                        context: context,
+                        filename: 'RptCambios_${state.periodoCobrado}.pdf',
+                        downloadFunction: () async {
+                          // 2. Ejecutamos la petición fresca
+                          return await ref.read(
+                            rptCambioLineaTigoProvider(
+                              state.periodoCobrado!,
+                            ).future,
+                          );
+                        },
+                      );
+                    },
+          ),
         ],
         bottom: TabBar(
           controller: _tabController,
@@ -183,7 +210,8 @@ class _CambiosLineaScreenState extends ConsumerState<CambiosLineaScreen>
                     const SizedBox(width: 6),
                     Container(
                       padding: const EdgeInsets.symmetric(
-                        horizontal: 6, vertical: 2,
+                        horizontal: 6,
+                        vertical: 2,
                       ),
                       decoration: BoxDecoration(
                         color: Colors.orange,
@@ -233,7 +261,7 @@ class _CambiosLineaScreenState extends ConsumerState<CambiosLineaScreen>
   // TAB 1: NUMEROS ASIGNADOS
   // ═══════════════════════════════════════════════════════════════════
 
-// ═══════════════════════════════════════════════════════════════════
+  // ═══════════════════════════════════════════════════════════════════
   // TAB 1: NUMEROS ASIGNADOS (REFACTORIZADO CON BOSQUE_FLAT_TABLE)
   // ═══════════════════════════════════════════════════════════════════
 
@@ -252,11 +280,33 @@ class _CambiosLineaScreenState extends ConsumerState<CambiosLineaScreen>
       searchController: _buscadorController,
       onSearch: _onSearchChanged,
 
-      
+      // -- PAGINACIÓN AUTOMÁTICA --
+      currentPage:
+          (!state.cargandoNumeros && state.numerosAsignados.isNotEmpty)
+              ? state.paginaNumeros
+              : null,
+      totalPages:
+          (!state.cargandoNumeros && state.numerosAsignados.isNotEmpty)
+              ? (state.numerosAsignados.first.totalPaginas > 0
+                  ? state.numerosAsignados.first.totalPaginas
+                  : 1)
+              : null,
+      firstRow:
+          (!state.cargandoNumeros && state.numerosAsignados.isNotEmpty)
+              ? state.numerosAsignados.first.fila
+              : null,
+      lastRow:
+          (!state.cargandoNumeros && state.numerosAsignados.isNotEmpty)
+              ? state.numerosAsignados.last.fila
+              : null,
+      onPageChanged: _irAPaginaNumeros,
+      currentPageSize: state.tamanoPaginaNumeros,
+      onPageSizeChanged: _cambiarTamanoPaginaNumeros,
+
       // Filtros limpios sin Expanded ni ScrollView innecesarios
       extraFilters: [
-       SizedBox(
-          height: 40, 
+        SizedBox(
+          height: 40,
           child: SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             child: Row(
@@ -268,24 +318,23 @@ class _CambiosLineaScreenState extends ConsumerState<CambiosLineaScreen>
                 _buildChipFiltro('EXTERNOS', 'EXTERNO'),
                 const SizedBox(width: 4),
                 _buildChipFiltro('SIN ASIGNAR', 'SIN ASIGNAR'),
-                const SizedBox(width: 12),
-                _buildSelectorTamanoPagina(state),
               ],
             ),
           ),
         ),
       ],
-      
+
       // Columnas con anchos fijos donde es necesario para mantener la alineación
       columns: [
         BosqueColumn(
           label: '#',
           flex: 0,
           alignment: Alignment.center,
-          cellBuilder: (e) => Text(
-            e.fila > 0 ? '${e.fila}' : '-', 
-            style: TextStyle(color: Colors.blueGrey[400], fontSize: 12)
-          ),
+          cellBuilder:
+              (e) => Text(
+                e.fila > 0 ? '${e.fila}' : '-',
+                style: TextStyle(color: Colors.blueGrey[400], fontSize: 12),
+              ),
         ),
         BosqueColumn(
           label: 'Tipo',
@@ -296,11 +345,12 @@ class _CambiosLineaScreenState extends ConsumerState<CambiosLineaScreen>
         BosqueColumn(
           label: 'Nombre',
           flex: 2,
-          cellBuilder: (e) => Text(
-            e.nombreCompleto.trim(), 
-            style: const TextStyle(fontWeight: FontWeight.w500),
-            overflow: TextOverflow.ellipsis,
-          ),
+          cellBuilder:
+              (e) => Text(
+                e.nombreCompleto.trim(),
+                style: const TextStyle(fontWeight: FontWeight.w500),
+                overflow: TextOverflow.ellipsis,
+              ),
         ),
         BosqueColumn(
           label: 'Teléfono',
@@ -310,18 +360,21 @@ class _CambiosLineaScreenState extends ConsumerState<CambiosLineaScreen>
         BosqueColumn(
           label: 'Descripción',
           flex: 1,
-          cellBuilder: (e) => Text(
-            e.descripcion.isNotEmpty ? e.descripcion : '-',
-            overflow: TextOverflow.ellipsis,
-          ),
+          cellBuilder:
+              (e) => Text(
+                e.descripcion.isNotEmpty ? e.descripcion : '-',
+                overflow: TextOverflow.ellipsis,
+              ),
         ),
         BosqueColumn(
           label: 'Estado',
           flex: 1,
           alignment: Alignment.center,
-          cellBuilder: (e) => e.estado == 'P' 
-              ? _buildChipPendiente(e.periodoCobrado) 
-              : const Text('-'),
+          cellBuilder:
+              (e) =>
+                  e.estado == 'P'
+                      ? _buildChipPendiente(e.periodoCobrado)
+                      : const Text('-'),
         ),
         BosqueColumn(
           label: 'Acciones',
@@ -342,31 +395,43 @@ class _CambiosLineaScreenState extends ConsumerState<CambiosLineaScreen>
       mobileCardBuilder: (e) {
         final tienePendiente = e.estado == 'P';
         final esSinAsignar = e.tipoSocio == 'SIN ASIGNAR';
-        
+
         return Card(
           margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
           elevation: 2,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
-            side: tienePendiente 
-                ? BorderSide(color: Colors.orange[300]!, width: 1.5) 
-                : BorderSide.none,
+            side:
+                tienePendiente
+                    ? BorderSide(color: Colors.orange[300]!, width: 1.5)
+                    : BorderSide.none,
           ),
           child: ListTile(
             leading: CircleAvatar(
-              backgroundColor: esSinAsignar 
-                  ? Colors.grey[200] 
-                  : (e.tipoSocio == 'EMPLEADO' ? Colors.blue[100] : Colors.green[100]),
+              backgroundColor:
+                  esSinAsignar
+                      ? Colors.grey[200]
+                      : (e.tipoSocio == 'EMPLEADO'
+                          ? Colors.blue[100]
+                          : Colors.green[100]),
               child: Icon(
-                esSinAsignar 
-                    ? Icons.phone_disabled 
-                    : (e.tipoSocio == 'EMPLEADO' ? Icons.person : Icons.person_outline),
-                color: esSinAsignar 
-                    ? Colors.grey[600] 
-                    : (e.tipoSocio == 'EMPLEADO' ? Colors.blue[800] : Colors.green[800]),
+                esSinAsignar
+                    ? Icons.phone_disabled
+                    : (e.tipoSocio == 'EMPLEADO'
+                        ? Icons.person
+                        : Icons.person_outline),
+                color:
+                    esSinAsignar
+                        ? Colors.grey[600]
+                        : (e.tipoSocio == 'EMPLEADO'
+                            ? Colors.blue[800]
+                            : Colors.green[800]),
               ),
             ),
-            title: Text(e.nombreCompleto.trim(), style: const TextStyle(fontWeight: FontWeight.w600)),
+            title: Text(
+              e.nombreCompleto.trim(),
+              style: const TextStyle(fontWeight: FontWeight.w600),
+            ),
             subtitle: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -393,138 +458,6 @@ class _CambiosLineaScreenState extends ConsumerState<CambiosLineaScreen>
           ),
         );
       },
-      footer: (!state.cargandoNumeros && state.numerosAsignados.isNotEmpty)
-          ? SafeArea(child: _buildPaginador(state, hPadding, isMobile))
-          : null,
-    );
-  }
-
-  /// Selector compacto de cuántas filas mostrar por página
-  Widget _buildSelectorTamanoPagina(CambiosTigoState state) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Text(
-          'Filas:',
-          style: TextStyle(fontSize: 13, color: Colors.blueGrey[600]),
-        ),
-        const SizedBox(width: 6),
-        DropdownButton<int>(
-          value: _opcionesTamanoPagina.contains(state.tamanoPagina)
-              ? state.tamanoPagina
-              : 15,
-          underline: const SizedBox(),
-          isDense: true,
-          borderRadius: BorderRadius.circular(8),
-          items: _opcionesTamanoPagina
-              .map((n) => DropdownMenuItem(value: n, child: Text('$n')))
-              .toList(),
-          onChanged: (n) {
-            if (n != null) _cambiarTamanoPagina(n);
-          },
-        ),
-      ],
-    );
-  }
-
-  /// Paginador inferior: Anterior | página X | Siguiente
-  /// El SP ya controla qué registros devuelve y numera con ROW_NUMBER (fila).
-  /// Flutter solo lee lo que el SP entregó — sin recalcular nada.
-  Widget _buildPaginador(
-    CambiosTigoState state,
-    double hPadding,
-    bool isMobile,
-  ) {
-    final pagina   = state.pagina;
-    final lista    = state.numerosAsignados;
-
-    // El SP devuelve exactamente tamanoPagina registros si hay más páginas,
-    // o menos si es la última. Flutter solo verifica eso — sin aritmética propia.
-    final hayMas      = lista.length >= state.tamanoPagina;
-    final hayAnterior = pagina > 1;
-
-    // El rango visible viene directo del campo fila que calcula el SP (ROW_NUMBER).
-    // Si la lista tiene items, fila del primero y fila del último = rango real.
-    final filaInicio = lista.isNotEmpty ? lista.first.fila : 0;
-    final filaFin    = lista.isNotEmpty ? lista.last.fila  : 0;
-
-    return Container(
-      color: Colors.white,
-      padding: EdgeInsets.symmetric(horizontal: hPadding, vertical: 10),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          _buildBotonPagina(
-            icono: Icons.chevron_left,
-            tooltip: 'Página anterior',
-            habilitado: hayAnterior,
-            onTap: () => _irAPagina(pagina - 1),
-          ),
-          const SizedBox(width: 8),
-
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-            decoration: BoxDecoration(
-              color: Colors.blue[50],
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: Colors.blue[200]!),
-            ),
-            child: Text(
-              'Página $pagina',
-              style: TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-                color: Colors.blue[800],
-              ),
-            ),
-          ),
-
-          const SizedBox(width: 8),
-
-          _buildBotonPagina(
-            icono: Icons.chevron_right,
-            tooltip: 'Página siguiente',
-            habilitado: hayMas,
-            onTap: () => _irAPagina(pagina + 1),
-          ),
-
-          // Rango real según fila del SP (solo desktop, solo si hay datos)
-          if (!isMobile && filaInicio > 0) ...[
-            const SizedBox(width: 16),
-            Text(
-              '$filaInicio – $filaFin',
-              style: TextStyle(fontSize: 12, color: Colors.blueGrey[500]),
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-
-  Widget _buildBotonPagina({
-    required IconData icono,
-    required String tooltip,
-    required bool habilitado,
-    required VoidCallback onTap,
-  }) {
-    return Tooltip(
-      message: tooltip,
-      child: InkWell(
-        onTap: habilitado ? onTap : null,
-        borderRadius: BorderRadius.circular(8),
-        child: Container(
-          padding: const EdgeInsets.all(6),
-          decoration: BoxDecoration(
-            color: habilitado ? Colors.blue[700] : Colors.grey[200],
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Icon(
-            icono,
-            size: 20,
-            color: habilitado ? Colors.white : Colors.grey[400],
-          ),
-        ),
-      ),
     );
   }
 
@@ -539,13 +472,11 @@ class _CambiosLineaScreenState extends ConsumerState<CambiosLineaScreen>
     );
   }
 
-
-
   // ═══════════════════════════════════════════════════════════════════
   // TAB 2: HISTORIAL DE CAMBIOS
   // ═══════════════════════════════════════════════════════════════════
 
-// ═══════════════════════════════════════════════════════════════════
+  // ═══════════════════════════════════════════════════════════════════
   // TAB 2: HISTORIAL DE CAMBIOS (REFACTORIZADO CON BOSQUE_FLAT_TABLE)
   // ═══════════════════════════════════════════════════════════════════
 
@@ -558,28 +489,64 @@ class _CambiosLineaScreenState extends ConsumerState<CambiosLineaScreen>
     return BosqueFlatTable<CambiosTigoEntity>(
       items: state.cambiosRegistrados,
       cargando: state.cargandoCambios,
-      searchHint: 'Filtrar por estado...',
-      onSearch: null, 
+      searchHint: 'Buscar por destino o teléfono...',
+      searchController: _buscadorCambiosController,
+      onSearch: _onSearchCambiosChanged,
+
+      // -- PAGINACIÓN AUTOMÁTICA --
+      currentPage:
+          (!state.cargandoCambios && state.cambiosRegistrados.isNotEmpty)
+              ? state.paginaCambios
+              : null,
+      totalPages:
+          (!state.cargandoCambios && state.cambiosRegistrados.isNotEmpty)
+              ? (state.cambiosRegistrados.first.totalPaginas > 0
+                  ? state.cambiosRegistrados.first.totalPaginas
+                  : 1)
+              : null,
+      firstRow:
+          (!state.cargandoCambios && state.cambiosRegistrados.isNotEmpty)
+              ? state.cambiosRegistrados.first.fila
+              : null,
+      lastRow:
+          (!state.cargandoCambios && state.cambiosRegistrados.isNotEmpty)
+              ? state.cambiosRegistrados.last.fila
+              : null,
+      onPageChanged: _irAPaginaCambios,
+      currentPageSize: state.tamanoPaginaCambios,
+      onPageSizeChanged: _cambiarTamanoPaginaCambios,
+
       extraFilters: [
-       // --- 1. NUEVO: Dropdown de Período ---
+        // --- 1. NUEVO: Dropdown de Período ---
         SizedBox(
           width: 140,
           child: DropdownButtonFormField<String>(
-            value: state.periodosDisponibles.contains(state.periodoCobrado) 
-                ? state.periodoCobrado 
-                : (state.periodosDisponibles.isNotEmpty ? state.periodosDisponibles.first : null),
+            value:
+                state.periodosDisponibles.contains(state.periodoCobrado)
+                    ? state.periodoCobrado
+                    : (state.periodosDisponibles.isNotEmpty
+                        ? state.periodosDisponibles.first
+                        : null),
             isDense: true,
             decoration: InputDecoration(
               labelText: 'Período',
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 12,
+                vertical: 8,
+              ),
             ),
-            items: state.periodosDisponibles.map((p) => 
-              DropdownMenuItem(value: p, child: Text(p))
-            ).toList(),
+            items:
+                state.periodosDisponibles
+                    .map((p) => DropdownMenuItem(value: p, child: Text(p)))
+                    .toList(),
             onChanged: (nuevoPeriodo) {
               if (nuevoPeriodo != null) {
-                ref.read(cambiosTigoProvider.notifier).setPeriodoCobrado(nuevoPeriodo);
+                ref
+                    .read(cambiosTigoProvider.notifier)
+                    .setPeriodoCobrado(nuevoPeriodo);
               }
             },
           ),
@@ -594,8 +561,13 @@ class _CambiosLineaScreenState extends ConsumerState<CambiosLineaScreen>
             isDense: true,
             decoration: InputDecoration(
               labelText: 'Estado',
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 12,
+                vertical: 8,
+              ),
             ),
             items: const [
               DropdownMenuItem(value: null, child: Text('Todos')),
@@ -613,38 +585,75 @@ class _CambiosLineaScreenState extends ConsumerState<CambiosLineaScreen>
         // Botón Aplicar
         state.aplicando
             ? const SizedBox(
-                width: 24, 
-                height: 24, 
-                child: CircularProgressIndicator(strokeWidth: 2)
-              )
+              width: 24,
+              height: 24,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            )
             : ElevatedButton.icon(
-                icon: const Icon(Icons.play_arrow, color: Colors.white, size: 18),
-                label: const Text('Aplicar'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.green[700],
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              icon: const Icon(Icons.play_arrow, color: Colors.white, size: 18),
+              label: const Text('Aplicar'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.green[700],
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 10,
                 ),
-                onPressed: () {
-                   // Validación: No permitir aplicar si está seleccionado 'TODOS'
-                   if (state.periodoCobrado == 'TODOS' || state.periodoCobrado == null) {
-                     AppSnackbar.showError(
-                       context, 
-                       'Debe seleccionar un periodo específico (Ej: ${widget.periodoCobrado}) para aplicar cambios.'
-                     );
-                   } else {
-                     _confirmarAplicarCambios(context);
-                   }
-                },
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
               ),
+              onPressed: () {
+                // Validación: No permitir aplicar si está seleccionado 'TODOS'
+                if (state.periodoCobrado == 'TODOS' ||
+                    state.periodoCobrado == null) {
+                  AppSnackbar.showError(
+                    context,
+                    'Debe seleccionar un periodo específico (Ej: ${widget.periodoCobrado}) para aplicar cambios.',
+                  );
+                } else {
+                  _confirmarAplicarCambios(context);
+                }
+              },
+            ),
       ],
 
       columns: [
-        BosqueColumn(label: 'Período', flex: 1, alignment: Alignment.center, cellBuilder: (e) => Text(e.periodoCobrado)),
-        BosqueColumn(label: 'Teléfono', flex: 2, cellBuilder: (e) => Text(e.telefono)),
-        BosqueColumn(label: 'De (Origen)', flex: 3, cellBuilder: (e) => Text(e.nombreOrigen.isNotEmpty ? e.nombreOrigen : '-', overflow: TextOverflow.ellipsis)),
-        BosqueColumn(label: 'Destino', flex: 3, cellBuilder: (e) => Text(e.nombreCompleto, overflow: TextOverflow.ellipsis)),
+        BosqueColumn(
+          label: '#',
+          flex: 0,
+          cellBuilder:
+              (e) => Text(
+                e.fila.toString(),
+                style: const TextStyle(fontWeight: FontWeight.w500),
+              ),
+        ),
+        BosqueColumn(
+          label: 'Período',
+          flex: 1,
+          alignment: Alignment.center,
+          cellBuilder: (e) => Text(e.periodoCobrado),
+        ),
+        BosqueColumn(
+          label: 'Teléfono',
+          flex: 2,
+          cellBuilder: (e) => Text(e.telefono),
+        ),
+        BosqueColumn(
+          label: 'De (Origen)',
+          flex: 3,
+          cellBuilder:
+              (e) => Text(
+                e.nombreOrigen.isNotEmpty ? e.nombreOrigen : '-',
+                overflow: TextOverflow.ellipsis,
+              ),
+        ),
+        BosqueColumn(
+          label: 'Destino',
+          flex: 3,
+          cellBuilder:
+              (e) => Text(e.nombreCompleto, overflow: TextOverflow.ellipsis),
+        ),
         BosqueColumn(
           label: 'Estado',
           flex: 2,
@@ -682,12 +691,17 @@ class _CambiosLineaScreenState extends ConsumerState<CambiosLineaScreen>
                   onPressed: () => _mostrarFormulario(context, cambio: e),
                 ),
                 PermissionWidget(
-  buttonName: 'btnEliminarCambioTigo', // El nombre del botón en tu BD de permisos
-  child: IconButton(
-    icon: const Icon(Icons.delete_outline, color: Colors.red, size: 20),
-    onPressed: () => _confirmarEliminar(context, e),
-  ),
-)
+                  buttonName:
+                      'btnEliminarCambioTigo', // El nombre del botón en tu BD de permisos
+                  child: IconButton(
+                    icon: const Icon(
+                      Icons.delete_outline,
+                      color: Colors.red,
+                      size: 20,
+                    ),
+                    onPressed: () => _confirmarEliminar(context, e),
+                  ),
+                ),
               ],
             );
           },
@@ -702,19 +716,23 @@ class _CambiosLineaScreenState extends ConsumerState<CambiosLineaScreen>
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
             side: BorderSide(
-              color: esPendiente ? Colors.orange : Colors.green, 
-              width: 1.5
+              color: esPendiente ? Colors.orange : Colors.green,
+              width: 1.5,
             ),
           ),
           child: ListTile(
             leading: CircleAvatar(
-              backgroundColor: esPendiente ? Colors.orange[100] : Colors.green[100],
+              backgroundColor:
+                  esPendiente ? Colors.orange[100] : Colors.green[100],
               child: Icon(
                 esPendiente ? Icons.pending : Icons.check_circle,
                 color: esPendiente ? Colors.orange[800] : Colors.green[800],
               ),
             ),
-            title: Text(e.nombreCompleto.trim(), style: const TextStyle(fontWeight: FontWeight.w600)),
+            title: Text(
+              e.nombreCompleto.trim(),
+              style: const TextStyle(fontWeight: FontWeight.w600),
+            ),
             subtitle: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -724,105 +742,69 @@ class _CambiosLineaScreenState extends ConsumerState<CambiosLineaScreen>
                   Padding(
                     padding: const EdgeInsets.only(top: 4),
                     child: Text(
-                      'Origen: ${e.nombreOrigen}', 
+                      'Origen: ${e.nombreOrigen}',
                       style: TextStyle(
-                        fontSize: 12, 
-                        color: Colors.blueGrey[600], 
-                        fontStyle: FontStyle.italic
-                      )
+                        fontSize: 12,
+                        color: Colors.blueGrey[600],
+                        fontStyle: FontStyle.italic,
+                      ),
                     ),
                   ),
               ],
             ),
-            trailing: esPendiente
-                ? Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      IconButton(
-                        icon: const Icon(Icons.edit, color: Colors.blue),
-                        onPressed: () => _mostrarFormulario(context, cambio: e),
-                      ),
-                      PermissionWidget(
-  buttonName: 'btnEliminarCambioTigo', // El nombre del botón en tu BD de permisos
-  child: IconButton(
-    icon: const Icon(Icons.delete_outline, color: Colors.red, size: 20),
-    onPressed: () => _confirmarEliminar(context, e),
-  ),
-)
-                    ],
-                  )
-                : null,
+            trailing:
+                esPendiente
+                    ? Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        IconButton(
+                          icon: const Icon(Icons.edit, color: Colors.blue),
+                          onPressed:
+                              () => _mostrarFormulario(context, cambio: e),
+                        ),
+                        PermissionWidget(
+                          buttonName:
+                              'btnEliminarCambioTigo', // El nombre del botón en tu BD de permisos
+                          child: IconButton(
+                            icon: const Icon(
+                              Icons.delete_outline,
+                              color: Colors.red,
+                              size: 20,
+                            ),
+                            onPressed: () => _confirmarEliminar(context, e),
+                          ),
+                        ),
+                      ],
+                    )
+                    : null,
           ),
         );
       },
-      footer: (!state.cargandoCambios && state.cambiosRegistrados.isNotEmpty)
-          ? SafeArea(child: _buildPaginadorCambiosMock(hPadding, isMobile))
-          : null,
     );
   }
 
   // ═══════════════════════════════════════════════════════════════════
   // WIDGETS AUXILIARES
   // ═══════════════════════════════════════════════════════════════════
-  // Paginador estático listo para cuando el SP tenga soporte de paginación
-  Widget _buildPaginadorCambiosMock(double hPadding, bool isMobile) {
-    return Container(
-      color: Colors.white,
-      padding: EdgeInsets.symmetric(horizontal: hPadding, vertical: 10),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          _buildBotonPagina(
-            icono: Icons.chevron_left,
-            tooltip: 'Página anterior',
-            habilitado: false, // Deshabilitado hasta tener SQL
-            onTap: () {},
-          ),
-          const SizedBox(width: 8),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-            decoration: BoxDecoration(
-              color: Colors.blue[50],
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: Colors.blue[200]!),
-            ),
-            child: Text(
-              'Página 1', // Estático por ahora
-              style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Colors.blue[800]),
-            ),
-          ),
-          const SizedBox(width: 8),
-          _buildBotonPagina(
-            icono: Icons.chevron_right,
-            tooltip: 'Página siguiente',
-            habilitado: false, // Deshabilitado hasta tener SQL
-            onTap: () {},
-          ),
-          if (!isMobile) ...[
-            const SizedBox(width: 16),
-            
-          ],
-        ],
-      ),
-    );
-  }
 
   Widget _buildChipTipoSocio(String tipo) {
-    final esEmpleado   = tipo == 'EMPLEADO';
+    final esEmpleado = tipo == 'EMPLEADO';
     final esSinAsignar = tipo == 'SIN ASIGNAR';
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
-        color: esSinAsignar
-            ? Colors.grey[100]
-            : esEmpleado
+        color:
+            esSinAsignar
+                ? Colors.grey[100]
+                : esEmpleado
                 ? Colors.blue[50]
                 : Colors.green[50],
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
-          color: esSinAsignar
-              ? Colors.grey[400]!
-              : esEmpleado
+          color:
+              esSinAsignar
+                  ? Colors.grey[400]!
+                  : esEmpleado
                   ? Colors.blue[300]!
                   : Colors.green[300]!,
         ),
@@ -831,9 +813,10 @@ class _CambiosLineaScreenState extends ConsumerState<CambiosLineaScreen>
         tipo,
         style: TextStyle(
           fontSize: 11,
-          color: esSinAsignar
-              ? Colors.grey[700]
-              : esEmpleado
+          color:
+              esSinAsignar
+                  ? Colors.grey[700]
+                  : esEmpleado
                   ? Colors.blue[800]
                   : Colors.green[800],
           fontWeight: FontWeight.bold,
@@ -868,7 +851,6 @@ class _CambiosLineaScreenState extends ConsumerState<CambiosLineaScreen>
     );
   }
 
-
   // ═══════════════════════════════════════════════════════════════════
   // ACCIONES
   // ═══════════════════════════════════════════════════════════════════
@@ -880,41 +862,48 @@ class _CambiosLineaScreenState extends ConsumerState<CambiosLineaScreen>
   }) {
     showDialog(
       context: context,
-      builder: (ctx) => Dialog(
-  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-  insetPadding: const EdgeInsets.symmetric(horizontal: 40, vertical: 24),
-  child: ConstrainedBox(
-    constraints: const BoxConstraints(maxWidth: 580, maxHeight: 650),
-    child: SingleChildScrollView(
-      child: FormularioCambioLinea(
-          // Usamos el periodo del state, pero si es 'TODOS', usamos el del widget como respaldo
-periodoCobrado: (ref.read(cambiosTigoProvider).periodoCobrado == 'TODOS') 
-    ? widget.periodoCobrado 
-    : (ref.read(cambiosTigoProvider).periodoCobrado ?? widget.periodoCobrado),
-          origenItem:     item,
-          cambioEditar:   cambio,
-          onSave: (entity) async {
-  final audUsuario = await _getCodUsuario();
-  bool ok;
-  if (item?.tipoSocio == 'SIN ASIGNAR') {
-    // Asignacion inmediata sin pendiente
-    ok = await ref
-        .read(cambiosTigoProvider.notifier)
-        .asignarNumeroSinAsignar(entity, audUsuario);
-  } else {
-    // Cambio pendiente normal
-    ok = await ref
-        .read(cambiosTigoProvider.notifier)
-        .registrarCambio(entity, audUsuario);
-  }
-  if (ok && ctx.mounted) Navigator.of(ctx).pop();
-},
-          onCancel: () => Navigator.of(ctx).pop(),
-        ),
-    ),
-  ),
-
-      ),
+      builder:
+          (ctx) => Dialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            insetPadding: const EdgeInsets.symmetric(
+              horizontal: 40,
+              vertical: 24,
+            ),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 580, maxHeight: 650),
+              child: SingleChildScrollView(
+                child: FormularioCambioLinea(
+                  // Usamos el periodo del state, pero si es 'TODOS', usamos el del widget como respaldo
+                  periodoCobrado:
+                      (ref.read(cambiosTigoProvider).periodoCobrado == 'TODOS')
+                          ? widget.periodoCobrado
+                          : (ref.read(cambiosTigoProvider).periodoCobrado ??
+                              widget.periodoCobrado),
+                  origenItem: item,
+                  cambioEditar: cambio,
+                  onSave: (entity) async {
+                    final audUsuario = await _getCodUsuario();
+                    bool ok;
+                    if (item?.tipoSocio == 'SIN ASIGNAR') {
+                      // Asignacion inmediata sin pendiente
+                      ok = await ref
+                          .read(cambiosTigoProvider.notifier)
+                          .asignarNumeroSinAsignar(entity, audUsuario);
+                    } else {
+                      // Cambio pendiente normal
+                      ok = await ref
+                          .read(cambiosTigoProvider.notifier)
+                          .registrarCambio(entity, audUsuario);
+                    }
+                    if (ok && ctx.mounted) Navigator.of(ctx).pop();
+                  },
+                  onCancel: () => Navigator.of(ctx).pop(),
+                ),
+              ),
+            ),
+          ),
     );
   }
 
@@ -924,31 +913,32 @@ periodoCobrado: (ref.read(cambiosTigoProvider).periodoCobrado == 'TODOS')
   ) async {
     final confirmar = await showDialog<bool>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: Row(
-          children: const [
-            Icon(Icons.delete, color: Colors.red),
-            SizedBox(width: 8),
-            Text('Eliminar Cambio'),
-          ],
-        ),
-        content: Text(
-          '¿Eliminar el cambio del número ${cambio.telefono} '
-          'programado para ${cambio.periodoCobrado}?',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('Cancelar'),
+      builder:
+          (ctx) => AlertDialog(
+            title: Row(
+              children: const [
+                Icon(Icons.delete, color: Colors.red),
+                SizedBox(width: 8),
+                Text('Eliminar Cambio'),
+              ],
+            ),
+            content: Text(
+              '¿Eliminar el cambio del número ${cambio.telefono} '
+              'programado para ${cambio.periodoCobrado}?',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(ctx).pop(false),
+                child: const Text('Cancelar'),
+              ),
+              ElevatedButton.icon(
+                icon: const Icon(Icons.delete),
+                label: const Text('Eliminar'),
+                style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+                onPressed: () => Navigator.of(ctx).pop(true),
+              ),
+            ],
           ),
-          ElevatedButton.icon(
-            icon: const Icon(Icons.delete),
-            label: const Text('Eliminar'),
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-            onPressed: () => Navigator.of(ctx).pop(true),
-          ),
-        ],
-      ),
     );
 
     if (confirmar == true) {
@@ -960,9 +950,9 @@ periodoCobrado: (ref.read(cambiosTigoProvider).periodoCobrado == 'TODOS')
     }
   }
 
-void _confirmarAplicarCambios(BuildContext context) async {
+  void _confirmarAplicarCambios(BuildContext context) async {
     final state = ref.read(cambiosTigoProvider);
-    
+
     // 1. DETERMINAR EL PERIODO ACTIVO
     // Priorizamos el del state (el del dropdown). Si es 'TODOS', no permitimos aplicar.
     final periodoActivo = state.periodoCobrado;
@@ -975,9 +965,8 @@ void _confirmarAplicarCambios(BuildContext context) async {
       return;
     }
 
-    final pendientes = state.cambiosRegistrados
-        .where((c) => c.estado == 'P')
-        .length;
+    final pendientes =
+        state.cambiosRegistrados.where((c) => c.estado == 'P').length;
 
     if (pendientes == 0) {
       AppSnackbar.showError(
@@ -989,40 +978,41 @@ void _confirmarAplicarCambios(BuildContext context) async {
 
     final confirmar = await showDialog<bool>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: Row(
-          children: const [
-            Icon(Icons.play_arrow, color: Colors.green),
-            SizedBox(width: 8),
-            Text('Aplicar Cambios'),
-          ],
-        ),
-        content: Text(
-          'Se aplicarán $pendientes cambio(s) pendiente(s) '
-          'para el período $periodoActivo.\n\n' // <-- USAMOS EL ACTIVO
-          'Esta acción actualizará los titulares de las líneas corporativas.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('Cancelar'),
-          ),
-          ElevatedButton.icon(
-            icon: const Icon(Icons.play_arrow, color: Colors.white),
-            label: const Text('Aplicar'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.green[700],
+      builder:
+          (ctx) => AlertDialog(
+            title: Row(
+              children: const [
+                Icon(Icons.play_arrow, color: Colors.green),
+                SizedBox(width: 8),
+                Text('Aplicar Cambios'),
+              ],
             ),
-            onPressed: () => Navigator.of(ctx).pop(true),
+            content: Text(
+              'Se aplicarán $pendientes cambio(s) pendiente(s) '
+              'para el período $periodoActivo.\n\n' // <-- USAMOS EL ACTIVO
+              'Esta acción actualizará los titulares de las líneas corporativas.',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(ctx).pop(false),
+                child: const Text('Cancelar'),
+              ),
+              ElevatedButton.icon(
+                icon: const Icon(Icons.play_arrow, color: Colors.white),
+                label: const Text('Aplicar'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.green[700],
+                ),
+                onPressed: () => Navigator.of(ctx).pop(true),
+              ),
+            ],
           ),
-        ],
-      ),
     );
 
     if (confirmar == true) {
       final audUsuario = await _getCodUsuario();
       if (!mounted) return;
-      
+
       // 2. ENVIAMOS EL PERIODO DEL STATE AL NOTIFIER
       await ref
           .read(cambiosTigoProvider.notifier)

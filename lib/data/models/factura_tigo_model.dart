@@ -14,6 +14,40 @@ List<FacturaTigoModel> facturaTigoModelFromJson(String str) =>
 String facturaTigoModelToJson(List<FacturaTigoModel> data) =>
     json.encode(List<dynamic>.from(data.map((x) => x.toJson())));
 
+class FacturaTigoResponse {
+  final String message;
+  final int? idGenerado; // total registros procesados
+  final int status;
+
+  FacturaTigoResponse({
+    required this.message,
+    this.idGenerado,
+    required this.status,
+  });
+
+  factory FacturaTigoResponse.fromJson(Map<String, dynamic> json) {
+    int? idGen;
+    // Java devuelve idGenerado en 'data' (igual que CambiosTigo)
+    if (json['data'] is int) {
+      idGen = json['data'] as int;
+    }
+    return FacturaTigoResponse(
+      message: json['message'] ?? '',
+      idGenerado: json['idGenerado'] ?? idGen,
+      status: json['status'] ?? 200,
+    );
+  }
+
+  /// true si el SP reportó éxito (HTTP 200 y mensaje no contiene ERROR)
+  bool get esExito => status == 200 || status == 201;
+
+  /// Registros procesados como texto legible
+  String get resumen =>
+      idGenerado != null
+          ? '$message ($idGenerado registros procesados)'
+          : message;
+}
+
 class FacturaTigoModel {
   final int codFactura;
   final String nroFactura;

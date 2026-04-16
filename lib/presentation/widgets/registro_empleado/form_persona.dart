@@ -15,9 +15,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart';
 import 'package:bosque_flutter/domain/entities/persona_entity.dart';
-import 'package:latlong2/latlong.dart';
 
 class FormPersona extends ConsumerStatefulWidget {
   final GlobalKey<FormState> formKey;
@@ -70,7 +68,6 @@ class PersonaFormState extends ConsumerState<FormPersona> {
   String? _initialCi;
   String? _ciValidationError; // Para almacenar el error de CI del backend
 
-
   @override
   void initState() {
     super.initState();
@@ -88,7 +85,7 @@ class PersonaFormState extends ConsumerState<FormPersona> {
 
     _initialCi = widget.persona.ciNumero;
     _cargarDatos(widget.persona);
-     // 🔄 IMPORTANTE: Limpiar error de CI cuando el usuario modifique el campo
+    // 🔄 IMPORTANTE: Limpiar error de CI cuando el usuario modifique el campo
     // Esto asegura que no se "pegue" el error anterior al probar otro CI
     _ciNumeroController.addListener(() {
       if (_ciValidationError != null) {
@@ -104,8 +101,12 @@ class PersonaFormState extends ConsumerState<FormPersona> {
       _apPaternoController.text = persona.apPaterno;
       _apMaternoController.text = persona.apMaterno;
       _ciNumeroController.text = persona.ciNumero;
-    _vencimientoCIController.text = FechaUtils.formatDate(persona.ciFechaVencimiento); // ✅
-    _fechaNacimientoController.text = FechaUtils.formatDate(persona.fechaNacimiento);
+      _vencimientoCIController.text = FechaUtils.formatDate(
+        persona.ciFechaVencimiento,
+      ); // ✅
+      _fechaNacimientoController.text = FechaUtils.formatDate(
+        persona.fechaNacimiento,
+      );
       _lugarNacimientoController.text = persona.lugarNacimiento;
       _direccionController.text = persona.direccion;
 
@@ -117,7 +118,8 @@ class PersonaFormState extends ConsumerState<FormPersona> {
       _currentSexo = persona.sexo;
       _currentCiExpedido = persona.ciExpedido;
       _currentEstadoCivil = persona.estadoCivil;
-      _currentNacionalidad = persona.nacionalidad != 0 ? persona.nacionalidad : null;
+      _currentNacionalidad =
+          persona.nacionalidad != 0 ? persona.nacionalidad : null;
       _currentCiudad = persona.ciudad?.codCiudad;
       _currentZona = persona.codZona != 0 ? persona.codZona : null;
 
@@ -126,15 +128,21 @@ class PersonaFormState extends ConsumerState<FormPersona> {
       _zonaEntity = persona.zona;
       _ciValidationError = null; // Limpiar error previo
 
-      Future.microtask(() => ref.read(currentNacionalidadProvider.notifier).state = _currentNacionalidad);
+      Future.microtask(
+        () =>
+            ref.read(currentNacionalidadProvider.notifier).state =
+                _currentNacionalidad,
+      );
     });
   }
 
   @override
   void didUpdateWidget(covariant FormPersona oldWidget) {
     super.didUpdateWidget(oldWidget);
-    final PersonaEntity personaActual = ref.read(tempPersonaProvider) ?? widget.persona;
-    if (_ultimaPersonaSync?.codPersona != personaActual.codPersona || oldWidget.persona != widget.persona) {
+    final PersonaEntity personaActual =
+        ref.read(tempPersonaProvider) ?? widget.persona;
+    if (_ultimaPersonaSync?.codPersona != personaActual.codPersona ||
+        oldWidget.persona != widget.persona) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _cargarDatos(personaActual);
         _ultimaPersonaSync = personaActual;
@@ -168,8 +176,10 @@ class PersonaFormState extends ConsumerState<FormPersona> {
 
     try {
       // Hacer la llamada al backend
-      final personaExistente = await ref.read(obtenerPersonaXCarnet(currentCi).future);
-      
+      final personaExistente = await ref.read(
+        obtenerPersonaXCarnet(currentCi).future,
+      );
+
       if (personaExistente.codPersona != 0) {
         return 'Este C.I. ya está registrado por otra persona';
       }
@@ -184,7 +194,7 @@ class PersonaFormState extends ConsumerState<FormPersona> {
     // 🔄 PASO 1: Invalidar TODOS los providers de CI para limpiar cache
     // Esto asegura que la siguiente lectura sea fresca desde el backend
     ref.invalidate(obtenerPersonaXCarnet);
-    
+
     // Primero validar localmente todos los campos
     if (!widget.formKey.currentState!.validate()) {
       // Si hay algún error local, no continuar
@@ -213,8 +223,12 @@ class PersonaFormState extends ConsumerState<FormPersona> {
       apPaterno: _apPaternoController.text.trim(),
       apMaterno: _apMaternoController.text.trim(),
       ciNumero: _ciNumeroController.text.trim(),
-  ciFechaVencimiento: FechaUtils.parseDate(_vencimientoCIController.text), // ✅
-  fechaNacimiento: FechaUtils.parseDate(_fechaNacimientoController.text),   // ✅
+      ciFechaVencimiento: FechaUtils.parseDate(
+        _vencimientoCIController.text,
+      ), // ✅
+      fechaNacimiento: FechaUtils.parseDate(
+        _fechaNacimientoController.text,
+      ), // ✅
       lugarNacimiento: _lugarNacimientoController.text.trim(),
       direccion: _direccionController.text.trim(),
       lat: double.tryParse(_latController.text) ?? _currentLat,
@@ -242,78 +256,86 @@ class PersonaFormState extends ConsumerState<FormPersona> {
       padding: EdgeInsets.all(context.spacing),
       child: Form(
         key: widget.formKey,
-      // ✅ AGREGAR FocusTraversalGroup
-      child: FocusTraversalGroup(
-        policy: OrderedTraversalPolicy(),
-        child: isMobile
-            ? _buildMobileLayout(isKeyboardOpen)
-            : _buildWebLayout(),
-      ),
+        // ✅ AGREGAR FocusTraversalGroup
+        child: FocusTraversalGroup(
+          policy: OrderedTraversalPolicy(),
+          child:
+              isMobile ? _buildMobileLayout(isKeyboardOpen) : _buildWebLayout(),
+        ),
       ),
     );
   }
 
-Widget _buildWebLayout() {
-  return Row(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      Expanded(
-        flex: 2,
-        child: FocusTraversalGroup(
+  Widget _buildWebLayout() {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Expanded(
+          flex: 2,
+          child: FocusTraversalGroup(
+            policy: OrderedTraversalPolicy(),
+            child: Column(children: _buildFormFields()),
+          ),
+        ),
+        const SizedBox(width: 24),
+        Expanded(flex: 1, child: _buildMapSection(false)),
+      ],
+    );
+  }
+
+  Widget _buildMobileLayout(bool keyboardOpen) {
+    return Column(
+      children: [
+        FocusTraversalGroup(
           policy: OrderedTraversalPolicy(),
           child: Column(children: _buildFormFields()),
         ),
-      ),
-      const SizedBox(width: 24),
-      Expanded(flex: 1, child: _buildMapSection(false)),
-    ],
-  );
-}
-
-Widget _buildMobileLayout(bool keyboardOpen) {
-  return Column(
-    children: [
-      FocusTraversalGroup(
-        policy: OrderedTraversalPolicy(),
-        child: Column(children: _buildFormFields()),
-      ),
-      if (!keyboardOpen) ...[
-        const SizedBox(height: 16),
-        _buildMapSection(true),
+        if (!keyboardOpen) ...[
+          const SizedBox(height: 16),
+          _buildMapSection(true),
+        ],
+        if (keyboardOpen)
+          SizedBox(height: MediaQuery.of(context).size.height * 0.1),
       ],
-      if (keyboardOpen) SizedBox(height: MediaQuery.of(context).size.height * 0.1),
-    ],
-  );
-}
+    );
+  }
+
   List<Widget> _buildFormFields() {
     return [
       _sectionTitle('Identificación y Cédula'),
       _row([
-_textInput(_nombresController, 'Nombres', true, 'Ingresa tu nombre completo', false, validarNombres),
-_textInput(
-  _apPaternoController,
-  'Ap. Paterno',
-  false,
-  'Opcional',
-  false,
-  (v) {
-    if (v == null || v.trim().isEmpty) return null;
-    return validarNombres(v);
-  },
-),
+        _textInput(
+          _nombresController,
+          'Nombres',
+          true,
+          'Ingresa tu nombre completo',
+          false,
+          validarNombres,
+        ),
+        _textInput(
+          _apPaternoController,
+          'Ap. Paterno',
+          false,
+          'Opcional',
+          false,
+          (v) {
+            if (v == null || v.trim().isEmpty) return null;
+            return validarNombres(v);
+          },
+        ),
       ]),
       _row([
-_textInput(
-  _apMaternoController,
-  'Ap. Materno',
-  false,
-  'Opcional',
-  false,
-  (v) {
-    if (v == null || v.trim().isEmpty) return null;
-    return validarNombres(v);
-  },
-),
+        _textInput(
+          _apMaternoController,
+          'Ap. Materno',
+          false,
+          'Opcional',
+          false,
+          (v) {
+            if (v == null || v.trim().isEmpty) return null;
+            return validarNombres(v);
+          },
+        ),
         _buildCiField(),
       ]),
       _row([
@@ -324,7 +346,11 @@ _textInput(
           getName: (e) => e.nombre,
           getCode: (e) => e.codTipos,
           onChanged: (val) => setState(() => _currentCiExpedido = val),
-          validator: (value) => value?.isEmpty ?? true ? 'Selecciona dónde fue expedido' : null,
+          validator:
+              (value) =>
+                  value?.isEmpty ?? true
+                      ? 'Selecciona dónde fue expedido'
+                      : null,
         ),
         _buildVencimientoCIField(),
       ]),
@@ -332,7 +358,14 @@ _textInput(
       _sectionTitle('Nacimiento y Estado'),
       _row([
         _buildFechaNacimientoField(),
-_textInput(_lugarNacimientoController, 'Lugar Nac.', true, 'Ciudad o región de nacimiento', false, validarLugarNacimiento),
+        _textInput(
+          _lugarNacimientoController,
+          'Lugar Nac.',
+          true,
+          'Ciudad o región de nacimiento',
+          false,
+          validarLugarNacimiento,
+        ),
       ]),
       _row([
         CustomDropdown<SexoEntity>(
@@ -342,7 +375,8 @@ _textInput(_lugarNacimientoController, 'Lugar Nac.', true, 'Ciudad o región de 
           getName: (e) => e.nombre,
           getCode: (e) => e.codTipos,
           onChanged: (val) => setState(() => _currentSexo = val),
-          validator: (value) => value?.isEmpty ?? true ? 'Selecciona tu sexo' : null,
+          validator:
+              (value) => value?.isEmpty ?? true ? 'Selecciona tu sexo' : null,
         ),
         CustomDropdown<EstadoCivilEntity>(
           asyncValue: ref.watch(estadoCivilProvider),
@@ -351,7 +385,9 @@ _textInput(_lugarNacimientoController, 'Lugar Nac.', true, 'Ciudad o región de 
           getName: (e) => e.nombre,
           getCode: (e) => e.codTipos,
           onChanged: (val) => setState(() => _currentEstadoCivil = val),
-          validator: (value) => value?.isEmpty ?? true ? 'Selecciona tu estado civil' : null,
+          validator:
+              (value) =>
+                  value?.isEmpty ?? true ? 'Selecciona tu estado civil' : null,
         ),
       ]),
       _fullWidth(
@@ -364,76 +400,94 @@ _textInput(_lugarNacimientoController, 'Lugar Nac.', true, 'Ciudad o región de 
           onChanged: (val) {
             final id = int.tryParse(val ?? '0');
             ref.read(paisProvider).whenData((list) {
-              _paisEntity = list.firstWhere((p) => p.codPais == id, orElse: () => PaisEntity.vacio());
+              _paisEntity = list.firstWhere(
+                (p) => p.codPais == id,
+                orElse: () => PaisEntity.vacio(),
+              );
               setState(() => _currentNacionalidad = id);
               ref.read(currentNacionalidadProvider.notifier).state = id;
             });
           },
-          validator: (value) => value?.isEmpty ?? true ? 'Selecciona tu nacionalidad' : null,
+          validator:
+              (value) =>
+                  value?.isEmpty ?? true ? 'Selecciona tu nacionalidad' : null,
         ),
       ),
       const SizedBox(height: 12),
       _sectionTitle('Dirección'),
-_fullWidth(_textInput(_direccionController, 'Dirección Completa', true, 'Calle, número, edificio, etc.', false, validarDireccion)),
-      _row([
-        _buildCiudadField(),
-        _buildZonaField(),
-      ]),
+      _fullWidth(
+        _textInput(
+          _direccionController,
+          'Dirección Completa',
+          true,
+          'Calle, número, edificio, etc.',
+          false,
+          validarDireccion,
+        ),
+      ),
+      _row([_buildCiudadField(), _buildZonaField()]),
     ];
   }
 
   /// Campo CI con validación del backend integrada
   Widget _buildCiField() {
-  return Column(
-    mainAxisSize: MainAxisSize.min,
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      TextFormField(
-        controller: _ciNumeroController,
-        keyboardType: TextInputType.text,
-        inputFormatters: [
-          LengthLimitingTextInputFormatter(10),  // ✅ AUMENTADO A 10
-          FilteringTextInputFormatter.allow(RegExp(r'[a-zA-Z0-9\-]')),  // ✅ PERMITIR GUION
-        ],
-        style: const TextStyle(fontSize: 13),
-        decoration: InputDecoration(
-          labelText: 'CI Número',
-          isDense: true,
-          contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
-          border: const OutlineInputBorder(),
-          hintText: 'Ej: 9154499-A',
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        TextFormField(
+          controller: _ciNumeroController,
+          keyboardType: TextInputType.text,
+          inputFormatters: [
+            LengthLimitingTextInputFormatter(10), // ✅ AUMENTADO A 10
+            FilteringTextInputFormatter.allow(
+              RegExp(r'[a-zA-Z0-9\-]'),
+            ), // ✅ PERMITIR GUION
+          ],
+          style: const TextStyle(fontSize: 13),
+          decoration: InputDecoration(
+            labelText: 'CI Número',
+            isDense: true,
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 10,
+              vertical: 12,
+            ),
+            border: const OutlineInputBorder(),
+            hintText: 'Ej: 9154499-A',
+          ),
+          validator: (v) {
+            return validarCI(v, ciBackendError: _ciValidationError);
+          },
         ),
-        validator: (v) {
-          return validarCI(v, ciBackendError: _ciValidationError);
-        },
-      ),
-    ],
-  );
-}
+      ],
+    );
+  }
 
-// ...existing code...
+  // ...existing code...
 
   /// Campo de Vencimiento del CI con validación de fecha
-Widget _buildVencimientoCIField() {
-  return CustomDatePicker(
-    controller: _vencimientoCIController,
-    label: 'Vencimiento CI',
-    firstDate: DateTime.now(),
-    lastDate: DateTime(2100),
-    validator: validarFechaVencimientoCi
-  );
-}
+  Widget _buildVencimientoCIField() {
+    return CustomDatePicker(
+      controller: _vencimientoCIController,
+      label: 'Vencimiento CI',
+      firstDate: DateTime.now(),
+      lastDate: DateTime(2100),
+      validator: validarFechaVencimientoCi,
+    );
+  }
 
   /// Campo de Fecha de Nacimiento con validación
-Widget _buildFechaNacimientoField() {
-  return CustomDatePicker(
-    controller: _fechaNacimientoController,
-    label: 'Fecha Nac.',
-    firstDate: DateTime(1900),
-    lastDate: DateTime.now().subtract(const Duration(days: 365 * 18)), // -18 años
-    validator: validarFechaNacimiento
-  );
-}
+  Widget _buildFechaNacimientoField() {
+    return CustomDatePicker(
+      controller: _fechaNacimientoController,
+      label: 'Fecha Nac.',
+      firstDate: DateTime(1900),
+      lastDate: DateTime.now().subtract(
+        const Duration(days: 365 * 18),
+      ), // -18 años
+      validator: validarFechaNacimiento,
+    );
+  }
 
   Widget _buildCiudadField() {
     final ciudadesAsync = ref.watch(ciudadesCombinadasProvider);
@@ -448,13 +502,17 @@ Widget _buildFechaNacimientoField() {
         ciudadesAsync.whenData((list) {
           setState(() {
             _currentCiudad = id;
-            _ciudadEntity = list.firstWhere((c) => c.codCiudad == id, orElse: () => CiudadEntity.vacio());
+            _ciudadEntity = list.firstWhere(
+              (c) => c.codCiudad == id,
+              orElse: () => CiudadEntity.vacio(),
+            );
             _currentZona = null;
             _zonaEntity = null;
           });
         });
       },
-      validator: (value) => value?.isEmpty ?? true ? 'Selecciona tu ciudad' : null,
+      validator:
+          (value) => value?.isEmpty ?? true ? 'Selecciona tu ciudad' : null,
     );
   }
 
@@ -471,11 +529,15 @@ Widget _buildFechaNacimientoField() {
         zonasAsync.whenData((list) {
           setState(() {
             _currentZona = id;
-            _zonaEntity = list.firstWhere((z) => z.codZona == id, orElse: () => ZonaEntity.vacio());
+            _zonaEntity = list.firstWhere(
+              (z) => z.codZona == id,
+              orElse: () => ZonaEntity.vacio(),
+            );
           });
         });
       },
-      validator: (value) => value?.isEmpty ?? true ? 'Selecciona tu zona' : null,
+      validator:
+          (value) => value?.isEmpty ?? true ? 'Selecciona tu zona' : null,
     );
   }
 
@@ -484,18 +546,27 @@ Widget _buildFechaNacimientoField() {
       padding: EdgeInsets.only(bottom: _vSpacing),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
-        children: children.map((c) => Expanded(
-          child: Padding(
-            padding: EdgeInsets.symmetric(horizontal: _hSpacing / 2),
-            child: c,
-          ),
-        )).toList(),
+        children:
+            children
+                .map(
+                  (c) => Expanded(
+                    child: Padding(
+                      padding: EdgeInsets.symmetric(horizontal: _hSpacing / 2),
+                      child: c,
+                    ),
+                  ),
+                )
+                .toList(),
       ),
     );
   }
 
   Widget _fullWidth(Widget child) => Padding(
-    padding: EdgeInsets.only(bottom: _vSpacing, left: _hSpacing / 2, right: _hSpacing / 2),
+    padding: EdgeInsets.only(
+      bottom: _vSpacing,
+      left: _hSpacing / 2,
+      right: _hSpacing / 2,
+    ),
     child: child,
   );
 
@@ -503,41 +574,51 @@ Widget _buildFechaNacimientoField() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(title, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.blueGrey)),
+        Text(
+          title,
+          style: const TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.bold,
+            color: Colors.blueGrey,
+          ),
+        ),
         const Divider(height: 16),
       ],
     );
   }
 
-Widget _textInput(
-  TextEditingController controller,
-  String label,
-  bool required, [
-  String? hint,
-  bool isNum = false,
-  String? Function(String?)? customValidator,
-]) {
-  return TextFormField(
-    controller: controller,
-    keyboardType: isNum ? TextInputType.number : TextInputType.text,
-    inputFormatters: isNum ? [FilteringTextInputFormatter.digitsOnly] : null,
-    style: const TextStyle(fontSize: 13),
-    decoration: InputDecoration(
-      labelText: label,
-      isDense: true,
-      contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
-      border: const OutlineInputBorder(),
-      hintText: hint,
-    ),
-    validator: (v) {
-      if (customValidator != null) return customValidator(v);
-      if (required && (v == null || v.isEmpty)) {
-        return 'Este campo es obligatorio';
-      }
-      return null;
-    },
-  );
-}
+  Widget _textInput(
+    TextEditingController controller,
+    String label,
+    bool required, [
+    String? hint,
+    bool isNum = false,
+    String? Function(String?)? customValidator,
+  ]) {
+    return TextFormField(
+      controller: controller,
+      keyboardType: isNum ? TextInputType.number : TextInputType.text,
+      inputFormatters: isNum ? [FilteringTextInputFormatter.digitsOnly] : null,
+      style: const TextStyle(fontSize: 13),
+      decoration: InputDecoration(
+        labelText: label,
+        isDense: true,
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 10,
+          vertical: 12,
+        ),
+        border: const OutlineInputBorder(),
+        hintText: hint,
+      ),
+      validator: (v) {
+        if (customValidator != null) return customValidator(v);
+        if (required && (v == null || v.isEmpty)) {
+          return 'Este campo es obligatorio';
+        }
+        return null;
+      },
+    );
+  }
 
   Widget _buildMapSection(bool isMobile) {
     return Column(

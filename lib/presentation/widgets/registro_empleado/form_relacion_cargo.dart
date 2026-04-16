@@ -24,7 +24,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 class FormRelacionConCargo extends ConsumerStatefulWidget {
   final int codEmpleado;
   final int audUsuario;
-  final Function(RelacionLaboralEntity, CargoSucursalEntity, CargoSucursalEntity) onSave;
+  final Function(
+    RelacionLaboralEntity,
+    CargoSucursalEntity,
+    CargoSucursalEntity,
+  )
+  onSave;
   final VoidCallback onCancel;
 
   const FormRelacionConCargo({
@@ -36,7 +41,8 @@ class FormRelacionConCargo extends ConsumerStatefulWidget {
   }) : super(key: key);
 
   @override
-  ConsumerState<FormRelacionConCargo> createState() => _FormRelacionConCargoState();
+  ConsumerState<FormRelacionConCargo> createState() =>
+      _FormRelacionConCargoState();
 }
 
 class _FormRelacionConCargoState extends ConsumerState<FormRelacionConCargo> {
@@ -95,7 +101,8 @@ class _FormRelacionConCargoState extends ConsumerState<FormRelacionConCargo> {
         _selectedTipoRelacion != null) {
       FocusManager.instance.primaryFocus?.unfocus();
 
-      final fechaIni = FechaUtils.parseDate(_fechaInicioController.text) ?? DateTime.now();
+      final fechaIni =
+          FechaUtils.parseDate(_fechaInicioController.text) ?? DateTime.now();
 
       final relacionGuardada = RelacionLaboralEntity(
         codRelEmplEmpr: 0,
@@ -117,11 +124,17 @@ class _FormRelacionConCargoState extends ConsumerState<FormRelacionConCargo> {
       );
 
       // call parent with CargoSucursalEntity extracted from selected EmpleadoEntity
-      widget.onSave(relacionGuardada, _selectedCargoInterno!, _selectedCargoPlanilla!);
+      widget.onSave(
+        relacionGuardada,
+        _selectedCargoInterno!,
+        _selectedCargoPlanilla!,
+      );
       _resetForm();
     } else {
       // If validation fails, keep the form open (no onCancel). User requested this behaviour.
-      console('FormRelacionConCargo: validación fallida, formulario mantiene abierto.');
+      console(
+        'FormRelacionConCargo: validación fallida, formulario mantiene abierto.',
+      );
     }
   }
 
@@ -132,19 +145,6 @@ class _FormRelacionConCargoState extends ConsumerState<FormRelacionConCargo> {
 
   void _navegarAEstructura() {
     Navigator.of(context).pop();
-  }
-
-  DropdownMenuItem<int> _buildGestionarItem() {
-    return DropdownMenuItem<int>(
-      value: -1,
-      child: Row(
-        children: [
-          Icon(Icons.settings, size: 14, color: Colors.blue),
-          const SizedBox(width: 6),
-          const Text("Gestionar...", style: TextStyle(fontSize: 11)),
-        ],
-      ),
-    );
   }
 
   // ========================================================================
@@ -170,65 +170,88 @@ class _FormRelacionConCargoState extends ConsumerState<FormRelacionConCargo> {
   // ------------------------------------------------------------------------
   // NEW: Interno selector using getCargoXEmpresa((text, 6)) with deduplication
   // ------------------------------------------------------------------------
-Widget _buildCargoInternoSelector(BuildContext context) {
-  return Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      Text('Cargo Interno', style: context.bodyStyle.copyWith(fontWeight: FontWeight.w600)),
-      SizedBox(height: context.smallSpacing),
-      Row(
-        children: [
-          Expanded(
-            child: DropdownSearch<EmpleadoEntity>(
-              asyncItems: (text) async {
-                final items = await ref.read(getCargoXEmpresa((text, 6)).future);
-                /*final seen = <int>{};
+  Widget _buildCargoInternoSelector(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Cargo Interno',
+          style: context.bodyStyle.copyWith(fontWeight: FontWeight.w600),
+        ),
+        SizedBox(height: context.smallSpacing),
+        Row(
+          children: [
+            Expanded(
+              child: DropdownSearch<EmpleadoEntity>(
+                asyncItems: (text) async {
+                  final items = await ref.read(
+                    getCargoXEmpresa((text, 6)).future,
+                  );
+                  /*final seen = <int>{};
                 final deduplicated = items.where((e) {
                   final codCargo = e.empleadoCargo.cargoSucursal?.codCargo;
                   if (codCargo == null) return false;
                   return seen.add(codCargo);
                 }).toList();
                 console('FormRelacionConCargo - INTERNO Items: ${items.length} → ${deduplicated.length}');*/
-                return items;
-              },
-              selectedItem: _selectedInternoEmpleado,
-              itemAsString: (e) {
-                final cargo = e.empleadoCargo.cargoSucursal?.cargo;
-                final cargoSuc = e.empleadoCargo.cargoSucursal;
-                final desc = cargo?.descripcion ?? cargoSuc?.datoCargo ?? 'N/A';
-                final suc = cargo?.sucursal ?? 'N/A';
-                return "$desc — $suc";
-              },
-              dropdownDecoratorProps: DropDownDecoratorProps(
-                dropdownSearchDecoration: InputDecoration(
-                  labelText: 'Cargo Interno *',
-                  hintText: 'Seleccione cargo',
-                  border: const OutlineInputBorder(),
-                  isDense: true,
+                  return items;
+                },
+                selectedItem: _selectedInternoEmpleado,
+                itemAsString: (e) {
+                  final cargo = e.empleadoCargo.cargoSucursal?.cargo;
+                  final cargoSuc = e.empleadoCargo.cargoSucursal;
+                  final desc =
+                      cargo?.descripcion ?? cargoSuc?.datoCargo ?? 'N/A';
+                  final suc = cargo?.sucursal ?? 'N/A';
+                  return "$desc — $suc";
+                },
+                dropdownDecoratorProps: DropDownDecoratorProps(
+                  dropdownSearchDecoration: InputDecoration(
+                    labelText: 'Cargo Interno *',
+                    hintText: 'Seleccione cargo',
+                    border: const OutlineInputBorder(),
+                    isDense: true,
+                  ),
                 ),
+                onChanged: (val) {
+                  setState(() {
+                    _selectedInternoEmpleado = val;
+                    _selectedCargoInterno = val?.empleadoCargo.cargoSucursal;
+                  });
+                  console(
+                    'FormRelacionConCargo - selected interno codCargoSucursal: ${_selectedCargoInterno?.codCargoSucursal}',
+                  );
+                },
+                popupProps: const PopupProps.menu(
+                  showSearchBox: true,
+                  searchDelay: Duration(milliseconds: 300),
+                ),
+                validator:
+                    (val) => _selectedCargoInterno == null ? 'Requerido' : null,
               ),
-              onChanged: (val) {
-                setState(() {
-                  _selectedInternoEmpleado = val;
-                  _selectedCargoInterno = val?.empleadoCargo.cargoSucursal;
-                });
-                console('FormRelacionConCargo - selected interno codCargoSucursal: ${_selectedCargoInterno?.codCargoSucursal}');
-              },
-              popupProps: const PopupProps.menu(showSearchBox: true, searchDelay: Duration(milliseconds: 300)),
-              validator: (val) => _selectedCargoInterno == null ? 'Requerido' : null,
             ),
-          ),
-          SizedBox(width: context.smallSpacing),
-          CargoNavigationButton(
-            empresaId: _selectedInternoEmpleado?.empleadoCargo.cargoSucursal?.cargo?.codEmpresa??6,
-            empresaNombre: _selectedInternoEmpleado?.empleadoCargo.cargoSucursal?.cargo?.nombreEmpresa,
-            ref: ref, // ✅ PASAR ref
-          ),
-        ],
-      ),
-    ],
-  );
-}
+            SizedBox(width: context.smallSpacing),
+            CargoNavigationButton(
+              empresaId:
+                  _selectedInternoEmpleado
+                      ?.empleadoCargo
+                      .cargoSucursal
+                      ?.cargo
+                      ?.codEmpresa ??
+                  6,
+              empresaNombre:
+                  _selectedInternoEmpleado
+                      ?.empleadoCargo
+                      .cargoSucursal
+                      ?.cargo
+                      ?.nombreEmpresa,
+              ref: ref, // ✅ PASAR ref
+            ),
+          ],
+        ),
+      ],
+    );
+  }
 
   // ------------------------------------------------------------------------
   // REUSE: empresa dropdown helper adapted for planilla (returns DropdownButtonFormField)
@@ -237,18 +260,30 @@ Widget _buildCargoInternoSelector(BuildContext context) {
     final empresasAsync = ref.watch(empresasProvider);
     return empresasAsync.when(
       loading: () => const LinearProgressIndicator(minHeight: 2),
-      error: (err, _) => Text('Error al cargar', style: TextStyle(color: Colors.red.shade300, fontSize: 10)),
+      error:
+          (err, _) => Text(
+            'Error al cargar',
+            style: TextStyle(color: Colors.red.shade300, fontSize: 10),
+          ),
       data: (data) {
         final empresas = (data as List?)?.cast<dynamic>() ?? [];
         //final filtered = empresas.where((e) => (e as dynamic).codEmpresa != -1 && (e as dynamic).codEmpresa != 6).toList();
-        final items = empresas
-            .map<DropdownMenuItem<int>>((e) => DropdownMenuItem<int>(
-                  value: (e as dynamic).codEmpresa as int,
-                  child: Text((e as dynamic).nombre as String, overflow: TextOverflow.ellipsis),
-                ))
-            .toList();
+        final items =
+            empresas
+                .map<DropdownMenuItem<int>>(
+                  (e) => DropdownMenuItem<int>(
+                    value: (e as dynamic).codEmpresa as int,
+                    child: Text(
+                      (e as dynamic).nombre as String,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                )
+                .toList();
 
-        final existeValor = items.any((item) => item.value == _selectedCodEmpresaPlanilla);
+        final existeValor = items.any(
+          (item) => item.value == _selectedCodEmpresaPlanilla,
+        );
         final valorSeguro = existeValor ? _selectedCodEmpresaPlanilla : null;
 
         return DropdownButtonFormField<int>(
@@ -258,7 +293,10 @@ Widget _buildCargoInternoSelector(BuildContext context) {
             labelText: 'Empresa Planilla *',
             border: const OutlineInputBorder(),
             isDense: true,
-            contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: context.smallSpacing),
+            contentPadding: EdgeInsets.symmetric(
+              horizontal: 8,
+              vertical: context.smallSpacing,
+            ),
           ),
           items: items,
           onChanged: (val) {
@@ -282,282 +320,110 @@ Widget _buildCargoInternoSelector(BuildContext context) {
   // ------------------------------------------------------------------------
   // NEW: Planilla selector using getCargoXEmpresa((text, codEmpresaPlanilla))
   // ------------------------------------------------------------------------
-Widget _buildCargoPlanillaSelector(BuildContext context) {
-  // Obtener el nombre de la empresa seleccionada
-  final empresasAsync = ref.watch(empresasProvider);
-  
-  return Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      Text('Cargo Planilla', style: context.bodyStyle.copyWith(fontWeight: FontWeight.w600)),
-      SizedBox(height: context.smallSpacing),
-      empresasAsync.when(
-        loading: () => const LinearProgressIndicator(minHeight: 2),
-        error: (e, _) => Text('Error: $e', style: context.bodyLightStyle),
-        data: (empresas) {
-          final empresaSeleccionada = empresas.firstWhere(
-            (e) => e.codEmpresa == _selectedCodEmpresaPlanilla,
-            orElse: () => empresas.isNotEmpty ? empresas.first : EmpresaEntity(codEmpresa: 0, nombre: 'N/A', codPadre: 0,sigla: '',audUsuario: 0),
-          );
+  Widget _buildCargoPlanillaSelector(BuildContext context) {
+    // Obtener el nombre de la empresa seleccionada
+    final empresasAsync = ref.watch(empresasProvider);
 
-          return Row(
-            children: [
-              Expanded(
-                child: DropdownSearch<EmpleadoEntity>(
-                  enabled: _selectedCodEmpresaPlanilla != null,
-                  asyncItems: (text) {
-                    return ref.read(getCargoXEmpresa((text, _selectedCodEmpresaPlanilla)).future);
-                  },
-                  selectedItem: _selectedPlanillaEmpleado,
-                  itemAsString: (e) {
-                    final cargo = e.empleadoCargo.cargoSucursal?.cargo;
-                    final cargoSuc = e.empleadoCargo.cargoSucursal;
-                    final desc = cargo?.descripcionPlanilla?.isNotEmpty == true
-                        ? cargo!.descripcionPlanilla
-                        : (cargo?.descripcion ?? cargoSuc?.datoCargo ?? 'N/A');
-                    final suc = cargo?.sucursalPlanilla?.isNotEmpty == true ? cargo!.sucursalPlanilla : (cargo?.sucursal ?? 'N/A');
-                    return "$desc — $suc";
-                  },
-                  dropdownDecoratorProps: DropDownDecoratorProps(
-                    dropdownSearchDecoration: InputDecoration(
-                      labelText: 'Cargo Planilla *',
-                      hintText: _selectedCodEmpresaPlanilla == null ? 'Primero empresa' : 'Seleccione cargo',
-                      border: const OutlineInputBorder(),
-                      isDense: true,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Cargo Planilla',
+          style: context.bodyStyle.copyWith(fontWeight: FontWeight.w600),
+        ),
+        SizedBox(height: context.smallSpacing),
+        empresasAsync.when(
+          loading: () => const LinearProgressIndicator(minHeight: 2),
+          error: (e, _) => Text('Error: $e', style: context.bodyLightStyle),
+          data: (empresas) {
+            final empresaSeleccionada = empresas.firstWhere(
+              (e) => e.codEmpresa == _selectedCodEmpresaPlanilla,
+              orElse:
+                  () =>
+                      empresas.isNotEmpty
+                          ? empresas.first
+                          : EmpresaEntity(
+                            codEmpresa: 0,
+                            nombre: 'N/A',
+                            codPadre: 0,
+                            sigla: '',
+                            audUsuario: 0,
+                          ),
+            );
+
+            return Row(
+              children: [
+                Expanded(
+                  child: DropdownSearch<EmpleadoEntity>(
+                    enabled: _selectedCodEmpresaPlanilla != null,
+                    asyncItems: (text) {
+                      return ref.read(
+                        getCargoXEmpresa((
+                          text,
+                          _selectedCodEmpresaPlanilla,
+                        )).future,
+                      );
+                    },
+                    selectedItem: _selectedPlanillaEmpleado,
+                    itemAsString: (e) {
+                      final cargo = e.empleadoCargo.cargoSucursal?.cargo;
+                      final cargoSuc = e.empleadoCargo.cargoSucursal;
+                      final desc =
+                          cargo?.descripcionPlanilla.isNotEmpty == true
+                              ? cargo!.descripcionPlanilla
+                              : (cargo?.descripcion ??
+                                  cargoSuc?.datoCargo ??
+                                  'N/A');
+                      final suc =
+                          cargo?.sucursalPlanilla.isNotEmpty == true
+                              ? cargo!.sucursalPlanilla
+                              : (cargo?.sucursal ?? 'N/A');
+                      return "$desc — $suc";
+                    },
+                    dropdownDecoratorProps: DropDownDecoratorProps(
+                      dropdownSearchDecoration: InputDecoration(
+                        labelText: 'Cargo Planilla *',
+                        hintText:
+                            _selectedCodEmpresaPlanilla == null
+                                ? 'Primero empresa'
+                                : 'Seleccione cargo',
+                        border: const OutlineInputBorder(),
+                        isDense: true,
+                      ),
                     ),
+                    onChanged: (val) {
+                      setState(() {
+                        _selectedPlanillaEmpleado = val;
+                        _selectedCargoPlanilla =
+                            val?.empleadoCargo.cargoSucursal;
+                      });
+                      console(
+                        'FormRelacionConCargo - selected planilla codCargoSucursal: ${_selectedCargoPlanilla?.codCargoSucursal}',
+                      );
+                    },
+                    popupProps: const PopupProps.menu(showSearchBox: true),
+                    validator:
+                        (val) =>
+                            _selectedCargoPlanilla == null ? 'Requerido' : null,
                   ),
-                  onChanged: (val) {
-                    setState(() {
-                      _selectedPlanillaEmpleado = val;
-                      _selectedCargoPlanilla = val?.empleadoCargo.cargoSucursal;
-                    });
-                    console('FormRelacionConCargo - selected planilla codCargoSucursal: ${_selectedCargoPlanilla?.codCargoSucursal}');
-                  },
-                  popupProps: const PopupProps.menu(showSearchBox: true),
-                  validator: (val) => _selectedCargoPlanilla == null ? 'Requerido' : null,
                 ),
-              ),
-              SizedBox(width: context.smallSpacing),
-              CargoNavigationButton(
-                empresaId: _selectedCodEmpresaPlanilla,
-                empresaNombre: empresaSeleccionada.nombre,
-                ref: ref, // ✅ PASAR ref
-              ),
-            ],
-          );
-        },
-      ),
-    ],
-  );
-}
+                SizedBox(width: context.smallSpacing),
+                CargoNavigationButton(
+                  empresaId: _selectedCodEmpresaPlanilla,
+                  empresaNombre: empresaSeleccionada.nombre,
+                  ref: ref, // ✅ PASAR ref
+                ),
+              ],
+            );
+          },
+        ),
+      ],
+    );
+  }
 
   // ------------------------------------------------------------------------
   // los dropdowns para empresa,sucursal y cargo se mantienen pero ya no se usan en el nuevo flujo. Se dejan para referencia y posible reutilización futura.
   // ------------------------------------------------------------------------
-
-  Widget _buildEmpresaDropdown(
-    BuildContext context,
-    String tipo,
-    int? selectedValue,
-    Function(int?) onChanged,
-  ) {
-    // KEPT: original helper (used previously by old flow). Not used in new flow.
-    final empresasAsync = ref.watch(empresasProvider);
-
-    return empresasAsync.when(
-      loading: () => const LinearProgressIndicator(minHeight: 2),
-      error: (err, _) => Text(
-        'Error al cargar',
-        style: TextStyle(color: Colors.red.shade300, fontSize: 10),
-      ),
-      data: (data) {
-        final empresas = (data as List?)?.cast<dynamic>() ?? [];
-        final filteredEmpresas = tipo == 'interno'
-            ? empresas.where((e) => (e as dynamic).codEmpresa == 6).toList()
-            : empresas.where((e) => (e as dynamic).codEmpresa != -1 && (e as dynamic).codEmpresa != 6).toList();
-
-        final items = filteredEmpresas
-            .map<DropdownMenuItem<int>>(
-              (e) => DropdownMenuItem<int>(
-                value: (e as dynamic).codEmpresa as int,
-                child: Text((e as dynamic).nombre as String, overflow: TextOverflow.ellipsis),
-              ),
-            )
-            .toList();
-        items.insert(0, _buildGestionarItem());
-
-        final existeValor = items.any((item) => item.value == selectedValue);
-        final valorSeguro = existeValor ? selectedValue : null;
-
-        return IgnorePointer(
-          ignoring: tipo == 'interno',
-          child: Opacity(
-            opacity: tipo == 'interno' ? 0.6 : 1.0,
-            child: DropdownButtonFormField<int>(
-              value: valorSeguro,
-              isExpanded: true,
-              decoration: InputDecoration(
-                labelText: 'Empresa *',
-                labelStyle: context.bodyStyle.copyWith(fontSize: 11),
-                border: const OutlineInputBorder(),
-                filled: true,
-                fillColor: Colors.white,
-                isDense: true,
-                contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: context.smallSpacing),
-              ),
-              items: items,
-              onChanged: (val) {
-                if (val == -1) {
-                  _navegarAEstructura();
-                } else {
-                  onChanged(val);
-                }
-              },
-              validator: (val) => val == null ? 'Requerido' : null,
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  // KEPT: old sucursal & cargo helpers (not used by new flow)
-  Widget _buildSucursalDropdown(
-    BuildContext context,
-    int? selectedEmpresa,
-    int? selectedValue,
-    Function(int?) onChanged,
-  ) {
-    final sucursalesAsync = selectedEmpresa != null
-        ? ref.watch(sucursalesProvider(selectedEmpresa))
-        : const AsyncValue.data([]);
-
-    return IgnorePointer(
-      ignoring: selectedEmpresa == null,
-      child: Opacity(
-        opacity: selectedEmpresa == null ? 0.5 : 1.0,
-        child: sucursalesAsync.when(
-          loading: () => const LinearProgressIndicator(minHeight: 2),
-          error: (err, _) => Text(
-            'Error al cargar',
-            style: TextStyle(color: Colors.red.shade300, fontSize: 10),
-          ),
-          data: (data) {
-            final sucursales = (data as List?)?.cast<dynamic>() ?? [];
-            final filteredSucursales = sucursales.where((s) => (s as dynamic).codSucursal != -1).toList();
-
-            final items = filteredSucursales
-                .map<DropdownMenuItem<int>>(
-                  (s) => DropdownMenuItem<int>(
-                    value: (s as dynamic).codSucursal as int,
-                    child: Text((s as dynamic).nombre as String, overflow: TextOverflow.ellipsis),
-                  ),
-                )
-                .toList();
-            items.insert(0, _buildGestionarItem());
-
-            final existeValor = items.any((item) => item.value == selectedValue);
-            final valorSeguro = existeValor ? selectedValue : null;
-
-            return DropdownButtonFormField<int>(
-              value: valorSeguro,
-              isExpanded: true,
-              decoration: InputDecoration(
-                labelText: 'Sucursal *',
-                labelStyle: context.bodyStyle.copyWith(fontSize: 11),
-                border: const OutlineInputBorder(),
-                filled: true,
-                fillColor: Colors.white,
-                isDense: true,
-                contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: context.smallSpacing),
-              ),
-              items: items,
-              onChanged: (val) {
-                if (val == -1) {
-                  _navegarAEstructura();
-                } else {
-                  onChanged(val);
-                }
-              },
-              validator: (val) => val == null ? 'Requerido' : null,
-            );
-          },
-        ),
-      ),
-    );
-  }
-
-  Widget _buildCargoDropdown(
-    BuildContext context,
-    int? selectedSucursal,
-    int? selectedValue,
-    Function(int?) onChanged,
-    Function(CargoSucursalEntity?) onCargoSelected,
-  ) {
-    final cargosAsync = selectedSucursal != null
-        ? ref.watch(cargoXsucursalProvider(selectedSucursal))
-        : const AsyncValue.data([]);
-
-    return IgnorePointer(
-      ignoring: selectedSucursal == null,
-      child: Opacity(
-        opacity: selectedSucursal == null ? 0.5 : 1.0,
-        child: cargosAsync.when(
-          loading: () => const LinearProgressIndicator(minHeight: 2),
-          error: (err, _) => Text(
-            'Error al cargar',
-            style: TextStyle(color: Colors.red.shade300, fontSize: 10),
-          ),
-          data: (data) {
-            final cargos = (data as List?)?.cast<CargoSucursalEntity>() ?? [];
-            final filteredCargos = cargos.where((c) => c.codCargoSucursal != -1).toList();
-
-            final items = filteredCargos
-                .map<DropdownMenuItem<int>>(
-                  (c) => DropdownMenuItem<int>(
-                    value: c.codCargoSucursal,
-                    child: Text(c.datoCargo, overflow: TextOverflow.ellipsis),
-                  ),
-                )
-                .toList();
-            items.insert(0, _buildGestionarItem());
-
-            final existeValor = items.any((item) => item.value == selectedValue);
-            final valorSeguro = existeValor ? selectedValue : null;
-
-            return DropdownButtonFormField<int>(
-              value: valorSeguro,
-              isExpanded: true,
-              decoration: InputDecoration(
-                labelText: 'Cargo *',
-                labelStyle: context.bodyStyle.copyWith(fontSize: 11),
-                border: const OutlineInputBorder(),
-                filled: true,
-                fillColor: Colors.white,
-                isDense: true,
-                contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: context.smallSpacing),
-              ),
-              items: items,
-              onChanged: (val) {
-                if (val == -1) {
-                  _navegarAEstructura();
-                } else {
-                  onChanged(val);
-                  try {
-                    final cargo = cargos.firstWhere((c) => c.codCargoSucursal == val);
-                    onCargoSelected(cargo);
-                  } catch (_) {
-                    onCargoSelected(null);
-                  }
-                }
-              },
-              validator: (val) => val == null ? 'Requerido' : null,
-            );
-          },
-        ),
-      ),
-    );
-  }
 
   // ------------------------------------------------------------------------
   // Layout composition: replace old cargo section calls with new selectors
@@ -569,7 +435,9 @@ Widget _buildCargoPlanillaSelector(BuildContext context) {
       children: [
         _buildSectionTitle(context, 'Seleccionar Cargos', Icons.work),
         SizedBox(height: context.spacing),
-        context.isMobile ? _buildCargosMobileView(context) : _buildCargosWebView(context),
+        context.isMobile
+            ? _buildCargosMobileView(context)
+            : _buildCargosWebView(context),
       ],
     );
   }
@@ -593,9 +461,7 @@ Widget _buildCargoPlanillaSelector(BuildContext context) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Expanded(
-          child: _buildCargoInternoSelector(context),
-        ),
+        Expanded(child: _buildCargoInternoSelector(context)),
         SizedBox(width: context.largeSpacing * 2),
         Expanded(
           child: Column(
@@ -617,11 +483,19 @@ Widget _buildCargoPlanillaSelector(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _buildSectionTitle(context, 'Información de Relación Laboral', Icons.link),
+        _buildSectionTitle(
+          context,
+          'Información de Relación Laboral',
+          Icons.link,
+        ),
         SizedBox(height: context.spacing),
         tiposRelacionAsync.when(
           loading: () => const LinearProgressIndicator(minHeight: 2),
-          error: (err, _) => Text('Error', style: TextStyle(color: Colors.red.shade300, fontSize: 10)),
+          error:
+              (err, _) => Text(
+                'Error',
+                style: TextStyle(color: Colors.red.shade300, fontSize: 10),
+              ),
           data: (tiposRelacion) {
             return CustomDropdown<TipoRelacionLaboralEntity>(
               asyncValue: AsyncValue.data(tiposRelacion),

@@ -206,6 +206,13 @@ final routerProvider = Provider<GoRouter>((ref) {
               name: 'tdesc_EmpleadosDescuentoView',
               builder: (context, state) => const InformeEmpDescuentosScreen(),
             ),
+
+            // Lote de producción
+            GoRoute(
+              path: '/dashboard/tprod_loteProduccion/loteProduccion',
+              name: 'tprod_loteProduccion',
+              builder: (context, state) => const LoteProduccionRegistroScreen(),
+            ),
           ],
         ),
 
@@ -330,6 +337,13 @@ final routerProvider = Provider<GoRouter>((ref) {
           path: '/tdesc_EmpleadosDescuento/View',
           redirect:
               (context, state) => '/dashboard/tdesc_EmpleadosDescuento/View',
+        ),
+        // Lote de producción
+        GoRoute(
+          path: '/tprod_loteProduccion/loteProduccion',
+          redirect:
+              (context, state) =>
+                  '/dashboard/tprod_loteProduccion/loteProduccion',
         ),
 
         GoRoute(

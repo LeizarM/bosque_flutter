@@ -18,7 +18,10 @@ import 'package:bosque_flutter/presentation/widgets/dependientes/persona_seccion
 import 'package:bosque_flutter/presentation/widgets/dependientes/relacion_laboral_seccion.dart';
 import 'package:bosque_flutter/presentation/widgets/dependientes/seccion_foto.dart';
 import 'package:bosque_flutter/presentation/widgets/dependientes/telefono_secccion.dart';
+import 'package:bosque_flutter/core/state/permisos_vacacion_provider.dart';
+import 'package:bosque_flutter/presentation/widgets/permisos-vacaciones/vacacion_resumen_widget.dart';
 import 'package:flutter/material.dart';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:printing/printing.dart';
 
@@ -59,7 +62,7 @@ class _InfoEmpleadoScreenState extends ConsumerState<InfoEmpleadoScreen> {
     'garanteReferenciaExp': true,
     'relEmpExp': true,
     'foto': true,
-    'licenciaConducir': true, 
+    'licenciaConducir': true,
   };
 
   Map<String, String?> selectedOperation = {
@@ -69,7 +72,7 @@ class _InfoEmpleadoScreenState extends ConsumerState<InfoEmpleadoScreen> {
     'formacion': null,
     'experienciaLaboral': null,
     'garanteReferencia': null,
-    'licenciaConducir': null, 
+    'licenciaConducir': null,
   };
 
   bool _habilitarEdicion = false;
@@ -97,6 +100,7 @@ class _InfoEmpleadoScreenState extends ConsumerState<InfoEmpleadoScreen> {
       ref.refresh(relacionLaboralProvider(widget.codEmpleado));
       ref.refresh(todosLosDocumentosProvider(widget.codEmpleado));
       ref.invalidate(documentosPendientesProvider);
+      ref.invalidate(vacacionResumenProvider(widget.codEmpleado));
     });
   }
 
@@ -328,6 +332,11 @@ class _InfoEmpleadoScreenState extends ConsumerState<InfoEmpleadoScreen> {
                                     );
                                     ref.invalidate(
                                       jasperPdfProvider(widget.codEmpleado),
+                                    );
+                                    ref.invalidate(
+                                      vacacionResumenProvider(
+                                        widget.codEmpleado,
+                                      ),
                                     );
                                   },
                                 ),
@@ -587,6 +596,12 @@ class _InfoEmpleadoScreenState extends ConsumerState<InfoEmpleadoScreen> {
                   ),
                   const SizedBox(height: 24),
                   _buildSection(
+                    child: VacacionResumenWidget(
+                      codEmpleado: widget.codEmpleado,
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  _buildSection(
                     child: TelefonoSection(
                       codPersona: empleado.codPersona,
                       habilitarEdicion: _habilitarEdicion,
@@ -713,21 +728,23 @@ class _InfoEmpleadoScreenState extends ConsumerState<InfoEmpleadoScreen> {
                       //ocultarCamposSensibles: !esAutoConsulta,
                     ),
                   ),
-                    const SizedBox(height: 16),
-_buildSection(
-  child: LicenciaConducirSeccion(
-    codPersona: empleado.codPersona,
-    habilitarEdicion: _habilitarEdicion,
-    estadoExpandido: estadoExpandido,
-    selectedOperation: selectedOperation,
-    onToggleSeccion: toggleSeccion,
-    onUpdateOperation:
-        (op) => setState(() => selectedOperation['licenciaConducir'] = op),
-    onEditar: () => activarEdicion('licenciaConducir'),
-    onAgregar: () => (),
-    onEliminar: () => (),
-  ),
-),
+                  const SizedBox(height: 16),
+                  _buildSection(
+                    child: LicenciaConducirSeccion(
+                      codPersona: empleado.codPersona,
+                      habilitarEdicion: _habilitarEdicion,
+                      estadoExpandido: estadoExpandido,
+                      selectedOperation: selectedOperation,
+                      onToggleSeccion: toggleSeccion,
+                      onUpdateOperation:
+                          (op) => setState(
+                            () => selectedOperation['licenciaConducir'] = op,
+                          ),
+                      onEditar: () => activarEdicion('licenciaConducir'),
+                      onAgregar: () => (),
+                      onEliminar: () => (),
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -849,6 +866,7 @@ _buildSection(
                 ref.invalidate(emailProvider(_ultimoCodPersona!));
                 ref.invalidate(jasperPdfProvider(widget.codEmpleado));
               }
+              ref.invalidate(vacacionResumenProvider(widget.codEmpleado));
             },
           ),
           /* FutureBuilder<String>(
@@ -1049,6 +1067,9 @@ _buildSection(
                           ref.invalidate(
                             relacionLaboralProvider(widget.codEmpleado),
                           );
+                          ref.invalidate(
+                            vacacionResumenProvider(widget.codEmpleado),
+                          );
                           await Future.delayed(
                             const Duration(milliseconds: 500),
                           );
@@ -1189,20 +1210,22 @@ _buildSection(
             ),
           ),
           const SizedBox(height: 16),
-_buildSection(
-  child: LicenciaConducirSeccion(
-    codPersona: codPersona,
-    habilitarEdicion: _habilitarEdicion,
-    estadoExpandido: estadoExpandido,
-    selectedOperation: selectedOperation,
-    onToggleSeccion: toggleSeccion,
-    onUpdateOperation:
-        (op) => setState(() => selectedOperation['licenciaConducir'] = op),
-    onEditar: () => activarEdicion('licenciaConducir'),
-    onAgregar: () => (),
-    onEliminar: () => (),
-  ),
-),
+          _buildSection(
+            child: LicenciaConducirSeccion(
+              codPersona: codPersona,
+              habilitarEdicion: _habilitarEdicion,
+              estadoExpandido: estadoExpandido,
+              selectedOperation: selectedOperation,
+              onToggleSeccion: toggleSeccion,
+              onUpdateOperation:
+                  (op) => setState(
+                    () => selectedOperation['licenciaConducir'] = op,
+                  ),
+              onEditar: () => activarEdicion('licenciaConducir'),
+              onAgregar: () => (),
+              onEliminar: () => (),
+            ),
+          ),
         ],
       ),
     );
@@ -1291,13 +1314,21 @@ _buildSection(
   Widget _buildLaboralPage() {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
-      child: _buildSection(
-        child: RelacionLaboralSeccion(
-          codEmpleado: widget.codEmpleado,
-          habilitarEdicion: _habilitarEdicion,
-          estadoExpandido: estadoExpandido,
-          onToggleSeccion: toggleSeccion,
-        ),
+      child: Column(
+        children: [
+          _buildSection(
+            child: RelacionLaboralSeccion(
+              codEmpleado: widget.codEmpleado,
+              habilitarEdicion: _habilitarEdicion,
+              estadoExpandido: estadoExpandido,
+              onToggleSeccion: toggleSeccion,
+            ),
+          ),
+          const SizedBox(height: 16),
+          _buildSection(
+            child: VacacionResumenWidget(codEmpleado: widget.codEmpleado),
+          ),
+        ],
       ),
     );
   }

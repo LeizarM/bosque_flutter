@@ -4,7 +4,6 @@ import 'package:bosque_flutter/core/state/registro_empleado_provider.dart';
 import 'package:bosque_flutter/core/state/user_provider.dart';
 import 'package:bosque_flutter/core/utils/abm_service.dart';
 import 'package:bosque_flutter/domain/entities/cargo_sucursal_entity.dart';
-import 'package:bosque_flutter/presentation/widgets/registro_empleado/registro_empleado_utils.dart';
 import 'package:bosque_flutter/presentation/widgets/registro_empleado/responsive_utils_registro_empleado.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -14,10 +13,12 @@ import 'form_area_cargo.dart';
 // PROVIDERS
 // ============================================================================
 
-final currentCargoInternoProvider =
-    StateProvider<CargoSucursalEntity?>((ref) => null);
-final currentCargoPlanillaProvider =
-    StateProvider<CargoSucursalEntity?>((ref) => null);
+final currentCargoInternoProvider = StateProvider<CargoSucursalEntity?>(
+  (ref) => null,
+);
+final currentCargoPlanillaProvider = StateProvider<CargoSucursalEntity?>(
+  (ref) => null,
+);
 
 // ============================================================================
 // MAIN WIDGET
@@ -121,7 +122,12 @@ class _DetalleAreaCargoState extends ConsumerState<DetalleAreaCargo> {
         children: [
           _buildCargoCard(context, 'Cargo Interno', cargoInterno, Colors.blue),
           SizedBox(height: context.largeSpacing),
-          _buildCargoCard(context, 'Cargo Planilla', cargoPlanilla, Colors.orange),
+          _buildCargoCard(
+            context,
+            'Cargo Planilla',
+            cargoPlanilla,
+            Colors.orange,
+          ),
         ],
       );
     } else {
@@ -129,11 +135,21 @@ class _DetalleAreaCargoState extends ConsumerState<DetalleAreaCargo> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Expanded(
-            child: _buildCargoCard(context, 'Cargo Interno', cargoInterno, Colors.blue),
+            child: _buildCargoCard(
+              context,
+              'Cargo Interno',
+              cargoInterno,
+              Colors.blue,
+            ),
           ),
           SizedBox(width: context.largeSpacing),
           Expanded(
-            child: _buildCargoCard(context, 'Cargo Planilla', cargoPlanilla, Colors.orange),
+            child: _buildCargoCard(
+              context,
+              'Cargo Planilla',
+              cargoPlanilla,
+              Colors.orange,
+            ),
           ),
         ],
       );
@@ -147,13 +163,12 @@ class _DetalleAreaCargoState extends ConsumerState<DetalleAreaCargo> {
     Color colorPrimario,
   ) {
     // Mapeo correcto de datos
-    final cargoDesc = cargo.cargo?.descripcion ?? cargo.datoCargo ?? 'N/A';
-    final empresa = cargo.cargo?.nombreEmpresa ?? 
-                    cargo.sucursal?.empresa.nombre ?? 
-                    'Desconocida';
-    final sucursal = cargo.cargo?.sucursal ?? 
-                     cargo.sucursal?.nombre ?? 
-                     'N/A';
+    final cargoDesc = cargo.cargo?.descripcion ?? cargo.datoCargo;
+    final empresa =
+        cargo.cargo?.nombreEmpresa ??
+        cargo.sucursal?.empresa.nombre ??
+        'Desconocida';
+    final sucursal = cargo.cargo?.sucursal ?? cargo.sucursal?.nombre ?? 'N/A';
 
     return Card(
       margin: EdgeInsets.zero,
@@ -170,7 +185,9 @@ class _DetalleAreaCargoState extends ConsumerState<DetalleAreaCargo> {
             Row(
               children: [
                 Icon(
-                  titulo.contains('Interno') ? Icons.business_center : Icons.description,
+                  titulo.contains('Interno')
+                      ? Icons.business_center
+                      : Icons.description,
                   size: context.smallIconSize,
                   color: colorPrimario,
                 ),
@@ -273,7 +290,8 @@ class _DetalleAreaCargoState extends ConsumerState<DetalleAreaCargo> {
           audUsuario: _audUsuario,
           cargoInternoInicial: cargoInterno,
           cargoPlanillaInicial: cargoPlanilla,
-          onSave: (cargoInt, cargoPlan) => _handleCargoSave(cargoInt, cargoPlan),
+          onSave:
+              (cargoInt, cargoPlan) => _handleCargoSave(cargoInt, cargoPlan),
           onCancel: () {
             setState(() => _isAddingCargo = false);
           },
@@ -309,10 +327,7 @@ class _DetalleAreaCargoState extends ConsumerState<DetalleAreaCargo> {
   // ACTION BUTTONS
   // ============================================================================
 
-  Widget _buildActionButtons(
-    BuildContext context,
-    bool ambosGuardados,
-  ) {
+  Widget _buildActionButtons(BuildContext context, bool ambosGuardados) {
     final cargoInterno = ref.watch(currentCargoInternoProvider);
     final cargoPlanilla = ref.watch(currentCargoPlanillaProvider);
     final ambosGuardadosActual = cargoInterno != null && cargoPlanilla != null;
@@ -344,7 +359,10 @@ class _DetalleAreaCargoState extends ConsumerState<DetalleAreaCargo> {
   // HANDLER
   // ============================================================================
 
-  void _handleCargoSave(CargoSucursalEntity cargoInterno, CargoSucursalEntity cargoPlanilla) {
+  void _handleCargoSave(
+    CargoSucursalEntity cargoInterno,
+    CargoSucursalEntity cargoPlanilla,
+  ) {
     // Actualizar providers
     ref.read(currentCargoInternoProvider.notifier).state = cargoInterno;
     ref.read(currentCargoPlanillaProvider.notifier).state = cargoPlanilla;
@@ -356,7 +374,8 @@ class _DetalleAreaCargoState extends ConsumerState<DetalleAreaCargo> {
       'fechaInicio': DateTime.now(),
       'cargoSucursal': cargoInterno,
       'cargoSucursalPlanilla': cargoPlanilla,
-      'cargoPlanilla': cargoPlanilla.cargo?.descripcion ?? cargoPlanilla.datoCargo ?? '',
+      'cargoPlanilla':
+          cargoPlanilla.cargo?.descripcion ?? cargoPlanilla.datoCargo,
       'existe': 0,
       'audUsuario': _audUsuario,
     };

@@ -293,7 +293,7 @@ class _GruposTigoScreenState extends ConsumerState<GruposTigoScreen> {
               ref.invalidate(tigoResumenDetallado(widget.periodoCobrado));
               ref.invalidate(obtenerNroSinAsignar(widget.periodoCobrado));
               //refresh de tigoArbolDetallado
-              ref.invalidate(tigoArbolDetallado((null, widget.periodoCobrado)));
+              //ref.invalidate(tigoArbolDetallado((null, widget.periodoCobrado)));
             },
             onCancel: () {
               Navigator.of(ctx).pop();
@@ -340,7 +340,7 @@ class _GruposTigoScreenState extends ConsumerState<GruposTigoScreen> {
       ref.invalidate(obtenerGruposTigo(widget.periodoCobrado));
       ref.invalidate(tigoResumenDetallado(widget.periodoCobrado));
       ref.invalidate(obtenerNroSinAsignar(widget.periodoCobrado));
-      ref.invalidate(tigoArbolDetallado((null, widget.periodoCobrado)));
+      //ref.invalidate(tigoArbolDetallado((null, widget.periodoCobrado)));
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Grupo eliminado'),

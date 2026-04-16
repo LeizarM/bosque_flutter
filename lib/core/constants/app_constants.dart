@@ -247,6 +247,8 @@ class AppConstants {
       '/tigo/RptCorporativosPersonal';
   static const String tigoRptComparacionEmpresas =
       '/tigo/RptComparacionEmpresas';
+  static const String tigoListarPeriodoFactura = '/tigo/listarPeriodoFactura';
+  static const String tigoListarEmpresas = '/tigo/listarEmpresas';
   //ENDPOINT PARA LA GESTION DE EMPLEADOS - RRHH
   static const String rrhhObtenerLstEmpleados = '/rrhh/obtenerLstEmpleados';
   static const String rrhhRegistroEmpleado = '/rrhh/registroEmpleado';
@@ -396,6 +398,31 @@ class AppConstants {
   // ── TDESC: Descuentos empleados ────────────────────────────────────────────────────────
 
   static const String descObtenerDescuentosEmpleado = '/rrhh/prestamos-multas';
+
+  // ═══════════════════════════════════════════════════════════════════════════════
+  // RUTAS MODULO: LOTES DE PRODUCCION
+  // ═══════════════════════════════════════════════════════════════════════════════
+  static const String obtenerLotesProduccion =
+      '/loteProduccion/newLoteProduccion';
+  static const String obtenerArticulos = '/loteProduccion/articulos';
+  static const String registrarLoteProduccion =
+      '/loteProduccion/registroLoteProduccion';
+  static const String registrarMaterialIngreso =
+      '/loteProduccion/registroIngreso';
+  static const String registrarMaterialSalida =
+      '/loteProduccion/registroSalida';
+  static const String registrarMerma = '/loteProduccion/registroMerma';
+  static const String obtenerMaquinas = '/loteProduccion/maquina';
+  static const String obtenerEmpresas = '/loteProduccion/lst-empresas';
+  static const String obtenerDocNumOrdFabXEmpresa =
+      '/loteProduccion/lstDocNumOrdFabXEmpresa';
+
+  // ═══════════════════════════════════════════════════════════════════════════════
+  // RUTAS MODULO: PERMISOS / VACACION
+  // ═══════════════════════════════════════════════════════════════════════════════
+  static const String vacDiasDisponibles = '/vacacion/diasDisponibles';
+
+  // ── TPROD: Lote de Produccion ────────────────────────────────────────────────────────────
 
   //Para cargar permisos de botones por usuario
   static const String ubtnPermisosBotones = '/view/vistaBtn';

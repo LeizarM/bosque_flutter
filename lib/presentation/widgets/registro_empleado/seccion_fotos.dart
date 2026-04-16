@@ -14,10 +14,8 @@ import 'package:bosque_flutter/data/repositories/ficha_trabajador_impl.dart';
 class DetalleDocumentosEmpleado extends ConsumerStatefulWidget {
   final int codEmpleado;
 
-  const DetalleDocumentosEmpleado({
-    Key? key,
-    required this.codEmpleado,
-  }) : super(key: key);
+  const DetalleDocumentosEmpleado({Key? key, required this.codEmpleado})
+    : super(key: key);
 
   @override
   ConsumerState<DetalleDocumentosEmpleado> createState() =>
@@ -27,12 +25,6 @@ class DetalleDocumentosEmpleado extends ConsumerStatefulWidget {
 class _DetalleDocumentosEmpleadoState
     extends ConsumerState<DetalleDocumentosEmpleado> {
   final ImagePicker _imagePicker = ImagePicker();
-
-  static const Map<String, (String, int)> tiposDocumentos = {
-    'carnet': ('Carnet de Identidad', 2),
-    'pasaporte': ('Pasaporte', 1),
-    'licencia': ('Licencia de Conducir', 2),
-  };
 
   @override
   Widget build(BuildContext context) {
@@ -44,29 +36,19 @@ class _DetalleDocumentosEmpleadoState
   }
 
   void _mostrarDialogoDocumentos(BuildContext context) {
-    console('🔍 Abriendo diálogo de documentos para codEmpleado: ${widget.codEmpleado}');
+    console(
+      '🔍 Abriendo diálogo de documentos para codEmpleado: ${widget.codEmpleado}',
+    );
 
     showDialog(
       context: context,
       barrierDismissible: true,
-      builder: (context) => _DocumentosDialog(
-        codEmpleado: widget.codEmpleado,
-        imagePicker: _imagePicker,
-      ),
+      builder:
+          (context) => _DocumentosDialog(
+            codEmpleado: widget.codEmpleado,
+            imagePicker: _imagePicker,
+          ),
     );
-  }
-
-  IconData _getIconForDocType(String tipoKey) {
-    switch (tipoKey) {
-      case 'carnet':
-        return Icons.badge;
-      case 'licencia':
-        return Icons.card_giftcard;
-      case 'pasaporte':
-        return Icons.travel_explore;
-      default:
-        return Icons.document_scanner;
-    }
   }
 }
 
@@ -124,9 +106,8 @@ class _DocumentosDialogState extends ConsumerState<_DocumentosDialog> {
 
   Future<void> _seleccionarFoto(String tipoKey, int index) async {
     final cantidadRequerida = tiposDocumentos[tipoKey]!.$2;
-    final lado = cantidadRequerida == 2
-        ? (index == 0 ? 'Anverso' : 'Reverso')
-        : 'Foto';
+    final lado =
+        cantidadRequerida == 2 ? (index == 0 ? 'Anverso' : 'Reverso') : 'Foto';
 
     try {
       console('📷 Seleccionando $lado (índice: $index)');
@@ -153,9 +134,8 @@ class _DocumentosDialogState extends ConsumerState<_DocumentosDialog> {
     final bytes = await file.readAsBytes();
     final tipoDocumentoBackend = tipoKey.toUpperCase();
     final cantidadRequerida = tiposDocumentos[tipoKey]!.$2;
-    final lado = cantidadRequerida == 2
-        ? (index == 0 ? 'anverso' : 'reverso')
-        : 'foto';
+    final lado =
+        cantidadRequerida == 2 ? (index == 0 ? 'anverso' : 'reverso') : 'foto';
 
     console('📤 Subiendo ${index + 1}/$cantidadRequerida:');
     console('   - codEmpleado: ${widget.codEmpleado}');
@@ -274,24 +254,27 @@ class _DocumentosDialogState extends ConsumerState<_DocumentosDialog> {
   void _mostrarConfirmacionEliminar(String tipoKey, String nombreArchivo) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Eliminar documento'),
-        content: const Text('¿Estás seguro de que deseas eliminar este documento?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancelar'),
+      builder:
+          (context) => AlertDialog(
+            title: const Text('Eliminar documento'),
+            content: const Text(
+              '¿Estás seguro de que deseas eliminar este documento?',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Cancelar'),
+              ),
+              TextButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                  _eliminarDocumento(tipoKey, nombreArchivo);
+                },
+                style: TextButton.styleFrom(foregroundColor: Colors.red),
+                child: const Text('Eliminar'),
+              ),
+            ],
           ),
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-              _eliminarDocumento(tipoKey, nombreArchivo);
-            },
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: const Text('Eliminar'),
-          ),
-        ],
-      ),
     );
   }
 
@@ -327,16 +310,16 @@ class _DocumentosDialogState extends ConsumerState<_DocumentosDialog> {
           if (mounted) setState(() => _isDeleting = false);
         }
       },
-      providersToInvalidate: [
-        todosLosDocumentosProvider(widget.codEmpleado),
-      ],
+      providersToInvalidate: [todosLosDocumentosProvider(widget.codEmpleado)],
       successMessage: 'Documento eliminado correctamente',
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    console('📋 Observando provider: todosLosDocumentosProvider(${widget.codEmpleado})');
+    console(
+      '📋 Observando provider: todosLosDocumentosProvider(${widget.codEmpleado})',
+    );
     final docsAsync = ref.watch(todosLosDocumentosProvider(widget.codEmpleado));
 
     return Dialog(
@@ -354,11 +337,17 @@ class _DocumentosDialogState extends ConsumerState<_DocumentosDialog> {
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
                 color: Colors.blue.shade50,
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(12),
+                ),
               ),
               child: Row(
                 children: [
-                  Icon(Icons.document_scanner, color: Colors.blue.shade700, size: 24),
+                  Icon(
+                    Icons.document_scanner,
+                    color: Colors.blue.shade700,
+                    size: 24,
+                  ),
                   const SizedBox(width: 12),
                   const Expanded(
                     child: Text(
@@ -371,7 +360,10 @@ class _DocumentosDialogState extends ConsumerState<_DocumentosDialog> {
                   ),
                   IconButton(
                     icon: const Icon(Icons.close),
-                    onPressed: (_isUploading || _isDeleting) ? null : () => Navigator.pop(context),
+                    onPressed:
+                        (_isUploading || _isDeleting)
+                            ? null
+                            : () => Navigator.pop(context),
                     padding: EdgeInsets.zero,
                     constraints: const BoxConstraints(),
                   ),
@@ -389,7 +381,10 @@ class _DocumentosDialogState extends ConsumerState<_DocumentosDialog> {
                 error: (err, stack) {
                   console('❌ Error cargando documentos: $err');
                   return Center(
-                    child: Text('Error: $err', style: const TextStyle(color: Colors.red)),
+                    child: Text(
+                      'Error: $err',
+                      style: const TextStyle(color: Colors.red),
+                    ),
                   );
                 },
                 data: (documentos) {
@@ -461,7 +456,10 @@ class _DocumentosDialogState extends ConsumerState<_DocumentosDialog> {
                   ),
                 ),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.blue.shade50,
                     borderRadius: BorderRadius.circular(12),
@@ -492,10 +490,12 @@ class _DocumentosDialogState extends ConsumerState<_DocumentosDialog> {
                 itemCount: archivos.length,
                 itemBuilder: (context, index) {
                   final nombreArchivo = archivos[index];
-                  final url = '${AppConstants.baseUrl}${AppConstants.getDocImageUrl}${widget.codEmpleado}/$tipoKey/$nombreArchivo?ts=${DateTime.now().millisecondsSinceEpoch}';
-                  final lado = cantidadRequerida == 2
-                      ? (index == 0 ? 'Anverso' : 'Reverso')
-                      : 'Documento';
+                  final url =
+                      '${AppConstants.baseUrl}${AppConstants.getDocImageUrl}${widget.codEmpleado}/$tipoKey/$nombreArchivo?ts=${DateTime.now().millisecondsSinceEpoch}';
+                  final lado =
+                      cantidadRequerida == 2
+                          ? (index == 0 ? 'Anverso' : 'Reverso')
+                          : 'Documento';
 
                   return _buildThumbnail(url, lado, tipoKey, nombreArchivo);
                 },
@@ -511,11 +511,18 @@ class _DocumentosDialogState extends ConsumerState<_DocumentosDialog> {
                 ),
                 child: Column(
                   children: [
-                    Icon(Icons.image_not_supported, size: 32, color: Colors.grey.shade400),
+                    Icon(
+                      Icons.image_not_supported,
+                      size: 32,
+                      color: Colors.grey.shade400,
+                    ),
                     const SizedBox(height: 8),
                     Text(
                       'Sin documentos',
-                      style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
+                      style: TextStyle(
+                        color: Colors.grey.shade600,
+                        fontSize: 12,
+                      ),
                     ),
                   ],
                 ),
@@ -555,9 +562,10 @@ class _DocumentosDialogState extends ConsumerState<_DocumentosDialog> {
                 separatorBuilder: (_, __) => const SizedBox(height: 12),
                 itemBuilder: (context, index) {
                   final imagen = _fotosEnEdicion[tipoKey]?[index];
-                  final lado = cantidadRequerida == 2
-                      ? (index == 0 ? 'Anverso' : 'Reverso')
-                      : 'Foto';
+                  final lado =
+                      cantidadRequerida == 2
+                          ? (index == 0 ? 'Anverso' : 'Reverso')
+                          : 'Foto';
 
                   return _buildFotoSlot(tipoKey, index, lado, imagen);
                 },
@@ -570,34 +578,45 @@ class _DocumentosDialogState extends ConsumerState<_DocumentosDialog> {
                 child: ElevatedButton.icon(
                   icon: const Icon(Icons.add_photo_alternate),
                   label: const Text('Agregar'),
-                  onPressed: () => _entrarModoEdicion(tipoKey, cantidadRequerida),
+                  onPressed:
+                      () => _entrarModoEdicion(tipoKey, cantidadRequerida),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: archivos.isNotEmpty ? Colors.green : Colors.blue,
+                    backgroundColor:
+                        archivos.isNotEmpty ? Colors.green : Colors.blue,
                   ),
                 ),
               )
             else
               Builder(
                 builder: (context) {
-                  final fotosSeleccionadas = _fotosEnEdicion[tipoKey]?.where((img) => img != null).length ?? 0;
+                  final fotosSeleccionadas =
+                      _fotosEnEdicion[tipoKey]
+                          ?.where((img) => img != null)
+                          .length ??
+                      0;
                   return Row(
                     children: [
                       Expanded(
                         child: ElevatedButton.icon(
-                          icon: _isUploading
-                              ? const SizedBox(
-                                  width: 16,
-                                  height: 16,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                                  ),
-                                )
-                              : const Icon(Icons.cloud_upload),
+                          icon:
+                              _isUploading
+                                  ? const SizedBox(
+                                    width: 16,
+                                    height: 16,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      valueColor: AlwaysStoppedAnimation<Color>(
+                                        Colors.white,
+                                      ),
+                                    ),
+                                  )
+                                  : const Icon(Icons.cloud_upload),
                           label: Text(_isUploading ? 'Subiendo...' : 'Subir'),
-                          onPressed: _isUploading || fotosSeleccionadas < cantidadRequerida
-                              ? null
-                              : () => _subirFotosDelTipo(tipoKey),
+                          onPressed:
+                              _isUploading ||
+                                      fotosSeleccionadas < cantidadRequerida
+                                  ? null
+                                  : () => _subirFotosDelTipo(tipoKey),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.green,
                             disabledBackgroundColor: Colors.grey.shade300,
@@ -609,7 +628,10 @@ class _DocumentosDialogState extends ConsumerState<_DocumentosDialog> {
                         child: OutlinedButton.icon(
                           icon: const Icon(Icons.close),
                           label: const Text('Cancelar'),
-                          onPressed: _isUploading ? null : () => _salirModoEdicion(tipoKey),
+                          onPressed:
+                              _isUploading
+                                  ? null
+                                  : () => _salirModoEdicion(tipoKey),
                         ),
                       ),
                     ],
@@ -622,7 +644,12 @@ class _DocumentosDialogState extends ConsumerState<_DocumentosDialog> {
     );
   }
 
-  Widget _buildThumbnail(String url, String lado, String tipoKey, String nombreArchivo) {
+  Widget _buildThumbnail(
+    String url,
+    String lado,
+    String tipoKey,
+    String nombreArchivo,
+  ) {
     return GestureDetector(
       onTap: () => _mostrarImagenCompleta(url),
       child: Container(
@@ -688,7 +715,13 @@ class _DocumentosDialogState extends ConsumerState<_DocumentosDialog> {
               top: 4,
               right: 4,
               child: GestureDetector(
-                onTap: _isDeleting ? null : () => _mostrarConfirmacionEliminar(tipoKey, nombreArchivo),
+                onTap:
+                    _isDeleting
+                        ? null
+                        : () => _mostrarConfirmacionEliminar(
+                          tipoKey,
+                          nombreArchivo,
+                        ),
                 child: Container(
                   padding: const EdgeInsets.all(6),
                   decoration: BoxDecoration(
@@ -702,11 +735,7 @@ class _DocumentosDialogState extends ConsumerState<_DocumentosDialog> {
                       ),
                     ],
                   ),
-                  child: const Icon(
-                    Icons.close,
-                    color: Colors.white,
-                    size: 16,
-                  ),
+                  child: const Icon(Icons.close, color: Colors.white, size: 16),
                 ),
               ),
             ),
@@ -719,60 +748,65 @@ class _DocumentosDialogState extends ConsumerState<_DocumentosDialog> {
   void _mostrarImagenCompleta(String url) {
     showDialog(
       context: context,
-      builder: (context) => Dialog(
-        insetPadding: const EdgeInsets.all(16),
-        child: Container(
-          width: 450,
-          height: 550,
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Stack(
-            children: [
-              Center(
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(12),
-                  child: InteractiveViewer(
-                    boundaryMargin: const EdgeInsets.all(20),
-                    minScale: 1.0,
-                    maxScale: 4.0,
-                    child: Image.network(
-                      url,
-                      fit: BoxFit.contain,
-                      errorBuilder: (context, error, stackTrace) {
-                        return Container(
-                          color: Colors.grey.shade200,
-                          child: Icon(
-                            Icons.broken_image,
-                            color: Colors.grey.shade400,
-                            size: 48,
-                          ),
-                        );
-                      },
+      builder:
+          (context) => Dialog(
+            insetPadding: const EdgeInsets.all(16),
+            child: Container(
+              width: 450,
+              height: 550,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Stack(
+                children: [
+                  Center(
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(12),
+                      child: InteractiveViewer(
+                        boundaryMargin: const EdgeInsets.all(20),
+                        minScale: 1.0,
+                        maxScale: 4.0,
+                        child: Image.network(
+                          url,
+                          fit: BoxFit.contain,
+                          errorBuilder: (context, error, stackTrace) {
+                            return Container(
+                              color: Colors.grey.shade200,
+                              child: Icon(
+                                Icons.broken_image,
+                                color: Colors.grey.shade400,
+                                size: 48,
+                              ),
+                            );
+                          },
+                        ),
+                      ),
                     ),
                   ),
-                ),
-              ),
-              Positioned(
-                top: 12,
-                right: 12,
-                child: GestureDetector(
-                  onTap: () => Navigator.pop(context),
-                  child: Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: Colors.grey.shade800.withOpacity(0.7),
-                      shape: BoxShape.circle,
+                  Positioned(
+                    top: 12,
+                    right: 12,
+                    child: GestureDetector(
+                      onTap: () => Navigator.pop(context),
+                      child: Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: Colors.grey.shade800.withOpacity(0.7),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(
+                          Icons.close,
+                          color: Colors.white,
+                          size: 20,
+                        ),
+                      ),
                     ),
-                    child: const Icon(Icons.close, color: Colors.white, size: 20),
                   ),
-                ),
+                ],
               ),
-            ],
+            ),
           ),
-        ),
-      ),
     );
   }
 
@@ -794,7 +828,10 @@ class _DocumentosDialogState extends ConsumerState<_DocumentosDialog> {
                         height: 180,
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: Colors.green.shade300, width: 2),
+                          border: Border.all(
+                            color: Colors.green.shade300,
+                            width: 2,
+                          ),
                         ),
                         child: ClipRRect(
                           borderRadius: BorderRadius.circular(8),
@@ -832,9 +869,10 @@ class _DocumentosDialogState extends ConsumerState<_DocumentosDialog> {
                                 ),
                               ),
                               GestureDetector(
-                                onTap: _isUploading
-                                    ? null
-                                    : () => _eliminarFoto(tipoKey, index),
+                                onTap:
+                                    _isUploading
+                                        ? null
+                                        : () => _eliminarFoto(tipoKey, index),
                                 child: Icon(
                                   Icons.close,
                                   color: Colors.white,
@@ -856,9 +894,7 @@ class _DocumentosDialogState extends ConsumerState<_DocumentosDialog> {
                     color: Colors.grey.shade100,
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: const Center(
-                    child: CircularProgressIndicator(),
-                  ),
+                  child: const Center(child: CircularProgressIndicator()),
                 );
               }
             },
@@ -877,11 +913,7 @@ class _DocumentosDialogState extends ConsumerState<_DocumentosDialog> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(
-                    Icons.camera_alt,
-                    size: 48,
-                    color: Colors.grey.shade400,
-                  ),
+                  Icon(Icons.camera_alt, size: 48, color: Colors.grey.shade400),
                   const SizedBox(height: 8),
                   Text(
                     'Tomar $lado',
@@ -893,10 +925,7 @@ class _DocumentosDialogState extends ConsumerState<_DocumentosDialog> {
                   const SizedBox(height: 4),
                   Text(
                     'Tap para capturar',
-                    style: TextStyle(
-                      color: Colors.grey.shade400,
-                      fontSize: 12,
-                    ),
+                    style: TextStyle(color: Colors.grey.shade400, fontSize: 12),
                   ),
                 ],
               ),
@@ -909,50 +938,52 @@ class _DocumentosDialogState extends ConsumerState<_DocumentosDialog> {
   void _mostrarImagenPreview(Uint8List imageBytes) {
     showDialog(
       context: context,
-      builder: (context) => Dialog(
-        insetPadding: const EdgeInsets.all(16),
-        child: Container(
-          width: 450,
-          height: 550,
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Stack(
-            children: [
-              Center(
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(12),
-                  child: InteractiveViewer(
-                    boundaryMargin: const EdgeInsets.all(20),
-                    minScale: 1.0,
-                    maxScale: 4.0,
-                    child: Image.memory(
-                      imageBytes,
-                      fit: BoxFit.contain,
+      builder:
+          (context) => Dialog(
+            insetPadding: const EdgeInsets.all(16),
+            child: Container(
+              width: 450,
+              height: 550,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Stack(
+                children: [
+                  Center(
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(12),
+                      child: InteractiveViewer(
+                        boundaryMargin: const EdgeInsets.all(20),
+                        minScale: 1.0,
+                        maxScale: 4.0,
+                        child: Image.memory(imageBytes, fit: BoxFit.contain),
+                      ),
                     ),
                   ),
-                ),
-              ),
-              Positioned(
-                top: 12,
-                right: 12,
-                child: GestureDetector(
-                  onTap: () => Navigator.pop(context),
-                  child: Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: Colors.grey.shade800.withOpacity(0.7),
-                      shape: BoxShape.circle,
+                  Positioned(
+                    top: 12,
+                    right: 12,
+                    child: GestureDetector(
+                      onTap: () => Navigator.pop(context),
+                      child: Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: Colors.grey.shade800.withOpacity(0.7),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(
+                          Icons.close,
+                          color: Colors.white,
+                          size: 20,
+                        ),
+                      ),
                     ),
-                    child: const Icon(Icons.close, color: Colors.white, size: 20),
                   ),
-                ),
+                ],
               ),
-            ],
+            ),
           ),
-        ),
-      ),
     );
   }
 
@@ -963,9 +994,17 @@ class _DocumentosDialogState extends ConsumerState<_DocumentosDialog> {
       case 'licencia':
         return Icon(Icons.card_giftcard, size: 20, color: Colors.blue.shade700);
       case 'pasaporte':
-        return Icon(Icons.travel_explore, size: 20, color: Colors.blue.shade700);
+        return Icon(
+          Icons.travel_explore,
+          size: 20,
+          color: Colors.blue.shade700,
+        );
       default:
-        return Icon(Icons.document_scanner, size: 20, color: Colors.blue.shade700);
+        return Icon(
+          Icons.document_scanner,
+          size: 20,
+          color: Colors.blue.shade700,
+        );
     }
   }
 }

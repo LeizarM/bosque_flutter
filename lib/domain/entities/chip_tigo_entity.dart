@@ -13,6 +13,7 @@ class ChipTigoEntity {
   final int? tamanoPagina;
   final String? periodo;
   final String? codigo;
+  final int? totalPaginas;
   ChipTigoEntity({
     required this.codLinea,
     required this.codEmpleado,
@@ -28,6 +29,7 @@ class ChipTigoEntity {
     this.tamanoPagina,
     this.periodo,
     this.codigo,
+    this.totalPaginas,
   });
   //metodo copyWith
   ChipTigoEntity copyWith({
@@ -45,6 +47,7 @@ class ChipTigoEntity {
     int? tamanoPagina,
     String? periodo,
     String? codigo,
+    int? totalPaginas,
   }) {
     return ChipTigoEntity(
       codLinea: codLinea ?? this.codLinea,
@@ -61,7 +64,7 @@ class ChipTigoEntity {
       tamanoPagina: tamanoPagina ?? this.tamanoPagina,
       periodo: periodo ?? this.periodo,
       codigo: codigo ?? this.codigo,
+      totalPaginas: totalPaginas ?? this.totalPaginas,
     );
   }
-
 }

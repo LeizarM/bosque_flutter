@@ -30,23 +30,24 @@ class FormularioCambioLinea extends ConsumerStatefulWidget {
 class _FormularioCambioLineaState extends ConsumerState<FormularioCambioLinea> {
   final _formKey = GlobalKey<FormState>();
 
-  final _periodoController      = TextEditingController();
-  final _telefonoController     = TextEditingController();
-  final _descripcionController  = TextEditingController();
+  final _telefonoController = TextEditingController();
+  final _descripcionController = TextEditingController();
   final _buscadorDestinoController = TextEditingController();
   final _nuevoExternoController = TextEditingController();
 
+  String? _periodoSeleccionado;
+
   CambiosTigoEntity? _destinoSeleccionado;
   Timer? _debounceDestino;
-  bool _isEditing      = false;
+  bool _isEditing = false;
   bool _modoNuevoExterno = false;
 
   // ── FIX Bug 1: guardar tipoSocio del ORIGEN por separado ──
   // En modo edición el cambioEditar.tipoSocio es del destino, no del origen.
   // Necesitamos saber el tipo de origen para enviar codTelefono o codCuenta.
   late String _tipoSocioOrigen;
-  late int    _codTelefonoOrigen;
-  late int    _codCuentaOrigen;
+  late int _codTelefonoOrigen;
+  late int _codCuentaOrigen;
 
   @override
   void initState() {
@@ -55,26 +56,29 @@ class _FormularioCambioLineaState extends ConsumerState<FormularioCambioLinea> {
 
     if (_isEditing) {
       final c = widget.cambioEditar!;
-      _periodoController.text     = c.periodoCobrado;
-      _telefonoController.text    = c.telefono;
+      _periodoSeleccionado = c.periodoCobrado;
+      _telefonoController.text = c.telefono;
       _descripcionController.text = c.descripcion;
 
       // FIX Bug 1: en edición, detectar tipo de origen por codTelefono/codCuenta
       // Si tiene codTelefono → origen era EMPLEADO
       // Si tiene codCuenta   → origen era EXTERNO
       _codTelefonoOrigen = c.codTelefono;
-      _codCuentaOrigen   = c.codCuenta;
-      _tipoSocioOrigen   = c.codTelefono != 0 ? 'EMPLEADO' : 'EXTERNO';
-
+      _codCuentaOrigen = c.codCuenta;
+      _tipoSocioOrigen = c.codTelefono != 0 ? 'EMPLEADO' : 'EXTERNO';
     } else {
-      _periodoController.text = widget.periodoCobrado;
+      // Intentamos usar el parametro o sino dejamos null para que sea asignado por defecto luego
+      _periodoSeleccionado =
+          widget.periodoCobrado.isNotEmpty && widget.periodoCobrado != 'TODOS'
+              ? widget.periodoCobrado
+              : null;
       if (widget.origenItem != null) {
         _telefonoController.text = widget.origenItem!.telefono;
       }
       // En modo nuevo, el origen viene de origenItem
-      _tipoSocioOrigen   = widget.origenItem?.tipoSocio   ?? '';
+      _tipoSocioOrigen = widget.origenItem?.tipoSocio ?? '';
       _codTelefonoOrigen = widget.origenItem?.codTelefono ?? 0;
-      _codCuentaOrigen   = widget.origenItem?.codCuenta   ?? 0;
+      _codCuentaOrigen = widget.origenItem?.codCuenta ?? 0;
     }
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -84,7 +88,6 @@ class _FormularioCambioLineaState extends ConsumerState<FormularioCambioLinea> {
 
   @override
   void dispose() {
-    _periodoController.dispose();
     _telefonoController.dispose();
     _descripcionController.dispose();
     _buscadorDestinoController.dispose();
@@ -101,6 +104,9 @@ class _FormularioCambioLineaState extends ConsumerState<FormularioCambioLinea> {
   }
 
   void _handleSubmit() {
+    FocusScope.of(
+      context,
+    ).unfocus(); // Ocultar teclado y quitar foco antes de dialog
     if (!(_formKey.currentState?.validate() ?? false)) return;
     if (_destinoSeleccionado == null) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -112,66 +118,69 @@ class _FormularioCambioLineaState extends ConsumerState<FormularioCambioLinea> {
       return;
     }
 
-    final destinoEsEmpleado       = _destinoSeleccionado!.tipoSocio == 'EMPLEADO';
-    final destinoTieneCorporativo = destinoEsEmpleado &&
-        _destinoSeleccionado!.telefono.isNotEmpty;
+    final destinoEsEmpleado = _destinoSeleccionado!.tipoSocio == 'EMPLEADO';
+    final destinoTieneCorporativo =
+        destinoEsEmpleado && _destinoSeleccionado!.telefono.isNotEmpty;
 
     if (destinoTieneCorporativo) {
       showDialog(
         context: context,
-        builder: (ctx) => AlertDialog(
-          title: Row(children: [
-            Icon(Icons.swap_horiz, color: Colors.blue[700]),
-            const SizedBox(width: 8),
-            const Flexible(child: Text('¿Cómo desea reasignar?')),
-          ]),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                '${_destinoSeleccionado!.nombreCompleto.trim()} '
-                'ya tiene el corporativo ${_destinoSeleccionado!.telefono}.',
-                style: const TextStyle(fontWeight: FontWeight.w500),
+        builder:
+            (ctx) => AlertDialog(
+              title: Row(
+                children: [
+                  Icon(Icons.swap_horiz, color: Colors.blue[700]),
+                  const SizedBox(width: 8),
+                  const Flexible(child: Text('¿Cómo desea reasignar?')),
+                ],
               ),
-              const SizedBox(height: 16),
-              _opcionReasignacion(
-                ctx: ctx,
-                color: Colors.blue,
-                icon: Icons.swap_horiz,
-                titulo: 'Intercambio de corporativo',
-                subtitulo:
-                    'El ${_telefonoController.text} pasará a '
-                    '${_destinoSeleccionado!.nombreCompleto.trim()} como nuevo corporativo.',
-                onTap: () {
-                  Navigator.of(ctx).pop();
-                  _guardarCambio(tipoSocioDestino: 'EMPLEADO');
-                },
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '${_destinoSeleccionado!.nombreCompleto.trim()} '
+                    'ya tiene el corporativo ${_destinoSeleccionado!.telefono}.',
+                    style: const TextStyle(fontWeight: FontWeight.w500),
+                  ),
+                  const SizedBox(height: 16),
+                  _opcionReasignacion(
+                    ctx: ctx,
+                    color: Colors.blue,
+                    icon: Icons.swap_horiz,
+                    titulo: 'Intercambio de corporativo',
+                    subtitulo:
+                        'El ${_telefonoController.text} pasará a '
+                        '${_destinoSeleccionado!.nombreCompleto.trim()} como nuevo corporativo.',
+                    onTap: () {
+                      Navigator.of(ctx).pop();
+                      _guardarCambio(tipoSocioDestino: 'EMPLEADO');
+                    },
+                  ),
+                  const SizedBox(height: 10),
+                  _opcionReasignacion(
+                    ctx: ctx,
+                    color: Colors.green,
+                    icon: Icons.person_outline,
+                    titulo: 'Agregar como externo referente',
+                    subtitulo:
+                        'El ${_telefonoController.text} quedará como número '
+                        'adicional referente a ${_destinoSeleccionado!.nombreCompleto.trim()}.',
+                    onTap: () {
+                      Navigator.of(ctx).pop();
+                      _guardarCambio(tipoSocioDestino: 'EXTERNO');
+                    },
+                  ),
+                ],
               ),
-              const SizedBox(height: 10),
-              _opcionReasignacion(
-                ctx: ctx,
-                color: Colors.green,
-                icon: Icons.person_outline,
-                titulo: 'Agregar como externo referente',
-                subtitulo:
-                    'El ${_telefonoController.text} quedará como número '
-                    'adicional referente a ${_destinoSeleccionado!.nombreCompleto.trim()}.',
-                onTap: () {
-                  Navigator.of(ctx).pop();
-                  _guardarCambio(tipoSocioDestino: 'EXTERNO');
-                },
-              ),
-            ],
-          ),
-          actions: [
-            TextButton.icon(
-              onPressed: () => Navigator.of(ctx).pop(),
-              icon: const Icon(Icons.close, color: Colors.red),
-              label: const Text('Cancelar'),
+              actions: [
+                TextButton.icon(
+                  onPressed: () => Navigator.of(ctx).pop(),
+                  icon: const Icon(Icons.close, color: Colors.red),
+                  label: const Text('Cancelar'),
+                ),
+              ],
             ),
-          ],
-        ),
       );
       return;
     }
@@ -197,22 +206,30 @@ class _FormularioCambioLineaState extends ConsumerState<FormularioCambioLinea> {
           borderRadius: BorderRadius.circular(12),
           border: Border.all(color: color[300]!),
         ),
-        child: Row(children: [
-          Icon(icon, color: color[700]),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(titulo,
+        child: Row(
+          children: [
+            Icon(icon, color: color[700]),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    titulo,
                     style: TextStyle(
-                        fontWeight: FontWeight.bold, color: color[800])),
-                Text(subtitulo,
-                    style: TextStyle(fontSize: 12, color: color[600])),
-              ],
+                      fontWeight: FontWeight.bold,
+                      color: color[800],
+                    ),
+                  ),
+                  Text(
+                    subtitulo,
+                    style: TextStyle(fontSize: 12, color: color[600]),
+                  ),
+                ],
+              ),
             ),
-          ),
-        ]),
+          ],
+        ),
       ),
     );
   }
@@ -221,15 +238,15 @@ class _FormularioCambioLineaState extends ConsumerState<FormularioCambioLinea> {
     // FIX Bug 1: usar los valores de origen guardados en initState
     // NO usar widget.cambioEditar.tipoSocio porque ese es el tipoSocio del DESTINO
     final entity = CambiosTigoEntity(
-      codCambio:      _isEditing ? widget.cambioEditar!.codCambio : 0,
-      telefono:       _telefonoController.text.trim(),
-      periodoCobrado: _periodoController.text.trim(),
-      codEmpleado:    _destinoSeleccionado!.codEmpleado,
+      codCambio: _isEditing ? widget.cambioEditar!.codCambio : 0,
+      telefono: _telefonoController.text.trim(),
+      periodoCobrado: _periodoSeleccionado!,
+      codEmpleado: _destinoSeleccionado!.codEmpleado,
       nombreCompleto: _destinoSeleccionado!.nombreCompleto,
-      descripcion:    _descripcionController.text.trim(),
-      tipoSocio:      tipoSocioDestino,
+      descripcion: _descripcionController.text.trim(),
+      tipoSocio: tipoSocioDestino,
       // FIX: usar los valores guardados del origen, no calcularlos desde tipoSocio
-      codCuenta:   _tipoSocioOrigen == 'EXTERNO'  ? _codCuentaOrigen   : 0,
+      codCuenta: _tipoSocioOrigen == 'EXTERNO' ? _codCuentaOrigen : 0,
       codTelefono: _tipoSocioOrigen == 'EMPLEADO' ? _codTelefonoOrigen : 0,
     );
 
@@ -238,32 +255,30 @@ class _FormularioCambioLineaState extends ConsumerState<FormularioCambioLinea> {
 
   @override
   Widget build(BuildContext context) {
-    final isDesktop   = ResponsiveUtilsBosque.isDesktop(context);
-    final vPadding    = ResponsiveUtilsBosque.getVerticalPadding(context);
-    final screenWidth = MediaQuery.of(context).size.width;
+    final isDesktop = ResponsiveUtilsBosque.isDesktop(context);
 
     // FIX Bug 4: reducir padding en web para que el formulario sea más compacto
     return Center(
-  child: ConstrainedBox(
-    constraints: const BoxConstraints(maxWidth: 580),
-    child: Padding(
-      padding: EdgeInsets.symmetric(
-        horizontal: isDesktop ? 24 : 16,
-        vertical: 12,
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 580),
+        child: Padding(
+          padding: EdgeInsets.symmetric(
+            horizontal: isDesktop ? 24 : 16,
+            vertical: 12,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _buildHeader(context),
+              const SizedBox(height: 10),
+              _buildForm(context, isDesktop),
+              const SizedBox(height: 12),
+              _buildButtons(context),
+            ],
+          ),
+        ),
       ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          _buildHeader(context),
-          const SizedBox(height: 10),
-          _buildForm(context, isDesktop),
-          const SizedBox(height: 12),
-          _buildButtons(context),
-        ],
-      ),
-    ),
-  ),
-);
+    );
   }
 
   Widget _buildHeader(BuildContext context) {
@@ -307,11 +322,13 @@ class _FormularioCambioLineaState extends ConsumerState<FormularioCambioLinea> {
 
           // FIX Bug 4: en desktop agrupar período + teléfono en una fila
           if (isDesktop)
-            Row(children: [
-              Expanded(child: _buildPeriodoInput()),
-              const SizedBox(width: 12),
-              Expanded(child: _buildTelefonoInput()),
-            ])
+            Row(
+              children: [
+                Expanded(child: _buildPeriodoInput()),
+                const SizedBox(width: 12),
+                Expanded(child: _buildTelefonoInput()),
+              ],
+            )
           else ...[
             _buildPeriodoInput(),
             const SizedBox(height: 8),
@@ -328,7 +345,7 @@ class _FormularioCambioLineaState extends ConsumerState<FormularioCambioLinea> {
   }
 
   Widget _buildInfoOrigen() {
-    final origen     = widget.origenItem!;
+    final origen = widget.origenItem!;
     final esEmpleado = origen.tipoSocio == 'EMPLEADO';
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -339,29 +356,37 @@ class _FormularioCambioLineaState extends ConsumerState<FormularioCambioLinea> {
           color: esEmpleado ? Colors.blue[200]! : Colors.green[200]!,
         ),
       ),
-      child: Row(children: [
-        Icon(
-          esEmpleado ? Icons.person : Icons.person_outline,
-          color: esEmpleado ? Colors.blue[700] : Colors.green[700],
-          size: 20,
-        ),
-        const SizedBox(width: 8),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('Origen: ${origen.nombreCompleto.trim()}',
+      child: Row(
+        children: [
+          Icon(
+            esEmpleado ? Icons.person : Icons.person_outline,
+            color: esEmpleado ? Colors.blue[700] : Colors.green[700],
+            size: 20,
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Origen: ${origen.nombreCompleto.trim()}',
                   style: const TextStyle(
-                      fontWeight: FontWeight.bold, fontSize: 13)),
-              Text('${origen.tipoSocio} | 📞 ${origen.telefono}',
+                    fontWeight: FontWeight.bold,
+                    fontSize: 13,
+                  ),
+                ),
+                Text(
+                  '${origen.tipoSocio} | 📞 ${origen.telefono}',
                   style: TextStyle(
                     color: esEmpleado ? Colors.blue[700] : Colors.green[700],
                     fontSize: 12,
-                  )),
-            ],
+                  ),
+                ),
+              ],
+            ),
           ),
-        ),
-      ]),
+        ],
+      ),
     );
   }
 
@@ -373,45 +398,101 @@ class _FormularioCambioLineaState extends ConsumerState<FormularioCambioLinea> {
         borderRadius: BorderRadius.circular(10),
         border: Border.all(color: Colors.grey[300]!),
       ),
-      child: Row(children: [
-        Icon(Icons.info_outline, color: Colors.grey[600], size: 18),
-        const SizedBox(width: 8),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('Origen original',
+      child: Row(
+        children: [
+          Icon(Icons.info_outline, color: Colors.grey[600], size: 18),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Origen original',
                   style: TextStyle(
-                      fontSize: 10,
-                      color: Colors.grey[600],
-                      fontWeight: FontWeight.bold)),
-              Text(widget.cambioEditar!.nombreOrigen,
+                    fontSize: 10,
+                    color: Colors.grey[600],
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                Text(
+                  widget.cambioEditar!.nombreOrigen,
                   style: const TextStyle(
-                      fontSize: 13, fontWeight: FontWeight.w600)),
-            ],
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
           ),
-        ),
-      ]),
+        ],
+      ),
     );
   }
 
   Widget _buildPeriodoInput() {
-    return TextFormField(
-      controller: _periodoController,
-      decoration: InputDecoration(
-        labelText: 'Período Cobrado',
-        hintText: 'YYYY-MM',
-        prefixIcon: const Icon(Icons.calendar_month, size: 20),
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-        isDense: true,
-      ),
-      validator: (value) {
-        if (value == null || value.trim().isEmpty) return 'El período es obligatorio.';
-        if (!RegExp(r'^\d{4}-\d{2}$').hasMatch(value.trim())) {
-          return 'Formato inválido. Use YYYY-MM';
+    final periodosAsync = ref.watch(periodosFacturaProvider);
+
+    return periodosAsync.when(
+      data: (periodos) {
+        // Asignar por defecto el más reciente si no hay nada seleccionado
+        if (_periodoSeleccionado == null && periodos.isNotEmpty) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) setState(() => _periodoSeleccionado = periodos.first);
+          });
         }
-        return null;
+
+        return DropdownButtonFormField<String>(
+          value:
+              (_periodoSeleccionado != null &&
+                      periodos.contains(_periodoSeleccionado))
+                  ? _periodoSeleccionado
+                  : (periodos.isNotEmpty ? periodos.first : null),
+          decoration: InputDecoration(
+            labelText: 'Período Cobrado',
+            prefixIcon: const Icon(Icons.calendar_month, size: 20),
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+            isDense: true,
+            filled: true,
+            fillColor: Colors.grey[50],
+          ),
+          items:
+              periodos
+                  .map(
+                    (p) => DropdownMenuItem(
+                      value: p,
+                      child: Text(
+                        p,
+                        style: const TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                  )
+                  .toList(),
+          onChanged: (val) {
+            setState(() {
+              _periodoSeleccionado = val;
+            });
+          },
+          validator:
+              (value) =>
+                  value == null || value.isEmpty
+                      ? 'Seleccione un período'
+                      : null,
+        );
       },
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error:
+          (e, st) => TextFormField(
+            readOnly: true,
+            decoration: InputDecoration(
+              labelText: 'Período Cobrado',
+              hintText: 'Error al cargar periodos',
+              prefixIcon: const Icon(Icons.error, color: Colors.red),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+              isDense: true,
+            ),
+          ),
     );
   }
 
@@ -424,284 +505,347 @@ class _FormularioCambioLineaState extends ConsumerState<FormularioCambioLinea> {
         prefixIcon: const Icon(Icons.phone, size: 20),
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
         filled: widget.origenItem != null || _isEditing,
-        fillColor: (widget.origenItem != null || _isEditing) ? Colors.grey[100] : null,
+        fillColor:
+            (widget.origenItem != null || _isEditing) ? Colors.grey[100] : null,
         isDense: true,
       ),
       keyboardType: TextInputType.number,
       validator: (value) {
-        if (value == null || value.trim().isEmpty) return 'El teléfono es obligatorio.';
+        if (value == null || value.trim().isEmpty) {
+          return 'El teléfono es obligatorio.';
+        }
         return null;
       },
     );
   }
 
   Widget _buildSelectorDestino() {
-  final state = ref.watch(cambiosTigoProvider);
+    final state = ref.watch(cambiosTigoProvider);
 
-  return Column(
-    crossAxisAlignment: CrossAxisAlignment.stretch,
-    children: [
-
-      // ══════════════════════════════════════════════════════════════
-      // SECCIÓN A: Búsqueda de destinatario existente
-      // Solo visible cuando NO estamos registrando un nuevo externo
-      // ══════════════════════════════════════════════════════════════
-      if (!_modoNuevoExterno) ...[
-        TextField(
-          controller: _buscadorDestinoController,
-          decoration: InputDecoration(
-            labelText: 'Buscar destinatario existente',
-            hintText: 'Nombre o teléfono...',
-            prefixIcon: const Icon(Icons.search, size: 20),
-            suffixIcon: state.cargandoDestinos
-                ? const Padding(
-                    padding: EdgeInsets.all(12),
-                    child: SizedBox(
-                        width: 14,
-                        height: 14,
-                        child: CircularProgressIndicator(strokeWidth: 2)),
-                  )
-                : (_buscadorDestinoController.text.isNotEmpty
-                    ? IconButton(
-                        icon: const Icon(Icons.clear, size: 18),
-                        onPressed: () {
-                          _buscadorDestinoController.clear();
-                          ref.read(cambiosTigoProvider.notifier).cargarDestinos();
-                        },
-                      )
-                    : null),
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-            isDense: true,
-          ),
-          onChanged: _onBuscadorDestinoChanged,
-        ),
-        const SizedBox(height: 8),
-
-        // Destino ya seleccionado
-        if (_destinoSeleccionado != null) ...[
-          _buildDestinoSeleccionadoCard(),
-          const SizedBox(height: 8),
-        ],
-
-        // Lista de resultados
-        if (state.destinosDisponibles.isNotEmpty)
-          Container(
-            height: 170,
-            decoration: BoxDecoration(
-              border: Border.all(color: Colors.grey[300]!),
-              borderRadius: BorderRadius.circular(10),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        // ══════════════════════════════════════════════════════════════
+        // SECCIÓN A: Búsqueda de destinatario existente
+        // Solo visible cuando NO estamos registrando un nuevo externo
+        // ══════════════════════════════════════════════════════════════
+        if (!_modoNuevoExterno) ...[
+          if (_destinoSeleccionado != null) ...[
+            _buildDestinoSeleccionadoCard(),
+            const SizedBox(height: 8),
+          ] else ...[
+            TextField(
+              controller: _buscadorDestinoController,
+              decoration: InputDecoration(
+                labelText: 'Buscar destinatario existente',
+                hintText: 'Nombre o teléfono...',
+                prefixIcon: const Icon(Icons.search, size: 20),
+                suffixIcon:
+                    state.cargandoDestinos
+                        ? const Padding(
+                          padding: EdgeInsets.all(12),
+                          child: SizedBox(
+                            width: 14,
+                            height: 14,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          ),
+                        )
+                        : (_buscadorDestinoController.text.isNotEmpty
+                            ? IconButton(
+                              icon: const Icon(Icons.clear, size: 18),
+                              onPressed: () {
+                                _buscadorDestinoController.clear();
+                                ref
+                                    .read(cambiosTigoProvider.notifier)
+                                    .cargarDestinos();
+                              },
+                            )
+                            : null),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                isDense: true,
+              ),
+              onChanged: _onBuscadorDestinoChanged,
             ),
-            child: ListView.separated(
-              shrinkWrap: true,
-              itemCount: state.destinosDisponibles.length,
-              separatorBuilder: (_, __) => const Divider(height: 1),
-              itemBuilder: (context, index) {
-                final destino     = state.destinosDisponibles[index];
-                final esEmpleado  = destino.tipoSocio == 'EMPLEADO';
-                final sinNumero   = destino.telefono.isEmpty;
-                final seleccionado =
-                    _destinoSeleccionado?.codEmpleado == destino.codEmpleado &&
-                    _destinoSeleccionado?.codCuenta   == destino.codCuenta;
+            const SizedBox(height: 8),
 
-                return ListTile(
-                  dense: true,
-                  selected: seleccionado,
-                  selectedTileColor: Colors.blue[50],
-                  leading: CircleAvatar(
-                    radius: 14,
-                    backgroundColor: esEmpleado ? Colors.blue[100] : Colors.green[100],
-                    child: Icon(
-                      esEmpleado ? Icons.person : Icons.person_outline,
-                      size: 14,
-                      color: esEmpleado ? Colors.blue[700] : Colors.green[700],
-                    ),
-                  ),
-                  title: Text(destino.nombreCompleto.trim(),
-                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500)),
-                  subtitle: Row(children: [
-                    Text(
-                      sinNumero ? 'Sin corporativo' : '📞 ${destino.telefono}',
-                      style: TextStyle(
-                          fontSize: 11,
-                          color: sinNumero ? Colors.orange[700] : Colors.grey[600]),
-                    ),
-                    const SizedBox(width: 4),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
-                      decoration: BoxDecoration(
-                        color: esEmpleado ? Colors.blue[50] : Colors.green[50],
-                        borderRadius: BorderRadius.circular(5),
+            // Lista de resultados
+            if (state.destinosDisponibles.isNotEmpty)
+              Container(
+                height: 170,
+                decoration: BoxDecoration(
+                  border: Border.all(color: Colors.grey[300]!),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: ListView.separated(
+                  shrinkWrap: true,
+                  itemCount: state.destinosDisponibles.length,
+                  separatorBuilder: (_, __) => const Divider(height: 1),
+                  itemBuilder: (context, index) {
+                    final destino = state.destinosDisponibles[index];
+                    final esEmpleado = destino.tipoSocio == 'EMPLEADO';
+                    final sinNumero = destino.telefono.isEmpty;
+                    final seleccionado =
+                        _destinoSeleccionado?.codEmpleado ==
+                            destino.codEmpleado &&
+                        _destinoSeleccionado?.codCuenta == destino.codCuenta;
+
+                    return ListTile(
+                      dense: true,
+                      selected: seleccionado,
+                      selectedTileColor: Colors.blue[50],
+                      leading: CircleAvatar(
+                        radius: 14,
+                        backgroundColor:
+                            esEmpleado ? Colors.blue[100] : Colors.green[100],
+                        child: Icon(
+                          esEmpleado ? Icons.person : Icons.person_outline,
+                          size: 14,
+                          color:
+                              esEmpleado ? Colors.blue[700] : Colors.green[700],
+                        ),
                       ),
-                      child: Text(destino.tipoSocio,
-                          style: TextStyle(
-                              fontSize: 9,
-                              color: esEmpleado ? Colors.blue[700] : Colors.green[700],
-                              fontWeight: FontWeight.bold)),
-                    ),
-                  ]),
-                  onTap: () => setState(() {
-                    _destinoSeleccionado = destino;
-                    // _descripcionController.text = destino.descripcion.isNotEmpty
-                    //     ? destino.descripcion
-                    //     : destino.nombreCompleto.trim().split(' ').first;
-                  }),
-                );
-              },
-            ),
-          ),
+                      title: Text(
+                        destino.nombreCompleto.trim(),
+                        style: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      subtitle: Row(
+                        children: [
+                          Text(
+                            sinNumero
+                                ? 'Sin corporativo'
+                                : '📞 ${destino.telefono}',
+                            style: TextStyle(
+                              fontSize: 11,
+                              color:
+                                  sinNumero
+                                      ? Colors.orange[700]
+                                      : Colors.grey[600],
+                            ),
+                          ),
+                          const SizedBox(width: 4),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 5,
+                              vertical: 1,
+                            ),
+                            decoration: BoxDecoration(
+                              color:
+                                  esEmpleado
+                                      ? Colors.blue[50]
+                                      : Colors.green[50],
+                              borderRadius: BorderRadius.circular(5),
+                            ),
+                            child: Text(
+                              destino.tipoSocio,
+                              style: TextStyle(
+                                fontSize: 9,
+                                color:
+                                    esEmpleado
+                                        ? Colors.blue[700]
+                                        : Colors.green[700],
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      onTap:
+                          () => setState(() {
+                            _destinoSeleccionado = destino;
+                            // _descripcionController.text = destino.descripcion.isNotEmpty
+                            //     ? destino.descripcion
+                            //     : destino.nombreCompleto.trim().split(' ').first;
+                          }),
+                    );
+                  },
+                ),
+              ),
 
-        const SizedBox(height: 12),
+            const SizedBox(height: 12),
 
-        // ── Separador y CTA hacia nuevo externo ──────────────────────
-        Row(children: [
-          Expanded(child: Divider(color: Colors.grey[300])),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 10),
-            child: Text('¿No está en la lista?',
-                style: TextStyle(fontSize: 11, color: Colors.grey[500])),
-          ),
-          Expanded(child: Divider(color: Colors.grey[300])),
-        ]),
-        const SizedBox(height: 8),
-
-        // ── Botón para cambiar a modo nuevo externo ───────────────────
-        OutlinedButton.icon(
-          onPressed: () => setState(() {
-            _modoNuevoExterno          = true;
-            _destinoSeleccionado       = null;    // limpia selección previa
-            _buscadorDestinoController.clear();   // limpia el buscador
-          }),
-          icon: const Icon(Icons.person_add, size: 18),
-          label: const Text('Registrar nuevo externo'),
-          style: OutlinedButton.styleFrom(
-            foregroundColor: Colors.green[700],
-            side: BorderSide(color: Colors.green[400]!),
-            padding: const EdgeInsets.symmetric(vertical: 10),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-          ),
-        ),
-      ],
-
-      // ══════════════════════════════════════════════════════════════
-      // SECCIÓN B: Formulario de nuevo externo
-      // Completamente independiente — sin buscador, sin lista
-      // ══════════════════════════════════════════════════════════════
-      if (_modoNuevoExterno)
-        Container(
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: Colors.green[50],
-            borderRadius: BorderRadius.circular(10),
-            border: Border.all(color: Colors.green[300]!),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              // Cabecera con botón de cierre integrado
-              Row(children: [
-                Icon(Icons.person_add, color: Colors.green[700], size: 18),
-                const SizedBox(width: 6),
-                Text('Registrar nuevo externo',
-                    style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: Colors.green[800],
-                        fontSize: 13)),
-                const Spacer(),
-                InkWell(
-                  borderRadius: BorderRadius.circular(20),
-                  onTap: () => setState(() {
-                    _modoNuevoExterno = false;
-                    _nuevoExternoController.clear();
-                  }),
-                  child: Padding(
-                    padding: const EdgeInsets.all(4),
-                    child: Icon(Icons.close, size: 18, color: Colors.grey[600]),
+            // ── Separador y CTA hacia nuevo externo ──────────────────────
+            Row(
+              children: [
+                Expanded(child: Divider(color: Colors.grey[300])),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 10),
+                  child: Text(
+                    '¿No está en la lista?',
+                    style: TextStyle(fontSize: 11, color: Colors.grey[500]),
                   ),
                 ),
-              ]),
-              const SizedBox(height: 10),
+                Expanded(child: Divider(color: Colors.grey[300])),
+              ],
+            ),
+            const SizedBox(height: 8),
 
-              // Campo de nombre — autofocus para flujo ágil
-              TextField(
-                controller: _nuevoExternoController,
-                autofocus: true,
-                textCapitalization: TextCapitalization.characters,
-                decoration: InputDecoration(
-                  labelText: 'Nombre completo',
-                  hintText: 'Ej: JUAN CARLOS MIRANDA',
-                  prefixIcon: const Icon(Icons.badge, size: 18),
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                  isDense: true,
+            // ── Botón para cambiar a modo nuevo externo ───────────────────
+            OutlinedButton.icon(
+              onPressed:
+                  () => setState(() {
+                    _modoNuevoExterno = true;
+                    _destinoSeleccionado = null; // limpia selección previa
+                    _buscadorDestinoController.clear(); // limpia el buscador
+                  }),
+              icon: const Icon(Icons.person_add, size: 18),
+              label: const Text('Registrar nuevo externo'),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: Colors.green[700],
+                side: BorderSide(color: Colors.green[400]!),
+                padding: const EdgeInsets.symmetric(vertical: 10),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
                 ),
               ),
-              const SizedBox(height: 10),
-
-              ElevatedButton.icon(
-                onPressed: _confirmarNuevoExterno,
-                icon: const Icon(Icons.check, size: 16),
-                label: const Text('Confirmar nuevo externo'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.green[700],
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 11),
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8)),
-                ),
-              ),
-            ],
-          ),
-        ),
-
-      // Tarjeta de destino seleccionado (visible en ambos modos una vez confirmado)
-      if (_destinoSeleccionado != null && _modoNuevoExterno == false) const SizedBox(),
-    ],
-  );
-}
-
-// ── Widget auxiliar extraído ──────────────────────────────────────────────
-Widget _buildDestinoSeleccionadoCard() {
-  return Container(
-    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-    decoration: BoxDecoration(
-      color: Colors.blue[50],
-      borderRadius: BorderRadius.circular(10),
-      border: Border.all(color: Colors.blue[300]!),
-    ),
-    child: Row(children: [
-      Icon(Icons.check_circle, color: Colors.blue[700], size: 18),
-      const SizedBox(width: 8),
-      Expanded(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(_destinoSeleccionado!.nombreCompleto.trim(),
-                style: TextStyle(
-                    color: Colors.blue[800],
-                    fontWeight: FontWeight.w600,
-                    fontSize: 13)),
-            Text(
-              _destinoSeleccionado!.telefono.isNotEmpty
-                  ? '📞 ${_destinoSeleccionado!.telefono}'
-                  : 'Nuevo externo (sin corporativo asignado aún)',
-              style: TextStyle(
-                  fontSize: 11,
-                  color: Colors.blue[600],
-                  fontStyle: _destinoSeleccionado!.telefono.isEmpty
-                      ? FontStyle.italic
-                      : FontStyle.normal),
             ),
           ],
-        ),
+        ],
+
+        // ══════════════════════════════════════════════════════════════
+        // SECCIÓN B: Formulario de nuevo externo
+        // Completamente independiente — sin buscador, sin lista
+        // ══════════════════════════════════════════════════════════════
+        if (_modoNuevoExterno)
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.green[50],
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: Colors.green[300]!),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // Cabecera con botón de cierre integrado
+                Row(
+                  children: [
+                    Icon(Icons.person_add, color: Colors.green[700], size: 18),
+                    const SizedBox(width: 6),
+                    Text(
+                      'Registrar nuevo externo',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.green[800],
+                        fontSize: 13,
+                      ),
+                    ),
+                    const Spacer(),
+                    InkWell(
+                      borderRadius: BorderRadius.circular(20),
+                      onTap:
+                          () => setState(() {
+                            _modoNuevoExterno = false;
+                            _nuevoExternoController.clear();
+                          }),
+                      child: Padding(
+                        padding: const EdgeInsets.all(4),
+                        child: Icon(
+                          Icons.close,
+                          size: 18,
+                          color: Colors.grey[600],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 10),
+
+                // Campo de nombre — autofocus para flujo ágil
+                TextField(
+                  controller: _nuevoExternoController,
+                  autofocus: true,
+                  textCapitalization: TextCapitalization.characters,
+                  decoration: InputDecoration(
+                    labelText: 'Nombre completo',
+                    hintText: 'Ej: JUAN CARLOS MIRANDA',
+                    prefixIcon: const Icon(Icons.badge, size: 18),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    isDense: true,
+                  ),
+                ),
+                const SizedBox(height: 10),
+
+                ElevatedButton.icon(
+                  onPressed: _confirmarNuevoExterno,
+                  icon: const Icon(Icons.check, size: 16),
+                  label: const Text('Confirmar nuevo externo'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.green[700],
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 11),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+        // Eliminamos el SizedBox() fantasma del destino seleccionado aquí
+        // porque ahora se maneja arriba excluyendo el resto
+      ],
+    );
+  }
+
+  // ── Widget auxiliar extraído ──────────────────────────────────────────────
+  Widget _buildDestinoSeleccionadoCard() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      decoration: BoxDecoration(
+        color: Colors.blue[50],
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: Colors.blue[300]!),
       ),
-      IconButton(
-        icon: const Icon(Icons.close, size: 16),
-        onPressed: () => setState(() => _destinoSeleccionado = null),
-        padding: EdgeInsets.zero,
-        constraints: const BoxConstraints(),
+      child: Row(
+        children: [
+          Icon(Icons.check_circle, color: Colors.blue[700], size: 18),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  _destinoSeleccionado!.nombreCompleto.trim(),
+                  style: TextStyle(
+                    color: Colors.blue[800],
+                    fontWeight: FontWeight.w600,
+                    fontSize: 13,
+                  ),
+                ),
+                Text(
+                  _destinoSeleccionado!.telefono.isNotEmpty
+                      ? '📞 ${_destinoSeleccionado!.telefono}'
+                      : 'Nuevo externo (sin corporativo asignado aún)',
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: Colors.blue[600],
+                    fontStyle:
+                        _destinoSeleccionado!.telefono.isEmpty
+                            ? FontStyle.italic
+                            : FontStyle.normal,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          IconButton(
+            icon: const Icon(Icons.close, size: 16),
+            onPressed: () => setState(() => _destinoSeleccionado = null),
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(),
+          ),
+        ],
       ),
-    ]),
-  );
-}
+    );
+  }
 
   Widget _buildDescripcionInput() {
     return TextFormField(
@@ -714,16 +858,16 @@ Widget _buildDestinoSeleccionadoCard() {
         isDense: true,
       ),
       inputFormatters: [
-      FilteringTextInputFormatter.allow(RegExp(r'[a-zA-Z\s]')),
-    ],
-    validator: (value) {
-      if (value != null && value.isNotEmpty) {
-        if (!RegExp(r'^[a-zA-Z\s]+$').hasMatch(value)) {
-          return 'Solo se permiten letras y espacios.';
+        FilteringTextInputFormatter.allow(RegExp(r'[a-zA-Z\s]')),
+      ],
+      validator: (value) {
+        if (value != null && value.isNotEmpty) {
+          if (!RegExp(r'^[a-zA-Z\s]+$').hasMatch(value)) {
+            return 'Solo se permiten letras y espacios.';
+          }
         }
-      }
-      return null;
-    },
+        return null;
+      },
     );
   }
 
@@ -743,18 +887,24 @@ Widget _buildDestinoSeleccionadoCard() {
         const SizedBox(width: 10),
         ElevatedButton.icon(
           onPressed: state.guardando ? null : _handleSubmit,
-          icon: state.guardando
-              ? const SizedBox(
-                  width: 16,
-                  height: 16,
-                  child: CircularProgressIndicator(
-                      strokeWidth: 2, color: Colors.white))
-              : Icon(_isEditing ? Icons.save : Icons.check,
-                  color: Colors.white, size: 18),
+          icon:
+              state.guardando
+                  ? const SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Colors.white,
+                    ),
+                  )
+                  : Icon(
+                    _isEditing ? Icons.save : Icons.check,
+                    color: Colors.white,
+                    size: 18,
+                  ),
           label: Text(_isEditing ? 'Actualizar' : 'Guardar'),
           style: ElevatedButton.styleFrom(
-            backgroundColor:
-                _isEditing ? Colors.orange[800] : Colors.blue[800],
+            backgroundColor: _isEditing ? Colors.orange[800] : Colors.blue[800],
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           ),
         ),
@@ -762,28 +912,36 @@ Widget _buildDestinoSeleccionadoCard() {
     );
   }
 
-void _confirmarNuevoExterno() {
-  final nombre = _nuevoExternoController.text.trim();
-  if (nombre.isEmpty) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Ingrese el nombre del nuevo externo.'),
-        backgroundColor: Colors.orange,
-      ),
-    );
-    return;
-  }
+  void _confirmarNuevoExterno() {
+    final nombre = _nuevoExternoController.text.trim();
+    if (nombre.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Ingrese el nombre del nuevo externo.'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
 
-  setState(() {
-    _destinoSeleccionado = CambiosTigoEntity(
-      codCambio: 0, codEmpleado: 0, codCuenta: 0, codTelefono: 0,
-      telefono: '', tipoSocio: 'EXTERNO', nombreCompleto: nombre,
-      descripcion: '', periodoCobrado: '', estado: '', nombreOrigen: '',
-    );
-    //_descripcionController.text = nombre.split(' ').first;
-    _modoNuevoExterno            = false;    // regresa a sección de búsqueda
-    _nuevoExternoController.clear();
-    _buscadorDestinoController.clear();       // buscador limpio al volver
-  });
-}
+    setState(() {
+      _destinoSeleccionado = CambiosTigoEntity(
+        codCambio: 0,
+        codEmpleado: 0,
+        codCuenta: 0,
+        codTelefono: 0,
+        telefono: '',
+        tipoSocio: 'EXTERNO',
+        nombreCompleto: nombre,
+        descripcion: '',
+        periodoCobrado: '',
+        estado: '',
+        nombreOrigen: '',
+      );
+      //_descripcionController.text = nombre.split(' ').first;
+      _modoNuevoExterno = false; // regresa a sección de búsqueda
+      _nuevoExternoController.clear();
+      _buscadorDestinoController.clear(); // buscador limpio al volver
+    });
+  }
 }

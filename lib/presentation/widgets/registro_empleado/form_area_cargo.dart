@@ -5,7 +5,6 @@ import 'package:bosque_flutter/core/state/rrhh_provider.dart';
 import 'package:bosque_flutter/core/utils/console_log.dart';
 import 'package:bosque_flutter/presentation/widgets/registro_empleado/detalle_area_cargo.dart';
 import 'package:bosque_flutter/presentation/widgets/registro_empleado/detalle_informacion_laboral.dart';
-import 'package:bosque_flutter/presentation/widgets/registro_empleado/registro_empleado_utils.dart';
 import 'package:bosque_flutter/presentation/widgets/registro_empleado/responsive_utils_registro_empleado.dart';
 import 'package:dropdown_search/dropdown_search.dart';
 import 'package:flutter/material.dart';
@@ -58,8 +57,10 @@ class FormAreaCargoState extends ConsumerState<FormAreaCargo> {
     if (widget.cargoPlanillaInicial != null) {
       final cargo = widget.cargoPlanillaInicial!;
       _codCargoPlanillaId = cargo.codCargoSucursal;
-      _codEmpresaPlanilla = cargo.cargo?.codEmpresa;  // ✅ CORRECCIÓN
-      console('📌 INIT - Cargo Planilla: codCargoSucursal=$_codCargoPlanillaId, empresa=$_codEmpresaPlanilla');
+      _codEmpresaPlanilla = cargo.cargo?.codEmpresa; // ✅ CORRECCIÓN
+      console(
+        '📌 INIT - Cargo Planilla: codCargoSucursal=$_codCargoPlanillaId, empresa=$_codEmpresaPlanilla',
+      );
     }
   }
 
@@ -67,17 +68,25 @@ class FormAreaCargoState extends ConsumerState<FormAreaCargo> {
     if (widget.cargoInternoInicial != null && _selectedInterno == null) {
       try {
         final items = await ref.read(getCargoXEmpresa(('', 6)).future);
-        
+
         // Buscar el cargo que coincida con el inicial
-        final cargo = items.firstWhere(
-          (e) => e.empleadoCargo.cargoSucursal?.codCargoSucursal == _codCargoInternoId,
-          orElse: () => items.isNotEmpty ? items.first : null as EmpleadoEntity,
-        );
-        
-        if (cargo != null && mounted) {
+        EmpleadoEntity? cargo;
+        try {
+          cargo = items.firstWhere(
+            (e) =>
+                e.empleadoCargo.cargoSucursal?.codCargoSucursal ==
+                _codCargoInternoId,
+          );
+        } catch (_) {
+          cargo = null;
+        }
+
+        if (mounted) {
           setState(() {
             _selectedInterno = cargo;
-            console('✅ PRELOAD Cargo Interno: ${cargo.empleadoCargo.cargoSucursal?.codCargoSucursal}');
+            console(
+              '✅ PRELOAD Cargo Interno: ${cargo?.empleadoCargo.cargoSucursal?.codCargoSucursal}',
+            );
           });
         }
       } catch (e) {
@@ -87,22 +96,32 @@ class FormAreaCargoState extends ConsumerState<FormAreaCargo> {
   }
 
   Future<void> _preloadCargoPlanilla() async {
-    if (widget.cargoPlanillaInicial != null && 
-        _codEmpresaPlanilla != null && 
+    if (widget.cargoPlanillaInicial != null &&
+        _codEmpresaPlanilla != null &&
         _selectedPlanilla == null) {
       try {
-        final items = await ref.read(getCargoXEmpresa(('', _codEmpresaPlanilla)).future);
-        
-        // Buscar el cargo que coincida con el inicial
-        final cargo = items.firstWhere(
-          (e) => e.empleadoCargo.cargoSucursal?.codCargoSucursal == _codCargoPlanillaId,
-          orElse: () => items.isNotEmpty ? items.first : null as EmpleadoEntity,
+        final items = await ref.read(
+          getCargoXEmpresa(('', _codEmpresaPlanilla)).future,
         );
-        
-        if (cargo != null && mounted) {
+
+        // Buscar el cargo que coincida con el inicial
+        EmpleadoEntity? cargo;
+        try {
+          cargo = items.firstWhere(
+            (e) =>
+                e.empleadoCargo.cargoSucursal?.codCargoSucursal ==
+                _codCargoPlanillaId,
+          );
+        } catch (_) {
+          cargo = null;
+        }
+
+        if (mounted) {
           setState(() {
             _selectedPlanilla = cargo;
-            console('✅ PRELOAD Cargo Planilla: ${cargo.empleadoCargo.cargoSucursal?.codCargoSucursal}');
+            console(
+              '✅ PRELOAD Cargo Planilla: ${cargo?.empleadoCargo.cargoSucursal?.codCargoSucursal}',
+            );
           });
         }
       } catch (e) {
@@ -111,42 +130,52 @@ class FormAreaCargoState extends ConsumerState<FormAreaCargo> {
     }
   }
 
-void handleSave() {
-  if (_formKey.currentState!.validate()) {
-    FocusManager.instance.primaryFocus?.unfocus();
+  void handleSave() {
+    if (_formKey.currentState!.validate()) {
+      FocusManager.instance.primaryFocus?.unfocus();
 
-    if (_selectedInterno != null && _selectedPlanilla != null) {
-      final cargoInterno = _selectedInterno!.empleadoCargo.cargoSucursal;
-      final cargoPlanilla = _selectedPlanilla!.empleadoCargo.cargoSucursal;
+      if (_selectedInterno != null && _selectedPlanilla != null) {
+        final cargoInterno = _selectedInterno!.empleadoCargo.cargoSucursal;
+        final cargoPlanilla = _selectedPlanilla!.empleadoCargo.cargoSucursal;
 
-      console('✅ FormAreaCargo.handleSave - AMBOS CARGOS:');
-      console('   INTERNO - codCargoSucursal: ${cargoInterno?.codCargoSucursal}');
-      console('   PLANILLA - codCargoSucursal: ${cargoPlanilla?.codCargoSucursal}');
+        console('✅ FormAreaCargo.handleSave - AMBOS CARGOS:');
+        console(
+          '   INTERNO - codCargoSucursal: ${cargoInterno?.codCargoSucursal}',
+        );
+        console(
+          '   PLANILLA - codCargoSucursal: ${cargoPlanilla?.codCargoSucursal}',
+        );
 
-      if (cargoInterno != null && cargoPlanilla != null) {
-        // Guardar en providers temporales
-        ref.read(currentCargoInternoProvider.notifier).state = cargoInterno;
-        ref.read(currentCargoPlanillaProvider.notifier).state = cargoPlanilla;
+        if (cargoInterno != null && cargoPlanilla != null) {
+          // Guardar en providers temporales
+          ref.read(currentCargoInternoProvider.notifier).state = cargoInterno;
+          ref.read(currentCargoPlanillaProvider.notifier).state = cargoPlanilla;
 
-        // ✅ ACTUALIZAR CORRECTAMENTE - Serializar Entities a JSON
-        final areaCargoMap = {
-          'codCargoSucursal': cargoInterno.codCargoSucursal,
-          'codCargoSucPlanilla': cargoPlanilla.codCargoSucursal,
-          'fechaInicio': DateTime.now(),
-          'cargoSucursal': cargoInterno,  // Se serializa en _saveTemporaryProviders
-          'cargoSucursalPlanilla': cargoPlanilla,  // Se serializa en _saveTemporaryProviders
-          'cargoPlanilla': cargoPlanilla.cargo?.descripcion ?? cargoPlanilla.datoCargo ?? '',
-          'existe': 0,
-          'audUsuario': widget.audUsuario,
-        };
-        ref.read(tempRegistroFuncionesListProvider.notifier).state = [areaCargoMap];
+          // ✅ ACTUALIZAR CORRECTAMENTE - Serializar Entities a JSON
+          final areaCargoMap = {
+            'codCargoSucursal': cargoInterno.codCargoSucursal,
+            'codCargoSucPlanilla': cargoPlanilla.codCargoSucursal,
+            'fechaInicio': DateTime.now(),
+            'cargoSucursal':
+                cargoInterno, // Se serializa en _saveTemporaryProviders
+            'cargoSucursalPlanilla':
+                cargoPlanilla, // Se serializa en _saveTemporaryProviders
+            'cargoPlanilla':
+                cargoPlanilla.cargo?.descripcion ?? cargoPlanilla.datoCargo,
+            'existe': 0,
+            'audUsuario': widget.audUsuario,
+          };
+          ref.read(tempRegistroFuncionesListProvider.notifier).state = [
+            areaCargoMap,
+          ];
 
-        // Callback con ambos cargos
-        widget.onSave(cargoInterno, cargoPlanilla);
+          // Callback con ambos cargos
+          widget.onSave(cargoInterno, cargoPlanilla);
+        }
       }
     }
   }
-}
+
   String _formatCargoLabel(EmpleadoEntity e, {required String tipo}) {
     final cargo = e.empleadoCargo.cargoSucursal?.cargo;
     final cargoSuc = e.empleadoCargo.cargoSucursal;
@@ -156,12 +185,14 @@ void handleSave() {
       final suc = cargo?.sucursal ?? 'N/A';
       return '$desc — $suc';
     } else {
-      final desc = cargo?.descripcionPlanilla?.isNotEmpty == true
-          ? cargo!.descripcionPlanilla
-          : (cargo?.descripcion ?? cargoSuc?.datoCargo ?? 'N/A');
-      final suc = cargo?.sucursalPlanilla?.isNotEmpty == true
-          ? cargo!.sucursalPlanilla
-          : (cargo?.sucursal ?? 'N/A');
+      final desc =
+          cargo?.descripcionPlanilla.isNotEmpty == true
+              ? cargo!.descripcionPlanilla
+              : (cargo?.descripcion ?? cargoSuc?.datoCargo ?? 'N/A');
+      final suc =
+          cargo?.sucursalPlanilla.isNotEmpty == true
+              ? cargo!.sucursalPlanilla
+              : (cargo?.sucursal ?? 'N/A');
       return '$desc — $suc';
     }
   }
@@ -183,9 +214,10 @@ void handleSave() {
           borderRadius: context.borderRadius,
           border: Border.all(color: Colors.blue.withOpacity(0.2)),
         ),
-        child: context.isMobile
-            ? _buildMobileLayout(context)
-            : _buildWebLayout(context),
+        child:
+            context.isMobile
+                ? _buildMobileLayout(context)
+                : _buildWebLayout(context),
       ),
     );
   }
@@ -249,7 +281,8 @@ void handleSave() {
             onChanged: (val) {
               if (val != null) {
                 setState(() {
-                  _codCargoInternoId = val.empleadoCargo.cargoSucursal?.codCargoSucursal;
+                  _codCargoInternoId =
+                      val.empleadoCargo.cargoSucursal?.codCargoSucursal;
                   _selectedInterno = val;
                   console('🔵 Area Cargo interno: $_codCargoInternoId');
                 });
@@ -265,8 +298,20 @@ void handleSave() {
         SizedBox(width: context.smallSpacing),
         // ✅ AGREGAR BOTÓN DE NAVEGACIÓN
         CargoNavigationButton(
-          empresaId: _selectedInterno?.empleadoCargo.cargoSucursal?.cargo?.codEmpresa ?? 6,
-          empresaNombre: _selectedInterno?.empleadoCargo.cargoSucursal?.sucursal?.empresa.nombre,
+          empresaId:
+              _selectedInterno
+                  ?.empleadoCargo
+                  .cargoSucursal
+                  ?.cargo
+                  ?.codEmpresa ??
+              6,
+          empresaNombre:
+              _selectedInterno
+                  ?.empleadoCargo
+                  .cargoSucursal
+                  ?.sucursal
+                  ?.empresa
+                  .nombre,
           ref: ref,
         ),
       ],
@@ -280,12 +325,13 @@ void handleSave() {
       error: (e, _) => Text('Error: $e', style: context.bodyLightStyle),
       data: (empresas) {
         final filtered = empresas.where((e) => e.codEmpresa != -1).toList();
-        
+
         // Validar que el valor exista en la lista
-        final valueExists = _codEmpresaPlanilla == null ||
+        final valueExists =
+            _codEmpresaPlanilla == null ||
             filtered.any((e) => e.codEmpresa == _codEmpresaPlanilla);
         final safeValue = valueExists ? _codEmpresaPlanilla : null;
-        
+
         return DropdownButtonFormField<int>(
           value: safeValue,
           isExpanded: true,
@@ -302,12 +348,15 @@ void handleSave() {
             filled: true,
             fillColor: Colors.white,
           ),
-          items: filtered
-              .map((e) => DropdownMenuItem(
-                    value: e.codEmpresa,
-                    child: Text(e.nombre, overflow: TextOverflow.ellipsis),
-                  ))
-              .toList(),
+          items:
+              filtered
+                  .map(
+                    (e) => DropdownMenuItem(
+                      value: e.codEmpresa,
+                      child: Text(e.nombre, overflow: TextOverflow.ellipsis),
+                    ),
+                  )
+                  .toList(),
           onChanged: (val) {
             console('🟡 Area Empresa planilla: $_codEmpresaPlanilla → $val');
             setState(() {
@@ -338,19 +387,24 @@ void handleSave() {
             Expanded(
               child: DropdownSearch<EmpleadoEntity>(
                 enabled: _codEmpresaPlanilla != null,
-                asyncItems: (text) =>
-                    ref.read(getCargoXEmpresa((text, _codEmpresaPlanilla)).future),
+                asyncItems:
+                    (text) => ref.read(
+                      getCargoXEmpresa((text, _codEmpresaPlanilla)).future,
+                    ),
                 selectedItem: _selectedPlanilla,
                 itemAsString: (e) => _formatCargoLabel(e, tipo: 'planilla'),
                 dropdownDecoratorProps: DropDownDecoratorProps(
                   dropdownSearchDecoration: InputDecoration(
                     labelText: 'Cargo Planilla *',
-                    hintText: _codEmpresaPlanilla == null
-                        ? 'Primero empresa'
-                        : 'Seleccione cargo',
+                    hintText:
+                        _codEmpresaPlanilla == null
+                            ? 'Primero empresa'
+                            : 'Seleccione cargo',
                     labelStyle: TextStyle(fontSize: context.bodyFontSize),
                     hintStyle: context.bodyLightStyle,
-                    border: OutlineInputBorder(borderRadius: context.borderRadius),
+                    border: OutlineInputBorder(
+                      borderRadius: context.borderRadius,
+                    ),
                     contentPadding: EdgeInsets.symmetric(
                       horizontal: context.smallSpacing,
                       vertical: context.spacing,
@@ -361,7 +415,8 @@ void handleSave() {
                 onChanged: (val) {
                   if (val != null) {
                     setState(() {
-                      _codCargoPlanillaId = val.empleadoCargo.cargoSucursal?.codCargoSucursal;
+                      _codCargoPlanillaId =
+                          val.empleadoCargo.cargoSucursal?.codCargoSucursal;
                       _selectedPlanilla = val;
                       console('🟠 Area Cargo planilla: $_codCargoPlanillaId');
                     });

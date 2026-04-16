@@ -1,4 +1,3 @@
-
 import 'package:bosque_flutter/core/state/registro_empleado_provider.dart';
 import 'package:bosque_flutter/core/state/user_provider.dart';
 import 'package:bosque_flutter/core/utils/abm_service.dart';
@@ -72,12 +71,12 @@ class _DetalleEducacionState extends ConsumerState<DetalleEducacion> {
 
     // Si tempEducacionListProvider está vacío, cargar del servidor SOLO UNA VEZ
     if (listaEducacion.isEmpty) {
-      final educacionDelServidorAsync =
-          ref.watch(educacionProvider(widget.codEmpleado));
+      final educacionDelServidorAsync = ref.watch(
+        educacionProvider(widget.codEmpleado),
+      );
 
       return educacionDelServidorAsync.when(
-        loading: () =>
-            const Center(child: CircularProgressIndicator()),
+        loading: () => const Center(child: CircularProgressIndicator()),
         error: (err, _) => Center(child: Text('Error: $err')),
         data: (educacionDelServidor) {
           // IMPORTANTE: Cargar en tempEducacionListProvider SOLO una vez
@@ -107,8 +106,9 @@ class _DetalleEducacionState extends ConsumerState<DetalleEducacion> {
     return educacionAsync.when(
       loading: () => const Center(child: CircularProgressIndicator()),
       error: (err, _) => Center(child: Text('Error: $err')),
-      data: (listaEducacion) =>
-          _buildUI(context, listaEducacion, isEdition: true),
+      data:
+          (listaEducacion) =>
+              _buildUI(context, listaEducacion, isEdition: true),
     );
   }
 
@@ -116,8 +116,11 @@ class _DetalleEducacionState extends ConsumerState<DetalleEducacion> {
   // UI PRINCIPAL
   // ============================================================================
 
-  Widget _buildUI(BuildContext context, List<EducacionEntity> lista,
-      {required bool isEdition}) {
+  Widget _buildUI(
+    BuildContext context,
+    List<EducacionEntity> lista, {
+    required bool isEdition,
+  }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -127,9 +130,15 @@ class _DetalleEducacionState extends ConsumerState<DetalleEducacion> {
             // Lista de educación
             ...List.generate(
               lista.length,
-              (idx) => _editingIndex == idx
-                  ? _buildEditForm(context, idx, lista, isEdition)
-                  : _buildEducacionCard(context, idx, lista[idx], isEdition),
+              (idx) =>
+                  _editingIndex == idx
+                      ? _buildEditForm(context, idx, lista, isEdition)
+                      : _buildEducacionCard(
+                        context,
+                        idx,
+                        lista[idx],
+                        isEdition,
+                      ),
             ),
             // Formulario nuevo si está activo
             if (_isAddingNew) _buildNewForm(context, isEdition),
@@ -152,17 +161,11 @@ class _DetalleEducacionState extends ConsumerState<DetalleEducacion> {
       padding: EdgeInsets.only(bottom: context.smallSpacing),
       child: Row(
         children: [
-          Icon(
-            Icons.school,
-            size: context.smallIconSize,
-            color: Colors.grey,
-          ),
+          Icon(Icons.school, size: context.smallIconSize, color: Colors.grey),
           SizedBox(width: context.smallSpacing),
           Text(
             'Historial Educativo',
-            style: context.subtitleStyle.copyWith(
-              fontWeight: FontWeight.bold,
-            ),
+            style: context.subtitleStyle.copyWith(fontWeight: FontWeight.bold),
           ),
         ],
       ),
@@ -173,8 +176,12 @@ class _DetalleEducacionState extends ConsumerState<DetalleEducacion> {
   // TARJETA DE EDUCACIÓN (LECTURA)
   // ============================================================================
 
-  Widget _buildEducacionCard(BuildContext context, int index,
-      EducacionEntity edu, bool isEdition) {
+  Widget _buildEducacionCard(
+    BuildContext context,
+    int index,
+    EducacionEntity edu,
+    bool isEdition,
+  ) {
     return Card(
       margin: EdgeInsets.symmetric(vertical: context.smallSpacing),
       elevation: 0,
@@ -220,7 +227,9 @@ class _DetalleEducacionState extends ConsumerState<DetalleEducacion> {
                   _buildDetailRow(
                     label: 'Descripción:',
                     child: Text(
-                      edu.descripcion.isNotEmpty ? edu.descripcion : 'Sin registrar',
+                      edu.descripcion.isNotEmpty
+                          ? edu.descripcion
+                          : 'Sin registrar',
                       style: context.bodyStyle.copyWith(fontSize: 13),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
@@ -255,9 +264,11 @@ class _DetalleEducacionState extends ConsumerState<DetalleEducacion> {
                           size: context.smallIconSize,
                           color: Colors.redAccent,
                         ),
-                        onPressed: () => isEdition
-                            ? _deleteFromServer(edu.codEducacion)
-                            : _deleteFromList(index),
+                        onPressed:
+                            () =>
+                                isEdition
+                                    ? _deleteFromServer(edu.codEducacion)
+                                    : _deleteFromList(index),
                         tooltip: 'Eliminar',
                       ),
                     ],
@@ -291,53 +302,23 @@ class _DetalleEducacionState extends ConsumerState<DetalleEducacion> {
   }
 
   // Reemplazamos el subtitle original (ya no se usa por el nuevo card)
-  Widget _buildSubtitle(BuildContext context, EducacionEntity edu) {
-    // Mantener por compatibilidad si se usa en otro lugar; devolvemos SizedBox.shrink()
-    return const SizedBox.shrink();
-  }
-
-  Widget _buildActions(BuildContext context, int index,
-      EducacionEntity edu, bool isEdition) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        IconButton(
-          icon: Icon(
-            Icons.edit_outlined,
-            size: context.smallIconSize,
-            color: Colors.blueGrey,
-          ),
-          onPressed: () => _startEditing(index),
-          tooltip: 'Editar',
-        ),
-        IconButton(
-          icon: Icon(
-            Icons.delete_outline,
-            size: context.smallIconSize,
-            color: Colors.redAccent,
-          ),
-          onPressed: () => isEdition
-              ? _deleteFromServer(edu.codEducacion)
-              : _deleteFromList(index),
-          tooltip: 'Eliminar',
-        ),
-      ],
-    );
-  }
-
   // ============================================================================
   // FORMULARIOS
   // ============================================================================
 
-  Widget _buildEditForm(BuildContext context, int index,
-      List<EducacionEntity> lista, bool isEdition) {
+  Widget _buildEditForm(
+    BuildContext context,
+    int index,
+    List<EducacionEntity> lista,
+    bool isEdition,
+  ) {
     return FormEducacion(
       key: ValueKey('edit_educacion_${lista[index].codEducacion}'),
       educacionInicial: lista[index],
       codEmpleado: widget.codEmpleado,
       audUsuario: _audUsuario,
-      onSave: (edu) =>
-          isEdition ? _saveToServer(edu) : _updateInList(edu, index),
+      onSave:
+          (edu) => isEdition ? _saveToServer(edu) : _updateInList(edu, index),
       onCancel: () {
         FocusManager.instance.primaryFocus?.unfocus();
         setState(() => _editingIndex = -1);
@@ -410,7 +391,8 @@ class _DetalleEducacionState extends ConsumerState<DetalleEducacion> {
 
   void _addToList(EducacionEntity edu) {
     final list = List<EducacionEntity>.from(
-        ref.read(tempEducacionListProvider));
+      ref.read(tempEducacionListProvider),
+    );
     list.add(edu);
     ref.read(tempEducacionListProvider.notifier).state = list;
     setState(() => _isAddingNew = false);
@@ -419,7 +401,8 @@ class _DetalleEducacionState extends ConsumerState<DetalleEducacion> {
 
   void _updateInList(EducacionEntity edu, int index) {
     final list = List<EducacionEntity>.from(
-        ref.read(tempEducacionListProvider));
+      ref.read(tempEducacionListProvider),
+    );
     list[index] = edu;
     ref.read(tempEducacionListProvider.notifier).state = list;
     setState(() => _editingIndex = -1);
@@ -428,7 +411,8 @@ class _DetalleEducacionState extends ConsumerState<DetalleEducacion> {
 
   void _deleteFromList(int index) {
     final list = List<EducacionEntity>.from(
-        ref.read(tempEducacionListProvider));
+      ref.read(tempEducacionListProvider),
+    );
     list.removeAt(index);
     ref.read(tempEducacionListProvider.notifier).state = list;
     _resetFormState();
@@ -443,8 +427,7 @@ class _DetalleEducacionState extends ConsumerState<DetalleEducacion> {
     await executeABM(
       ref: ref,
       context: context,
-      operation: () =>
-          ref.read(registrarEducacionProvider(edu).future),
+      operation: () => ref.read(registrarEducacionProvider(edu).future),
       providersToInvalidate: [educacionProvider(widget.codEmpleado)],
       successMessage: '✅ Educación guardada: ${edu.descripcion}',
     );
@@ -458,8 +441,7 @@ class _DetalleEducacionState extends ConsumerState<DetalleEducacion> {
     final success = await executeABM(
       ref: ref,
       context: context,
-      operation: () =>
-          ref.read(eliminarEducacionProvider(codEducacion).future),
+      operation: () => ref.read(eliminarEducacionProvider(codEducacion).future),
       providersToInvalidate: [educacionProvider(widget.codEmpleado)],
       successMessage: 'Educación eliminada correctamente',
       requireConfirmation: true,

@@ -73,12 +73,12 @@ class _DetalleFormacionState extends ConsumerState<DetalleFormacion> {
 
     // Si tempFormacionListProvider está vacío, cargar del servidor SOLO UNA VEZ
     if (listaFormacion.isEmpty) {
-      final formacionDelServidorAsync =
-          ref.watch(formacionProvider(widget.codEmpleado));
+      final formacionDelServidorAsync = ref.watch(
+        formacionProvider(widget.codEmpleado),
+      );
 
       return formacionDelServidorAsync.when(
-        loading: () =>
-            const Center(child: CircularProgressIndicator()),
+        loading: () => const Center(child: CircularProgressIndicator()),
         error: (err, _) => Center(child: Text('Error: $err')),
         data: (formacionDelServidor) {
           // IMPORTANTE: Cargar en tempFormacionListProvider SOLO una vez
@@ -108,8 +108,9 @@ class _DetalleFormacionState extends ConsumerState<DetalleFormacion> {
     return formacionAsync.when(
       loading: () => const Center(child: CircularProgressIndicator()),
       error: (err, _) => Center(child: Text('Error: $err')),
-      data: (listaFormacion) =>
-          _buildUI(context, listaFormacion, isEdition: true),
+      data:
+          (listaFormacion) =>
+              _buildUI(context, listaFormacion, isEdition: true),
     );
   }
 
@@ -117,8 +118,11 @@ class _DetalleFormacionState extends ConsumerState<DetalleFormacion> {
   // UI PRINCIPAL
   // ============================================================================
 
-  Widget _buildUI(BuildContext context, List<FormacionEntity> lista,
-      {required bool isEdition}) {
+  Widget _buildUI(
+    BuildContext context,
+    List<FormacionEntity> lista, {
+    required bool isEdition,
+  }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -128,9 +132,15 @@ class _DetalleFormacionState extends ConsumerState<DetalleFormacion> {
             // Lista de formación
             ...List.generate(
               lista.length,
-              (idx) => _editingIndex == idx
-                  ? _buildEditForm(context, idx, lista, isEdition)
-                  : _buildFormacionCard(context, idx, lista[idx], isEdition),
+              (idx) =>
+                  _editingIndex == idx
+                      ? _buildEditForm(context, idx, lista, isEdition)
+                      : _buildFormacionCard(
+                        context,
+                        idx,
+                        lista[idx],
+                        isEdition,
+                      ),
             ),
             // Formulario nuevo si está activo
             if (_isAddingNew) _buildNewForm(context, isEdition),
@@ -153,17 +163,11 @@ class _DetalleFormacionState extends ConsumerState<DetalleFormacion> {
       padding: EdgeInsets.only(bottom: context.smallSpacing),
       child: Row(
         children: [
-          Icon(
-            Icons.class_,
-            size: context.smallIconSize,
-            color: Colors.grey,
-          ),
+          Icon(Icons.class_, size: context.smallIconSize, color: Colors.grey),
           SizedBox(width: context.smallSpacing),
           Text(
             'Formación / Cursos',
-            style: context.subtitleStyle.copyWith(
-              fontWeight: FontWeight.bold,
-            ),
+            style: context.subtitleStyle.copyWith(fontWeight: FontWeight.bold),
           ),
         ],
       ),
@@ -174,8 +178,12 @@ class _DetalleFormacionState extends ConsumerState<DetalleFormacion> {
   // TARJETA DE FORMACIÓN (LECTURA)
   // ============================================================================
 
-  Widget _buildFormacionCard(BuildContext context, int index,
-      FormacionEntity formacion, bool isEdition) {
+  Widget _buildFormacionCard(
+    BuildContext context,
+    int index,
+    FormacionEntity formacion,
+    bool isEdition,
+  ) {
     return Card(
       margin: EdgeInsets.symmetric(vertical: context.smallSpacing),
       elevation: 0,
@@ -250,20 +258,18 @@ class _DetalleFormacionState extends ConsumerState<DetalleFormacion> {
                       children: [
                         Text(
                           '${formacion.duracion} ',
-                          style:
-                              context.bodyLightStyle.copyWith(fontSize: 13),
+                          style: context.bodyLightStyle.copyWith(fontSize: 13),
                         ),
                         Flexible(
-                          child:
-                              DisplayValue<TipoDuracionFormacionEntity>(
+                          child: DisplayValue<TipoDuracionFormacionEntity>(
                             code: formacion.tipoDuracion,
-                            provider:
-                                obtenerTipoDuracionFormacionProvider,
+                            provider: obtenerTipoDuracionFormacionProvider,
                             getCode: (tipo) => tipo.codTipos,
                             getDescription: (tipo) => tipo.nombre,
                             fallback: formacion.tipoDuracion,
-                            style: context.bodyLightStyle
-                                .copyWith(fontSize: 13),
+                            style: context.bodyLightStyle.copyWith(
+                              fontSize: 13,
+                            ),
                           ),
                         ),
                       ],
@@ -298,9 +304,11 @@ class _DetalleFormacionState extends ConsumerState<DetalleFormacion> {
                           size: context.smallIconSize,
                           color: Colors.redAccent,
                         ),
-                        onPressed: () => isEdition
-                            ? _deleteFromServer(formacion.codFormacion)
-                            : _deleteFromList(index),
+                        onPressed:
+                            () =>
+                                isEdition
+                                    ? _deleteFromServer(formacion.codFormacion)
+                                    : _deleteFromList(index),
                         tooltip: 'Eliminar',
                       ),
                     ],
@@ -311,97 +319,6 @@ class _DetalleFormacionState extends ConsumerState<DetalleFormacion> {
           ],
         ),
       ),
-    );
-  }
-
-  Widget _buildTitle(BuildContext context, FormacionEntity formacion) {
-    return DisplayValue<TipoFormacionEntity>(
-      code: formacion.tipoFormacion,
-      provider: obtenerTipoFormacionProvider,
-      getCode: (tipo) => tipo.codTipos,
-      getDescription: (tipo) => tipo.nombre,
-      fallback: formacion.descripcion,
-      style: context.bodyStyle.copyWith(
-        fontWeight: FontWeight.bold,
-      ),
-    );
-  }
-
-    Widget _buildSubtitle(BuildContext context, FormacionEntity formacion) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        SizedBox(height: context.smallSpacing),
-        // ✅ FILA 1: Tipo Formación
-        _buildDetailRow(
-          label: 'Tipo Formación:',
-          child: DisplayValue<TipoFormacionEntity>(
-            code: formacion.tipoFormacion,
-            provider: obtenerTipoFormacionProvider,
-            getCode: (tipo) => tipo.codTipos,
-            getDescription: (tipo) => tipo.nombre,
-            fallback: formacion.tipoFormacion,
-            style: context.bodyStyle.copyWith(fontSize: 13),
-          ),
-        ),
-        SizedBox(height: context.smallSpacing),
-        // ✅ FILA 2: Institución
-        _buildDetailRow(
-          label: 'Institución:',
-          child: Text(
-            formacion.institucion.isNotEmpty
-                ? formacion.institucion
-                : 'Sin registrar',
-            style: context.bodyStyle.copyWith(fontSize: 13),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-        ),
-        SizedBox(height: context.smallSpacing),
-        // ✅ FILA 3: Descripción
-        _buildDetailRow(
-          label: 'Descripción:',
-          child: Text(
-            formacion.descripcion.isNotEmpty
-                ? formacion.descripcion
-                : 'Sin registrar',
-            style: context.bodyStyle.copyWith(fontSize: 13),
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-          ),
-        ),
-        SizedBox(height: context.smallSpacing),
-        // ✅ FILA 4: Duración
-        _buildDetailRow(
-          label: 'Duración:',
-          child: Text(
-            '${formacion.duracion}',
-            style: context.bodyLightStyle.copyWith(fontSize: 13),
-          ),
-        ),
-        SizedBox(height: context.smallSpacing),
-        // ✅ FILA 5: Tipo Duración
-        _buildDetailRow(
-          label: 'Tipo Duración:',
-          child: DisplayValue<TipoDuracionFormacionEntity>(
-            code: formacion.tipoDuracion,
-            provider: obtenerTipoDuracionFormacionProvider,
-            getCode: (tipo) => tipo.codTipos,
-            getDescription: (tipo) => tipo.nombre,
-            fallback: formacion.tipoDuracion,
-            style: context.bodyLightStyle.copyWith(fontSize: 13),
-          ),
-        ),
-        SizedBox(height: context.smallSpacing),
-        // ✅ FILA 6: Fecha Finalización
-        _buildDetailRow(
-          label: 'Fecha Finalización:',
-          child: Text(
-            FechaUtils.formatDate(formacion.fechaFormacion),
-            style: context.bodyLightStyle.copyWith(fontSize: 13),
-          ),
-        ),
-      ],
     );
   }
 
@@ -418,38 +335,7 @@ class _DetalleFormacionState extends ConsumerState<DetalleFormacion> {
           ),
         ),
         SizedBox(width: 8),
-        Expanded(
-          child: child,
-        ),
-      ],
-    );
-  }
-
-  Widget _buildActions(BuildContext context, int index,
-      FormacionEntity formacion, bool isEdition) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        IconButton(
-          icon: Icon(
-            Icons.edit_outlined,
-            size: context.smallIconSize,
-            color: Colors.blueGrey,
-          ),
-          onPressed: () => _startEditing(index),
-          tooltip: 'Editar',
-        ),
-        IconButton(
-          icon: Icon(
-            Icons.delete_outline,
-            size: context.smallIconSize,
-            color: Colors.redAccent,
-          ),
-          onPressed: () => isEdition
-              ? _deleteFromServer(formacion.codFormacion)
-              : _deleteFromList(index),
-          tooltip: 'Eliminar',
-        ),
+        Expanded(child: child),
       ],
     );
   }
@@ -458,15 +344,22 @@ class _DetalleFormacionState extends ConsumerState<DetalleFormacion> {
   // FORMULARIOS
   // ============================================================================
 
-  Widget _buildEditForm(BuildContext context, int index,
-      List<FormacionEntity> lista, bool isEdition) {
+  Widget _buildEditForm(
+    BuildContext context,
+    int index,
+    List<FormacionEntity> lista,
+    bool isEdition,
+  ) {
     return FormFormacion(
       key: ValueKey('edit_formacion_${lista[index].codFormacion}'),
       formacionInicial: lista[index],
       codEmpleado: widget.codEmpleado,
       audUsuario: _audUsuario,
-      onSave: (formacion) =>
-          isEdition ? _saveToServer(formacion) : _updateInList(formacion, index),
+      onSave:
+          (formacion) =>
+              isEdition
+                  ? _saveToServer(formacion)
+                  : _updateInList(formacion, index),
       onCancel: () {
         FocusManager.instance.primaryFocus?.unfocus();
         setState(() => _editingIndex = -1);
@@ -490,7 +383,9 @@ class _DetalleFormacionState extends ConsumerState<DetalleFormacion> {
       ),
       codEmpleado: widget.codEmpleado,
       audUsuario: _audUsuario,
-      onSave: (formacion) => isEdition ? _saveToServer(formacion) : _addToList(formacion),
+      onSave:
+          (formacion) =>
+              isEdition ? _saveToServer(formacion) : _addToList(formacion),
       onCancel: () {
         FocusManager.instance.primaryFocus?.unfocus();
         setState(() => _isAddingNew = false);
@@ -542,7 +437,8 @@ class _DetalleFormacionState extends ConsumerState<DetalleFormacion> {
 
   void _addToList(FormacionEntity formacion) {
     final list = List<FormacionEntity>.from(
-        ref.read(tempFormacionListProvider));
+      ref.read(tempFormacionListProvider),
+    );
     list.add(formacion);
     ref.read(tempFormacionListProvider.notifier).state = list;
     setState(() => _isAddingNew = false);
@@ -551,7 +447,8 @@ class _DetalleFormacionState extends ConsumerState<DetalleFormacion> {
 
   void _updateInList(FormacionEntity formacion, int index) {
     final list = List<FormacionEntity>.from(
-        ref.read(tempFormacionListProvider));
+      ref.read(tempFormacionListProvider),
+    );
     list[index] = formacion;
     ref.read(tempFormacionListProvider.notifier).state = list;
     setState(() => _editingIndex = -1);
@@ -560,7 +457,8 @@ class _DetalleFormacionState extends ConsumerState<DetalleFormacion> {
 
   void _deleteFromList(int index) {
     final list = List<FormacionEntity>.from(
-        ref.read(tempFormacionListProvider));
+      ref.read(tempFormacionListProvider),
+    );
     list.removeAt(index);
     ref.read(tempFormacionListProvider.notifier).state = list;
     _resetFormState();
@@ -575,8 +473,7 @@ class _DetalleFormacionState extends ConsumerState<DetalleFormacion> {
     await executeABM(
       ref: ref,
       context: context,
-      operation: () =>
-          ref.read(registrarFormacionProvider(formacion).future),
+      operation: () => ref.read(registrarFormacionProvider(formacion).future),
       providersToInvalidate: [formacionProvider(widget.codEmpleado)],
       successMessage: '✅ Formación guardada: ${formacion.descripcion}',
     );
@@ -590,8 +487,7 @@ class _DetalleFormacionState extends ConsumerState<DetalleFormacion> {
     final success = await executeABM(
       ref: ref,
       context: context,
-      operation: () =>
-          ref.read(eliminarFormacionProvider(codFormacion).future),
+      operation: () => ref.read(eliminarFormacionProvider(codFormacion).future),
       providersToInvalidate: [formacionProvider(widget.codEmpleado)],
       successMessage: 'Formación eliminada correctamente',
       requireConfirmation: true,

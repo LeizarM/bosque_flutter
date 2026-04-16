@@ -3,7 +3,6 @@
 import 'package:bosque_flutter/core/state/empleados_dependientes_provider.dart';
 import 'package:bosque_flutter/core/state/registro_empleado_provider.dart';
 import 'package:bosque_flutter/core/state/user_provider.dart';
-import 'package:bosque_flutter/core/utils/abm_service.dart';
 import 'package:bosque_flutter/domain/entities/banco_entity.dart';
 import 'package:bosque_flutter/domain/entities/cargo_sucursal_entity.dart';
 import 'package:bosque_flutter/domain/entities/educacion_entity.dart';
@@ -31,10 +30,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 class ResumenRegistroEmpleado extends ConsumerStatefulWidget {
   final PersonaEntity selectedPersona;
 
-  const ResumenRegistroEmpleado({
-    Key? key,
-    required this.selectedPersona,
-  }) : super(key: key);
+  const ResumenRegistroEmpleado({Key? key, required this.selectedPersona})
+    : super(key: key);
 
   @override
   ConsumerState<ResumenRegistroEmpleado> createState() =>
@@ -157,16 +154,12 @@ class _ResumenRegistroEmpleadoState
         children: [
           Text(
             'Resumen de Registro',
-            style: context.titleStyle.copyWith(
-              color: Colors.black87,
-            ),
+            style: context.titleStyle.copyWith(color: Colors.black87),
           ),
           SizedBox(height: context.smallSpacing),
           Text(
             'Verifica que toda la información sea correcta antes de guardar',
-            style: context.bodyStyle.copyWith(
-              color: Colors.grey.shade600,
-            ),
+            style: context.bodyStyle.copyWith(color: Colors.grey.shade600),
           ),
         ],
       ),
@@ -217,10 +210,11 @@ class _ResumenRegistroEmpleadoState
               }
               return const SizedBox.shrink();
             },
-            loading: () => Padding(
-              padding: EdgeInsets.symmetric(vertical: context.smallSpacing),
-              child: const CircularProgressIndicator(),
-            ),
+            loading:
+                () => Padding(
+                  padding: EdgeInsets.symmetric(vertical: context.smallSpacing),
+                  child: const CircularProgressIndicator(),
+                ),
             error: (_, __) => const SizedBox.shrink(),
           ),
         if (hasEmails) SizedBox(height: context.largeSpacing),
@@ -247,24 +241,32 @@ class _ResumenRegistroEmpleadoState
                   icon: Icons.phone,
                   children: [
                     ...telefonos.map((tel) {
-                      return _buildRowResumen(context, 'Teléfono:', tel.telefono);
+                      return _buildRowResumen(
+                        context,
+                        'Teléfono:',
+                        tel.telefono,
+                      );
                     }),
                   ],
                 );
               }
               return const SizedBox.shrink();
             },
-            loading: () => Padding(
-              padding: EdgeInsets.symmetric(vertical: context.smallSpacing),
-              child: const CircularProgressIndicator(),
-            ),
+            loading:
+                () => Padding(
+                  padding: EdgeInsets.symmetric(vertical: context.smallSpacing),
+                  child: const CircularProgressIndicator(),
+                ),
             error: (_, __) => const SizedBox.shrink(),
           ),
       ],
     );
   }
 
-  Widget _buildCargosSection(BuildContext context, List<dynamic> areaCargoList) {
+  Widget _buildCargosSection(
+    BuildContext context,
+    List<dynamic> areaCargoList,
+  ) {
     if (areaCargoList.isEmpty) return const SizedBox.shrink();
 
     return _buildSection(
@@ -296,7 +298,9 @@ class _ResumenRegistroEmpleadoState
           context: context,
           titulo: 'Cargo Planilla (RRHH)',
           cargoNombre: areaCargoList[0]['cargoPlanilla'],
-          cargoSucursal: areaCargoList[0]['cargoSucursalPlanilla'] ?? areaCargoList[0]['cargoSucursal'],
+          cargoSucursal:
+              areaCargoList[0]['cargoSucursalPlanilla'] ??
+              areaCargoList[0]['cargoSucursal'],
           colorPrimario: Colors.orange,
         ),
       ],
@@ -324,7 +328,9 @@ class _ResumenRegistroEmpleadoState
             context: context,
             titulo: 'Cargo Planilla (RRHH)',
             cargoNombre: areaCargoList[0]['cargoPlanilla'],
-            cargoSucursal: areaCargoList[0]['cargoSucursalPlanilla'] ?? areaCargoList[0]['cargoSucursal'],
+            cargoSucursal:
+                areaCargoList[0]['cargoSucursalPlanilla'] ??
+                areaCargoList[0]['cargoSucursal'],
             colorPrimario: Colors.orange,
           ),
         ),
@@ -332,139 +338,144 @@ class _ResumenRegistroEmpleadoState
     );
   }
 
- Widget _buildCargoCard({
-  required BuildContext context,
-  required String titulo,
-  required Color colorPrimario,
-  CargoSucursalEntity? cargoSucursal,
-  String? cargoNombre,
-}) {
-  final tieneData = cargoSucursal != null || (cargoNombre != null && cargoNombre.isNotEmpty);
+  Widget _buildCargoCard({
+    required BuildContext context,
+    required String titulo,
+    required Color colorPrimario,
+    CargoSucursalEntity? cargoSucursal,
+    String? cargoNombre,
+  }) {
+    final tieneData =
+        cargoSucursal != null ||
+        (cargoNombre != null && cargoNombre.isNotEmpty);
 
-  // ✅ MAPEO CORRECTO desde cargoSucursal.cargo (no desde sucursal)
-  final empresa = cargoSucursal?.cargo?.nombreEmpresa ?? 
-                  cargoSucursal?.sucursal?.empresa?.nombre ?? 
-                  'N/A';
-  final sucursal = cargoSucursal?.cargo?.sucursal ?? 
-                   cargoSucursal?.sucursal?.nombre ?? 
-                   'N/A';
-  final cargoDesc = cargoSucursal?.cargo?.descripcion ?? 
-                    cargoSucursal?.datoCargo ?? 
-                    'N/A';
+    // ✅ MAPEO CORRECTO desde cargoSucursal.cargo (no desde sucursal)
+    final empresa =
+        cargoSucursal?.cargo?.nombreEmpresa ??
+        cargoSucursal?.sucursal?.empresa.nombre ??
+        'N/A';
+    final sucursal =
+        cargoSucursal?.cargo?.sucursal ??
+        cargoSucursal?.sucursal?.nombre ??
+        'N/A';
+    final cargoDesc =
+        cargoSucursal?.cargo?.descripcion ?? cargoSucursal?.datoCargo ?? 'N/A';
 
-  return Card(
-    margin: EdgeInsets.zero,
-    elevation: 0,
-    shape: RoundedRectangleBorder(
-      side: BorderSide(color: colorPrimario.withOpacity(0.3)),
-      borderRadius: context.borderRadius,
-    ),
-    child: Padding(
-      padding: EdgeInsets.all(context.spacing),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Header
-          Row(
-            children: [
-              Icon(Icons.work_outline, size: 16, color: colorPrimario),
-              SizedBox(width: context.smallSpacing),
-              Expanded(
-                child: Text(
-                  titulo,
-                  style: context.bodyStyle.copyWith(
-                    fontWeight: FontWeight.w600,
-                    color: colorPrimario,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-            ],
-          ),
-          SizedBox(height: context.spacing),
-
-          // Datos
-          if (tieneData)
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+    return Card(
+      margin: EdgeInsets.zero,
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        side: BorderSide(color: colorPrimario.withOpacity(0.3)),
+        borderRadius: context.borderRadius,
+      ),
+      child: Padding(
+        padding: EdgeInsets.all(context.spacing),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Header
+            Row(
               children: [
-                // Empresa
-                Text(
-                  'Empresa',
-                  style: context.bodyLightStyle.copyWith(
-                    fontSize: 10,
-                    color: Colors.grey.shade600,
-                    fontWeight: FontWeight.w500,
+                Icon(Icons.work_outline, size: 16, color: colorPrimario),
+                SizedBox(width: context.smallSpacing),
+                Expanded(
+                  child: Text(
+                    titulo,
+                    style: context.bodyStyle.copyWith(
+                      fontWeight: FontWeight.w600,
+                      color: colorPrimario,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
-                ),
-                SizedBox(height: context.smallSpacing * 0.5),
-                Text(
-                  empresa,
-                  style: context.bodyStyle.copyWith(
-                    fontWeight: FontWeight.w600,
-                    color: Colors.black87,
-                  ),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                SizedBox(height: context.spacing),
-                
-                // Sucursal
-                Text(
-                  'Sucursal',
-                  style: context.bodyLightStyle.copyWith(
-                    fontSize: 10,
-                    color: Colors.grey.shade600,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                SizedBox(height: context.smallSpacing * 0.5),
-                Text(
-                  sucursal,
-                  style: context.bodyStyle.copyWith(
-                    fontWeight: FontWeight.w600,
-                    color: Colors.black87,
-                  ),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                SizedBox(height: context.spacing),
-                
-                // Cargo
-                Text(
-                  titulo.contains('Interno') ? 'Cargo Interno' : 'Cargo Planilla',
-                  style: context.bodyLightStyle.copyWith(
-                    fontSize: 10,
-                    color: Colors.grey.shade600,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                SizedBox(height: context.smallSpacing * 0.5),
-                Text(
-                  cargoNombre ?? cargoDesc,
-                  style: context.bodyStyle.copyWith(
-                    fontWeight: FontWeight.w600,
-                    color: Colors.black87,
-                  ),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
                 ),
               ],
-            )
-          else
-            Text(
-              'No especificado',
-              style: context.bodyStyle.copyWith(
-                color: Colors.grey.shade500,
-                fontStyle: FontStyle.italic,
-              ),
             ),
-        ],
+            SizedBox(height: context.spacing),
+
+            // Datos
+            if (tieneData)
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Empresa
+                  Text(
+                    'Empresa',
+                    style: context.bodyLightStyle.copyWith(
+                      fontSize: 10,
+                      color: Colors.grey.shade600,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  SizedBox(height: context.smallSpacing * 0.5),
+                  Text(
+                    empresa,
+                    style: context.bodyStyle.copyWith(
+                      fontWeight: FontWeight.w600,
+                      color: Colors.black87,
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  SizedBox(height: context.spacing),
+
+                  // Sucursal
+                  Text(
+                    'Sucursal',
+                    style: context.bodyLightStyle.copyWith(
+                      fontSize: 10,
+                      color: Colors.grey.shade600,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  SizedBox(height: context.smallSpacing * 0.5),
+                  Text(
+                    sucursal,
+                    style: context.bodyStyle.copyWith(
+                      fontWeight: FontWeight.w600,
+                      color: Colors.black87,
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  SizedBox(height: context.spacing),
+
+                  // Cargo
+                  Text(
+                    titulo.contains('Interno')
+                        ? 'Cargo Interno'
+                        : 'Cargo Planilla',
+                    style: context.bodyLightStyle.copyWith(
+                      fontSize: 10,
+                      color: Colors.grey.shade600,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  SizedBox(height: context.smallSpacing * 0.5),
+                  Text(
+                    cargoNombre ?? cargoDesc,
+                    style: context.bodyStyle.copyWith(
+                      fontWeight: FontWeight.w600,
+                      color: Colors.black87,
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              )
+            else
+              Text(
+                'No especificado',
+                style: context.bodyStyle.copyWith(
+                  color: Colors.grey.shade500,
+                  fontStyle: FontStyle.italic,
+                ),
+              ),
+          ],
+        ),
       ),
-    )
-  );
-}
+    );
+  }
 
   Widget _buildRelacionLaboralSection(
     BuildContext context,
@@ -532,12 +543,13 @@ class _ResumenRegistroEmpleadoState
               final cuenta = entry.value;
               final banco = bancos.firstWhere(
                 (b) => b.codBanco == cuenta.codBanco,
-                orElse: () => BancoEntity(
-                  codBanco: 0,
-                  nombre: 'Banco desconocido',
-                  audUsuario: 0,
-                  fila: 0,
-                ),
+                orElse:
+                    () => BancoEntity(
+                      codBanco: 0,
+                      nombre: 'Banco desconocido',
+                      audUsuario: 0,
+                      fila: 0,
+                    ),
               );
               final estadoText = cuenta.estado == 1 ? 'Activa' : 'Inactiva';
 
@@ -546,7 +558,11 @@ class _ResumenRegistroEmpleadoState
                 children: [
                   if (index > 1) Divider(height: context.spacing * 1.5),
                   _buildRowResumen(context, 'Banco $index:', banco.nombre),
-                  _buildRowResumen(context, 'Nro. Cuenta:', cuenta.nroCuentaBancaria),
+                  _buildRowResumen(
+                    context,
+                    'Nro. Cuenta:',
+                    cuenta.nroCuentaBancaria,
+                  ),
                   _buildRowResumen(context, 'Estado:', estadoText),
                 ],
               );
@@ -574,13 +590,14 @@ class _ResumenRegistroEmpleadoState
           children: [
             tiposEducacionAsync.when(
               loading: () => const CircularProgressIndicator(),
-              error: (_, __) => Text(
-                'Tipo: ${educacion.tipoEducacion}',
-                style: context.bodyStyle.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black87,
-                ),
-              ),
+              error:
+                  (_, __) => Text(
+                    'Tipo: ${educacion.tipoEducacion}',
+                    style: context.bodyStyle.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black87,
+                    ),
+                  ),
               data: (tipos) {
                 return DisplayValue<TipoEducacionEntity>(
                   code: educacion.tipoEducacion,
@@ -596,11 +613,7 @@ class _ResumenRegistroEmpleadoState
               },
             ),
             SizedBox(height: context.spacing),
-            _buildRowResumen(
-              context,
-              'Institución:',
-              educacion.descripcion,
-            ),
+            _buildRowResumen(context, 'Institución:', educacion.descripcion),
             _buildRowResumen(
               context,
               'Fecha:',
@@ -648,13 +661,14 @@ class _ResumenRegistroEmpleadoState
           children: [
             tiposFormacionAsync.when(
               loading: () => const CircularProgressIndicator(),
-              error: (_, __) => Text(
-                'Tipo: ${formacion.tipoFormacion}',
-                style: context.bodyStyle.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black87,
-                ),
-              ),
+              error:
+                  (_, __) => Text(
+                    'Tipo: ${formacion.tipoFormacion}',
+                    style: context.bodyStyle.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black87,
+                    ),
+                  ),
               data: (_) {
                 return DisplayValue<TipoFormacionEntity>(
                   code: formacion.tipoFormacion,
@@ -669,7 +683,11 @@ class _ResumenRegistroEmpleadoState
                 );
               },
             ),
-            _buildRowResumen(context, 'Institución:', formacion.institucion), // ✅ AGREGAR
+            _buildRowResumen(
+              context,
+              'Institución:',
+              formacion.institucion,
+            ), // ✅ AGREGAR
             SizedBox(height: context.spacing),
             _buildRowResumen(context, 'Descripción:', formacion.descripcion),
             _buildRowResumenWithWidget(
@@ -677,18 +695,16 @@ class _ResumenRegistroEmpleadoState
               'Duración:',
               Row(
                 children: [
-                  Text(
-                    formacion.duracion.toString(),
-                    style: context.bodyStyle,
-                  ),
+                  Text(formacion.duracion.toString(), style: context.bodyStyle),
                   SizedBox(width: context.smallSpacing),
                   Expanded(
                     child: tiposDuracionAsync.when(
                       loading: () => const SizedBox.shrink(),
-                      error: (_, __) => Text(
-                        formacion.tipoDuracion,
-                        style: context.bodyStyle,
-                      ),
+                      error:
+                          (_, __) => Text(
+                            formacion.tipoDuracion,
+                            style: context.bodyStyle,
+                          ),
                       data: (_) {
                         return DisplayValue<TipoDuracionFormacionEntity>(
                           code: formacion.tipoDuracion,
@@ -767,8 +783,12 @@ class _ResumenRegistroEmpleadoState
               'Período:',
               '$formattedFechaInicio - $formattedFechaFin',
             ),
-            if ((experiencia.nroReferencia ?? '').isNotEmpty)
-              _buildRowResumen(context, 'Referencia:', experiencia.nroReferencia ?? ''),
+            if (experiencia.nroReferencia.isNotEmpty)
+              _buildRowResumen(
+                context,
+                'Referencia:',
+                experiencia.nroReferencia,
+              ),
           ],
         ),
       ),
@@ -793,94 +813,18 @@ class _ResumenRegistroEmpleadoState
     );
   }
 
-  Widget _buildActionButtons(BuildContext context) {
-    if (context.isMobile) {
-      return Row(
-        children: [
-          Expanded(
-            child: OutlinedButton.icon(
-              onPressed: _isLoading ? null : () => Navigator.pop(context),
-              icon: const Icon(Icons.arrow_back),
-              label: const Text('Volver'),
-            ),
-          ),
-          SizedBox(width: context.spacing),
-          Expanded(
-            child: ElevatedButton.icon(
-              onPressed: _isLoading ? null : () {
-                final tempPersona = ref.read(tempPersonaProvider);
-                if (tempPersona != null) {
-                  _registrarEmpleado(tempPersona);
-                }
-              },
-              icon: _isLoading
-                  ? const SizedBox(
-                      height: 16,
-                      width: 16,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                      ),
-                    )
-                  : const Icon(Icons.save),
-              label: Text(
-                _isLoading ? 'Guardando...' : 'Confirmar y Guardar',
-              ),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.green.shade600,
-              ),
-            ),
-          ),
-        ],
-      );
-    }
-
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.end,
-      children: [
-        OutlinedButton.icon(
-          onPressed: _isLoading ? null : () => Navigator.pop(context),
-          icon: const Icon(Icons.arrow_back),
-          label: const Text('Volver'),
-        ),
-        SizedBox(width: context.spacing),
-        ElevatedButton.icon(
-          onPressed: _isLoading ? null : () {
-            final tempPersona = ref.read(tempPersonaProvider);
-            if (tempPersona != null) {
-              _registrarEmpleado(tempPersona);
-            }
-          },
-          icon: _isLoading
-              ? const SizedBox(
-                  height: 16,
-                  width: 16,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                  ),
-                )
-              : const Icon(Icons.save),
-          label: Text(
-            _isLoading ? 'Guardando...' : 'Confirmar y Guardar',
-          ),
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.green.shade600,
-          ),
-        ),
-      ],
-    );
-  }
-
   // ========== MÉTODO PRINCIPAL ==========
 
   @override
   Widget build(BuildContext context) {
     final tempPersona = ref.watch(tempPersonaProvider);
 
-    final personaCompletaAsync = tempPersona == null
-        ? ref.watch(obtenerPersonaProvider(widget.selectedPersona.codPersona))
-        : AsyncValue.data(tempPersona);
+    final personaCompletaAsync =
+        tempPersona == null
+            ? ref.watch(
+              obtenerPersonaProvider(widget.selectedPersona.codPersona),
+            )
+            : AsyncValue.data(tempPersona);
 
     final areaCargoList = ref.watch(tempRegistroFuncionesListProvider);
     final relacionLaboral = ref.watch(tempRelacionLaboralListProvider);
@@ -890,14 +834,16 @@ class _ResumenRegistroEmpleadoState
     final listaExperiencia = ref.watch(tempExperienciaListProvider);
     final tempTelefonos = ref.watch(tempTelefonoListProvider);
     final tempEmails = ref.watch(tempEmailListProvider);
-    final emailsAsync = ref.watch(emailProvider(widget.selectedPersona.codPersona));
-    final telefonosAsync = ref.watch(telefonoProvider(widget.selectedPersona.codPersona));
+    final emailsAsync = ref.watch(
+      emailProvider(widget.selectedPersona.codPersona),
+    );
+    final telefonosAsync = ref.watch(
+      telefonoProvider(widget.selectedPersona.codPersona),
+    );
 
     return personaCompletaAsync.when(
       loading: () => const Center(child: CircularProgressIndicator()),
-      error: (err, _) => Center(
-        child: Text('Error al cargar datos: $err'),
-      ),
+      error: (err, _) => Center(child: Text('Error al cargar datos: $err')),
       data: (personaCompleta) {
         return SingleChildScrollView(
           child: Padding(
@@ -914,9 +860,7 @@ class _ResumenRegistroEmpleadoState
                   context: context,
                   title: 'Datos Personales',
                   icon: Icons.person,
-                  children: [
-                    DetallePersona(persona: personaCompleta),
-                  ],
+                  children: [DetallePersona(persona: personaCompleta)],
                 ),
                 SizedBox(height: context.largeSpacing),
 
@@ -933,30 +877,36 @@ class _ResumenRegistroEmpleadoState
 
                 // Cargos
                 _buildCargosSection(context, areaCargoList),
-                if (areaCargoList.isNotEmpty) SizedBox(height: context.largeSpacing),
+                if (areaCargoList.isNotEmpty)
+                  SizedBox(height: context.largeSpacing),
 
                 // Relación Laboral
                 _buildRelacionLaboralSection(context, relacionLaboral),
-                if (relacionLaboral.isNotEmpty) SizedBox(height: context.largeSpacing),
+                if (relacionLaboral.isNotEmpty)
+                  SizedBox(height: context.largeSpacing),
 
                 // Cuentas Bancarias
                 _buildCuentasBancariasSection(context, cuentasBancarias),
-                if (cuentasBancarias.isNotEmpty) SizedBox(height: context.largeSpacing),
+                if (cuentasBancarias.isNotEmpty)
+                  SizedBox(height: context.largeSpacing),
 
                 // Educación
                 _buildEducacionSection(context, listaEducacion),
-                if (listaEducacion.isNotEmpty) SizedBox(height: context.largeSpacing),
+                if (listaEducacion.isNotEmpty)
+                  SizedBox(height: context.largeSpacing),
 
                 // Formación
                 _buildFormacionSection(context, listaFormacion),
-                if (listaFormacion.isNotEmpty) SizedBox(height: context.largeSpacing),
+                if (listaFormacion.isNotEmpty)
+                  SizedBox(height: context.largeSpacing),
 
                 // Experiencia
                 _buildExperienciaSection(context, listaExperiencia),
-                if (listaExperiencia.isNotEmpty) SizedBox(height: context.largeSpacing),
+                if (listaExperiencia.isNotEmpty)
+                  SizedBox(height: context.largeSpacing),
 
                 // Botones
-               // _buildActionButtons(context),
+                // _buildActionButtons(context),
               ],
             ),
           ),
@@ -978,16 +928,23 @@ class _ResumenRegistroEmpleadoState
       int codEmpleado = 0;
 
       // ========== PASO 1: REGISTRAR/ACTUALIZAR PERSONA ==========
-      debugPrint('➡️ [1. Registrar/Actualizar Persona] codPersona: $codPersona');
+      debugPrint(
+        '➡️ [1. Registrar/Actualizar Persona] codPersona: $codPersona',
+      );
       try {
-        final personaRegistrada = await ref.read(registrarPersonaProvider(personaCompleta).future);
+        final personaRegistrada = await ref.read(
+          registrarPersonaProvider(personaCompleta).future,
+        );
         codPersona = personaRegistrada.codPersona;
         debugPrint('✅ [1. Persona] codPersona obtenido: $codPersona');
       } catch (e) {
         debugPrint('❌ [1. Persona] Error: $e');
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Error en persona: $e'), backgroundColor: Colors.red),
+            SnackBar(
+              content: Text('Error en persona: $e'),
+              backgroundColor: Colors.red,
+            ),
           );
         }
         return;
@@ -1002,7 +959,8 @@ class _ResumenRegistroEmpleadoState
         apPaterno: personaCompleta.apPaterno,
         apMaterno: personaCompleta.apMaterno,
         ciExpedido: personaCompleta.ciExpedido,
-        ciFechaVencimiento: personaCompleta.ciFechaVencimiento ?? DateTime.now(),
+        ciFechaVencimiento:
+            personaCompleta.ciFechaVencimiento ?? DateTime.now(),
         ciNumero: personaCompleta.ciNumero,
         direccion: personaCompleta.direccion,
         estadoCivil: personaCompleta.estadoCivil,
@@ -1084,14 +1042,19 @@ class _ResumenRegistroEmpleadoState
 
       debugPrint('➡️ [2. Registrar Empleado]');
       try {
-        final empleadoRegistrado = await ref.read(registrarEmpleadoProvider(empleadoEntity).future);
+        final empleadoRegistrado = await ref.read(
+          registrarEmpleadoProvider(empleadoEntity).future,
+        );
         codEmpleado = empleadoRegistrado.codEmpleado;
         debugPrint('✅ [2. Empleado] codEmpleado obtenido: $codEmpleado');
       } catch (e) {
         debugPrint('❌ [2. Empleado] Error: $e');
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Error en empleado: $e'), backgroundColor: Colors.red),
+            SnackBar(
+              content: Text('Error en empleado: $e'),
+              backgroundColor: Colors.red,
+            ),
           );
         }
         return;
@@ -1100,7 +1063,8 @@ class _ResumenRegistroEmpleadoState
       // ========== PASO 3: REGISTRAR EMPLEADO CARGO ==========
       final areaCargoList = ref.read(tempRegistroFuncionesListProvider);
       final relacionList = ref.read(tempRelacionLaboralListProvider);
-      final fechaInicioDelCargo = relacionList.isNotEmpty ? relacionList[0].fechaIni : DateTime.now();
+      final fechaInicioDelCargo =
+          relacionList.isNotEmpty ? relacionList[0].fechaIni : DateTime.now();
 
       for (var i = 0; i < areaCargoList.length; i++) {
         final area = areaCargoList[i];
@@ -1110,8 +1074,15 @@ class _ResumenRegistroEmpleadoState
             codCargoSucursal: (area['codCargoSucursal'] as int?) ?? 0,
             codCargoSucPlanilla: (area['codCargoSucPlanilla'] as int?) ?? 0,
             fechaInicio: fechaInicioDelCargo,
-            cargoSucursal: area['cargoSucursal'] as CargoSucursalEntity? ??
-                CargoSucursalEntity(codCargoSucursal: 0, codSucursal: 0, codCargo: 0, audUsuario: 0, datoCargo: ''),
+            cargoSucursal:
+                area['cargoSucursal'] as CargoSucursalEntity? ??
+                CargoSucursalEntity(
+                  codCargoSucursal: 0,
+                  codSucursal: 0,
+                  codCargo: 0,
+                  audUsuario: 0,
+                  datoCargo: '',
+                ),
             cargoPlanilla: (area['cargoPlanilla'] as String?) ?? '',
             existe: (area['existe'] as int?) ?? 0,
             audUsuario: user?.codUsuario ?? 0,
@@ -1301,13 +1272,13 @@ class _ResumenRegistroEmpleadoState
         ref.read(tempEmailListProvider.notifier).state = [];
         ref.read(tempTelefonoListProvider.notifier).state = [];
         ref.read(tempPersonaProvider.notifier).state = null;
-         ref.invalidate(getListaEmpleados);
-          ref.invalidate(detalleEmpleadoProvider);
-          ref.invalidate(cargoActualEmpleadoProvider);
-          ref.invalidate(getHistorialCargosEmpleado);
-          ref.invalidate(getHistorialRelLabEmpleado);
-          ref.invalidate(empObtenerDatosEmpleado);
-          ref.invalidate(empObtenerDatosEmpleados);
+        ref.invalidate(getListaEmpleados);
+        ref.invalidate(detalleEmpleadoProvider);
+        ref.invalidate(cargoActualEmpleadoProvider);
+        ref.invalidate(getHistorialCargosEmpleado);
+        ref.invalidate(getHistorialRelLabEmpleado);
+        ref.invalidate(empObtenerDatosEmpleado);
+        ref.invalidate(empObtenerDatosEmpleados);
         Navigator.of(context).pop(true);
       }
     } catch (e, st) {

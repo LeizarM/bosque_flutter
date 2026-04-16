@@ -471,7 +471,7 @@ final cumpleMensajesInitProvider = FutureProvider<void>((ref) async {
         edad--;
       }
       mensajes.add(
-        '🎉 ${emp.persona.datoPersona} de la Agencia: ${emp.sucursal.nombre ?? "-"} cumple $edad años',
+        '🎉 ${emp.persona.datoPersona} de la Agencia: ${emp.sucursal.nombre} cumple $edad años',
       );
     }
   }
