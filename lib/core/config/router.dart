@@ -415,7 +415,23 @@ final routerProvider = Provider<GoRouter>((ref) {
           ),
       redirect: (BuildContext context, GoRouterState state) async {
         final storage = SecureStorage();
-        final isTokenExpired = await storage.isTokenExpired();
+        // Timeout de seguridad: si SecureStorage cuelga, asumir token expirado
+        // para que el usuario pueda ver el login y no se quede en pantalla blanca
+        bool isTokenExpired;
+        try {
+          isTokenExpired = await storage.isTokenExpired().timeout(
+            const Duration(seconds: 4),
+            onTimeout: () {
+              console(
+                '⚠️ Router redirect: timeout verificando token, asumiendo expirado',
+              );
+              return true;
+            },
+          );
+        } catch (e) {
+          console('⚠️ Router redirect: error verificando token: $e');
+          isTokenExpired = true;
+        }
         final isGoingToLogin = state.fullPath == '/login';
 
         // Si el token NO está expirado y está yendo al login, redirigir al dashboard

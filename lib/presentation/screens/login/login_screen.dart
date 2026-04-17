@@ -849,30 +849,35 @@ class _FloatingOrbs extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
-    return AnimatedBuilder(
-      animation: controller,
-      builder: (context, _) {
-        final t = controller.value * 2 * math.pi;
-        return Stack(
-          children: [
-            Positioned(
-              top: 80 + 30 * math.sin(t),
-              right: 40 + 20 * math.cos(t),
-              child: _orb(120, accent.withValues(alpha: isDark ? 0.06 : 0.08)),
-            ),
-            Positioned(
-              bottom: 100 + 20 * math.cos(t + 1),
-              left: 30 + 25 * math.sin(t + 2),
-              child: _orb(90, accent.withValues(alpha: isDark ? 0.04 : 0.06)),
-            ),
-            Positioned(
-              top: size.height * 0.4 + 15 * math.sin(t + 3),
-              left: size.width * 0.7 + 18 * math.cos(t + 1),
-              child: _orb(60, accent.withValues(alpha: isDark ? 0.05 : 0.07)),
-            ),
-          ],
-        );
-      },
+    return RepaintBoundary(
+      child: AnimatedBuilder(
+        animation: controller,
+        builder: (context, _) {
+          final t = controller.value * 2 * math.pi;
+          return Stack(
+            children: [
+              Positioned(
+                top: 80 + 30 * math.sin(t),
+                right: 40 + 20 * math.cos(t),
+                child: _orb(
+                  120,
+                  accent.withValues(alpha: isDark ? 0.06 : 0.08),
+                ),
+              ),
+              Positioned(
+                bottom: 100 + 20 * math.cos(t + 1),
+                left: 30 + 25 * math.sin(t + 2),
+                child: _orb(90, accent.withValues(alpha: isDark ? 0.04 : 0.06)),
+              ),
+              Positioned(
+                top: size.height * 0.4 + 15 * math.sin(t + 3),
+                left: size.width * 0.7 + 18 * math.cos(t + 1),
+                child: _orb(60, accent.withValues(alpha: isDark ? 0.05 : 0.07)),
+              ),
+            ],
+          );
+        },
+      ),
     );
   }
 

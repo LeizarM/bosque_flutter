@@ -10,26 +10,33 @@ import 'package:bosque_flutter/domain/repositories/auth_repository.dart';
 import 'package:bosque_flutter/data/repositories/auth_repository_impl.dart';
 
 final asyncUserProvider = FutureProvider<LoginEntity?>((ref) async {
-  final storage = SecureStorage();
-  final userDataJson = await storage.getUserData();
-  if (userDataJson != null) {
-    try {
-      final userDataMap = jsonDecode(userDataJson);
-      final userVersion = userDataMap['versionApp']?.toString();
-      if (userVersion != null && userVersion != AppConstants.APP_VERSION) {
-        // Si la versión no coincide, limpiar usuario y token
+  try {
+    final storage = SecureStorage();
+    final userDataJson = await storage.getUserData().timeout(
+      const Duration(seconds: 4),
+      onTimeout: () => null,
+    );
+    if (userDataJson != null) {
+      try {
+        final userDataMap = jsonDecode(userDataJson);
+        final userVersion = userDataMap['versionApp']?.toString();
+        if (userVersion != null && userVersion != AppConstants.APP_VERSION) {
+          // Si la versión no coincide, limpiar usuario y token
+          await storage.deleteUserData();
+          await storage.deleteToken();
+          return null;
+        }
+        return LoginEntity.fromJson(userDataMap);
+      } catch (_) {
         await storage.deleteUserData();
         await storage.deleteToken();
         return null;
       }
-      return LoginEntity.fromJson(userDataMap);
-    } catch (_) {
-      await storage.deleteUserData();
-      await storage.deleteToken();
-      return null;
     }
+    return null;
+  } catch (e) {
+    return null;
   }
-  return null;
 });
 
 class UserStateNotifier extends StateNotifier<LoginEntity?> {
@@ -40,28 +47,36 @@ class UserStateNotifier extends StateNotifier<LoginEntity?> {
   }
 
   Future<void> _loadUserFromStorage() async {
-    final storage = SecureStorage();
-    final userDataJson = await storage.getUserData();
-    if (userDataJson != null) {
-      try {
-        final userDataMap = jsonDecode(userDataJson);
-        // Validar versión de la app
-        final userVersion = userDataMap['versionApp']?.toString();
-        if (userVersion != null && userVersion != AppConstants.APP_VERSION) {
-          // Si la versión no coincide, limpiar usuario y token
+    try {
+      final storage = SecureStorage();
+      final userDataJson = await storage.getUserData().timeout(
+        const Duration(seconds: 4),
+        onTimeout: () => null,
+      );
+      if (userDataJson != null) {
+        try {
+          final userDataMap = jsonDecode(userDataJson);
+          // Validar versión de la app
+          final userVersion = userDataMap['versionApp']?.toString();
+          if (userVersion != null && userVersion != AppConstants.APP_VERSION) {
+            // Si la versión no coincide, limpiar usuario y token
+            state = null;
+            await storage.deleteUserData();
+            await storage.deleteToken();
+            return;
+          }
+          // Deserializar los datos del usuario desde JSON
+          state = LoginEntity.fromJson(userDataMap);
+        } catch (e) {
+          // Si hay un error al deserializar, limpiar el estado
           state = null;
           await storage.deleteUserData();
           await storage.deleteToken();
-          return;
         }
-        // Deserializar los datos del usuario desde JSON
-        state = LoginEntity.fromJson(userDataMap);
-      } catch (e) {
-        // Si hay un error al deserializar, limpiar el estado
-        state = null;
-        await storage.deleteUserData();
-        await storage.deleteToken();
       }
+    } catch (e) {
+      // Timeout o error inesperado: dejar state en null (usuario no autenticado)
+      state = null;
     }
   }
 

@@ -23,15 +23,24 @@ class ThemeNotifier extends StateNotifier<AppTheme> {
     _loadSavedTheme();
   }
 
-  /// Carga el tema guardado desde el almacenamiento
+  /// Carga el tema guardado desde el almacenamiento con timeout de seguridad
   Future<void> _loadSavedTheme() async {
-    final savedColor = await _storage.getThemeColor();
-    final savedDarkMode = await _storage.getThemeDarkMode();
+    try {
+      final results = await Future.wait([
+        _storage.getThemeColor(),
+        _storage.getThemeDarkMode(),
+      ]).timeout(
+        const Duration(seconds: 3),
+        onTimeout: () => [2, false], // defaults: color verde, modo claro
+      );
 
-    state = state.copyWith(
-      selectedColor: savedColor,
-      isDarkMode: savedDarkMode,
-    );
+      state = state.copyWith(
+        selectedColor: results[0] as int,
+        isDarkMode: results[1] as bool,
+      );
+    } catch (e) {
+      // Si falla, usar valores por defecto (ya están en el estado inicial)
+    }
   }
 
   void toggleDarkMode() {

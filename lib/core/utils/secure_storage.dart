@@ -1,15 +1,73 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:bosque_flutter/core/utils/console_log.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class SecureStorage {
-  final _storage = const FlutterSecureStorage();
+  // Usar encryptedSharedPreferences en Android para evitar problemas con el Keystore
+  // que puede colgar en algunos dispositivos (Samsung, Huawei, Xiaomi)
+  final _storage = const FlutterSecureStorage(
+    aOptions: AndroidOptions(encryptedSharedPreferences: true),
+  );
   static const _tokenKey = 'auth_token';
   static const _userDataKey = 'user_data';
   static const _tokenExpiryKey = 'token_expiry';
 
+  /// Timeout de seguridad para operaciones de lectura del storage
+  static const _readTimeout = Duration(seconds: 3);
+
+  /// Lectura segura con timeout para evitar cuelgues en dispositivos problemáticos
+  Future<String?> _safeRead(String key) async {
+    try {
+      return await _storage
+          .read(key: key)
+          .timeout(
+            _readTimeout,
+            onTimeout: () {
+              console('⚠️ SecureStorage timeout al leer key: $key');
+              return null;
+            },
+          );
+    } catch (e) {
+      console('⚠️ SecureStorage error al leer key $key: $e');
+      return null;
+    }
+  }
+
+  /// Escritura segura con timeout
+  Future<void> _safeWrite(String key, String value) async {
+    try {
+      await _storage
+          .write(key: key, value: value)
+          .timeout(
+            _readTimeout,
+            onTimeout: () {
+              console('⚠️ SecureStorage timeout al escribir key: $key');
+            },
+          );
+    } catch (e) {
+      console('⚠️ SecureStorage error al escribir key $key: $e');
+    }
+  }
+
+  /// Eliminación segura con timeout
+  Future<void> _safeDelete(String key) async {
+    try {
+      await _storage
+          .delete(key: key)
+          .timeout(
+            _readTimeout,
+            onTimeout: () {
+              console('⚠️ SecureStorage timeout al eliminar key: $key');
+            },
+          );
+    } catch (e) {
+      console('⚠️ SecureStorage error al eliminar key $key: $e');
+    }
+  }
+
   Future<void> saveToken(String token) async {
-    await _storage.write(key: _tokenKey, value: token);
+    await _safeWrite(_tokenKey, token);
 
     // Intenta extraer la fecha de expiración del JWT
     try {
@@ -38,34 +96,34 @@ class SecureStorage {
   }
 
   Future<String?> getToken() async {
-    return await _storage.read(key: _tokenKey);
+    return await _safeRead(_tokenKey);
   }
 
   Future<void> deleteToken() async {
-    await _storage.delete(key: _tokenKey);
-    await _storage.delete(key: _tokenExpiryKey);
+    await _safeDelete(_tokenKey);
+    await _safeDelete(_tokenExpiryKey);
   }
 
   Future<void> saveUserData(String userDataJson) async {
-    await _storage.write(key: _userDataKey, value: userDataJson);
+    await _safeWrite(_userDataKey, userDataJson);
   }
 
   Future<String?> getUserData() async {
-    return await _storage.read(key: _userDataKey);
+    return await _safeRead(_userDataKey);
   }
 
   Future<void> deleteUserData() async {
-    await _storage.delete(key: _userDataKey);
+    await _safeDelete(_userDataKey);
   }
 
   // Nuevos métodos para manejar la expiración del token
   Future<void> saveTokenExpiry(DateTime expiryDate) async {
     final timestamp = expiryDate.millisecondsSinceEpoch.toString();
-    await _storage.write(key: _tokenExpiryKey, value: timestamp);
+    await _safeWrite(_tokenExpiryKey, timestamp);
   }
 
   Future<DateTime?> getTokenExpiry() async {
-    final timestamp = await _storage.read(key: _tokenExpiryKey);
+    final timestamp = await _safeRead(_tokenExpiryKey);
     if (timestamp != null) {
       return DateTime.fromMillisecondsSinceEpoch(int.parse(timestamp));
     }
@@ -113,23 +171,23 @@ class SecureStorage {
 
   /// Guarda el índice del color seleccionado
   Future<void> saveThemeColor(int colorIndex) async {
-    await _storage.write(key: _themeColorKey, value: colorIndex.toString());
+    await _safeWrite(_themeColorKey, colorIndex.toString());
   }
 
   /// Obtiene el índice del color guardado (default: 2 = green)
   Future<int> getThemeColor() async {
-    final value = await _storage.read(key: _themeColorKey);
+    final value = await _safeRead(_themeColorKey);
     return value != null ? int.tryParse(value) ?? 2 : 2;
   }
 
   /// Guarda la preferencia de modo oscuro
   Future<void> saveThemeDarkMode(bool isDark) async {
-    await _storage.write(key: _themeDarkModeKey, value: isDark.toString());
+    await _safeWrite(_themeDarkModeKey, isDark.toString());
   }
 
   /// Obtiene la preferencia de modo oscuro (default: false)
   Future<bool> getThemeDarkMode() async {
-    final value = await _storage.read(key: _themeDarkModeKey);
+    final value = await _safeRead(_themeDarkModeKey);
     return value == 'true';
   }
 }

@@ -70,8 +70,19 @@ class ConnectivityNotifier extends StateNotifier<ConnectivityState> {
       );
     }
 
-    // Verificación inicial
-    _checkConnectivity();
+    // Asumir conectado inicialmente para no bloquear el arranque de la app.
+    // La verificación real se hace después de un delay para que la UI cargue primero.
+    state = ConnectivityState(
+      status: ConnectionStatus.connected,
+      message: 'Conectado',
+      lastChecked: DateTime.now(),
+    );
+
+    // Retrasar la verificación inicial para no competir con SecureStorage
+    // y otras operaciones de arranque que podrían colgar en dispositivos lentos
+    Future.delayed(const Duration(seconds: 5), () {
+      if (mounted) _checkConnectivity();
+    });
 
     // Verificación periódica cada 30 segundos
     _periodicCheck = Timer.periodic(
