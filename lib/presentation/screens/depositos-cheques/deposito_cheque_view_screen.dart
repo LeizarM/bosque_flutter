@@ -48,7 +48,7 @@ class DepositoChequeViewScreen extends ConsumerWidget {
                       Icon(
                         Icons.account_balance_wallet_outlined,
                         size: isDesktop ? 32 : 28,
-                        color: Colors.black54,
+                        color: Theme.of(context).colorScheme.primary,
                       ),
                       SizedBox(width: isDesktop ? 12 : 8),
                       Expanded(
@@ -67,7 +67,9 @@ class DepositoChequeViewScreen extends ConsumerWidget {
                               'Busque y visualice los depósitos registrados',
                               style: TextStyle(
                                 fontSize: isDesktop ? 15 : (isMobile ? 13 : 14),
-                                color: Colors.black54,
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.onSurface.withValues(alpha: 0.6),
                               ),
                             ),
                           ],
@@ -548,7 +550,11 @@ class DepositoChequeViewScreen extends ConsumerWidget {
           const SizedBox(width: 16),
           Text(
             '${state.totalRegistros} registros encontrados',
-            style: const TextStyle(color: Colors.black54),
+            style: TextStyle(
+              color: Theme.of(
+                context,
+              ).colorScheme.onSurface.withValues(alpha: 0.6),
+            ),
           ),
         ],
       );
@@ -706,7 +712,7 @@ class _DatePickerFieldState extends State<_DatePickerField> {
             IconButton(
               icon: Icon(
                 Icons.calendar_month,
-                color: Color(0xFF6C63FF),
+                color: Theme.of(context).colorScheme.primary,
                 size: isMobile ? 18 : 20,
               ),
               onPressed: () async {
@@ -794,16 +800,23 @@ class _DepositosTableState extends ConsumerState<_DepositosTable> {
   }
 
   Widget _emptyTablePlaceholder() {
+    final colorScheme = Theme.of(context).colorScheme;
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 48),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
-        children: const [
-          Icon(Icons.search_off, size: 48, color: Colors.black26),
-          SizedBox(height: 8),
+        children: [
+          Icon(
+            Icons.search_off,
+            size: 48,
+            color: colorScheme.onSurface.withValues(alpha: 0.3),
+          ),
+          const SizedBox(height: 8),
           Text(
             'No se encontraron depósitos',
-            style: TextStyle(color: Colors.black54),
+            style: TextStyle(
+              color: colorScheme.onSurface.withValues(alpha: 0.6),
+            ),
           ),
         ],
       ),
@@ -813,6 +826,7 @@ class _DepositosTableState extends ConsumerState<_DepositosTable> {
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(depositosChequesViewProvider);
+    final colorScheme = Theme.of(context).colorScheme;
     final columns = const [
       'ID',
       'Cliente',
@@ -854,7 +868,7 @@ class _DepositosTableState extends ConsumerState<_DepositosTable> {
                 controller: horizontalController,
                 thickness: isDesktop ? 8 : 6,
                 radius: const Radius.circular(5),
-                thumbColor: Colors.grey.shade400,
+                thumbColor: colorScheme.outline,
                 child: SingleChildScrollView(
                   controller: horizontalController,
                   scrollDirection: Axis.horizontal,
@@ -986,7 +1000,11 @@ class _DepositosTableState extends ConsumerState<_DepositosTable> {
                                                     style: TextStyle(
                                                       fontStyle:
                                                           FontStyle.italic,
-                                                      color: Colors.grey,
+                                                      color: colorScheme
+                                                          .onSurface
+                                                          .withValues(
+                                                            alpha: 0.5,
+                                                          ),
                                                       fontSize:
                                                           isMobile ? 12 : null,
                                                     ),
@@ -998,7 +1016,9 @@ class _DepositosTableState extends ConsumerState<_DepositosTable> {
                                                       IconButton(
                                                         icon: Icon(
                                                           Icons.image,
-                                                          color: Colors.indigo,
+                                                          color:
+                                                              colorScheme
+                                                                  .secondary,
                                                           size: 20,
                                                         ),
                                                         tooltip: 'Ver imagen',
@@ -1029,7 +1049,9 @@ class _DepositosTableState extends ConsumerState<_DepositosTable> {
                                                       IconButton(
                                                         icon: Icon(
                                                           Icons.description,
-                                                          color: Colors.blue,
+                                                          color:
+                                                              colorScheme
+                                                                  .primary,
                                                           size: 20,
                                                         ),
                                                         tooltip:
@@ -1068,8 +1090,8 @@ class _DepositosTableState extends ConsumerState<_DepositosTable> {
                                                           icon: Icon(
                                                             Icons.edit,
                                                             color:
-                                                                Colors
-                                                                    .deepPurple,
+                                                                colorScheme
+                                                                    .tertiary,
                                                             size: 20,
                                                           ),
                                                           tooltip: 'Editar',
@@ -1273,7 +1295,8 @@ class _DepositosTableState extends ConsumerState<_DepositosTable> {
                                                       IconButton(
                                                         icon: Icon(
                                                           Icons.close,
-                                                          color: Colors.red,
+                                                          color:
+                                                              colorScheme.error,
                                                           size: 20,
                                                         ),
                                                         tooltip: 'Rechazar',

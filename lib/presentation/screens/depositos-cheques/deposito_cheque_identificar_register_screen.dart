@@ -3,9 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:bosque_flutter/core/state/depositos_cheques_provider.dart';
 import 'package:bosque_flutter/core/utils/responsive_utils_bosque.dart';
 
-final depositosChequesIdentificarRegisterProvider = StateNotifierProvider<DepositosChequesNotifier, DepositosChequesState>(
-  (ref) => DepositosChequesNotifier(ref),
-);
+final depositosChequesIdentificarRegisterProvider =
+    StateNotifierProvider<DepositosChequesNotifier, DepositosChequesState>(
+      (ref) => DepositosChequesNotifier(ref),
+    );
 
 class DepositoChequeIdentificarScreen extends ConsumerWidget {
   const DepositoChequeIdentificarScreen({super.key});
@@ -14,9 +15,13 @@ class DepositoChequeIdentificarScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final colorScheme = Theme.of(context).colorScheme;
     final state = ref.watch(depositosChequesIdentificarRegisterProvider);
-    final notifier = ref.read(depositosChequesIdentificarRegisterProvider.notifier);
+    final notifier = ref.read(
+      depositosChequesIdentificarRegisterProvider.notifier,
+    );
     final isMobile = ResponsiveUtilsBosque.isMobile(context);
-    final horizontalPadding = ResponsiveUtilsBosque.getHorizontalPadding(context);
+    final horizontalPadding = ResponsiveUtilsBosque.getHorizontalPadding(
+      context,
+    );
     final verticalPadding = ResponsiveUtilsBosque.getVerticalPadding(context);
 
     return Scaffold(
@@ -26,186 +31,280 @@ class DepositoChequeIdentificarScreen extends ConsumerWidget {
         elevation: 0,
         foregroundColor: colorScheme.onSurface,
       ),
-      body: state.cargando
-          ? const Center(child: CircularProgressIndicator())
-          : SingleChildScrollView(
-              padding: EdgeInsets.symmetric(
-                horizontal: horizontalPadding,
-                vertical: verticalPadding,
-              ),
-              child: Container(
-                decoration: BoxDecoration(
-                  color: colorScheme.surfaceVariant.withValues(alpha: 0.4),
-                  borderRadius: BorderRadius.circular(
-                    ResponsiveUtilsBosque.getResponsiveValue(
-                      context: context,
-                      defaultValue: 16.0,
-                      mobile: 12.0,
-                      desktop: 20.0,
+      body:
+          state.cargando
+              ? const Center(child: CircularProgressIndicator())
+              : SingleChildScrollView(
+                padding: EdgeInsets.symmetric(
+                  horizontal: horizontalPadding,
+                  vertical: verticalPadding,
+                ),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: colorScheme.surfaceVariant.withValues(alpha: 0.4),
+                    borderRadius: BorderRadius.circular(
+                      ResponsiveUtilsBosque.getResponsiveValue(
+                        context: context,
+                        defaultValue: 16.0,
+                        mobile: 12.0,
+                        desktop: 20.0,
+                      ),
                     ),
                   ),
-                ),
-                padding: EdgeInsets.all(
-                  ResponsiveUtilsBosque.getResponsiveValue(
-                    context: context,
-                    defaultValue: 24.0,
-                    mobile: 16.0,
-                    desktop: 32.0,
+                  padding: EdgeInsets.all(
+                    ResponsiveUtilsBosque.getResponsiveValue(
+                      context: context,
+                      defaultValue: 24.0,
+                      mobile: 16.0,
+                      desktop: 32.0,
+                    ),
                   ),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    isMobile
-                        ? _buildMobileFields(context, state, notifier)
-                        : _buildDesktopFields(context, state, notifier),
-                    SizedBox(height: ResponsiveUtilsBosque.getVerticalPadding(context)),
-                    isMobile
-                        ? _buildMobileBancoFields(context, state, notifier)
-                        : _buildDesktopBancoFields(context, state, notifier),
-                    SizedBox(height: ResponsiveUtilsBosque.getVerticalPadding(context)),
-                    isMobile
-                        ? _buildMobileImporteFields(context, state, notifier)
-                        : _buildDesktopImporteFields(context, state, notifier),
-                    SizedBox(height: ResponsiveUtilsBosque.getVerticalPadding(context) * 1.5),
-                    _buildObservacionesField(context, notifier),
-                    Align(
-                      alignment: Alignment.centerRight,
-                      child: Wrap(
-                        spacing: 16,
-                        runSpacing: 12,
-                        alignment: WrapAlignment.end,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
                         children: [
-                          OutlinedButton(
-                            onPressed: () {
-                              notifier.limpiarFormulario();
-                            },
-                            style: OutlinedButton.styleFrom(
-                              padding: EdgeInsets.symmetric(
-                                horizontal: ResponsiveUtilsBosque.getResponsiveValue(
-                                  context: context,
-                                  defaultValue: 16.0,
-                                  mobile: 12.0,
-                                  desktop: 24.0,
-                                ),
-                                vertical: ResponsiveUtilsBosque.getResponsiveValue(
-                                  context: context,
-                                  defaultValue: 12.0,
-                                  mobile: 8.0,
-                                  desktop: 16.0,
-                                ),
-                              ),
-                            ),
-                            child: const Text('Cancelar'),
+                          Icon(
+                            Icons.receipt_long_outlined,
+                            color: colorScheme.primary,
+                            size: 22,
                           ),
-                          ElevatedButton.icon(
-                            onPressed: _isGuardarEnabled(state)
-                                ? () async {
-                                    if (state.empresaSeleccionada == null) {
-                                      ScaffoldMessenger.of(context).showSnackBar(
-                                        const SnackBar(content: Text('Debe seleccionar una empresa.')),
-                                      );
-                                      return;
-                                    }
-                                    if (state.bancoSeleccionado == null) {
-                                      ScaffoldMessenger.of(context).showSnackBar(
-                                        const SnackBar(content: Text('Debe seleccionar un banco.')),
-                                      );
-                                      return;
-                                    }
-                                    if (state.monedaSeleccionada == '') {
-                                      ScaffoldMessenger.of(context).showSnackBar(
-                                        const SnackBar(content: Text('Debe seleccionar una moneda.')),
-                                      );
-                                      return;
-                                    }
-                                    if (state.importeTotal <= 0) {
-                                      ScaffoldMessenger.of(context).showSnackBar(
-                                        const SnackBar(content: Text('El importe total debe ser mayor a 0.')),
-                                      );
-                                      return;
-                                    }
-                                    try {
-                                      final okDeposito = await notifier.registrarDeposito(null);
-                                      if (!okDeposito) throw Exception('No se pudo registrar el depósito');
-                                      ScaffoldMessenger.of(context).showSnackBar(
-                                        const SnackBar(content: Text('Depósito registrado correctamente.')),
-                                      );
-                                      notifier.limpiarFormulario();
-                                    } catch (e) {
-                                      ScaffoldMessenger.of(context).showSnackBar(
-                                        SnackBar(content: Text('Error: ${e.toString()}')),
-                                      );
-                                    }
-                                  }
-                                : null,
-                            icon: const Icon(Icons.save),
-                            label: const Text('Guardar'),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.green,
-                              padding: EdgeInsets.symmetric(
-                                horizontal: ResponsiveUtilsBosque.getResponsiveValue(
-                                  context: context,
-                                  defaultValue: 16.0,
-                                  mobile: 12.0,
-                                  desktop: 24.0,
-                                ),
-                                vertical: ResponsiveUtilsBosque.getResponsiveValue(
-                                  context: context,
-                                  defaultValue: 12.0,
-                                  mobile: 8.0,
-                                  desktop: 16.0,
-                                ),
-                              ),
+                          const SizedBox(width: 8),
+                          Text(
+                            'Datos del Depósito',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                              color: colorScheme.primary,
                             ),
                           ),
                         ],
                       ),
-                    ),
-                  ],
+                      const Divider(height: 24),
+                      isMobile
+                          ? _buildMobileFields(context, state, notifier)
+                          : _buildDesktopFields(context, state, notifier),
+                      SizedBox(
+                        height: ResponsiveUtilsBosque.getVerticalPadding(
+                          context,
+                        ),
+                      ),
+                      isMobile
+                          ? _buildMobileBancoFields(context, state, notifier)
+                          : _buildDesktopBancoFields(context, state, notifier),
+                      SizedBox(
+                        height: ResponsiveUtilsBosque.getVerticalPadding(
+                          context,
+                        ),
+                      ),
+                      isMobile
+                          ? _buildMobileImporteFields(context, state, notifier)
+                          : _buildDesktopImporteFields(
+                            context,
+                            state,
+                            notifier,
+                          ),
+                      SizedBox(
+                        height:
+                            ResponsiveUtilsBosque.getVerticalPadding(context) *
+                            1.5,
+                      ),
+                      _buildObservacionesField(context, notifier),
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: Wrap(
+                          spacing: 16,
+                          runSpacing: 12,
+                          alignment: WrapAlignment.end,
+                          children: [
+                            OutlinedButton(
+                              onPressed: () {
+                                notifier.limpiarFormulario();
+                              },
+                              style: OutlinedButton.styleFrom(
+                                padding: EdgeInsets.symmetric(
+                                  horizontal:
+                                      ResponsiveUtilsBosque.getResponsiveValue(
+                                        context: context,
+                                        defaultValue: 16.0,
+                                        mobile: 12.0,
+                                        desktop: 24.0,
+                                      ),
+                                  vertical:
+                                      ResponsiveUtilsBosque.getResponsiveValue(
+                                        context: context,
+                                        defaultValue: 12.0,
+                                        mobile: 8.0,
+                                        desktop: 16.0,
+                                      ),
+                                ),
+                              ),
+                              child: const Text('Cancelar'),
+                            ),
+                            ElevatedButton.icon(
+                              onPressed:
+                                  _isGuardarEnabled(state)
+                                      ? () async {
+                                        if (state.empresaSeleccionada == null) {
+                                          ScaffoldMessenger.of(
+                                            context,
+                                          ).showSnackBar(
+                                            const SnackBar(
+                                              content: Text(
+                                                'Debe seleccionar una empresa.',
+                                              ),
+                                            ),
+                                          );
+                                          return;
+                                        }
+                                        if (state.bancoSeleccionado == null) {
+                                          ScaffoldMessenger.of(
+                                            context,
+                                          ).showSnackBar(
+                                            const SnackBar(
+                                              content: Text(
+                                                'Debe seleccionar un banco.',
+                                              ),
+                                            ),
+                                          );
+                                          return;
+                                        }
+                                        if (state.monedaSeleccionada == '') {
+                                          ScaffoldMessenger.of(
+                                            context,
+                                          ).showSnackBar(
+                                            const SnackBar(
+                                              content: Text(
+                                                'Debe seleccionar una moneda.',
+                                              ),
+                                            ),
+                                          );
+                                          return;
+                                        }
+                                        if (state.importeTotal <= 0) {
+                                          ScaffoldMessenger.of(
+                                            context,
+                                          ).showSnackBar(
+                                            const SnackBar(
+                                              content: Text(
+                                                'El importe total debe ser mayor a 0.',
+                                              ),
+                                            ),
+                                          );
+                                          return;
+                                        }
+                                        try {
+                                          final okDeposito = await notifier
+                                              .registrarDeposito(null);
+                                          if (!okDeposito)
+                                            throw Exception(
+                                              'No se pudo registrar el depósito',
+                                            );
+                                          ScaffoldMessenger.of(
+                                            context,
+                                          ).showSnackBar(
+                                            const SnackBar(
+                                              content: Text(
+                                                'Depósito registrado correctamente.',
+                                              ),
+                                            ),
+                                          );
+                                          notifier.limpiarFormulario();
+                                        } catch (e) {
+                                          ScaffoldMessenger.of(
+                                            context,
+                                          ).showSnackBar(
+                                            SnackBar(
+                                              content: Text(
+                                                'Error: ${e.toString()}',
+                                              ),
+                                            ),
+                                          );
+                                        }
+                                      }
+                                      : null,
+                              icon: const Icon(Icons.save),
+                              label: const Text('Guardar'),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: colorScheme.primary,
+                                foregroundColor: colorScheme.onPrimary,
+                                padding: EdgeInsets.symmetric(
+                                  horizontal:
+                                      ResponsiveUtilsBosque.getResponsiveValue(
+                                        context: context,
+                                        defaultValue: 16.0,
+                                        mobile: 12.0,
+                                        desktop: 24.0,
+                                      ),
+                                  vertical:
+                                      ResponsiveUtilsBosque.getResponsiveValue(
+                                        context: context,
+                                        defaultValue: 12.0,
+                                        mobile: 8.0,
+                                        desktop: 16.0,
+                                      ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
-            ),
     );
   }
 
-  Widget _buildMobileFields(BuildContext context, dynamic state, dynamic notifier) {
+  Widget _buildMobileFields(
+    BuildContext context,
+    dynamic state,
+    dynamic notifier,
+  ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _buildEmpresaField(context, state, notifier),
-      ],
+      children: [_buildEmpresaField(context, state, notifier)],
     );
   }
 
-  Widget _buildDesktopFields(BuildContext context, dynamic state, dynamic notifier) {
+  Widget _buildDesktopFields(
+    BuildContext context,
+    dynamic state,
+    dynamic notifier,
+  ) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Expanded(child: _buildEmpresaField(context, state, notifier)),
-      ],
+      children: [Expanded(child: _buildEmpresaField(context, state, notifier))],
     );
   }
 
-  Widget _buildMobileBancoFields(BuildContext context, dynamic state, dynamic notifier) {
+  Widget _buildMobileBancoFields(
+    BuildContext context,
+    dynamic state,
+    dynamic notifier,
+  ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _buildBancoField(context, state, notifier),
-      ],
+      children: [_buildBancoField(context, state, notifier)],
     );
   }
 
-  Widget _buildDesktopBancoFields(BuildContext context, dynamic state, dynamic notifier) {
+  Widget _buildDesktopBancoFields(
+    BuildContext context,
+    dynamic state,
+    dynamic notifier,
+  ) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Expanded(child: _buildBancoField(context, state, notifier)),
-      ],
+      children: [Expanded(child: _buildBancoField(context, state, notifier))],
     );
   }
 
-  Widget _buildMobileImporteFields(BuildContext context, dynamic state, dynamic notifier) {
+  Widget _buildMobileImporteFields(
+    BuildContext context,
+    dynamic state,
+    dynamic notifier,
+  ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -216,7 +315,11 @@ class DepositoChequeIdentificarScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildDesktopImporteFields(BuildContext context, dynamic state, dynamic notifier) {
+  Widget _buildDesktopImporteFields(
+    BuildContext context,
+    dynamic state,
+    dynamic notifier,
+  ) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -227,27 +330,41 @@ class DepositoChequeIdentificarScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildEmpresaField(BuildContext context, dynamic state, dynamic notifier) {
-    final empresaItems = state.empresas.map<DropdownMenuItem<dynamic>>((e) =>
-      DropdownMenuItem<dynamic>(
-        value: e,
-        child: Text(e.nombre),
-      )
-    ).toList();
+  Widget _buildEmpresaField(
+    BuildContext context,
+    dynamic state,
+    dynamic notifier,
+  ) {
+    final empresaItems =
+        state.empresas
+            .map<DropdownMenuItem<dynamic>>(
+              (e) => DropdownMenuItem<dynamic>(value: e, child: Text(e.nombre)),
+            )
+            .toList();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          'Empresa',
-          style: TextStyle(
-            fontSize: ResponsiveUtilsBosque.getResponsiveValue(
-              context: context,
-              defaultValue: 14.0,
-              mobile: 14.0,
-              desktop: 16.0,
+        Row(
+          children: [
+            Icon(
+              Icons.business_outlined,
+              size: 16,
+              color: Theme.of(context).colorScheme.primary,
             ),
-            fontWeight: FontWeight.w500,
-          ),
+            const SizedBox(width: 4),
+            Text(
+              'Empresa',
+              style: TextStyle(
+                fontSize: ResponsiveUtilsBosque.getResponsiveValue(
+                  context: context,
+                  defaultValue: 14.0,
+                  mobile: 14.0,
+                  desktop: 16.0,
+                ),
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
         ),
         SizedBox(height: 8),
         DropdownButtonFormField<dynamic>(
@@ -267,30 +384,50 @@ class DepositoChequeIdentificarScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildBancoField(BuildContext context, dynamic state, dynamic notifier) {
+  Widget _buildBancoField(
+    BuildContext context,
+    dynamic state,
+    dynamic notifier,
+  ) {
     // Si el banco seleccionado ya no está en la lista, lo limpiamos
     final bancos = state.bancos;
-    final bancoSeleccionado = bancos.contains(state.bancoSeleccionado) ? state.bancoSeleccionado : null;
-    final bancoItems = bancos.map<DropdownMenuItem<dynamic>>((b) =>
-      DropdownMenuItem<dynamic>(
-        value: b,
-        child: Text(b.nombreBanco),
-      )
-    ).toList();
+    final bancoSeleccionado =
+        bancos.contains(state.bancoSeleccionado)
+            ? state.bancoSeleccionado
+            : null;
+    final bancoItems =
+        bancos
+            .map<DropdownMenuItem<dynamic>>(
+              (b) => DropdownMenuItem<dynamic>(
+                value: b,
+                child: Text(b.nombreBanco),
+              ),
+            )
+            .toList();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          'Banco',
-          style: TextStyle(
-            fontSize: ResponsiveUtilsBosque.getResponsiveValue(
-              context: context,
-              defaultValue: 14.0,
-              mobile: 14.0,
-              desktop: 16.0,
+        Row(
+          children: [
+            Icon(
+              Icons.account_balance_outlined,
+              size: 16,
+              color: Theme.of(context).colorScheme.primary,
             ),
-            fontWeight: FontWeight.w500,
-          ),
+            const SizedBox(width: 4),
+            Text(
+              'Banco',
+              style: TextStyle(
+                fontSize: ResponsiveUtilsBosque.getResponsiveValue(
+                  context: context,
+                  defaultValue: 14.0,
+                  mobile: 14.0,
+                  desktop: 16.0,
+                ),
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
         ),
         SizedBox(height: 8),
         DropdownButtonFormField<dynamic>(
@@ -308,21 +445,35 @@ class DepositoChequeIdentificarScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildImporteTotalField(BuildContext context, dynamic state, dynamic notifier) {
+  Widget _buildImporteTotalField(
+    BuildContext context,
+    dynamic state,
+    dynamic notifier,
+  ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          'Importe',
-          style: TextStyle(
-            fontSize: ResponsiveUtilsBosque.getResponsiveValue(
-              context: context,
-              defaultValue: 14.0,
-              mobile: 14.0,
-              desktop: 16.0,
+        Row(
+          children: [
+            Icon(
+              Icons.attach_money,
+              size: 16,
+              color: Theme.of(context).colorScheme.primary,
             ),
-            fontWeight: FontWeight.w500,
-          ),
+            const SizedBox(width: 4),
+            Text(
+              'Importe',
+              style: TextStyle(
+                fontSize: ResponsiveUtilsBosque.getResponsiveValue(
+                  context: context,
+                  defaultValue: 14.0,
+                  mobile: 14.0,
+                  desktop: 16.0,
+                ),
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
         ),
         SizedBox(height: 8),
         TextFormField(
@@ -338,31 +489,48 @@ class DepositoChequeIdentificarScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildMonedaField(BuildContext context, dynamic state, dynamic notifier) {
+  Widget _buildMonedaField(
+    BuildContext context,
+    dynamic state,
+    dynamic notifier,
+  ) {
     final monedaOptions = const [
       {'label': 'Bolivianos', 'value': 'BS'},
       {'label': 'Dólares', 'value': 'USD'},
     ];
-    final monedaItems = monedaOptions.map<DropdownMenuItem<String>>((m) =>
-      DropdownMenuItem<String>(
-        value: m['value']!,
-        child: Text(m['label']!),
-      )
-    ).toList();
+    final monedaItems =
+        monedaOptions
+            .map<DropdownMenuItem<String>>(
+              (m) => DropdownMenuItem<String>(
+                value: m['value']!,
+                child: Text(m['label']!),
+              ),
+            )
+            .toList();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          'Moneda',
-          style: TextStyle(
-            fontSize: ResponsiveUtilsBosque.getResponsiveValue(
-              context: context,
-              defaultValue: 14.0,
-              mobile: 14.0,
-              desktop: 16.0,
+        Row(
+          children: [
+            Icon(
+              Icons.currency_exchange,
+              size: 16,
+              color: Theme.of(context).colorScheme.primary,
             ),
-            fontWeight: FontWeight.w500,
-          ),
+            const SizedBox(width: 4),
+            Text(
+              'Moneda',
+              style: TextStyle(
+                fontSize: ResponsiveUtilsBosque.getResponsiveValue(
+                  context: context,
+                  defaultValue: 14.0,
+                  mobile: 14.0,
+                  desktop: 16.0,
+                ),
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
         ),
         SizedBox(height: 8),
         DropdownButtonFormField<String>(
@@ -379,22 +547,31 @@ class DepositoChequeIdentificarScreen extends ConsumerWidget {
     );
   }
 
-
   Widget _buildObservacionesField(BuildContext context, dynamic notifier) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          'Observaciones (opcional)',
-          style: TextStyle(
-            fontSize: ResponsiveUtilsBosque.getResponsiveValue(
-              context: context,
-              defaultValue: 14.0,
-              mobile: 14.0,
-              desktop: 16.0,
+        Row(
+          children: [
+            Icon(
+              Icons.notes_outlined,
+              size: 16,
+              color: Theme.of(context).colorScheme.primary,
             ),
-            fontWeight: FontWeight.w500,
-          ),
+            const SizedBox(width: 4),
+            Text(
+              'Observaciones (opcional)',
+              style: TextStyle(
+                fontSize: ResponsiveUtilsBosque.getResponsiveValue(
+                  context: context,
+                  defaultValue: 14.0,
+                  mobile: 14.0,
+                  desktop: 16.0,
+                ),
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
         ),
         SizedBox(height: 8),
         TextFormField(
@@ -414,8 +591,12 @@ class DepositoChequeIdentificarScreen extends ConsumerWidget {
     final bancoSeleccionado = state.bancoSeleccionado != null;
     final importeValido = state.importeTotal > 0;
     final empresaSeleccionada = state.empresaSeleccionada != null;
-    final monedaSeleccionada = state.monedaSeleccionada != null && state.monedaSeleccionada != '';
-    return bancoSeleccionado && importeValido && empresaSeleccionada && monedaSeleccionada;
+    final monedaSeleccionada =
+        state.monedaSeleccionada != null && state.monedaSeleccionada != '';
+    return bancoSeleccionado &&
+        importeValido &&
+        empresaSeleccionada &&
+        monedaSeleccionada;
   }
 }
 

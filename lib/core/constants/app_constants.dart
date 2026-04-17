@@ -43,6 +43,11 @@ class AppConstants {
   static const String articulosEndpoint = '/paginaXApp/articulosX';
   static const String articulosAlmacenEndpoint =
       '/paginaXApp/articulosXAlmacen';
+
+  // ═══════════════════════════════════════════════════════════════════════════════
+  // RUTAS MODULO: ENTREGAS Y RUTAS DE CHOFERES
+  // ═══════════════════════════════════════════════════════════════════════════════
+
   static const String entregasEndpoint = '/entregas/chofer-entrega';
   static const String marcarEntregaCompletada =
       '/entregas/registro-entrega-chofer';
@@ -51,6 +56,8 @@ class AppConstants {
   static const String rutaChoferEndpoint = '/entregas/entregas-fecha';
   static const String choferesEndPoint = '/entregas/choferes';
   static const String entregasRutasChoferes = '/entregas/extracto';
+  static const String pendientesDeEntrega = '/entregas/pendientes-entrega';
+
   static const String usuariosEndPoint = '/auth/lstUsers';
   static const String changePasswordEndPoint = '/auth/changePasswordDefault';
   static const String registrarCombustibleEndPoint =

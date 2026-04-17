@@ -14,6 +14,7 @@ export 'package:bosque_flutter/presentation/screens/depositos-cheques/deposito_c
 export 'package:bosque_flutter/presentation/screens/depositos-cheques/deposito_cheque_view_screen.dart';
 export 'package:bosque_flutter/presentation/screens/entregas/entregas_dashboard_screen.dart';
 export 'package:bosque_flutter/presentation/screens/entregas/entregas_home_screen.dart';
+export 'package:bosque_flutter/presentation/screens/entregas/pendientes_entrega_screen.dart';
 export 'package:bosque_flutter/presentation/screens/estructura-organizacional/estructura_organizacional_empresa_screen.dart';
 export 'package:bosque_flutter/presentation/screens/facturas-tigo/ver_factura.dart';
 export 'package:bosque_flutter/presentation/screens/ficha-trabajador/dependiente_screen.dart';

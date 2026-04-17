@@ -54,6 +54,7 @@ class _EditableSaldoPendienteCellState
   Widget build(BuildContext context) {
     final isDesktop = MediaQuery.of(context).size.width > 1100;
     final isMobile = MediaQuery.of(context).size.width < 600;
+    final colorScheme = Theme.of(context).colorScheme;
 
     return MouseRegion(
       onEnter: (_) => setState(() => _isHovering = true),
@@ -71,7 +72,7 @@ class _EditableSaldoPendienteCellState
                     _isEditing || _isHovering
                         ? [
                           BoxShadow(
-                            color: Colors.blue.withValues(alpha: 0.2),
+                            color: colorScheme.primary.withValues(alpha: 0.15),
                             blurRadius: 4,
                             offset: Offset(0, 2),
                           ),
@@ -90,10 +91,10 @@ class _EditableSaldoPendienteCellState
                   fontSize: isDesktop ? 15 : (isMobile ? 13 : 14),
                   color:
                       _hasError
-                          ? Colors.red.shade700
+                          ? colorScheme.error
                           : (_isEditing
-                              ? Colors.blue.shade800
-                              : Colors.black87),
+                              ? colorScheme.primary
+                              : colorScheme.onSurface),
                 ),
                 decoration: InputDecoration(
                   isDense: true,
@@ -106,10 +107,10 @@ class _EditableSaldoPendienteCellState
                     borderSide: BorderSide(
                       color:
                           _hasError
-                              ? Colors.red.shade400
+                              ? colorScheme.error
                               : (_isEditing
-                                  ? Colors.blue.shade400
-                                  : Colors.grey.shade400),
+                                  ? colorScheme.primary
+                                  : colorScheme.outline),
                       width: _isEditing ? 2 : 1,
                     ),
                   ),
@@ -118,35 +119,34 @@ class _EditableSaldoPendienteCellState
                     borderSide: BorderSide(
                       color:
                           _isHovering
-                              ? Colors.blue.shade300
-                              : Colors.grey.shade400,
+                              ? colorScheme.primary.withValues(alpha: 0.6)
+                              : colorScheme.outline,
                     ),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
                     borderSide: BorderSide(
-                      color: Colors.blue.shade500,
+                      color: colorScheme.primary,
                       width: 2,
                     ),
                   ),
                   errorBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
-                    borderSide: BorderSide(
-                      color: Colors.red.shade400,
-                      width: 2,
-                    ),
+                    borderSide: BorderSide(color: colorScheme.error, width: 2),
                   ),
                   filled: true,
                   fillColor:
                       _isEditing
-                          ? Colors.blue.shade50
-                          : (_isHovering ? Colors.grey.shade50 : Colors.white),
+                          ? colorScheme.primaryContainer.withValues(alpha: 0.3)
+                          : (_isHovering
+                              ? colorScheme.surfaceVariant
+                              : colorScheme.surface),
                   suffixIcon:
                       _isEditing
                           ? Icon(
                             Icons.edit,
                             size: 16,
-                            color: Colors.blue.shade400,
+                            color: colorScheme.primary.withValues(alpha: 0.7),
                           )
                           : null,
                 ),
@@ -172,7 +172,7 @@ class _EditableSaldoPendienteCellState
                 child: Text(
                   'No puede ser mayor al saldo original',
                   style: TextStyle(
-                    color: Colors.red.shade700,
+                    color: colorScheme.error,
                     fontSize: isDesktop ? 11 : 10,
                     fontStyle: FontStyle.italic,
                   ),
@@ -187,13 +187,13 @@ class _EditableSaldoPendienteCellState
                     Icon(
                       Icons.info_outline,
                       size: 12,
-                      color: Colors.blue.shade400,
+                      color: colorScheme.primary.withValues(alpha: 0.7),
                     ),
                     SizedBox(width: 4),
                     Text(
                       'Máx: ${widget.valorOriginal.toStringAsFixed(2)}',
                       style: TextStyle(
-                        color: Colors.blue.shade700,
+                        color: colorScheme.primary,
                         fontSize: isDesktop ? 11 : 10,
                       ),
                     ),

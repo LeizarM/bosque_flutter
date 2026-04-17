@@ -1,4 +1,5 @@
 import 'package:bosque_flutter/domain/entities/entregas_entity.dart';
+import 'package:bosque_flutter/domain/entities/pendiente_entrega_entity.dart';
 
 abstract class EntregasRepository {
   Future<List<EntregaEntity>> getEntregas(int uchofer);
@@ -47,16 +48,18 @@ abstract class EntregasRepository {
     required int audUsuario,
   });
 
-
   //metodo para obtener el historial de ruta por chofer
-  Future<List<EntregaEntity>> getHistorialRuta( DateTime fecha, int codEmpleado );
+  Future<List<EntregaEntity>> getHistorialRuta(DateTime fecha, int codEmpleado);
 
   //metodo para obtener la lista de choferes
   Future<List<EntregaEntity>> getChoferes();
 
   //Metodo para obtener el extracto de rutas de todos los choferes entre fechas
   Future<List<EntregaEntity>> getExtractoRutas(
-     DateTime fechaInicio,
-     DateTime fechaFin
+    DateTime fechaInicio,
+    DateTime fechaFin,
   );
+
+  // Método para obtener la lista de notas de venta pendientes de entrega (sin parámetros)
+  Future<List<PendienteEntregaEntity>> getPendientesEntrega();
 }

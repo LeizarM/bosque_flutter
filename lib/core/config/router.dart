@@ -82,6 +82,12 @@ final routerProvider = Provider<GoRouter>((ref) {
               name: 'trch_chofer_resumen',
               builder: (context, state) => const EntregasDashboardScreen(),
             ),
+            // Pendientes de entrega
+            GoRoute(
+              path: '/dashboard/trch_choferEntrega/Pendientes',
+              name: 'trch_choferEntrega_Pendientes',
+              builder: (context, state) => const PendientesEntregaScreen(),
+            ),
             //Ruta para ver los usuarios del sistema
             GoRoute(
               path: '/dashboard/tbUsuario/usuario',
@@ -241,6 +247,12 @@ final routerProvider = Provider<GoRouter>((ref) {
         GoRoute(
           path: '/trch_choferEntrega/Resumen',
           redirect: (context, state) => '/dashboard/trch_choferEntrega/Resumen',
+        ),
+        // Pendientes de entrega
+        GoRoute(
+          path: '/trch_choferEntrega/Pendientes',
+          redirect:
+              (context, state) => '/dashboard/trch_choferEntrega/Pendientes',
         ),
         GoRoute(
           path: '/tbUsuario/Usuario',

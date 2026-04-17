@@ -88,6 +88,25 @@ class _DepositoChequeRegisterScreenState
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.receipt_long_outlined,
+                            color: colorScheme.primary,
+                            size: 22,
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            'Datos del Depósito',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                              color: colorScheme.primary,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const Divider(height: 24),
                       // Layout responsivo para empresa y cliente
                       isMobile
                           ? _buildMobileFields(context, state, notifier)
@@ -295,7 +314,8 @@ class _DepositoChequeRegisterScreenState
                               icon: const Icon(Icons.save),
                               label: const Text('Guardar'),
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.green,
+                                backgroundColor: colorScheme.primary,
+                                foregroundColor: colorScheme.onPrimary,
                                 padding: EdgeInsets.symmetric(
                                   horizontal:
                                       ResponsiveUtilsBosque.getResponsiveValue(
@@ -437,17 +457,27 @@ class _DepositoChequeRegisterScreenState
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          'Empresa',
-          style: TextStyle(
-            fontSize: ResponsiveUtilsBosque.getResponsiveValue(
-              context: context,
-              defaultValue: 14.0,
-              mobile: 14.0,
-              desktop: 16.0,
+        Row(
+          children: [
+            Icon(
+              Icons.business_outlined,
+              size: 16,
+              color: Theme.of(context).colorScheme.primary,
             ),
-            fontWeight: FontWeight.w500,
-          ),
+            const SizedBox(width: 4),
+            Text(
+              'Empresa',
+              style: TextStyle(
+                fontSize: ResponsiveUtilsBosque.getResponsiveValue(
+                  context: context,
+                  defaultValue: 14.0,
+                  mobile: 14.0,
+                  desktop: 16.0,
+                ),
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
         ),
         SizedBox(height: 8),
         DropdownButtonFormField<dynamic>(
@@ -661,13 +691,23 @@ class _DepositoChequeRegisterScreenState
           width: double.infinity,
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
           decoration: BoxDecoration(
-            border: Border.all(color: Colors.grey),
+            border: Border.all(
+              color: Theme.of(
+                context,
+              ).colorScheme.outline.withValues(alpha: 0.5),
+            ),
             borderRadius: BorderRadius.circular(4),
-            color: Colors.grey.shade100,
+            color: Theme.of(
+              context,
+            ).colorScheme.surfaceVariant.withValues(alpha: 0.5),
           ),
           child: Text(
             state.importeTotal.toStringAsFixed(2),
-            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: Theme.of(context).colorScheme.primary,
+            ),
           ),
         ),
       ],
@@ -811,7 +851,7 @@ class _DepositoChequeRegisterScreenState
         }
       },
       child: DottedBorder(
-        color: Colors.grey,
+        color: Theme.of(context).colorScheme.outline,
         dashPattern: const [6, 3],
         borderType: BorderType.RRect,
         radius: Radius.circular(
@@ -1146,7 +1186,7 @@ class _DepositoChequeRegisterScreenState
               'Total seleccionado: ${totalSeleccionados.toStringAsFixed(2)} Bs',
               style: TextStyle(
                 fontWeight: FontWeight.bold,
-                color: Colors.green,
+                color: colorScheme.primary,
               ),
             ),
           ],
@@ -1162,7 +1202,10 @@ class _DepositoChequeRegisterScreenState
       alignment: Alignment.center,
       child: Text(
         text,
-        style: TextStyle(fontWeight: FontWeight.bold, color: Colors.green),
+        style: TextStyle(
+          fontWeight: FontWeight.bold,
+          color: Theme.of(context).colorScheme.primary,
+        ),
         textAlign: TextAlign.center,
       ),
     );
