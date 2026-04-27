@@ -836,15 +836,21 @@ class DepositosChequesNotifier extends StateNotifier<DepositosChequesState> {
     BuildContext context,
   ) async {
     if (kIsWeb) {
-      // En web, imitar el comportamiento de Angular
-      final blob = html.Blob([bytes]);
+      // En web, abrir la imagen en una nueva pestaña
+      final blob = html.Blob([bytes], 'image/jpeg');
       final url = html.Url.createObjectUrlFromBlob(blob);
 
-      html.Url.revokeObjectUrl(url);
+      html.window.open(url, '_blank');
 
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Descarga iniciada: $fileName')));
+      // Revocar la URL después de un tiempo para liberar memoria
+      Future.delayed(
+        const Duration(minutes: 1),
+        () => html.Url.revokeObjectUrl(url),
+      );
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Imagen abierta en nueva pestaña')),
+      );
     } else {
       // En móvil, guardar la imagen y permitir verla
       try {

@@ -375,9 +375,16 @@ class DepositoChequesImpl implements DepositoChequesRepository {
 
       if (response.statusCode == 200) {
         if (response.data is List<int>) {
-          final bytes = Uint8List.fromList(response.data);
+          final bytes = Uint8List.fromList(response.data as List<int>);
 
           // Verificar que tenemos datos
+          if (bytes.isNotEmpty) {
+            return bytes;
+          } else {
+            throw Exception('La imagen recibida está vacía');
+          }
+        } else if (response.data is Uint8List) {
+          final bytes = response.data as Uint8List;
           if (bytes.isNotEmpty) {
             return bytes;
           } else {

@@ -52,17 +52,22 @@ class _ResmadoRegistroScreenState extends ConsumerState<ResmadoRegistroScreen> {
     final st = ref.read(resmadoRegistroProvider(_params));
     final errores = <String>[];
 
-    if (st.codEmpresaSeleccionada == null)
+    if (st.codEmpresaSeleccionada == null) {
       errores.add('• Seleccione una empresa.');
-    if (st.ordenSeleccionada == null)
+    }
+    if (st.ordenSeleccionada == null) {
       errores.add('• Seleccione una orden de fabricación.');
+    }
     if (st.idGrupoSeleccionado == null) errores.add('• Seleccione un grupo.');
-    if (!_horaValida(st.hraInicio))
+    if (!_horaValida(st.hraInicio)) {
       errores.add('• Ingrese Hora Inicio en formato HH:mm.');
-    if (!_horaValida(st.hraFin))
+    }
+    if (!_horaValida(st.hraFin)) {
       errores.add('• Ingrese Hora Fin en formato HH:mm.');
-    if (st.detalles.isEmpty)
+    }
+    if (st.detalles.isEmpty) {
       errores.add('• Agregue al menos un artículo al detalle.');
+    }
 
     if (errores.isNotEmpty) {
       showDialog<void>(

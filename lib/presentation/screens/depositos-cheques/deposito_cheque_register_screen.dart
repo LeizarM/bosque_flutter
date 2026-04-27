@@ -1,4 +1,6 @@
 import 'dart:io';
+import 'dart:async';
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -6,6 +8,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:bosque_flutter/core/state/depositos_cheques_provider.dart';
 import 'package:bosque_flutter/core/utils/responsive_utils_bosque.dart';
 import 'dart:typed_data';
+import 'package:universal_html/html.dart' as html;
 
 // Proveedor para almacenar los bytes de la imagen (necesario para web)
 final imageBytesProvider = StateProvider<Uint8List?>((ref) => null);
@@ -25,6 +28,10 @@ class DepositoChequeRegisterScreen extends ConsumerStatefulWidget {
 
 class _DepositoChequeRegisterScreenState
     extends ConsumerState<DepositoChequeRegisterScreen> {
+  bool _isDragging = false;
+  int _dragCounter = 0;
+  final List<StreamSubscription> _dragSubs = [];
+
   @override
   void initState() {
     super.initState();
@@ -32,6 +39,64 @@ class _DepositoChequeRegisterScreenState
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(depositosChequesRegisterProvider.notifier).clearState();
     });
+
+    if (kIsWeb) {
+      _dragSubs.add(
+        html.document.onDragEnter.listen((event) {
+          event.preventDefault();
+          _dragCounter++;
+          if (_dragCounter == 1 && mounted) {
+            setState(() => _isDragging = true);
+          }
+        }),
+      );
+      _dragSubs.add(
+        html.document.onDragOver.listen((event) {
+          event.preventDefault();
+        }),
+      );
+      _dragSubs.add(
+        html.document.onDragLeave.listen((event) {
+          _dragCounter--;
+          if (_dragCounter <= 0 && mounted) {
+            _dragCounter = 0;
+            setState(() => _isDragging = false);
+          }
+        }),
+      );
+      _dragSubs.add(
+        html.document.onDrop.listen((event) async {
+          event.preventDefault();
+          _dragCounter = 0;
+          if (mounted) setState(() => _isDragging = false);
+          final files = event.dataTransfer.files;
+          if (files != null && files.isNotEmpty) {
+            final file = files[0];
+            if (file.type.startsWith('image/')) {
+              final reader = html.FileReader();
+              reader.readAsDataUrl(file);
+              await reader.onLoad.first;
+              final dataUrl = reader.result as String;
+              final base64Str = dataUrl.split(',').last;
+              final bytes = base64Decode(base64Str);
+              if (mounted) {
+                ref
+                    .read(imageBytesProvider.notifier)
+                    .state = Uint8List.fromList(bytes);
+              }
+            }
+          }
+        }),
+      );
+    }
+  }
+
+  @override
+  void dispose() {
+    for (final sub in _dragSubs) {
+      sub.cancel();
+    }
+    super.dispose();
   }
 
   @override
@@ -773,13 +838,17 @@ class _DepositoChequeRegisterScreenState
     Uint8List? imageBytes,
     WidgetRef ref,
   ) {
-    final imageHeight = ResponsiveUtilsBosque.getResponsiveValue(
+    final dropZoneHeight = ResponsiveUtilsBosque.getResponsiveValue(
       context: context,
-      defaultValue: 120.0,
-      mobile: 100.0,
-      tablet: 120.0,
-      desktop: 150.0,
+      defaultValue: 220.0,
+      mobile: 180.0,
+      tablet: 220.0,
+      desktop: 300.0,
     );
+    final maxImageHeight = MediaQuery.of(context).size.height * 0.8;
+    final hasImage =
+        (kIsWeb && imageBytes != null) ||
+        (!kIsWeb && state.imagenDeposito != null);
 
     // Función para seleccionar/capturar imagen desde móvil o web
     Future<void> pickImage(ImageSource source) async {
@@ -840,41 +909,62 @@ class _DepositoChequeRegisterScreenState
       );
     }
 
+    final colorScheme = Theme.of(context).colorScheme;
+    final borderRadius = ResponsiveUtilsBosque.getResponsiveValue(
+      context: context,
+      defaultValue: 8.0,
+      mobile: 6.0,
+      desktop: 10.0,
+    );
+
+    final decoration = BoxDecoration(
+      color:
+          _isDragging
+              ? colorScheme.primary.withValues(alpha: 0.08)
+              : colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+      border: Border.all(
+        color: _isDragging ? colorScheme.primary : colorScheme.outline,
+        width: _isDragging ? 2.5 : 1.5,
+      ),
+      borderRadius: BorderRadius.circular(borderRadius),
+    );
+
+    void onTap() {
+      if (!kIsWeb && ResponsiveUtilsBosque.isMobile(context)) {
+        showImageSourceActionSheet(context);
+      } else {
+        pickImage(ImageSource.gallery);
+      }
+    }
+
+    if (hasImage) {
+      return GestureDetector(
+        onTap: onTap,
+        child: ConstrainedBox(
+          constraints: BoxConstraints(maxHeight: maxImageHeight),
+          child: Container(
+            width: double.infinity,
+            decoration: decoration,
+            child: _buildImageContent(
+              context,
+              state,
+              notifier,
+              imageBytes,
+              ref,
+            ),
+          ),
+        ),
+      );
+    }
+
     return GestureDetector(
-      onTap: () {
-        if (!kIsWeb && ResponsiveUtilsBosque.isMobile(context)) {
-          // En móvil, mostramos el modal para elegir entre cámara y galería
-          showImageSourceActionSheet(context);
-        } else {
-          // En web o escritorio, solo permitimos seleccionar de la galería
-          pickImage(ImageSource.gallery);
-        }
-      },
-      child: DottedBorder(
-        color: Theme.of(context).colorScheme.outline,
-        dashPattern: const [6, 3],
-        borderType: BorderType.RRect,
-        radius: Radius.circular(
-          ResponsiveUtilsBosque.getResponsiveValue(
-            context: context,
-            defaultValue: 8.0,
-            mobile: 6.0,
-            desktop: 10.0,
-          ),
-        ),
-        child: Container(
-          height: imageHeight,
-          width: double.infinity,
-          alignment: Alignment.center,
-          child: _buildImageContent(
-            context,
-            state,
-            notifier,
-            imageHeight,
-            imageBytes,
-            ref,
-          ),
-        ),
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        height: dropZoneHeight,
+        width: double.infinity,
+        decoration: decoration,
+        child: _buildImageContent(context, state, notifier, imageBytes, ref),
       ),
     );
   }
@@ -884,7 +974,6 @@ class _DepositoChequeRegisterScreenState
     BuildContext context,
     dynamic state,
     dynamic notifier,
-    double imageHeight,
     Uint8List? imageBytes,
     WidgetRef ref,
   ) {
@@ -894,10 +983,11 @@ class _DepositoChequeRegisterScreenState
     if (kIsWeb && imageBytes != null) {
       return Stack(
         children: [
-          Center(
+          Padding(
+            padding: const EdgeInsets.all(12.0),
             child: Image.memory(
               imageBytes,
-              height: imageHeight,
+              width: double.infinity,
               fit: BoxFit.contain,
             ),
           ),
@@ -912,11 +1002,11 @@ class _DepositoChequeRegisterScreenState
               child: CircleAvatar(
                 radius: ResponsiveUtilsBosque.getResponsiveValue(
                   context: context,
-                  defaultValue: 14.0,
-                  mobile: 12.0,
-                  desktop: 16.0,
+                  defaultValue: 16.0,
+                  mobile: 14.0,
+                  desktop: 18.0,
                 ),
-                backgroundColor: Theme.of(context).colorScheme.surface,
+                backgroundColor: Theme.of(context).colorScheme.errorContainer,
                 child: Icon(
                   Icons.close,
                   size: ResponsiveUtilsBosque.getResponsiveValue(
@@ -925,7 +1015,7 @@ class _DepositoChequeRegisterScreenState
                     mobile: 16.0,
                     desktop: 20.0,
                   ),
-                  color: Colors.red,
+                  color: Theme.of(context).colorScheme.onErrorContainer,
                 ),
               ),
             ),
@@ -937,10 +1027,11 @@ class _DepositoChequeRegisterScreenState
     else if (!kIsWeb && state.imagenDeposito != null) {
       return Stack(
         children: [
-          Center(
+          Padding(
+            padding: const EdgeInsets.all(12.0),
             child: Image.file(
               state.imagenDeposito!,
-              height: imageHeight,
+              width: double.infinity,
               fit: BoxFit.contain,
             ),
           ),
@@ -952,11 +1043,11 @@ class _DepositoChequeRegisterScreenState
               child: CircleAvatar(
                 radius: ResponsiveUtilsBosque.getResponsiveValue(
                   context: context,
-                  defaultValue: 14.0,
-                  mobile: 12.0,
-                  desktop: 16.0,
+                  defaultValue: 16.0,
+                  mobile: 14.0,
+                  desktop: 18.0,
                 ),
-                backgroundColor: Theme.of(context).colorScheme.surface,
+                backgroundColor: Theme.of(context).colorScheme.errorContainer,
                 child: Icon(
                   Icons.close,
                   size: ResponsiveUtilsBosque.getResponsiveValue(
@@ -965,7 +1056,7 @@ class _DepositoChequeRegisterScreenState
                     mobile: 16.0,
                     desktop: 20.0,
                   ),
-                  color: Colors.red,
+                  color: Theme.of(context).colorScheme.onErrorContainer,
                 ),
               ),
             ),
@@ -975,54 +1066,79 @@ class _DepositoChequeRegisterScreenState
     }
     // Si no hay imagen seleccionada
     else {
+      final dropColorScheme = Theme.of(context).colorScheme;
+      final iconColor = _isDragging ? dropColorScheme.primary : Colors.grey;
       return Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                Icons.cloud_upload,
-                size: ResponsiveUtilsBosque.getResponsiveValue(
-                  context: context,
-                  defaultValue: 36.0,
-                  mobile: 28.0,
-                  desktop: 40.0,
-                ),
-                color: Colors.grey,
-              ),
-              // Solo en móvil, mostramos el icono de la cámara
-              if (isMobile) ...[
-                SizedBox(width: 16),
-                Icon(
-                  Icons.camera_alt,
-                  size: ResponsiveUtilsBosque.getResponsiveValue(
-                    context: context,
-                    defaultValue: 36.0,
-                    mobile: 28.0,
-                    desktop: 40.0,
-                  ),
-                  color: Colors.grey,
-                ),
-              ],
-            ],
+          AnimatedSwitcher(
+            duration: const Duration(milliseconds: 200),
+            child:
+                _isDragging
+                    ? Icon(
+                      Icons.file_download_outlined,
+                      key: const ValueKey('drag_icon'),
+                      size: ResponsiveUtilsBosque.getResponsiveValue(
+                        context: context,
+                        defaultValue: 64.0,
+                        mobile: 44.0,
+                        desktop: 80.0,
+                      ),
+                      color: dropColorScheme.primary,
+                    )
+                    : Row(
+                      key: const ValueKey('normal_icon'),
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.cloud_upload_outlined,
+                          size: ResponsiveUtilsBosque.getResponsiveValue(
+                            context: context,
+                            defaultValue: 52.0,
+                            mobile: 36.0,
+                            desktop: 64.0,
+                          ),
+                          color: iconColor,
+                        ),
+                        if (isMobile) ...[
+                          const SizedBox(width: 16),
+                          Icon(
+                            Icons.camera_alt_outlined,
+                            size: ResponsiveUtilsBosque.getResponsiveValue(
+                              context: context,
+                              defaultValue: 52.0,
+                              mobile: 36.0,
+                              desktop: 64.0,
+                            ),
+                            color: iconColor,
+                          ),
+                        ],
+                      ],
+                    ),
           ),
-          SizedBox(height: 8),
-          Text(
-            isMobile
-                ? 'Toca para capturar o seleccionar imagen'
-                : 'Arrastra y suelta tu imagen aquí o haz clic para seleccionar',
-            textAlign: TextAlign.center,
+          const SizedBox(height: 14),
+          AnimatedDefaultTextStyle(
+            duration: const Duration(milliseconds: 200),
             style: TextStyle(
               fontSize: ResponsiveUtilsBosque.getResponsiveValue(
                 context: context,
                 defaultValue: 14.0,
                 mobile: 12.0,
-                desktop: 14.0,
+                desktop: 15.0,
               ),
+              fontWeight: _isDragging ? FontWeight.w600 : FontWeight.normal,
+              color: _isDragging ? dropColorScheme.primary : null,
+            ),
+            child: Text(
+              _isDragging
+                  ? 'Suelta la imagen aquí'
+                  : isMobile
+                  ? 'Toca para capturar o seleccionar imagen'
+                  : 'Arrastra y suelta tu imagen aquí o haz clic para seleccionar',
+              textAlign: TextAlign.center,
             ),
           ),
-          SizedBox(height: 4),
+          const SizedBox(height: 6),
           Text(
             'Formatos permitidos: JPG, JPEG, PNG. Tamaño máximo: 5MB',
             textAlign: TextAlign.center,
