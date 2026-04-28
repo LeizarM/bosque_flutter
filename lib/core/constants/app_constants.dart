@@ -10,7 +10,7 @@ class AppConstants {
 
   static const String _compiledBaseUrlDev = String.fromEnvironment(
     'BASE_URL_DEV',
-    defaultValue: 'http://192.168.3.107:9223',
+    defaultValue: 'http://192.168.3.108:9223',
   );
 
   // Selector inteligente de URL base
@@ -312,6 +312,9 @@ class AppConstants {
   static const String eliminarAseguradora = '/rrhh/eliminarAseguradora';
   static const String obtenerTipoSeguro = '/rrhh/tipoSeguro';
   static const String obtenerHaberBasico = '/rrhh/obtenerHaberBasico';
+  //ENDPOINTS AREA
+  static const String obtenerArea = '/rrhh/obtenerArea';
+  static const String registroArea = '/rrhh/registrarArea';
 
   // ═══════════════════════════════════════════════════════════════════════════════
   // RUTAS MODULO DE PAGOS AL EXTRANJERO
@@ -437,7 +440,17 @@ class AppConstants {
   // RUTAS MODULO: PERMISOS / VACACION
   // ═══════════════════════════════════════════════════════════════════════════════
   static const String vacDiasDisponibles = '/vacacion/diasDisponibles';
-
+  // ═══════════════════════════════════════════════════════════════════════════════
+  // RUTAS MODULO: ANTICIPOS
+  // ═══════════════════════════════════════════════════════════════════════════════
+  static const String antListarAnticipoSAP = '/anticipo/listarAnticiposSAP';
+  static const String antListarAnticiposBosque = '/anticipo/obtenerAnticipos';
+  static const String antListarAnticipoDetallado =
+      '/anticipo/obtenerAnticipoDetalle';
+  static const String antAnticiposUnificados = '/anticipo/listAnticipos';
+  static const String antTipoAsignacion = '/anticipo/tipoAsigAnticipo';
+  static const String antRegistrarAnticipo = '/anticipo/registrarAnticipo';
+  static const String antAnticipoNoAsignado = '/anticipo/anticipoNoAsignado';
   // ── TPROD: Lote de Produccion ────────────────────────────────────────────────────────────
 
   //Para cargar permisos de botones por usuario

@@ -22,6 +22,7 @@ class CargoModel {
   int codEmpresaPlanilla;
   int codCargoPlanilla;
   String descripcionPlanilla;
+  int codArea;
 
   //variables de apoyo
   int nivel;
@@ -61,6 +62,7 @@ class CargoModel {
     required this.codEmpresaPlanilla,
     required this.codCargoPlanilla,
     required this.descripcionPlanilla,
+    required this.codArea,
 
     //variables de apoyo
     required this.nivel,
@@ -99,6 +101,7 @@ class CargoModel {
     codEmpresaPlanilla: json["codEmpresaPlanilla"] ?? 0,
     codCargoPlanilla: json["codCargoPlanilla"] ?? 0,
     descripcionPlanilla: json["descripcionPlanilla"] ?? '',
+    codArea: json["codArea"] ?? 0,
     //variables de apoyo
     nivel: json["nivel"] ?? 0,
     tieneEmpleadosActivos: json["tieneEmpleadosActivos"] ?? 0,
@@ -142,6 +145,7 @@ class CargoModel {
     "codEmpresaPlanilla": codEmpresaPlanilla,
     "codCargoPlanilla": codCargoPlanilla,
     "descripcionPlanilla": descripcionPlanilla,
+    "codArea": codArea,
     //variables de apoyo
     "nivel": nivel,
     "tieneEmpleadosActivos": tieneEmpleadosActivos,
@@ -157,8 +161,7 @@ class CargoModel {
     "resumenCompleto": resumenCompleto,
     "estadoPadre": estadoPadre,
     "esVisible": esVisible,
-    "items":
-        items?.map((item) => item.toJson()).toList(),
+    "items": items?.map((item) => item.toJson()).toList(),
     "codCargoPadreOriginal": codCargoPadreOriginal,
     "codEmpleado": codEmpleado,
     "nombreCompleto": nombreCompleto,
@@ -200,6 +203,7 @@ class CargoModel {
     codCargoPadreOriginal: codCargoPadreOriginal,
     codEmpleado: codEmpleado,
     nombreCompleto: nombreCompleto,
+    codArea: codArea,
   );
 
   // Método factory para convertir de Entity a Model
@@ -219,6 +223,7 @@ class CargoModel {
     codEmpresaPlanilla: entity.codEmpresaPlanilla,
     codCargoPlanilla: entity.codCargoPlanilla,
     descripcionPlanilla: entity.descripcionPlanilla,
+    codArea: entity.codArea,
     //variables de apoyo
     nivel: entity.nivel,
     tieneEmpleadosActivos: entity.tieneEmpleadosActivos,

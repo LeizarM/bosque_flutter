@@ -1,9 +1,12 @@
 import 'package:bosque_flutter/core/state/rrhh_provider.dart';
 import 'package:bosque_flutter/core/state/user_provider.dart';
 import 'package:bosque_flutter/core/utils/responsive_utils_bosque.dart';
+import 'package:bosque_flutter/domain/entities/area_entity.dart';
 import 'package:bosque_flutter/domain/entities/cargo_entity.dart';
 import 'package:bosque_flutter/domain/entities/cargo_sucursal_entity.dart';
 import 'package:bosque_flutter/domain/entities/sucursal_entity.dart';
+import 'package:bosque_flutter/presentation/widgets/estructura-organizacional/form_area.dart';
+import 'package:bosque_flutter/presentation/widgets/registro_empleado/registro_empleado_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -40,6 +43,7 @@ class _EditarCargoFormState extends ConsumerState<EditarCargoForm>
   bool _estadoActivo = true;
   int? _nivelJerarquicoSeleccionado; // Nivel jerárquico seleccionado
   String _busquedaPadre = ''; // 🆕 Query de búsqueda
+  int? _codAreaSeleccionada;
 
   @override
   void initState() {
@@ -59,6 +63,8 @@ class _EditarCargoFormState extends ConsumerState<EditarCargoForm>
     // Inicializar nivel jerárquico solo si es mayor a 0
     _nivelJerarquicoSeleccionado =
         widget.cargo.codNivel > 0 ? widget.cargo.codNivel : null;
+    _codAreaSeleccionada =
+        widget.cargo.codArea > 0 ? widget.cargo.codArea : null; // 🆕 AGREGAR
   }
 
   @override
@@ -285,6 +291,68 @@ class _EditarCargoFormState extends ConsumerState<EditarCargoForm>
             ),
           ),
           const SizedBox(height: 16),
+
+          // editar_cargo_form.dart -> Método _buildEstadoTab()
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // CABECERA DEL CARD: Título + Botón de acción pequeño
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.category,
+                            color: Theme.of(context).primaryColor,
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            'Área',
+                            style: Theme.of(context).textTheme.titleMedium
+                                ?.copyWith(fontWeight: FontWeight.bold),
+                          ),
+                        ],
+                      ),
+                      // El widget ahora vive aquí para el botón de "Nueva"
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+
+                  // EL DROPDOWN
+                  CustomDropdown<AreaEntity>(
+                    asyncValue: ref.watch(
+                      areasPorEmpresaProvider(widget.codEmpresa),
+                    ),
+                    label: 'Seleccionar área',
+                    currentValue: _codAreaSeleccionada?.toString(),
+                    getName: (a) => a.nombreArea,
+                    getCode: (a) => a.codArea.toString(),
+                    onChanged: (val) {
+                      setState(
+                        () =>
+                            _codAreaSeleccionada =
+                                val != null ? int.tryParse(val) : null,
+                      );
+                    },
+                    validator: (_) => null,
+                  ),
+
+                  // EL FORMULARIO EXPANDIBLE (Ahora dentro del Card y debajo del Dropdown)
+                  NuevaAreaExpandable(
+                    codEmpresa: widget.codEmpresa,
+                    onAreaCreada: (codArea) {
+                      setState(() => _codAreaSeleccionada = codArea);
+                    },
+                  ),
+                ],
+              ),
+            ),
+          ),
+          // FIN BLOQUE 🆕
 
           // Estado actual
           Card(
@@ -1645,6 +1713,7 @@ class _EditarCargoFormState extends ConsumerState<EditarCargoForm>
         // Usar codCargo del cargo seleccionado como nuevo padre
         nuevoCargoPadre: _nuevoCargoPadre?.codCargo,
         esNuevo: false,
+        codArea: _codAreaSeleccionada, // 🆕 AGREGAR
       );
 
       widget.onGuardar(data);
@@ -1663,6 +1732,7 @@ class CargoEditData {
   final int? nuevoCargoPadre;
   final int? nuevoNivelJerarquico; // Nuevo nivel jerárquico (codNivel)
   final bool esNuevo; // true si es un cargo nuevo
+  final int? codArea;
 
   CargoEditData({
     required this.codCargo,
@@ -1672,6 +1742,7 @@ class CargoEditData {
     this.nuevoCargoPadre,
     this.nuevoNivelJerarquico,
     this.esNuevo = false,
+    this.codArea,
   });
 
   bool get cambioEstado => true;

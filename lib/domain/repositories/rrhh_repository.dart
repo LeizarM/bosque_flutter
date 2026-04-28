@@ -1,3 +1,5 @@
+import 'package:bosque_flutter/data/models/area_model.dart';
+import 'package:bosque_flutter/domain/entities/area_entity.dart';
 import 'package:bosque_flutter/domain/entities/cargo_entity.dart';
 import 'package:bosque_flutter/domain/entities/empresa_entity.dart';
 import 'package:bosque_flutter/domain/entities/sucursal_entity.dart';
@@ -33,4 +35,8 @@ abstract class RRHHRepository {
 
   //Para obtener los empleados asignados a un cargo
   Future<List<CargoEntity>> obtenerEmpleadosXCargo(int codCargo);
+  //obtener areas por empresa
+  Future<List<AreaEntity>> obtenerArea(int codEmpresa);
+  //registrar area por empresa
+  Future<AreaResponse> registrarArea(AreaEntity area);
 }

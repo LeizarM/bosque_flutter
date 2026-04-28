@@ -1,5 +1,6 @@
 import 'package:bosque_flutter/data/repositories/rrhh_repository_impl.dart';
 import 'package:bosque_flutter/data/repositories/nivel_jerarquico_impl.dart';
+import 'package:bosque_flutter/domain/entities/area_entity.dart';
 import 'package:bosque_flutter/domain/entities/cargo_entity.dart';
 import 'package:bosque_flutter/domain/entities/cargo_sucursal_entity.dart';
 import 'package:bosque_flutter/domain/entities/descuento_empleado_entity.dart';
@@ -309,3 +310,18 @@ final descuentosEmpleadoProvider = FutureProvider.autoDispose
         anio: params.$3,
       );
     });
+// Al final del archivo rrhh_provider.dart
+final areasPorEmpresaProvider = FutureProvider.family<List<AreaEntity>, int>((
+  ref,
+  codEmpresa,
+) async {
+  final repository = ref.watch(rrhhRepositoryProvider);
+  // Aquí llamarás a tu futuro método del repositorio
+  return await repository.obtenerArea(codEmpresa);
+  //return []; // Esqueleto de momento
+});
+// Provider para la acción de registrar área
+final registrarAreaProvider = Provider((ref) {
+  final repository = ref.watch(rrhhRepositoryProvider);
+  return (AreaEntity area) => repository.registrarArea(area);
+});

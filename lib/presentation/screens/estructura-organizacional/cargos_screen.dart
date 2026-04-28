@@ -2,10 +2,13 @@ import 'package:bosque_flutter/core/constants/app_constants.dart';
 import 'package:bosque_flutter/core/state/rrhh_provider.dart';
 import 'package:bosque_flutter/core/state/user_provider.dart';
 import 'package:bosque_flutter/core/utils/responsive_utils_bosque.dart';
+import 'package:bosque_flutter/domain/entities/area_entity.dart';
 import 'package:bosque_flutter/domain/entities/cargo_entity.dart';
 import 'package:bosque_flutter/presentation/screens/estructura-organizacional/organigrama_custom.dart';
 import 'package:bosque_flutter/presentation/widgets/estructura-organizacional/cargo_actions_bottom_sheet.dart';
 import 'package:bosque_flutter/presentation/widgets/estructura-organizacional/editar_cargo_form.dart';
+import 'package:bosque_flutter/presentation/widgets/estructura-organizacional/form_area.dart';
+import 'package:bosque_flutter/presentation/widgets/registro_empleado/registro_empleado_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -116,6 +119,7 @@ class _CargosScreenState extends ConsumerState<CargosScreen> {
               codCargoPadreOriginal: cargo.codCargoPadreOriginal,
               codEmpleado: cargo.codEmpleado,
               nombreCompleto: cargo.nombreCompleto,
+              codArea: cargo.codArea,
             ),
           );
         }
@@ -183,6 +187,7 @@ class _CargosScreenState extends ConsumerState<CargosScreen> {
       codCargoPadreOriginal: cargo.codCargoPadreOriginal,
       codEmpleado: cargo.codEmpleado,
       nombreCompleto: cargo.nombreCompleto,
+      codArea: cargo.codArea,
     );
   }
 
@@ -798,6 +803,8 @@ class _CargosScreenState extends ConsumerState<CargosScreen> {
         codCargoPadreOriginal: data.nuevoCargoPadre ?? 0,
         codEmpleado: 0,
         nombreCompleto: '',
+        codArea:
+            data.codArea ?? 0, // 🆕 CAMBIAR (era codArea: 0 fijo o no estaba)
       );
 
       // Llamar al repositorio
@@ -945,6 +952,7 @@ class _CargosScreenState extends ConsumerState<CargosScreen> {
             data.nuevoCargoPadre ?? cargoOriginal.codCargoPadreOriginal,
         codEmpleado: cargoOriginal.codEmpleado,
         nombreCompleto: cargoOriginal.nombreCompleto,
+        codArea: data.codArea ?? cargoOriginal.codArea, // 🆕 CAMBIAR
       );
 
       // Llamar al repositorio
@@ -1020,6 +1028,7 @@ class _CrearCargoDialogState extends ConsumerState<_CrearCargoDialog> {
   late final TextEditingController _posicionController;
   late bool _esRaiz; // Determinado por si hay padre predefinido
   int? _nivelJerarquicoSeleccionado; // Nivel jerárquico seleccionado
+  int? _codAreaSeleccionada; // 🆕 AGREGAR
 
   // 🔄 Sugerencias de cargos REALES inactivos similares
   List<CargoEntity> _cargosInactivosSimilares = [];
@@ -1356,6 +1365,34 @@ class _CrearCargoDialogState extends ConsumerState<_CrearCargoDialog> {
                 },
               ),
               const SizedBox(height: 16),
+              // 🆕 AGREGAR BLOQUE COMPLETO
+              CustomDropdown<AreaEntity>(
+                asyncValue: ref.watch(
+                  areasPorEmpresaProvider(widget.codEmpresa),
+                ),
+                label: 'Área',
+                currentValue: _codAreaSeleccionada?.toString(),
+                getName: (a) => a.nombreArea,
+                getCode: (a) => a.codArea.toString(),
+                onChanged: (val) {
+                  setState(() {
+                    _codAreaSeleccionada =
+                        val != null ? int.tryParse(val) : null;
+                  });
+                },
+                validator: (_) => null,
+              ),
+              //const SizedBox(height: 16),
+              // Widget compacto para crear nueva área (el que corregimos antes)
+              NuevaAreaExpandable(
+                codEmpresa: widget.codEmpresa,
+                onAreaCreada: (codArea) {
+                  setState(() {
+                    _codAreaSeleccionada = codArea;
+                  });
+                },
+              ),
+              // FIN BLOQUE 🆕
 
               // Tipo de cargo (solo si NO hay padre predefinido)
               if (widget.cargoPadre == null) ...[
@@ -1480,6 +1517,7 @@ class _CrearCargoDialogState extends ConsumerState<_CrearCargoDialog> {
         nuevoCargoPadre: codPadre,
         nuevoNivelJerarquico: _nivelJerarquicoSeleccionado,
         esNuevo: true,
+        codArea: _codAreaSeleccionada, // 🆕 AGREGAR
       );
 
       widget.onGuardar(data);
@@ -1604,6 +1642,7 @@ class _CrearCargoDialogState extends ConsumerState<_CrearCargoDialog> {
                       codCargoPadreOriginal: cargo.codCargoPadreOriginal,
                       codEmpleado: cargo.codEmpleado,
                       nombreCompleto: cargo.nombreCompleto,
+                      codArea: cargo.codArea,
                     );
 
                     final repository = ref.read(rrhhRepositoryProvider);

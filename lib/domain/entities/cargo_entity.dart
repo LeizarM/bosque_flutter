@@ -14,6 +14,7 @@ class CargoEntity {
   int codEmpresaPlanilla;
   int codCargoPlanilla;
   String descripcionPlanilla;
+  int codArea;
 
   // Variables de apoyo
   int nivel;
@@ -54,6 +55,7 @@ class CargoEntity {
     required this.codEmpresaPlanilla,
     required this.codCargoPlanilla,
     required this.descripcionPlanilla,
+    required this.codArea,
 
     //variables de apoyo
     required this.nivel,

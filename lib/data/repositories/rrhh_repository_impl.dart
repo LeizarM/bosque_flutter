@@ -1,10 +1,12 @@
 import 'package:bosque_flutter/core/constants/app_constants.dart';
 import 'package:bosque_flutter/core/network/dio_client.dart';
+import 'package:bosque_flutter/data/models/area_model.dart';
 import 'package:bosque_flutter/data/models/cargo_model.dart';
 import 'package:bosque_flutter/data/models/cargo_sucursal_model.dart';
 import 'package:bosque_flutter/data/models/descuento_empleado_model.dart';
 import 'package:bosque_flutter/data/models/empresa_model.dart';
 import 'package:bosque_flutter/data/models/sucursal_model.dart';
+import 'package:bosque_flutter/domain/entities/area_entity.dart';
 import 'package:bosque_flutter/domain/entities/cargo_entity.dart';
 import 'package:bosque_flutter/domain/entities/cargo_sucursal_entity.dart';
 import 'package:bosque_flutter/domain/entities/descuento_empleado_entity.dart';
@@ -372,6 +374,70 @@ class RRHHRepositoryImpl implements RRHHRepository {
       throw Exception(errorMessage);
     } catch (e) {
       throw Exception('Error al obtener descuentos: ${e.toString()}');
+    }
+  }
+
+  //AREA
+  @override
+  Future<List<AreaEntity>> obtenerArea(int codEmpresa) async {
+    try {
+      final response = await _dio.post(
+        AppConstants.obtenerArea,
+        data: {'codEmpresa': codEmpresa},
+      );
+
+      if (response.statusCode == 200 && response.data != null) {
+        final rawData = response.data;
+        // El controller envuelve en ApiResponse con campo 'data'
+        final data = rawData is List ? rawData : (rawData['data'] ?? []);
+        if (data is! List) return [];
+        final items =
+            (data as List<dynamic>)
+                .map((json) => AreaModel.fromJson(json))
+                .toList();
+        return items.map((model) => model.toEntity()).toList();
+      } else {
+        return [];
+      }
+    } on DioException catch (e) {
+      String errorMessage = 'Error de conexión: ${e.message}';
+      if (e.response != null && e.response!.data != null) {
+        errorMessage = 'Error del servidor: ${e.response!.statusCode}';
+      }
+      throw Exception(errorMessage);
+    } catch (e) {
+      throw Exception('Error al obtener áreas: ${e.toString()}');
+    }
+  }
+
+  // Recuerda importar AreaResponse
+  // import 'package:bosque_flutter/data/models/area_model.dart';
+
+  @override
+  Future<AreaResponse> registrarArea(AreaEntity area) async {
+    final model = AreaModel.fromEntity(area);
+
+    try {
+      final response = await _dio.post(
+        AppConstants.registroArea,
+        data: model.toJson(),
+      );
+
+      // Mapeamos el JSON de Spring Boot directamente a tu AreaResponse
+      return AreaResponse.fromJson(response.data);
+    } on DioException catch (e) {
+      String errorMessage = 'Error de conexión: ${e.message}';
+      if (e.response != null && e.response!.data != null) {
+        // Si el backend mandó un error estructurado, intentar leerlo
+        try {
+          return AreaResponse.fromJson(e.response!.data);
+        } catch (_) {
+          errorMessage = 'Error del servidor: ${e.response!.statusCode}';
+        }
+      }
+      throw Exception(errorMessage);
+    } catch (e) {
+      throw Exception('Error inesperado al registrar áreas: ${e.toString()}');
     }
   }
 }
