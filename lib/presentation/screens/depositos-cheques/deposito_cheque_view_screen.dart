@@ -1,3 +1,5 @@
+import 'dart:ui' show FontFeature;
+
 import 'package:bosque_flutter/core/utils/pdf_service.dart';
 import 'package:bosque_flutter/domain/entities/banco_cuenta_entity.dart';
 import 'package:bosque_flutter/presentation/widgets/shared/permission_widget.dart';
@@ -799,6 +801,54 @@ class _DepositosTableState extends ConsumerState<_DepositosTable> {
     super.dispose();
   }
 
+  Widget _buildEstadoBadge(String estado, bool isMobile) {
+    Color bgColor;
+    Color textColor;
+    IconData icon;
+
+    switch (estado.toLowerCase()) {
+      case 'verificado':
+        bgColor = const Color(0xFFD4EDDA);
+        textColor = const Color(0xFF155724);
+        icon = Icons.check_circle_outline;
+        break;
+      case 'rechazado':
+        bgColor = const Color(0xFFF8D7DA);
+        textColor = const Color(0xFF721C24);
+        icon = Icons.cancel_outlined;
+        break;
+      case 'pendiente':
+      default:
+        bgColor = const Color(0xFFFFF3CD);
+        textColor = const Color(0xFF856404);
+        icon = Icons.hourglass_empty;
+        break;
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: bgColor,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 13, color: textColor),
+          const SizedBox(width: 4),
+          Text(
+            estado.isEmpty ? 'Pendiente' : estado,
+            style: TextStyle(
+              fontSize: isMobile ? 11 : 12,
+              fontWeight: FontWeight.w600,
+              color: textColor,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _emptyTablePlaceholder() {
     final colorScheme = Theme.of(context).colorScheme;
     return Padding(
@@ -832,11 +882,13 @@ class _DepositosTableState extends ConsumerState<_DepositosTable> {
       'Cliente',
       'Banco',
       'Empresa',
+      'Vendedor',
       'Importe',
       'Moneda',
       'Fecha Ingreso',
       'Num. Transaccion',
       'Estado',
+      'Deposito Registrado Por',
       'Acciones',
     ];
     final page = state.page;
@@ -914,77 +966,271 @@ class _DepositosTableState extends ConsumerState<_DepositosTable> {
                                 .map(
                                   (d) => DataRow(
                                     cells: [
+                                      // ID
                                       DataCell(
-                                        Text(
-                                          d.idDeposito.toString(),
-                                          style: TextStyle(
-                                            fontSize: isMobile ? 12 : null,
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 8,
+                                            vertical: 4,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color:
+                                                colorScheme
+                                                    .surfaceContainerHighest,
+                                            borderRadius: BorderRadius.circular(
+                                              6,
+                                            ),
+                                          ),
+                                          child: Text(
+                                            '#${d.idDeposito}',
+                                            style: TextStyle(
+                                              fontSize: isMobile ? 11 : 13,
+                                              fontWeight: FontWeight.w600,
+                                              color:
+                                                  colorScheme.onSurfaceVariant,
+                                            ),
                                           ),
                                         ),
                                       ),
+                                      // Cliente
                                       DataCell(
-                                        Text(
-                                          d.codCliente,
-                                          style: TextStyle(
-                                            fontSize: isMobile ? 12 : null,
+                                        SizedBox(
+                                          width: isDesktop ? 130 : 100,
+                                          child: Text(
+                                            d.codCliente,
+                                            style: TextStyle(
+                                              fontSize: isMobile ? 12 : 13,
+                                              fontWeight: FontWeight.w500,
+                                            ),
+                                            overflow: TextOverflow.ellipsis,
+                                            maxLines: 1,
                                           ),
                                         ),
                                       ),
+                                      // Banco
                                       DataCell(
-                                        Text(
-                                          d.nombreBanco,
-                                          style: TextStyle(
-                                            fontSize: isMobile ? 12 : null,
+                                        Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Icon(
+                                              Icons.account_balance,
+                                              size: 14,
+                                              color: colorScheme.primary
+                                                  .withValues(alpha: 0.7),
+                                            ),
+                                            const SizedBox(width: 4),
+                                            SizedBox(
+                                              width: isDesktop ? 110 : 80,
+                                              child: Text(
+                                                d.nombreBanco,
+                                                style: TextStyle(
+                                                  fontSize: isMobile ? 12 : 13,
+                                                ),
+                                                overflow: TextOverflow.ellipsis,
+                                                maxLines: 1,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      // Empresa
+                                      DataCell(
+                                        SizedBox(
+                                          width: isDesktop ? 110 : 80,
+                                          child: Text(
+                                            d.nombreEmpresa,
+                                            style: TextStyle(
+                                              fontSize: isMobile ? 12 : 13,
+                                            ),
+                                            overflow: TextOverflow.ellipsis,
+                                            maxLines: 1,
                                           ),
                                         ),
                                       ),
+                                      // Vendedor
                                       DataCell(
-                                        Text(
-                                          d.nombreEmpresa,
-                                          style: TextStyle(
-                                            fontSize: isMobile ? 12 : null,
-                                          ),
-                                        ),
+                                        d.nombreVendedor.isEmpty
+                                            ? Text(
+                                              '—',
+                                              style: TextStyle(
+                                                fontSize: isMobile ? 12 : 13,
+                                                color: colorScheme.onSurface
+                                                    .withValues(alpha: 0.35),
+                                                fontStyle: FontStyle.italic,
+                                              ),
+                                            )
+                                            : Container(
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                    horizontal: 8,
+                                                    vertical: 3,
+                                                  ),
+                                              decoration: BoxDecoration(
+                                                color:
+                                                    colorScheme
+                                                        .secondaryContainer,
+                                                borderRadius:
+                                                    BorderRadius.circular(20),
+                                              ),
+                                              child: Row(
+                                                mainAxisSize: MainAxisSize.min,
+                                                children: [
+                                                  Icon(
+                                                    Icons.person_outline,
+                                                    size: 13,
+                                                    color:
+                                                        colorScheme
+                                                            .onSecondaryContainer,
+                                                  ),
+                                                  const SizedBox(width: 4),
+                                                  ConstrainedBox(
+                                                    constraints: BoxConstraints(
+                                                      maxWidth:
+                                                          isDesktop ? 110 : 80,
+                                                    ),
+                                                    child: Text(
+                                                      d.nombreVendedor,
+                                                      style: TextStyle(
+                                                        fontSize:
+                                                            isMobile ? 11 : 12,
+                                                        color:
+                                                            colorScheme
+                                                                .onSecondaryContainer,
+                                                        fontWeight:
+                                                            FontWeight.w500,
+                                                      ),
+                                                      overflow:
+                                                          TextOverflow.ellipsis,
+                                                      maxLines: 1,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
                                       ),
+                                      // Importe
                                       DataCell(
                                         Text(
                                           d.importe.toStringAsFixed(2),
                                           style: TextStyle(
-                                            fontSize: isMobile ? 12 : null,
+                                            fontSize: isMobile ? 12 : 13,
+                                            fontWeight: FontWeight.w600,
+                                            fontFeatures: const [
+                                              FontFeature.tabularFigures(),
+                                            ],
+                                          ),
+                                          textAlign: TextAlign.right,
+                                        ),
+                                      ),
+                                      // Moneda
+                                      DataCell(
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 8,
+                                            vertical: 3,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color:
+                                                colorScheme.tertiaryContainer,
+                                            borderRadius: BorderRadius.circular(
+                                              6,
+                                            ),
+                                          ),
+                                          child: Text(
+                                            d.moneda,
+                                            style: TextStyle(
+                                              fontSize: isMobile ? 11 : 12,
+                                              fontWeight: FontWeight.bold,
+                                              color:
+                                                  colorScheme
+                                                      .onTertiaryContainer,
+                                            ),
                                           ),
                                         ),
                                       ),
+                                      // Fecha Ingreso
                                       DataCell(
-                                        Text(
-                                          d.moneda,
-                                          style: TextStyle(
-                                            fontSize: isMobile ? 12 : null,
-                                          ),
-                                        ),
+                                        d.fechaI != null
+                                            ? Row(
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: [
+                                                Icon(
+                                                  Icons.calendar_today,
+                                                  size: 13,
+                                                  color: colorScheme.onSurface
+                                                      .withValues(alpha: 0.5),
+                                                ),
+                                                const SizedBox(width: 4),
+                                                Text(
+                                                  "${d.fechaI!.day.toString().padLeft(2, '0')}/${d.fechaI!.month.toString().padLeft(2, '0')}/${d.fechaI!.year}",
+                                                  style: TextStyle(
+                                                    fontSize:
+                                                        isMobile ? 12 : 13,
+                                                  ),
+                                                ),
+                                              ],
+                                            )
+                                            : Text(
+                                              '—',
+                                              style: TextStyle(
+                                                color: colorScheme.onSurface
+                                                    .withValues(alpha: 0.35),
+                                              ),
+                                            ),
                                       ),
+                                      // Nro. Transacción
                                       DataCell(
-                                        Text(
-                                          d.fechaI != null
-                                              ? "${d.fechaI!.day.toString().padLeft(2, '0')}/${d.fechaI!.month.toString().padLeft(2, '0')}/${d.fechaI!.year}"
-                                              : '',
-                                          style: TextStyle(
-                                            fontSize: isMobile ? 12 : null,
-                                          ),
-                                        ),
+                                        d.nroTransaccion.isEmpty
+                                            ? Text(
+                                              '—',
+                                              style: TextStyle(
+                                                color: colorScheme.onSurface
+                                                    .withValues(alpha: 0.35),
+                                                fontStyle: FontStyle.italic,
+                                              ),
+                                            )
+                                            : Text(
+                                              d.nroTransaccion,
+                                              style: TextStyle(
+                                                fontSize: isMobile ? 12 : 13,
+                                                fontFamily: 'monospace',
+                                              ),
+                                            ),
                                       ),
+                                      // Estado
                                       DataCell(
-                                        Text(
-                                          d.nroTransaccion,
-                                          style: TextStyle(
-                                            fontSize: isMobile ? 12 : null,
-                                          ),
-                                        ),
-                                      ),
-                                      DataCell(
-                                        Text(
+                                        _buildEstadoBadge(
                                           d.esPendiente,
-                                          style: TextStyle(
-                                            fontSize: isMobile ? 12 : null,
+                                          isMobile,
+                                        ),
+                                      ),
+                                      // Registrado Por
+                                      DataCell(
+                                        SizedBox(
+                                          width: isDesktop ? 160 : 130,
+                                          child: Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              Icon(
+                                                Icons.badge_outlined,
+                                                size: 14,
+                                                color: colorScheme.onSurface
+                                                    .withValues(alpha: 0.45),
+                                              ),
+                                              const SizedBox(width: 4),
+                                              Expanded(
+                                                child: Text(
+                                                  d.nombreCompleto,
+                                                  style: TextStyle(
+                                                    fontSize:
+                                                        isMobile ? 12 : 13,
+                                                  ),
+                                                  overflow:
+                                                      TextOverflow.ellipsis,
+                                                  maxLines: 1,
+                                                ),
+                                              ),
+                                            ],
                                           ),
                                         ),
                                       ),

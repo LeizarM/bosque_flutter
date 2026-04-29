@@ -550,7 +550,7 @@ class _DepositosIdentificarTable extends ConsumerWidget {
                   return DataRow(
                     cells: [
                       _customDataCell(Text(d.idDeposito.toString()), 60),
-                      _customDataCell(Text(d.codCliente), 90),
+                      _customDataCell(Text(d.nombreCompleto), 90),
                       _customDataCell(Text(d.nombreEmpresa), 90),
                       _customDataCell(Text(d.nombreBanco), 200),
                       _customDataCell(Text(d.importe.toStringAsFixed(2)), 90),
@@ -1900,8 +1900,10 @@ class _ActualizacionDepositoDialogState
                                 }
                               },
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: Theme.of(context).colorScheme.primary,
-                                foregroundColor: Theme.of(context).colorScheme.onPrimary,
+                                backgroundColor:
+                                    Theme.of(context).colorScheme.primary,
+                                foregroundColor:
+                                    Theme.of(context).colorScheme.onPrimary,
                                 padding: const EdgeInsets.symmetric(
                                   horizontal: 16,
                                   vertical: 12,
@@ -1933,8 +1935,10 @@ class _ActualizacionDepositoDialogState
                                 }
                               },
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: Theme.of(context).colorScheme.primary,
-                                foregroundColor: Theme.of(context).colorScheme.onPrimary,
+                                backgroundColor:
+                                    Theme.of(context).colorScheme.primary,
+                                foregroundColor:
+                                    Theme.of(context).colorScheme.onPrimary,
                                 padding: const EdgeInsets.symmetric(
                                   horizontal: 24,
                                   vertical: 14,

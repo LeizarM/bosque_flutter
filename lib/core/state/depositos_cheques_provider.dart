@@ -196,12 +196,15 @@ class DepositosChequesNotifier extends StateNotifier<DepositosChequesState> {
         fechaFin: deposito.fechaFin,
         nombreBanco: nuevoBanco.nombreBanco, // Nuevo nombre de banco
         nombreEmpresa: deposito.nombreEmpresa,
+        nombreVendedor: deposito.nombreVendedor,
         esPendiente: deposito.esPendiente,
         numeroDeDocumentos: deposito.numeroDeDocumentos,
         fechasDeDepositos: deposito.fechasDeDepositos,
         numeroDeFacturas: deposito.numeroDeFacturas,
         totalMontos: deposito.totalMontos,
         estadoFiltro: deposito.estadoFiltro,
+        codEmpleado: deposito.codEmpleado,
+        nombreCompleto: deposito.nombreCompleto,
       );
 
       // Llamar al método existente para actualizar
@@ -499,9 +502,10 @@ class DepositosChequesNotifier extends StateNotifier<DepositosChequesState> {
       // Usar el ID pasado como parámetro para actualizaciones, 0 para nuevos registros
       final idDeposito = idDepositoActualizacion ?? 0;
 
-      // Obtener codUsuario correctamente desde userProvider
+      // Obtener codUsuario y codEmpleado correctamente desde userProvider
       final user = ref.read(userProvider);
       final codUsuario = user?.codUsuario ?? 0;
+      final codEmpleado = user?.codEmpleado ?? 0;
 
       final deposito = DepositoChequeEntity(
         idDeposito: idDeposito,
@@ -516,18 +520,21 @@ class DepositosChequesNotifier extends StateNotifier<DepositosChequesState> {
         fechaI: null, // Enviar como null
         nroTransaccion: '',
         obs: state.obs, // Usar las observaciones guardadas en el estado
-        audUsuario: codUsuario, // <-- Aquí se llena correctamente
+        codEmpleado: codEmpleado,
+        audUsuario: codUsuario,
         codBanco: state.bancoSeleccionado?.codBanco ?? 0,
         fechaInicio: DateTime.now(),
         fechaFin: DateTime.now(),
         nombreBanco: state.bancoSeleccionado?.nombreBanco ?? '',
         nombreEmpresa: state.empresaSeleccionada?.nombre ?? '',
+        nombreVendedor: '',
         esPendiente: '',
         numeroDeDocumentos: state.notasSeleccionadas.length.toString(),
         fechasDeDepositos: '',
         numeroDeFacturas: '',
         totalMontos: '',
         estadoFiltro: '',
+        nombreCompleto: '',
       );
 
       bool result = false;
@@ -937,12 +944,15 @@ class DepositosChequesNotifier extends StateNotifier<DepositosChequesState> {
         fechaFin: deposito.fechaFin,
         nombreBanco: deposito.nombreBanco,
         nombreEmpresa: deposito.nombreEmpresa,
+        nombreVendedor: deposito.nombreVendedor,
         esPendiente: deposito.esPendiente,
         numeroDeDocumentos: deposito.numeroDeDocumentos,
         fechasDeDepositos: deposito.fechasDeDepositos,
         numeroDeFacturas: deposito.numeroDeFacturas,
         totalMontos: deposito.totalMontos,
         estadoFiltro: deposito.estadoFiltro,
+        codEmpleado: deposito.codEmpleado,
+        nombreCompleto: deposito.nombreCompleto,
       );
 
       // Llamar al método existente en el repositorio para rechazar

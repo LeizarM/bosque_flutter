@@ -10,7 +10,7 @@ class AppConstants {
 
   static const String _compiledBaseUrlDev = String.fromEnvironment(
     'BASE_URL_DEV',
-    defaultValue: 'http://192.168.3.108:9223',
+    defaultValue: 'http://192.168.3.107:9223',
   );
 
   // Selector inteligente de URL base
