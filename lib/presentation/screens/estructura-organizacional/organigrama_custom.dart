@@ -114,27 +114,57 @@ class _OrganigramaCustomState extends State<OrganigramaCustom> {
       return false;
     }
 
-    // Crear nodos: OCULTAR cargos REALES inactivos Y ficticios que no llevan a activos
+    // PASO 1: Construir conjunto candidato (activos + ficticios que llevan a activos)
+    final candidatos = <int>{};
+    final candidatosMap = <int, CargoEntity>{};
     for (var cargo in todosLosCargos) {
       final esFicticio =
           cargo.descripcion.contains('[Ficticio') ||
           cargo.descripcion.toLowerCase().contains('ficticio');
       final esRealInactivo = !esFicticio && cargo.estado == 0;
 
-      // Si es REAL Y está INACTIVO -> NO MOSTRAR
       if (esRealInactivo) continue;
 
-      // Si es FICTICIO, verificar que su cadena lleve a un cargo real activo
       if (esFicticio) {
-        if (!ficticioPadreDeCargoActivo(cargo.codCargo)) {
-          // Este ficticio no lleva a ningún cargo real activo, no mostrarlo
-          continue;
-        }
+        if (!ficticioPadreDeCargoActivo(cargo.codCargo)) continue;
       }
 
-      final node = Node.Id(cargo.codCargo);
-      nodeMap[cargo.codCargo] = node;
-      cargoMap[cargo.codCargo] = cargo;
+      candidatos.add(cargo.codCargo);
+      candidatosMap[cargo.codCargo] = cargo;
+    }
+
+    // PASO 2: Eliminar en cascada los ficticios cuyo padre no estará en el grafo
+    // (evita que ficticios con padre inactivo aparezcan como nodos huérfanos)
+    bool changed = true;
+    while (changed) {
+      changed = false;
+      final toRemove = <int>[];
+      for (final codCargo in candidatos) {
+        final cargo = candidatosMap[codCargo]!;
+        final esFicticio =
+            cargo.descripcion.contains('[Ficticio') ||
+            cargo.descripcion.toLowerCase().contains('ficticio');
+        if (esFicticio &&
+            cargo.codCargoPadre != 0 &&
+            !candidatos.contains(cargo.codCargoPadre)) {
+          toRemove.add(codCargo);
+        }
+      }
+      if (toRemove.isNotEmpty) {
+        for (final cod in toRemove) {
+          candidatos.remove(cod);
+          candidatosMap.remove(cod);
+        }
+        changed = true;
+      }
+    }
+
+    // PASO 3: Agregar los nodos válidos al grafo
+    for (final codCargo in candidatos) {
+      final cargo = candidatosMap[codCargo]!;
+      final node = Node.Id(codCargo);
+      nodeMap[codCargo] = node;
+      cargoMap[codCargo] = cargo;
       graph.addNode(node);
     }
 
@@ -557,7 +587,7 @@ class _OrganigramaCustomState extends State<OrganigramaCustom> {
                               border: Border.all(color: Colors.red.shade300),
                             ),
                             child: Text(
-                              'Padre inactivo: ${cargo.codCargoPadre}',
+                              'Padre inactivo: ${cargo.codCargoPadreOriginal != 0 && cargo.codCargoPadreOriginal != cargo.codCargoPadre ? cargo.codCargoPadreOriginal : cargo.codCargoPadre}',
                               style: TextStyle(
                                 fontSize: 9,
                                 color: Colors.red.shade900,

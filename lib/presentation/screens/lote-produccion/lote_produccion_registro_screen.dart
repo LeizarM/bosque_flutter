@@ -620,6 +620,7 @@ class _LoteProduccionRegistroScreenState
     );
   }
 
+  // ignore: non_constant_identifier_names
   Widget _LoteInfoField({required String label, required String value}) {
     final colorScheme = Theme.of(context).colorScheme;
     return InputDecorator(

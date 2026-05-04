@@ -1,5 +1,3 @@
-import 'dart:ui' show FontFeature;
-
 import 'package:bosque_flutter/core/utils/pdf_service.dart';
 import 'package:bosque_flutter/domain/entities/banco_cuenta_entity.dart';
 import 'package:bosque_flutter/presentation/widgets/shared/permission_widget.dart';

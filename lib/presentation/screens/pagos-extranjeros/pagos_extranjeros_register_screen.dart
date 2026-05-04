@@ -435,8 +435,9 @@ class _PagosExtranjerosRegisterScreenState
     if (state.empresaSeleccionada != null) pasos++;
     if (state.proveedores.isNotEmpty) pasos++;
     if (state.proveedores.isNotEmpty &&
-        state.proveedores.every((p) => p.detalles.isNotEmpty))
+        state.proveedores.every((p) => p.detalles.isNotEmpty)) {
       pasos++;
+    }
     return pasos / 3.0;
   }
 
