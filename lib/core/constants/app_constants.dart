@@ -405,6 +405,16 @@ class AppConstants {
   static const String tpexEliminarConfig =
       '/pagos-extranjeros/eliminar-config-comisiones';
 
+  // ── TPEX: asientos contables ───────────────────────────────────────────────
+  static const String tpexRegistrarAsiento =
+      '/pagos-extranjeros/registrar-asiento';
+  static const String tpexEliminarAsiento =
+      '/pagos-extranjeros/eliminar-asiento';
+  static const String tpexObtenerAsientosTransaccion =
+      '/pagos-extranjeros/obtener-asientos-transaccion';
+  static const String tpexValidarCuadreAsientos =
+      '/pagos-extranjeros/validar-cuadre-asientos';
+
   // ── TDESC: Descuentos empleados ────────────────────────────────────────────────────────
 
   static const String descObtenerDescuentosEmpleado = '/rrhh/prestamos-multas';

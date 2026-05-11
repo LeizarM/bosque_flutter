@@ -3,6 +3,7 @@ import 'dart:typed_data';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:bosque_flutter/core/utils/console_log.dart';
 import 'package:bosque_flutter/data/repositories/pagos_extranjeros_impl.dart';
+import 'package:bosque_flutter/domain/entities/asiento_entity.dart';
 import 'package:bosque_flutter/data/repositories/registro_empleado_impl.dart';
 import 'package:bosque_flutter/domain/entities/banco_entity.dart';
 import 'package:bosque_flutter/domain/entities/canales_pago_entity.dart';
@@ -1736,6 +1737,22 @@ final configComisionesBancoProvider = FutureProvider.autoDispose
       if (codBanco <= 0) return [];
       final repo = PagosExtranjerosImpl();
       return repo.getConfigComisionesPorBanco(codBanco);
+    });
+
+/// Asientos contables de una transacción (ACCION="T").
+final asientosTransaccionProvider = FutureProvider.autoDispose
+    .family<List<AsientoEntity>, BigInt>((ref, idTransaccion) async {
+      if (idTransaccion == BigInt.zero) return [];
+      final repo = PagosExtranjerosImpl();
+      return repo.getAsientosPorTransaccion(idTransaccion);
+    });
+
+/// Resumen de cuadre de asientos de una transacción (ACCION="V").
+final cuadreAsientosProvider = FutureProvider.autoDispose
+    .family<AsientoEntity?, BigInt>((ref, idTransaccion) async {
+      if (idTransaccion == BigInt.zero) return null;
+      final repo = PagosExtranjerosImpl();
+      return repo.validarCuadreAsientos(idTransaccion);
     });
 
 /// Lista de bancos disponibles para cotización TPEX.

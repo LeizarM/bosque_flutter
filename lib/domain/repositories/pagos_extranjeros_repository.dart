@@ -1,5 +1,6 @@
 import 'dart:typed_data';
 
+import 'package:bosque_flutter/domain/entities/asiento_entity.dart';
 import 'package:bosque_flutter/domain/entities/cargo_pago_entity.dart';
 import 'package:bosque_flutter/domain/entities/canales_pago_entity.dart';
 import 'package:bosque_flutter/domain/entities/config_comisiones_banco_entity.dart';
@@ -148,4 +149,11 @@ abstract class PagosExtranjerosRepository {
   Future<BigInt> eliminarTipoTransaccion(Map<String, dynamic> payload);
   Future<BigInt> registrarConfigComisiones(Map<String, dynamic> payload);
   Future<BigInt> eliminarConfigComisiones(Map<String, dynamic> payload);
+
+  // ══ Asientos contables ════════════════════════════════════════════════════
+
+  Future<BigInt> registrarAsiento(Map<String, dynamic> payload);
+  Future<BigInt> eliminarAsiento(Map<String, dynamic> payload);
+  Future<List<AsientoEntity>> getAsientosPorTransaccion(BigInt idTransaccion);
+  Future<AsientoEntity?> validarCuadreAsientos(BigInt idTransaccion);
 }

@@ -1,6 +1,7 @@
 import 'package:bosque_flutter/core/state/pagos_extranjeros_provider.dart';
 import 'package:bosque_flutter/core/utils/responsive_utils_bosque.dart';
 import 'package:bosque_flutter/data/repositories/pagos_extranjeros_impl.dart';
+import 'package:bosque_flutter/domain/entities/asiento_entity.dart';
 import 'package:bosque_flutter/domain/entities/cargo_pago_entity.dart';
 import 'package:bosque_flutter/domain/entities/cotizaciones_entity.dart';
 import 'package:bosque_flutter/domain/entities/detalle_solicitud_entity.dart';
@@ -165,9 +166,9 @@ class _SolicitudDetailPanelState extends ConsumerState<_SolicitudDetailPanel>
   void initState() {
     super.initState();
     _tabController = TabController(
-      length: 5,
+      length: 6,
       vsync: this,
-      initialIndex: widget.initialTab.clamp(0, 4),
+      initialIndex: widget.initialTab.clamp(0, 5),
     );
   }
 
@@ -258,6 +259,10 @@ class _SolicitudDetailPanelState extends ConsumerState<_SolicitudDetailPanel>
             ),
             Tab(icon: Icon(Icons.history_rounded, size: 18), text: 'Historial'),
             Tab(icon: Icon(Icons.timeline_rounded, size: 18), text: 'Timeline'),
+            Tab(
+              icon: Icon(Icons.account_balance_wallet_outlined, size: 18),
+              text: 'Asientos',
+            ),
           ],
         ),
         const Divider(height: 1),
@@ -272,6 +277,7 @@ class _SolicitudDetailPanelState extends ConsumerState<_SolicitudDetailPanel>
               _TabTransacciones(solicitud: sol),
               _TabLog(solicitud: sol),
               _TabTimeline(solicitud: sol),
+              _TabAsientos(solicitud: sol),
             ],
           ),
         ),
@@ -1558,6 +1564,647 @@ class _MiniChip extends StatelessWidget {
     );
   }
 }
+
+// TAB 6: Asientos contables
+// ═════════════════════════════════════════════════════════════════════════════
+
+class _TabAsientos extends ConsumerWidget {
+  final SolicitudPagoEntity solicitud;
+  const _TabAsientos({required this.solicitud});
+
+  static const _estados = {'PENDIENTE', 'PROCESADO', 'CONFIRMADO'};
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final cs = Theme.of(context).colorScheme;
+
+    // Primero necesitamos las transacciones para saber el idTransaccion
+    final asyncTxns = ref.watch(
+      transaccionesXSolicitudProvider((
+        idSolicitud: solicitud.idSolicitud,
+        codEmpresa: solicitud.codEmpresa,
+      )),
+    );
+
+    return asyncTxns.when(
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (e, _) => _ErrorTab(message: e.toString()),
+      data: (txns) {
+        if (txns.isEmpty) {
+          return _EmptyTab(
+            icon: Icons.account_balance_wallet_outlined,
+            message: 'Sin transacciones — registre primero una transacción',
+          );
+        }
+
+        // Si hay varias transacciones mostramos selector; caso común: 1 transacción
+        if (txns.length == 1) {
+          return _AsientosDeTransaccion(txn: txns.first, cs: cs);
+        }
+
+        // Múltiples transacciones: mostrar una sección expandible por cada una
+        return ListView.builder(
+          padding: const EdgeInsets.all(12),
+          itemCount: txns.length,
+          itemBuilder: (context, i) {
+            final txn = txns[i];
+            return Card(
+              margin: const EdgeInsets.only(bottom: 10),
+              elevation: 0,
+              color: cs.surfaceContainerLow,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+                side: BorderSide(color: cs.outlineVariant.withValues(alpha: 0.4)),
+              ),
+              child: ExpansionTile(
+                leading: Icon(
+                  Icons.receipt_long_rounded,
+                  size: 20,
+                  color: cs.primary,
+                ),
+                title: Text(
+                  'Txn #${txn.idTransaccion}',
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w600,
+                    fontSize: 13,
+                  ),
+                ),
+                subtitle: _EstadoBadge(estado: txn.estado),
+                children: [
+                  _AsientosDeTransaccion(txn: txn, cs: cs),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+}
+
+class _AsientosDeTransaccion extends ConsumerWidget {
+  final TransaccionesEntity txn;
+  final ColorScheme cs;
+  const _AsientosDeTransaccion({required this.txn, required this.cs});
+
+  static const _estadosEditables = {'PENDIENTE', 'PROCESADO'};
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final asyncAsientos = ref.watch(asientosTransaccionProvider(txn.idTransaccion));
+    final asyncCuadre = ref.watch(cuadreAsientosProvider(txn.idTransaccion));
+    final puedeAgregar = _estadosEditables.contains(txn.estado.toUpperCase());
+
+    return asyncAsientos.when(
+      loading: () => const Padding(
+        padding: EdgeInsets.all(24),
+        child: Center(child: CircularProgressIndicator()),
+      ),
+      error: (e, _) => _ErrorTab(message: e.toString()),
+      data: (asientos) => Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // Lista de asientos
+          if (asientos.isEmpty)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 24),
+              child: _EmptyTab(
+                icon: Icons.table_rows_rounded,
+                message: 'Sin asientos registrados',
+              ),
+            )
+          else
+            _AsientosTabla(asientos: asientos, cs: cs),
+
+          // Resumen de cuadre
+          asyncCuadre.when(
+            loading: () => const SizedBox.shrink(),
+            error: (_, __) => const SizedBox.shrink(),
+            data: (cuadre) {
+              if (cuadre == null || cuadre.estadoCuadre.isEmpty) {
+                return const SizedBox.shrink();
+              }
+              final cuadrado = cuadre.estadoCuadre.toUpperCase() == 'CUADRADO';
+              final color = cuadrado ? Colors.green : Colors.red;
+              return Container(
+                margin: const EdgeInsets.fromLTRB(12, 4, 12, 8),
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                decoration: BoxDecoration(
+                  color: color.withValues(alpha: 0.08),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: color.withValues(alpha: 0.35)),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(
+                          cuadrado ? Icons.check_circle_rounded : Icons.warning_rounded,
+                          color: color,
+                          size: 18,
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          cuadre.estadoCuadre,
+                          style: TextStyle(
+                            fontWeight: FontWeight.w700,
+                            fontSize: 13,
+                            color: color,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 6),
+                    Wrap(
+                      spacing: 16,
+                      runSpacing: 4,
+                      children: [
+                        _DataPair(
+                          label: 'Total Débito Bs',
+                          value: _numberFormat.format(cuadre.totalDebitoBs),
+                        ),
+                        _DataPair(
+                          label: 'Total Crédito Bs',
+                          value: _numberFormat.format(cuadre.totalCreditoBs),
+                        ),
+                        _DataPair(
+                          label: 'Diferencia Bs',
+                          value: _numberFormat.format(cuadre.diferenciaBs),
+                          bold: !cuadrado,
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+
+          // Botón agregar
+          if (puedeAgregar)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+              child: FilledButton.icon(
+                icon: const Icon(Icons.add_rounded, size: 18),
+                label: const Text('Agregar asiento'),
+                onPressed: () => _abrirDialogoAsiento(context, ref, txn),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  void _abrirDialogoAsiento(
+    BuildContext context,
+    WidgetRef ref,
+    TransaccionesEntity txn, {
+    AsientoEntity? editar,
+  }) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (_) => ProviderScope(
+        parent: ProviderScope.containerOf(context),
+        child: _DialogoAsiento(txn: txn, editar: editar),
+      ),
+    );
+  }
+}
+
+class _AsientosTabla extends StatelessWidget {
+  final List<AsientoEntity> asientos;
+  final ColorScheme cs;
+  const _AsientosTabla({required this.asientos, required this.cs});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(12, 8, 12, 4),
+      child: Column(
+        children: asientos.map((a) => _AsientoFila(asiento: a, cs: cs)).toList(),
+      ),
+    );
+  }
+}
+
+class _AsientoFila extends StatelessWidget {
+  final AsientoEntity asiento;
+  final ColorScheme cs;
+  const _AsientoFila({required this.asiento, required this.cs});
+
+  Color _tipoColor(String tipo) {
+    switch (tipo.toUpperCase()) {
+      case 'PR':
+        return Colors.blue;
+      case 'PE':
+        return Colors.orange;
+      case 'MP':
+        return Colors.purple;
+      default:
+        return Colors.grey;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final c = _tipoColor(asiento.tipoAsiento);
+    return Container(
+      margin: const EdgeInsets.only(bottom: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      decoration: BoxDecoration(
+        color: cs.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.35)),
+      ),
+      child: Row(
+        children: [
+          // Número
+          Container(
+            width: 28,
+            height: 28,
+            decoration: BoxDecoration(
+              color: cs.primaryContainer,
+              borderRadius: BorderRadius.circular(6),
+            ),
+            alignment: Alignment.center,
+            child: Text(
+              '${asiento.numero}',
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
+                color: cs.onPrimaryContainer,
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+          // Tipo
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+            decoration: BoxDecoration(
+              color: c.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(4),
+              border: Border.all(color: c.withValues(alpha: 0.35)),
+            ),
+            child: Text(
+              asiento.tipoAsiento,
+              style: TextStyle(
+                fontSize: 10,
+                fontWeight: FontWeight.w700,
+                color: c,
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+          // Cuentas
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (asiento.cuentaDebe.isNotEmpty)
+                  Text(
+                    'Debe: ${asiento.cuentaDebe}',
+                    style: const TextStyle(fontSize: 11),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                if (asiento.cuentaHaber.isNotEmpty)
+                  Text(
+                    'Haber: ${asiento.cuentaHaber}',
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: cs.onSurfaceVariant,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                if (asiento.descripcion.isNotEmpty)
+                  Text(
+                    asiento.descripcion,
+                    style: TextStyle(
+                      fontSize: 10,
+                      color: cs.onSurfaceVariant,
+                      fontStyle: FontStyle.italic,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          // Montos
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              if (asiento.debitoBs > 0)
+                Text(
+                  'D: ${_numberFormat.format(asiento.debitoBs)}',
+                  style: const TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              if (asiento.creditoBs > 0)
+                Text(
+                  'C: ${_numberFormat.format(asiento.creditoBs)}',
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: cs.onSurfaceVariant,
+                  ),
+                ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─── Diálogo / BottomSheet para crear/editar asiento ─────────────────────────
+
+class _DialogoAsiento extends ConsumerStatefulWidget {
+  final TransaccionesEntity txn;
+  final AsientoEntity? editar;
+  const _DialogoAsiento({required this.txn, this.editar});
+
+  @override
+  ConsumerState<_DialogoAsiento> createState() => _DialogoAsientoState();
+}
+
+class _DialogoAsientoState extends ConsumerState<_DialogoAsiento> {
+  final _formKey = GlobalKey<FormState>();
+  String _tipoAsiento = 'PR';
+  final _cuentaDebeCtrl = TextEditingController();
+  final _cuentaHaberCtrl = TextEditingController();
+  final _descripcionCtrl = TextEditingController();
+  final _debitoCtrl = TextEditingController();
+  final _creditoCtrl = TextEditingController();
+  bool _esDebito = true; // true = ingresa debitoBs, false = creditoBs
+  bool _cargando = false;
+
+  @override
+  void initState() {
+    super.initState();
+    final e = widget.editar;
+    if (e != null) {
+      _tipoAsiento = e.tipoAsiento;
+      _cuentaDebeCtrl.text = e.cuentaDebe;
+      _cuentaHaberCtrl.text = e.cuentaHaber;
+      _descripcionCtrl.text = e.descripcion;
+      if (e.debitoBs > 0) {
+        _esDebito = true;
+        _debitoCtrl.text = e.debitoBs.toStringAsFixed(2);
+      } else {
+        _esDebito = false;
+        _creditoCtrl.text = e.creditoBs.toStringAsFixed(2);
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    _cuentaDebeCtrl.dispose();
+    _cuentaHaberCtrl.dispose();
+    _descripcionCtrl.dispose();
+    _debitoCtrl.dispose();
+    _creditoCtrl.dispose();
+    super.dispose();
+  }
+
+  double get _tc => widget.txn.tipoCambioAplicado;
+
+  Future<void> _guardar() async {
+    if (!_formKey.currentState!.validate()) return;
+    setState(() => _cargando = true);
+
+    final monto = double.tryParse(
+          (_esDebito ? _debitoCtrl : _creditoCtrl).text.replaceAll(',', '.'),
+        ) ??
+        0.0;
+    final montoBs = monto;
+    final montoUs = _tc > 0 ? monto / _tc : 0.0;
+    final editar = widget.editar;
+
+    final payload = <String, dynamic>{
+      'idAsiento': editar?.idAsiento.toInt() ?? 0,
+      'idTransaccion': widget.txn.idTransaccion.toInt(),
+      'tipoAsiento': _tipoAsiento,
+      'cuentaDebe': _cuentaDebeCtrl.text.trim(),
+      'cuentaHaber': _cuentaHaberCtrl.text.trim(),
+      'descripcion': _descripcionCtrl.text.trim(),
+      'debitoBs': _esDebito ? montoBs : 0.0,
+      'creditoBs': _esDebito ? 0.0 : montoBs,
+      'debitoUs': _esDebito ? montoUs : 0.0,
+      'creditoUs': _esDebito ? 0.0 : montoUs,
+      'tcAplicado': _tc,
+    };
+
+    try {
+      final repo = PagosExtranjerosImpl();
+      await repo.registrarAsiento(payload);
+      if (!mounted) return;
+      // Invalidar los providers para refrescar la lista y el cuadre
+      ref.invalidate(asientosTransaccionProvider(widget.txn.idTransaccion));
+      ref.invalidate(cuadreAsientosProvider(widget.txn.idTransaccion));
+      Navigator.of(context).pop();
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Asiento guardado exitosamente')),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(e.toString().replaceFirst('Exception: ', '')),
+          backgroundColor: Theme.of(context).colorScheme.error,
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _cargando = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final isEdicion = widget.editar != null;
+
+    return Padding(
+      padding: EdgeInsets.only(
+        left: 16,
+        right: 16,
+        top: 16,
+        bottom: MediaQuery.viewInsetsOf(context).bottom + 16,
+      ),
+      child: Form(
+        key: _formKey,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // Handle
+            Center(
+              child: Container(
+                width: 36,
+                height: 4,
+                margin: const EdgeInsets.only(bottom: 16),
+                decoration: BoxDecoration(
+                  color: cs.outlineVariant,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+            Text(
+              isEdicion ? 'Editar asiento' : 'Nuevo asiento',
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            const SizedBox(height: 16),
+
+            // Tipo de asiento
+            DropdownButtonFormField<String>(
+              value: _tipoAsiento,
+              decoration: const InputDecoration(
+                labelText: 'Tipo de asiento',
+                border: OutlineInputBorder(),
+                isDense: true,
+              ),
+              items: const [
+                DropdownMenuItem(value: 'PR', child: Text('PR — Préstamo')),
+                DropdownMenuItem(value: 'PE', child: Text('PE — Pago Exterior')),
+                DropdownMenuItem(value: 'MP', child: Text('MP — Mesa de Partes')),
+              ],
+              onChanged: (v) => setState(() => _tipoAsiento = v ?? 'PR'),
+            ),
+            const SizedBox(height: 12),
+
+            // Cuenta Debe
+            TextFormField(
+              controller: _cuentaDebeCtrl,
+              decoration: const InputDecoration(
+                labelText: 'Cuenta Debe',
+                border: OutlineInputBorder(),
+                isDense: true,
+              ),
+              validator: (v) =>
+                  v == null || v.trim().isEmpty ? 'Requerido' : null,
+            ),
+            const SizedBox(height: 12),
+
+            // Cuenta Haber
+            TextFormField(
+              controller: _cuentaHaberCtrl,
+              decoration: const InputDecoration(
+                labelText: 'Cuenta Haber',
+                border: OutlineInputBorder(),
+                isDense: true,
+              ),
+              validator: (v) =>
+                  v == null || v.trim().isEmpty ? 'Requerido' : null,
+            ),
+            const SizedBox(height: 12),
+
+            // Descripción
+            TextFormField(
+              controller: _descripcionCtrl,
+              decoration: const InputDecoration(
+                labelText: 'Descripción',
+                border: OutlineInputBorder(),
+                isDense: true,
+              ),
+              maxLines: 2,
+            ),
+            const SizedBox(height: 12),
+
+            // Selector débito / crédito
+            Row(
+              children: [
+                Expanded(
+                  child: SegmentedButton<bool>(
+                    segments: const [
+                      ButtonSegment(value: true, label: Text('Débito Bs')),
+                      ButtonSegment(value: false, label: Text('Crédito Bs')),
+                    ],
+                    selected: {_esDebito},
+                    onSelectionChanged: (s) =>
+                        setState(() => _esDebito = s.first),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+
+            // Monto Bs
+            TextFormField(
+              controller: _esDebito ? _debitoCtrl : _creditoCtrl,
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              decoration: InputDecoration(
+                labelText: _esDebito ? 'Débito Bs' : 'Crédito Bs',
+                border: const OutlineInputBorder(),
+                isDense: true,
+                suffixText: _tc > 0
+                    ? 'TC ${_tc.toStringAsFixed(4)}'
+                    : null,
+              ),
+              validator: (v) {
+                if (v == null || v.trim().isEmpty) return 'Requerido';
+                final n = double.tryParse(v.replaceAll(',', '.'));
+                if (n == null || n <= 0) return 'Ingrese un monto válido';
+                return null;
+              },
+            ),
+            if (_tc > 0)
+              Padding(
+                padding: const EdgeInsets.only(top: 4),
+                child: Text(
+                  'Equivalente US: ~${_numberFormat.format((double.tryParse((_esDebito ? _debitoCtrl : _creditoCtrl).text.replaceAll(',', '.')) ?? 0) / _tc)}',
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: cs.onSurfaceVariant,
+                  ),
+                ),
+              ),
+            const SizedBox(height: 20),
+
+            // Botones
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: _cargando ? null : () => Navigator.of(context).pop(),
+                    child: const Text('Cancelar'),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: FilledButton(
+                    onPressed: _cargando ? null : _guardar,
+                    child: _cargando
+                        ? const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : Text(isEdicion ? 'Actualizar' : 'Guardar'),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ═════════════════════════════════════════════════════════════════════════════
+// Shared helpers
+// ═════════════════════════════════════════════════════════════════════════════
 
 class _EmptyTab extends StatelessWidget {
   final IconData icon;

@@ -4,6 +4,7 @@ import 'package:bosque_flutter/core/constants/app_constants.dart';
 import 'package:bosque_flutter/core/network/base_api_repository.dart';
 import 'package:bosque_flutter/core/network/dio_client.dart';
 import 'package:dio/dio.dart';
+import 'package:bosque_flutter/data/models/asiento_model.dart';
 import 'package:bosque_flutter/data/models/canales_pago_model.dart';
 import 'package:bosque_flutter/data/models/cargo_pago_model.dart';
 import 'package:bosque_flutter/data/models/config_comisiones_banco_model.dart';
@@ -33,6 +34,7 @@ import 'package:bosque_flutter/domain/entities/solicitud_proveedor_entity.dart';
 import 'package:bosque_flutter/domain/entities/tipos_cambio_entity.dart';
 import 'package:bosque_flutter/domain/entities/tipos_cargo_entity.dart';
 import 'package:bosque_flutter/domain/entities/tipos_transaccion_entity.dart';
+import 'package:bosque_flutter/domain/entities/asiento_entity.dart';
 import 'package:bosque_flutter/domain/entities/transacciones_entity.dart';
 import 'package:bosque_flutter/domain/repositories/pagos_extranjeros_repository.dart';
 
@@ -408,6 +410,49 @@ class PagosExtranjerosImpl extends BaseApiRepository
         data: payload,
         errorMessage: 'Error al eliminar configuración de comisiones',
       );
+
+  // ════════════════════════════════════════════════════════════════════
+  // Asientos contables
+  // ════════════════════════════════════════════════════════════════════
+
+  @override
+  Future<BigInt> registrarAsiento(Map<String, dynamic> payload) =>
+      postAndReturnId(
+        endpoint: AppConstants.tpexRegistrarAsiento,
+        data: payload,
+        errorMessage: 'Error al registrar el asiento',
+      );
+
+  @override
+  Future<BigInt> eliminarAsiento(Map<String, dynamic> payload) =>
+      postAndReturnId(
+        endpoint: AppConstants.tpexEliminarAsiento,
+        data: payload,
+        errorMessage: 'Error al eliminar el asiento',
+      );
+
+  @override
+  Future<List<AsientoEntity>> getAsientosPorTransaccion(
+    BigInt idTransaccion,
+  ) async {
+    final modelos = await postAndReturnList<AsientoModel>(
+      endpoint: AppConstants.tpexObtenerAsientosTransaccion,
+      data: {'idTransaccion': idTransaccion.toInt()},
+      fromJson: (json) => AsientoModel.fromJson(json),
+    );
+    return modelos.map((m) => m.toEntity()).toList();
+  }
+
+  @override
+  Future<AsientoEntity?> validarCuadreAsientos(BigInt idTransaccion) async {
+    final model = await postAndReturnObject<AsientoModel>(
+      endpoint: AppConstants.tpexValidarCuadreAsientos,
+      data: {'idTransaccion': idTransaccion.toInt()},
+      fromJson: (json) => AsientoModel.fromJson(json),
+      errorMessage: 'Error al validar cuadre de asientos',
+    );
+    return model?.toEntity();
+  }
 
   // ════════════════════════════════════════════════════════════════════
   // Lecturas adicionales (spec v2)
