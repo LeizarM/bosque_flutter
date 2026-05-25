@@ -36,6 +36,12 @@ class TransaccionesEntity {
   int audUsuario;
   String? rutaVoucher;
   bool tieneVoucher;
+  // campos de JOIN (devueltos por el SP, solo lectura)
+  String proveedor;
+  String banco;
+  String empresa;
+  String monedaOrigen;
+  String monedaDestino;
   List<CargoPagoEntity> cargos;
 
   TransaccionesEntity({
@@ -74,6 +80,11 @@ class TransaccionesEntity {
     required this.audUsuario,
     this.rutaVoucher,
     this.tieneVoucher = false,
+    this.proveedor = '',
+    this.banco = '',
+    this.empresa = '',
+    this.monedaOrigen = '',
+    this.monedaDestino = '',
     this.cargos = const [],
   });
 }

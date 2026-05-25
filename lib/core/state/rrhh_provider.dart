@@ -4,6 +4,7 @@ import 'package:bosque_flutter/domain/entities/area_entity.dart';
 import 'package:bosque_flutter/domain/entities/cargo_entity.dart';
 import 'package:bosque_flutter/domain/entities/cargo_sucursal_entity.dart';
 import 'package:bosque_flutter/domain/entities/descuento_empleado_entity.dart';
+import 'package:bosque_flutter/domain/entities/docs_vencidos_entity.dart';
 import 'package:bosque_flutter/domain/entities/empresa_entity.dart';
 import 'package:bosque_flutter/domain/entities/sucursal_entity.dart';
 import 'package:bosque_flutter/domain/entities/nivel_jerarquico_entity.dart';
@@ -325,3 +326,52 @@ final registrarAreaProvider = Provider((ref) {
   final repository = ref.watch(rrhhRepositoryProvider);
   return (AreaEntity area) => repository.registrarArea(area);
 });
+
+class DocsVencidosState {
+  final List<DocsVencidosEntity> items;
+  final bool cargando;
+  final String? mensajeError;
+
+  const DocsVencidosState({
+    this.items = const [],
+    this.cargando = false,
+    this.mensajeError,
+  });
+
+  DocsVencidosState copyWith({
+    List<DocsVencidosEntity>? items,
+    bool? cargando,
+    String? mensajeError,
+  }) => DocsVencidosState(
+    items: items ?? this.items,
+    cargando: cargando ?? this.cargando,
+    mensajeError: mensajeError,
+  );
+}
+
+class DocsVencidosNotifier extends StateNotifier<DocsVencidosState> {
+  final RRHHRepositoryImpl _repo;
+
+  DocsVencidosNotifier(this._repo) : super(const DocsVencidosState()) {
+    Future.microtask(cargar);
+  }
+
+  Future<void> cargar() async {
+    state = state.copyWith(cargando: true, mensajeError: null);
+    try {
+      final data = await _repo.getDocsVencidos();
+      state = state.copyWith(items: data, cargando: false);
+    } catch (e) {
+      state = state.copyWith(cargando: false, mensajeError: e.toString());
+    }
+  }
+
+  Future<void> recargar() => cargar();
+}
+
+final _rrhhRepoProvider = Provider((ref) => RRHHRepositoryImpl());
+
+final docsVencidosProvider =
+    StateNotifierProvider.autoDispose<DocsVencidosNotifier, DocsVencidosState>(
+      (ref) => DocsVencidosNotifier(ref.read(_rrhhRepoProvider)),
+    );

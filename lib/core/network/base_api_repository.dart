@@ -104,4 +104,33 @@ abstract class BaseApiRepository {
       rethrow;
     }
   }
+
+  /// Método personalizado para obtener la respuesta completa (incluye el message del backend).
+  /// Lanza errores como String directo para evitar el prefijo "Exception: " en la UI.
+  Future<T> postAndReturnFullResponse<T>({
+    required String endpoint,
+    required Map<String, dynamic> data,
+    required T Function(Map<String, dynamic>) fromJson,
+    String errorMessage = 'Error en la operación',
+  }) async {
+    try {
+      final response = await dio.post(endpoint, data: data);
+      final status = response.statusCode ?? 0;
+
+      if (status == 200 || status == 201) {
+        // Mapeamos LA RAÍZ completa del JSON
+        return fromJson(response.data);
+      }
+
+      throw errorMessage; // Lanzamos el String directo
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 400 && e.response?.data is Map) {
+        // Lanzamos el mensaje del backend directo como String (sin Exception())
+        throw e.response!.data['message'] ?? errorMessage;
+      }
+      throw DioClient.handleDioError(e, errorMessage);
+    } catch (e) {
+      rethrow;
+    }
+  }
 }

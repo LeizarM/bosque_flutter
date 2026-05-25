@@ -44,6 +44,12 @@ class TransaccionesModel {
   int audUsuario;
   String? rutaVoucher;
   bool tieneVoucher;
+  // campos de JOIN (solo lectura, del SP)
+  String proveedor;
+  String banco;
+  String empresa;
+  String monedaOrigen;
+  String monedaDestino;
   List<CargoPagoModel> cargos;
 
   TransaccionesModel({
@@ -82,6 +88,11 @@ class TransaccionesModel {
     required this.audUsuario,
     this.rutaVoucher,
     this.tieneVoucher = false,
+    this.proveedor = '',
+    this.banco = '',
+    this.empresa = '',
+    this.monedaOrigen = '',
+    this.monedaDestino = '',
     this.cargos = const [],
   });
 
@@ -147,6 +158,11 @@ class TransaccionesModel {
       audUsuario: json["audUsuario"] ?? 0,
       rutaVoucher: json["rutaVoucher"] as String?,
       tieneVoucher: json["tieneVoucher"] == true || json["tieneVoucher"] == 1,
+      proveedor: json["proveedor"] ?? '',
+      banco: json["banco"] ?? '',
+      empresa: json["empresa"] ?? '',
+      monedaOrigen: json["monedaOrigen"] ?? '',
+      monedaDestino: json["monedaDestino"] ?? '',
       cargos:
           cargosJson
               .map((c) => CargoPagoModel.fromJson(c as Map<String, dynamic>))
@@ -239,6 +255,11 @@ class TransaccionesModel {
     audUsuario: audUsuario,
     rutaVoucher: rutaVoucher,
     tieneVoucher: tieneVoucher,
+    proveedor: proveedor,
+    banco: banco,
+    empresa: empresa,
+    monedaOrigen: monedaOrigen,
+    monedaDestino: monedaDestino,
     cargos: cargos.map((c) => c.toEntity()).toList(),
   );
 
@@ -279,5 +300,10 @@ class TransaccionesModel {
         audUsuario: entity.audUsuario,
         rutaVoucher: entity.rutaVoucher,
         tieneVoucher: entity.tieneVoucher,
+        proveedor: entity.proveedor,
+        banco: entity.banco,
+        empresa: entity.empresa,
+        monedaOrigen: entity.monedaOrigen,
+        monedaDestino: entity.monedaDestino,
       );
 }

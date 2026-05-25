@@ -1807,3 +1807,16 @@ final reporteTransaccionesFechasProvider = FutureProvider.autoDispose.family<
     codEmpresa: params.codEmpresa,
   );
 });
+
+/// Último tipo de cambio vigente del BCB (codBanco=null) para USD→BOB.
+/// idMonedaOrigen=3 (USD), idMonedaDestino=4 (BOB)
+final tcVigenteRefProvider = FutureProvider.autoDispose
+    .family<TiposCambioEntity?, ({int? codBanco, int idMonedaOrigen, int idMonedaDestino})>(
+        (ref, params) async {
+  final repo = PagosExtranjerosImpl();
+  return repo.getTCVigenteRef(
+    codBanco: params.codBanco,
+    idMonedaOrigen: params.idMonedaOrigen,
+    idMonedaDestino: params.idMonedaDestino,
+  );
+});

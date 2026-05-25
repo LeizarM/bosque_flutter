@@ -280,6 +280,25 @@ class PagosExtranjerosImpl extends BaseApiRepository
   }
 
   @override
+  Future<TiposCambioEntity?> getTCVigenteRef({
+    int? codBanco,
+    required int idMonedaOrigen,
+    required int idMonedaDestino,
+  }) async {
+    final modelo = await postAndReturnObject<TiposCambioModel>(
+      endpoint: AppConstants.tpexObtenerTCVigenteRef,
+      data: {
+        if (codBanco != null) 'codBanco': codBanco,
+        'idMonedaOrigen': idMonedaOrigen,
+        'idMonedaDestino': idMonedaDestino,
+      },
+      fromJson: (json) => TiposCambioModel.fromJson(json),
+      errorMessage: 'Error al obtener TC vigente',
+    );
+    return modelo?.toEntity();
+  }
+
+  @override
   Future<List<TiposCargoEntity>> getTiposCargo() async {
     final modelos = await postAndReturnList<TiposCargoModel>(
       endpoint: AppConstants.tpexObtenerTiposCargo,

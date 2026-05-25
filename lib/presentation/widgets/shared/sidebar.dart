@@ -447,6 +447,32 @@ class _AppSidebarState extends ConsumerState<AppSidebar> {
                                 ),
                               ),
                             ),
+                            // ── TPEX: entradas específicas por rol ─────────
+                            if (user?.tipoUsuario == 'ger') ...[
+                              buildMenuItem(
+                                SidebarMenuItem(
+                                  id: 9001,
+                                  title: 'Aprobación de Solicitudes',
+                                  icon: Icons.approval_rounded,
+                                  route:
+                                      '/dashboard/tpex_Aprobacion/Gerencia',
+                                ),
+                                currentRoute ==
+                                    '/dashboard/tpex_Aprobacion/Gerencia',
+                              ),
+                            ],
+                            if (user?.tipoUsuario == 'cob') ...[
+                              buildMenuItem(
+                                SidebarMenuItem(
+                                  id: 9002,
+                                  title: 'Cobranzas — Asientos',
+                                  icon: Icons.account_balance_wallet_outlined,
+                                  route: '/dashboard/tpex_Asientos/Cobranzas',
+                                ),
+                                currentRoute ==
+                                    '/dashboard/tpex_Asientos/Cobranzas',
+                              ),
+                            ],
                           ],
                           ...filteredItems.map((item) {
                             final isActive = currentRoute == item.route;

@@ -6,7 +6,7 @@ class FormacionEntity {
   final int duracion;
   final String tipoDuracion;
   final String tipoFormacion;
-  final DateTime fechaFormacion;
+  final DateTime? fechaFormacion;
   final int audUsuario;
   FormacionEntity({
     required this.codFormacion,
@@ -28,10 +28,11 @@ class FormacionEntity {
       'duracion': duracion,
       'tipoDuracion': tipoDuracion,
       'tipoFormacion': tipoFormacion,
-      'fechaFormacion': fechaFormacion.toIso8601String(),
+      'fechaFormacion': fechaFormacion?.toIso8601String(),
       'audUsuario': audUsuario,
     };
   }
+
   // Método copyWith
   FormacionEntity copyWith({
     int? codFormacion,

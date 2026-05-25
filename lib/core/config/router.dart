@@ -206,6 +206,18 @@ final routerProvider = Provider<GoRouter>((ref) {
               name: 'tpex_RegistroVerView',
               builder: (context, state) => const PagosAlExtranjerosViewScreen(),
             ),
+            // Aprobación de solicitudes (ROLE_GER)
+            GoRoute(
+              path: '/dashboard/tpex_Aprobacion/Gerencia',
+              name: 'tpex_AprobacionGerencia',
+              builder: (context, state) => const GerenciaAprobacionScreen(),
+            ),
+            // Asientos contables / Cobranzas (ROLE_COB)
+            GoRoute(
+              path: '/dashboard/tpex_Asientos/Cobranzas',
+              name: 'tpex_AsientosCobranzas',
+              builder: (context, state) => const CobranzasAsientosScreen(),
+            ),
             // Descuentos Empleado
             GoRoute(
               path: '/dashboard/tdesc_EmpleadosDescuento/View',
@@ -225,6 +237,12 @@ final routerProvider = Provider<GoRouter>((ref) {
               path: '/dashboard/tprod_loteProduccion/Resmado',
               name: 'tprod_loteProduccionResmado',
               builder: (context, state) => const ResmadoRegistroScreen(),
+            ),
+            //Anticipos Empleados
+            GoRoute(
+              path: '/dashboard/tplAnticipo/anticipo',
+              name: 'tplAnticipo',
+              builder: (context, state) => const AnticiposScreen(),
             ),
           ],
         ),
@@ -351,6 +369,16 @@ final routerProvider = Provider<GoRouter>((ref) {
           path: '/tpex_RegistroVer/View',
           redirect: (context, state) => '/dashboard/tpex_RegistroVer/View',
         ),
+        // Aprobación Gerencia
+        GoRoute(
+          path: '/tpex_Aprobacion/Gerencia',
+          redirect: (context, state) => '/dashboard/tpex_Aprobacion/Gerencia',
+        ),
+        // Asientos Cobranzas
+        GoRoute(
+          path: '/tpex_Asientos/Cobranzas',
+          redirect: (context, state) => '/dashboard/tpex_Asientos/Cobranzas',
+        ),
         // Empleados Descuentos
         GoRoute(
           path: '/tdesc_EmpleadosDescuento/View',
@@ -369,6 +397,16 @@ final routerProvider = Provider<GoRouter>((ref) {
           path: '/tprod_loteProduccion/Resmado',
           redirect:
               (context, state) => '/dashboard/tprod_loteProduccion/Resmado',
+        ),
+        // ANTICIPOS EMPLEADOS
+        GoRoute(
+          path: '/tplAnticipo/anticipo',
+          redirect: (context, state) => '/dashboard/tplAnticipo/anticipo',
+        ),
+        // MULTAS EMPLEADO
+        GoRoute(
+          path: '/tplMulta/multas',
+          redirect: (context, state) => '/dashboard/tplMulta/multas',
         ),
 
         GoRoute(

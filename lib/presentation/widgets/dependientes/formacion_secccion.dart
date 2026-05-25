@@ -305,7 +305,7 @@ class FormacionSecccion extends ConsumerWidget {
                 ],
               ],
             ),
-             const SizedBox(height: 10),
+            const SizedBox(height: 10),
             // ✅ AGREGAR CAMPO INSTITUCIÓN
             _datoConEtiqueta(
               context,
@@ -425,7 +425,7 @@ class FormacionSecccion extends ConsumerWidget {
                         formacion.fechaFormacion != null
                             ? DateFormat(
                               'dd-MM-yyyy',
-                            ).format(formacion.fechaFormacion)
+                            ).format(formacion.fechaFormacion!)
                             : '',
                     color: icono,
                     textoPrincipal: textoPrincipal,

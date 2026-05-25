@@ -4,12 +4,14 @@ import 'package:bosque_flutter/data/models/area_model.dart';
 import 'package:bosque_flutter/data/models/cargo_model.dart';
 import 'package:bosque_flutter/data/models/cargo_sucursal_model.dart';
 import 'package:bosque_flutter/data/models/descuento_empleado_model.dart';
+import 'package:bosque_flutter/data/models/docs_vencidos_model.dart';
 import 'package:bosque_flutter/data/models/empresa_model.dart';
 import 'package:bosque_flutter/data/models/sucursal_model.dart';
 import 'package:bosque_flutter/domain/entities/area_entity.dart';
 import 'package:bosque_flutter/domain/entities/cargo_entity.dart';
 import 'package:bosque_flutter/domain/entities/cargo_sucursal_entity.dart';
 import 'package:bosque_flutter/domain/entities/descuento_empleado_entity.dart';
+import 'package:bosque_flutter/domain/entities/docs_vencidos_entity.dart';
 import 'package:bosque_flutter/domain/entities/empresa_entity.dart';
 import 'package:bosque_flutter/domain/entities/sucursal_entity.dart';
 import 'package:bosque_flutter/domain/repositories/rrhh_repository.dart';
@@ -438,6 +440,31 @@ class RRHHRepositoryImpl implements RRHHRepository {
       throw Exception(errorMessage);
     } catch (e) {
       throw Exception('Error inesperado al registrar áreas: ${e.toString()}');
+    }
+  }
+
+  //==============
+  //OBTENDRA DOCUMENTOS VENCIDOS/ POR VENCER
+  //==============
+  Future<List<DocsVencidosEntity>> getDocsVencidos() async {
+    try {
+      final response = await _dio.post(AppConstants.docsVencidos, data: {});
+      if (response.statusCode == 204 || response.data == null) return [];
+
+      if (response.statusCode == 200) {
+        final raw = response.data;
+        final data = raw is List ? raw : (raw['data'] ?? []);
+        if (data is! List) return [];
+        return (data as List<dynamic>)
+            .map((json) => DocsVencidosModel.fromJson(json).toEntity())
+            .toList();
+      }
+      return [];
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 204) return [];
+      throw Exception('Error al obtener documentos vencidos: ${e.message}');
+    } catch (e) {
+      throw Exception('Error inesperado getDocsVencidos: ${e.toString()}');
     }
   }
 }

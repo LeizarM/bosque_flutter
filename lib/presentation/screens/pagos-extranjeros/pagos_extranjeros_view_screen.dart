@@ -70,132 +70,6 @@ class _PagosAlExtranjerosViewScreenState
     }
   }
 
-  Future<void> _aprobarSolicitud(SolicitudPagoEntity solicitud) async {
-    // Confirmation dialog
-    final confirmar = await showDialog<bool>(
-      context: context,
-      builder:
-          (ctx) => AlertDialog(
-            icon: const Icon(Icons.check_circle_outline_rounded, size: 40),
-            title: const Text('Confirmar aprobación'),
-            content: Text(
-              '¿Está seguro de aprobar la solicitud #${solicitud.idSolicitud} '
-              'por \$ ${_nf.format(solicitud.montoTotalSolicitud)}?\n\n'
-              'Esta acción no se puede deshacer.',
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(ctx).pop(false),
-                child: const Text('Cancelar'),
-              ),
-              FilledButton(
-                onPressed: () => Navigator.of(ctx).pop(true),
-                child: const Text('Aprobar'),
-              ),
-            ],
-          ),
-    );
-    if (confirmar != true || !mounted) return;
-
-    final audUsuario = ref.read(userProvider)?.codUsuario ?? 0;
-    setState(() => _approvingId = solicitud.idSolicitud);
-    try {
-      final ok = await ref
-          .read(pagosExtranjerosProvider.notifier)
-          .aprobarSolicitud(
-            idSolicitud: solicitud.idSolicitud.toInt(),
-            codEmpresa: solicitud.codEmpresa,
-            montoTotalSolicitud: solicitud.montoTotalSolicitud,
-            audUsuario: audUsuario,
-          );
-      if (!mounted) return;
-      if (ok) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              'Solicitud #${solicitud.idSolicitud} aprobada exitosamente.',
-            ),
-            backgroundColor: Colors.green.shade700,
-          ),
-        );
-        ref.invalidate(solicitudesRegistradasProvider(_param));
-      } else {
-        final error =
-            ref.read(pagosExtranjerosProvider).mensajeError ??
-            'Error al aprobar la solicitud.';
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(error), backgroundColor: Colors.red),
-        );
-      }
-    } finally {
-      if (mounted) setState(() => _approvingId = null);
-    }
-  }
-
-  Future<void> _rechazarSolicitud(SolicitudPagoEntity solicitud) async {
-    final confirmar = await showDialog<bool>(
-      context: context,
-      builder:
-          (ctx) => AlertDialog(
-            icon: const Icon(Icons.cancel_outlined, size: 40),
-            title: const Text('Confirmar rechazo'),
-            content: Text(
-              '¿Está seguro de rechazar la solicitud #${solicitud.idSolicitud} '
-              'por \$ ${_nf.format(solicitud.montoTotalSolicitud)}?\n\n'
-              'Esta acción no se puede deshacer.',
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(ctx).pop(false),
-                child: const Text('Cancelar'),
-              ),
-              FilledButton(
-                onPressed: () => Navigator.of(ctx).pop(true),
-                style: FilledButton.styleFrom(
-                  backgroundColor: Colors.red.shade700,
-                ),
-                child: const Text('Rechazar'),
-              ),
-            ],
-          ),
-    );
-    if (confirmar != true || !mounted) return;
-
-    final audUsuario = ref.read(userProvider)?.codUsuario ?? 0;
-    setState(() => _rejectingId = solicitud.idSolicitud);
-    try {
-      final ok = await ref
-          .read(pagosExtranjerosProvider.notifier)
-          .rechazarSolicitud(
-            idSolicitud: solicitud.idSolicitud.toInt(),
-            codEmpresa: solicitud.codEmpresa,
-            montoTotalSolicitud: solicitud.montoTotalSolicitud,
-            audUsuario: audUsuario,
-          );
-      if (!mounted) return;
-      if (ok) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              'Solicitud #${solicitud.idSolicitud} rechazada exitosamente.',
-            ),
-            backgroundColor: Colors.red.shade700,
-          ),
-        );
-        ref.invalidate(solicitudesRegistradasProvider(_param));
-      } else {
-        final error =
-            ref.read(pagosExtranjerosProvider).mensajeError ??
-            'Error al rechazar la solicitud.';
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(error), backgroundColor: Colors.red),
-        );
-      }
-    } finally {
-      if (mounted) setState(() => _rejectingId = null);
-    }
-  }
-
   void _abrirCotizacion(SolicitudPagoEntity solicitud) {
     final isDesktop = ResponsiveUtilsBosque.isDesktop(context);
     // Init form con idSolicitud
@@ -554,14 +428,8 @@ class _PagosAlExtranjerosViewScreenState
                       isMobile: isMobile,
                       isApproving: _approvingId == sol.idSolicitud,
                       isRejecting: _rejectingId == sol.idSolicitud,
-                      onAprobar:
-                          sol.estado.toUpperCase() == 'PENDIENTE'
-                              ? () => _aprobarSolicitud(sol)
-                              : null,
-                      onRechazar:
-                          sol.estado.toUpperCase() == 'PENDIENTE'
-                              ? () => _rechazarSolicitud(sol)
-                              : null,
+                      onAprobar: null,
+                      onRechazar: null,
                       onCotizar:
                           sol.estado.toUpperCase() == 'APROBADA'
                               ? () => _abrirCotizacion(sol)
@@ -574,13 +442,14 @@ class _PagosAlExtranjerosViewScreenState
                           sol.estado.toUpperCase() == 'APROBADA'
                               ? () => _abrirTransaccion(sol)
                               : null,
-                      onDetalle: () => abrirDetalleSolicitud(context, ref, sol),
+                      onDetalle: () => abrirDetalleSolicitud(context, ref, sol, asientosReadOnly: true),
                       onVerTransacciones:
                           () => abrirDetalleSolicitud(
                             context,
                             ref,
                             sol,
                             initialTab: 2,
+                            asientosReadOnly: true,
                           ),
                     );
                   },

@@ -90,8 +90,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
 
     try {
       final (loginEntity, message) = await _authRepository.login(
-        _userController.text,
-        _passwordController.text,
+        _userController.text.trim(),
+        _passwordController.text.trim(),
       );
 
       if (!mounted) return;

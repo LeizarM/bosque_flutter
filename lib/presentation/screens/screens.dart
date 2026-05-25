@@ -24,6 +24,8 @@ export 'package:bosque_flutter/presentation/screens/informe-emp-descuentos/Infor
 export 'package:bosque_flutter/presentation/screens/login/login_screen.dart';
 export 'package:bosque_flutter/presentation/screens/lote-produccion/lote_produccion_registro_screen.dart';
 export 'package:bosque_flutter/presentation/screens/lote-produccion/resmado_registro_screen.dart';
+export 'package:bosque_flutter/presentation/screens/pagos-extranjeros/cobranzas_asientos_screen.dart';
+export 'package:bosque_flutter/presentation/screens/pagos-extranjeros/gerencia_aprobacion_screen.dart';
 export 'package:bosque_flutter/presentation/screens/pagos-extranjeros/pagos_extranjeros_list_screen.dart';
 export 'package:bosque_flutter/presentation/screens/pagos-extranjeros/pagos_extranjeros_register_screen.dart';
 export 'package:bosque_flutter/presentation/screens/pagos-extranjeros/pagos_extranjeros_screen.dart';
@@ -33,3 +35,4 @@ export 'package:bosque_flutter/presentation/screens/prestamo_vehiculos/prestamo_
 export 'package:bosque_flutter/presentation/screens/registro_empleado/lista_empleados.dart';
 export 'package:bosque_flutter/presentation/screens/usuarios/usuarios_home_screen.dart';
 export 'package:bosque_flutter/presentation/screens/ventas/ventas_home_screen.dart';
+export 'package:bosque_flutter/presentation/screens/anticipos/anticipos_screen.dart';

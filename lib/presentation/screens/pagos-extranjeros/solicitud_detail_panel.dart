@@ -1,7 +1,10 @@
 import 'package:bosque_flutter/core/state/pagos_extranjeros_provider.dart';
+import 'package:bosque_flutter/core/state/user_provider.dart';
 import 'package:bosque_flutter/core/utils/responsive_utils_bosque.dart';
 import 'package:bosque_flutter/data/repositories/pagos_extranjeros_impl.dart';
 import 'package:bosque_flutter/domain/entities/asiento_entity.dart';
+import 'package:file_picker/file_picker.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:bosque_flutter/domain/entities/cargo_pago_entity.dart';
 import 'package:bosque_flutter/domain/entities/cotizaciones_entity.dart';
 import 'package:bosque_flutter/domain/entities/detalle_solicitud_entity.dart';
@@ -115,11 +118,16 @@ void abrirDetalleSolicitud(
   WidgetRef ref,
   SolicitudPagoEntity solicitud, {
   int initialTab = 0,
+  bool asientosReadOnly = false,
 }) {
   final isDesktop = ResponsiveUtilsBosque.isDesktop(context);
   final widget = ProviderScope(
     parent: ProviderScope.containerOf(context),
-    child: _SolicitudDetailPanel(solicitud: solicitud, initialTab: initialTab),
+    child: _SolicitudDetailPanel(
+      solicitud: solicitud,
+      initialTab: initialTab,
+      asientosReadOnly: asientosReadOnly,
+    ),
   );
 
   if (isDesktop) {
@@ -151,7 +159,12 @@ void abrirDetalleSolicitud(
 class _SolicitudDetailPanel extends ConsumerStatefulWidget {
   final SolicitudPagoEntity solicitud;
   final int initialTab;
-  const _SolicitudDetailPanel({required this.solicitud, this.initialTab = 0});
+  final bool asientosReadOnly;
+  const _SolicitudDetailPanel({
+    required this.solicitud,
+    this.initialTab = 0,
+    this.asientosReadOnly = false,
+  });
 
   @override
   ConsumerState<_SolicitudDetailPanel> createState() =>
@@ -277,7 +290,10 @@ class _SolicitudDetailPanelState extends ConsumerState<_SolicitudDetailPanel>
               _TabTransacciones(solicitud: sol),
               _TabLog(solicitud: sol),
               _TabTimeline(solicitud: sol),
-              _TabAsientos(solicitud: sol),
+              _TabAsientos(
+                solicitud: sol,
+                readOnly: widget.asientosReadOnly,
+              ),
             ],
           ),
         ),
@@ -645,6 +661,8 @@ class _CotizacionCardState extends ConsumerState<_CotizacionCard> {
                 ),
               ],
             ),
+            // Botón aprobar cotización (solo ROLE_GER cuando estado=VIGENTE)
+            _CotizacionAprobarButton(cotizacion: cot, cs: cs),
             // Cargos inline (from nested entity) or fetch from endpoint
             if (cot.cargos.isNotEmpty) ...[
               const SizedBox(height: 8),
@@ -687,6 +705,108 @@ class _CotizacionCardState extends ConsumerState<_CotizacionCard> {
             ],
           ],
         ),
+      ),
+    );
+  }
+}
+
+// ── Aprobación de cotización (solo ROLE_GER, estado VIGENTE) ─────────────────
+
+class _CotizacionAprobarButton extends ConsumerStatefulWidget {
+  final CotizacionesEntity cotizacion;
+  final ColorScheme cs;
+  const _CotizacionAprobarButton({
+    required this.cotizacion,
+    required this.cs,
+  });
+
+  @override
+  ConsumerState<_CotizacionAprobarButton> createState() =>
+      _CotizacionAprobarButtonState();
+}
+
+class _CotizacionAprobarButtonState
+    extends ConsumerState<_CotizacionAprobarButton> {
+  bool _cargando = false;
+
+  Future<void> _aprobar() async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Aprobar cotización'),
+        content: Text(
+          '¿Confirma aprobar la cotización #${widget.cotizacion.idCotizacion}?\n'
+          'Las demás cotizaciones quedarán RECHAZADAS.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Aprobar'),
+          ),
+        ],
+      ),
+    );
+    if (confirm != true) return;
+
+    setState(() => _cargando = true);
+    try {
+      final audUsuario = ref.read(userProvider)?.codUsuario ?? 0;
+      final repo = PagosExtranjerosImpl();
+      await repo.aceptarCotizacion({
+        'idCotizacion': widget.cotizacion.idCotizacion.toInt(),
+        'idSolicitud': widget.cotizacion.idSolicitud.toInt(),
+        'estado': 'ACEPTADA',
+        'audUsuario': audUsuario,
+      });
+      if (!mounted) return;
+      // Invalidar para refrescar la lista de cotizaciones
+      ref.invalidate(cotizacionesXSolicitudProvider(widget.cotizacion.idSolicitud));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Cotización aprobada exitosamente')),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(e.toString().replaceFirst('Exception: ', '')),
+          backgroundColor: Theme.of(context).colorScheme.error,
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _cargando = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final tipoUsuario = ref.watch(userProvider)?.tipoUsuario ?? '';
+    final esGer = tipoUsuario == 'ger';
+    final esVigente =
+        widget.cotizacion.estado.toUpperCase() == 'VIGENTE';
+
+    if (!esGer || !esVigente) return const SizedBox.shrink();
+
+    return Padding(
+      padding: const EdgeInsets.only(top: 10),
+      child: FilledButton.icon(
+        icon: _cargando
+            ? const SizedBox(
+                width: 16,
+                height: 16,
+                child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+              )
+            : const Icon(Icons.check_circle_outline_rounded, size: 18),
+        label: Text(_cargando ? 'Aprobando…' : 'Aprobar esta cotización'),
+        style: FilledButton.styleFrom(
+          backgroundColor: Colors.green.shade700,
+          foregroundColor: Colors.white,
+          visualDensity: VisualDensity.compact,
+        ),
+        onPressed: _cargando ? null : _aprobar,
       ),
     );
   }
@@ -990,30 +1110,143 @@ class _TransaccionCardState extends ConsumerState<_TransaccionCard> {
             _TxnLogInline(idTransaccion: t.idTransaccion, cs: cs),
             // Voucher
             const SizedBox(height: 8),
-            if (t.tieneVoucher)
-              ActionChip(
-                avatar: Icon(Icons.check_circle, color: cs.primary, size: 18),
-                label: const Text('Ver Voucher'),
-                backgroundColor: cs.primaryContainer,
-                onPressed:
-                    () => _verVoucherPost(
-                      context,
-                      t.idTransaccion,
-                      codEmpresa:
-                          t.codEmpresa != 0 ? t.codEmpresa : widget.codEmpresa,
-                    ),
-              )
-            else
-              Text(
-                'Sin voucher adjunto',
-                style: TextStyle(
-                  fontSize: 11,
-                  color: cs.onSurfaceVariant,
-                  fontStyle: FontStyle.italic,
-                ),
-              ),
+            _VoucherSection(
+              txn: t,
+              codEmpresa: widget.codEmpresa,
+              cs: cs,
+            ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+// ── Voucher inline (upload + view) ────────────────────────────────────────────
+
+class _VoucherSection extends ConsumerStatefulWidget {
+  final TransaccionesEntity txn;
+  final int codEmpresa;
+  final ColorScheme cs;
+  const _VoucherSection({
+    required this.txn,
+    required this.codEmpresa,
+    required this.cs,
+  });
+
+  @override
+  ConsumerState<_VoucherSection> createState() => _VoucherSectionState();
+}
+
+class _VoucherSectionState extends ConsumerState<_VoucherSection> {
+  bool _subiendo = false;
+  bool? _tieneVoucher; // null = usar valor del entity
+
+  bool get _efectivo => _tieneVoucher ?? widget.txn.tieneVoucher;
+
+  Future<void> _subir() async {
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: ['jpg', 'jpeg', 'png', 'pdf'],
+      withData: true,
+    );
+    if (result == null || result.files.isEmpty) return;
+    final file = result.files.single;
+    final audUsuario = ref.read(userProvider)?.codUsuario ?? 0;
+    setState(() => _subiendo = true);
+    try {
+      final repo = PagosExtranjerosImpl();
+      await repo.subirVoucher(
+        idTransaccion: widget.txn.idTransaccion,
+        audUsuario: audUsuario,
+        filePath: kIsWeb ? null : file.path,
+        fileBytes: file.bytes,
+        fileName: file.name,
+      );
+      if (!mounted) return;
+      setState(() => _tieneVoucher = true);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Voucher subido exitosamente')),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(e.toString().replaceFirst('Exception: ', '')),
+          backgroundColor: Theme.of(context).colorScheme.error,
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _subiendo = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final tipoUsuario = ref.watch(userProvider)?.tipoUsuario ?? '';
+    final esGRH = tipoUsuario == 'grh';
+    final cs = widget.cs;
+
+    if (_subiendo) {
+      return Row(
+        children: [
+          const SizedBox(
+            width: 16,
+            height: 16,
+            child: CircularProgressIndicator(strokeWidth: 2),
+          ),
+          const SizedBox(width: 8),
+          Text(
+            'Subiendo voucher…',
+            style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant),
+          ),
+        ],
+      );
+    }
+
+    if (_efectivo) {
+      return Row(
+        children: [
+          ActionChip(
+            avatar: Icon(Icons.check_circle, color: cs.primary, size: 18),
+            label: const Text('Ver Voucher'),
+            backgroundColor: cs.primaryContainer,
+            onPressed: () => _verVoucherPost(
+              context,
+              widget.txn.idTransaccion,
+              codEmpresa: widget.txn.codEmpresa != 0
+                  ? widget.txn.codEmpresa
+                  : widget.codEmpresa,
+            ),
+          ),
+          if (esGRH) ...[
+            const SizedBox(width: 8),
+            IconButton(
+              icon: const Icon(Icons.upload_file, size: 18),
+              tooltip: 'Reemplazar voucher',
+              visualDensity: VisualDensity.compact,
+              onPressed: _subir,
+            ),
+          ],
+        ],
+      );
+    }
+
+    // Sin voucher
+    if (esGRH && widget.txn.estado.toUpperCase() == 'PENDIENTE') {
+      return FilledButton.tonalIcon(
+        icon: const Icon(Icons.upload_file, size: 18),
+        label: const Text('Subir Voucher'),
+        onPressed: _subir,
+      );
+    }
+
+    return Text(
+      'Sin voucher adjunto',
+      style: TextStyle(
+        fontSize: 11,
+        color: cs.onSurfaceVariant,
+        fontStyle: FontStyle.italic,
       ),
     );
   }
@@ -1570,7 +1803,8 @@ class _MiniChip extends StatelessWidget {
 
 class _TabAsientos extends ConsumerWidget {
   final SolicitudPagoEntity solicitud;
-  const _TabAsientos({required this.solicitud});
+  final bool readOnly;
+  const _TabAsientos({required this.solicitud, this.readOnly = false});
 
   static const _estados = {'PENDIENTE', 'PROCESADO', 'CONFIRMADO'};
 
@@ -1599,7 +1833,7 @@ class _TabAsientos extends ConsumerWidget {
 
         // Si hay varias transacciones mostramos selector; caso común: 1 transacción
         if (txns.length == 1) {
-          return _AsientosDeTransaccion(txn: txns.first, cs: cs);
+          return _AsientosDeTransaccion(txn: txns.first, cs: cs, readOnly: readOnly);
         }
 
         // Múltiples transacciones: mostrar una sección expandible por cada una
@@ -1631,7 +1865,7 @@ class _TabAsientos extends ConsumerWidget {
                 ),
                 subtitle: _EstadoBadge(estado: txn.estado),
                 children: [
-                  _AsientosDeTransaccion(txn: txn, cs: cs),
+                  _AsientosDeTransaccion(txn: txn, cs: cs, readOnly: readOnly),
                 ],
               ),
             );
@@ -1645,15 +1879,20 @@ class _TabAsientos extends ConsumerWidget {
 class _AsientosDeTransaccion extends ConsumerWidget {
   final TransaccionesEntity txn;
   final ColorScheme cs;
-  const _AsientosDeTransaccion({required this.txn, required this.cs});
+  final bool readOnly;
+  const _AsientosDeTransaccion({
+    required this.txn,
+    required this.cs,
+    this.readOnly = false,
+  });
 
-  static const _estadosEditables = {'PENDIENTE', 'PROCESADO'};
+  static const _estadosEditables = {'PENDIENTE', 'PROCESADO', 'CONFIRMADO'};
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final asyncAsientos = ref.watch(asientosTransaccionProvider(txn.idTransaccion));
     final asyncCuadre = ref.watch(cuadreAsientosProvider(txn.idTransaccion));
-    final puedeAgregar = _estadosEditables.contains(txn.estado.toUpperCase());
+    final puedeAgregar = !readOnly && _estadosEditables.contains(txn.estado.toUpperCase());
 
     return asyncAsientos.when(
       loading: () => const Padding(
@@ -1675,7 +1914,7 @@ class _AsientosDeTransaccion extends ConsumerWidget {
               ),
             )
           else
-            _AsientosTabla(asientos: asientos, cs: cs),
+            _AsientosTabla(asientos: asientos, txn: txn, cs: cs, readOnly: readOnly),
 
           // Resumen de cuadre
           asyncCuadre.when(
@@ -1749,7 +1988,13 @@ class _AsientosDeTransaccion extends ConsumerWidget {
               child: FilledButton.icon(
                 icon: const Icon(Icons.add_rounded, size: 18),
                 label: const Text('Agregar asiento'),
-                onPressed: () => _abrirDialogoAsiento(context, ref, txn),
+                onPressed: () => _abrirDialogoAsiento(
+                  context,
+                  ref,
+                  txn,
+                  nextNumero: asientos.length + 1,
+                  audUsuario: ref.read(userProvider)?.codUsuario ?? 0,
+                ),
               ),
             ),
         ],
@@ -1761,6 +2006,8 @@ class _AsientosDeTransaccion extends ConsumerWidget {
     BuildContext context,
     WidgetRef ref,
     TransaccionesEntity txn, {
+    required int nextNumero,
+    required int audUsuario,
     AsientoEntity? editar,
   }) {
     showModalBottomSheet(
@@ -1770,9 +2017,11 @@ class _AsientosDeTransaccion extends ConsumerWidget {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      builder: (_) => ProviderScope(
-        parent: ProviderScope.containerOf(context),
-        child: _DialogoAsiento(txn: txn, editar: editar),
+      builder: (_) => _DialogoAsiento(
+        txn: txn,
+        numero: editar?.numero ?? nextNumero,
+        audUsuario: audUsuario,
+        editar: editar,
       ),
     );
   }
@@ -1780,24 +2029,47 @@ class _AsientosDeTransaccion extends ConsumerWidget {
 
 class _AsientosTabla extends StatelessWidget {
   final List<AsientoEntity> asientos;
+  final TransaccionesEntity txn;
   final ColorScheme cs;
-  const _AsientosTabla({required this.asientos, required this.cs});
+  final bool readOnly;
+  const _AsientosTabla({
+    required this.asientos,
+    required this.txn,
+    required this.cs,
+    this.readOnly = false,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(12, 8, 12, 4),
       child: Column(
-        children: asientos.map((a) => _AsientoFila(asiento: a, cs: cs)).toList(),
+        children: asientos
+            .map((a) => _AsientoFila(asiento: a, txn: txn, cs: cs, readOnly: readOnly))
+            .toList(),
       ),
     );
   }
 }
 
-class _AsientoFila extends StatelessWidget {
+class _AsientoFila extends ConsumerStatefulWidget {
   final AsientoEntity asiento;
+  final TransaccionesEntity txn;
   final ColorScheme cs;
-  const _AsientoFila({required this.asiento, required this.cs});
+  final bool readOnly;
+  const _AsientoFila({
+    required this.asiento,
+    required this.txn,
+    required this.cs,
+    this.readOnly = false,
+  });
+
+  @override
+  ConsumerState<_AsientoFila> createState() => _AsientoFilaState();
+}
+
+class _AsientoFilaState extends ConsumerState<_AsientoFila> {
+  bool _eliminando = false;
 
   Color _tipoColor(String tipo) {
     switch (tipo.toUpperCase()) {
@@ -1812,113 +2084,243 @@ class _AsientoFila extends StatelessWidget {
     }
   }
 
+  void _editar() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (_) => _DialogoAsiento(
+        txn: widget.txn,
+        numero: widget.asiento.numero,
+        audUsuario: ref.read(userProvider)?.codUsuario ?? 0,
+        editar: widget.asiento,
+      ),
+    );
+  }
+
+  Future<void> _eliminar() async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Eliminar asiento'),
+        content: Text(
+          '¿Confirma eliminar el asiento #${widget.asiento.numero}?\n'
+          'Esta acción no se puede deshacer.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(backgroundColor: Colors.red),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Eliminar'),
+          ),
+        ],
+      ),
+    );
+    if (ok != true || !mounted) return;
+
+    setState(() => _eliminando = true);
+    try {
+      final audUsuario = ref.read(userProvider)?.codUsuario ?? 0;
+      final repo = PagosExtranjerosImpl();
+      await repo.eliminarAsiento({
+        'idAsiento': widget.asiento.idAsiento.toInt(),
+        'idTransaccion': widget.txn.idTransaccion.toInt(),
+        'audUsuario': audUsuario,
+      });
+      if (!mounted) return;
+      ref.invalidate(asientosTransaccionProvider(widget.txn.idTransaccion));
+      ref.invalidate(cuadreAsientosProvider(widget.txn.idTransaccion));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Asiento eliminado')),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(e.toString().replaceFirst('Exception: ', '')),
+          backgroundColor: Theme.of(context).colorScheme.error,
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _eliminando = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    final asiento = widget.asiento;
+    final cs = widget.cs;
     final c = _tipoColor(asiento.tipoAsiento);
+
     return Container(
       margin: const EdgeInsets.only(bottom: 6),
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
       decoration: BoxDecoration(
         color: cs.surfaceContainerLow,
         borderRadius: BorderRadius.circular(8),
         border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.35)),
       ),
-      child: Row(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          // Número
-          Container(
-            width: 28,
-            height: 28,
-            decoration: BoxDecoration(
-              color: cs.primaryContainer,
-              borderRadius: BorderRadius.circular(6),
-            ),
-            alignment: Alignment.center,
-            child: Text(
-              '${asiento.numero}',
-              style: TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.w700,
-                color: cs.onPrimaryContainer,
-              ),
-            ),
-          ),
-          const SizedBox(width: 8),
-          // Tipo
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-            decoration: BoxDecoration(
-              color: c.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(4),
-              border: Border.all(color: c.withValues(alpha: 0.35)),
-            ),
-            child: Text(
-              asiento.tipoAsiento,
-              style: TextStyle(
-                fontSize: 10,
-                fontWeight: FontWeight.w700,
-                color: c,
-              ),
-            ),
-          ),
-          const SizedBox(width: 8),
-          // Cuentas
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+          // ── Fila principal ──────────────────────────────────────────
+          Padding(
+            padding: const EdgeInsets.fromLTRB(10, 8, 4, 4),
+            child: Row(
               children: [
-                if (asiento.cuentaDebe.isNotEmpty)
-                  Text(
-                    'Debe: ${asiento.cuentaDebe}',
-                    style: const TextStyle(fontSize: 11),
-                    overflow: TextOverflow.ellipsis,
+                // Número
+                Container(
+                  width: 28,
+                  height: 28,
+                  decoration: BoxDecoration(
+                    color: cs.primaryContainer,
+                    borderRadius: BorderRadius.circular(6),
                   ),
-                if (asiento.cuentaHaber.isNotEmpty)
-                  Text(
-                    'Haber: ${asiento.cuentaHaber}',
+                  alignment: Alignment.center,
+                  child: Text(
+                    '${asiento.numero}',
                     style: TextStyle(
                       fontSize: 11,
-                      color: cs.onSurfaceVariant,
+                      fontWeight: FontWeight.w700,
+                      color: cs.onPrimaryContainer,
                     ),
-                    overflow: TextOverflow.ellipsis,
                   ),
-                if (asiento.descripcion.isNotEmpty)
-                  Text(
-                    asiento.descripcion,
+                ),
+                const SizedBox(width: 8),
+                // Tipo badge
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: c.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(4),
+                    border: Border.all(color: c.withValues(alpha: 0.35)),
+                  ),
+                  child: Text(
+                    asiento.tipoAsiento,
                     style: TextStyle(
                       fontSize: 10,
-                      color: cs.onSurfaceVariant,
-                      fontStyle: FontStyle.italic,
+                      fontWeight: FontWeight.w700,
+                      color: c,
                     ),
-                    overflow: TextOverflow.ellipsis,
                   ),
+                ),
+                const SizedBox(width: 8),
+                // Cuentas + descripción
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      if (asiento.cuentaDebe.isNotEmpty)
+                        Text(
+                          'Debe: ${asiento.cuentaDebe}',
+                          style: const TextStyle(fontSize: 11),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      if (asiento.cuentaHaber.isNotEmpty)
+                        Text(
+                          'Haber: ${asiento.cuentaHaber}',
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: cs.onSurfaceVariant,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      if (asiento.descripcion.isNotEmpty)
+                        Text(
+                          asiento.descripcion,
+                          style: TextStyle(
+                            fontSize: 10,
+                            color: cs.primary.withValues(alpha: 0.75),
+                            fontStyle: FontStyle.italic,
+                            fontWeight: FontWeight.w500,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                          maxLines: 2,
+                        ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 8),
+                // Montos
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    if (asiento.debitoBs > 0)
+                      Text(
+                        'D: ${_numberFormat.format(asiento.debitoBs)}',
+                        style: const TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    if (asiento.creditoBs > 0)
+                      Text(
+                        'C: ${_numberFormat.format(asiento.creditoBs)}',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          color: cs.onSurfaceVariant,
+                        ),
+                      ),
+                  ],
+                ),
               ],
             ),
           ),
-          const SizedBox(width: 8),
-          // Montos
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              if (asiento.debitoBs > 0)
-                Text(
-                  'D: ${_numberFormat.format(asiento.debitoBs)}',
-                  style: const TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
-                  ),
+          // ── Botones editar / eliminar ───────────────────────────────
+          if (!widget.readOnly)
+            if (_eliminando)
+              const Padding(
+                padding: EdgeInsets.only(bottom: 6),
+                child: SizedBox(
+                  height: 18,
+                  width: 18,
+                  child: CircularProgressIndicator(strokeWidth: 2),
                 ),
-              if (asiento.creditoBs > 0)
-                Text(
-                  'C: ${_numberFormat.format(asiento.creditoBs)}',
-                  style: TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
-                    color: cs.onSurfaceVariant,
+              )
+            else
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                TextButton.icon(
+                  icon: const Icon(Icons.edit_rounded, size: 14),
+                  label: const Text('Editar', style: TextStyle(fontSize: 11)),
+                  style: TextButton.styleFrom(
+                    foregroundColor: cs.primary,
+                    visualDensity: VisualDensity.compact,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 2,
+                    ),
                   ),
+                  onPressed: _editar,
                 ),
-            ],
-          ),
+                TextButton.icon(
+                  icon: const Icon(Icons.delete_outline_rounded, size: 14),
+                  label: const Text(
+                    'Eliminar',
+                    style: TextStyle(fontSize: 11),
+                  ),
+                  style: TextButton.styleFrom(
+                    foregroundColor: Colors.red,
+                    visualDensity: VisualDensity.compact,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 2,
+                    ),
+                  ),
+                  onPressed: _eliminar,
+                ),
+                const SizedBox(width: 4),
+              ],
+            ),
         ],
       ),
     );
@@ -1930,7 +2332,14 @@ class _AsientoFila extends StatelessWidget {
 class _DialogoAsiento extends ConsumerStatefulWidget {
   final TransaccionesEntity txn;
   final AsientoEntity? editar;
-  const _DialogoAsiento({required this.txn, this.editar});
+  final int numero;       // nro de asiento (length+1 para nuevo, e.numero para editar)
+  final int audUsuario;   // se pasa desde el widget padre que tiene ref correcto
+  const _DialogoAsiento({
+    required this.txn,
+    required this.numero,
+    required this.audUsuario,
+    this.editar,
+  });
 
   @override
   ConsumerState<_DialogoAsiento> createState() => _DialogoAsientoState();
@@ -1993,6 +2402,8 @@ class _DialogoAsientoState extends ConsumerState<_DialogoAsiento> {
     final payload = <String, dynamic>{
       'idAsiento': editar?.idAsiento.toInt() ?? 0,
       'idTransaccion': widget.txn.idTransaccion.toInt(),
+      'numero': widget.numero,
+      'codBancoRef': widget.txn.codBanco,
       'tipoAsiento': _tipoAsiento,
       'cuentaDebe': _cuentaDebeCtrl.text.trim(),
       'cuentaHaber': _cuentaHaberCtrl.text.trim(),
@@ -2002,6 +2413,7 @@ class _DialogoAsientoState extends ConsumerState<_DialogoAsiento> {
       'debitoUs': _esDebito ? montoUs : 0.0,
       'creditoUs': _esDebito ? 0.0 : montoUs,
       'tcAplicado': _tc,
+      'audUsuario': widget.audUsuario,
     };
 
     try {
@@ -2064,20 +2476,48 @@ class _DialogoAsientoState extends ConsumerState<_DialogoAsiento> {
                 fontWeight: FontWeight.w700,
               ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 8),
 
-            // Tipo de asiento
+            // TC BCB referencia
+            ref.watch(tcVigenteRefProvider((
+              codBanco: null,
+              idMonedaOrigen: 3,
+              idMonedaDestino: 4,
+            ))).when(
+              data: (tc) => tc == null
+                  ? const SizedBox.shrink()
+                  : Align(
+                      alignment: Alignment.centerLeft,
+                      child: Chip(
+                        visualDensity: VisualDensity.compact,
+                        avatar: const Icon(Icons.currency_exchange, size: 14),
+                        label: Text(
+                          'TC BCB ref: ${_numberFormat.format(tc.tasaVenta)}',
+                          style: const TextStyle(fontSize: 11),
+                        ),
+                        backgroundColor: cs.primaryContainer.withValues(alpha: 0.4),
+                      ),
+                    ),
+              loading: () => const SizedBox(
+                height: 20,
+                width: 20,
+                child: CircularProgressIndicator(strokeWidth: 1.5),
+              ),
+              error: (_, __) => const SizedBox.shrink(),
+            ),
+            const SizedBox(height: 10),
+
+            // Medio de Pago
             DropdownButtonFormField<String>(
               value: _tipoAsiento,
               decoration: const InputDecoration(
-                labelText: 'Tipo de asiento',
+                labelText: 'Medio de Pago',
                 border: OutlineInputBorder(),
                 isDense: true,
               ),
               items: const [
-                DropdownMenuItem(value: 'PR', child: Text('PR — Préstamo')),
-                DropdownMenuItem(value: 'PE', child: Text('PE — Pago Exterior')),
-                DropdownMenuItem(value: 'MP', child: Text('MP — Mesa de Partes')),
+                DropdownMenuItem(value: 'PR', child: Text('PR — Pago Recibido')),
+                DropdownMenuItem(value: 'PE', child: Text('PE — Pago Efectuado')),
               ],
               onChanged: (v) => setState(() => _tipoAsiento = v ?? 'PR'),
             ),
@@ -2109,15 +2549,19 @@ class _DialogoAsientoState extends ConsumerState<_DialogoAsiento> {
             ),
             const SizedBox(height: 12),
 
-            // Descripción
+            // Glosa
             TextFormField(
               controller: _descripcionCtrl,
               decoration: const InputDecoration(
-                labelText: 'Descripción',
+                labelText: 'Glosa',
+                hintText: 'Ej: Cambio de MN a ME IMP 25-014 GOLD EAST',
                 border: OutlineInputBorder(),
                 isDense: true,
+                helperText: 'Descripción del movimiento contable',
               ),
               maxLines: 2,
+              validator: (v) =>
+                  (v == null || v.trim().isEmpty) ? 'La glosa es obligatoria' : null,
             ),
             const SizedBox(height: 12),
 

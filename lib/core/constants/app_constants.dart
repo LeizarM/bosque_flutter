@@ -315,6 +315,7 @@ class AppConstants {
   //ENDPOINTS AREA
   static const String obtenerArea = '/rrhh/obtenerArea';
   static const String registroArea = '/rrhh/registrarArea';
+  static const String docsVencidos = '/rrhh/docsVencidos';
 
   // ═══════════════════════════════════════════════════════════════════════════════
   // RUTAS MODULO DE PAGOS AL EXTRANJERO
@@ -382,6 +383,8 @@ class AppConstants {
   static const String tpexEliminarMoneda = '/pagos-extranjeros/eliminar-moneda';
   static const String tpexObtenerTipoCambioBanco =
       '/pagos-extranjeros/obtener-tipos-cambio-banco';
+  static const String tpexObtenerTCVigenteRef =
+      '/pagos-extranjeros/obtener-tc-vigente-ref'; // ACCION='V' — último BCB
   static const String tpexRegistrarTipoCambio =
       '/pagos-extranjeros/registrar-tipo-cambio';
   static const String tpexEliminarTipoCambio =
@@ -461,6 +464,17 @@ class AppConstants {
   static const String antTipoAsignacion = '/anticipo/tipoAsigAnticipo';
   static const String antRegistrarAnticipo = '/anticipo/registrarAnticipo';
   static const String antAnticipoNoAsignado = '/anticipo/anticipoNoAsignado';
+  static const String antPrevisualizarAsignacion =
+      '/anticipo/previsualizarAsignacion';
+  static const String antAnularAnticipo = '/anticipo/anularAnticipo';
+  static const String antEditarAsignacion = '/anticipo/editarAsignacion';
+  static const String antEstadoAnticipo = '/anticipo/estadoAnticipo';
+  // ═══════════════════════════════════════════════════════════════════════════════
+  // RUTAS MODULO: MULTAS
+  // ═══════════════════════════════════════════════════════════════════════════════
+  static const String mulListasMultas = '/multas/listarMultas';
+  static const String mulGenerarMultas = '/multas/generarMultas';
+  static const String mulEditarMulta = '/multas/editarMulta';
   // ── TPROD: Lote de Produccion ────────────────────────────────────────────────────────────
 
   //Para cargar permisos de botones por usuario

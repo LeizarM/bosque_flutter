@@ -1,8 +1,11 @@
 import 'dart:math' as math;
 
+import 'package:bosque_flutter/core/state/button_permissions_provider.dart';
 import 'package:bosque_flutter/core/state/empleados_dependientes_provider.dart';
+import 'package:bosque_flutter/core/state/rrhh_provider.dart';
 import 'package:bosque_flutter/core/state/user_provider.dart';
 import 'package:bosque_flutter/presentation/widgets/shared/confetti_widget.dart';
+import 'package:bosque_flutter/presentation/widgets/shared/docs_vencidos.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -105,7 +108,26 @@ class _DashboardHomeContentState extends ConsumerState<DashboardHomeContent>
     final primary = theme.colorScheme.primary;
     final screenW = MediaQuery.of(context).size.width;
     final isWide = screenW > 700;
+    // 1. ¿Hay datos de documentos para mostrar?
+    final docsState = ref.watch(docsVencidosProvider);
+    final tieneDatosDocs =
+        docsState.cargando ||
+        docsState.mensajeError != null ||
+        docsState.items.isNotEmpty;
 
+    // 2. ¿El usuario tiene permiso? (Misma lógica de PermissionWidget)
+    ref.watch(
+      buttonPermissionsProvider,
+    ); // Escuchamos el estado para que se redibuje si cargan los permisos
+
+    final tienePermisoDocs =
+        (user != null && user.tipoUsuario == 'ROLE_ADM') ||
+        ref
+            .read(buttonPermissionsProvider.notifier)
+            .tienePermiso('btnDocsVencidos');
+
+    // Si tiene ambas cosas, lo mostramos.
+    final mostrarDocs = tieneDatosDocs && tienePermisoDocs;
     if (cumpleMensajes.isNotEmpty && !_confettiChecked) {
       _checkAndShowConfetti(cumpleMensajes);
     }
@@ -150,17 +172,49 @@ class _DashboardHomeContentState extends ConsumerState<DashboardHomeContent>
               // ─── Hero Card ───
               _buildHeroCard(context, user, primary, isDark, isWide),
 
-              const SizedBox(height: 28),
+              const SizedBox(height: 10),
 
               // ─── Cumpleaños celebración ───
-              if (cumpleMensajes.isNotEmpty)
-                _buildBirthdaySection(
-                  context,
-                  cumpleMensajes,
-                  primary,
-                  isDark,
-                  isWide,
-                ),
+              if (isWide && cumpleMensajes.isNotEmpty && mostrarDocs)
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Docs ocupa 3/5 del ancho
+                    const Expanded(
+                      flex: 3,
+                      child: DocsVencidosDashboardWidget(),
+                    ),
+                    const SizedBox(width: 16),
+                    // Cumpleaños ocupa 2/5
+                    Expanded(
+                      flex: 2,
+                      child: _buildBirthdaySection(
+                        context,
+                        cumpleMensajes,
+                        primary,
+                        isDark,
+                        isWide,
+                      ),
+                    ),
+                  ],
+                )
+              else ...[
+                // Si la pantalla es pequeña, o si falta alguno de los widgets, caen aquí en formato columna:
+                if (mostrarDocs) const DocsVencidosDashboardWidget(),
+
+                // Solo ponemos el separador si AMBOS widgets se van a dibujar apilados
+                if (mostrarDocs && cumpleMensajes.isNotEmpty)
+                  const SizedBox(height: 20),
+
+                if (cumpleMensajes.isNotEmpty)
+                  _buildBirthdaySection(
+                    context,
+                    cumpleMensajes,
+                    primary,
+                    isDark,
+                    isWide,
+                  ),
+              ],
             ],
           ),
         ),

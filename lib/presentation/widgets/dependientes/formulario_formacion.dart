@@ -1,4 +1,3 @@
-
 import 'package:bosque_flutter/core/state/empleados_dependientes_provider.dart';
 import 'package:bosque_flutter/core/state/user_provider.dart';
 import 'package:bosque_flutter/core/utils/formatear_fecha.dart';
@@ -33,7 +32,7 @@ class FormularioFormacion extends ConsumerStatefulWidget {
 class FormularioFormacionState extends ConsumerState<FormularioFormacion> {
   final _formKey = GlobalKey<FormState>();
   final _descripcionController = TextEditingController();
-    final _institucionController = TextEditingController(); // ✅ AGREGAR
+  final _institucionController = TextEditingController(); // ✅ AGREGAR
   final _duracionController = TextEditingController();
   final _tipoDuracionController = TextEditingController();
   final _tipoFormacionController = TextEditingController();
@@ -45,16 +44,16 @@ class FormularioFormacionState extends ConsumerState<FormularioFormacion> {
     super.initState();
     if (widget.isEditing && widget.formacion != null) {
       _descripcionController.text = widget.formacion!.descripcion;
-            _institucionController.text = widget.formacion!.institucion; // ✅ AGREGAR
+      _institucionController.text = widget.formacion!.institucion; // ✅ AGREGAR
       _duracionController.text = widget.formacion!.duracion.toString();
-       // Asignar los valores seleccionados para los dropdowns
-    _tipoFormacionSeleccionado = widget.formacion!.tipoFormacion;
-    _tipoDuracionSeleccionado = widget.formacion!.tipoDuracion;
-    // Los controllers de tipo también se mantienen para respaldo
+      // Asignar los valores seleccionados para los dropdowns
+      _tipoFormacionSeleccionado = widget.formacion!.tipoFormacion;
+      _tipoDuracionSeleccionado = widget.formacion!.tipoDuracion;
+      // Los controllers de tipo también se mantienen para respaldo
       _tipoDuracionController.text = widget.formacion!.tipoDuracion;
       _tipoFormacionController.text = widget.formacion!.tipoFormacion;
       _fechaFinController.text = FormatearFecha.formatearFecha(
-        widget.formacion!.fechaFormacion,
+        widget.formacion!.fechaFormacion!,
       );
     }
   }
@@ -62,7 +61,7 @@ class FormularioFormacionState extends ConsumerState<FormularioFormacion> {
   @override
   void dispose() {
     _descripcionController.dispose();
-        _institucionController.dispose(); // ✅ AGREGAR
+    _institucionController.dispose(); // ✅ AGREGAR
     _duracionController.dispose();
     _tipoDuracionController.dispose();
     _tipoFormacionController.dispose();
@@ -83,14 +82,16 @@ class FormularioFormacionState extends ConsumerState<FormularioFormacion> {
                   codFormacion: widget.formacion!.codFormacion,
                   codEmpleado: widget.codEmpleado,
                   descripcion: _descripcionController.text,
-                                  institucion: _institucionController.text.trim(), // ✅ AGREGAR
+                  institucion: _institucionController.text.trim(), // ✅ AGREGAR
                   duracion: int.parse(_duracionController.text),
                   tipoDuracion:
                       _tipoDuracionSeleccionado ?? _tipoDuracionController.text,
                   tipoFormacion:
                       _tipoFormacionSeleccionado ??
                       _tipoFormacionController.text,
-                  fechaFormacion: FormatearFecha.parseFecha(_fechaFinController.text),
+                  fechaFormacion: FormatearFecha.parseFecha(
+                    _fechaFinController.text,
+                  ),
                   audUsuario: await getCodUsuario(),
                 )
                 : FormacionEntity(
@@ -104,36 +105,36 @@ class FormularioFormacionState extends ConsumerState<FormularioFormacion> {
                   tipoFormacion:
                       _tipoFormacionSeleccionado ??
                       _tipoFormacionController.text,
-                  fechaFormacion: FormatearFecha.parseFecha(_fechaFinController.text),
+                  fechaFormacion: FormatearFecha.parseFecha(
+                    _fechaFinController.text,
+                  ),
                   audUsuario: await getCodUsuario(),
                 );
 
         widget.onSave(formacion);
-         // Usar los nuevos SnackBars personalizados
-      if (context.mounted) {
-        if (widget.isEditing) {
-          AppSnackbarCustom.showEdit(
-            context, 
-            'Formación actualizada correctamente'
-          );
-        } else {
-          AppSnackbarCustom.showAdd(
-            context, 
-            'Formación agregada correctamente'
-          );
+        // Usar los nuevos SnackBars personalizados
+        if (context.mounted) {
+          if (widget.isEditing) {
+            AppSnackbarCustom.showEdit(
+              context,
+              'Formación actualizada correctamente',
+            );
+          } else {
+            AppSnackbarCustom.showAdd(
+              context,
+              'Formación agregada correctamente',
+            );
+          }
+          Navigator.of(context).pop();
         }
-        Navigator.of(context).pop();
-      }
-
-        
       } catch (e) {
         // Mostrar SnackBar de error
-      if (context.mounted) {
-        AppSnackbar.showError(
-          context, 
-          'Error al ${widget.isEditing ? 'actualizar' : 'agregar'} la Formación'
-        );
-      }
+        if (context.mounted) {
+          AppSnackbar.showError(
+            context,
+            'Error al ${widget.isEditing ? 'actualizar' : 'agregar'} la Formación',
+          );
+        }
       }
     }
   }
@@ -142,21 +143,25 @@ class FormularioFormacionState extends ConsumerState<FormularioFormacion> {
   Widget build(BuildContext context) {
     final isDesktop = ResponsiveUtilsBosque.isDesktop(context);
     final screenWidth = MediaQuery.of(context).size.width;
-    final horizontalPadding = ResponsiveUtilsBosque.getHorizontalPadding(context);
+    final horizontalPadding = ResponsiveUtilsBosque.getHorizontalPadding(
+      context,
+    );
     final verticalPadding = ResponsiveUtilsBosque.getVerticalPadding(context);
 
     return Dialog(
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: SingleChildScrollView(
         child: Container(
-          width: isDesktop 
-              ? screenWidth * 0.5  // 50% del ancho en desktop
-              : screenWidth * 0.9, // 90% del ancho en móvil
+          width:
+              isDesktop
+                  ? screenWidth *
+                      0.5 // 50% del ancho en desktop
+                  : screenWidth * 0.9, // 90% del ancho en móvil
           constraints: BoxConstraints(
             maxWidth: 800, // Ancho máximo para evitar que sea demasiado ancho
-            maxHeight: MediaQuery.of(context).size.height * 0.9, // 90% del alto de la pantalla
+            maxHeight:
+                MediaQuery.of(context).size.height *
+                0.9, // 90% del alto de la pantalla
           ),
           padding: EdgeInsets.symmetric(
             horizontal: horizontalPadding,
@@ -169,46 +174,51 @@ class FormularioFormacionState extends ConsumerState<FormularioFormacion> {
   }
 
   Widget _buildFormContent(BuildContext context) {
-  final isDesktop = ResponsiveUtilsBosque.isDesktop(context);
+    final isDesktop = ResponsiveUtilsBosque.isDesktop(context);
 
-  return Form(
-    key: _formKey,
-    child: Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        _buildHeader(context),
-        const SizedBox(height: 16),
-        Flexible(
-          child: ListView(
-            shrinkWrap: true,
-            children: [
-              _buildInstitucionField(), // ✅ AGREGAR
-              _buildDescripcionField(),
-              _buildTipoFormacionDropdown(),
-              if (isDesktop) ...[
-                Row(
-                  children: [
-                    Expanded(child: _buildTipoDuracionDropdown()),
-                    const SizedBox(width: 12),
-                    Expanded(child: _buildDuracionField()),
-                  ],
-                ),
-              ] else ...[
-                _buildTipoDuracionDropdown(),
-                _buildDuracionField(),
-              ],
-              _buildFechaField(),
-              _buildButtons(context),
-            ].map((widget) => Padding(
-              padding: EdgeInsets.only(bottom: 12),
-              child: widget,
-            )).toList(),
+    return Form(
+      key: _formKey,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _buildHeader(context),
+          const SizedBox(height: 16),
+          Flexible(
+            child: ListView(
+              shrinkWrap: true,
+              children:
+                  [
+                        _buildInstitucionField(), // ✅ AGREGAR
+                        _buildDescripcionField(),
+                        _buildTipoFormacionDropdown(),
+                        if (isDesktop) ...[
+                          Row(
+                            children: [
+                              Expanded(child: _buildTipoDuracionDropdown()),
+                              const SizedBox(width: 12),
+                              Expanded(child: _buildDuracionField()),
+                            ],
+                          ),
+                        ] else ...[
+                          _buildTipoDuracionDropdown(),
+                          _buildDuracionField(),
+                        ],
+                        _buildFechaField(),
+                        _buildButtons(context),
+                      ]
+                      .map(
+                        (widget) => Padding(
+                          padding: EdgeInsets.only(bottom: 12),
+                          child: widget,
+                        ),
+                      )
+                      .toList(),
+            ),
           ),
-        ),
-      ],
-    ),
-  );
-}
+        ],
+      ),
+    );
+  }
 
   Widget _buildHeader(BuildContext context) {
     return Text(
@@ -217,7 +227,8 @@ class FormularioFormacionState extends ConsumerState<FormularioFormacion> {
       textAlign: TextAlign.center,
     );
   }
-    // ✅ AGREGAR CAMPO INSTITUCIÓN
+
+  // ✅ AGREGAR CAMPO INSTITUCIÓN
   Widget _buildInstitucionField() {
     return TextFormField(
       controller: _institucionController,
@@ -253,64 +264,102 @@ class FormularioFormacionState extends ConsumerState<FormularioFormacion> {
   }
 
   Widget _buildTipoFormacionDropdown() {
-  return ref.watch(obtenerTipoFormacionProvider).when(
-    data: (tipoFormacion) => DropdownButtonFormField<String>(
-      value: tipoFormacion.any((tipo) => tipo.codTipos == (_tipoFormacionSeleccionado ?? _tipoFormacionController.text))
-        ? (_tipoFormacionSeleccionado ?? _tipoFormacionController.text)
-        : null,
-      decoration: InputDecoration(
-        labelText: 'TIPO DE FORMACIÓN',
-        border: const OutlineInputBorder(),
-        contentPadding: EdgeInsets.symmetric(
-          horizontal: 16,
-          vertical: ResponsiveUtilsBosque.getVerticalPadding(context),
-        ),
-      ),
-      isExpanded: true,
-      items: tipoFormacion.map((tipo) => DropdownMenuItem(
-        value: tipo.codTipos,
-        child: Text(
-          tipo.nombre,
-          overflow: TextOverflow.ellipsis,
-        ),
-      )).toList(),
-      onChanged: (value) => setState(() => _tipoFormacionSeleccionado = value),
-      validator: (value) => validarDropdown(value?.toString(), 'tipo de formación'),
-    ),
-    loading: () => const Center(child: CircularProgressIndicator()),
-    error: (error, _) => Text('Error: $error'),
-  );
-}
+    return ref
+        .watch(obtenerTipoFormacionProvider)
+        .when(
+          data:
+              (tipoFormacion) => DropdownButtonFormField<String>(
+                value:
+                    tipoFormacion.any(
+                          (tipo) =>
+                              tipo.codTipos ==
+                              (_tipoFormacionSeleccionado ??
+                                  _tipoFormacionController.text),
+                        )
+                        ? (_tipoFormacionSeleccionado ??
+                            _tipoFormacionController.text)
+                        : null,
+                decoration: InputDecoration(
+                  labelText: 'TIPO DE FORMACIÓN',
+                  border: const OutlineInputBorder(),
+                  contentPadding: EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: ResponsiveUtilsBosque.getVerticalPadding(context),
+                  ),
+                ),
+                isExpanded: true,
+                items:
+                    tipoFormacion
+                        .map(
+                          (tipo) => DropdownMenuItem(
+                            value: tipo.codTipos,
+                            child: Text(
+                              tipo.nombre,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        )
+                        .toList(),
+                onChanged:
+                    (value) =>
+                        setState(() => _tipoFormacionSeleccionado = value),
+                validator:
+                    (value) =>
+                        validarDropdown(value?.toString(), 'tipo de formación'),
+              ),
+          loading: () => const Center(child: CircularProgressIndicator()),
+          error: (error, _) => Text('Error: $error'),
+        );
+  }
 
   Widget _buildTipoDuracionDropdown() {
-  return ref.watch(obtenerTipoDuracionFormacionProvider).when(
-    data: (tipoDuracion) => DropdownButtonFormField<String>(
-      value: tipoDuracion.any((tipo) => tipo.codTipos == (_tipoDuracionSeleccionado ?? _tipoDuracionController.text))
-        ? (_tipoDuracionSeleccionado ?? _tipoDuracionController.text)
-        : null,
-      decoration: InputDecoration(
-        labelText: 'TIPO DE DURACIÓN',
-        border: const OutlineInputBorder(),
-        contentPadding: EdgeInsets.symmetric(
-          horizontal: 16,
-          vertical: ResponsiveUtilsBosque.getVerticalPadding(context),
-        ),
-      ),
-      isExpanded: true,
-      items: tipoDuracion.map((tipo) => DropdownMenuItem(
-        value: tipo.codTipos,
-        child: Text(
-          tipo.nombre,
-          overflow: TextOverflow.ellipsis,
-        ),
-      )).toList(),
-      onChanged: (value) => setState(() => _tipoDuracionSeleccionado = value),
-      validator: (value) => validarDropdown(value?.toString(), 'tipo de duración'),
-    ),
-    loading: () => const Center(child: CircularProgressIndicator()),
-    error: (error, _) => Text('Error: $error'),
-  );
-}
+    return ref
+        .watch(obtenerTipoDuracionFormacionProvider)
+        .when(
+          data:
+              (tipoDuracion) => DropdownButtonFormField<String>(
+                value:
+                    tipoDuracion.any(
+                          (tipo) =>
+                              tipo.codTipos ==
+                              (_tipoDuracionSeleccionado ??
+                                  _tipoDuracionController.text),
+                        )
+                        ? (_tipoDuracionSeleccionado ??
+                            _tipoDuracionController.text)
+                        : null,
+                decoration: InputDecoration(
+                  labelText: 'TIPO DE DURACIÓN',
+                  border: const OutlineInputBorder(),
+                  contentPadding: EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: ResponsiveUtilsBosque.getVerticalPadding(context),
+                  ),
+                ),
+                isExpanded: true,
+                items:
+                    tipoDuracion
+                        .map(
+                          (tipo) => DropdownMenuItem(
+                            value: tipo.codTipos,
+                            child: Text(
+                              tipo.nombre,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        )
+                        .toList(),
+                onChanged:
+                    (value) =>
+                        setState(() => _tipoDuracionSeleccionado = value),
+                validator:
+                    (value) =>
+                        validarDropdown(value?.toString(), 'tipo de duración'),
+              ),
+          loading: () => const Center(child: CircularProgressIndicator()),
+          error: (error, _) => Text('Error: $error'),
+        );
+  }
 
   Widget _buildDuracionField() {
     return TextFormField(
@@ -325,11 +374,12 @@ class FormularioFormacionState extends ConsumerState<FormularioFormacion> {
       ),
       keyboardType: TextInputType.number,
       inputFormatters: bloquearEspacios,
-      validator: (value) => validarDuracion(
-        value,
-        _tipoDuracionSeleccionado ?? _tipoDuracionController.text,
-        esObligatorio: true
-      ),
+      validator:
+          (value) => validarDuracion(
+            value,
+            _tipoDuracionSeleccionado ?? _tipoDuracionController.text,
+            esObligatorio: true,
+          ),
     );
   }
 
@@ -341,8 +391,9 @@ class FormularioFormacionState extends ConsumerState<FormularioFormacion> {
   }
 
   Widget _buildButtons(BuildContext context) {
-    final buttonSpacing = ResponsiveUtilsBosque.getHorizontalPadding(context) / 2;
-    
+    final buttonSpacing =
+        ResponsiveUtilsBosque.getHorizontalPadding(context) / 2;
+
     return Row(
       mainAxisAlignment: MainAxisAlignment.end,
       children: [
