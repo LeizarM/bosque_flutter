@@ -244,6 +244,12 @@ final routerProvider = Provider<GoRouter>((ref) {
               name: 'tplAnticipo',
               builder: (context, state) => const AnticiposScreen(),
             ),
+            // Multas Empleados
+            GoRoute(
+              path: '/dashboard/tplMulta/multas',
+              name: 'tplMulta',
+              builder: (context, state) => const MultasScreen(),
+            ),
           ],
         ),
 
