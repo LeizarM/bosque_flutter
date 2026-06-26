@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:bosque_flutter/domain/entities/relacion_laboral_entity.dart';
 import 'package:bosque_flutter/core/state/registro_empleado_provider.dart';
+import 'package:bosque_flutter/presentation/widgets/shared/permission_widget.dart';
 
 class FormRelacionLaboral extends ConsumerStatefulWidget {
   final RelacionLaboralEntity? relacionInicial;
@@ -45,9 +46,10 @@ class _FormRelacionLaboralState extends ConsumerState<FormRelacionLaboral> {
   void initState() {
     super.initState();
 
-    _selectedTipoRelacion = widget.relacionInicial?.tipoRel.isNotEmpty == true
-        ? widget.relacionInicial!.tipoRel
-        : null;
+    _selectedTipoRelacion =
+        widget.relacionInicial?.tipoRel.isNotEmpty == true
+            ? widget.relacionInicial!.tipoRel
+            : null;
 
     _esActivo = (widget.relacionInicial?.esActivo ?? 1) == 1;
 
@@ -101,10 +103,10 @@ class _FormRelacionLaboralState extends ConsumerState<FormRelacionLaboral> {
     if (_formKey.currentState!.validate()) {
       FocusManager.instance.primaryFocus?.unfocus();
 
-      final fechaIni = FechaUtils.parseDate(_fechaInicioController.text) ?? DateTime.now();
-      final fechaFin = !_esActivo
-          ? FechaUtils.parseDate(_fechaFinController.text)
-          : null;
+      final fechaIni =
+          FechaUtils.parseDate(_fechaInicioController.text) ?? DateTime.now();
+      final fechaFin =
+          !_esActivo ? FechaUtils.parseDate(_fechaFinController.text) : null;
 
       final relacionGuardada = RelacionLaboralEntity(
         codRelEmplEmpr: widget.relacionInicial?.codRelEmplEmpr ?? 0,
@@ -229,13 +231,30 @@ class _FormRelacionLaboralState extends ConsumerState<FormRelacionLaboral> {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          CustomDatePicker(
-            controller: _fechaInicioController,
-            label: 'Fecha de Inicio *',
-            validator: (val) =>
-                (val == null || val.isEmpty) ? 'Requerido' : null,
-            lastDate: DateTime(2050),
-            firstDate: DateTime(1900),
+          PermissionWidget(
+            buttonName: 'btnEditarFechaInicioRelLab',
+            placeholder: Opacity(
+              opacity: 0.5,
+              child: IgnorePointer(
+                child: CustomDatePicker(
+                  controller: _fechaInicioController,
+                  label: 'Fecha de Inicio *',
+                  validator:
+                      (val) =>
+                          (val == null || val.isEmpty) ? 'Requerido' : null,
+                  lastDate: DateTime(2050),
+                  firstDate: DateTime(1900),
+                ),
+              ),
+            ),
+            child: CustomDatePicker(
+              controller: _fechaInicioController,
+              label: 'Fecha de Inicio *',
+              validator:
+                  (val) => (val == null || val.isEmpty) ? 'Requerido' : null,
+              lastDate: DateTime(2050),
+              firstDate: DateTime(1900),
+            ),
           ),
           SizedBox(height: context.spacing),
           _buildEstadoSwitch(context),
@@ -248,20 +267,34 @@ class _FormRelacionLaboralState extends ConsumerState<FormRelacionLaboral> {
       children: [
         Expanded(
           flex: 2,
-          child: CustomDatePicker(
-            controller: _fechaInicioController,
-            label: 'Fecha de Inicio *',
-            validator: (val) =>
-                (val == null || val.isEmpty) ? 'Requerido' : null,
-            lastDate: DateTime(2050),
-            firstDate: DateTime(1900),
+          child: PermissionWidget(
+            buttonName: 'btnEditarFechaInicioRelLab',
+            placeholder: Opacity(
+              opacity: 0.5,
+              child: IgnorePointer(
+                child: CustomDatePicker(
+                  controller: _fechaInicioController,
+                  label: 'Fecha de Inicio *',
+                  validator:
+                      (val) =>
+                          (val == null || val.isEmpty) ? 'Requerido' : null,
+                  lastDate: DateTime(2050),
+                  firstDate: DateTime(1900),
+                ),
+              ),
+            ),
+            child: CustomDatePicker(
+              controller: _fechaInicioController,
+              label: 'Fecha de Inicio *',
+              validator:
+                  (val) => (val == null || val.isEmpty) ? 'Requerido' : null,
+              lastDate: DateTime(2050),
+              firstDate: DateTime(1900),
+            ),
           ),
         ),
         SizedBox(width: context.spacing),
-        Expanded(
-          flex: 1,
-          child: _buildEstadoSwitch(context),
-        ),
+        Expanded(flex: 1, child: _buildEstadoSwitch(context)),
       ],
     );
   }
@@ -296,17 +329,18 @@ class _FormRelacionLaboralState extends ConsumerState<FormRelacionLaboral> {
               ),
               Switch(
                 value: _esActivo,
-                onChanged: widget.forceInactivo
-                    ? null
-                    : (value) {
-                        setState(() {
-                          _esActivo = value;
-                          if (_esActivo) {
-                            _fechaFinController.clear();
-                            _motivoFinController.clear();
-                          }
-                        });
-                      },
+                onChanged:
+                    widget.forceInactivo
+                        ? null
+                        : (value) {
+                          setState(() {
+                            _esActivo = value;
+                            if (_esActivo) {
+                              _fechaFinController.clear();
+                              _motivoFinController.clear();
+                            }
+                          });
+                        },
                 activeColor: Colors.green,
                 inactiveThumbColor: Colors.red,
               ),

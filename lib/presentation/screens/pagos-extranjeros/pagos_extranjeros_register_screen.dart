@@ -1,9 +1,12 @@
+import 'dart:async';
+
 import 'package:bosque_flutter/core/state/pagos_extranjeros_provider.dart';
 import 'package:bosque_flutter/core/state/user_provider.dart';
 import 'package:bosque_flutter/core/utils/responsive_utils_bosque.dart';
 import 'package:bosque_flutter/domain/entities/detalle_solicitud_entity.dart';
 import 'package:bosque_flutter/domain/entities/empresa_entity.dart';
 import 'package:bosque_flutter/domain/entities/proveedor_empresa_entity.dart';
+import 'package:bosque_flutter/presentation/widgets/pagos-extranjeros/tpex_estado_ui.dart';
 import 'package:dropdown_search/dropdown_search.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -607,20 +610,58 @@ class _DatosGeneralesForm extends StatelessWidget {
 
     final empresaDropdown = _buildEmpresaDropdown(context, colorScheme);
     final fechaField = _buildFechaField(context, colorScheme);
+    // Campo "Proyecto SAP" oculto a pedido (se conserva el código por si se reactiva).
+    // final projectField = _buildProjectField(context, colorScheme);
 
     if (isMobile) {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        children: [empresaDropdown, const SizedBox(height: 16), fechaField],
+        children: [
+          empresaDropdown,
+          const SizedBox(height: 16),
+          fechaField,
+          // const SizedBox(height: 16),
+          // projectField,
+        ],
       );
     }
-    return Row(
+    return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Expanded(child: empresaDropdown),
-        const SizedBox(width: 16),
-        Expanded(child: fechaField),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(child: empresaDropdown),
+            const SizedBox(width: 16),
+            Expanded(child: fechaField),
+          ],
+        ),
+        // const SizedBox(height: 16),
+        // projectField,
       ],
+    );
+  }
+
+  // ignore: unused_element
+  Widget _buildProjectField(BuildContext context, ColorScheme colorScheme) {
+    return TextFormField(
+      initialValue: state.project,
+      decoration: InputDecoration(
+        labelText: 'Proyecto SAP',
+        hintText: 'Código del proyecto (opcional)',
+        helperText:
+            'Una solicitud agrupa pagos de un mismo proyecto. Déjelo vacío si no aplica.',
+        border: const OutlineInputBorder(),
+        prefixIcon: const Icon(Icons.work_outline),
+        suffixIcon:
+            state.project.isNotEmpty
+                ? const Icon(
+                  Icons.check_circle_rounded,
+                  color: Color(0xFF2E7D32),
+                )
+                : null,
+      ),
+      onChanged: (val) => notifier.setProject(val.trim()),
     );
   }
 
@@ -1373,6 +1414,7 @@ class _ResumenRow extends StatelessWidget {
       fontWeight: bold ? FontWeight.bold : FontWeight.normal,
       fontSize: bold ? 17 : 13,
       color: colorScheme.onPrimaryContainer,
+      fontFeatures: tpexTabularFigures,
     );
     final valorText =
         isCount
@@ -1900,6 +1942,12 @@ class _DetalleDialogState extends ConsumerState<_DetalleDialog> {
   DetalleSolicitudEntity? _selectedFacturaSap;
   bool _initialSelectionDone = false;
 
+  // Búsqueda por proyecto (debounce: cada consulta dispara OPENQUERY a SAP)
+  final _proyectoCtrl = TextEditingController();
+  Timer? _proyectoDebounce;
+  String _proyectoQuery = '';
+  static const _proyectoMinChars = 3;
+
   final _dateFormat = DateFormat('dd/MM/yyyy');
 
   @override
@@ -1934,7 +1982,20 @@ class _DetalleDialogState extends ConsumerState<_DetalleDialog> {
     _montoPagarCtrl.dispose();
     _conceptoCtrl.dispose();
     _obsCtrl.dispose();
+    _proyectoDebounce?.cancel();
+    _proyectoCtrl.dispose();
     super.dispose();
+  }
+
+  void _onProyectoChanged(String value) {
+    _proyectoDebounce?.cancel();
+    _proyectoDebounce = Timer(const Duration(milliseconds: 500), () {
+      if (!mounted) return;
+      final q = value.trim();
+      setState(() {
+        _proyectoQuery = q.length >= _proyectoMinChars ? q : '';
+      });
+    });
   }
 
   Future<void> _pickDate(
@@ -1973,6 +2034,9 @@ class _DetalleDialogState extends ConsumerState<_DetalleDialog> {
       tipoDocumento: _selectedTipoDoc!,
       numeroDocumento: _nroDocCtrl.text.trim(),
       facturaProvSap: _selectedFacturaSap?.facturaProvSap ?? 0,
+      // DocTotal del documento SAP (lo trae el picker). Antes no se copiaba y
+      // quedaba en 0; ahora se persiste para reflejar el total real del doc.
+      montoTotalDocumento: _selectedFacturaSap?.montoTotalDocumento ?? 0.0,
       codigoImportacion: _codImportCtrl.text.trim(),
       montoFacturaUsd: double.tryParse(_montoFacturaCtrl.text) ?? 0.0,
       montoAmortizadoUsd: double.tryParse(_montoAmortCtrl.text) ?? 0.0,
@@ -2001,9 +2065,18 @@ class _DetalleDialogState extends ConsumerState<_DetalleDialog> {
     final isEdicion = widget.indexEditar != null;
     final colorScheme = Theme.of(context).colorScheme;
 
-    final facturasAsync = ref.watch(
-      facProvYOrdCompraProvider(widget.codEmpresa),
-    );
+    // Con búsqueda por proyecto activa se consulta SAP (ACCION C);
+    // sin búsqueda, la lista completa por empresa (ACCION A).
+    final buscandoPorProyecto = _proyectoQuery.isNotEmpty;
+    final facturasAsync =
+        buscandoPorProyecto
+            ? ref.watch(
+              facProvYOrdCompraProyectoProvider((
+                codEmpresa: widget.codEmpresa,
+                project: _proyectoQuery,
+              )),
+            )
+            : ref.watch(facProvYOrdCompraProvider(widget.codEmpresa));
     final facturas = facturasAsync.valueOrNull ?? [];
     final isLoadingFacturas = facturasAsync.isLoading;
     final errorFacturas =
@@ -2027,12 +2100,6 @@ class _DetalleDialogState extends ConsumerState<_DetalleDialog> {
     } else if (!_initialSelectionDone && !isLoadingFacturas) {
       _initialSelectionDone = true;
     }
-
-    // Valores únicos de tipo documento para el dropdown
-    final tiposDoc =
-        facturas.map((e) => e.tipoDocumento).toSet().toList()..sort();
-    final tipoDocValue =
-        tiposDoc.contains(_selectedTipoDoc) ? _selectedTipoDoc : null;
 
     return Dialog(
       clipBehavior: Clip.antiAlias,
@@ -2076,60 +2143,35 @@ class _DetalleDialogState extends ConsumerState<_DetalleDialog> {
                   key: _formKey,
                   child: Column(
                     children: [
-                      // ── Fila 1: Tipo Documento + Número de Documento ──
-                      _buildRow(
-                        widget.isMobile,
-                        isLoadingFacturas
-                            ? const _FieldLoading(label: 'Tipo Documento *')
-                            : errorFacturas != null
-                            ? _FieldError(
-                              label: 'Tipo Documento *',
-                              error: errorFacturas,
-                              onRetry:
-                                  () => ref.invalidate(
-                                    facProvYOrdCompraProvider(
-                                      widget.codEmpresa,
-                                    ),
-                                  ),
-                            )
-                            : DropdownButtonFormField<String>(
-                              value: tipoDocValue,
-                              decoration: const InputDecoration(
-                                labelText: 'Tipo Documento *',
-                                border: OutlineInputBorder(),
-                              ),
-                              items:
-                                  tiposDoc
-                                      .map(
-                                        (t) => DropdownMenuItem(
-                                          value: t,
-                                          child: Text(t),
-                                        ),
-                                      )
-                                      .toList(),
-                              onChanged:
-                                  (v) => setState(() => _selectedTipoDoc = v),
-                              validator:
-                                  (v) =>
-                                      v == null || v.isEmpty
-                                          ? 'Requerido'
-                                          : null,
-                            ),
-                        TextFormField(
-                          controller: _nroDocCtrl,
-                          decoration: const InputDecoration(
-                            labelText: 'Número de Documento *',
-                            border: OutlineInputBorder(),
-                          ),
-                          validator:
-                              (v) =>
-                                  v == null || v.trim().isEmpty
-                                      ? 'Requerido'
-                                      : null,
+                      // ── Buscador por proyecto (debounce 500ms, consulta SAP) ──
+                      TextField(
+                        controller: _proyectoCtrl,
+                        onChanged: _onProyectoChanged,
+                        decoration: InputDecoration(
+                          labelText: 'Buscar por proyecto',
+                          hintText:
+                              'Código de proyecto SAP (mín. $_proyectoMinChars caracteres)',
+                          border: const OutlineInputBorder(),
+                          prefixIcon: const Icon(Icons.search),
+                          suffixIcon:
+                              _proyectoCtrl.text.isNotEmpty
+                                  ? IconButton(
+                                    icon: const Icon(Icons.clear),
+                                    onPressed: () {
+                                      _proyectoDebounce?.cancel();
+                                      _proyectoCtrl.clear();
+                                      setState(() => _proyectoQuery = '');
+                                    },
+                                  )
+                                  : null,
+                          helperText:
+                              buscandoPorProyecto
+                                  ? '${facturas.length} documento(s) del proyecto "$_proyectoQuery"'
+                                  : 'Filtra facturas/OC por proyecto SAP',
                         ),
                       ),
                       const SizedBox(height: 12),
-                      // ── Fila 2: Factura Prov. SAP (dropdown buscable) + Cód. Importación ──
+                      // ── Fila 1: Factura Prov. SAP (buscable) + Nro. Documento Proveedor ──
                       _buildRow(
                         widget.isMobile,
                         isLoadingFacturas
@@ -2139,11 +2181,19 @@ class _DetalleDialogState extends ConsumerState<_DetalleDialog> {
                               label: 'Factura Prov. SAP',
                               error: errorFacturas,
                               onRetry:
-                                  () => ref.invalidate(
-                                    facProvYOrdCompraProvider(
-                                      widget.codEmpresa,
-                                    ),
-                                  ),
+                                  () =>
+                                      buscandoPorProyecto
+                                          ? ref.invalidate(
+                                            facProvYOrdCompraProyectoProvider((
+                                              codEmpresa: widget.codEmpresa,
+                                              project: _proyectoQuery,
+                                            )),
+                                          )
+                                          : ref.invalidate(
+                                            facProvYOrdCompraProvider(
+                                              widget.codEmpresa,
+                                            ),
+                                          ),
                             )
                             : DropdownSearch<DetalleSolicitudEntity>(
                               items: facturas,
@@ -2156,9 +2206,44 @@ class _DetalleDialogState extends ConsumerState<_DetalleDialog> {
                               onChanged:
                                   (item) => setState(() {
                                     _selectedFacturaSap = item;
-                                    // Sincroniza tipo doc automáticamente
+                                    // FIX: auto-poblar la factura desde el
+                                    // documento SAP elegido. Antes solo se
+                                    // copiaba el tipo de documento, dejando que el
+                                    // usuario re-tecleara Nro/Monto/fechas que SAP
+                                    // ya conoce (y Tipo es read-only → si no se
+                                    // sembraba quedaba imposible de completar).
                                     if (item != null) {
                                       _selectedTipoDoc = item.tipoDocumento;
+                                      _nroDocCtrl.text =
+                                          item.numeroDocumento.isNotEmpty
+                                              ? item.numeroDocumento
+                                              : item.facturaProvSap.toString();
+                                      _codImportCtrl.text =
+                                          item.codigoImportacion;
+                                      final montoDoc =
+                                          item.montoFacturaUsd > 0
+                                              ? item.montoFacturaUsd
+                                              : item.montoTotalDocumento;
+                                      if (montoDoc > 0) {
+                                        _montoFacturaCtrl.text = montoDoc
+                                            .toStringAsFixed(2);
+                                      }
+                                      _montoAmortCtrl.text =
+                                          item.montoAmortizadoUsd > 0
+                                              ? item.montoAmortizadoUsd
+                                                  .toStringAsFixed(2)
+                                              : '';
+                                      if (item.concepto.isNotEmpty) {
+                                        _conceptoCtrl.text = item.concepto;
+                                      }
+                                      if (item.fechaFactura.year > 2000) {
+                                        _fechaFactura = item.fechaFactura;
+                                      }
+                                      if (item.fechaVencimiento.year > 2000) {
+                                        _fechaVencimiento =
+                                            item.fechaVencimiento;
+                                      }
+                                      _calcularMontoPagar();
                                     }
                                   }),
                               dropdownDecoratorProps:
@@ -2187,6 +2272,49 @@ class _DetalleDialogState extends ConsumerState<_DetalleDialog> {
                                     ),
                               ),
                             ),
+                        TextFormField(
+                          controller: _nroDocCtrl,
+                          decoration: const InputDecoration(
+                            labelText: 'Nro. Documento Proveedor *',
+                            hintText: 'Nro. de factura u OC (alfanumérico)',
+                            border: OutlineInputBorder(),
+                          ),
+                          validator:
+                              (v) =>
+                                  v == null || v.trim().isEmpty
+                                      ? 'Requerido'
+                                      : null,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      // ── Fila 2: Tipo Documento (solo lectura, derivado del doc SAP) + Cód. Importación ──
+                      _buildRow(
+                        widget.isMobile,
+                        TextFormField(
+                          key: ValueKey('tipoDoc-${_selectedTipoDoc ?? ''}'),
+                          initialValue: _selectedTipoDoc ?? '',
+                          readOnly: true,
+                          decoration: InputDecoration(
+                            labelText: 'Tipo Documento *',
+                            hintText:
+                                'Se completa al elegir la Factura Prov. SAP',
+                            border: const OutlineInputBorder(),
+                            filled: true,
+                            fillColor: Theme.of(context)
+                                .colorScheme
+                                .surfaceContainerHighest
+                                .withValues(alpha: 0.4),
+                            suffixIcon: const Icon(
+                              Icons.lock_outline,
+                              size: 16,
+                            ),
+                          ),
+                          validator:
+                              (v) =>
+                                  v == null || v.isEmpty
+                                      ? 'Seleccione la Factura Prov. SAP'
+                                      : null,
+                        ),
                         TextFormField(
                           controller: _codImportCtrl,
                           decoration: const InputDecoration(

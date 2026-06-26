@@ -6,8 +6,10 @@ import 'package:bosque_flutter/domain/entities/cotizaciones_entity.dart';
 import 'package:bosque_flutter/domain/entities/detalle_solicitud_entity.dart';
 import 'package:bosque_flutter/domain/entities/solicitud_pago_entity.dart';
 import 'package:bosque_flutter/domain/entities/solicitud_proveedor_entity.dart';
+import 'package:bosque_flutter/domain/entities/tipos_cargo_entity.dart';
 import 'package:bosque_flutter/domain/entities/transacciones_entity.dart';
 import 'package:bosque_flutter/presentation/screens/pagos-extranjeros/solicitud_detail_panel.dart';
+import 'package:bosque_flutter/presentation/widgets/pagos-extranjeros/tpex_estado_ui.dart';
 import 'package:bosque_flutter/presentation/widgets/pagos-extranjeros/voucher_button.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -16,6 +18,37 @@ import 'package:intl/intl.dart';
 
 final _nf = NumberFormat('#,##0.00', 'es_BO');
 final _df = DateFormat('dd/MM/yyyy');
+
+/// Circuito desacoplado: se puede cotizar/transaccionar mientras exista ≥1 cuota
+/// aprobada (proveedor APROBADO o APROBADO_PARCIAL), aunque la solicitud siga
+/// PENDIENTE. Solo se excluyen las solicitudes cerradas (PAGADA/RECHAZADA).
+bool _tieneCuotaAprobada(SolicitudPagoEntity sol) {
+  final est = sol.estado.toUpperCase();
+  if (est == 'PAGADA' || est == 'RECHAZADA') return false;
+  return sol.proveedores.any(
+    (p) => p.estado == 'APROBADO' || p.estado == 'APROBADO_PARCIAL',
+  );
+}
+
+/// Descripción legible del canal de pago. Los nombres del catálogo
+/// (`tpex_CanalesPago`) son códigos técnicos (SWIFT, TRANSFERENCIA_LOCAL…);
+/// acá los traducimos a algo entendible para el usuario del formulario.
+String _canalDescripcion(String nombre) {
+  switch (nombre.toUpperCase()) {
+    case 'TRANSFERENCIA_LOCAL':
+      return 'Transferencia local (dentro de Bolivia)';
+    case 'SWIFT':
+      return 'SWIFT (transferencia internacional)';
+    case 'CARTA_CREDITO':
+      return 'Carta de crédito';
+    case 'CHEQUE_GERENCIA':
+      return 'Cheque de gerencia';
+    case 'EFECTIVO':
+      return 'Efectivo';
+    default:
+      return nombre;
+  }
+}
 
 class PagosAlExtranjerosViewScreen extends ConsumerStatefulWidget {
   const PagosAlExtranjerosViewScreen({super.key});
@@ -70,7 +103,32 @@ class _PagosAlExtranjerosViewScreenState
     }
   }
 
-  void _abrirCotizacion(SolicitudPagoEntity solicitud) {
+  Future<void> _abrirCotizacion(SolicitudPagoEntity solicitud) async {
+    // Si ya hay una cotización ACEPTADA, no tiene sentido registrar más:
+    // el SP igual impediría aceptarlas (error 44) y solo serían basura VIGENTE.
+    try {
+      final cotizaciones = await ref.read(
+        cotizacionesXSolicitudProvider(solicitud.idSolicitud).future,
+      );
+      if (cotizaciones.any((c) => c.estado.toUpperCase() == 'ACEPTADA')) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text(
+              'Esta solicitud ya tiene una cotización ACEPTADA. '
+              'No se pueden registrar nuevas cotizaciones.',
+            ),
+            backgroundColor: Theme.of(context).colorScheme.error,
+          ),
+        );
+        return;
+      }
+    } catch (_) {
+      // Si la verificación falla, se permite continuar: el SP es la
+      // última línea de defensa al aceptar.
+    }
+    if (!mounted) return;
+
     final isDesktop = ResponsiveUtilsBosque.isDesktop(context);
     // Init form con idSolicitud
     ref
@@ -88,6 +146,12 @@ class _PagosAlExtranjerosViewScreenState
                 solicitud: solicitud,
                 onGuardado: () {
                   ref.invalidate(solicitudesRegistradasProvider(_param));
+                  // Refresca las cotizaciones de esta solicitud para que la
+                  // Comparativa y el gate del botón Transacción se actualicen
+                  // sin tener que recargar la página.
+                  ref.invalidate(
+                    cotizacionesXSolicitudProvider(solicitud.idSolicitud),
+                  );
                 },
               ),
             ),
@@ -107,6 +171,12 @@ class _PagosAlExtranjerosViewScreenState
                 solicitud: solicitud,
                 onGuardado: () {
                   ref.invalidate(solicitudesRegistradasProvider(_param));
+                  // Refresca las cotizaciones de esta solicitud para que la
+                  // Comparativa y el gate del botón Transacción se actualicen
+                  // sin tener que recargar la página.
+                  ref.invalidate(
+                    cotizacionesXSolicitudProvider(solicitud.idSolicitud),
+                  );
                 },
               ),
             ),
@@ -127,6 +197,11 @@ class _PagosAlExtranjerosViewScreenState
                 solicitud: solicitud,
                 onAceptada: () {
                   ref.invalidate(solicitudesRegistradasProvider(_param));
+                  // Al aceptar, refrescar las cotizaciones para que el botón
+                  // Transacción se habilite al instante (sin recargar).
+                  ref.invalidate(
+                    cotizacionesXSolicitudProvider(solicitud.idSolicitud),
+                  );
                 },
               ),
             ),
@@ -146,6 +221,11 @@ class _PagosAlExtranjerosViewScreenState
                 solicitud: solicitud,
                 onAceptada: () {
                   ref.invalidate(solicitudesRegistradasProvider(_param));
+                  // Al aceptar, refrescar las cotizaciones para que el botón
+                  // Transacción se habilite al instante (sin recargar).
+                  ref.invalidate(
+                    cotizacionesXSolicitudProvider(solicitud.idSolicitud),
+                  );
                 },
               ),
             ),
@@ -207,6 +287,34 @@ class _PagosAlExtranjerosViewScreenState
             .firstOrNull;
 
     if (sinConfirmar != null) {
+      // ── Limitación de orden: transacción → asientos → pago ──────────────
+      // El pago (Confirmar) va SIEMPRE después de los asientos. No se permite
+      // confirmar si el Debe/Haber no está CUADRADO (mismo criterio que la
+      // pantalla Cobranzas — Asientos).
+      bool cuadrado = false;
+      try {
+        final cuadre = await PagosExtranjerosImpl().validarCuadreAsientos(
+          sinConfirmar.idTransaccion,
+        );
+        cuadrado =
+            cuadre != null && cuadre.estadoCuadre.toUpperCase() == 'CUADRADO';
+      } catch (_) {
+        cuadrado = false;
+      }
+      if (!cuadrado) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text(
+              'Primero se deben cargar y cuadrar los asientos (Debe/Haber) en '
+              '"Cobranzas — Asientos" antes de confirmar el pago.',
+            ),
+            backgroundColor: Colors.orange.shade700,
+          ),
+        );
+        return;
+      }
+
       // Ya existe transacción sin confirmar → abrir diálogo de confirmación
       ref.read(transaccionFormProvider.notifier).resetForm();
       ref
@@ -249,6 +357,58 @@ class _PagosAlExtranjerosViewScreenState
             borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
           ),
           builder: (_) => dialogWidget,
+        );
+      }
+      return;
+    }
+
+    // No hay transacción PENDIENTE. Si las cuotas aprobadas YA están pagadas con
+    // transacciones CONFIRMADAS, avisar (para no duplicar el pago) en vez de
+    // abrir una "Nueva Transacción".
+    final aprobadoUsd = solicitud.proveedores
+        .expand((p) => p.detalles)
+        .where((d) => d.esAprobado == 1)
+        .fold<double>(0, (s, d) => s + d.montoAPagarUsd);
+    final confirmadas =
+        transacciones
+            .where((t) => t.estado.toUpperCase() == 'CONFIRMADO')
+            .toList();
+    final pagadoUsd = confirmadas.fold<double>(
+      0,
+      (s, t) => s + t.montoOrigen,
+    );
+    if (confirmadas.isNotEmpty && pagadoUsd >= aprobadoUsd - 0.01) {
+      if (!mounted) return;
+      final accion = await showDialog<String>(
+        context: context,
+        builder:
+            (ctx) => AlertDialog(
+              title: const Text('El pago ya está confirmado'),
+              content: Text(
+                'Las cuotas aprobadas de esta solicitud '
+                '(\$ ${_nf.format(aprobadoUsd)}) ya están pagadas con '
+                '${confirmadas.length} transacción(es) CONFIRMADA(s).\n\n'
+                'Para pagar más, primero se debe aprobar otra cuota en Gerencia.',
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(ctx, 'cerrar'),
+                  child: const Text('Cerrar'),
+                ),
+                FilledButton(
+                  onPressed: () => Navigator.pop(ctx, 'ver'),
+                  child: const Text('Ver transacciones'),
+                ),
+              ],
+            ),
+      );
+      if (accion == 'ver' && mounted) {
+        abrirDetalleSolicitud(
+          context,
+          ref,
+          solicitud,
+          initialTab: 2,
+          asientosReadOnly: true,
         );
       }
       return;
@@ -431,18 +591,24 @@ class _PagosAlExtranjerosViewScreenState
                       onAprobar: null,
                       onRechazar: null,
                       onCotizar:
-                          sol.estado.toUpperCase() == 'APROBADA'
+                          _tieneCuotaAprobada(sol)
                               ? () => _abrirCotizacion(sol)
                               : null,
                       onComparativa:
-                          sol.estado.toUpperCase() == 'APROBADA'
+                          _tieneCuotaAprobada(sol)
                               ? () => _abrirComparativa(sol)
                               : null,
                       onTransaccion:
-                          sol.estado.toUpperCase() == 'APROBADA'
+                          _tieneCuotaAprobada(sol)
                               ? () => _abrirTransaccion(sol)
                               : null,
-                      onDetalle: () => abrirDetalleSolicitud(context, ref, sol, asientosReadOnly: true),
+                      onDetalle:
+                          () => abrirDetalleSolicitud(
+                            context,
+                            ref,
+                            sol,
+                            asientosReadOnly: true,
+                          ),
                       onVerTransacciones:
                           () => abrirDetalleSolicitud(
                             context,
@@ -578,7 +744,7 @@ class _DateButton extends StatelessWidget {
 // ═══════════════════════════════════════════════════════════════════════════════
 // Solicitud card — flat design con acciones claras
 // ═══════════════════════════════════════════════════════════════════════════════
-class _SolicitudCard extends StatefulWidget {
+class _SolicitudCard extends ConsumerStatefulWidget {
   final SolicitudPagoEntity solicitud;
   final bool isMobile;
   final bool isApproving;
@@ -606,45 +772,17 @@ class _SolicitudCard extends StatefulWidget {
   });
 
   @override
-  State<_SolicitudCard> createState() => _SolicitudCardState();
+  ConsumerState<_SolicitudCard> createState() => _SolicitudCardState();
 }
 
-class _SolicitudCardState extends State<_SolicitudCard> {
+class _SolicitudCardState extends ConsumerState<_SolicitudCard> {
   bool _expanded = false;
 
   SolicitudPagoEntity get sol => widget.solicitud;
 
-  Color _estadoColor() {
-    switch (sol.estado.toUpperCase()) {
-      case 'APROBADA':
-        return Colors.green;
-      case 'PAGADA':
-        return Colors.teal;
-      case 'CANCELADA':
-      case 'RECHAZADA':
-      case 'RECHAZADO':
-        return Colors.red;
-      case 'PENDIENTE':
-      default:
-        return Colors.orange;
-    }
-  }
+  Color _estadoColor() => tpexEstadoColor(sol.estado);
 
-  IconData _estadoIcon() {
-    switch (sol.estado.toUpperCase()) {
-      case 'APROBADA':
-        return Icons.check_circle_rounded;
-      case 'PAGADA':
-        return Icons.verified_rounded;
-      case 'RECHAZADA':
-      case 'RECHAZADO':
-      case 'CANCELADA':
-        return Icons.cancel_rounded;
-      case 'PENDIENTE':
-      default:
-        return Icons.schedule_rounded;
-    }
-  }
+  IconData _estadoIcon() => tpexEstadoIcon(sol.estado);
 
   @override
   Widget build(BuildContext context) {
@@ -807,6 +945,26 @@ class _SolicitudCardState extends State<_SolicitudCard> {
   }
 
   Widget _buildExpandedContent(ColorScheme cs) {
+    // Circuito desacoplado: se opera (cotizar/transaccionar) si hay ≥1 cuota
+    // aprobada, aunque la solicitud siga PENDIENTE.
+    final puedeOperar = _tieneCuotaAprobada(sol);
+    // Coherencia del flujo: la Transacción sólo se habilita cuando ya existe
+    // una cotización ACEPTADA (lo mismo que exige el SP). Hasta entonces el
+    // botón queda deshabilitado con un tooltip que explica el requisito.
+    final tieneCotizacionAceptada =
+        puedeOperar
+            ? ref
+                .watch(cotizacionesXSolicitudProvider(sol.idSolicitud))
+                .maybeWhen(
+                  data:
+                      (cots) => cots.any(
+                        (c) =>
+                            c.estado.toUpperCase() == 'ACEPTADA' ||
+                            c.esGanadora == 1,
+                      ),
+                  orElse: () => false,
+                )
+            : false;
     return Column(
       children: [
         Divider(height: 1, color: cs.outlineVariant.withValues(alpha: 0.3)),
@@ -894,7 +1052,7 @@ class _SolicitudCardState extends State<_SolicitudCard> {
                         visualDensity: VisualDensity.compact,
                       ),
                     ),
-              if (sol.estado.toUpperCase() == 'APROBADA') ...[
+              if (puedeOperar) ...[
                 OutlinedButton.icon(
                   onPressed: widget.onCotizar,
                   icon: const Icon(Icons.currency_exchange_rounded, size: 16),
@@ -922,20 +1080,27 @@ class _SolicitudCardState extends State<_SolicitudCard> {
                     visualDensity: VisualDensity.compact,
                   ),
                 ),
-                FilledButton.icon(
-                  onPressed: widget.onTransaccion,
-                  icon: const Icon(Icons.swap_horiz_rounded, size: 16),
-                  label: const Text(
-                    'Transacción',
-                    style: TextStyle(fontSize: 12),
-                  ),
-                  style: FilledButton.styleFrom(
-                    backgroundColor: Colors.indigo.shade600,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 8,
+                Tooltip(
+                  message:
+                      tieneCotizacionAceptada
+                          ? 'Crear la transacción del pago'
+                          : 'Primero acepta una cotización (botón Comparativa)',
+                  child: FilledButton.icon(
+                    onPressed:
+                        tieneCotizacionAceptada ? widget.onTransaccion : null,
+                    icon: const Icon(Icons.swap_horiz_rounded, size: 16),
+                    label: const Text(
+                      'Transacción',
+                      style: TextStyle(fontSize: 12),
                     ),
-                    visualDensity: VisualDensity.compact,
+                    style: FilledButton.styleFrom(
+                      backgroundColor: Colors.indigo.shade600,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 8,
+                      ),
+                      visualDensity: VisualDensity.compact,
+                    ),
                   ),
                 ),
               ],
@@ -1010,10 +1175,12 @@ class _ProveedorSectionState extends State<_ProveedorSection> {
       0,
       (s, d) => s + d.montoAmortizadoUsd,
     );
-    final totalPagar = prov.detalles.fold<double>(
-      0,
-      (s, d) => s + d.montoAPagarUsd,
-    );
+    // "A Pagar" = solo lo APROBADO (lo que realmente se cotiza/paga). Las cuotas
+    // PENDIENTES no suman aquí; coincide con el total de la solicitud y con el
+    // "Disponible" del diálogo de cotización.
+    final totalPagar = prov.detalles
+        .where((d) => d.esAprobado == 1)
+        .fold<double>(0, (s, d) => s + d.montoAPagarUsd);
 
     return Container(
       decoration: BoxDecoration(
@@ -1164,6 +1331,10 @@ class _FacturaRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final aprobada = det.esAprobado == 1;
+    // Sello por cuota: APROBADA (verde, entra a la cotización/pago) o PENDIENTE
+    // (ámbar, queda fuera hasta que el gerente la apruebe).
+    final estadoColor = aprobada ? Colors.green : Colors.orange;
     return Padding(
       padding: const EdgeInsets.only(top: 8),
       child: Container(
@@ -1171,7 +1342,12 @@ class _FacturaRow extends StatelessWidget {
         decoration: BoxDecoration(
           color: cs.surface,
           borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.3)),
+          border: Border.all(
+            color:
+                aprobada
+                    ? Colors.green.withValues(alpha: 0.35)
+                    : cs.outlineVariant.withValues(alpha: 0.3),
+          ),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -1196,6 +1372,41 @@ class _FacturaRow extends StatelessWidget {
                     ),
                   ),
                 ),
+                const SizedBox(width: 6),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 7,
+                    vertical: 2,
+                  ),
+                  decoration: BoxDecoration(
+                    color: estadoColor.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(5),
+                    border: Border.all(
+                      color: estadoColor.withValues(alpha: 0.4),
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        aprobada
+                            ? Icons.check_circle_rounded
+                            : Icons.schedule_rounded,
+                        size: 11,
+                        color: estadoColor,
+                      ),
+                      const SizedBox(width: 3),
+                      Text(
+                        aprobada ? 'APROBADA' : 'PENDIENTE',
+                        style: TextStyle(
+                          fontSize: 9,
+                          fontWeight: FontWeight.w700,
+                          color: estadoColor,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
@@ -1212,7 +1423,7 @@ class _FacturaRow extends StatelessWidget {
                   style: TextStyle(
                     fontWeight: FontWeight.w700,
                     fontSize: 13,
-                    color: cs.primary,
+                    color: aprobada ? Colors.green.shade700 : cs.onSurfaceVariant,
                   ),
                 ),
               ],
@@ -1309,6 +1520,11 @@ class _DialogoTransaccionState extends ConsumerState<_DialogoTransaccion> {
   final _tcCtrl = TextEditingController();
   final _tcFwdCtrl = TextEditingController();
   final _contratoCtrl = TextEditingController();
+  // Exportadora (tipo EXPORTADORA)
+  final _nombreExpCtrl = TextEditingController();
+  final _tcNegExpCtrl = TextEditingController();
+  final _comisionExpCtrl = TextEditingController();
+  final _metodoExpCtrl = TextEditingController();
   final _obsCtrl = TextEditingController();
 
   // Fase 5
@@ -1336,6 +1552,10 @@ class _DialogoTransaccionState extends ConsumerState<_DialogoTransaccion> {
     _tcCtrl.dispose();
     _tcFwdCtrl.dispose();
     _contratoCtrl.dispose();
+    _nombreExpCtrl.dispose();
+    _tcNegExpCtrl.dispose();
+    _comisionExpCtrl.dispose();
+    _metodoExpCtrl.dispose();
     _obsCtrl.dispose();
     _nroTransCtrl.dispose();
     _obsConfirmarCtrl.dispose();
@@ -1663,7 +1883,8 @@ class _DialogoTransaccionState extends ConsumerState<_DialogoTransaccion> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            'Pago confirmado. Solicitud #${widget.solicitud.idSolicitud} cerrada como PAGADA.',
+            'Pago confirmado: transacción CONFIRMADA (con N° y voucher). '
+            'La solicitud #${widget.solicitud.idSolicitud} sigue PENDIENTE.',
           ),
           backgroundColor: Colors.teal.shade700,
         ),
@@ -2120,6 +2341,7 @@ class _DialogoTransaccionState extends ConsumerState<_DialogoTransaccion> {
             style: TextStyle(
               fontSize: 13,
               fontWeight: bold ? FontWeight.w800 : FontWeight.w600,
+              fontFeatures: tpexTabularFigures,
             ),
           ),
         ],
@@ -2169,6 +2391,114 @@ class _DialogoTransaccionState extends ConsumerState<_DialogoTransaccion> {
       borderSide: BorderSide(color: cs.error, width: 1.5),
     ),
   );
+
+  /// Sección "Datos Exportadora" (tipo EXPORTADORA): el pago se canaliza por una
+  /// exportadora a un TC negociado. nombre + TC negociado son obligatorios (el SP
+  /// los exige, error 43/44); comisión y método son opcionales.
+  Widget _seccionExportadora(ColorScheme colorScheme, bool isMobile) {
+    final notifier = ref.read(transaccionFormProvider.notifier);
+    Widget field({
+      required String label,
+      required TextEditingController ctrl,
+      required String hint,
+      required void Function(String) onChanged,
+      bool number = false,
+    }) =>
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildLabel(label),
+            TextFormField(
+              controller: ctrl,
+              decoration: _inputDeco(hint, colorScheme),
+              keyboardType: number
+                  ? const TextInputType.numberWithOptions(decimal: true)
+                  : null,
+              inputFormatters: number
+                  ? [FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d{0,6}'))]
+                  : null,
+              onChanged: onChanged,
+            ),
+          ],
+        );
+
+    final nombre = field(
+      label: 'Nombre Exportadora *',
+      ctrl: _nombreExpCtrl,
+      hint: 'Ej: SRA INES',
+      onChanged: notifier.setNombreExportadora,
+    );
+    final tcNeg = field(
+      label: 'TC Negociado *',
+      ctrl: _tcNegExpCtrl,
+      hint: 'Ej: 6.9600',
+      number: true,
+      onChanged: (v) =>
+          notifier.setTcNegociadoExportadora(double.tryParse(v) ?? 0.0),
+    );
+    final comision = field(
+      label: 'Comisión (opcional)',
+      ctrl: _comisionExpCtrl,
+      hint: 'Ej: 150.00',
+      number: true,
+      onChanged: (v) =>
+          notifier.setComisionExportadora(double.tryParse(v) ?? 0.0),
+    );
+    final metodo = field(
+      label: 'Método (opcional)',
+      ctrl: _metodoExpCtrl,
+      hint: 'Ej: Transferencia',
+      onChanged: notifier.setMetodoExportadora,
+    );
+
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: colorScheme.secondaryContainer.withValues(alpha: 0.2),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: colorScheme.secondary.withValues(alpha: 0.3)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Datos Exportadora',
+            style: TextStyle(
+              fontWeight: FontWeight.w700,
+              color: colorScheme.secondary,
+              fontSize: 13,
+            ),
+          ),
+          const SizedBox(height: 12),
+          if (isMobile) ...[
+            nombre,
+            const SizedBox(height: 12),
+            tcNeg,
+            const SizedBox(height: 12),
+            comision,
+            const SizedBox(height: 12),
+            metodo,
+          ] else ...[
+            Row(
+              children: [
+                Expanded(child: nombre),
+                const SizedBox(width: 16),
+                Expanded(child: tcNeg),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(child: comision),
+                const SizedBox(width: 16),
+                Expanded(child: metodo),
+              ],
+            ),
+          ],
+        ],
+      ),
+    );
+  }
 
   Widget _infoChip(String label, String value, ColorScheme cs) {
     return Container(
@@ -2221,6 +2551,7 @@ class _DialogoTransaccionState extends ConsumerState<_DialogoTransaccion> {
               fontSize: fontSize,
               fontWeight: bold ? FontWeight.w800 : FontWeight.w600,
               color: color ?? cs.onSurface,
+              fontFeatures: tpexTabularFigures,
             ),
           ),
         ],
@@ -2266,6 +2597,7 @@ class _DialogoTransaccionState extends ConsumerState<_DialogoTransaccion> {
             .where((t) => t.idTipoTransaccion == formState.idTipoTransaccion)
             .firstOrNull;
     final requiereForward = tipoSel?.requiereForward == 1;
+    final requiereExportadora = tipoSel?.codigo == 'EXPORTADORA';
 
     // TC referencia BCB
     final tcRef = formState.tipoCambioReferencia;
@@ -2447,7 +2779,7 @@ class _DialogoTransaccionState extends ConsumerState<_DialogoTransaccion> {
                 final origenDropdown = Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _buildLabel('Moneda Origen *'),
+                    _buildLabel('Moneda Origen * (divisa que se compra)'),
                     DropdownButtonFormField<int>(
                       key: const ValueKey('txn_moneda_origen'),
                       decoration: _inputDeco(
@@ -2464,7 +2796,7 @@ class _DialogoTransaccionState extends ConsumerState<_DialogoTransaccion> {
                                 (m) => DropdownMenuItem(
                                   value: m.idMoneda,
                                   child: Text(
-                                    '${m.codigo} — ${m.nombre}',
+                                    '${m.codigo} — ${m.nombre} (${m.simbolo})',
                                     overflow: TextOverflow.ellipsis,
                                   ),
                                 ),
@@ -2491,7 +2823,7 @@ class _DialogoTransaccionState extends ConsumerState<_DialogoTransaccion> {
                 final destinoDropdown = Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _buildLabel('Moneda Destino *'),
+                    _buildLabel('Moneda Destino * (moneda con la que se paga)'),
                     DropdownButtonFormField<int>(
                       key: const ValueKey('txn_moneda_destino'),
                       decoration: _inputDeco(
@@ -2508,7 +2840,7 @@ class _DialogoTransaccionState extends ConsumerState<_DialogoTransaccion> {
                                 (m) => DropdownMenuItem(
                                   value: m.idMoneda,
                                   child: Text(
-                                    '${m.codigo} — ${m.nombre}',
+                                    '${m.codigo} — ${m.nombre} (${m.simbolo})',
                                     overflow: TextOverflow.ellipsis,
                                   ),
                                 ),
@@ -2642,9 +2974,14 @@ class _DialogoTransaccionState extends ConsumerState<_DialogoTransaccion> {
                                         : null,
                             onChanged: (v) {
                               if (v == null) return;
+                              final reqFwd = tipos.any(
+                                (t) =>
+                                    t.idTipoTransaccion == v &&
+                                    t.requiereForward == 1,
+                              );
                               ref
                                   .read(transaccionFormProvider.notifier)
-                                  .setIdTipoTransaccion(v);
+                                  .setIdTipoTransaccion(v, requiereForward: reqFwd);
                             },
                           ),
                     ),
@@ -2671,7 +3008,7 @@ class _DialogoTransaccionState extends ConsumerState<_DialogoTransaccion> {
                                       (c) => DropdownMenuItem(
                                         value: c.idCanal,
                                         child: Text(
-                                          c.nombre,
+                                          _canalDescripcion(c.nombre),
                                           overflow: TextOverflow.ellipsis,
                                         ),
                                       ),
@@ -2733,9 +3070,17 @@ class _DialogoTransaccionState extends ConsumerState<_DialogoTransaccion> {
                                               : null,
                                   onChanged: (v) {
                                     if (v == null) return;
+                                    final reqFwd = tipos.any(
+                                      (t) =>
+                                          t.idTipoTransaccion == v &&
+                                          t.requiereForward == 1,
+                                    );
                                     ref
                                         .read(transaccionFormProvider.notifier)
-                                        .setIdTipoTransaccion(v);
+                                        .setIdTipoTransaccion(
+                                          v,
+                                          requiereForward: reqFwd,
+                                        );
                                   },
                                 ),
                           ),
@@ -2772,7 +3117,7 @@ class _DialogoTransaccionState extends ConsumerState<_DialogoTransaccion> {
                                             (c) => DropdownMenuItem(
                                               value: c.idCanal,
                                               child: Text(
-                                                c.nombre,
+                                                _canalDescripcion(c.nombre),
                                                 overflow: TextOverflow.ellipsis,
                                               ),
                                             ),
@@ -3039,6 +3384,12 @@ class _DialogoTransaccionState extends ConsumerState<_DialogoTransaccion> {
               const SizedBox(height: 16),
             ],
 
+            // ── Sección Exportadora (condicional) ─────────────────────
+            if (requiereExportadora) ...[
+              _seccionExportadora(colorScheme, isMobile),
+              const SizedBox(height: 16),
+            ],
+
             // ── Observaciones ─────────────────────────────────────────
             _buildLabel('Observaciones'),
             TextFormField(
@@ -3050,6 +3401,164 @@ class _DialogoTransaccionState extends ConsumerState<_DialogoTransaccion> {
                       .read(transaccionFormProvider.notifier)
                       .setObservaciones(v),
             ),
+
+            // ── Cargos (opcional): ITF, comisión bancaria, SWIFT… ─────
+            const SizedBox(height: 18),
+            Row(
+              children: [
+                Icon(
+                  Icons.receipt_long_rounded,
+                  size: 18,
+                  color: colorScheme.primary,
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  'Cargos (opcional)',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 13,
+                    color: colorScheme.onSurface,
+                  ),
+                ),
+                const Spacer(),
+                TextButton.icon(
+                  onPressed: () async {
+                    final nuevo = await showDialog<CargoPagoFormItem>(
+                      context: context,
+                      builder:
+                          (_) => _DialogoCargoTxn(
+                            monedaCargoId: formState.idMonedaDestino,
+                            baseSugerida: formState.montoConvertido,
+                          ),
+                    );
+                    if (nuevo != null) {
+                      ref
+                          .read(transaccionFormProvider.notifier)
+                          .agregarCargo(nuevo);
+                    }
+                  },
+                  icon: const Icon(Icons.add_rounded, size: 18),
+                  label: const Text('Agregar'),
+                ),
+              ],
+            ),
+            if (formState.cargos.isEmpty)
+              Padding(
+                padding: const EdgeInsets.only(top: 2, bottom: 4),
+                child: Text(
+                  'Sin cargos. Agrega ITF, comisión bancaria, SWIFT, etc. '
+                  '(opcional).',
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontStyle: FontStyle.italic,
+                    color: colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              )
+            else ...[
+              ...formState.cargos.asMap().entries.map((entry) {
+                final i = entry.key;
+                final c = entry.value;
+                return Container(
+                  margin: const EdgeInsets.only(top: 6),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 6,
+                  ),
+                  decoration: BoxDecoration(
+                    color: colorScheme.surfaceContainerHighest.withValues(
+                      alpha: 0.3,
+                    ),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              c.descripcion.isNotEmpty
+                                  ? c.descripcion
+                                  : c.nombreCargo,
+                              style: const TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            Text(
+                              c.esPorcentaje
+                                  ? '${c.porcentaje.toStringAsFixed(2)}% · base Bs ${_nf.format(c.baseCalculo)}'
+                                  : 'Valor fijo',
+                              style: TextStyle(
+                                fontSize: 10,
+                                color: colorScheme.onSurfaceVariant,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Text(
+                        'Bs ${_nf.format(c.montoCargo)}',
+                        style: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                          fontFeatures: tpexTabularFigures,
+                        ),
+                      ),
+                      IconButton(
+                        visualDensity: VisualDensity.compact,
+                        iconSize: 18,
+                        icon: const Icon(Icons.edit_outlined),
+                        tooltip: 'Editar',
+                        onPressed: () async {
+                          final editado = await showDialog<CargoPagoFormItem>(
+                            context: context,
+                            builder:
+                                (_) => _DialogoCargoTxn(
+                                  monedaCargoId: formState.idMonedaDestino,
+                                  baseSugerida: formState.montoConvertido,
+                                  inicial: c,
+                                ),
+                          );
+                          if (editado != null) {
+                            ref
+                                .read(transaccionFormProvider.notifier)
+                                .actualizarCargo(i, editado);
+                          }
+                        },
+                      ),
+                      IconButton(
+                        visualDensity: VisualDensity.compact,
+                        iconSize: 18,
+                        color: colorScheme.error,
+                        icon: const Icon(Icons.delete_outline_rounded),
+                        tooltip: 'Eliminar',
+                        onPressed:
+                            () => ref
+                                .read(transaccionFormProvider.notifier)
+                                .eliminarCargo(i),
+                      ),
+                    ],
+                  ),
+                );
+              }),
+              Padding(
+                padding: const EdgeInsets.only(top: 6),
+                child: Align(
+                  alignment: Alignment.centerRight,
+                  child: Text(
+                    'Total cargos: $monedaDestinoNombre ${_nf.format(formState.totalCargos)}',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                      color: colorScheme.primary,
+                      fontFeatures: tpexTabularFigures,
+                    ),
+                  ),
+                ),
+              ),
+            ],
 
             // ── Resumen detallado ─────────────────────────────────────
             if (formState.montoOrigen > 0 &&
@@ -3432,12 +3941,7 @@ class _DialogoComparativaState extends ConsumerState<_DialogoComparativa> {
         final esGanadora = c.esGanadora == 1;
         final estaAceptada = c.estado.toUpperCase() == 'ACEPTADA';
         final isBest = i == 0 && !yaAceptada; // primer item = menor costo
-        final estadoColor =
-            estaAceptada
-                ? Colors.green
-                : c.estado.toUpperCase() == 'RECHAZADA'
-                ? Colors.red
-                : Colors.orange;
+        final estadoColor = tpexEstadoColor(c.estado);
 
         items.add(
           Padding(
@@ -3835,6 +4339,7 @@ class _ComparativaDataChip extends StatelessWidget {
                   highlight
                       ? colorScheme.onPrimaryContainer
                       : colorScheme.onSurface,
+              fontFeatures: tpexTabularFigures,
             ),
           ),
         ],
@@ -3916,6 +4421,18 @@ class _DialogoCotizacionState extends ConsumerState<_DialogoCotizacion> {
     final bancosAsync = ref.watch(bancosTPEXProvider);
     final monedasAsync = ref.watch(monedasProvider);
 
+    // Cuotas APROBADAS: son las que esta cotización va a cubrir. Las PENDIENTES
+    // quedan fuera. El "Monto a comprar" tope = suma de estas.
+    final cuotasAprobadas =
+        widget.solicitud.proveedores
+            .expand((p) => p.detalles)
+            .where((d) => d.esAprobado == 1)
+            .toList();
+    final totalAprobado = cuotasAprobadas.fold<double>(
+      0,
+      (s, d) => s + d.montoAPagarUsd,
+    );
+
     // Sincronizar campos de texto con el estado solo cuando el usuario no está editando
     if (_tcCtrl.text.isEmpty && formState.tipoCambioOfrecido > 0) {
       _tcCtrl.text = formState.tipoCambioOfrecido.toStringAsFixed(4);
@@ -3971,6 +4488,104 @@ class _DialogoCotizacionState extends ConsumerState<_DialogoCotizacion> {
             ),
             const SizedBox(height: 20),
             const Divider(),
+            const SizedBox(height: 16),
+
+            // ── Cuotas que cubre esta cotización (solo las APROBADAS) ────
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.green.withValues(alpha: 0.07),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: Colors.green.withValues(alpha: 0.25)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.check_circle_rounded,
+                        size: 15,
+                        color: Colors.green.shade700,
+                      ),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: Text(
+                          'Esta cotización se hará sobre las cuotas APROBADAS',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.green.shade800,
+                          ),
+                        ),
+                      ),
+                      Text(
+                        'Disponible: \$ ${_nf.format(totalAprobado)}',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                          color: Colors.green.shade800,
+                          fontFeatures: tpexTabularFigures,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 6),
+                  if (cuotasAprobadas.isEmpty)
+                    Text(
+                      'No hay cuotas aprobadas. Apruebe al menos una en Gerencia.',
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: colorScheme.error,
+                      ),
+                    )
+                  else
+                    ...cuotasAprobadas.map(
+                      (d) => Padding(
+                        padding: const EdgeInsets.only(top: 2),
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.fiber_manual_record,
+                              size: 7,
+                              color: Colors.green.shade700,
+                            ),
+                            const SizedBox(width: 6),
+                            Expanded(
+                              child: Text(
+                                'Doc ${d.numeroDocumento}'
+                                '${d.tipoDocumento.isNotEmpty ? " · ${d.tipoDocumento}" : ""}',
+                                style: const TextStyle(fontSize: 11),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                            Text(
+                              '\$ ${_nf.format(d.montoAPagarUsd)}',
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w600,
+                                fontFeatures: tpexTabularFigures,
+                                color: colorScheme.onSurface,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Las cuotas PENDIENTES no entran en esta cotización; '
+                    'el monto a comprar no puede superar el disponible.',
+                    style: TextStyle(
+                      fontSize: 10,
+                      fontStyle: FontStyle.italic,
+                      color: colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ],
+              ),
+            ),
             const SizedBox(height: 16),
 
             // ── Formulario en grid responsivo ───────────────────────────
@@ -4046,7 +4661,7 @@ class _DialogoCotizacionState extends ConsumerState<_DialogoCotizacion> {
                 ),
 
                 // Moneda
-                _buildLabel('Moneda *'),
+                _buildLabel('Moneda a cotizar * (divisa que se comprará)'),
                 monedasAsync.when(
                   loading:
                       () => InputDecorator(
@@ -4117,7 +4732,7 @@ class _DialogoCotizacionState extends ConsumerState<_DialogoCotizacion> {
                                 (m) => DropdownMenuItem(
                                   value: m.idMoneda,
                                   child: Text(
-                                    '${m.codigo} — ${m.nombre}',
+                                    '${m.codigo} — ${m.nombre} (${m.simbolo})',
                                     overflow: TextOverflow.ellipsis,
                                   ),
                                 ),
@@ -4506,4 +5121,272 @@ class _DialogoCotizacionState extends ConsumerState<_DialogoCotizacion> {
       borderSide: BorderSide(color: cs.error, width: 1.5),
     ),
   );
+}
+
+// ═════════════════════════════════════════════════════════════════════════════
+// Diálogo para agregar/editar un cargo (ITF, comisión bancaria, SWIFT, OUR…)
+// porcentaje se ingresa como número-porcentaje: 0.30 == 0,30%.
+// ═════════════════════════════════════════════════════════════════════════════
+class _DialogoCargoTxn extends ConsumerStatefulWidget {
+  final int monedaCargoId;
+  final double baseSugerida;
+  final CargoPagoFormItem? inicial;
+  const _DialogoCargoTxn({
+    required this.monedaCargoId,
+    required this.baseSugerida,
+    this.inicial,
+  });
+
+  @override
+  ConsumerState<_DialogoCargoTxn> createState() => _DialogoCargoTxnState();
+}
+
+class _DialogoCargoTxnState extends ConsumerState<_DialogoCargoTxn> {
+  final _formKey = GlobalKey<FormState>();
+  TiposCargoEntity? _tipo;
+  final _baseCtrl = TextEditingController();
+  final _pctCtrl = TextEditingController();
+  final _fijoCtrl = TextEditingController();
+  final _descCtrl = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    final ini = widget.inicial;
+    if (ini != null) {
+      _baseCtrl.text =
+          ini.baseCalculo > 0 ? ini.baseCalculo.toStringAsFixed(2) : '';
+      _pctCtrl.text = ini.porcentaje > 0 ? ini.porcentaje.toString() : '';
+      _fijoCtrl.text =
+          ini.valorFijo > 0 ? ini.valorFijo.toStringAsFixed(2) : '';
+      _descCtrl.text = ini.descripcion;
+    } else {
+      _baseCtrl.text =
+          widget.baseSugerida > 0 ? widget.baseSugerida.toStringAsFixed(2) : '';
+    }
+  }
+
+  @override
+  void dispose() {
+    _baseCtrl.dispose();
+    _pctCtrl.dispose();
+    _fijoCtrl.dispose();
+    _descCtrl.dispose();
+    super.dispose();
+  }
+
+  bool get _esPct => (_tipo?.esPorcentaje ?? 1) == 1;
+
+  double get _montoPreview {
+    final base = double.tryParse(_baseCtrl.text.replaceAll(',', '.')) ?? 0;
+    final pct = double.tryParse(_pctCtrl.text.replaceAll(',', '.')) ?? 0;
+    final fijo = double.tryParse(_fijoCtrl.text.replaceAll(',', '.')) ?? 0;
+    return _esPct ? base * pct / 100 : fijo;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final tiposAsync = ref.watch(tiposCargoProvider);
+
+    return AlertDialog(
+      title: Text(widget.inicial == null ? 'Agregar cargo' : 'Editar cargo'),
+      content: SizedBox(
+        width: 380,
+        child: Form(
+          key: _formKey,
+          child: tiposAsync.when(
+            loading:
+                () => const SizedBox(
+                  height: 80,
+                  child: Center(child: CircularProgressIndicator()),
+                ),
+            error: (e, _) => Text('Error cargando tipos de cargo: $e'),
+            data: (tipos) {
+              final activos = tipos.where((t) => t.activo == 1).toList();
+              // En modo edición, enlazar el tipo inicial una sola vez.
+              if (_tipo == null && widget.inicial != null) {
+                _tipo =
+                    activos
+                        .where(
+                          (t) => t.idTipoCargo == widget.inicial!.idTipoCargo,
+                        )
+                        .firstOrNull;
+              }
+              return Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  DropdownButtonFormField<TiposCargoEntity>(
+                    value: _tipo,
+                    isExpanded: true,
+                    decoration: const InputDecoration(
+                      labelText: 'Tipo de cargo',
+                      border: OutlineInputBorder(),
+                      isDense: true,
+                    ),
+                    items:
+                        activos
+                            .map(
+                              (t) => DropdownMenuItem(
+                                value: t,
+                                child: Text(
+                                  '${t.nombre}  ${t.esPorcentaje == 1 ? "(%)" : "(fijo)"}',
+                                ),
+                              ),
+                            )
+                            .toList(),
+                    validator: (v) => v == null ? 'Seleccione un tipo' : null,
+                    onChanged:
+                        (v) => setState(() {
+                          _tipo = v;
+                          if (v != null && _descCtrl.text.trim().isEmpty) {
+                            _descCtrl.text = v.nombre;
+                          }
+                        }),
+                  ),
+                  const SizedBox(height: 12),
+                  if (_esPct) ...[
+                    TextFormField(
+                      controller: _baseCtrl,
+                      keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true,
+                      ),
+                      decoration: const InputDecoration(
+                        labelText: 'Base de cálculo (Bs)',
+                        border: OutlineInputBorder(),
+                        isDense: true,
+                      ),
+                      onChanged: (_) => setState(() {}),
+                      validator: (v) {
+                        final n = double.tryParse(
+                          (v ?? '').replaceAll(',', '.'),
+                        );
+                        return (n == null || n <= 0) ? 'Base > 0' : null;
+                      },
+                    ),
+                    const SizedBox(height: 10),
+                    TextFormField(
+                      controller: _pctCtrl,
+                      keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true,
+                      ),
+                      decoration: const InputDecoration(
+                        labelText: 'Porcentaje (%)',
+                        hintText: 'Ej. 0.30 para 0,30%',
+                        border: OutlineInputBorder(),
+                        isDense: true,
+                      ),
+                      onChanged: (_) => setState(() {}),
+                      validator: (v) {
+                        final n = double.tryParse(
+                          (v ?? '').replaceAll(',', '.'),
+                        );
+                        return (n == null || n <= 0) ? 'Porcentaje > 0' : null;
+                      },
+                    ),
+                  ] else ...[
+                    TextFormField(
+                      controller: _fijoCtrl,
+                      keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true,
+                      ),
+                      decoration: const InputDecoration(
+                        labelText: 'Valor fijo (Bs)',
+                        border: OutlineInputBorder(),
+                        isDense: true,
+                      ),
+                      onChanged: (_) => setState(() {}),
+                      validator: (v) {
+                        final n = double.tryParse(
+                          (v ?? '').replaceAll(',', '.'),
+                        );
+                        return (n == null || n <= 0) ? 'Valor > 0' : null;
+                      },
+                    ),
+                  ],
+                  const SizedBox(height: 10),
+                  TextFormField(
+                    controller: _descCtrl,
+                    decoration: const InputDecoration(
+                      labelText: 'Descripción (opcional)',
+                      border: OutlineInputBorder(),
+                      isDense: true,
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 8,
+                    ),
+                    decoration: BoxDecoration(
+                      color: cs.primaryContainer.withValues(alpha: 0.35),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'Monto del cargo',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: cs.onSurfaceVariant,
+                          ),
+                        ),
+                        Text(
+                          'Bs ${_nf.format(_montoPreview)}',
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w800,
+                            color: cs.primary,
+                            fontFeatures: tpexTabularFigures,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              );
+            },
+          ),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Cancelar'),
+        ),
+        FilledButton(
+          onPressed: () {
+            if (!(_formKey.currentState?.validate() ?? false)) return;
+            final tipo = _tipo;
+            if (tipo == null) return;
+            final base =
+                double.tryParse(_baseCtrl.text.replaceAll(',', '.')) ?? 0;
+            final pct =
+                double.tryParse(_pctCtrl.text.replaceAll(',', '.')) ?? 0;
+            final fijo =
+                double.tryParse(_fijoCtrl.text.replaceAll(',', '.')) ?? 0;
+            final esPct = tipo.esPorcentaje == 1;
+            final item = CargoPagoFormItem(
+              idTipoCargo: tipo.idTipoCargo,
+              nombreCargo: tipo.nombre,
+              esPorcentaje: esPct,
+              porcentaje: esPct ? pct : 0,
+              valorFijo: esPct ? 0 : fijo,
+              // Para cargos fijos el SP exige base > 0: usamos el propio valor.
+              baseCalculo: esPct ? base : fijo,
+              idMoneda: widget.monedaCargoId,
+              descripcion:
+                  _descCtrl.text.trim().isEmpty
+                      ? tipo.nombre
+                      : _descCtrl.text.trim(),
+            );
+            Navigator.pop(context, item);
+          },
+          child: const Text('Guardar'),
+        ),
+      ],
+    );
+  }
 }

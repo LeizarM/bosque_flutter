@@ -326,6 +326,8 @@ class AppConstants {
       '/pagos-extranjeros/obtener-proveedores-empresa';
   static const String lstFacProvYOrdCompra =
       '/pagos-extranjeros/obtener-docnum-empresa';
+  static const String lstDocumentosProyecto =
+      '/pagos-extranjeros/obtener-documentos-proyecto';
 
   static const String lstSolPagosRegistrados =
       '/pagos-extranjeros/reporte-solicitudes-fechas';
@@ -333,6 +335,15 @@ class AppConstants {
   // ── TPEX: escrituras ACID ──────────────────────────────────────────────────
   static const String tpexAprobarSolicitud =
       '/pagos-extranjeros/aprobar-solicitud';
+  // Aprobación granular: por cuota y por proveedor
+  static const String tpexAprobarCuota =
+      '/pagos-extranjeros/aprobar-cuota';
+  static const String tpexRevertirCuota =
+      '/pagos-extranjeros/revertir-aprobacion-cuota';
+  static const String tpexAprobarProveedor =
+      '/pagos-extranjeros/aprobar-proveedor';
+  static const String tpexRechazarProveedor =
+      '/pagos-extranjeros/rechazar-proveedor';
   static const String tpexGuardarCotizacion =
       '/pagos-extranjeros/guardar-cotizacion-completa';
   static const String tpexAceptarCotizacion =
@@ -409,6 +420,8 @@ class AppConstants {
       '/pagos-extranjeros/eliminar-config-comisiones';
 
   // ── TPEX: asientos contables ───────────────────────────────────────────────
+  static const String tpexCorregirComprobante =
+      '/pagos-extranjeros/corregir-comprobante';
   static const String tpexRegistrarAsiento =
       '/pagos-extranjeros/registrar-asiento';
   static const String tpexEliminarAsiento =
@@ -417,6 +430,16 @@ class AppConstants {
       '/pagos-extranjeros/obtener-asientos-transaccion';
   static const String tpexValidarCuadreAsientos =
       '/pagos-extranjeros/validar-cuadre-asientos';
+
+  // ── TPEX: participantes (split de transacción) ─────────────────────────────
+  static const String tpexRegistrarParticipante =
+      '/pagos-extranjeros/registrar-participante';
+  static const String tpexEliminarParticipante =
+      '/pagos-extranjeros/eliminar-participante';
+  static const String tpexObtenerParticipantesTransaccion =
+      '/pagos-extranjeros/obtener-participantes-transaccion';
+  static const String tpexValidarCuadreParticipantes =
+      '/pagos-extranjeros/validar-cuadre-participantes';
 
   // ── TDESC: Descuentos empleados ────────────────────────────────────────────────────────
 

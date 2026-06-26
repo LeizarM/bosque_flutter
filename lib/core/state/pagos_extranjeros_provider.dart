@@ -19,6 +19,7 @@ import 'package:bosque_flutter/domain/entities/solicitud_pago_entity.dart';
 import 'package:bosque_flutter/domain/entities/tipos_cambio_entity.dart';
 import 'package:bosque_flutter/domain/entities/tipos_cargo_entity.dart';
 import 'package:bosque_flutter/domain/entities/tipos_transaccion_entity.dart';
+import 'package:bosque_flutter/domain/entities/transaccion_participante_entity.dart';
 import 'package:bosque_flutter/domain/entities/transacciones_entity.dart';
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -31,13 +32,16 @@ class DetalleFormItem {
   final String numeroDocumento;
   final int facturaProvSap;
   final String codigoImportacion;
+  final int numeroCuota;              // 1, 2, 3... permite varias cuotas del mismo doc SAP
   final double montoFacturaUsd;
   final double montoAmortizadoUsd;
-  final double montoAPagarUsd;
+  final double montoAPagarUsd;        // monto de esta cuota
+  final double montoTotalDocumento;   // total del documento SAP (DocTotal)
   final DateTime fechaFactura;
   final DateTime fechaVencimiento;
   final String concepto;
   final String obs;
+  final int esAprobado;               // 0/1 — aprobación por cuota
 
   DetalleFormItem({
     this.idDetalle = 0,
@@ -45,13 +49,16 @@ class DetalleFormItem {
     this.numeroDocumento = '',
     this.facturaProvSap = 0,
     this.codigoImportacion = '',
+    this.numeroCuota = 1,
     this.montoFacturaUsd = 0.0,
     this.montoAmortizadoUsd = 0.0,
     this.montoAPagarUsd = 0.0,
+    this.montoTotalDocumento = 0.0,
     DateTime? fechaFactura,
     DateTime? fechaVencimiento,
     this.concepto = '',
     this.obs = '',
+    this.esAprobado = 0,
   }) : fechaFactura = fechaFactura ?? DateTime.now(),
        fechaVencimiento = fechaVencimiento ?? DateTime.now();
 
@@ -61,13 +68,16 @@ class DetalleFormItem {
     String? numeroDocumento,
     int? facturaProvSap,
     String? codigoImportacion,
+    int? numeroCuota,
     double? montoFacturaUsd,
     double? montoAmortizadoUsd,
     double? montoAPagarUsd,
+    double? montoTotalDocumento,
     DateTime? fechaFactura,
     DateTime? fechaVencimiento,
     String? concepto,
     String? obs,
+    int? esAprobado,
   }) {
     return DetalleFormItem(
       idDetalle: idDetalle ?? this.idDetalle,
@@ -75,13 +85,16 @@ class DetalleFormItem {
       numeroDocumento: numeroDocumento ?? this.numeroDocumento,
       facturaProvSap: facturaProvSap ?? this.facturaProvSap,
       codigoImportacion: codigoImportacion ?? this.codigoImportacion,
+      numeroCuota: numeroCuota ?? this.numeroCuota,
       montoFacturaUsd: montoFacturaUsd ?? this.montoFacturaUsd,
       montoAmortizadoUsd: montoAmortizadoUsd ?? this.montoAmortizadoUsd,
       montoAPagarUsd: montoAPagarUsd ?? this.montoAPagarUsd,
+      montoTotalDocumento: montoTotalDocumento ?? this.montoTotalDocumento,
       fechaFactura: fechaFactura ?? this.fechaFactura,
       fechaVencimiento: fechaVencimiento ?? this.fechaVencimiento,
       concepto: concepto ?? this.concepto,
       obs: obs ?? this.obs,
+      esAprobado: esAprobado ?? this.esAprobado,
     );
   }
 }
@@ -93,6 +106,9 @@ class ProveedorFormItem {
   final String obs;
   final List<DetalleFormItem> detalles;
   final List<int> detallesAEliminar;
+  // Estado de aprobación (lectura para mostrar en UI; no se envía en INSERT)
+  final String estado;
+  final String obsAprobacion;
 
   ProveedorFormItem({
     this.idSolicitudProveedor = 0,
@@ -101,6 +117,8 @@ class ProveedorFormItem {
     this.obs = '',
     this.detalles = const [],
     this.detallesAEliminar = const [],
+    this.estado = 'PENDIENTE',
+    this.obsAprobacion = '',
   });
 
   double get totalFacturasUsd =>
@@ -109,6 +127,10 @@ class ProveedorFormItem {
       detalles.fold(0.0, (sum, d) => sum + d.montoAmortizadoUsd);
   double get totalAPagarUsd =>
       detalles.fold(0.0, (sum, d) => sum + d.montoAPagarUsd);
+  int get cuotasAprobadas =>
+      detalles.where((d) => d.esAprobado == 1).length;
+  bool get todasCuotasAprobadas =>
+      detalles.isNotEmpty && cuotasAprobadas == detalles.length;
 
   ProveedorFormItem copyWith({
     int? idSolicitudProveedor,
@@ -117,6 +139,8 @@ class ProveedorFormItem {
     String? obs,
     List<DetalleFormItem>? detalles,
     List<int>? detallesAEliminar,
+    String? estado,
+    String? obsAprobacion,
   }) {
     return ProveedorFormItem(
       idSolicitudProveedor: idSolicitudProveedor ?? this.idSolicitudProveedor,
@@ -125,6 +149,8 @@ class ProveedorFormItem {
       obs: obs ?? this.obs,
       detalles: detalles ?? this.detalles,
       detallesAEliminar: detallesAEliminar ?? this.detallesAEliminar,
+      estado: estado ?? this.estado,
+      obsAprobacion: obsAprobacion ?? this.obsAprobacion,
     );
   }
 }
@@ -138,6 +164,7 @@ class PagosExtranjerosState {
   final List<EmpresaEntity> empresas;
   final EmpresaEntity? empresaSeleccionada;
   final DateTime fechaSolicitud;
+  final String project; // Proyecto SAP asociado a esta solicitud
   final List<ProveedorFormItem> proveedores;
   final List<int> proveedoresAEliminar;
   final bool cargando;
@@ -150,6 +177,7 @@ class PagosExtranjerosState {
     this.empresas = const [],
     this.empresaSeleccionada,
     DateTime? fechaSolicitud,
+    this.project = '',
     this.proveedores = const [],
     this.proveedoresAEliminar = const [],
     this.cargando = false,
@@ -167,6 +195,7 @@ class PagosExtranjerosState {
     EmpresaEntity? empresaSeleccionada,
     bool clearEmpresa = false,
     DateTime? fechaSolicitud,
+    String? project,
     List<ProveedorFormItem>? proveedores,
     List<int>? proveedoresAEliminar,
     bool? cargando,
@@ -184,6 +213,7 @@ class PagosExtranjerosState {
               ? null
               : (empresaSeleccionada ?? this.empresaSeleccionada),
       fechaSolicitud: fechaSolicitud ?? this.fechaSolicitud,
+      project: project ?? this.project,
       proveedores: proveedores ?? this.proveedores,
       proveedoresAEliminar: proveedoresAEliminar ?? this.proveedoresAEliminar,
       cargando: cargando ?? this.cargando,
@@ -236,6 +266,11 @@ class PagosExtranjerosNotifier extends StateNotifier<PagosExtranjerosState> {
 
   void setFechaSolicitud(DateTime fecha) {
     state = state.copyWith(fechaSolicitud: fecha);
+  }
+
+  /// Establece el proyecto SAP asociado a la solicitud.
+  void setProject(String project) {
+    state = state.copyWith(project: project);
   }
 
   // ── Gestión de proveedores ───────────────────────────────────────────
@@ -404,6 +439,135 @@ class PagosExtranjerosNotifier extends StateNotifier<PagosExtranjerosState> {
     logContext: 'rechazando',
   );
 
+  // ══════════════════════════════════════════════════════════════════════
+  //   APROBACIÓN GRANULAR (por cuota + por proveedor)
+  // ══════════════════════════════════════════════════════════════════════
+
+  /// Aprueba una cuota individual. El backend propaga automáticamente
+  /// el estado del proveedor cuando todas sus cuotas están aprobadas.
+  Future<bool> aprobarCuota({
+    required int idDetalle,
+    required int audUsuario,
+  }) async {
+    state = state.copyWith(
+      cargando: true,
+      clearMensajeError: true,
+      clearMensajeExito: true,
+    );
+    try {
+      await _repo.aprobarCuota({
+        'idDetalle': idDetalle,
+        'audUsuario': audUsuario,
+      });
+      state = state.copyWith(
+        cargando: false,
+        mensajeExito: 'Cuota aprobada exitosamente.',
+      );
+      return true;
+    } catch (e) {
+      console('Error aprobando cuota $idDetalle: $e');
+      state = state.copyWith(
+        cargando: false,
+        mensajeError: e.toString().replaceFirst('Exception: ', ''),
+      );
+      return false;
+    }
+  }
+
+  /// Revierte la aprobación de una cuota.
+  Future<bool> revertirAprobacionCuota({
+    required int idDetalle,
+    required int audUsuario,
+  }) async {
+    state = state.copyWith(
+      cargando: true,
+      clearMensajeError: true,
+      clearMensajeExito: true,
+    );
+    try {
+      await _repo.revertirAprobacionCuota({
+        'idDetalle': idDetalle,
+        'audUsuario': audUsuario,
+      });
+      state = state.copyWith(
+        cargando: false,
+        mensajeExito: 'Aprobación de cuota revertida.',
+      );
+      return true;
+    } catch (e) {
+      console('Error revirtiendo cuota $idDetalle: $e');
+      state = state.copyWith(
+        cargando: false,
+        mensajeError: e.toString().replaceFirst('Exception: ', ''),
+      );
+      return false;
+    }
+  }
+
+  /// Aprueba manualmente todas las cuotas de un proveedor.
+  Future<bool> aprobarProveedor({
+    required int idSolicitudProveedor,
+    String obsAprobacion = '',
+    required int audUsuario,
+  }) async {
+    state = state.copyWith(
+      cargando: true,
+      clearMensajeError: true,
+      clearMensajeExito: true,
+    );
+    try {
+      await _repo.aprobarProveedor({
+        'idSolicitudProveedor': idSolicitudProveedor,
+        'obsAprobacion': obsAprobacion,
+        'audUsuario': audUsuario,
+      });
+      state = state.copyWith(
+        cargando: false,
+        mensajeExito: 'Proveedor APROBADO exitosamente.',
+      );
+      return true;
+    } catch (e) {
+      console('Error aprobando proveedor $idSolicitudProveedor: $e');
+      state = state.copyWith(
+        cargando: false,
+        mensajeError: e.toString().replaceFirst('Exception: ', ''),
+      );
+      return false;
+    }
+  }
+
+  /// Rechaza un proveedor (queda excluido del cálculo de cotizaciones).
+  Future<bool> rechazarProveedor({
+    required int idSolicitudProveedor,
+    String obsAprobacion = '',
+    required int audUsuario,
+  }) async {
+    state = state.copyWith(
+      cargando: true,
+      clearMensajeError: true,
+      clearMensajeExito: true,
+    );
+    try {
+      await _repo.rechazarProveedor({
+        'idSolicitudProveedor': idSolicitudProveedor,
+        'obsAprobacion': obsAprobacion,
+        'audUsuario': audUsuario,
+      });
+      state = state.copyWith(
+        cargando: false,
+        mensajeExito: 'Proveedor RECHAZADO.',
+      );
+      return true;
+    } catch (e) {
+      console('Error rechazando proveedor $idSolicitudProveedor: $e');
+      state = state.copyWith(
+        cargando: false,
+        mensajeError: e.toString().replaceFirst('Exception: ', ''),
+      );
+      return false;
+    }
+  }
+
   // ── Guardar solicitud completa (endpoint único transaccional) ────────
 
   /// Construye el payload completo y lo envía en un único POST transaccional.
@@ -466,6 +630,7 @@ class PagosExtranjerosNotifier extends StateNotifier<PagosExtranjerosState> {
         'fechaSolicitud': formatDate(state.fechaSolicitud),
         'montoTotalSolicitud': state.montoTotalSolicitud,
         'estado': null, // el backend asigna el estado inicial automáticamente
+        'project': state.project, // Proyecto SAP de la solicitud
         'audUsuario': audUsuario,
         'proveedoresAEliminar': state.proveedoresAEliminar,
         'proveedores':
@@ -490,9 +655,11 @@ class PagosExtranjerosNotifier extends StateNotifier<PagosExtranjerosState> {
                                 'numeroDocumento': det.numeroDocumento,
                                 'facturaProvSap': det.facturaProvSap,
                                 'codigoImportacion': det.codigoImportacion,
+                                'numeroCuota': det.numeroCuota,
                                 'montoFacturaUsd': det.montoFacturaUsd,
                                 'montoAmortizadoUsd': det.montoAmortizadoUsd,
                                 'montoAPagarUsd': det.montoAPagarUsd,
+                                'montoTotalDocumento': det.montoTotalDocumento,
                                 'fechaFactura': formatDate(det.fechaFactura),
                                 'fechaVencimiento': formatDate(
                                   det.fechaVencimiento,
@@ -558,6 +725,21 @@ final facProvYOrdCompraProvider = FutureProvider.autoDispose
       return repo.getFacProvYOrdCompra(codEmpresa);
     });
 
+/// Documentos abiertos de SAP filtrados por proyecto (ACCION="C").
+/// Cada llamada consulta el linked server SAP: usar con debounce en la UI.
+final facProvYOrdCompraProyectoProvider = FutureProvider.autoDispose
+    .family<List<DetalleSolicitudEntity>, ({int codEmpresa, String project})>((
+      ref,
+      args,
+    ) async {
+      if (args.project.trim().isEmpty) return [];
+      final repo = PagosExtranjerosImpl();
+      return repo.getFacProvYOrdCompraPorProyecto(
+        args.codEmpresa,
+        args.project.trim(),
+      );
+    });
+
 // ═══════════════════════════════════════════════════════════════════════
 // Provider para listar solicitudes registradas
 // ═══════════════════════════════════════════════════════════════════════
@@ -609,6 +791,7 @@ class CargoPagoFormItem {
   final double valorFijo;
   final double baseCalculo;
   final int idMoneda;
+  final String descripcion;
 
   CargoPagoFormItem({
     BigInt? idTipoCargo,
@@ -618,8 +801,10 @@ class CargoPagoFormItem {
     this.valorFijo = 0.0,
     this.baseCalculo = 0.0,
     this.idMoneda = 0,
+    this.descripcion = '',
   }) : idTipoCargo = idTipoCargo ?? BigInt.zero;
 
+  // porcentaje es número-porcentaje (0.30 = 0,30%), por eso /100.
   double get montoCargo =>
       esPorcentaje ? baseCalculo * porcentaje / 100 : valorFijo;
 
@@ -631,6 +816,7 @@ class CargoPagoFormItem {
     double? valorFijo,
     double? baseCalculo,
     int? idMoneda,
+    String? descripcion,
   }) {
     return CargoPagoFormItem(
       idTipoCargo: idTipoCargo ?? this.idTipoCargo,
@@ -640,6 +826,7 @@ class CargoPagoFormItem {
       valorFijo: valorFijo ?? this.valorFijo,
       baseCalculo: baseCalculo ?? this.baseCalculo,
       idMoneda: idMoneda ?? this.idMoneda,
+      descripcion: descripcion ?? this.descripcion,
     );
   }
 }
@@ -1021,6 +1208,7 @@ class TransaccionFormState {
   final double comisionExportadora;
   final String metodoExportadora;
   final String observaciones;
+  final BigInt? idTransaccionOrigen; // vínculo devolución → transacción origen
   final List<CargoPagoFormItem> cargos;
   final bool cargando;
   final bool cargandoTcRef;
@@ -1056,6 +1244,7 @@ class TransaccionFormState {
     this.comisionExportadora = 0.0,
     this.metodoExportadora = '',
     this.observaciones = '',
+    this.idTransaccionOrigen,
     this.cargos = const [],
     this.cargando = false,
     this.cargandoTcRef = false,
@@ -1105,6 +1294,8 @@ class TransaccionFormState {
     double? comisionExportadora,
     String? metodoExportadora,
     String? observaciones,
+    BigInt? idTransaccionOrigen,
+    bool clearIdTransaccionOrigen = false,
     List<CargoPagoFormItem>? cargos,
     bool? cargando,
     bool? cargandoTcRef,
@@ -1144,6 +1335,9 @@ class TransaccionFormState {
       comisionExportadora: comisionExportadora ?? this.comisionExportadora,
       metodoExportadora: metodoExportadora ?? this.metodoExportadora,
       observaciones: observaciones ?? this.observaciones,
+      idTransaccionOrigen: clearIdTransaccionOrigen
+          ? null
+          : (idTransaccionOrigen ?? this.idTransaccionOrigen),
       cargos: cargos ?? this.cargos,
       cargando: cargando ?? this.cargando,
       cargandoTcRef: cargandoTcRef ?? this.cargandoTcRef,
@@ -1257,8 +1451,22 @@ class TransaccionNotifier extends StateNotifier<TransaccionFormState> {
 
   // ── Campos del formulario ──────────────────────────────────────────
 
-  void setIdTipoTransaccion(BigInt id) =>
-      state = state.copyWith(idTipoTransaccion: id);
+  void setIdTipoTransaccion(BigInt id, {bool requiereForward = false}) =>
+      state = state.copyWith(
+        idTipoTransaccion: id,
+        // FIX: el backend exige fechaPactado/fechaVencimiento para FORWARD. Los
+        // date pickers muestran un default (now / now+90) pero el estado quedaba
+        // en null hasta que el usuario abría y elegía una fecha → el guardado
+        // fallaba con "FORWARD requiere Fecha Vencimiento". Al elegir un tipo
+        // forward sembramos esos defaults (null = copyWith conserva el actual,
+        // así los tipos no-forward no quedan con fechas espurias).
+        fechaPactado:
+            requiereForward ? (state.fechaPactado ?? DateTime.now()) : null,
+        fechaVencimiento: requiereForward
+            ? (state.fechaVencimiento ??
+                DateTime.now().add(const Duration(days: 90)))
+            : null,
+      );
   void setCodBanco(int id) => state = state.copyWith(codBanco: id);
   void setIdCanal(int id) => state = state.copyWith(idCanal: id);
   void setMontoOrigen(double v) => state = state.copyWith(montoOrigen: v);
@@ -1286,6 +1494,15 @@ class TransaccionNotifier extends StateNotifier<TransaccionFormState> {
   void setMetodoExportadora(String v) =>
       state = state.copyWith(metodoExportadora: v);
   void setObservaciones(String v) => state = state.copyWith(observaciones: v);
+  // Usados por la operación de tesorería (B): la empresa y el TC de referencia
+  // se eligen a mano (no vienen de una cotización pre-cargada).
+  void setCodEmpresa(int v) => state = state.copyWith(codEmpresa: v);
+  void setTipoCambioReferencia(double v) =>
+      state = state.copyWith(tipoCambioReferencia: v);
+  // Devolución (tipo DEVOLUCION): vincula la transacción que se está devolviendo.
+  void setIdTransaccionOrigen(BigInt? v) => state = v == null
+      ? state.copyWith(clearIdTransaccionOrigen: true)
+      : state.copyWith(idTransaccionOrigen: v);
 
   // ── Gestión de cargos ──────────────────────────────────────────────
 
@@ -1420,8 +1637,13 @@ class TransaccionNotifier extends StateNotifier<TransaccionFormState> {
                     'idTipoCargo': c.idTipoCargo.toInt(),
                     'porcentaje': c.esPorcentaje ? c.porcentaje : 0.0,
                     'valorFijo': c.esPorcentaje ? 0.0 : c.valorFijo,
-                    'baseCalculo': c.baseCalculo,
+                    // baseCalculo debe ser > 0 incluso para cargos fijos (validación del SP);
+                    // para fijos se usa el propio valorFijo como base nominal.
+                    'baseCalculo': c.esPorcentaje
+                        ? c.baseCalculo
+                        : (c.baseCalculo > 0 ? c.baseCalculo : c.valorFijo),
                     'idMoneda': c.idMoneda,
+                    'descripcion': c.descripcion,
                   },
                 )
                 .toList(),
@@ -1438,6 +1660,105 @@ class TransaccionNotifier extends StateNotifier<TransaccionFormState> {
       return true;
     } catch (e) {
       console('Error guardando transacción: $e');
+      state = state.copyWith(
+        cargando: false,
+        mensajeError: e.toString().replaceFirst('Exception: ', ''),
+      );
+      return false;
+    }
+  }
+
+  // ── OPCIÓN B: Operación de TESORERÍA (sin solicitud ni cotización) ──
+  // Para tipos que NO son pago a proveedor (USDT, Fondeo/Traspaso Mercury,
+  // Devolución). El SP los acepta con idSolicitud/idCotizacion/cardCode NULL
+  // (esPagoProveedor=0) y codBanco sólo si el tipo lo requiere. El backend
+  // (SP) hace NULLIF(@idCotizacion,0)/NULLIF(@codBanco,0), así que mandar 0
+  // equivale a NULL y no viola las FK. Mismo payload que guardarTransaccion
+  // pero con validaciones relajadas (sin exigir cotización ni banco).
+  Future<bool> guardarOperacionTesoreria(int audUsuario) async {
+    if (state.idTipoTransaccion == BigInt.zero) {
+      state = state.copyWith(
+          mensajeError: 'Debe seleccionar un tipo de operación.');
+      return false;
+    }
+    if (state.codEmpresa <= 0) {
+      state = state.copyWith(mensajeError: 'Debe seleccionar la empresa.');
+      return false;
+    }
+    if (state.montoOrigen <= 0) {
+      state = state.copyWith(
+          mensajeError: 'El monto origen debe ser mayor a 0.');
+      return false;
+    }
+    if (state.idMonedaOrigen <= 0 || state.idMonedaDestino <= 0) {
+      state = state.copyWith(
+          mensajeError: 'Debe seleccionar las monedas de origen y destino.');
+      return false;
+    }
+    if (state.tipoCambioAplicado <= 0) {
+      state = state.copyWith(mensajeError: 'El tipo de cambio no puede ser 0.');
+      return false;
+    }
+
+    state = state.copyWith(
+        cargando: true, clearMensajeError: true, clearMensajeExito: true);
+
+    try {
+      String fmtDate(DateTime d) =>
+          '${d.year.toString().padLeft(4, '0')}-'
+          '${d.month.toString().padLeft(2, '0')}-'
+          '${d.day.toString().padLeft(2, '0')} 00:00:00';
+
+      final payload = <String, dynamic>{
+        'idTransaccion': 0,
+        // Tesorería: SIN solicitud/cotización/proveedor. Se mandan 0/'' y el SP
+        // los convierte a NULL con NULLIF; codBanco 0 (Traspaso sin banco) -> NULL.
+        'idSolicitud': 0,
+        'idCotizacion': 0,
+        'cardCode': '',
+        'idTipoTransaccion': state.idTipoTransaccion.toInt(),
+        'codBanco': state.codBanco,
+        'idCanal': state.idCanal,
+        'codEmpresa': state.codEmpresa,
+        'fechaTransaccion': fmtDate(state.fechaTransaccion),
+        'montoOrigen': state.montoOrigen,
+        'idMonedaOrigen': state.idMonedaOrigen,
+        'tipoCambioAplicado': state.tipoCambioAplicado,
+        'idMonedaDestino': state.idMonedaDestino,
+        if (state.tipoCambioReferencia > 0)
+          'tipoCambioReferencia': state.tipoCambioReferencia,
+        'montoConvertido': state.montoConvertido,
+        'totalCargos': state.totalCargos,
+        'totalFinal': state.montoConvertido + state.totalCargos,
+        'observaciones': state.observaciones,
+        // Devolución: vínculo a la transacción origen (el SP exige >0 para DEVOLUCION).
+        if (state.idTransaccionOrigen != null &&
+            state.idTransaccionOrigen! > BigInt.zero)
+          'idTransaccionOrigen': state.idTransaccionOrigen!.toInt(),
+        'audUsuario': audUsuario,
+        'cargos': state.cargos
+            .map((c) => {
+                  'idTipoCargo': c.idTipoCargo.toInt(),
+                  'porcentaje': c.esPorcentaje ? c.porcentaje : 0.0,
+                  'valorFijo': c.esPorcentaje ? 0.0 : c.valorFijo,
+                  'baseCalculo': c.esPorcentaje
+                      ? c.baseCalculo
+                      : (c.baseCalculo > 0 ? c.baseCalculo : c.valorFijo),
+                  'idMoneda': c.idMoneda,
+                  'descripcion': c.descripcion,
+                })
+            .toList(),
+      };
+
+      final idTransaccion = await _repo.guardarTransaccionCompleta(payload);
+      state = state.copyWith(
+        cargando: false,
+        idTransaccion: idTransaccion.toInt(),
+        mensajeExito: 'Operación de tesorería registrada exitosamente.',
+      );
+      return true;
+    } catch (e) {
+      console('Error guardando operación de tesorería: $e');
       state = state.copyWith(
         cargando: false,
         mensajeError: e.toString().replaceFirst('Exception: ', ''),
@@ -1753,6 +2074,28 @@ final cuadreAsientosProvider = FutureProvider.autoDispose
       if (idTransaccion == BigInt.zero) return null;
       final repo = PagosExtranjerosImpl();
       return repo.validarCuadreAsientos(idTransaccion);
+    });
+
+/// Participantes del split de una transacción (ACCION="T").
+final participantesTransaccionProvider = FutureProvider.autoDispose
+    .family<List<TransaccionParticipanteEntity>, BigInt>((
+      ref,
+      idTransaccion,
+    ) async {
+      if (idTransaccion == BigInt.zero) return [];
+      final repo = PagosExtranjerosImpl();
+      return repo.getParticipantesPorTransaccion(idTransaccion);
+    });
+
+/// Resumen de cuadre del split de una transacción (ACCION="V").
+final cuadreParticipantesProvider = FutureProvider.autoDispose
+    .family<TransaccionParticipanteEntity?, BigInt>((
+      ref,
+      idTransaccion,
+    ) async {
+      if (idTransaccion == BigInt.zero) return null;
+      final repo = PagosExtranjerosImpl();
+      return repo.validarCuadreParticipantes(idTransaccion);
     });
 
 /// Lista de bancos disponibles para cotización TPEX.

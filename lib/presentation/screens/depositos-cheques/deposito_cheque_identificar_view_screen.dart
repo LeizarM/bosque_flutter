@@ -412,10 +412,10 @@ class _DepositosIdentificarTable extends ConsumerWidget {
                         if (d.obs.isNotEmpty)
                           _buildInfoRow('Observaciones', d.obs),
                         const SizedBox(height: 8),
-                        if (!esVerificado) // Solo mostrar el botón si NO está verificado
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.end,
-                            children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          children: [
+                            if (!esVerificado) // Solo mostrar el botón si NO está verificado
                               IconButton(
                                 icon: const Icon(
                                   Icons.person,
@@ -425,8 +425,9 @@ class _DepositosIdentificarTable extends ConsumerWidget {
                                 onPressed:
                                     () => mostrarDialogoAsignarCliente(d),
                               ),
-                            ],
-                          ),
+                            _PdfDepositoButton(idDeposito: d.idDeposito),
+                          ],
+                        ),
                       ],
                     ),
                   ),
@@ -540,7 +541,7 @@ class _DepositosIdentificarTable extends ConsumerWidget {
               _customDataColumn('Fecha', 80),
               _customDataColumn('Estado', 100),
               _customDataColumn('Observaciones', 180),
-              _customDataColumn('Acciones', 80),
+              _customDataColumn('Acciones', 110),
             ],
             rows:
                 paged.map((d) {
@@ -569,27 +570,25 @@ class _DepositosIdentificarTable extends ConsumerWidget {
                         180,
                       ),
                       _customDataCell(
-                        esVerificado // Si está verificado, mostrar un contenedor vacío
-                            ? const SizedBox.shrink()
-                            : Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                IconButton(
-                                  icon: const Icon(
-                                    Icons.person,
-                                    color: Colors.orange,
-                                    size: 20,
-                                  ),
-                                  tooltip: 'Asignar Cliente',
-                                  onPressed: () => onAsignarCliente(d),
-                                  constraints: const BoxConstraints(
-                                    maxWidth: 32,
-                                  ),
-                                  padding: EdgeInsets.zero,
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            if (!esVerificado)
+                              IconButton(
+                                icon: const Icon(
+                                  Icons.person,
+                                  color: Colors.orange,
+                                  size: 20,
                                 ),
-                              ],
-                            ),
-                        80,
+                                tooltip: 'Asignar Cliente',
+                                onPressed: () => onAsignarCliente(d),
+                                constraints: const BoxConstraints(maxWidth: 32),
+                                padding: EdgeInsets.zero,
+                              ),
+                            _PdfDepositoButton(idDeposito: d.idDeposito),
+                          ],
+                        ),
+                        110,
                       ),
                     ],
                   );
@@ -794,6 +793,49 @@ class _EstadoChip extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+// Botón para descargar/imprimir el PDF de un depósito (backend genera el PDF)
+class _PdfDepositoButton extends ConsumerStatefulWidget {
+  final int idDeposito;
+  const _PdfDepositoButton({required this.idDeposito});
+
+  @override
+  ConsumerState<_PdfDepositoButton> createState() => _PdfDepositoButtonState();
+}
+
+class _PdfDepositoButtonState extends ConsumerState<_PdfDepositoButton> {
+  bool _descargando = false;
+
+  Future<void> _descargar() async {
+    if (_descargando) return;
+    setState(() => _descargando = true);
+    try {
+      await ref
+          .read(depositosChequesIdentificarViewProvider.notifier)
+          .descargarPdfDeposito(widget.idDeposito, context);
+    } finally {
+      if (mounted) setState(() => _descargando = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return IconButton(
+      icon:
+          _descargando
+              ? const SizedBox(
+                width: 18,
+                height: 18,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              )
+              : const Icon(Icons.picture_as_pdf, color: Colors.red, size: 20),
+      tooltip: 'Descargar PDF',
+      onPressed: _descargando ? null : _descargar,
+      constraints: const BoxConstraints(maxWidth: 32),
+      padding: EdgeInsets.zero,
     );
   }
 }

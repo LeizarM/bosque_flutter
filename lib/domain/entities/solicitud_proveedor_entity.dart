@@ -13,6 +13,12 @@ class SolicitudProveedorEntity {
 
   int codEmpresa;
 
+  // --- Estado de aprobación por proveedor ---
+  String estado; // PENDIENTE / APROBADO / RECHAZADO
+  DateTime? fechaAprobacion;
+  int? usuarioAprobador;
+  String obsAprobacion;
+
   List<DetalleSolicitudEntity> detalles;
 
   SolicitudProveedorEntity({
@@ -25,8 +31,11 @@ class SolicitudProveedorEntity {
     required this.totalAPagarUsd,
     required this.obs,
     required this.audUsuario,
-
     required this.codEmpresa,
+    this.estado = 'PENDIENTE',
+    this.fechaAprobacion,
+    this.usuarioAprobador,
+    this.obsAprobacion = '',
     this.detalles = const [],
   });
 }

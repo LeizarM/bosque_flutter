@@ -14,9 +14,11 @@ class DetalleSolicitudModel {
   String numeroDocumento;
   int facturaProvSap;
   String codigoImportacion;
+  int numeroCuota;
   double montoFacturaUsd;
   double montoAmortizadoUsd;
   double montoAPagarUsd;
+  double montoTotalDocumento;
   DateTime fechaFactura;
   DateTime fechaVencimiento;
   String concepto;
@@ -33,9 +35,11 @@ class DetalleSolicitudModel {
     required this.numeroDocumento,
     required this.facturaProvSap,
     required this.codigoImportacion,
+    this.numeroCuota = 1,
     required this.montoFacturaUsd,
     required this.montoAmortizadoUsd,
     required this.montoAPagarUsd,
+    this.montoTotalDocumento = 0.0,
     required this.fechaFactura,
     required this.fechaVencimiento,
     required this.concepto,
@@ -59,9 +63,11 @@ class DetalleSolicitudModel {
         numeroDocumento: json["numeroDocumento"] ?? '',
         facturaProvSap: json["facturaProvSap"] ?? 0,
         codigoImportacion: json["codigoImportacion"] ?? '',
+        numeroCuota: json["numeroCuota"] ?? 1,
         montoFacturaUsd: json["montoFacturaUsd"]?.toDouble() ?? 0.0,
         montoAmortizadoUsd: json["montoAmortizadoUsd"]?.toDouble() ?? 0.0,
         montoAPagarUsd: json["montoAPagarUsd"]?.toDouble() ?? 0.0,
+        montoTotalDocumento: json["montoTotalDocumento"]?.toDouble() ?? 0.0,
         fechaFactura:
             json["fechaFactura"] != null
                 ? DateTime.parse(json["fechaFactura"])
@@ -84,9 +90,11 @@ class DetalleSolicitudModel {
     "numeroDocumento": numeroDocumento,
     "facturaProvSap": facturaProvSap,
     "codigoImportacion": codigoImportacion,
+    "numeroCuota": numeroCuota,
     "montoFacturaUsd": montoFacturaUsd,
     "montoAmortizadoUsd": montoAmortizadoUsd,
     "montoAPagarUsd": montoAPagarUsd,
+    "montoTotalDocumento": montoTotalDocumento,
     "fechaFactura": fechaFactura.toIso8601String(),
     "fechaVencimiento": fechaVencimiento.toIso8601String(),
     "concepto": concepto,
@@ -104,9 +112,11 @@ class DetalleSolicitudModel {
     numeroDocumento: numeroDocumento,
     facturaProvSap: facturaProvSap,
     codigoImportacion: codigoImportacion,
+    numeroCuota: numeroCuota,
     montoFacturaUsd: montoFacturaUsd,
     montoAmortizadoUsd: montoAmortizadoUsd,
     montoAPagarUsd: montoAPagarUsd,
+    montoTotalDocumento: montoTotalDocumento,
     fechaFactura: fechaFactura,
     fechaVencimiento: fechaVencimiento,
     concepto: concepto,
@@ -125,9 +135,11 @@ class DetalleSolicitudModel {
         numeroDocumento: entity.numeroDocumento,
         facturaProvSap: entity.facturaProvSap,
         codigoImportacion: entity.codigoImportacion,
+        numeroCuota: entity.numeroCuota,
         montoFacturaUsd: entity.montoFacturaUsd,
         montoAmortizadoUsd: entity.montoAmortizadoUsd,
         montoAPagarUsd: entity.montoAPagarUsd,
+        montoTotalDocumento: entity.montoTotalDocumento,
         fechaFactura: entity.fechaFactura,
         fechaVencimiento: entity.fechaVencimiento,
         concepto: entity.concepto,

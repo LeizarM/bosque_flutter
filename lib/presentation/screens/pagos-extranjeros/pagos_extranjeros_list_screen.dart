@@ -4,6 +4,7 @@ import 'package:bosque_flutter/core/utils/responsive_utils_bosque.dart';
 import 'package:bosque_flutter/domain/entities/solicitud_pago_entity.dart';
 import 'package:bosque_flutter/domain/entities/solicitud_proveedor_entity.dart';
 import 'package:bosque_flutter/domain/entities/detalle_solicitud_entity.dart';
+import 'package:bosque_flutter/presentation/widgets/pagos-extranjeros/tpex_estado_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -122,7 +123,7 @@ class _PagosExtranjerosListScreenState
         // ── Lista ─────────────────────────────────────────────────
         Expanded(
           child: asyncSolicitudes.when(
-            loading: () => const Center(child: CircularProgressIndicator()),
+            loading: () => _LoadingState(hPad: hPad),
             error:
                 (e, _) => _ErrorState(
                   error: e.toString(),
@@ -134,15 +135,22 @@ class _PagosExtranjerosListScreenState
             data: (solicitudes) {
               if (solicitudes.isEmpty) return const _EmptyState();
 
-              return ListView.separated(
-                padding: EdgeInsets.fromLTRB(hPad, 8, hPad, 16),
-                itemCount: solicitudes.length,
-                separatorBuilder: (_, __) => const SizedBox(height: 8),
-                itemBuilder:
-                    (context, i) => _SolicitudCard(
-                      solicitud: solicitudes[i],
-                      isMobile: isMobile,
+              return Column(
+                children: [
+                  _ResumenHeader(solicitudes: solicitudes, hPad: hPad),
+                  Expanded(
+                    child: ListView.separated(
+                      padding: EdgeInsets.fromLTRB(hPad, 4, hPad, 16),
+                      itemCount: solicitudes.length,
+                      separatorBuilder: (_, __) => const SizedBox(height: 8),
+                      itemBuilder:
+                          (context, i) => _SolicitudCard(
+                            solicitud: solicitudes[i],
+                            isMobile: isMobile,
+                          ),
                     ),
+                  ),
+                ],
               );
             },
           ),
@@ -201,6 +209,248 @@ class _DateButton extends StatelessWidget {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
+// Resumen header — KPIs del período (cantidad, monto, desglose por estado)
+// ═══════════════════════════════════════════════════════════════════════════════
+class _ResumenHeader extends StatelessWidget {
+  final List<SolicitudPagoEntity> solicitudes;
+  final double hPad;
+  const _ResumenHeader({required this.solicitudes, required this.hPad});
+
+  int _count(List<String> estados) =>
+      solicitudes.where((s) => estados.contains(s.estado.toUpperCase())).length;
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final total = solicitudes.fold<double>(
+      0,
+      (s, x) => s + x.montoTotalSolicitud,
+    );
+    final pend = _count(['PENDIENTE']);
+    final aprob = _count(['APROBADA', 'APROBADO']);
+    final pag = _count(['PAGADA', 'PAGADO']);
+    final rech = _count(['RECHAZADA', 'RECHAZADO']);
+
+    final chips = <Widget>[
+      _StatChip(
+        icon: Icons.receipt_long_rounded,
+        label: 'Solicitudes',
+        value: '${solicitudes.length}',
+        color: cs.primary,
+        cs: cs,
+      ),
+      _StatChip(
+        icon: Icons.payments_rounded,
+        label: 'Monto total',
+        value: '\$ ${_nf.format(total)}',
+        color: cs.primary,
+        cs: cs,
+      ),
+      if (pend > 0)
+        _StatChip(
+          icon: Icons.schedule_rounded,
+          label: 'Pendientes',
+          value: '$pend',
+          color: Colors.orange,
+          cs: cs,
+        ),
+      if (aprob > 0)
+        _StatChip(
+          icon: Icons.verified_rounded,
+          label: 'Aprobadas',
+          value: '$aprob',
+          color: Colors.green,
+          cs: cs,
+        ),
+      if (pag > 0)
+        _StatChip(
+          icon: Icons.paid_rounded,
+          label: 'Pagadas',
+          value: '$pag',
+          color: Colors.teal,
+          cs: cs,
+        ),
+      if (rech > 0)
+        _StatChip(
+          icon: Icons.cancel_rounded,
+          label: 'Rechazadas',
+          value: '$rech',
+          color: Colors.red,
+          cs: cs,
+        ),
+    ];
+
+    return Padding(
+      padding: EdgeInsets.fromLTRB(hPad, 8, hPad, 4),
+      child: SizedBox(
+        height: 54,
+        child: ListView.separated(
+          scrollDirection: Axis.horizontal,
+          physics: const BouncingScrollPhysics(),
+          itemCount: chips.length,
+          separatorBuilder: (_, __) => const SizedBox(width: 8),
+          itemBuilder: (_, i) => chips[i],
+        ),
+      ),
+    );
+  }
+}
+
+class _StatChip extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final String value;
+  final Color color;
+  final ColorScheme cs;
+  const _StatChip({
+    required this.icon,
+    required this.label,
+    required this.value,
+    required this.color,
+    required this.cs,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: color.withValues(alpha: 0.22)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 30,
+            height: 30,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.14),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(icon, size: 17, color: color),
+          ),
+          const SizedBox(width: 8),
+          Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 10,
+                  color: cs.onSurfaceVariant,
+                  height: 1.1,
+                ),
+              ),
+              Text(
+                value,
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w800,
+                  color: cs.onSurface,
+                  height: 1.15,
+                  fontFeatures: tpexTabularFigures,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// Loading — skeletons animados (en vez de spinner pelado)
+// ═══════════════════════════════════════════════════════════════════════════════
+class _LoadingState extends StatelessWidget {
+  final double hPad;
+  const _LoadingState({required this.hPad});
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView.separated(
+      padding: EdgeInsets.fromLTRB(hPad, 16, hPad, 16),
+      itemCount: 5,
+      separatorBuilder: (_, __) => const SizedBox(height: 8),
+      itemBuilder: (_, __) => const _SkeletonCard(),
+    );
+  }
+}
+
+class _SkeletonCard extends StatefulWidget {
+  const _SkeletonCard();
+  @override
+  State<_SkeletonCard> createState() => _SkeletonCardState();
+}
+
+class _SkeletonCardState extends State<_SkeletonCard>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _ctrl = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 1100),
+  )..repeat(reverse: true);
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    Widget bar(double w, double h) => Container(
+      width: w,
+      height: h,
+      decoration: BoxDecoration(
+        color: cs.onSurfaceVariant,
+        borderRadius: BorderRadius.circular(6),
+      ),
+    );
+    return FadeTransition(
+      opacity: Tween<double>(begin: 0.30, end: 0.65).animate(_ctrl),
+      child: Container(
+        padding: const EdgeInsets.fromLTRB(12, 12, 16, 12),
+        decoration: BoxDecoration(
+          color: cs.surface,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.4)),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: cs.onSurfaceVariant.withValues(alpha: 0.5),
+                borderRadius: BorderRadius.circular(10),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  bar(170, 12),
+                  const SizedBox(height: 8),
+                  bar(110, 10),
+                ],
+              ),
+            ),
+            const SizedBox(width: 12),
+            bar(70, 14),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
 // Solicitud card — flat design, sin nested expansions
 // ═══════════════════════════════════════════════════════════════════════════════
 class _SolicitudCard extends StatefulWidget {
@@ -217,33 +467,9 @@ class _SolicitudCardState extends State<_SolicitudCard> {
 
   SolicitudPagoEntity get sol => widget.solicitud;
 
-  Color _estadoColor() {
-    switch (sol.estado.toUpperCase()) {
-      case 'APROBADA':
-      case 'APROBADO':
-        return Colors.green;
-      case 'RECHAZADA':
-      case 'RECHAZADO':
-        return Colors.red;
-      case 'PENDIENTE':
-      default:
-        return Colors.orange;
-    }
-  }
+  Color _estadoColor() => tpexEstadoColor(sol.estado);
 
-  IconData _estadoIcon() {
-    switch (sol.estado.toUpperCase()) {
-      case 'APROBADA':
-      case 'APROBADO':
-        return Icons.check_circle_rounded;
-      case 'RECHAZADA':
-      case 'RECHAZADO':
-        return Icons.cancel_rounded;
-      case 'PENDIENTE':
-      default:
-        return Icons.schedule_rounded;
-    }
-  }
+  IconData _estadoIcon() => tpexEstadoIcon(sol.estado);
 
   @override
   Widget build(BuildContext context) {
@@ -348,6 +574,7 @@ class _SolicitudCardState extends State<_SolicitudCard> {
                           fontWeight: FontWeight.w700,
                           fontSize: 15,
                           color: cs.primary,
+                          fontFeatures: tpexTabularFigures,
                         ),
                       ),
                       const SizedBox(height: 4),
@@ -735,7 +962,11 @@ class _SmallLabel extends StatelessWidget {
         ),
         Text(
           value,
-          style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w600),
+          style: const TextStyle(
+            fontSize: 10,
+            fontWeight: FontWeight.w600,
+            fontFeatures: tpexTabularFigures,
+          ),
         ),
       ],
     );

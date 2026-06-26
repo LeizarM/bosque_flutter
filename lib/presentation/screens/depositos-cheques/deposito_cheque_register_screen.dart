@@ -546,13 +546,12 @@ class _DepositoChequeRegisterScreenState
         ),
         SizedBox(height: 8),
         DropdownButtonFormField<dynamic>(
-          // Especificar el tipo genérico aquí
+          key: ValueKey(
+            'reg-empresa-${state.empresaSeleccionada?.codEmpresa ?? 0}_${state.empresas.length}',
+          ),
           value: state.empresaSeleccionada,
           items: empresaItems,
           onChanged: (value) {
-            // Primero limpiamos el cliente seleccionado antes de cambiar la empresa
-            notifier.seleccionarCliente(null);
-            // Luego cambiamos la empresa
             notifier.seleccionarEmpresa(value);
           },
           decoration: const InputDecoration(
@@ -715,7 +714,9 @@ class _DepositoChequeRegisterScreenState
         ),
         SizedBox(height: 8),
         DropdownButtonFormField<dynamic>(
-          // Especificar el tipo genérico aquí
+          key: ValueKey(
+            'reg-banco-${state.empresaSeleccionada?.codEmpresa ?? 0}_${state.bancos.length}',
+          ),
           value: state.bancoSeleccionado,
           items: bancoItems,
           onChanged: (value) => notifier.seleccionarBanco(value),

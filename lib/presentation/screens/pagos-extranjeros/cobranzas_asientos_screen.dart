@@ -4,12 +4,20 @@ import 'package:bosque_flutter/core/utils/responsive_utils_bosque.dart';
 import 'package:bosque_flutter/data/repositories/pagos_extranjeros_impl.dart';
 import 'package:bosque_flutter/domain/entities/asiento_entity.dart';
 import 'package:bosque_flutter/domain/entities/transacciones_entity.dart';
+import 'package:bosque_flutter/presentation/widgets/pagos-extranjeros/dialogo_operacion_tesoreria.dart';
+import 'package:bosque_flutter/presentation/widgets/pagos-extranjeros/tpex_estado_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
 final _nf = NumberFormat('#,##0.00', 'es_BO');
 final _df = DateFormat('dd/MM/yyyy');
+
+// Etiqueta de la "fuente": banco real, o "Tesorería" si la txn no tiene banco
+// (operaciones USDT/Mercury/Devolución sin proveedor → codBanco NULL/0).
+String _fuenteLabel(TransaccionesEntity t) => t.banco.isNotEmpty
+    ? t.banco
+    : (t.codBanco > 0 ? 'Banco #${t.codBanco}' : 'Tesorería');
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Screen principal
@@ -142,6 +150,21 @@ class _CobranzasAsientosScreenState
                       ),
                     ),
                   ),
+                  // OPCIÓN B — alta de operaciones de tesorería (USDT/Mercury/
+                  // Devolución) sin pasar por solicitud/cotización de proveedor.
+                  FilledButton.tonalIcon(
+                    onPressed: () => showDialog(
+                      context: context,
+                      builder: (_) => DialogoOperacionTesoreria(
+                        onGuardado: () => ref.invalidate(
+                          reporteTransaccionesFechasProvider(_params),
+                        ),
+                      ),
+                    ),
+                    icon: const Icon(Icons.add, size: 18),
+                    label: const Text('Tesorería'),
+                  ),
+                  const SizedBox(width: 4),
                   IconButton(
                     icon: const Icon(Icons.refresh_rounded),
                     tooltip: 'Actualizar',
@@ -183,18 +206,18 @@ class _CobranzasAsientosScreenState
         // Lista
         Expanded(
           child: asyncTxns.when(
-            loading: () =>
-                const Center(child: CircularProgressIndicator()),
-            error: (e, _) => Center(
-              child: Padding(
-                padding: const EdgeInsets.all(24),
-                child: Text(
-                  'Error: $e',
-                  style: TextStyle(color: cs.error),
-                  textAlign: TextAlign.center,
+            loading: () => const Center(child: CircularProgressIndicator()),
+            error:
+                (e, _) => Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(24),
+                    child: Text(
+                      'Error: $e',
+                      style: TextStyle(color: cs.error),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
                 ),
-              ),
-            ),
             data: (txns) {
               if (txns.isEmpty) {
                 return Center(
@@ -224,13 +247,14 @@ class _CobranzasAsientosScreenState
                 padding: const EdgeInsets.all(12),
                 itemCount: txns.length,
                 separatorBuilder: (_, __) => const SizedBox(height: 6),
-                itemBuilder: (context, i) => _TxnCobranzaCard(
-                  txn: txns[i],
-                  cs: cs,
-                  seleccionada:
-                      _seleccionada?.idTransaccion == txns[i].idTransaccion,
-                  onTap: () => setState(() => _seleccionada = txns[i]),
-                ),
+                itemBuilder:
+                    (context, i) => _TxnCobranzaCard(
+                      txn: txns[i],
+                      cs: cs,
+                      seleccionada:
+                          _seleccionada?.idTransaccion == txns[i].idTransaccion,
+                      onTap: () => setState(() => _seleccionada = txns[i]),
+                    ),
               );
             },
           ),
@@ -278,10 +302,7 @@ class _DateChip extends StatelessWidget {
                 children: [
                   Text(
                     label,
-                    style: TextStyle(
-                      fontSize: 9,
-                      color: cs.onSurfaceVariant,
-                    ),
+                    style: TextStyle(fontSize: 9, color: cs.onSurfaceVariant),
                   ),
                   Text(
                     _df.format(fecha),
@@ -318,15 +339,17 @@ class _TxnCobranzaCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Card(
       elevation: 0,
-      color: seleccionada
-          ? cs.primaryContainer.withValues(alpha: 0.3)
-          : cs.surfaceContainerLow,
+      color:
+          seleccionada
+              ? cs.primaryContainer.withValues(alpha: 0.3)
+              : cs.surfaceContainerLow,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(10),
         side: BorderSide(
-          color: seleccionada
-              ? cs.primary.withValues(alpha: 0.6)
-              : cs.outlineVariant.withValues(alpha: 0.4),
+          color:
+              seleccionada
+                  ? cs.primary.withValues(alpha: 0.6)
+                  : cs.outlineVariant.withValues(alpha: 0.4),
           width: seleccionada ? 1.5 : 1,
         ),
       ),
@@ -359,9 +382,13 @@ class _TxnCobranzaCard extends StatelessWidget {
                       ),
                     ),
                     Text(
-                      txn.proveedor.isNotEmpty
-                          ? txn.proveedor
-                          : txn.cardCode,
+                      txn.idTransaccionOrigen != null
+                          ? '↩ Devolución de Txn #${txn.idTransaccionOrigen}'
+                          : (txn.proveedor.isNotEmpty
+                              ? txn.proveedor
+                              : (txn.cardCode.isNotEmpty
+                                  ? txn.cardCode
+                                  : 'Operación de tesorería')),
                       style: TextStyle(
                         fontSize: 11,
                         color: cs.onSurfaceVariant,
@@ -369,7 +396,7 @@ class _TxnCobranzaCard extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                     ),
                     Text(
-                      '${txn.banco.isNotEmpty ? txn.banco : 'Banco #${txn.codBanco}'}  ·  ${_df.format(txn.fechaTransaccion)}',
+                      '${_fuenteLabel(txn)}  ·  ${_df.format(txn.fechaTransaccion)}',
                       style: TextStyle(
                         fontSize: 10,
                         color: cs.onSurfaceVariant,
@@ -387,6 +414,7 @@ class _TxnCobranzaCard extends StatelessWidget {
                     style: const TextStyle(
                       fontWeight: FontWeight.w700,
                       fontSize: 13,
+                      fontFeatures: tpexTabularFigures,
                     ),
                   ),
                   _EstadoBadgeCob(estado: txn.estado),
@@ -418,7 +446,9 @@ class _TransaccionAsientosPanel extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final cs = Theme.of(context).colorScheme;
-    final asyncAsientos = ref.watch(asientosTransaccionProvider(txn.idTransaccion));
+    final asyncAsientos = ref.watch(
+      asientosTransaccionProvider(txn.idTransaccion),
+    );
     final asyncCuadre = ref.watch(cuadreAsientosProvider(txn.idTransaccion));
 
     return Column(
@@ -432,12 +462,26 @@ class _TransaccionAsientosPanel extends ConsumerWidget {
               Icon(Icons.receipt_long_rounded, color: cs.primary, size: 20),
               const SizedBox(width: 8),
               Expanded(
-                child: Text(
-                  'Txn #${txn.idTransaccion}  ·  ${txn.banco.isNotEmpty ? txn.banco : 'Banco #${txn.codBanco}'}',
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w700,
-                    fontSize: 14,
-                  ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Txn #${txn.idTransaccion}  ·  ${_fuenteLabel(txn)}',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w700,
+                        fontSize: 14,
+                      ),
+                    ),
+                    if (txn.idTransaccionOrigen != null)
+                      Text(
+                        '↩ Devolución de Txn #${txn.idTransaccionOrigen}',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          color: cs.primary,
+                        ),
+                      ),
+                  ],
                 ),
               ),
               IconButton(
@@ -457,16 +501,18 @@ class _TransaccionAsientosPanel extends ConsumerWidget {
         Expanded(
           child: asyncAsientos.when(
             loading: () => const Center(child: CircularProgressIndicator()),
-            error: (e, _) => Center(
-              child: Text('Error: $e', style: TextStyle(color: cs.error)),
-            ),
-            data: (asientos) => _AsientosBody(
-              txn: txn,
-              asientos: asientos,
-              asyncCuadre: asyncCuadre,
-              cs: cs,
-              onConfirmada: onConfirmada,
-            ),
+            error:
+                (e, _) => Center(
+                  child: Text('Error: $e', style: TextStyle(color: cs.error)),
+                ),
+            data:
+                (asientos) => _AsientosBody(
+                  txn: txn,
+                  asientos: asientos,
+                  asyncCuadre: asyncCuadre,
+                  cs: cs,
+                  onConfirmada: onConfirmada,
+                ),
           ),
         ),
       ],
@@ -557,6 +603,7 @@ class _InfoChip extends StatelessWidget {
               fontSize: 11,
               fontWeight: bold ? FontWeight.w700 : FontWeight.w600,
               color: bold ? cs.primary : cs.onSurface,
+              fontFeatures: tpexTabularFigures,
             ),
           ),
         ],
@@ -587,6 +634,13 @@ class _AsientosBody extends ConsumerWidget {
     final cuadre = asyncCuadre.valueOrNull;
     final cuadrado =
         cuadre != null && cuadre.estadoCuadre.toUpperCase() == 'CUADRADO';
+    // El botón Confirmar solo aplica si la transacción todavía puede pasar a
+    // CONFIRMADO. Si ya está CONFIRMADO (o CANCELADO) no se muestra, para no
+    // disparar el error "No se puede modificar una transacción en estado
+    // CONFIRMADO". Los asientos sí se pueden seguir editando (lo permite el SP).
+    final estadoTxn = txn.estado.toUpperCase();
+    final puedeConfirmar =
+        cuadrado && estadoTxn != 'CONFIRMADO' && estadoTxn != 'CANCELADO';
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -619,38 +673,44 @@ class _AsientosBody extends ConsumerWidget {
 
         // Lista de asientos
         Expanded(
-          child: asientos.isEmpty
-              ? Center(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        Icons.table_rows_rounded,
-                        size: 48,
-                        color: cs.onSurfaceVariant.withValues(alpha: 0.3),
-                      ),
-                      const SizedBox(height: 12),
-                      Text(
-                        'Sin asientos registrados',
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: cs.onSurfaceVariant,
+          child:
+              asientos.isEmpty
+                  ? Center(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.table_rows_rounded,
+                          size: 48,
+                          color: cs.onSurfaceVariant.withValues(alpha: 0.3),
                         ),
-                      ),
-                    ],
+                        const SizedBox(height: 12),
+                        Text(
+                          'Sin asientos registrados',
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: cs.onSurfaceVariant,
+                          ),
+                        ),
+                      ],
+                    ),
+                  )
+                  : ListView(
+                    padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
+                    children:
+                        asientos
+                            .map(
+                              (a) => _AsientoFilaCob(
+                                asiento: a,
+                                txn: txn,
+                                cs: cs,
+                                onEditar:
+                                    () =>
+                                        _abrirDialogo(context, ref, editar: a),
+                              ),
+                            )
+                            .toList(),
                   ),
-                )
-              : ListView(
-                  padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
-                  children: asientos
-                      .map((a) => _AsientoFilaCob(
-                            asiento: a,
-                            txn: txn,
-                            cs: cs,
-                            onEditar: () => _abrirDialogo(context, ref, editar: a),
-                          ))
-                      .toList(),
-                ),
         ),
 
         // Cuadre
@@ -677,9 +737,7 @@ class _AsientosBody extends ConsumerWidget {
                   Row(
                     children: [
                       Icon(
-                        ok
-                            ? Icons.check_circle_rounded
-                            : Icons.warning_rounded,
+                        ok ? Icons.check_circle_rounded : Icons.warning_rounded,
                         color: color,
                         size: 18,
                       ),
@@ -721,13 +779,79 @@ class _AsientosBody extends ConsumerWidget {
           },
         ),
 
-        // Botón Confirmar y cerrar
-        if (cuadrado)
+        // Cobranzas = SOLO registro contable. El pago NO se confirma aquí: el
+        // N° de transacción bancaria y el voucher se cargan en
+        // "Gestión de Solicitudes" → botón Transacción → "Confirmar Pago".
+        if (cuadrado && estadoTxn == 'CONFIRMADO')
           Padding(
             padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
-            child: _ConfirmarButton(
-              txn: txn,
-              onConfirmada: onConfirmada,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.verified_rounded,
+                  size: 16,
+                  color: Colors.teal.shade700,
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  'Pago confirmado',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.teal.shade700,
+                  ),
+                ),
+              ],
+            ),
+          )
+        else if (puedeConfirmar)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(12, 4, 12, 12),
+            child: Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: Colors.blue.withValues(alpha: 0.06),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: Colors.blue.withValues(alpha: 0.22)),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.info_outline_rounded,
+                    size: 16,
+                    color: Colors.blue.shade700,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text.rich(
+                      TextSpan(
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: Colors.blue.shade900,
+                        ),
+                        children: const [
+                          TextSpan(
+                            text: 'Asientos cuadrados. ',
+                            style: TextStyle(fontWeight: FontWeight.w700),
+                          ),
+                          TextSpan(
+                            text:
+                                'Esto es solo el registro contable. El pago '
+                                '(N° de transacción bancaria y voucher) se confirma '
+                                'en "Gestión de Solicitudes" → botón ',
+                          ),
+                          TextSpan(
+                            text: 'Transacción',
+                            style: TextStyle(fontWeight: FontWeight.w700),
+                          ),
+                          TextSpan(text: '.'),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
 
@@ -736,7 +860,11 @@ class _AsientosBody extends ConsumerWidget {
     );
   }
 
-  void _abrirDialogo(BuildContext context, WidgetRef ref, {AsientoEntity? editar}) {
+  void _abrirDialogo(
+    BuildContext context,
+    WidgetRef ref, {
+    AsientoEntity? editar,
+  }) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -744,12 +872,13 @@ class _AsientosBody extends ConsumerWidget {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      builder: (_) => _DialogoAsientoCob(
-        txn: txn,
-        numero: editar?.numero ?? asientos.length + 1,
-        audUsuario: ref.read(userProvider)?.codUsuario ?? 0,
-        editar: editar,
-      ),
+      builder:
+          (_) => _DialogoAsientoCob(
+            txn: txn,
+            numero: editar?.numero ?? asientos.length + 1,
+            audUsuario: ref.read(userProvider)?.codUsuario ?? 0,
+            editar: editar,
+          ),
     );
   }
 }
@@ -767,13 +896,17 @@ class _CuadrePair extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Text('$label: ', style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant)),
+        Text(
+          '$label: ',
+          style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant),
+        ),
         Text(
           value,
           style: TextStyle(
             fontSize: 11,
             fontWeight: bold ? FontWeight.w700 : FontWeight.w600,
             color: color ?? cs.onSurface,
+            fontFeatures: tpexTabularFigures,
           ),
         ),
       ],
@@ -818,24 +951,25 @@ class _AsientoFilaCobState extends ConsumerState<_AsientoFilaCob> {
   Future<void> _eliminar() async {
     final ok = await showDialog<bool>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Eliminar asiento'),
-        content: Text(
-          '¿Confirma eliminar el asiento #${widget.asiento.numero}?\n'
-          'Esta acción no se puede deshacer.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancelar'),
+      builder:
+          (ctx) => AlertDialog(
+            title: const Text('Eliminar asiento'),
+            content: Text(
+              '¿Confirma eliminar el asiento #${widget.asiento.numero}?\n'
+              'El asiento se ocultará pero queda guardado (borrado lógico).',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx, false),
+                child: const Text('Cancelar'),
+              ),
+              FilledButton(
+                style: FilledButton.styleFrom(backgroundColor: Colors.red),
+                onPressed: () => Navigator.pop(ctx, true),
+                child: const Text('Eliminar'),
+              ),
+            ],
           ),
-          FilledButton(
-            style: FilledButton.styleFrom(backgroundColor: Colors.red),
-            onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Eliminar'),
-          ),
-        ],
-      ),
     );
     if (ok != true || !mounted) return;
 
@@ -851,9 +985,9 @@ class _AsientoFilaCobState extends ConsumerState<_AsientoFilaCob> {
       if (!mounted) return;
       ref.invalidate(asientosTransaccionProvider(widget.txn.idTransaccion));
       ref.invalidate(cuadreAsientosProvider(widget.txn.idTransaccion));
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Asiento eliminado')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Asiento eliminado')));
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -907,20 +1041,31 @@ class _AsientoFilaCobState extends ConsumerState<_AsientoFilaCob> {
                   ),
                 ),
                 const SizedBox(width: 6),
-                // Tipo badge
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
-                  decoration: BoxDecoration(
-                    color: c.withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(4),
-                    border: Border.all(color: c.withValues(alpha: 0.35)),
-                  ),
-                  child: Text(
-                    asiento.tipoAsiento,
-                    style: TextStyle(
-                      fontSize: 9,
-                      fontWeight: FontWeight.w700,
-                      color: c,
+                // Tipo badge (PR/PE) con tooltip explicativo
+                Tooltip(
+                  message:
+                      asiento.tipoAsiento == 'PR'
+                          ? 'PR — Pago Recibido'
+                          : asiento.tipoAsiento == 'PE'
+                          ? 'PE — Pago Efectuado'
+                          : asiento.tipoAsiento,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 5,
+                      vertical: 2,
+                    ),
+                    decoration: BoxDecoration(
+                      color: c.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(4),
+                      border: Border.all(color: c.withValues(alpha: 0.35)),
+                    ),
+                    child: Text(
+                      asiento.tipoAsiento,
+                      style: TextStyle(
+                        fontSize: 9,
+                        fontWeight: FontWeight.w700,
+                        color: c,
+                      ),
                     ),
                   ),
                 ),
@@ -939,7 +1084,10 @@ class _AsientoFilaCobState extends ConsumerState<_AsientoFilaCob> {
                       if (asiento.cuentaHaber.isNotEmpty)
                         Text(
                           'Haber: ${asiento.cuentaHaber}',
-                          style: TextStyle(fontSize: 10, color: cs.onSurfaceVariant),
+                          style: TextStyle(
+                            fontSize: 10,
+                            color: cs.onSurfaceVariant,
+                          ),
                           overflow: TextOverflow.ellipsis,
                         ),
                       if (asiento.descripcion.isNotEmpty)
@@ -964,19 +1112,21 @@ class _AsientoFilaCobState extends ConsumerState<_AsientoFilaCob> {
                   children: [
                     if (asiento.debitoBs > 0)
                       Text(
-                        'D: ${_nf.format(asiento.debitoBs)}',
+                        'Débito Bs ${_nf.format(asiento.debitoBs)}',
                         style: const TextStyle(
                           fontSize: 10,
                           fontWeight: FontWeight.w600,
+                          fontFeatures: tpexTabularFigures,
                         ),
                       ),
                     if (asiento.creditoBs > 0)
                       Text(
-                        'C: ${_nf.format(asiento.creditoBs)}',
+                        'Crédito Bs ${_nf.format(asiento.creditoBs)}',
                         style: TextStyle(
                           fontSize: 10,
                           fontWeight: FontWeight.w600,
                           color: cs.onSurfaceVariant,
+                          fontFeatures: tpexTabularFigures,
                         ),
                       ),
                   ],
@@ -1004,7 +1154,10 @@ class _AsientoFilaCobState extends ConsumerState<_AsientoFilaCob> {
                   style: TextButton.styleFrom(
                     foregroundColor: cs.primary,
                     visualDensity: VisualDensity.compact,
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 2,
+                    ),
                   ),
                   onPressed: widget.onEditar,
                 ),
@@ -1014,7 +1167,10 @@ class _AsientoFilaCobState extends ConsumerState<_AsientoFilaCob> {
                   style: TextButton.styleFrom(
                     foregroundColor: Colors.red,
                     visualDensity: VisualDensity.compact,
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 2,
+                    ),
                   ),
                   onPressed: _eliminar,
                 ),
@@ -1023,97 +1179,6 @@ class _AsientoFilaCobState extends ConsumerState<_AsientoFilaCob> {
             ),
         ],
       ),
-    );
-  }
-}
-
-// ── Botón Confirmar y cerrar ──────────────────────────────────────────────
-
-class _ConfirmarButton extends ConsumerStatefulWidget {
-  final TransaccionesEntity txn;
-  final VoidCallback onConfirmada;
-  const _ConfirmarButton({required this.txn, required this.onConfirmada});
-
-  @override
-  ConsumerState<_ConfirmarButton> createState() => _ConfirmarButtonState();
-}
-
-class _ConfirmarButtonState extends ConsumerState<_ConfirmarButton> {
-  bool _cargando = false;
-
-  Future<void> _confirmar() async {
-    final confirm = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Confirmar transacción'),
-        content: Text(
-          '¿Confirma cerrar la transacción #${widget.txn.idTransaccion}?\n'
-          'Los asientos están cuadrados y el estado cambiará a CONFIRMADO.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancelar'),
-          ),
-          FilledButton(
-            style: FilledButton.styleFrom(backgroundColor: Colors.green),
-            onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Confirmar'),
-          ),
-        ],
-      ),
-    );
-    if (confirm != true) return;
-
-    setState(() => _cargando = true);
-    try {
-      final audUsuario = ref.read(userProvider)?.codUsuario ?? 0;
-      final repo = PagosExtranjerosImpl();
-      await repo.cambiarEstadoTransaccion({
-        'idTransaccion': widget.txn.idTransaccion.toInt(),
-        'estado': 'CONFIRMADO',
-        'audUsuario': audUsuario,
-      });
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Transacción confirmada exitosamente'),
-          backgroundColor: Colors.green,
-        ),
-      );
-      widget.onConfirmada();
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(e.toString().replaceFirst('Exception: ', '')),
-          backgroundColor: Theme.of(context).colorScheme.error,
-        ),
-      );
-    } finally {
-      if (mounted) setState(() => _cargando = false);
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return FilledButton.icon(
-      icon: _cargando
-          ? const SizedBox(
-              width: 16,
-              height: 16,
-              child: CircularProgressIndicator(
-                strokeWidth: 2,
-                color: Colors.white,
-              ),
-            )
-          : const Icon(Icons.lock_rounded, size: 18),
-      label: Text(_cargando ? 'Confirmando…' : 'Confirmar y cerrar'),
-      style: FilledButton.styleFrom(
-        backgroundColor: Colors.green.shade700,
-        foregroundColor: Colors.white,
-      ),
-      onPressed: _cargando ? null : _confirmar,
     );
   }
 }
@@ -1156,8 +1221,9 @@ class _DialogoAsientoCobState extends ConsumerState<_DialogoAsientoCob> {
       _cuentaHaberCtrl.text = e.cuentaHaber;
       _descripcionCtrl.text = e.descripcion;
       _esDebito = e.debitoBs > 0;
-      _montoCtrl.text = (_esDebito ? e.debitoBs : e.creditoBs)
-          .toStringAsFixed(2);
+      _montoCtrl.text = (_esDebito ? e.debitoBs : e.creditoBs).toStringAsFixed(
+        2,
+      );
     } else {
       _tipoAsiento = 'PR';
       _esDebito = true;
@@ -1179,8 +1245,7 @@ class _DialogoAsientoCobState extends ConsumerState<_DialogoAsientoCob> {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _cargando = true);
 
-    final monto =
-        double.tryParse(_montoCtrl.text.replaceAll(',', '.')) ?? 0.0;
+    final monto = double.tryParse(_montoCtrl.text.replaceAll(',', '.')) ?? 0.0;
     final montoUs = _tc > 0 ? monto / _tc : 0.0;
 
     final payload = <String, dynamic>{
@@ -1257,40 +1322,50 @@ class _DialogoAsientoCobState extends ConsumerState<_DialogoAsientoCob> {
               widget.editar != null
                   ? 'Editar asiento #${widget.editar!.numero}'
                   : 'Nuevo asiento',
-              style: Theme.of(context)
-                  .textTheme
-                  .titleMedium
-                  ?.copyWith(fontWeight: FontWeight.w700),
+              style: Theme.of(
+                context,
+              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
             ),
             const SizedBox(height: 8),
 
             // TC BCB referencia
-            ref.watch(tcVigenteRefProvider((
-              codBanco: null,
-              idMonedaOrigen: 3,
-              idMonedaDestino: 4,
-            ))).when(
-              data: (tc) => tc == null
-                  ? const SizedBox.shrink()
-                  : Align(
-                      alignment: Alignment.centerLeft,
-                      child: Chip(
-                        visualDensity: VisualDensity.compact,
-                        avatar: const Icon(Icons.currency_exchange, size: 14),
-                        label: Text(
-                          'TC BCB ref: ${_nf.format(tc.tasaVenta)}',
-                          style: const TextStyle(fontSize: 11),
-                        ),
-                        backgroundColor: cs.primaryContainer.withValues(alpha: 0.4),
+            ref
+                .watch(
+                  tcVigenteRefProvider((
+                    codBanco: null,
+                    idMonedaOrigen: 3,
+                    idMonedaDestino: 4,
+                  )),
+                )
+                .when(
+                  data:
+                      (tc) =>
+                          tc == null
+                              ? const SizedBox.shrink()
+                              : Align(
+                                alignment: Alignment.centerLeft,
+                                child: Chip(
+                                  visualDensity: VisualDensity.compact,
+                                  avatar: const Icon(
+                                    Icons.currency_exchange,
+                                    size: 14,
+                                  ),
+                                  label: Text(
+                                    'TC BCB ref: ${_nf.format(tc.tasaVenta)}',
+                                    style: const TextStyle(fontSize: 11),
+                                  ),
+                                  backgroundColor: cs.primaryContainer
+                                      .withValues(alpha: 0.4),
+                                ),
+                              ),
+                  loading:
+                      () => const SizedBox(
+                        height: 20,
+                        width: 20,
+                        child: CircularProgressIndicator(strokeWidth: 1.5),
                       ),
-                    ),
-              loading: () => const SizedBox(
-                height: 20,
-                width: 20,
-                child: CircularProgressIndicator(strokeWidth: 1.5),
-              ),
-              error: (_, __) => const SizedBox.shrink(),
-            ),
+                  error: (_, __) => const SizedBox.shrink(),
+                ),
             const SizedBox(height: 10),
             // Tipo
             DropdownButtonFormField<String>(
@@ -1301,8 +1376,14 @@ class _DialogoAsientoCobState extends ConsumerState<_DialogoAsientoCob> {
                 isDense: true,
               ),
               items: const [
-                DropdownMenuItem(value: 'PR', child: Text('PR — Pago Recibido')),
-                DropdownMenuItem(value: 'PE', child: Text('PE — Pago Efectuado')),
+                DropdownMenuItem(
+                  value: 'PR',
+                  child: Text('PR — Pago Recibido'),
+                ),
+                DropdownMenuItem(
+                  value: 'PE',
+                  child: Text('PE — Pago Efectuado'),
+                ),
               ],
               onChanged: (v) => setState(() => _tipoAsiento = v ?? 'PR'),
             ),
@@ -1315,8 +1396,8 @@ class _DialogoAsientoCobState extends ConsumerState<_DialogoAsientoCob> {
                 border: OutlineInputBorder(),
                 isDense: true,
               ),
-              validator: (v) =>
-                  v == null || v.trim().isEmpty ? 'Requerido' : null,
+              validator:
+                  (v) => v == null || v.trim().isEmpty ? 'Requerido' : null,
             ),
             const SizedBox(height: 10),
             // Cuenta Haber
@@ -1327,8 +1408,8 @@ class _DialogoAsientoCobState extends ConsumerState<_DialogoAsientoCob> {
                 border: OutlineInputBorder(),
                 isDense: true,
               ),
-              validator: (v) =>
-                  v == null || v.trim().isEmpty ? 'Requerido' : null,
+              validator:
+                  (v) => v == null || v.trim().isEmpty ? 'Requerido' : null,
             ),
             const SizedBox(height: 10),
             // Glosa
@@ -1342,8 +1423,11 @@ class _DialogoAsientoCobState extends ConsumerState<_DialogoAsientoCob> {
                 helperText: 'Descripción del movimiento contable',
               ),
               maxLines: 2,
-              validator: (v) =>
-                  (v == null || v.trim().isEmpty) ? 'La glosa es obligatoria' : null,
+              validator:
+                  (v) =>
+                      (v == null || v.trim().isEmpty)
+                          ? 'La glosa es obligatoria'
+                          : null,
             ),
             const SizedBox(height: 10),
             // Débito / Crédito selector
@@ -1353,21 +1437,20 @@ class _DialogoAsientoCobState extends ConsumerState<_DialogoAsientoCob> {
                 ButtonSegment(value: false, label: Text('Crédito Bs')),
               ],
               selected: {_esDebito},
-              onSelectionChanged: (s) =>
-                  setState(() => _esDebito = s.first),
+              onSelectionChanged: (s) => setState(() => _esDebito = s.first),
             ),
             const SizedBox(height: 10),
             // Monto
             TextFormField(
               controller: _montoCtrl,
-              keyboardType:
-                  const TextInputType.numberWithOptions(decimal: true),
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
               decoration: InputDecoration(
                 labelText: _esDebito ? 'Débito Bs' : 'Crédito Bs',
                 border: const OutlineInputBorder(),
                 isDense: true,
-                suffixText:
-                    _tc > 0 ? 'TC ${_tc.toStringAsFixed(4)}' : null,
+                suffixText: _tc > 0 ? 'TC ${_tc.toStringAsFixed(4)}' : null,
               ),
               onChanged: (_) => setState(() {}),
               validator: (v) {
@@ -1391,9 +1474,8 @@ class _DialogoAsientoCobState extends ConsumerState<_DialogoAsientoCob> {
               children: [
                 Expanded(
                   child: OutlinedButton(
-                    onPressed: _cargando
-                        ? null
-                        : () => Navigator.of(context).pop(),
+                    onPressed:
+                        _cargando ? null : () => Navigator.of(context).pop(),
                     child: const Text('Cancelar'),
                   ),
                 ),
@@ -1401,14 +1483,14 @@ class _DialogoAsientoCobState extends ConsumerState<_DialogoAsientoCob> {
                 Expanded(
                   child: FilledButton(
                     onPressed: _cargando ? null : _guardar,
-                    child: _cargando
-                        ? const SizedBox(
-                            width: 18,
-                            height: 18,
-                            child:
-                                CircularProgressIndicator(strokeWidth: 2),
-                          )
-                        : const Text('Guardar'),
+                    child:
+                        _cargando
+                            ? const SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                            : const Text('Guardar'),
                   ),
                 ),
               ],
@@ -1429,23 +1511,7 @@ class _EstadoBadgeCob extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final e = estado.toUpperCase();
-    final Color color;
-    switch (e) {
-      case 'CONFIRMADO':
-        color = Colors.green;
-        break;
-      case 'PROCESADO':
-        color = Colors.blue;
-        break;
-      case 'APROBADA':
-        color = Colors.orange;
-        break;
-      case 'PENDIENTE':
-        color = Colors.grey;
-        break;
-      default:
-        color = Colors.blueGrey;
-    }
+    final color = tpexEstadoColor(e);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
       decoration: BoxDecoration(

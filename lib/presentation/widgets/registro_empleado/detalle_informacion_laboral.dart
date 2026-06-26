@@ -2631,15 +2631,11 @@ class _FormCargoEditState extends ConsumerState<_FormCargoEdit> {
       validator: (val) => (val == null || val.isEmpty) ? 'Requerido' : null,
     );
 
-    return esEmpleadoActivo
-        ? picker
-        : PermissionWidget(
-          buttonName: 'btnEditarFechaInicioCargo',
-          placeholder: IgnorePointer(
-            child: Opacity(opacity: 0.6, child: picker),
-          ),
-          child: picker,
-        );
+    return PermissionWidget(
+      buttonName: 'btnEditarFechaInicioCargo',
+      placeholder: IgnorePointer(child: Opacity(opacity: 0.6, child: picker)),
+      child: picker,
+    );
   }
 
   Widget _buildActionButtons(BuildContext context) {

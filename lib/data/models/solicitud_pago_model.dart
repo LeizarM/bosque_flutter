@@ -15,6 +15,7 @@ class SolicitudPagoModel {
   DateTime fechaSolicitud;
   double montoTotalSolicitud;
   String estado;
+  String project;
   int audUsuario;
   List<SolicitudProveedorModel> proveedores;
 
@@ -25,6 +26,7 @@ class SolicitudPagoModel {
     required this.fechaSolicitud,
     required this.montoTotalSolicitud,
     required this.estado,
+    this.project = '',
     required this.audUsuario,
     this.proveedores = const [],
   });
@@ -44,6 +46,7 @@ class SolicitudPagoModel {
               : DateTime.now(),
       montoTotalSolicitud: json["montoTotalSolicitud"]?.toDouble() ?? 0.0,
       estado: json["estado"] ?? '',
+      project: json["project"] ?? '',
       audUsuario: json["audUsuario"] ?? 0,
       proveedores:
           proveedoresJson
@@ -62,6 +65,7 @@ class SolicitudPagoModel {
     "fechaSolicitud": fechaSolicitud.toIso8601String(),
     "montoTotalSolicitud": montoTotalSolicitud,
     "estado": estado,
+    "project": project,
     "audUsuario": audUsuario,
     "proveedores": proveedores.map((p) => p.toJson()).toList(),
   };
@@ -74,6 +78,7 @@ class SolicitudPagoModel {
     fechaSolicitud: fechaSolicitud,
     montoTotalSolicitud: montoTotalSolicitud,
     estado: estado,
+    project: project,
     audUsuario: audUsuario,
     proveedores: proveedores.map((p) => p.toEntity()).toList(),
   );
@@ -87,6 +92,7 @@ class SolicitudPagoModel {
         fechaSolicitud: entity.fechaSolicitud,
         montoTotalSolicitud: entity.montoTotalSolicitud,
         estado: entity.estado,
+        project: entity.project,
         audUsuario: entity.audUsuario,
       );
 }

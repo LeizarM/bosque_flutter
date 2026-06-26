@@ -1240,8 +1240,8 @@ String? validarNombreSeguro(String? value) {
 
   final trimmed = value.trim();
 
-  if (trimmed.length < 6) {
-    return 'El nombre debe tener al menos 6 caracteres';
+  if (trimmed.length < 3) {
+    return 'El nombre debe tener al menos 3 caracteres';
   }
   if (trimmed.length > 50) {
     return 'El nombre corto no puede exceder 50 caracteres';
@@ -1311,7 +1311,7 @@ String? validarNombreCortoSeguro(String? value) {
 /// Retorna: mensaje de error o null si es válido
 String? validarNumeroSeguro(String? value) {
   if (value == null || value.trim().isEmpty) {
-    return 'El número es obligatorio';
+    return 'Este campo es obligatorio';
   }
 
   // No permitir espacios al inicio o final
@@ -1321,13 +1321,16 @@ String? validarNumeroSeguro(String? value) {
 
   final trimmed = value.trim();
 
-  // Solo dígitos (0-9)
-  if (!RegExp(r'^[0-9]+$').hasMatch(trimmed)) {
-    return 'El número solo puede contener dígitos';
+  // Permitir letras (A-Z, a-z), números (0-9), guiones (-) y espacios ( )
+  if (!RegExp(r'^[a-zA-Z0-9\- ]+$').hasMatch(trimmed)) {
+    return 'Solo puede contener letras, números, guiones y espacios';
   }
 
-  if (trimmed.length > 10) {
-    return 'El número no puede exceder 10 dígitos';
+  // Validar longitud (ignorando los guiones y los espacios para contar solo el contenido real)
+  final contenidoReal = trimmed.replaceAll('-', '').replaceAll(' ', '');
+
+  if (contenidoReal.length > 20) {
+    return 'No puede exceder 20 caracteres';
   }
 
   return null;

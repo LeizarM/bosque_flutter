@@ -20,6 +20,13 @@ class SolicitudProveedorModel {
   int audUsuario;
 
   int codEmpresa;
+
+  // --- Aprobación por proveedor ---
+  String estado;
+  DateTime? fechaAprobacion;
+  int? usuarioAprobador;
+  String obsAprobacion;
+
   List<DetalleSolicitudModel> detalles;
 
   SolicitudProveedorModel({
@@ -33,6 +40,10 @@ class SolicitudProveedorModel {
     required this.obs,
     required this.audUsuario,
     required this.codEmpresa,
+    this.estado = 'PENDIENTE',
+    this.fechaAprobacion,
+    this.usuarioAprobador,
+    this.obsAprobacion = '',
     this.detalles = const [],
   });
 
@@ -55,6 +66,13 @@ class SolicitudProveedorModel {
       obs: json["obs"] ?? '',
       audUsuario: json["audUsuario"] ?? 0,
       codEmpresa: json["codEmpresa"] ?? 0,
+      estado: json["estado"] ?? 'PENDIENTE',
+      fechaAprobacion:
+          json["fechaAprobacion"] != null
+              ? DateTime.tryParse(json["fechaAprobacion"].toString())
+              : null,
+      usuarioAprobador: json["usuarioAprobador"],
+      obsAprobacion: json["obsAprobacion"] ?? '',
       detalles:
           detallesJson
               .map(
@@ -76,10 +94,14 @@ class SolicitudProveedorModel {
     "obs": obs,
     "audUsuario": audUsuario,
     "codEmpresa": codEmpresa,
+    "estado": estado,
+    "fechaAprobacion": fechaAprobacion?.toIso8601String(),
+    "usuarioAprobador": usuarioAprobador,
+    "obsAprobacion": obsAprobacion,
     "detalles": detalles.map((d) => d.toJson()).toList(),
   };
 
-  // Método para convertir de Model a Entity
+  // Model -> Entity
   SolicitudProveedorEntity toEntity() => SolicitudProveedorEntity(
     idSolicitudProveedor: idSolicitudProveedor,
     idSolicitud: idSolicitud,
@@ -91,10 +113,14 @@ class SolicitudProveedorModel {
     obs: obs,
     audUsuario: audUsuario,
     codEmpresa: codEmpresa,
+    estado: estado,
+    fechaAprobacion: fechaAprobacion,
+    usuarioAprobador: usuarioAprobador,
+    obsAprobacion: obsAprobacion,
     detalles: detalles.map((d) => d.toEntity()).toList(),
   );
 
-  // Método factory para convertir de Entity a Model
+  // Entity -> Model
   factory SolicitudProveedorModel.fromEntity(SolicitudProveedorEntity entity) =>
       SolicitudProveedorModel(
         idSolicitudProveedor: entity.idSolicitudProveedor,
@@ -107,5 +133,9 @@ class SolicitudProveedorModel {
         obs: entity.obs,
         audUsuario: entity.audUsuario,
         codEmpresa: entity.codEmpresa,
+        estado: entity.estado,
+        fechaAprobacion: entity.fechaAprobacion,
+        usuarioAprobador: entity.usuarioAprobador,
+        obsAprobacion: entity.obsAprobacion,
       );
 }

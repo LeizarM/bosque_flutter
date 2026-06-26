@@ -19,6 +19,7 @@ class LogEstadosModel {
   String observaciones;
   DateTime fechaCreacion;
   int audUsuario;
+  String nombreUsuario;
 
   LogEstadosModel({
     required this.idLog,
@@ -32,6 +33,7 @@ class LogEstadosModel {
     required this.observaciones,
     required this.fechaCreacion,
     required this.audUsuario,
+    this.nombreUsuario = '',
   });
 
   factory LogEstadosModel.fromJson(Map<String, dynamic> json) =>
@@ -66,6 +68,7 @@ class LogEstadosModel {
                         DateTime.now()
                     : DateTime.now()),
         audUsuario: json["audUsuario"] ?? 0,
+        nombreUsuario: json["nombreUsuario"]?.toString() ?? '',
       );
 
   Map<String, dynamic> toJson() => {
@@ -80,6 +83,7 @@ class LogEstadosModel {
     "observaciones": observaciones,
     "fechaCreacion": fechaCreacion.toIso8601String(),
     "audUsuario": audUsuario,
+    "nombreUsuario": nombreUsuario,
   };
 
   LogEstadosEntity toEntity() => LogEstadosEntity(
@@ -94,6 +98,7 @@ class LogEstadosModel {
     observaciones: observaciones,
     fechaCreacion: fechaCreacion,
     audUsuario: audUsuario,
+    nombreUsuario: nombreUsuario,
   );
 
   factory LogEstadosModel.fromEntity(LogEstadosEntity entity) =>
@@ -109,5 +114,6 @@ class LogEstadosModel {
         observaciones: entity.observaciones,
         fechaCreacion: entity.fechaCreacion,
         audUsuario: entity.audUsuario,
+        nombreUsuario: entity.nombreUsuario,
       );
 }

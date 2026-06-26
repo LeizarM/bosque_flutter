@@ -33,6 +33,7 @@ class TransaccionesEntity {
   String metodoExportadora;
   String estado;
   String observaciones;
+  BigInt? idTransaccionOrigen; // vínculo devolución → transacción origen
   int audUsuario;
   String? rutaVoucher;
   bool tieneVoucher;
@@ -77,6 +78,7 @@ class TransaccionesEntity {
     required this.metodoExportadora,
     required this.estado,
     required this.observaciones,
+    this.idTransaccionOrigen,
     required this.audUsuario,
     this.rutaVoucher,
     this.tieneVoucher = false,

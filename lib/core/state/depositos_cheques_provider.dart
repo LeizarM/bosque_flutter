@@ -329,7 +329,13 @@ class DepositosChequesNotifier extends StateNotifier<DepositosChequesState> {
       selectedEstado: 'Todos',
       cargando: true,
     );
-    final clientesRaw = await _repo.getSociosNegocio(empresa.codEmpresa);
+    // Ejecutar ambas llamadas en paralelo para reducir el tiempo de espera
+    final results = await Future.wait([
+      _repo.getSociosNegocio(empresa.codEmpresa),
+      _repo.getBancos(empresa.codEmpresa),
+    ]);
+    final clientesRaw = results[0] as List<SocioNegocioEntity>;
+    final bancos = results[1] as List<BancoXCuentaEntity>;
     // Inyectar opción "Todos" al inicio
     final clientes = [
       SocioNegocioEntity(
@@ -346,7 +352,6 @@ class DepositosChequesNotifier extends StateNotifier<DepositosChequesState> {
       ),
       ...clientesRaw,
     ];
-    final bancos = await _repo.getBancos(empresa.codEmpresa);
     state = state.copyWith(
       clientes: clientes,
       bancos: bancos,

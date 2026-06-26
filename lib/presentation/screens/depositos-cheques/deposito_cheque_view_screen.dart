@@ -177,7 +177,7 @@ class DepositoChequeViewScreen extends ConsumerWidget {
     // Usamos int (codEmpresa) como valor del dropdown en lugar del objeto completo
     int? currentValue = state.empresaSeleccionada?.codEmpresa;
     final dropdownKey =
-        '${state.empresaSeleccionada?.codEmpresa ?? 0}_${state.empresas.length}_${state.clientes.length}_${state.bancos.length}_${state.selectedEstado}';
+        '${state.empresaSeleccionada?.codEmpresa ?? 0}_${state.empresas.length}';
     // Los items ya incluyen "Todos" desde el provider
     final empresaItems =
         state.empresas
@@ -226,8 +226,12 @@ class DepositoChequeViewScreen extends ConsumerWidget {
     int? currentValue = state.bancoSeleccionado?.idBxC;
 
     return DropdownButtonFormField<int?>(
+      key: ValueKey(
+        'banco-dropdown-${state.empresaSeleccionada?.codEmpresa ?? 0}_${state.bancos.length}',
+      ),
       value: currentValue,
       decoration: const InputDecoration(labelText: 'Banco'),
+
       isExpanded: true,
       items: [
         DropdownMenuItem<int?>(value: null, child: const Text('Todos')),

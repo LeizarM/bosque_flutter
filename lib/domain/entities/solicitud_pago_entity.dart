@@ -7,6 +7,7 @@ class SolicitudPagoEntity {
   DateTime fechaSolicitud;
   double montoTotalSolicitud;
   String estado;
+  String project; // Código del proyecto SAP asociado a esta solicitud
   int audUsuario;
 
   //  La lista de proveedores que le pertenecen
@@ -19,6 +20,7 @@ class SolicitudPagoEntity {
     required this.fechaSolicitud,
     required this.montoTotalSolicitud,
     required this.estado,
+    this.project = '',
     required this.audUsuario,
     this.proveedores = const [],
   });

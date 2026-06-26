@@ -10,7 +10,9 @@ import 'package:bosque_flutter/domain/entities/cotizaciones_entity.dart';
 import 'package:bosque_flutter/domain/entities/detalle_solicitud_entity.dart';
 import 'package:bosque_flutter/domain/entities/log_estados_entity.dart';
 import 'package:bosque_flutter/domain/entities/solicitud_pago_entity.dart';
+import 'package:bosque_flutter/domain/entities/transaccion_participante_entity.dart';
 import 'package:bosque_flutter/domain/entities/transacciones_entity.dart';
+import 'package:bosque_flutter/presentation/widgets/pagos-extranjeros/tpex_estado_ui.dart';
 import 'package:printing/printing.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -179,7 +181,7 @@ class _SolicitudDetailPanelState extends ConsumerState<_SolicitudDetailPanel>
   void initState() {
     super.initState();
     _tabController = TabController(
-      length: 6,
+      length: 7,
       vsync: this,
       initialIndex: widget.initialTab.clamp(0, 5),
     );
@@ -200,61 +202,206 @@ class _SolicitudDetailPanelState extends ConsumerState<_SolicitudDetailPanel>
     final content = Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        // ── Header ───────────────────────────────────────────
-        Padding(
-          padding: const EdgeInsets.fromLTRB(20, 16, 12, 0),
-          child: Row(
-            children: [
-              CircleAvatar(
-                backgroundColor: cs.primaryContainer,
-                child: Text(
-                  '${sol.idSolicitud}',
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 13,
-                    color: cs.onPrimaryContainer,
+        // ── Masthead: expediente de pago al exterior ─────────
+        DecoratedBox(
+          decoration: BoxDecoration(
+            color: Color.alphaBlend(
+              tpexEstadoColor(sol.estado).withValues(alpha: 0.05),
+              cs.surfaceContainerLowest,
+            ),
+            border: Border(
+              bottom: BorderSide(
+                color: cs.outlineVariant.withValues(alpha: 0.5),
+              ),
+            ),
+          ),
+          child: IntrinsicHeight(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // Lomo del expediente, teñido por el estado
+                Container(width: 4, color: tpexEstadoColor(sol.estado)),
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(18, 13, 4, 13),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // Identidad del expediente
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'PAGO AL EXTERIOR',
+                                    style: TextStyle(
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w700,
+                                      letterSpacing: 1.6,
+                                      color: cs.onSurfaceVariant,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 3),
+                                  Row(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.baseline,
+                                    textBaseline: TextBaseline.alphabetic,
+                                    children: [
+                                      Text(
+                                        'Solicitud ',
+                                        style: TextStyle(
+                                          fontSize: 17,
+                                          fontWeight: FontWeight.w600,
+                                          color: cs.onSurface,
+                                        ),
+                                      ),
+                                      Text(
+                                        '#${sol.idSolicitud}',
+                                        style: TextStyle(
+                                          fontSize: 20,
+                                          fontWeight: FontWeight.w800,
+                                          color: cs.primary,
+                                          fontFeatures: const [
+                                            FontFeature.tabularFigures(),
+                                            FontFeature.slashedZero(),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    sol.nombre,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: TextStyle(
+                                      fontSize: 12.5,
+                                      color: cs.onSurfaceVariant,
+                                    ),
+                                  ),
+                                  if (sol.project.isNotEmpty) ...[
+                                    const SizedBox(height: 7),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 7,
+                                        vertical: 2,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: cs.primary.withValues(
+                                          alpha: 0.08,
+                                        ),
+                                        borderRadius: BorderRadius.circular(6),
+                                        border: Border.all(
+                                          color: cs.primary.withValues(
+                                            alpha: 0.2,
+                                          ),
+                                        ),
+                                      ),
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Icon(
+                                            Icons.work_outline_rounded,
+                                            size: 12,
+                                            color: cs.primary,
+                                          ),
+                                          const SizedBox(width: 4),
+                                          Text(
+                                            sol.project,
+                                            style: TextStyle(
+                                              fontSize: 11,
+                                              fontWeight: FontWeight.w600,
+                                              color: cs.primary,
+                                              fontFeatures: const [
+                                                FontFeature.tabularFigures(),
+                                              ],
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ],
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            // Importe — héroe, cifras de libro mayor (tabulares)
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.end,
+                              children: [
+                                Text(
+                                  'IMPORTE · USD',
+                                  style: TextStyle(
+                                    fontSize: 9,
+                                    fontWeight: FontWeight.w700,
+                                    letterSpacing: 0.8,
+                                    color: cs.onSurfaceVariant,
+                                  ),
+                                ),
+                                const SizedBox(height: 1),
+                                Text(
+                                  _numberFormat.format(sol.montoTotalSolicitud),
+                                  style: TextStyle(
+                                    fontSize: 22,
+                                    fontWeight: FontWeight.w800,
+                                    height: 1.0,
+                                    color: cs.onSurface,
+                                    fontFeatures: const [
+                                      FontFeature.tabularFigures(),
+                                      FontFeature.slashedZero(),
+                                    ],
+                                  ),
+                                ),
+                                const SizedBox(height: 7),
+                                TpexEstadoBadge(
+                                  estado: sol.estado,
+                                  dense: true,
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 13),
+                        _FaseStepper(estado: sol.estado),
+                      ],
+                    ),
                   ),
                 ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Solicitud #${sol.idSolicitud}',
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    Text(
-                      '${sol.nombre}  ·  \$ ${_numberFormat.format(sol.montoTotalSolicitud)}',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: cs.onSurfaceVariant,
-                      ),
-                    ),
-                  ],
+                // Cerrar
+                Padding(
+                  padding: const EdgeInsets.only(top: 4, right: 2),
+                  child: IconButton(
+                    visualDensity: VisualDensity.compact,
+                    tooltip: 'Cerrar',
+                    onPressed: () => Navigator.of(context).pop(),
+                    icon: const Icon(Icons.close_rounded),
+                  ),
                 ),
-              ),
-              _EstadoBadge(estado: sol.estado),
-              const SizedBox(width: 4),
-              IconButton(
-                onPressed: () => Navigator.of(context).pop(),
-                icon: const Icon(Icons.close_rounded),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
-        const SizedBox(height: 8),
 
         // ── Tabs ─────────────────────────────────────────────
         TabBar(
           controller: _tabController,
           isScrollable: true,
           tabAlignment: TabAlignment.start,
+          labelColor: cs.primary,
+          unselectedLabelColor: cs.onSurfaceVariant,
+          indicatorColor: cs.primary,
+          indicatorWeight: 2.5,
+          indicatorSize: TabBarIndicatorSize.label,
+          dividerColor: Colors.transparent,
           labelStyle: const TextStyle(
-            fontWeight: FontWeight.w600,
+            fontWeight: FontWeight.w700,
+            fontSize: 13,
+          ),
+          unselectedLabelStyle: const TextStyle(
+            fontWeight: FontWeight.w500,
             fontSize: 13,
           ),
           tabs: const [
@@ -276,6 +423,10 @@ class _SolicitudDetailPanelState extends ConsumerState<_SolicitudDetailPanel>
               icon: Icon(Icons.account_balance_wallet_outlined, size: 18),
               text: 'Asientos',
             ),
+            Tab(
+              icon: Icon(Icons.pie_chart_outline_rounded, size: 18),
+              text: 'Participantes',
+            ),
           ],
         ),
         const Divider(height: 1),
@@ -290,7 +441,8 @@ class _SolicitudDetailPanelState extends ConsumerState<_SolicitudDetailPanel>
               _TabTransacciones(solicitud: sol),
               _TabLog(solicitud: sol),
               _TabTimeline(solicitud: sol),
-              _TabAsientos(
+              _TabAsientos(solicitud: sol, readOnly: widget.asientosReadOnly),
+              _TabParticipantes(
                 solicitud: sol,
                 readOnly: widget.asientosReadOnly,
               ),
@@ -324,25 +476,7 @@ class _EstadoBadge extends StatelessWidget {
   final String estado;
   const _EstadoBadge({required this.estado});
 
-  Color _color() {
-    switch (estado.toUpperCase()) {
-      case 'APROBADA':
-        return Colors.green;
-      case 'PAGADA':
-        return Colors.teal;
-      case 'CANCELADA':
-      case 'RECHAZADA':
-      case 'RECHAZADO':
-        return Colors.red;
-      case 'PROCESADO':
-        return Colors.blue;
-      case 'CONFIRMADO':
-        return Colors.teal;
-      case 'PENDIENTE':
-      default:
-        return Colors.orange;
-    }
-  }
+  Color _color() => tpexEstadoColor(estado);
 
   @override
   Widget build(BuildContext context) {
@@ -357,6 +491,112 @@ class _EstadoBadge extends StatelessWidget {
         estado,
         style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: c),
       ),
+    );
+  }
+}
+
+// ═════════════════════════════════════════════════════════════════════════════
+// Stepper de ciclo de vida del expediente (Solicitada → Aprobada → Pagada)
+// ═════════════════════════════════════════════════════════════════════════════
+class _FaseStepper extends StatelessWidget {
+  final String estado;
+  const _FaseStepper({required this.estado});
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final e = estado.toUpperCase().trim();
+    final rechazada =
+        e == 'RECHAZADA' ||
+        e == 'RECHAZADO' ||
+        e == 'CANCELADA' ||
+        e == 'CANCELADO';
+    final color = tpexEstadoColor(estado);
+
+    final fases =
+        rechazada
+            ? const ['Solicitada', 'Rechazada']
+            : const ['Solicitada', 'Aprobada', 'Pagada'];
+
+    int current;
+    if (rechazada) {
+      current = 1;
+    } else if (e == 'PAGADA' || e == 'PAGADO') {
+      current = 2;
+    } else if (e == 'APROBADA' || e == 'APROBADO') {
+      current = 1;
+    } else {
+      current = 0;
+    }
+
+    final children = <Widget>[];
+    for (var i = 0; i < fases.length; i++) {
+      children.add(_nodo(cs, color, fases[i], i <= current, i == current));
+      if (i < fases.length - 1) {
+        children.add(
+          Expanded(
+            child: Container(
+              height: 2,
+              margin: const EdgeInsets.symmetric(horizontal: 6),
+              decoration: BoxDecoration(
+                color: (i < current) ? color : cs.outlineVariant,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+          ),
+        );
+      }
+    }
+    return Row(children: children);
+  }
+
+  Widget _nodo(
+    ColorScheme cs,
+    Color color,
+    String label,
+    bool done,
+    bool isCurrent,
+  ) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: isCurrent ? 13 : 10,
+          height: isCurrent ? 13 : 10,
+          decoration: BoxDecoration(
+            color: done ? color : cs.surface,
+            shape: BoxShape.circle,
+            border: Border.all(
+              color: done ? color : cs.outlineVariant,
+              width: 2,
+            ),
+          ),
+          child:
+              isCurrent
+                  ? Center(
+                    child: Container(
+                      width: 4,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: cs.surface,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                  )
+                  : null,
+        ),
+        const SizedBox(width: 5),
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 10.5,
+            fontWeight: isCurrent ? FontWeight.w700 : FontWeight.w500,
+            color:
+                done ? (isCurrent ? color : cs.onSurface) : cs.onSurfaceVariant,
+            letterSpacing: 0.2,
+          ),
+        ),
+      ],
     );
   }
 }
@@ -715,10 +955,7 @@ class _CotizacionCardState extends ConsumerState<_CotizacionCard> {
 class _CotizacionAprobarButton extends ConsumerStatefulWidget {
   final CotizacionesEntity cotizacion;
   final ColorScheme cs;
-  const _CotizacionAprobarButton({
-    required this.cotizacion,
-    required this.cs,
-  });
+  const _CotizacionAprobarButton({required this.cotizacion, required this.cs});
 
   @override
   ConsumerState<_CotizacionAprobarButton> createState() =>
@@ -732,23 +969,24 @@ class _CotizacionAprobarButtonState
   Future<void> _aprobar() async {
     final confirm = await showDialog<bool>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Aprobar cotización'),
-        content: Text(
-          '¿Confirma aprobar la cotización #${widget.cotizacion.idCotizacion}?\n'
-          'Las demás cotizaciones quedarán RECHAZADAS.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancelar'),
+      builder:
+          (ctx) => AlertDialog(
+            title: const Text('Aprobar cotización'),
+            content: Text(
+              '¿Confirma aprobar la cotización #${widget.cotizacion.idCotizacion}?\n'
+              'Las demás cotizaciones quedarán RECHAZADAS.',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx, false),
+                child: const Text('Cancelar'),
+              ),
+              FilledButton(
+                onPressed: () => Navigator.pop(ctx, true),
+                child: const Text('Aprobar'),
+              ),
+            ],
           ),
-          FilledButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Aprobar'),
-          ),
-        ],
-      ),
     );
     if (confirm != true) return;
 
@@ -764,7 +1002,9 @@ class _CotizacionAprobarButtonState
       });
       if (!mounted) return;
       // Invalidar para refrescar la lista de cotizaciones
-      ref.invalidate(cotizacionesXSolicitudProvider(widget.cotizacion.idSolicitud));
+      ref.invalidate(
+        cotizacionesXSolicitudProvider(widget.cotizacion.idSolicitud),
+      );
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Cotización aprobada exitosamente')),
       );
@@ -785,21 +1025,24 @@ class _CotizacionAprobarButtonState
   Widget build(BuildContext context) {
     final tipoUsuario = ref.watch(userProvider)?.tipoUsuario ?? '';
     final esGer = tipoUsuario == 'ger';
-    final esVigente =
-        widget.cotizacion.estado.toUpperCase() == 'VIGENTE';
+    final esVigente = widget.cotizacion.estado.toUpperCase() == 'VIGENTE';
 
     if (!esGer || !esVigente) return const SizedBox.shrink();
 
     return Padding(
       padding: const EdgeInsets.only(top: 10),
       child: FilledButton.icon(
-        icon: _cargando
-            ? const SizedBox(
-                width: 16,
-                height: 16,
-                child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-              )
-            : const Icon(Icons.check_circle_outline_rounded, size: 18),
+        icon:
+            _cargando
+                ? const SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: Colors.white,
+                  ),
+                )
+                : const Icon(Icons.check_circle_outline_rounded, size: 18),
         label: Text(_cargando ? 'Aprobando…' : 'Aprobar esta cotización'),
         style: FilledButton.styleFrom(
           backgroundColor: Colors.green.shade700,
@@ -959,6 +1202,131 @@ class _TransaccionCard extends ConsumerStatefulWidget {
 class _TransaccionCardState extends ConsumerState<_TransaccionCard> {
   bool _showCargos = false;
 
+  /// Edita SOLO el N° de transacción bancaria y la fecha valor. Usa la ACCION
+  /// 'C' del backend, que funciona incluso si la transacción está CONFIRMADA
+  /// (no reabre el pago ni toca montos). El voucher se sube/reemplaza con el
+  /// botón "Subir Voucher".
+  Future<void> _editarComprobante() async {
+    final t = widget.txn;
+    final nroCtrl = TextEditingController(text: t.numeroTransaccion);
+    DateTime fechaValor = t.fechaValor;
+
+    final guardar = await showDialog<bool>(
+      context: context,
+      builder:
+          (ctx) => StatefulBuilder(
+            builder:
+                (ctx, setLocal) => AlertDialog(
+                  title: const Text('Editar comprobante'),
+                  content: SizedBox(
+                    width: 380,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Transacción #${t.idTransaccion} · estado ${t.estado}',
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: Theme.of(ctx).colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        TextField(
+                          controller: nroCtrl,
+                          decoration: const InputDecoration(
+                            labelText: 'N° Transacción Bancaria',
+                            border: OutlineInputBorder(),
+                            isDense: true,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                'Fecha Valor: ${_dateFormat.format(fechaValor)}',
+                                style: const TextStyle(fontSize: 13),
+                              ),
+                            ),
+                            TextButton.icon(
+                              icon: const Icon(Icons.calendar_today, size: 15),
+                              label: const Text('Cambiar'),
+                              onPressed: () async {
+                                final picked = await showDatePicker(
+                                  context: ctx,
+                                  initialDate: fechaValor,
+                                  firstDate: DateTime(2020),
+                                  lastDate: DateTime(2100),
+                                );
+                                if (picked != null) {
+                                  setLocal(() => fechaValor = picked);
+                                }
+                              },
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Solo se actualizan el N° y la fecha valor (no reabre el '
+                          'pago). El voucher se sube con el botón "Subir Voucher".',
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontStyle: FontStyle.italic,
+                            color: Theme.of(ctx).colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(ctx, false),
+                      child: const Text('Cancelar'),
+                    ),
+                    FilledButton(
+                      onPressed: () => Navigator.pop(ctx, true),
+                      child: const Text('Guardar'),
+                    ),
+                  ],
+                ),
+          ),
+    );
+
+    if (guardar != true || !mounted) return;
+    final audUsuario = ref.read(userProvider)?.codUsuario ?? 0;
+    final fv =
+        '${fechaValor.year.toString().padLeft(4, '0')}-'
+        '${fechaValor.month.toString().padLeft(2, '0')}-'
+        '${fechaValor.day.toString().padLeft(2, '0')}';
+    try {
+      await PagosExtranjerosImpl().corregirComprobante({
+        'idTransaccion': t.idTransaccion.toInt(),
+        'numeroTransaccion': nroCtrl.text.trim(),
+        'fechaValor': fv,
+        'audUsuario': audUsuario,
+      });
+      if (!mounted) return;
+      ref.invalidate(
+        transaccionesXSolicitudProvider((
+          idSolicitud: t.idSolicitud,
+          codEmpresa: widget.codEmpresa,
+        )),
+      );
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Comprobante actualizado')),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(e.toString().replaceFirst('Exception: ', '')),
+          backgroundColor: Theme.of(context).colorScheme.error,
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final t = widget.txn;
@@ -1041,28 +1409,142 @@ class _TransaccionCardState extends ConsumerState<_TransaccionCard> {
                 ),
                 if (t.numeroTransaccion.isNotEmpty)
                   _DataPair(label: 'N° Bancario', value: t.numeroTransaccion),
+                if (t.proveedor.isNotEmpty)
+                  _DataPair(label: 'Proveedor', value: t.proveedor),
+                if (t.totalCargos > 0)
+                  _DataPair(
+                    label: 'Total cargos',
+                    value: '$monDestino ${_numberFormat.format(t.totalCargos)}',
+                  ),
               ],
             ),
-            // TC referencia y diferencia
-            if (t.tipoCambioReferencia > 0) ...[
-              const SizedBox(height: 6),
-              Row(
-                children: [
-                  Text(
-                    'TC Ref BCB: ${t.tipoCambioReferencia.toStringAsFixed(4)}',
-                    style: TextStyle(fontSize: 10, color: cs.onSurfaceVariant),
-                  ),
-                  const SizedBox(width: 12),
-                  Text(
-                    'Dif: ${t.diferenciaDeMas >= 0 ? "+" : ""}${_numberFormat.format(t.diferenciaDeMas)} (${t.porcentajeDiferencia.toStringAsFixed(2)}%)',
-                    style: TextStyle(
-                      fontSize: 10,
-                      color:
-                          t.diferenciaDeMas > 0
-                              ? Colors.red.shade700
-                              : Colors.green.shade700,
+            // ── Referencia BCB y diferencia de T/C (porcentajes) ──────
+            if (t.tipoCambioReferencia > 0 ||
+                t.porcentajeDiferencia != 0 ||
+                t.equivalenteUsdRef > 0) ...[
+              const SizedBox(height: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 8,
+                ),
+                decoration: BoxDecoration(
+                  color: cs.surfaceContainerHighest.withValues(alpha: 0.35),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Wrap(
+                  spacing: 10,
+                  runSpacing: 6,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  children: [
+                    if (t.tipoCambioReferencia > 0)
+                      _MiniChip(
+                        label: 'TC Ref. BCB',
+                        value: t.tipoCambioReferencia.toStringAsFixed(4),
+                        cs: cs,
+                      ),
+                    if (t.equivalenteUsdRef > 0)
+                      _MiniChip(
+                        label: 'Equiv. USD ref.',
+                        value:
+                            '$monOrigen ${_numberFormat.format(t.equivalenteUsdRef)}',
+                        cs: cs,
+                      ),
+                    if (t.diferenciaDeMas != 0)
+                      _MiniChip(
+                        label: 'Dif. de más',
+                        value:
+                            '${t.diferenciaDeMas >= 0 ? "+" : ""}$monOrigen ${_numberFormat.format(t.diferenciaDeMas)}',
+                        cs: cs,
+                      ),
+                    // % Dif. T/C — destacado, color por umbral
+                    Builder(
+                      builder: (_) {
+                        final pct = t.porcentajeDiferencia;
+                        final color =
+                            pct < 30
+                                ? Colors.green.shade700
+                                : (pct <= 50
+                                    ? Colors.orange.shade800
+                                    : Colors.red.shade700);
+                        return Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: color.withValues(alpha: 0.14),
+                            borderRadius: BorderRadius.circular(6),
+                            border: Border.all(
+                              color: color.withValues(alpha: 0.5),
+                            ),
+                          ),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                '% Dif. T/C',
+                                style: TextStyle(
+                                  fontSize: 9,
+                                  color: cs.onSurfaceVariant,
+                                ),
+                              ),
+                              Text(
+                                '${pct.toStringAsFixed(2)}%',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w800,
+                                  color: color,
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      },
                     ),
-                  ),
+                  ],
+                ),
+              ),
+            ],
+            // ── Forward (si aplica) ───────────────────────────────────
+            if (t.tipoCambioForward > 0 || t.numeroContrato.isNotEmpty) ...[
+              const SizedBox(height: 6),
+              Wrap(
+                spacing: 16,
+                runSpacing: 4,
+                children: [
+                  if (t.tipoCambioForward > 0)
+                    _DataPair(
+                      label: 'TC Forward',
+                      value: t.tipoCambioForward.toStringAsFixed(4),
+                    ),
+                  if (t.numeroContrato.isNotEmpty)
+                    _DataPair(label: 'N° Contrato', value: t.numeroContrato),
+                ],
+              ),
+            ],
+            // ── Exportadora (si aplica) ───────────────────────────────
+            if (t.nombreExportadora.isNotEmpty) ...[
+              const SizedBox(height: 6),
+              Wrap(
+                spacing: 16,
+                runSpacing: 4,
+                children: [
+                  _DataPair(label: 'Exportadora', value: t.nombreExportadora),
+                  if (t.tcNegociadoExportadora > 0)
+                    _DataPair(
+                      label: 'TC negociado',
+                      value: t.tcNegociadoExportadora.toStringAsFixed(4),
+                    ),
+                  if (t.comisionExportadora > 0)
+                    _DataPair(
+                      label: 'Comisión export.',
+                      value:
+                          '$monDestino ${_numberFormat.format(t.comisionExportadora)}',
+                    ),
+                  if (t.metodoExportadora.isNotEmpty)
+                    _DataPair(label: 'Método', value: t.metodoExportadora),
                 ],
               ),
             ],
@@ -1110,10 +1592,20 @@ class _TransaccionCardState extends ConsumerState<_TransaccionCard> {
             _TxnLogInline(idTransaccion: t.idTransaccion, cs: cs),
             // Voucher
             const SizedBox(height: 8),
-            _VoucherSection(
-              txn: t,
-              codEmpresa: widget.codEmpresa,
-              cs: cs,
+            _VoucherSection(txn: t, codEmpresa: widget.codEmpresa, cs: cs),
+            // Editar comprobante (N° bancario + fecha valor). Funciona incluso
+            // si la transacción ya está CONFIRMADA (no reabre el pago).
+            const SizedBox(height: 4),
+            Align(
+              alignment: Alignment.centerRight,
+              child: TextButton.icon(
+                onPressed: _editarComprobante,
+                icon: const Icon(Icons.edit_note_rounded, size: 16),
+                label: const Text(
+                  'Editar comprobante',
+                  style: TextStyle(fontSize: 12),
+                ),
+              ),
             ),
           ],
         ),
@@ -1211,13 +1703,15 @@ class _VoucherSectionState extends ConsumerState<_VoucherSection> {
             avatar: Icon(Icons.check_circle, color: cs.primary, size: 18),
             label: const Text('Ver Voucher'),
             backgroundColor: cs.primaryContainer,
-            onPressed: () => _verVoucherPost(
-              context,
-              widget.txn.idTransaccion,
-              codEmpresa: widget.txn.codEmpresa != 0
-                  ? widget.txn.codEmpresa
-                  : widget.codEmpresa,
-            ),
+            onPressed:
+                () => _verVoucherPost(
+                  context,
+                  widget.txn.idTransaccion,
+                  codEmpresa:
+                      widget.txn.codEmpresa != 0
+                          ? widget.txn.codEmpresa
+                          : widget.codEmpresa,
+                ),
           ),
           if (esGRH) ...[
             const SizedBox(width: 8),
@@ -1232,8 +1726,11 @@ class _VoucherSectionState extends ConsumerState<_VoucherSection> {
       );
     }
 
-    // Sin voucher
-    if (esGRH && widget.txn.estado.toUpperCase() == 'PENDIENTE') {
+    // Sin voucher: permitir adjuntar el comprobante mientras la transacción
+    // siga PENDIENTE. No se restringe a GRH — el escenario real es que quien
+    // registra la transacción se olvidó de subir el voucher y debe poder
+    // adjuntarlo después. (Reemplazar un voucher ya cargado sí queda para GRH.)
+    if (widget.txn.estado.toUpperCase() == 'PENDIENTE') {
       return FilledButton.tonalIcon(
         icon: const Icon(Icons.upload_file, size: 18),
         label: const Text('Subir Voucher'),
@@ -1426,32 +1923,8 @@ class _TimelineItem extends StatelessWidget {
     }
   }
 
-  /// Color semántico por estadoNuevo.
-  static Color estadoColor(String estado) {
-    switch (estado.toUpperCase()) {
-      case 'PENDIENTE':
-        return Colors.grey;
-      case 'APROBADA':
-        return Colors.blue;
-      case 'ENVIADA':
-        return Colors.orange;
-      case 'ACEPTADA':
-        return Colors.lightBlue;
-      case 'PROCESADO':
-        return Colors.amber.shade700;
-      case 'CONFIRMADO':
-        return Colors.green;
-      case 'PAGADA':
-        return Colors.teal.shade700;
-      case 'RECHAZADA':
-      case 'RECHAZADO':
-      case 'CANCELADA':
-      case 'ERROR':
-        return Colors.red;
-      default:
-        return Colors.grey;
-    }
-  }
+  /// Color semántico por estadoNuevo (delegado al helper unificado del módulo).
+  static Color estadoColor(String estado) => tpexEstadoColor(estado);
 
   IconData _entityIcon() {
     switch (log.tipoEntidad.toUpperCase()) {
@@ -1603,15 +2076,28 @@ class _TimelineItem extends StatelessWidget {
                       ),
                     ),
                   ],
-                  // Usuario
-                  if (log.audUsuario > 0) ...[
+                  // Usuario (nombre real; fallback al código si el SP no lo trae)
+                  if (log.nombreUsuario.isNotEmpty || log.audUsuario > 0) ...[
                     const SizedBox(height: 4),
-                    Text(
-                      'Usuario: ${log.audUsuario}',
-                      style: TextStyle(
-                        fontSize: 10,
-                        color: cs.onSurfaceVariant.withValues(alpha: 0.6),
-                      ),
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.person_outline_rounded,
+                          size: 12,
+                          color: cs.onSurfaceVariant.withValues(alpha: 0.6),
+                        ),
+                        const SizedBox(width: 3),
+                        Text(
+                          log.nombreUsuario.isNotEmpty
+                              ? log.nombreUsuario
+                              : 'Usuario #${log.audUsuario}',
+                          style: TextStyle(
+                            fontSize: 10,
+                            color: cs.onSurfaceVariant.withValues(alpha: 0.7),
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ],
@@ -1684,7 +2170,7 @@ class _EstadoNuevoBadge extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
       ),
       child: Text(
-        estado,
+        tpexEstadoLabel(estado),
         style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: c),
       ),
     );
@@ -1704,7 +2190,7 @@ class _LogTileMini extends StatelessWidget {
         children: [
           if (log.estadoAnterior.isNotEmpty)
             Text(
-              '${log.estadoAnterior} → ',
+              '${tpexEstadoLabel(log.estadoAnterior)} → ',
               style: TextStyle(fontSize: 10, color: cs.onSurfaceVariant),
             ),
           _EstadoNuevoBadge(estado: log.estadoNuevo),
@@ -1749,6 +2235,7 @@ class _DataPair extends StatelessWidget {
             fontSize: 11,
             fontWeight: bold ? FontWeight.w700 : FontWeight.w600,
             color: bold ? cs.primary : cs.onSurface,
+            fontFeatures: tpexTabularFigures,
           ),
         ),
       ],
@@ -1790,6 +2277,7 @@ class _MiniChip extends StatelessWidget {
               fontSize: 11,
               fontWeight: bold ? FontWeight.w700 : FontWeight.w600,
               color: bold ? cs.primary : cs.onSurface,
+              fontFeatures: tpexTabularFigures,
             ),
           ),
         ],
@@ -1805,8 +2293,6 @@ class _TabAsientos extends ConsumerWidget {
   final SolicitudPagoEntity solicitud;
   final bool readOnly;
   const _TabAsientos({required this.solicitud, this.readOnly = false});
-
-  static const _estados = {'PENDIENTE', 'PROCESADO', 'CONFIRMADO'};
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -1833,7 +2319,11 @@ class _TabAsientos extends ConsumerWidget {
 
         // Si hay varias transacciones mostramos selector; caso común: 1 transacción
         if (txns.length == 1) {
-          return _AsientosDeTransaccion(txn: txns.first, cs: cs, readOnly: readOnly);
+          return _AsientosDeTransaccion(
+            txn: txns.first,
+            cs: cs,
+            readOnly: readOnly,
+          );
         }
 
         // Múltiples transacciones: mostrar una sección expandible por cada una
@@ -1848,7 +2338,9 @@ class _TabAsientos extends ConsumerWidget {
               color: cs.surfaceContainerLow,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
-                side: BorderSide(color: cs.outlineVariant.withValues(alpha: 0.4)),
+                side: BorderSide(
+                  color: cs.outlineVariant.withValues(alpha: 0.4),
+                ),
               ),
               child: ExpansionTile(
                 leading: Icon(
@@ -1890,115 +2382,134 @@ class _AsientosDeTransaccion extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final asyncAsientos = ref.watch(asientosTransaccionProvider(txn.idTransaccion));
+    final asyncAsientos = ref.watch(
+      asientosTransaccionProvider(txn.idTransaccion),
+    );
     final asyncCuadre = ref.watch(cuadreAsientosProvider(txn.idTransaccion));
-    final puedeAgregar = !readOnly && _estadosEditables.contains(txn.estado.toUpperCase());
+    final puedeAgregar =
+        !readOnly && _estadosEditables.contains(txn.estado.toUpperCase());
 
     return asyncAsientos.when(
-      loading: () => const Padding(
-        padding: EdgeInsets.all(24),
-        child: Center(child: CircularProgressIndicator()),
-      ),
-      error: (e, _) => _ErrorTab(message: e.toString()),
-      data: (asientos) => Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          // Lista de asientos
-          if (asientos.isEmpty)
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 24),
-              child: _EmptyTab(
-                icon: Icons.table_rows_rounded,
-                message: 'Sin asientos registrados',
-              ),
-            )
-          else
-            _AsientosTabla(asientos: asientos, txn: txn, cs: cs, readOnly: readOnly),
-
-          // Resumen de cuadre
-          asyncCuadre.when(
-            loading: () => const SizedBox.shrink(),
-            error: (_, __) => const SizedBox.shrink(),
-            data: (cuadre) {
-              if (cuadre == null || cuadre.estadoCuadre.isEmpty) {
-                return const SizedBox.shrink();
-              }
-              final cuadrado = cuadre.estadoCuadre.toUpperCase() == 'CUADRADO';
-              final color = cuadrado ? Colors.green : Colors.red;
-              return Container(
-                margin: const EdgeInsets.fromLTRB(12, 4, 12, 8),
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                decoration: BoxDecoration(
-                  color: color.withValues(alpha: 0.08),
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: color.withValues(alpha: 0.35)),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Icon(
-                          cuadrado ? Icons.check_circle_rounded : Icons.warning_rounded,
-                          color: color,
-                          size: 18,
-                        ),
-                        const SizedBox(width: 6),
-                        Text(
-                          cuadre.estadoCuadre,
-                          style: TextStyle(
-                            fontWeight: FontWeight.w700,
-                            fontSize: 13,
-                            color: color,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 6),
-                    Wrap(
-                      spacing: 16,
-                      runSpacing: 4,
-                      children: [
-                        _DataPair(
-                          label: 'Total Débito Bs',
-                          value: _numberFormat.format(cuadre.totalDebitoBs),
-                        ),
-                        _DataPair(
-                          label: 'Total Crédito Bs',
-                          value: _numberFormat.format(cuadre.totalCreditoBs),
-                        ),
-                        _DataPair(
-                          label: 'Diferencia Bs',
-                          value: _numberFormat.format(cuadre.diferenciaBs),
-                          bold: !cuadrado,
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              );
-            },
+      loading:
+          () => const Padding(
+            padding: EdgeInsets.all(24),
+            child: Center(child: CircularProgressIndicator()),
           ),
-
-          // Botón agregar
-          if (puedeAgregar)
-            Padding(
-              padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
-              child: FilledButton.icon(
-                icon: const Icon(Icons.add_rounded, size: 18),
-                label: const Text('Agregar asiento'),
-                onPressed: () => _abrirDialogoAsiento(
-                  context,
-                  ref,
-                  txn,
-                  nextNumero: asientos.length + 1,
-                  audUsuario: ref.read(userProvider)?.codUsuario ?? 0,
+      error: (e, _) => _ErrorTab(message: e.toString()),
+      data:
+          (asientos) => Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // Lista de asientos
+              if (asientos.isEmpty)
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 24),
+                  child: _EmptyTab(
+                    icon: Icons.table_rows_rounded,
+                    message: 'Sin asientos registrados',
+                  ),
+                )
+              else
+                _AsientosTabla(
+                  asientos: asientos,
+                  txn: txn,
+                  cs: cs,
+                  readOnly: readOnly,
                 ),
+
+              // Resumen de cuadre
+              asyncCuadre.when(
+                loading: () => const SizedBox.shrink(),
+                error: (_, __) => const SizedBox.shrink(),
+                data: (cuadre) {
+                  if (cuadre == null || cuadre.estadoCuadre.isEmpty) {
+                    return const SizedBox.shrink();
+                  }
+                  final cuadrado =
+                      cuadre.estadoCuadre.toUpperCase() == 'CUADRADO';
+                  final color = cuadrado ? Colors.green : Colors.red;
+                  return Container(
+                    margin: const EdgeInsets.fromLTRB(12, 4, 12, 8),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 10,
+                    ),
+                    decoration: BoxDecoration(
+                      color: color.withValues(alpha: 0.08),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: color.withValues(alpha: 0.35)),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(
+                              cuadrado
+                                  ? Icons.check_circle_rounded
+                                  : Icons.warning_rounded,
+                              color: color,
+                              size: 18,
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              cuadre.estadoCuadre,
+                              style: TextStyle(
+                                fontWeight: FontWeight.w700,
+                                fontSize: 13,
+                                color: color,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 6),
+                        Wrap(
+                          spacing: 16,
+                          runSpacing: 4,
+                          children: [
+                            _DataPair(
+                              label: 'Total Débito Bs',
+                              value: _numberFormat.format(cuadre.totalDebitoBs),
+                            ),
+                            _DataPair(
+                              label: 'Total Crédito Bs',
+                              value: _numberFormat.format(
+                                cuadre.totalCreditoBs,
+                              ),
+                            ),
+                            _DataPair(
+                              label: 'Diferencia Bs',
+                              value: _numberFormat.format(cuadre.diferenciaBs),
+                              bold: !cuadrado,
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  );
+                },
               ),
-            ),
-        ],
-      ),
+
+              // Botón agregar
+              if (puedeAgregar)
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+                  child: FilledButton.icon(
+                    icon: const Icon(Icons.add_rounded, size: 18),
+                    label: const Text('Agregar asiento'),
+                    onPressed:
+                        () => _abrirDialogoAsiento(
+                          context,
+                          ref,
+                          txn,
+                          nextNumero: asientos.length + 1,
+                          audUsuario: ref.read(userProvider)?.codUsuario ?? 0,
+                        ),
+                  ),
+                ),
+            ],
+          ),
     );
   }
 
@@ -2017,12 +2528,13 @@ class _AsientosDeTransaccion extends ConsumerWidget {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      builder: (_) => _DialogoAsiento(
-        txn: txn,
-        numero: editar?.numero ?? nextNumero,
-        audUsuario: audUsuario,
-        editar: editar,
-      ),
+      builder:
+          (_) => _DialogoAsiento(
+            txn: txn,
+            numero: editar?.numero ?? nextNumero,
+            audUsuario: audUsuario,
+            editar: editar,
+          ),
     );
   }
 }
@@ -2044,9 +2556,17 @@ class _AsientosTabla extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.fromLTRB(12, 8, 12, 4),
       child: Column(
-        children: asientos
-            .map((a) => _AsientoFila(asiento: a, txn: txn, cs: cs, readOnly: readOnly))
-            .toList(),
+        children:
+            asientos
+                .map(
+                  (a) => _AsientoFila(
+                    asiento: a,
+                    txn: txn,
+                    cs: cs,
+                    readOnly: readOnly,
+                  ),
+                )
+                .toList(),
       ),
     );
   }
@@ -2092,36 +2612,38 @@ class _AsientoFilaState extends ConsumerState<_AsientoFila> {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      builder: (_) => _DialogoAsiento(
-        txn: widget.txn,
-        numero: widget.asiento.numero,
-        audUsuario: ref.read(userProvider)?.codUsuario ?? 0,
-        editar: widget.asiento,
-      ),
+      builder:
+          (_) => _DialogoAsiento(
+            txn: widget.txn,
+            numero: widget.asiento.numero,
+            audUsuario: ref.read(userProvider)?.codUsuario ?? 0,
+            editar: widget.asiento,
+          ),
     );
   }
 
   Future<void> _eliminar() async {
     final ok = await showDialog<bool>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Eliminar asiento'),
-        content: Text(
-          '¿Confirma eliminar el asiento #${widget.asiento.numero}?\n'
-          'Esta acción no se puede deshacer.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancelar'),
+      builder:
+          (ctx) => AlertDialog(
+            title: const Text('Eliminar asiento'),
+            content: Text(
+              '¿Confirma eliminar el asiento #${widget.asiento.numero}?\n'
+              'El asiento se ocultará pero queda guardado (borrado lógico).',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx, false),
+                child: const Text('Cancelar'),
+              ),
+              FilledButton(
+                style: FilledButton.styleFrom(backgroundColor: Colors.red),
+                onPressed: () => Navigator.pop(ctx, true),
+                child: const Text('Eliminar'),
+              ),
+            ],
           ),
-          FilledButton(
-            style: FilledButton.styleFrom(backgroundColor: Colors.red),
-            onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Eliminar'),
-          ),
-        ],
-      ),
     );
     if (ok != true || !mounted) return;
 
@@ -2137,9 +2659,9 @@ class _AsientoFilaState extends ConsumerState<_AsientoFila> {
       if (!mounted) return;
       ref.invalidate(asientosTransaccionProvider(widget.txn.idTransaccion));
       ref.invalidate(cuadreAsientosProvider(widget.txn.idTransaccion));
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Asiento eliminado')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Asiento eliminado')));
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -2193,21 +2715,31 @@ class _AsientoFilaState extends ConsumerState<_AsientoFila> {
                   ),
                 ),
                 const SizedBox(width: 8),
-                // Tipo badge
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                  decoration: BoxDecoration(
-                    color: c.withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(4),
-                    border: Border.all(color: c.withValues(alpha: 0.35)),
-                  ),
-                  child: Text(
-                    asiento.tipoAsiento,
-                    style: TextStyle(
-                      fontSize: 10,
-                      fontWeight: FontWeight.w700,
-                      color: c,
+                // Tipo badge (PR/PE) con tooltip explicativo
+                Tooltip(
+                  message:
+                      asiento.tipoAsiento == 'PR'
+                          ? 'PR — Pago Recibido'
+                          : asiento.tipoAsiento == 'PE'
+                          ? 'PE — Pago Efectuado'
+                          : asiento.tipoAsiento,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 6,
+                      vertical: 2,
+                    ),
+                    decoration: BoxDecoration(
+                      color: c.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(4),
+                      border: Border.all(color: c.withValues(alpha: 0.35)),
+                    ),
+                    child: Text(
+                      asiento.tipoAsiento,
+                      style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w700,
+                        color: c,
+                      ),
                     ),
                   ),
                 ),
@@ -2254,7 +2786,7 @@ class _AsientoFilaState extends ConsumerState<_AsientoFila> {
                   children: [
                     if (asiento.debitoBs > 0)
                       Text(
-                        'D: ${_numberFormat.format(asiento.debitoBs)}',
+                        'Débito Bs ${_numberFormat.format(asiento.debitoBs)}',
                         style: const TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.w600,
@@ -2262,7 +2794,7 @@ class _AsientoFilaState extends ConsumerState<_AsientoFila> {
                       ),
                     if (asiento.creditoBs > 0)
                       Text(
-                        'C: ${_numberFormat.format(asiento.creditoBs)}',
+                        'Crédito Bs ${_numberFormat.format(asiento.creditoBs)}',
                         style: TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.w600,
@@ -2289,38 +2821,38 @@ class _AsientoFilaState extends ConsumerState<_AsientoFila> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
-                TextButton.icon(
-                  icon: const Icon(Icons.edit_rounded, size: 14),
-                  label: const Text('Editar', style: TextStyle(fontSize: 11)),
-                  style: TextButton.styleFrom(
-                    foregroundColor: cs.primary,
-                    visualDensity: VisualDensity.compact,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 2,
+                  TextButton.icon(
+                    icon: const Icon(Icons.edit_rounded, size: 14),
+                    label: const Text('Editar', style: TextStyle(fontSize: 11)),
+                    style: TextButton.styleFrom(
+                      foregroundColor: cs.primary,
+                      visualDensity: VisualDensity.compact,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 2,
+                      ),
                     ),
+                    onPressed: _editar,
                   ),
-                  onPressed: _editar,
-                ),
-                TextButton.icon(
-                  icon: const Icon(Icons.delete_outline_rounded, size: 14),
-                  label: const Text(
-                    'Eliminar',
-                    style: TextStyle(fontSize: 11),
-                  ),
-                  style: TextButton.styleFrom(
-                    foregroundColor: Colors.red,
-                    visualDensity: VisualDensity.compact,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 2,
+                  TextButton.icon(
+                    icon: const Icon(Icons.delete_outline_rounded, size: 14),
+                    label: const Text(
+                      'Eliminar',
+                      style: TextStyle(fontSize: 11),
                     ),
+                    style: TextButton.styleFrom(
+                      foregroundColor: Colors.red,
+                      visualDensity: VisualDensity.compact,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 2,
+                      ),
+                    ),
+                    onPressed: _eliminar,
                   ),
-                  onPressed: _eliminar,
-                ),
-                const SizedBox(width: 4),
-              ],
-            ),
+                  const SizedBox(width: 4),
+                ],
+              ),
         ],
       ),
     );
@@ -2332,8 +2864,9 @@ class _AsientoFilaState extends ConsumerState<_AsientoFila> {
 class _DialogoAsiento extends ConsumerStatefulWidget {
   final TransaccionesEntity txn;
   final AsientoEntity? editar;
-  final int numero;       // nro de asiento (length+1 para nuevo, e.numero para editar)
-  final int audUsuario;   // se pasa desde el widget padre que tiene ref correcto
+  final int
+  numero; // nro de asiento (length+1 para nuevo, e.numero para editar)
+  final int audUsuario; // se pasa desde el widget padre que tiene ref correcto
   const _DialogoAsiento({
     required this.txn,
     required this.numero,
@@ -2391,7 +2924,8 @@ class _DialogoAsientoState extends ConsumerState<_DialogoAsiento> {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _cargando = true);
 
-    final monto = double.tryParse(
+    final monto =
+        double.tryParse(
           (_esDebito ? _debitoCtrl : _creditoCtrl).text.replaceAll(',', '.'),
         ) ??
         0.0;
@@ -2472,39 +3006,50 @@ class _DialogoAsientoState extends ConsumerState<_DialogoAsiento> {
             ),
             Text(
               isEdicion ? 'Editar asiento' : 'Nuevo asiento',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w700,
-              ),
+              style: Theme.of(
+                context,
+              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
             ),
             const SizedBox(height: 8),
 
             // TC BCB referencia
-            ref.watch(tcVigenteRefProvider((
-              codBanco: null,
-              idMonedaOrigen: 3,
-              idMonedaDestino: 4,
-            ))).when(
-              data: (tc) => tc == null
-                  ? const SizedBox.shrink()
-                  : Align(
-                      alignment: Alignment.centerLeft,
-                      child: Chip(
-                        visualDensity: VisualDensity.compact,
-                        avatar: const Icon(Icons.currency_exchange, size: 14),
-                        label: Text(
-                          'TC BCB ref: ${_numberFormat.format(tc.tasaVenta)}',
-                          style: const TextStyle(fontSize: 11),
-                        ),
-                        backgroundColor: cs.primaryContainer.withValues(alpha: 0.4),
+            ref
+                .watch(
+                  tcVigenteRefProvider((
+                    codBanco: null,
+                    idMonedaOrigen: 3,
+                    idMonedaDestino: 4,
+                  )),
+                )
+                .when(
+                  data:
+                      (tc) =>
+                          tc == null
+                              ? const SizedBox.shrink()
+                              : Align(
+                                alignment: Alignment.centerLeft,
+                                child: Chip(
+                                  visualDensity: VisualDensity.compact,
+                                  avatar: const Icon(
+                                    Icons.currency_exchange,
+                                    size: 14,
+                                  ),
+                                  label: Text(
+                                    'TC BCB ref: ${_numberFormat.format(tc.tasaVenta)}',
+                                    style: const TextStyle(fontSize: 11),
+                                  ),
+                                  backgroundColor: cs.primaryContainer
+                                      .withValues(alpha: 0.4),
+                                ),
+                              ),
+                  loading:
+                      () => const SizedBox(
+                        height: 20,
+                        width: 20,
+                        child: CircularProgressIndicator(strokeWidth: 1.5),
                       ),
-                    ),
-              loading: () => const SizedBox(
-                height: 20,
-                width: 20,
-                child: CircularProgressIndicator(strokeWidth: 1.5),
-              ),
-              error: (_, __) => const SizedBox.shrink(),
-            ),
+                  error: (_, __) => const SizedBox.shrink(),
+                ),
             const SizedBox(height: 10),
 
             // Medio de Pago
@@ -2516,8 +3061,14 @@ class _DialogoAsientoState extends ConsumerState<_DialogoAsiento> {
                 isDense: true,
               ),
               items: const [
-                DropdownMenuItem(value: 'PR', child: Text('PR — Pago Recibido')),
-                DropdownMenuItem(value: 'PE', child: Text('PE — Pago Efectuado')),
+                DropdownMenuItem(
+                  value: 'PR',
+                  child: Text('PR — Pago Recibido'),
+                ),
+                DropdownMenuItem(
+                  value: 'PE',
+                  child: Text('PE — Pago Efectuado'),
+                ),
               ],
               onChanged: (v) => setState(() => _tipoAsiento = v ?? 'PR'),
             ),
@@ -2531,8 +3082,8 @@ class _DialogoAsientoState extends ConsumerState<_DialogoAsiento> {
                 border: OutlineInputBorder(),
                 isDense: true,
               ),
-              validator: (v) =>
-                  v == null || v.trim().isEmpty ? 'Requerido' : null,
+              validator:
+                  (v) => v == null || v.trim().isEmpty ? 'Requerido' : null,
             ),
             const SizedBox(height: 12),
 
@@ -2544,8 +3095,8 @@ class _DialogoAsientoState extends ConsumerState<_DialogoAsiento> {
                 border: OutlineInputBorder(),
                 isDense: true,
               ),
-              validator: (v) =>
-                  v == null || v.trim().isEmpty ? 'Requerido' : null,
+              validator:
+                  (v) => v == null || v.trim().isEmpty ? 'Requerido' : null,
             ),
             const SizedBox(height: 12),
 
@@ -2560,8 +3111,11 @@ class _DialogoAsientoState extends ConsumerState<_DialogoAsiento> {
                 helperText: 'Descripción del movimiento contable',
               ),
               maxLines: 2,
-              validator: (v) =>
-                  (v == null || v.trim().isEmpty) ? 'La glosa es obligatoria' : null,
+              validator:
+                  (v) =>
+                      (v == null || v.trim().isEmpty)
+                          ? 'La glosa es obligatoria'
+                          : null,
             ),
             const SizedBox(height: 12),
 
@@ -2575,8 +3129,8 @@ class _DialogoAsientoState extends ConsumerState<_DialogoAsiento> {
                       ButtonSegment(value: false, label: Text('Crédito Bs')),
                     ],
                     selected: {_esDebito},
-                    onSelectionChanged: (s) =>
-                        setState(() => _esDebito = s.first),
+                    onSelectionChanged:
+                        (s) => setState(() => _esDebito = s.first),
                   ),
                 ),
               ],
@@ -2586,14 +3140,14 @@ class _DialogoAsientoState extends ConsumerState<_DialogoAsiento> {
             // Monto Bs
             TextFormField(
               controller: _esDebito ? _debitoCtrl : _creditoCtrl,
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
               decoration: InputDecoration(
                 labelText: _esDebito ? 'Débito Bs' : 'Crédito Bs',
                 border: const OutlineInputBorder(),
                 isDense: true,
-                suffixText: _tc > 0
-                    ? 'TC ${_tc.toStringAsFixed(4)}'
-                    : null,
+                suffixText: _tc > 0 ? 'TC ${_tc.toStringAsFixed(4)}' : null,
               ),
               validator: (v) {
                 if (v == null || v.trim().isEmpty) return 'Requerido';
@@ -2607,10 +3161,7 @@ class _DialogoAsientoState extends ConsumerState<_DialogoAsiento> {
                 padding: const EdgeInsets.only(top: 4),
                 child: Text(
                   'Equivalente US: ~${_numberFormat.format((double.tryParse((_esDebito ? _debitoCtrl : _creditoCtrl).text.replaceAll(',', '.')) ?? 0) / _tc)}',
-                  style: TextStyle(
-                    fontSize: 11,
-                    color: cs.onSurfaceVariant,
-                  ),
+                  style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant),
                 ),
               ),
             const SizedBox(height: 20),
@@ -2620,7 +3171,8 @@ class _DialogoAsientoState extends ConsumerState<_DialogoAsiento> {
               children: [
                 Expanded(
                   child: OutlinedButton(
-                    onPressed: _cargando ? null : () => Navigator.of(context).pop(),
+                    onPressed:
+                        _cargando ? null : () => Navigator.of(context).pop(),
                     child: const Text('Cancelar'),
                   ),
                 ),
@@ -2628,13 +3180,14 @@ class _DialogoAsientoState extends ConsumerState<_DialogoAsiento> {
                 Expanded(
                   child: FilledButton(
                     onPressed: _cargando ? null : _guardar,
-                    child: _cargando
-                        ? const SizedBox(
-                            width: 18,
-                            height: 18,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                        : Text(isEdicion ? 'Actualizar' : 'Guardar'),
+                    child:
+                        _cargando
+                            ? const SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                            : Text(isEdicion ? 'Actualizar' : 'Guardar'),
                   ),
                 ),
               ],
@@ -2699,6 +3252,794 @@ class _ErrorTab extends StatelessWidget {
               style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+// ═════════════════════════════════════════════════════════════════════════════
+// Tab 6: Participantes (split de transacción — IPX / terceros)
+// ═════════════════════════════════════════════════════════════════════════════
+
+class _TabParticipantes extends ConsumerWidget {
+  final SolicitudPagoEntity solicitud;
+  final bool readOnly;
+  const _TabParticipantes({required this.solicitud, this.readOnly = false});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final cs = Theme.of(context).colorScheme;
+
+    final asyncTxns = ref.watch(
+      transaccionesXSolicitudProvider((
+        idSolicitud: solicitud.idSolicitud,
+        codEmpresa: solicitud.codEmpresa,
+      )),
+    );
+
+    return asyncTxns.when(
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (e, _) => _ErrorTab(message: e.toString()),
+      data: (txns) {
+        if (txns.isEmpty) {
+          return _EmptyTab(
+            icon: Icons.pie_chart_outline_rounded,
+            message: 'Sin transacciones — registre primero una transacción',
+          );
+        }
+
+        if (txns.length == 1) {
+          return _ParticipantesDeTransaccion(
+            txn: txns.first,
+            cs: cs,
+            readOnly: readOnly,
+          );
+        }
+
+        return ListView.builder(
+          padding: const EdgeInsets.all(12),
+          itemCount: txns.length,
+          itemBuilder: (context, i) {
+            final txn = txns[i];
+            return Card(
+              margin: const EdgeInsets.only(bottom: 10),
+              elevation: 0,
+              color: cs.surfaceContainerLow,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+                side: BorderSide(
+                  color: cs.outlineVariant.withValues(alpha: 0.4),
+                ),
+              ),
+              child: ExpansionTile(
+                leading: Icon(
+                  Icons.pie_chart_outline_rounded,
+                  size: 20,
+                  color: cs.primary,
+                ),
+                title: Text(
+                  'Txn #${txn.idTransaccion}',
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w600,
+                    fontSize: 13,
+                  ),
+                ),
+                subtitle: _EstadoBadge(estado: txn.estado),
+                children: [
+                  _ParticipantesDeTransaccion(
+                    txn: txn,
+                    cs: cs,
+                    readOnly: readOnly,
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+}
+
+class _ParticipantesDeTransaccion extends ConsumerWidget {
+  final TransaccionesEntity txn;
+  final ColorScheme cs;
+  final bool readOnly;
+  const _ParticipantesDeTransaccion({
+    required this.txn,
+    required this.cs,
+    this.readOnly = false,
+  });
+
+  static const _estadosEditables = {'PENDIENTE', 'PROCESADO', 'CONFIRMADO'};
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final asyncParticipantes = ref.watch(
+      participantesTransaccionProvider(txn.idTransaccion),
+    );
+    final asyncCuadre = ref.watch(
+      cuadreParticipantesProvider(txn.idTransaccion),
+    );
+    final puedeAgregar =
+        !readOnly && _estadosEditables.contains(txn.estado.toUpperCase());
+
+    return asyncParticipantes.when(
+      loading:
+          () => const Padding(
+            padding: EdgeInsets.all(24),
+            child: Center(child: CircularProgressIndicator()),
+          ),
+      error: (e, _) => _ErrorTab(message: e.toString()),
+      data:
+          (participantes) => Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              if (participantes.isEmpty)
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 24),
+                  child: _EmptyTab(
+                    icon: Icons.group_outlined,
+                    message: 'Sin participantes registrados',
+                  ),
+                )
+              else
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(12, 8, 12, 4),
+                  child: Column(
+                    children:
+                        participantes
+                            .map(
+                              (p) => _ParticipanteFila(
+                                participante: p,
+                                txn: txn,
+                                cs: cs,
+                                readOnly: readOnly,
+                              ),
+                            )
+                            .toList(),
+                  ),
+                ),
+
+              // Resumen de cuadre del split
+              asyncCuadre.when(
+                loading: () => const SizedBox.shrink(),
+                error: (_, __) => const SizedBox.shrink(),
+                data: (cuadre) {
+                  if (cuadre == null || cuadre.estadoCuadre.isEmpty) {
+                    return const SizedBox.shrink();
+                  }
+                  final cuadrado =
+                      cuadre.estadoCuadre.toUpperCase() == 'CUADRADO';
+                  final color = cuadrado ? Colors.green : Colors.red;
+                  return Container(
+                    margin: const EdgeInsets.fromLTRB(12, 4, 12, 8),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 10,
+                    ),
+                    decoration: BoxDecoration(
+                      color: color.withValues(alpha: 0.08),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: color.withValues(alpha: 0.35)),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(
+                              cuadrado
+                                  ? Icons.check_circle_rounded
+                                  : Icons.warning_rounded,
+                              color: color,
+                              size: 18,
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              cuadre.estadoCuadre,
+                              style: TextStyle(
+                                fontWeight: FontWeight.w700,
+                                fontSize: 13,
+                                color: color,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 6),
+                        Wrap(
+                          spacing: 16,
+                          runSpacing: 4,
+                          children: [
+                            _DataPair(
+                              label: 'Total \$us',
+                              value: _numberFormat.format(cuadre.totalMontoUs),
+                            ),
+                            _DataPair(
+                              label: 'Monto convertido \$us',
+                              value: _numberFormat.format(
+                                cuadre.montoConvertido,
+                              ),
+                            ),
+                            _DataPair(
+                              label: 'Diferencia \$us',
+                              value: _numberFormat.format(cuadre.diferenciaUs),
+                              bold: !cuadrado,
+                            ),
+                            _DataPair(
+                              label: 'Total %',
+                              value: _numberFormat.format(
+                                cuadre.totalPorcentaje,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              ),
+
+              if (puedeAgregar)
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+                  child: FilledButton.icon(
+                    icon: const Icon(Icons.add_rounded, size: 18),
+                    label: const Text('Agregar participante'),
+                    onPressed:
+                        () => _abrirDialogoParticipante(
+                          context,
+                          ref,
+                          txn,
+                          audUsuario: ref.read(userProvider)?.codUsuario ?? 0,
+                        ),
+                  ),
+                ),
+            ],
+          ),
+    );
+  }
+
+  void _abrirDialogoParticipante(
+    BuildContext context,
+    WidgetRef ref,
+    TransaccionesEntity txn, {
+    required int audUsuario,
+    TransaccionParticipanteEntity? editar,
+  }) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder:
+          (_) => _DialogoParticipante(
+            txn: txn,
+            audUsuario: audUsuario,
+            editar: editar,
+          ),
+    );
+  }
+}
+
+class _ParticipanteFila extends ConsumerStatefulWidget {
+  final TransaccionParticipanteEntity participante;
+  final TransaccionesEntity txn;
+  final ColorScheme cs;
+  final bool readOnly;
+  const _ParticipanteFila({
+    required this.participante,
+    required this.txn,
+    required this.cs,
+    this.readOnly = false,
+  });
+
+  @override
+  ConsumerState<_ParticipanteFila> createState() => _ParticipanteFilaState();
+}
+
+class _ParticipanteFilaState extends ConsumerState<_ParticipanteFila> {
+  bool _eliminando = false;
+
+  Color _tipoColor(String tipo) {
+    switch (tipo.toUpperCase()) {
+      case 'EMPRESA':
+        return Colors.blue;
+      case 'TERCERO':
+        return Colors.orange;
+      default:
+        return Colors.grey;
+    }
+  }
+
+  void _editar() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder:
+          (_) => _DialogoParticipante(
+            txn: widget.txn,
+            audUsuario: ref.read(userProvider)?.codUsuario ?? 0,
+            editar: widget.participante,
+          ),
+    );
+  }
+
+  Future<void> _eliminar() async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder:
+          (ctx) => AlertDialog(
+            title: const Text('Eliminar participante'),
+            content: Text(
+              '¿Confirma eliminar al participante "${widget.participante.nombre}"?\n'
+              'El participante se ocultará pero queda guardado (borrado lógico).',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx, false),
+                child: const Text('Cancelar'),
+              ),
+              FilledButton(
+                style: FilledButton.styleFrom(backgroundColor: Colors.red),
+                onPressed: () => Navigator.pop(ctx, true),
+                child: const Text('Eliminar'),
+              ),
+            ],
+          ),
+    );
+    if (ok != true || !mounted) return;
+
+    setState(() => _eliminando = true);
+    try {
+      final audUsuario = ref.read(userProvider)?.codUsuario ?? 0;
+      final repo = PagosExtranjerosImpl();
+      await repo.eliminarParticipante({
+        'idParticipante': widget.participante.idParticipante.toInt(),
+        'idTransaccion': widget.txn.idTransaccion.toInt(),
+        'audUsuario': audUsuario,
+      });
+      if (!mounted) return;
+      ref.invalidate(
+        participantesTransaccionProvider(widget.txn.idTransaccion),
+      );
+      ref.invalidate(cuadreParticipantesProvider(widget.txn.idTransaccion));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Participante eliminado')));
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(e.toString().replaceFirst('Exception: ', '')),
+          backgroundColor: Theme.of(context).colorScheme.error,
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _eliminando = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final p = widget.participante;
+    final cs = widget.cs;
+    final c = _tipoColor(p.tipoParticipante);
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 6),
+      decoration: BoxDecoration(
+        color: cs.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.35)),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(10, 8, 4, 4),
+            child: Row(
+              children: [
+                // Tipo badge
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 6,
+                    vertical: 2,
+                  ),
+                  decoration: BoxDecoration(
+                    color: c.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(4),
+                    border: Border.all(color: c.withValues(alpha: 0.35)),
+                  ),
+                  child: Text(
+                    p.tipoParticipante,
+                    style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w700,
+                      color: c,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                // Nombre + porcentaje + obs
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        p.nombre,
+                        style: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      if (p.porcentaje > 0)
+                        Text(
+                          '${_numberFormat.format(p.porcentaje)} %',
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: cs.onSurfaceVariant,
+                          ),
+                        ),
+                      if (p.observaciones.isNotEmpty)
+                        Text(
+                          p.observaciones,
+                          style: TextStyle(
+                            fontSize: 10,
+                            color: cs.primary.withValues(alpha: 0.75),
+                            fontStyle: FontStyle.italic,
+                            fontWeight: FontWeight.w500,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                          maxLines: 2,
+                        ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 8),
+                // Montos
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    if (p.montoUs > 0)
+                      Text(
+                        '\$us ${_numberFormat.format(p.montoUs)}',
+                        style: const TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    if (p.montoBs > 0)
+                      Text(
+                        'Bs ${_numberFormat.format(p.montoBs)}',
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: cs.onSurfaceVariant,
+                        ),
+                      ),
+                    if (p.itfBs > 0)
+                      Text(
+                        'ITF Bs ${_numberFormat.format(p.itfBs)}',
+                        style: TextStyle(
+                          fontSize: 10,
+                          color: cs.onSurfaceVariant.withValues(alpha: 0.8),
+                        ),
+                      ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          if (!widget.readOnly)
+            if (_eliminando)
+              const Padding(
+                padding: EdgeInsets.only(bottom: 6),
+                child: SizedBox(
+                  height: 18,
+                  width: 18,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                ),
+              )
+            else
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  TextButton.icon(
+                    icon: const Icon(Icons.edit_rounded, size: 14),
+                    label: const Text('Editar', style: TextStyle(fontSize: 11)),
+                    style: TextButton.styleFrom(
+                      foregroundColor: widget.cs.primary,
+                    ),
+                    onPressed: _editar,
+                  ),
+                  TextButton.icon(
+                    icon: const Icon(Icons.delete_outline_rounded, size: 14),
+                    label: const Text(
+                      'Eliminar',
+                      style: TextStyle(fontSize: 11),
+                    ),
+                    style: TextButton.styleFrom(foregroundColor: Colors.red),
+                    onPressed: _eliminar,
+                  ),
+                ],
+              ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─── Diálogo / BottomSheet para crear/editar participante ────────────────────
+
+class _DialogoParticipante extends ConsumerStatefulWidget {
+  final TransaccionesEntity txn;
+  final TransaccionParticipanteEntity? editar;
+  final int audUsuario;
+  const _DialogoParticipante({
+    required this.txn,
+    required this.audUsuario,
+    this.editar,
+  });
+
+  @override
+  ConsumerState<_DialogoParticipante> createState() =>
+      _DialogoParticipanteState();
+}
+
+class _DialogoParticipanteState extends ConsumerState<_DialogoParticipante> {
+  final _formKey = GlobalKey<FormState>();
+  String _tipoParticipante = 'EMPRESA';
+  final _nombreCtrl = TextEditingController();
+  final _montoUsCtrl = TextEditingController();
+  final _porcentajeCtrl = TextEditingController();
+  final _itfBsCtrl = TextEditingController();
+  final _observacionesCtrl = TextEditingController();
+  bool _cargando = false;
+
+  @override
+  void initState() {
+    super.initState();
+    final e = widget.editar;
+    if (e != null) {
+      _tipoParticipante = e.tipoParticipante;
+      _nombreCtrl.text = e.nombre;
+      if (e.montoUs > 0) _montoUsCtrl.text = e.montoUs.toStringAsFixed(2);
+      if (e.porcentaje > 0) {
+        _porcentajeCtrl.text = e.porcentaje.toStringAsFixed(2);
+      }
+      if (e.itfBs > 0) _itfBsCtrl.text = e.itfBs.toStringAsFixed(2);
+      _observacionesCtrl.text = e.observaciones;
+    }
+  }
+
+  @override
+  void dispose() {
+    _nombreCtrl.dispose();
+    _montoUsCtrl.dispose();
+    _porcentajeCtrl.dispose();
+    _itfBsCtrl.dispose();
+    _observacionesCtrl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _guardar() async {
+    if (!_formKey.currentState!.validate()) return;
+    setState(() => _cargando = true);
+
+    final montoUs =
+        double.tryParse(_montoUsCtrl.text.replaceAll(',', '.')) ?? 0.0;
+    final porcentaje =
+        double.tryParse(_porcentajeCtrl.text.replaceAll(',', '.')) ?? 0.0;
+    final itfBs = double.tryParse(_itfBsCtrl.text.replaceAll(',', '.')) ?? 0.0;
+    final editar = widget.editar;
+
+    // El SP deriva montoBs e itfUs con el TC de la transacción,
+    // y calcula el porcentaje automáticamente si se envía 0.
+    final payload = <String, dynamic>{
+      'idParticipante': editar?.idParticipante.toInt() ?? 0,
+      'idTransaccion': widget.txn.idTransaccion.toInt(),
+      'tipoParticipante': _tipoParticipante,
+      'nombre': _nombreCtrl.text.trim(),
+      'porcentaje': porcentaje,
+      'montoUs': montoUs,
+      'itfBs': itfBs,
+      'observaciones': _observacionesCtrl.text.trim(),
+      'audUsuario': widget.audUsuario,
+    };
+
+    try {
+      final repo = PagosExtranjerosImpl();
+      await repo.registrarParticipante(payload);
+      if (!mounted) return;
+      ref.invalidate(
+        participantesTransaccionProvider(widget.txn.idTransaccion),
+      );
+      ref.invalidate(cuadreParticipantesProvider(widget.txn.idTransaccion));
+      Navigator.of(context).pop();
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Participante guardado exitosamente')),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(e.toString().replaceFirst('Exception: ', '')),
+          backgroundColor: Theme.of(context).colorScheme.error,
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _cargando = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final esEdicion = widget.editar != null;
+
+    return Padding(
+      padding: EdgeInsets.only(
+        bottom: MediaQuery.of(context).viewInsets.bottom,
+      ),
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+        child: Form(
+          key: _formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Row(
+                children: [
+                  Icon(Icons.pie_chart_outline_rounded, color: cs.primary),
+                  const SizedBox(width: 8),
+                  Text(
+                    esEdicion ? 'Editar participante' : 'Nuevo participante',
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const Spacer(),
+                  Text(
+                    'Txn #${widget.txn.idTransaccion}',
+                    style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              DropdownButtonFormField<String>(
+                value: _tipoParticipante,
+                decoration: const InputDecoration(
+                  labelText: 'Tipo de participante',
+                  border: OutlineInputBorder(),
+                  isDense: true,
+                ),
+                items: const [
+                  DropdownMenuItem(
+                    value: 'EMPRESA',
+                    child: Text('EMPRESA (IPX / ESPP)'),
+                  ),
+                  DropdownMenuItem(
+                    value: 'TERCERO',
+                    child: Text('TERCERO (Monrroy, Nemer…)'),
+                  ),
+                ],
+                onChanged:
+                    (v) => setState(() => _tipoParticipante = v ?? 'EMPRESA'),
+              ),
+              const SizedBox(height: 12),
+              TextFormField(
+                controller: _nombreCtrl,
+                decoration: const InputDecoration(
+                  labelText: 'Nombre',
+                  hintText: 'IPX, MONRROY RODRIGO, NEMER…',
+                  border: OutlineInputBorder(),
+                  isDense: true,
+                ),
+                validator:
+                    (v) =>
+                        (v == null || v.trim().isEmpty)
+                            ? 'Nombre obligatorio'
+                            : null,
+              ),
+              const SizedBox(height: 12),
+              TextFormField(
+                controller: _montoUsCtrl,
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
+                ),
+                decoration: const InputDecoration(
+                  labelText: 'Monto \$us',
+                  border: OutlineInputBorder(),
+                  isDense: true,
+                ),
+                validator: (v) {
+                  final n = double.tryParse((v ?? '').replaceAll(',', '.'));
+                  if (n == null || n <= 0) return 'Monto \$us mayor a 0';
+                  return null;
+                },
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(
+                    child: TextFormField(
+                      controller: _porcentajeCtrl,
+                      keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true,
+                      ),
+                      decoration: const InputDecoration(
+                        labelText: '% (vacío = automático)',
+                        border: OutlineInputBorder(),
+                        isDense: true,
+                      ),
+                      validator: (v) {
+                        if (v == null || v.trim().isEmpty) return null;
+                        final n = double.tryParse(v.replaceAll(',', '.'));
+                        if (n == null || n < 0 || n > 100) {
+                          return 'Entre 0 y 100';
+                        }
+                        return null;
+                      },
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: TextFormField(
+                      controller: _itfBsCtrl,
+                      keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true,
+                      ),
+                      decoration: const InputDecoration(
+                        labelText: 'ITF Bs (opcional)',
+                        border: OutlineInputBorder(),
+                        isDense: true,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              TextFormField(
+                controller: _observacionesCtrl,
+                maxLines: 2,
+                decoration: const InputDecoration(
+                  labelText: 'Observaciones (opcional)',
+                  border: OutlineInputBorder(),
+                  isDense: true,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'El monto Bs se calcula con el TC de la transacción '
+                '(${_numberFormat.format(widget.txn.tipoCambioAplicado)}).',
+                style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant),
+              ),
+              const SizedBox(height: 16),
+              FilledButton.icon(
+                icon:
+                    _cargando
+                        ? const SizedBox(
+                          height: 16,
+                          width: 16,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                        : const Icon(Icons.save_rounded, size: 18),
+                label: Text(esEdicion ? 'Guardar cambios' : 'Registrar'),
+                onPressed: _cargando ? null : _guardar,
+              ),
+            ],
+          ),
         ),
       ),
     );

@@ -44,17 +44,20 @@ class _FormAfiliacionSeguroState extends ConsumerState<FormAfiliacionSeguro> {
   void initState() {
     super.initState();
     _formKey = GlobalKey<FormState>();
-    _nroAfiliacionCtrl =
-        TextEditingController(text: widget.afiliacionInicial?.nroAfiliacion ?? '');
+    _nroAfiliacionCtrl = TextEditingController(
+      text: widget.afiliacionInicial?.nroAfiliacion ?? '',
+    );
     _fechaAfiliacionCtrl = TextEditingController(
-      text: widget.afiliacionInicial != null
-          ? FechaUtils.formatDate(widget.afiliacionInicial!.fechaAfiliacion)
-          : '',
+      text:
+          widget.afiliacionInicial != null
+              ? FechaUtils.formatDate(widget.afiliacionInicial!.fechaAfiliacion)
+              : '',
     );
     _fechaBajaCtrl = TextEditingController(
-      text: widget.afiliacionInicial?.fechaBaja != null
-          ? FechaUtils.formatDate(widget.afiliacionInicial!.fechaBaja!)
-          : '',
+      text:
+          widget.afiliacionInicial?.fechaBaja != null
+              ? FechaUtils.formatDate(widget.afiliacionInicial!.fechaBaja!)
+              : '',
     );
     _codSeguroSeleccionado = widget.afiliacionInicial?.codSeguro ?? 0;
   }
@@ -95,9 +98,7 @@ class _FormAfiliacionSeguroState extends ConsumerState<FormAfiliacionSeguro> {
           SizedBox(height: context.largeSpacing),
 
           // GRUPO 2: Número y Fechas (Responsive)
-          context.isMobile
-              ? _buildMobileLayout()
-              : _buildWebLayout(),
+          context.isMobile ? _buildMobileLayout() : _buildWebLayout(),
 
           SizedBox(height: context.largeSpacing),
 
@@ -140,13 +141,9 @@ class _FormAfiliacionSeguroState extends ConsumerState<FormAfiliacionSeguro> {
         Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Expanded(
-              child: _buildFechaAfiliacionField(),
-            ),
+            Expanded(child: _buildFechaAfiliacionField()),
             SizedBox(width: context.spacing),
-            Expanded(
-              child: _buildFechaBajaField(),
-            ),
+            Expanded(child: _buildFechaBajaField()),
           ],
         ),
       ],
@@ -173,7 +170,8 @@ class _FormAfiliacionSeguroState extends ConsumerState<FormAfiliacionSeguro> {
           return Column(
             children: [
               DropdownButtonFormField<int>(
-                value: _codSeguroSeleccionado != 0 ? _codSeguroSeleccionado : null,
+                value:
+                    _codSeguroSeleccionado != 0 ? _codSeguroSeleccionado : null,
                 isExpanded: true,
                 decoration: InputDecoration(
                   labelText: 'Seguro',
@@ -183,17 +181,18 @@ class _FormAfiliacionSeguroState extends ConsumerState<FormAfiliacionSeguro> {
                   ),
                   prefixIcon: const Icon(Icons.shield),
                 ),
-                items: seguros
-                    .map(
-                      (seguro) => DropdownMenuItem<int>(
-                        value: seguro.codSeguro,
-                        child: Text(
-                          '${seguro.nombre} - ${seguro.regional}',
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                    )
-                    .toList(),
+                items:
+                    seguros
+                        .map(
+                          (seguro) => DropdownMenuItem<int>(
+                            value: seguro.codSeguro,
+                            child: Text(
+                              '${seguro.nombre} - ${seguro.regional}',
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        )
+                        .toList(),
                 onChanged: (codSeguro) {
                   setState(() => _codSeguroSeleccionado = codSeguro ?? 0);
                 },
@@ -227,7 +226,10 @@ class _FormAfiliacionSeguroState extends ConsumerState<FormAfiliacionSeguro> {
             children: [
               Expanded(
                 child: DropdownButtonFormField<int>(
-                  value: _codSeguroSeleccionado != 0 ? _codSeguroSeleccionado : null,
+                  value:
+                      _codSeguroSeleccionado != 0
+                          ? _codSeguroSeleccionado
+                          : null,
                   isExpanded: true,
                   decoration: InputDecoration(
                     labelText: 'Seguro',
@@ -237,14 +239,17 @@ class _FormAfiliacionSeguroState extends ConsumerState<FormAfiliacionSeguro> {
                     ),
                     prefixIcon: const Icon(Icons.shield),
                   ),
-                  items: seguros
-                      .map(
-                        (seguro) => DropdownMenuItem<int>(
-                          value: seguro.codSeguro,
-                          child: Text('${seguro.nombre} - ${seguro.regional}'),
-                        ),
-                      )
-                      .toList(),
+                  items:
+                      seguros
+                          .map(
+                            (seguro) => DropdownMenuItem<int>(
+                              value: seguro.codSeguro,
+                              child: Text(
+                                '${seguro.nombre} - ${seguro.regional}',
+                              ),
+                            ),
+                          )
+                          .toList(),
                   onChanged: (codSeguro) {
                     setState(() => _codSeguroSeleccionado = codSeguro ?? 0);
                   },
@@ -277,47 +282,48 @@ class _FormAfiliacionSeguroState extends ConsumerState<FormAfiliacionSeguro> {
     );
   }
 
-    // ============================================================================
+  // ============================================================================
   // DIALOG DE SEGUROS
   // ============================================================================
 
   void _showSegurosDialog(BuildContext context) {
     showDialog(
       context: context,
-      builder: (dialogContext) => Dialog(
-        insetPadding: EdgeInsets.symmetric(
-          horizontal: context.isMobile ? context.spacing / 2 : 100,
-          vertical: context.isMobile ? context.spacing : context.spacing,
-        ),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(0),
-        ),
-        child: SizedBox(
-          width: context.isMobile ? double.infinity : 800,
-          height: context.isMobile ? 500 : 600,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              AppBar(
-                title: const Text('Gestión de Seguros'),
-                automaticallyImplyLeading: true,
-                leading: IconButton(
-                  icon: const Icon(Icons.close),
-                  onPressed: () => Navigator.of(dialogContext).pop(),
-                ),
-              ),
-              Expanded(
-                child: SingleChildScrollView(
-                  child: Padding(
-                    padding: EdgeInsets.all(context.spacing),
-                    child: const DetalleSeguro(),
+      builder:
+          (dialogContext) => Dialog(
+            insetPadding: EdgeInsets.symmetric(
+              horizontal: context.isMobile ? context.spacing / 2 : 100,
+              vertical: context.isMobile ? context.spacing : context.spacing,
+            ),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(0),
+            ),
+            child: SizedBox(
+              width: context.isMobile ? double.infinity : 800,
+              height: context.isMobile ? 500 : 600,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  AppBar(
+                    title: const Text('Gestión de Seguros'),
+                    automaticallyImplyLeading: true,
+                    leading: IconButton(
+                      icon: const Icon(Icons.close),
+                      onPressed: () => Navigator.of(dialogContext).pop(),
+                    ),
                   ),
-                ),
+                  Expanded(
+                    child: SingleChildScrollView(
+                      child: Padding(
+                        padding: EdgeInsets.all(context.spacing),
+                        child: const DetalleSeguro(),
+                      ),
+                    ),
+                  ),
+                ],
               ),
-            ],
+            ),
           ),
-        ),
-      ),
     );
   }
 
@@ -331,12 +337,10 @@ class _FormAfiliacionSeguroState extends ConsumerState<FormAfiliacionSeguro> {
       decoration: InputDecoration(
         labelText: 'Número de Afiliación',
         hintText: 'Ej: 123456-A',
-        border: OutlineInputBorder(
-          borderRadius: context.borderRadius,
-        ),
+        border: OutlineInputBorder(borderRadius: context.borderRadius),
         prefixIcon: const Icon(Icons.badge),
       ),
-      validator: validarNroAfiliacion,
+      //validator: validarNroAfiliacion,
     );
   }
 
@@ -346,10 +350,10 @@ class _FormAfiliacionSeguroState extends ConsumerState<FormAfiliacionSeguro> {
       label: 'Fecha de Afiliación',
       firstDate: DateTime(2000),
       lastDate: DateTime.now(),
-      validator: (value) => validarFechaAfiliacion(
-        value,
-        fechaBajaText: _fechaBajaCtrl.text,
-      ),
+      // validator: (value) => validarFechaAfiliacion(
+      //   value,
+      //   fechaBajaText: _fechaBajaCtrl.text,
+      // ),
     );
   }
 
@@ -359,10 +363,10 @@ class _FormAfiliacionSeguroState extends ConsumerState<FormAfiliacionSeguro> {
       label: 'Fecha de Baja (Opcional)',
       firstDate: DateTime(2000),
       lastDate: DateTime.now(),
-      validator: (value) => validarFechaBaja(
-        value,
-        fechaAfiliacionText: _fechaAfiliacionCtrl.text,
-      ),
+      // validator: (value) => validarFechaBaja(
+      //   value,
+      //   fechaAfiliacionText: _fechaAfiliacionCtrl.text,
+      // ),
     );
   }
 
@@ -374,10 +378,7 @@ class _FormAfiliacionSeguroState extends ConsumerState<FormAfiliacionSeguro> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.end,
       children: [
-        TextButton(
-          onPressed: widget.onCancel,
-          child: const Text('Cancelar'),
-        ),
+        TextButton(onPressed: widget.onCancel, child: const Text('Cancelar')),
         SizedBox(width: context.spacing),
         ElevatedButton.icon(
           icon: const Icon(Icons.save),
@@ -403,14 +404,15 @@ class _FormAfiliacionSeguroState extends ConsumerState<FormAfiliacionSeguro> {
     }
 
     final fechaAfiliacion = FechaUtils.parseDate(_fechaAfiliacionCtrl.text);
-    final fechaBaja = _fechaBajaCtrl.text.isNotEmpty
-        ? FechaUtils.parseDate(_fechaBajaCtrl.text)
-        : null;
+    final fechaBaja =
+        _fechaBajaCtrl.text.isNotEmpty
+            ? FechaUtils.parseDate(_fechaBajaCtrl.text)
+            : null;
 
-    if (fechaAfiliacion == null) {
-      showErrorMessage(context, 'Fecha de afiliación inválida');
-      return;
-    }
+    // if (fechaAfiliacion == null) {
+    //   showErrorMessage(context, 'Fecha de afiliación inválida');
+    //   return;
+    // }
 
     // Obtener el seguro seleccionado desde el provider
     final segurosAsync = ref.read(obtenerSeguros);

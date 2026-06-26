@@ -6,6 +6,7 @@ import 'package:bosque_flutter/core/network/dio_client.dart';
 import 'package:dio/dio.dart';
 import 'package:bosque_flutter/data/models/asiento_model.dart';
 import 'package:bosque_flutter/data/models/canales_pago_model.dart';
+import 'package:bosque_flutter/data/models/transaccion_participante_model.dart';
 import 'package:bosque_flutter/data/models/cargo_pago_model.dart';
 import 'package:bosque_flutter/data/models/config_comisiones_banco_model.dart';
 import 'package:bosque_flutter/data/models/cotizaciones_model.dart';
@@ -22,6 +23,7 @@ import 'package:bosque_flutter/data/models/tipos_transaccion_model.dart';
 import 'package:bosque_flutter/data/models/transacciones_model.dart';
 import 'package:bosque_flutter/domain/entities/canales_pago_entity.dart';
 import 'package:bosque_flutter/domain/entities/cargo_pago_entity.dart';
+import 'package:bosque_flutter/domain/entities/transaccion_participante_entity.dart';
 import 'package:bosque_flutter/domain/entities/config_comisiones_banco_entity.dart';
 import 'package:bosque_flutter/domain/entities/cotizaciones_entity.dart';
 import 'package:bosque_flutter/domain/entities/detalle_solicitud_entity.dart';
@@ -58,6 +60,40 @@ class PagosExtranjerosImpl extends BaseApiRepository
         endpoint: AppConstants.tpexAprobarSolicitud,
         data: payload,
         errorMessage: 'Error al aprobar la solicitud',
+      );
+
+  // ─── Aprobación granular ────────────────────────────────────────────
+
+  @override
+  Future<BigInt> aprobarCuota(Map<String, dynamic> payload) =>
+      postAndReturnId(
+        endpoint: AppConstants.tpexAprobarCuota,
+        data: payload,
+        errorMessage: 'Error al aprobar la cuota',
+      );
+
+  @override
+  Future<BigInt> revertirAprobacionCuota(Map<String, dynamic> payload) =>
+      postAndReturnId(
+        endpoint: AppConstants.tpexRevertirCuota,
+        data: payload,
+        errorMessage: 'Error al revertir la aprobación de la cuota',
+      );
+
+  @override
+  Future<BigInt> aprobarProveedor(Map<String, dynamic> payload) =>
+      postAndReturnId(
+        endpoint: AppConstants.tpexAprobarProveedor,
+        data: payload,
+        errorMessage: 'Error al aprobar el proveedor',
+      );
+
+  @override
+  Future<BigInt> rechazarProveedor(Map<String, dynamic> payload) =>
+      postAndReturnId(
+        endpoint: AppConstants.tpexRechazarProveedor,
+        data: payload,
+        errorMessage: 'Error al rechazar el proveedor',
       );
 
   // ════════════════════════════════════════════════════════════════════
@@ -178,6 +214,29 @@ class PagosExtranjerosImpl extends BaseApiRepository
   }
 
   @override
+  Future<List<DetalleSolicitudEntity>> getFacProvYOrdCompraPorProyecto(
+    int codEmpresa,
+    String project,
+  ) async {
+    // El SP (ACCION C) devuelve docNum/descripcion desde SAP; se adaptan
+    // a los nombres que usa DetalleSolicitudModel (facturaProvSap/tipoDocumento).
+    final modelos = await postAndReturnList<DetalleSolicitudModel>(
+      endpoint: AppConstants.lstDocumentosProyecto,
+      data: {'codEmpresa': codEmpresa, 'project': project},
+      fromJson:
+          (json) => DetalleSolicitudModel.fromJson({
+            'facturaProvSap': json['docNum'],
+            'tipoDocumento': json['descripcion'],
+            'codEmpresa': json['codEmpresa'],
+            // DocTotal de SAP (ACCION C lo devuelve como montoTotal); se mapea
+            // al campo del modelo para que el total del documento no quede en 0.
+            'montoTotalDocumento': json['montoTotal'],
+          }),
+    );
+    return modelos.map((m) => m.toEntity()).toList();
+  }
+
+  @override
   Future<List<SolicitudPagoEntity>> getSolicitudesRegistradas(
     DateTime fechaInicio,
     DateTime fechaFin,
@@ -279,7 +338,6 @@ class PagosExtranjerosImpl extends BaseApiRepository
         .toList();
   }
 
-  @override
   Future<TiposCambioEntity?> getTCVigenteRef({
     int? codBanco,
     required int idMonedaOrigen,
@@ -435,6 +493,14 @@ class PagosExtranjerosImpl extends BaseApiRepository
   // ════════════════════════════════════════════════════════════════════
 
   @override
+  Future<BigInt> corregirComprobante(Map<String, dynamic> payload) =>
+      postAndReturnId(
+        endpoint: AppConstants.tpexCorregirComprobante,
+        data: payload,
+        errorMessage: 'Error al corregir el comprobante',
+      );
+
+  @override
   Future<BigInt> registrarAsiento(Map<String, dynamic> payload) =>
       postAndReturnId(
         endpoint: AppConstants.tpexRegistrarAsiento,
@@ -469,6 +535,51 @@ class PagosExtranjerosImpl extends BaseApiRepository
       data: {'idTransaccion': idTransaccion.toInt()},
       fromJson: (json) => AsientoModel.fromJson(json),
       errorMessage: 'Error al validar cuadre de asientos',
+    );
+    return model?.toEntity();
+  }
+
+  // ════════════════════════════════════════════════════════════════════
+  // Participantes (split de transacción)
+  // ════════════════════════════════════════════════════════════════════
+
+  @override
+  Future<BigInt> registrarParticipante(Map<String, dynamic> payload) =>
+      postAndReturnId(
+        endpoint: AppConstants.tpexRegistrarParticipante,
+        data: payload,
+        errorMessage: 'Error al registrar el participante',
+      );
+
+  @override
+  Future<BigInt> eliminarParticipante(Map<String, dynamic> payload) =>
+      postAndReturnId(
+        endpoint: AppConstants.tpexEliminarParticipante,
+        data: payload,
+        errorMessage: 'Error al eliminar el participante',
+      );
+
+  @override
+  Future<List<TransaccionParticipanteEntity>> getParticipantesPorTransaccion(
+    BigInt idTransaccion,
+  ) async {
+    final modelos = await postAndReturnList<TransaccionParticipanteModel>(
+      endpoint: AppConstants.tpexObtenerParticipantesTransaccion,
+      data: {'idTransaccion': idTransaccion.toInt()},
+      fromJson: (json) => TransaccionParticipanteModel.fromJson(json),
+    );
+    return modelos.map((m) => m.toEntity()).toList();
+  }
+
+  @override
+  Future<TransaccionParticipanteEntity?> validarCuadreParticipantes(
+    BigInt idTransaccion,
+  ) async {
+    final model = await postAndReturnObject<TransaccionParticipanteModel>(
+      endpoint: AppConstants.tpexValidarCuadreParticipantes,
+      data: {'idTransaccion': idTransaccion.toInt()},
+      fromJson: (json) => TransaccionParticipanteModel.fromJson(json),
+      errorMessage: 'Error al validar cuadre de participantes',
     );
     return model?.toEntity();
   }

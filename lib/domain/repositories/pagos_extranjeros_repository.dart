@@ -2,6 +2,7 @@ import 'dart:typed_data';
 
 import 'package:bosque_flutter/domain/entities/asiento_entity.dart';
 import 'package:bosque_flutter/domain/entities/cargo_pago_entity.dart';
+import 'package:bosque_flutter/domain/entities/transaccion_participante_entity.dart';
 import 'package:bosque_flutter/domain/entities/canales_pago_entity.dart';
 import 'package:bosque_flutter/domain/entities/config_comisiones_banco_entity.dart';
 import 'package:bosque_flutter/domain/entities/cotizaciones_entity.dart';
@@ -26,6 +27,27 @@ abstract class PagosExtranjerosRepository {
 
   /// Cambia el estado de la solicitud (PENDIENTE → APROBADA, etc.) + log.
   Future<BigInt> aprobarSolicitud(Map<String, dynamic> payload);
+
+  // ══ Aprobación granular ════════════════════════════════════════════
+  // Cada cuota (DetalleSolicitud) se aprueba por separado.
+  // Cuando todas las cuotas de un proveedor están aprobadas, el backend
+  // marca automáticamente al SolicitudProveedor como APROBADO.
+
+  /// Aprueba una cuota individual (DetalleSolicitud).
+  /// Payload: { idDetalle, audUsuario }
+  Future<BigInt> aprobarCuota(Map<String, dynamic> payload);
+
+  /// Revierte la aprobación de una cuota previamente aprobada.
+  /// Payload: { idDetalle, audUsuario }
+  Future<BigInt> revertirAprobacionCuota(Map<String, dynamic> payload);
+
+  /// Aprueba manualmente todas las cuotas de un proveedor.
+  /// Payload: { idSolicitudProveedor, obsAprobacion, audUsuario }
+  Future<BigInt> aprobarProveedor(Map<String, dynamic> payload);
+
+  /// Rechaza un proveedor (queda excluido del cálculo de cotizaciones).
+  /// Payload: { idSolicitudProveedor, obsAprobacion, audUsuario }
+  Future<BigInt> rechazarProveedor(Map<String, dynamic> payload);
 
   // ══ FASE 2 ─ Cotización ═════════════════════════════════════════
 
@@ -66,6 +88,10 @@ abstract class PagosExtranjerosRepository {
   Future<List<EmpresaEntity>> getEmpresas();
   Future<List<ProveedorEmpresaEntity>> getProveedoresXEmpresa(int codEmpresa);
   Future<List<DetalleSolicitudEntity>> getFacProvYOrdCompra(int codEmpresa);
+  Future<List<DetalleSolicitudEntity>> getFacProvYOrdCompraPorProyecto(
+    int codEmpresa,
+    String project,
+  );
   Future<List<SolicitudPagoEntity>> getSolicitudesRegistradas(
     DateTime fechaInicio,
     DateTime fechaFin,
@@ -150,10 +176,26 @@ abstract class PagosExtranjerosRepository {
   Future<BigInt> registrarConfigComisiones(Map<String, dynamic> payload);
   Future<BigInt> eliminarConfigComisiones(Map<String, dynamic> payload);
 
+  /// Corrige SOLO el comprobante de una transacción (N° bancario, fecha valor
+  /// y/o voucher), incluso si ya está CONFIRMADA. No reabre el pago.
+  /// Payload: { idTransaccion, numeroTransaccion?, fechaValor?, rutaVoucher?, audUsuario }
+  Future<BigInt> corregirComprobante(Map<String, dynamic> payload);
+
   // ══ Asientos contables ════════════════════════════════════════════════════
 
   Future<BigInt> registrarAsiento(Map<String, dynamic> payload);
   Future<BigInt> eliminarAsiento(Map<String, dynamic> payload);
   Future<List<AsientoEntity>> getAsientosPorTransaccion(BigInt idTransaccion);
   Future<AsientoEntity?> validarCuadreAsientos(BigInt idTransaccion);
+
+  // ══ Participantes (split de transacción) ════════════════════════════════════
+
+  Future<BigInt> registrarParticipante(Map<String, dynamic> payload);
+  Future<BigInt> eliminarParticipante(Map<String, dynamic> payload);
+  Future<List<TransaccionParticipanteEntity>> getParticipantesPorTransaccion(
+    BigInt idTransaccion,
+  );
+  Future<TransaccionParticipanteEntity?> validarCuadreParticipantes(
+    BigInt idTransaccion,
+  );
 }

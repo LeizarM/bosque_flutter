@@ -41,6 +41,7 @@ class TransaccionesModel {
   String metodoExportadora;
   String estado;
   String observaciones;
+  BigInt? idTransaccionOrigen; // vínculo devolución → transacción origen
   int audUsuario;
   String? rutaVoucher;
   bool tieneVoucher;
@@ -85,6 +86,7 @@ class TransaccionesModel {
     required this.metodoExportadora,
     required this.estado,
     required this.observaciones,
+    this.idTransaccionOrigen,
     required this.audUsuario,
     this.rutaVoucher,
     this.tieneVoucher = false,
@@ -155,6 +157,10 @@ class TransaccionesModel {
       metodoExportadora: json["metodoExportadora"] ?? '',
       estado: json["estado"] ?? '',
       observaciones: json["observaciones"] ?? '',
+      idTransaccionOrigen:
+          json["idTransaccionOrigen"] != null && json["idTransaccionOrigen"] != 0
+              ? BigInt.from(json["idTransaccionOrigen"])
+              : null,
       audUsuario: json["audUsuario"] ?? 0,
       rutaVoucher: json["rutaVoucher"] as String?,
       tieneVoucher: json["tieneVoucher"] == true || json["tieneVoucher"] == 1,
@@ -215,6 +221,7 @@ class TransaccionesModel {
     "metodoExportadora": metodoExportadora,
     "estado": estado,
     "observaciones": observaciones,
+    "idTransaccionOrigen": idTransaccionOrigen?.toInt() ?? 0,
     "audUsuario": audUsuario,
     "cargos": cargos.map((c) => c.toJson()).toList(),
   };
@@ -252,6 +259,7 @@ class TransaccionesModel {
     metodoExportadora: metodoExportadora,
     estado: estado,
     observaciones: observaciones,
+    idTransaccionOrigen: idTransaccionOrigen,
     audUsuario: audUsuario,
     rutaVoucher: rutaVoucher,
     tieneVoucher: tieneVoucher,
@@ -297,6 +305,7 @@ class TransaccionesModel {
         metodoExportadora: entity.metodoExportadora,
         estado: entity.estado,
         observaciones: entity.observaciones,
+        idTransaccionOrigen: entity.idTransaccionOrigen,
         audUsuario: entity.audUsuario,
         rutaVoucher: entity.rutaVoucher,
         tieneVoucher: entity.tieneVoucher,

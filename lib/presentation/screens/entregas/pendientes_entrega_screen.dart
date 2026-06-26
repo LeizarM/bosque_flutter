@@ -243,19 +243,16 @@ class _PendientesEntregaScreenState
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             // Encabezado
-            Container(
-              color: colorScheme.primaryContainer.withValues(alpha: 0.4),
-              child: _flexRow(
-                _cols
-                    .map(
-                      (c) => (
-                        flex: c.$2,
-                        child: Text(c.$1, style: headerStyle),
-                        right: c.$3,
-                      ),
-                    )
-                    .toList(),
-              ),
+            _flexRow(
+              _cols
+                  .map(
+                    (c) => (
+                      flex: c.$2,
+                      child: Text(c.$1, style: headerStyle),
+                      right: c.$3,
+                    ),
+                  )
+                  .toList(),
             ),
             const Divider(height: 1),
             // Filas

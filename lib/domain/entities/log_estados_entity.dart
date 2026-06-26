@@ -10,6 +10,7 @@ class LogEstadosEntity {
   String observaciones;
   DateTime fechaCreacion;
   int audUsuario;
+  String nombreUsuario;
 
   LogEstadosEntity({
     required this.idLog,
@@ -23,5 +24,6 @@ class LogEstadosEntity {
     required this.observaciones,
     required this.fechaCreacion,
     required this.audUsuario,
+    this.nombreUsuario = '',
   });
 }
