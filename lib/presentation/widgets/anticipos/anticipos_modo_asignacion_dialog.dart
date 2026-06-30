@@ -25,7 +25,9 @@ class ModoAsignacionDialog extends ConsumerWidget {
     final esTigo =
         cabecera.moduloOrigen != null
             ? cabecera.moduloOrigen!.toUpperCase() == 'TIGO'
-            : cabecera.concepto.toUpperCase().contains('TIGO');
+            : cabecera.concepto.toUpperCase().contains('TIGO') ||
+                cabecera.concepto.toUpperCase().contains('SERVICIO CELULAR');
+    ;
 
     final tigoSub =
         !esTigo

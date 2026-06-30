@@ -10,7 +10,7 @@ class AppConstants {
 
   static const String _compiledBaseUrlDev = String.fromEnvironment(
     'BASE_URL_DEV',
-    defaultValue: 'http://192.168.3.107:9223',
+    defaultValue: 'http://192.168.3.108:9223',
   );
 
   // Selector inteligente de URL base
@@ -336,8 +336,7 @@ class AppConstants {
   static const String tpexAprobarSolicitud =
       '/pagos-extranjeros/aprobar-solicitud';
   // Aprobación granular: por cuota y por proveedor
-  static const String tpexAprobarCuota =
-      '/pagos-extranjeros/aprobar-cuota';
+  static const String tpexAprobarCuota = '/pagos-extranjeros/aprobar-cuota';
   static const String tpexRevertirCuota =
       '/pagos-extranjeros/revertir-aprobacion-cuota';
   static const String tpexAprobarProveedor =
@@ -476,6 +475,21 @@ class AppConstants {
   // RUTAS MODULO: PERMISOS / VACACION
   // ═══════════════════════════════════════════════════════════════════════════════
   static const String vacDiasDisponibles = '/vacacion/diasDisponibles';
+  //-----------------
+  // ENDPOINTS PARA SOLOCITUD DE PERMISO/VACACION DE CADA EMPLEADO
+  //-----------------
+  static const String solicitarVacacion = '/vacacion/solicitar';
+  static const String aprobarVacacion = '/vacacion/aprobar';
+  static const String rechazarVacacion = '/vacacion/rechazar';
+  static const String pendientesVacacion = '/vacacion/pendientes';
+  static const String solicitudesIndividuales =
+      '/vacacion/solicitudesIndividuales';
+  static const String tipoPermisoSolicitudVacacion = '/vacacion/tipoPermiso';
+  static const String rptPermisoVacacion = '/vacacion/RptPermisoVacacion';
+  static const String feriados = '/vacacion/feriados';
+  static const String previsualizarSaldo = '/vacacion/previsualizarSaldo';
+
+  //====================
   // ═══════════════════════════════════════════════════════════════════════════════
   // RUTAS MODULO: ANTICIPOS
   // ═══════════════════════════════════════════════════════════════════════════════
@@ -498,6 +512,24 @@ class AppConstants {
   static const String mulListasMultas = '/multas/listarMultas';
   static const String mulGenerarMultas = '/multas/generarMultas';
   static const String mulEditarMulta = '/multas/editarMulta';
+  // ═══════════════════════════════════════════════════════════════════════════════
+  // RUTAS MODULO: BONOS
+  // ═══════════════════════════════════════════════════════════════════════════════
+  static const String bonoListarBono = '/bono/listarBono';
+  static const String bonoListarBonoEmpleado = '/bono/listarBonoEmpleado';
+  static const String bonoAbmBono = '/bono/abmBono';
+  // ═══════════════════════════════════════════════════════════════════════════════
+  // RUTAS MODULO: PLANILLAS
+  // ═══════════════════════════════════════════════════════════════════════════════
+  static const String planillaListarPlanilla = '/planilla/listarPlanilla';
+  static const String planillaListarDetalle = '/planilla/listarPlanillaDetalle';
+  static const String planillaGenerar = '/planilla/generarPlanilla';
+  static const String planillaEjecutar = '/planilla/ejecutarPlanilla';
+  static const String planillaPagosBancarios = '/planilla/pagosBancarios';
+  static const String planillaPdfEstimadoPagoBanco =
+      '/planilla/pdfEstimadoPagoBanco';
+  static const String planillaPdfCompacta = '/planilla/pdfPlanillaCompacta';
+  static const String planillaPdfExtendida = '/planilla/pdfPlanillaExtendida';
   // ── TPROD: Lote de Produccion ────────────────────────────────────────────────────────────
 
   //Para cargar permisos de botones por usuario

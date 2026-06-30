@@ -37,3 +37,5 @@ export 'package:bosque_flutter/presentation/screens/usuarios/usuarios_home_scree
 export 'package:bosque_flutter/presentation/screens/ventas/ventas_home_screen.dart';
 export 'package:bosque_flutter/presentation/screens/anticipos/anticipos_screen.dart';
 export 'package:bosque_flutter/presentation/screens/multas/multas_screen.dart';
+export 'package:bosque_flutter/presentation/screens/bonos/bonos_screen.dart';
+export 'package:bosque_flutter/presentation/screens/planillas/planillas_screen.dart';

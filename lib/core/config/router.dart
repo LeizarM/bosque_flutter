@@ -244,6 +244,26 @@ final routerProvider = Provider<GoRouter>((ref) {
               name: 'tplAnticipo',
               builder: (context, state) => const AnticiposScreen(),
             ),
+
+            //Multas
+            GoRoute(
+              path: '/dashboard/tplMulta/multas',
+              name: 'tplMulta',
+              builder: (context, state) => const MultasScreen(),
+            ),
+            //Bonos
+            GoRoute(
+              path: '/dashboard/tplBono/bono',
+              name: 'tplBono',
+              builder: (context, state) => const BonosScreen(),
+            ),
+            //Planillas
+            GoRoute(
+              path: '/dashboard/tplPlanilla/planilla',
+              name: 'tplPlanilla',
+              builder: (context, state) => const PlanillasScreen(),
+            ),
+
             // Multas Empleados
             GoRoute(
               path: '/dashboard/tplMulta/multas',
@@ -413,6 +433,16 @@ final routerProvider = Provider<GoRouter>((ref) {
         GoRoute(
           path: '/tplMulta/multas',
           redirect: (context, state) => '/dashboard/tplMulta/multas',
+        ),
+        // BONOS MENSUALES
+        GoRoute(
+          path: '/tplBono/bono',
+          redirect: (context, state) => '/dashboard/tplBono/bono',
+        ),
+        // PLANILLAS
+        GoRoute(
+          path: '/tplPlanilla/planilla',
+          redirect: (context, state) => '/dashboard/tplPlanilla/planilla',
         ),
 
         GoRoute(
