@@ -4,8 +4,10 @@ import 'package:bosque_flutter/core/state/button_permissions_provider.dart';
 import 'package:bosque_flutter/core/state/empleados_dependientes_provider.dart';
 import 'package:bosque_flutter/core/state/rrhh_provider.dart';
 import 'package:bosque_flutter/core/state/user_provider.dart';
+import 'package:bosque_flutter/presentation/widgets/permisos-vacaciones/ver_solicitudes_permiso_vacacion.dart';
 import 'package:bosque_flutter/presentation/widgets/shared/confetti_widget.dart';
 import 'package:bosque_flutter/presentation/widgets/shared/docs_vencidos.dart';
+import 'package:bosque_flutter/presentation/widgets/shared/permission_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -173,6 +175,13 @@ class _DashboardHomeContentState extends ConsumerState<DashboardHomeContent>
               _buildHeroCard(context, user, primary, isDark, isWide),
 
               const SizedBox(height: 10),
+              
+              // ─── Solicitudes pendientes de aprobar ──────────────────────
+              // Este widget ahora decide por sí mismo si debe mostrarse
+              // basándose en la respuesta del backend (jerarquía).
+              const SolicitudesPendientesWidget(),
+              
+              const SizedBox(height: 16),
 
               // ─── Cumpleaños celebración ───
               if (isWide && cumpleMensajes.isNotEmpty && mostrarDocs)

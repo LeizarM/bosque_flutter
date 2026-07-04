@@ -64,25 +64,64 @@ class PlanillasDesktopView extends StatelessWidget {
                       onViewDetalle: () {
                         showDialog(
                           context: context,
-                          builder: (_) => PlanillasDetalleDialog(planilla: item),
+                          builder:
+                              (_) => PlanillasDetalleDialog(planilla: item),
                         );
                       },
                       onReporteCompacto: () async {
                         await mostrarReportePdf(
                           context: context,
-                          downloadFunction: () async => await ref.read(pdfPlanillaCompactaProvider(item.codPlanilla).future),
-                          filename: 'PlanillaCompacta_${item.codPlanilla}.pdf',
+                          downloadFunction:
+                              () async => await ref.read(
+                                pdfPlanillaCompactaProvider(
+                                  item.codPlanilla,
+                                ).future,
+                              ),
+                          filename:
+                              'PlanillaCompacta_${item.empresa.replaceAll(" ", "_")}_${item.caja.replaceAll(" ", "_")}.pdf',
+                        );
+                      },
+                      onReporteExcelCompacto: () async {
+                        await mostrarReportePdf(
+                          context: context,
+                          downloadFunction:
+                              () async => await ref.read(
+                                excelPlanillaCompactaProvider(
+                                  item.codPlanilla,
+                                ).future,
+                              ),
+                          filename:
+                              'PlanillaCompacta_${item.empresa.replaceAll(" ", "_")}_${item.caja.replaceAll(" ", "_")}.xlsx',
                         );
                       },
                       onReporteExtendido: () async {
                         await mostrarReportePdf(
                           context: context,
-                          downloadFunction: () async => await ref.read(pdfPlanillaExtendidaProvider(item.codPlanilla).future),
-                          filename: 'PlanillaExtendida_${item.codPlanilla}.pdf',
+                          downloadFunction:
+                              () async => await ref.read(
+                                pdfPlanillaExtendidaProvider(
+                                  item.codPlanilla,
+                                ).future,
+                              ),
+                          filename:
+                              'PlanillaExtendida_${item.empresa.replaceAll(" ", "_")}_${item.caja.replaceAll(" ", "_")}.pdf',
+                        );
+                      },
+                      onReportePapeleta: () async {
+                        await mostrarReportePdf(
+                          context: context,
+                          downloadFunction:
+                              () async => await ref.read(
+                                pdfPapeletaPagoProvider(
+                                  item.codPlanilla,
+                                ).future,
+                              ),
+                          filename:
+                              'PapeletaPago_${item.empresa.replaceAll(" ", "_")}_${item.caja.replaceAll(" ", "_")}.pdf',
                         );
                       },
                     );
-                  }
+                  },
                 );
               },
             ),
@@ -159,14 +198,18 @@ class _TableRow extends StatelessWidget {
   final ColorScheme cs;
   final VoidCallback onViewDetalle;
   final VoidCallback onReporteCompacto;
+  final VoidCallback onReporteExcelCompacto;
   final VoidCallback onReporteExtendido;
+  final VoidCallback onReportePapeleta;
 
   const _TableRow({
     required this.item,
     required this.cs,
     required this.onViewDetalle,
     required this.onReporteCompacto,
+    required this.onReporteExcelCompacto,
     required this.onReporteExtendido,
+    required this.onReportePapeleta,
   });
 
   @override
@@ -207,6 +250,8 @@ class _TableRow extends StatelessWidget {
             child: Text(
               item.empresa,
               style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
             ),
           ),
           Expanded(
@@ -217,6 +262,8 @@ class _TableRow extends StatelessWidget {
                 fontSize: 12,
                 color: cs.onSurface.withValues(alpha: 0.8),
               ),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
             ),
           ),
           Expanded(
@@ -339,7 +386,10 @@ class _TableRow extends StatelessWidget {
                   child: FilledButton.tonalIcon(
                     onPressed: onViewDetalle,
                     icon: const Icon(Icons.list_alt, size: 16),
-                    label: const Text('Detalle', style: TextStyle(fontSize: 11)),
+                    label: const Text(
+                      'Detalle',
+                      style: TextStyle(fontSize: 11),
+                    ),
                     style: FilledButton.styleFrom(
                       padding: const EdgeInsets.symmetric(
                         horizontal: 8,
@@ -355,30 +405,81 @@ class _TableRow extends StatelessWidget {
                   padding: EdgeInsets.zero,
                   onSelected: (value) {
                     if (value == 'compacta') onReporteCompacto();
+                    if (value == 'excel_compacta') onReporteExcelCompacto();
                     if (value == 'extendida') onReporteExtendido();
+                    if (value == 'papeleta') onReportePapeleta();
                   },
-                  itemBuilder: (context) => [
-                    const PopupMenuItem(
-                      value: 'compacta',
-                      child: Row(
-                        children: [
-                          Icon(Icons.picture_as_pdf, color: Colors.red, size: 18),
-                          SizedBox(width: 8),
-                          Text('Planilla Compacta', style: TextStyle(fontSize: 13)),
-                        ],
-                      ),
-                    ),
-                    const PopupMenuItem(
-                      value: 'extendida',
-                      child: Row(
-                        children: [
-                          Icon(Icons.picture_as_pdf, color: Colors.red, size: 18),
-                          SizedBox(width: 8),
-                          Text('Planilla Extendida', style: TextStyle(fontSize: 13)),
-                        ],
-                      ),
-                    ),
-                  ],
+                  itemBuilder:
+                      (context) => [
+                        const PopupMenuItem(
+                          value: 'compacta',
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.picture_as_pdf,
+                                color: Colors.red,
+                                size: 18,
+                              ),
+                              SizedBox(width: 8),
+                              Text(
+                                'Planilla Compacta',
+                                style: TextStyle(fontSize: 13),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const PopupMenuItem(
+                          value: 'excel_compacta',
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.table_view,
+                                color: Colors.green,
+                                size: 18,
+                              ),
+                              SizedBox(width: 8),
+                              Text(
+                                'Exportar a Excel',
+                                style: TextStyle(fontSize: 13),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const PopupMenuItem(
+                          value: 'extendida',
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.picture_as_pdf,
+                                color: Colors.red,
+                                size: 18,
+                              ),
+                              SizedBox(width: 8),
+                              Text(
+                                'Planilla Extendida',
+                                style: TextStyle(fontSize: 13),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const PopupMenuItem(
+                          value: 'papeleta',
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.picture_as_pdf,
+                                color: Colors.red,
+                                size: 18,
+                              ),
+                              SizedBox(width: 8),
+                              Text(
+                                'Boletas de Pago',
+                                style: TextStyle(fontSize: 13),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
                 ),
               ],
             ),

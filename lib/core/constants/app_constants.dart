@@ -529,7 +529,9 @@ class AppConstants {
   static const String planillaPdfEstimadoPagoBanco =
       '/planilla/pdfEstimadoPagoBanco';
   static const String planillaPdfCompacta = '/planilla/pdfPlanillaCompacta';
+  static const String planillaExcelCompacta = '/planilla/excelPlanillaCompacta';
   static const String planillaPdfExtendida = '/planilla/pdfPlanillaExtendida';
+  static const String planillaPdfPapeletaPago = '/planilla/pdfPapeletaPago';
   // ── TPROD: Lote de Produccion ────────────────────────────────────────────────────────────
 
   //Para cargar permisos de botones por usuario

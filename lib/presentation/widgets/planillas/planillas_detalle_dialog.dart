@@ -1,6 +1,7 @@
 import 'package:bosque_flutter/core/state/planilla_provider.dart';
 import 'package:bosque_flutter/domain/entities/planilla_detalle_entity.dart';
 import 'package:bosque_flutter/domain/entities/planilla_entity.dart';
+import 'package:bosque_flutter/core/utils/responsive_utils_bosque.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -38,10 +39,12 @@ class _PlanillasDetalleDialogState
 
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
       child: Container(
-        width: 1000,
-        height: 700,
-        padding: const EdgeInsets.all(24),
+        width: MediaQuery.of(context).size.width * 0.95,
+        height: MediaQuery.of(context).size.height * 0.9,
+        constraints: const BoxConstraints(maxWidth: 1000, maxHeight: 800),
+        padding: const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -89,9 +92,15 @@ class _PlanillasDetalleDialogState
             const SizedBox(height: 20),
 
             // Search and filters
-            Row(
+            Wrap(
+              spacing: 16,
+              runSpacing: 16,
               children: [
-                Expanded(
+                SizedBox(
+                  width:
+                      ResponsiveUtilsBosque.isMobile(context)
+                          ? double.infinity
+                          : 300,
                   child: TextField(
                     decoration: InputDecoration(
                       hintText: 'Buscar empleado...',
@@ -110,7 +119,6 @@ class _PlanillasDetalleDialogState
                     },
                   ),
                 ),
-                const SizedBox(width: 16),
                 Container(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 16,
@@ -263,12 +271,20 @@ class _PlanillasDetalleDialogState
                                 children: [
                                   Padding(
                                     padding: const EdgeInsets.all(16.0),
-                                    child: Row(
+                                    child: Flex(
+                                      direction:
+                                          ResponsiveUtilsBosque.isMobile(
+                                                context,
+                                              )
+                                              ? Axis.vertical
+                                              : Axis.horizontal,
                                       crossAxisAlignment:
                                           CrossAxisAlignment.start,
                                       children: [
-                                        Expanded(
-                                          child: _buildInfoCol('INGRESOS', [
+                                        if (ResponsiveUtilsBosque.isMobile(
+                                          context,
+                                        ))
+                                          _buildInfoCol('INGRESOS', [
                                             (
                                               'Días Pagados',
                                               emp.diasPagadosMes.toString(),
@@ -283,21 +299,56 @@ class _PlanillasDetalleDialogState
                                                 emp.bonoAntiguedad,
                                               ),
                                             ),
-                                            // (
-                                            //   'Bono Producción',
-                                            //   fmtMonto.format(
-                                            //     emp.bonoProduccion,
-                                            //   ),
-                                            // ),
                                             (
                                               'Total Ganado',
                                               fmtMonto.format(emp.total),
                                             ),
-                                          ], cs),
+                                          ], cs)
+                                        else
+                                          Expanded(
+                                            child: _buildInfoCol('INGRESOS', [
+                                              (
+                                                'Días Pagados',
+                                                emp.diasPagadosMes.toString(),
+                                              ),
+                                              (
+                                                'Haber Básico',
+                                                fmtMonto.format(
+                                                  emp.haberBasico,
+                                                ),
+                                              ),
+                                              (
+                                                'Bono Antigüedad',
+                                                fmtMonto.format(
+                                                  emp.bonoAntiguedad,
+                                                ),
+                                              ),
+                                              (
+                                                'Total Ganado',
+                                                fmtMonto.format(emp.total),
+                                              ),
+                                            ], cs),
+                                          ),
+
+                                        SizedBox(
+                                          width:
+                                              ResponsiveUtilsBosque.isMobile(
+                                                    context,
+                                                  )
+                                                  ? 0
+                                                  : 16,
+                                          height:
+                                              ResponsiveUtilsBosque.isMobile(
+                                                    context,
+                                                  )
+                                                  ? 16
+                                                  : 0,
                                         ),
-                                        const SizedBox(width: 16),
-                                        Expanded(
-                                          child: _buildInfoCol('DESCUENTOS', [
+
+                                        if (ResponsiveUtilsBosque.isMobile(
+                                          context,
+                                        ))
+                                          _buildInfoCol('DESCUENTOS', [
                                             ('AFP', fmtMonto.format(emp.afp)),
                                             (
                                               'Cuotas BS',
@@ -330,8 +381,44 @@ class _PlanillasDetalleDialogState
                                                 emp.totalDescuentos,
                                               ),
                                             ),
-                                          ], cs),
-                                        ),
+                                          ], cs)
+                                        else
+                                          Expanded(
+                                            child: _buildInfoCol('DESCUENTOS', [
+                                              ('AFP', fmtMonto.format(emp.afp)),
+                                              (
+                                                'Cuotas BS',
+                                                fmtMonto.format(
+                                                  emp.cuotasBolivianos,
+                                                ),
+                                              ),
+                                              (
+                                                'Cuotas USD',
+                                                NumberFormat.currency(
+                                                  symbol: '\$ ',
+                                                  decimalDigits: 2,
+                                                ).format(emp.cuotasDolares),
+                                              ),
+                                              (
+                                                'Anticipos',
+                                                fmtMonto.format(emp.anticipo),
+                                              ),
+                                              (
+                                                'Multas',
+                                                fmtMonto.format(emp.multas),
+                                              ),
+                                              (
+                                                'Otros Desc.',
+                                                fmtMonto.format(emp.otros),
+                                              ),
+                                              (
+                                                'Total Descuentos',
+                                                fmtMonto.format(
+                                                  emp.totalDescuentos,
+                                                ),
+                                              ),
+                                            ], cs),
+                                          ),
                                       ],
                                     ),
                                   ),
@@ -349,10 +436,14 @@ class _PlanillasDetalleDialogState
 
             // Pagination inside dialog
             const SizedBox(height: 12),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            Wrap(
+              alignment: WrapAlignment.spaceBetween,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              spacing: 16,
+              runSpacing: 8,
               children: [
                 Row(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
                       'Total registros: ${st.totalRegistros}',
@@ -382,6 +473,7 @@ class _PlanillasDetalleDialogState
                   ],
                 ),
                 Row(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
                     Text('Página ${st.pagina} de ${st.totalPaginas}'),
                     const SizedBox(width: 8),
@@ -451,10 +543,9 @@ class _PlanillasDetalleDialogState
                       final parts = item.$2.split(' ');
                       if (parts.length == 2 &&
                           (parts[0] == 'Bs' || parts[0] == '\$')) {
-                        return SizedBox(
-                          width: 85,
+                        return Expanded(
                           child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            mainAxisAlignment: MainAxisAlignment.end,
                             children: [
                               Text(
                                 parts[0],
@@ -463,22 +554,29 @@ class _PlanillasDetalleDialogState
                                   fontWeight: FontWeight.w600,
                                 ),
                               ),
-                              Text(
-                                parts[1],
-                                style: const TextStyle(
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w600,
+                              const SizedBox(width: 4),
+                              Flexible(
+                                child: Text(
+                                  parts[1],
+                                  style: const TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
                                 ),
                               ),
                             ],
                           ),
                         );
                       }
-                      return Text(
-                        item.$2,
-                        style: const TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
+                      return Expanded(
+                        child: Text(
+                          item.$2,
+                          textAlign: TextAlign.right,
+                          style: const TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                       );
                     },

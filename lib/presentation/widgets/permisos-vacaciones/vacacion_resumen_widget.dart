@@ -30,8 +30,7 @@ class VacacionResumenWidget extends ConsumerWidget {
             children: [
               Icon(
                 Icons.beach_access_rounded,
-                color:
-                    isDark ? theme.colorScheme.primary : Colors.teal.shade700,
+                color: theme.colorScheme.primary,
                 size: isDesktop ? 22 : 18,
               ),
               const SizedBox(width: 8),
@@ -72,11 +71,16 @@ class VacacionResumenWidget extends ConsumerWidget {
                 decoration: BoxDecoration(
                   color:
                       isDark
-                          ? Colors.white.withOpacity(0.05)
-                          : Colors.teal.shade50.withOpacity(0.3),
+                          ? theme.colorScheme.surface
+                          : theme.colorScheme.primaryContainer.withValues(
+                            alpha: 0.3,
+                          ),
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
-                    color: isDark ? Colors.white10 : Colors.teal.shade100,
+                    color:
+                        isDark
+                            ? Colors.white10
+                            : theme.colorScheme.primaryContainer,
                   ),
                 ),
                 padding: const EdgeInsets.all(16),
@@ -113,12 +117,8 @@ class VacacionResumenWidget extends ConsumerWidget {
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
                           colors: [
-                            isDark
-                                ? theme.colorScheme.primary
-                                : Colors.teal.shade700,
-                            isDark
-                                ? theme.colorScheme.secondary
-                                : Colors.teal.shade500,
+                            theme.colorScheme.primary,
+                            theme.colorScheme.secondary,
                           ],
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
@@ -126,10 +126,9 @@ class VacacionResumenWidget extends ConsumerWidget {
                         borderRadius: BorderRadius.circular(10),
                         boxShadow: [
                           BoxShadow(
-                            color: (isDark
-                                    ? theme.colorScheme.primary
-                                    : Colors.teal)
-                                .withOpacity(0.2),
+                            color: theme.colorScheme.primary.withValues(
+                              alpha: 0.2,
+                            ),
                             blurRadius: 6,
                             offset: const Offset(0, 3),
                           ),

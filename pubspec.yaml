@@ -8,6 +8,7 @@ environment:
 
 dependencies:
   awesome_snackbar_content: ^0.1.1
+  calendar_date_picker2: 2.0.0
   connectivity_plus: ^7.0.0
   dio: ^5.8.0+1
   dropdown_search: ^5.0.6

@@ -19,7 +19,9 @@ import 'package:bosque_flutter/presentation/widgets/dependientes/relacion_labora
 import 'package:bosque_flutter/presentation/widgets/dependientes/seccion_foto.dart';
 import 'package:bosque_flutter/presentation/widgets/dependientes/telefono_secccion.dart';
 import 'package:bosque_flutter/core/state/permisos_vacacion_provider.dart';
+import 'package:bosque_flutter/presentation/widgets/permisos-vacaciones/solicitud_permiso_vacacion.dart';
 import 'package:bosque_flutter/presentation/widgets/permisos-vacaciones/vacacion_resumen_widget.dart';
+import 'package:bosque_flutter/presentation/widgets/permisos-vacaciones/ver_solicitud_individual.dart';
 import 'package:flutter/material.dart';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -244,6 +246,13 @@ class _InfoEmpleadoScreenState extends ConsumerState<InfoEmpleadoScreen> {
                                   'Experiencia',
                                   2,
                                   Icons.work,
+                                  codPersona,
+                                ),
+                                const SizedBox(width: 12),
+                                _buildDesktopTab(
+                                  'Permisos',
+                                  3,
+                                  Icons.calendar_month,
                                   codPersona,
                                 ),
                                 const SizedBox(width: 12),
@@ -552,14 +561,16 @@ class _InfoEmpleadoScreenState extends ConsumerState<InfoEmpleadoScreen> {
       case 2: // Formación
         ref.invalidate(formacionProvider(widget.codEmpleado));
         break;
-      case 3: // Experiencia
+      case 3: // Experiencia o Permisos (Desktop)
         ref.invalidate(experienciaLaboralProvider(widget.codEmpleado));
+        ref.invalidate(misSolicitudesProvider(widget.codEmpleado));
         break;
-      case 4: // Referencias
+      case 4: // Referencias o Laboral
         ref.invalidate(obtenerGaranteReferenciaProvider(widget.codEmpleado));
-        break;
-      case 5: // Laboral
         ref.invalidate(relacionLaboralProvider(widget.codEmpleado));
+        break;
+      case 5: // Permisos (Mobile)
+        ref.invalidate(misSolicitudesProvider(widget.codEmpleado));
         break;
     }
   }
@@ -600,6 +611,7 @@ class _InfoEmpleadoScreenState extends ConsumerState<InfoEmpleadoScreen> {
                       codEmpleado: widget.codEmpleado,
                     ),
                   ),
+
                   const SizedBox(height: 24),
                   _buildSection(
                     child: TelefonoSection(
@@ -780,6 +792,13 @@ class _InfoEmpleadoScreenState extends ConsumerState<InfoEmpleadoScreen> {
             onEditar: () => activarEdicion('experienciaLaboral'),
             onAgregar: () => (),
             onEliminar: () => (),
+          ),
+        );
+      case 3:
+        return _buildSection(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 16.0),
+            child: MisSolicitudesWidget(codEmpleado: widget.codEmpleado),
           ),
         );
 
@@ -1016,6 +1035,12 @@ class _InfoEmpleadoScreenState extends ConsumerState<InfoEmpleadoScreen> {
                           Icons.business,
                           codPersona,
                         ),
+                        _buildMobileNavButton(
+                          'Permisos',
+                          5,
+                          Icons.calendar_month,
+                          codPersona,
+                        ),
                       ],
                     ),
                   );
@@ -1084,6 +1109,7 @@ class _InfoEmpleadoScreenState extends ConsumerState<InfoEmpleadoScreen> {
                             if (_currentPage == 3) _buildExperienciaPage(),
                             //  if (_currentPage == 4) _buildReferenciasPage(),
                             if (_currentPage == 4) _buildLaboralPage(),
+                            if (_currentPage == 5) _buildPermisosPage(),
                           ],
                         ),
                       );
@@ -1329,6 +1355,18 @@ class _InfoEmpleadoScreenState extends ConsumerState<InfoEmpleadoScreen> {
             child: VacacionResumenWidget(codEmpleado: widget.codEmpleado),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildPermisosPage() {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: _buildSection(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 16.0),
+          child: MisSolicitudesWidget(codEmpleado: widget.codEmpleado),
+        ),
       ),
     );
   }

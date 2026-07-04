@@ -128,9 +128,41 @@ class PlanillaImpl extends BaseApiRepository implements PlanillaRepository {
     }
   }
 
+  Future<Uint8List> descargarPlanillaExcelCompacta(int codPlanilla) async {
+    final response = await _dio.post(
+      AppConstants.planillaExcelCompacta,
+      data: {'codPlanilla': codPlanilla},
+      options: Options(
+        headers: {'Content-Type': 'application/json'},
+        responseType: ResponseType.bytes,
+      ),
+    );
+    if (response.statusCode == 200) {
+      return response.data;
+    } else {
+      throw Exception('No se pudo descargar el Excel');
+    }
+  }
+
   Future<Uint8List> descargarPlanillaExtendida(int codPlanilla) async {
     final response = await _dio.post(
       AppConstants.planillaPdfExtendida,
+      data: {'codPlanilla': codPlanilla},
+      options: Options(
+        headers: {'Content-Type': 'application/json'},
+        responseType: ResponseType.bytes,
+      ),
+    );
+    if (response.statusCode == 200) {
+      return response.data;
+    } else {
+      throw Exception('No se pudo descargar el PDF');
+    }
+  }
+
+  Future<Uint8List> descargarPapeletaPago(int codPlanilla) async {
+    final response = await _dio.post(
+      AppConstants.planillaPdfPapeletaPago,
       data: {'codPlanilla': codPlanilla},
       options: Options(
         headers: {'Content-Type': 'application/json'},

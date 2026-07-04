@@ -323,7 +323,17 @@ final pdfPlanillaCompactaProvider = FutureProvider.family<Uint8List, int>((ref, 
   return await repo.descargarPlanillaCompacta(codPlanilla);
 });
 
+final excelPlanillaCompactaProvider = FutureProvider.family<Uint8List, int>((ref, codPlanilla) async {
+  final repo = PlanillaImpl();
+  return await repo.descargarPlanillaExcelCompacta(codPlanilla);
+});
+
 final pdfPlanillaExtendidaProvider = FutureProvider.family<Uint8List, int>((ref, codPlanilla) async {
   final repo = PlanillaImpl();
   return await repo.descargarPlanillaExtendida(codPlanilla);
+});
+
+final pdfPapeletaPagoProvider = FutureProvider.family<Uint8List, int>((ref, codPlanilla) async {
+  final repo = PlanillaImpl();
+  return await repo.descargarPapeletaPago(codPlanilla);
 });

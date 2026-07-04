@@ -45,40 +45,61 @@ class BancosExportService extends BaseApiRepository {
     required String mes,
     required String anio,
   }) async {
-    switch (codBanco) {
-      case 3: // BCP → TXT con comas
-        _exportarBCP(datos, mes, anio);
-        break;
-      case 5: // Ganadero → Excel (CSV sin encabezado especial)
-        _exportarExcelSimple(
-          datos,
-          'PlanillaGanadero',
-          mes,
-          anio,
-          'BancoGanadero',
-        );
-        break;
-      case 2: // Mercantil → Excel (CSV sin encabezado especial)
-        _exportarExcelSimple(
-          datos,
-          'PlanillaMercantil',
-          mes,
-          anio,
-          'BancoMercantil',
-        );
-        break;
-      case 9: // Económico → Excel con encabezado especial
-        _exportarEconomico(datos, mes, anio);
-        break;
-      default: // 0 = Global → Excel simple
-        _exportarExcelSimple(
-          datos,
-          'PlanillaGlobal',
-          mes,
-          anio,
-          'PlanillaBancos',
-        );
-        break;
+    // Agrupar por empresa usando la nueva columna oculta _nombreEmpresa
+    final Map<String, List<Map<String, dynamic>>> grupos = {};
+    for (final row in datos) {
+      final empresa = _v(row, '_nombreEmpresa').trim();
+      final key =
+          empresa.isNotEmpty
+              ? empresa.replaceAll(RegExp(r'[\\/:*?"<>|]'), '_')
+              : 'General';
+      grupos.putIfAbsent(key, () => []).add(row);
+    }
+
+    for (final entry in grupos.entries) {
+      final empresaKey = entry.key;
+      final datosEmpresa = entry.value;
+
+      switch (codBanco) {
+        case 3: // BCP → TXT con comas
+          _exportarBCP(datosEmpresa, mes, anio, empresaKey);
+          break;
+        case 5: // Ganadero → Excel (CSV sin encabezado especial)
+          _exportarExcelSimple(
+            datosEmpresa,
+            'PlanillaGanadero',
+            mes,
+            anio,
+            'BancoGanadero',
+            empresaKey,
+          );
+          break;
+        case 2: // Mercantil → Excel (CSV sin encabezado especial)
+          _exportarExcelSimple(
+            datosEmpresa,
+            'PlanillaMercantil',
+            mes,
+            anio,
+            'BancoMercantil',
+            empresaKey,
+          );
+          break;
+        case 9: // Económico → Excel con encabezado especial
+          _exportarEconomico(datosEmpresa, mes, anio, empresaKey);
+          break;
+        default: // 0 = Global → Excel simple
+          _exportarExcelSimple(
+            datosEmpresa,
+            'PlanillaGlobal',
+            mes,
+            anio,
+            'PlanillaBancos',
+            empresaKey,
+          );
+          break;
+      }
+      // Pequeña pausa para evitar que el navegador bloquee múltiples descargas
+      await Future.delayed(const Duration(milliseconds: 300));
     }
   }
 
@@ -86,7 +107,12 @@ class BancosExportService extends BaseApiRepository {
   // BCP: TXT con comas, SIN cabecera
   // Columnas: Nro,numCuenta,liquido,Comentario,TipoDocID,DocID,ExtensionDocID,,
   // ─────────────────────────────────────────────────────────────────────────────
-  void _exportarBCP(List<Map<String, dynamic>> datos, String mes, String anio) {
+  void _exportarBCP(
+    List<Map<String, dynamic>> datos,
+    String mes,
+    String anio, [
+    String empresa = '',
+  ]) {
     final sb = StringBuffer();
     int nro = 1;
     for (final row in datos) {
@@ -107,9 +133,11 @@ class BancosExportService extends BaseApiRepository {
       sb.writeln();
       nro++;
     }
+
+    final sufijo = empresa.isNotEmpty ? '-$empresa' : '';
     _descargar(
       sb.toString(),
-      'PlanillaBCP-$mes-$anio.txt',
+      'PlanillaBCP-$mes-$anio$sufijo.txt',
       'text/plain',
       bom: false,
     );
@@ -123,12 +151,16 @@ class BancosExportService extends BaseApiRepository {
     String prefijo,
     String mes,
     String anio,
-    String nombreHoja,
-  ) {
+    String nombreHoja, [
+    String empresa = '',
+  ]) {
     if (datos.isEmpty) return;
     final sb = StringBuffer();
     // Fila 1: cabeceras
-    final cols = datos.first.keys.where((k) => !k.startsWith('_') && k != '_liquidoInterno').toList();
+    final cols =
+        datos.first.keys
+            .where((k) => !k.startsWith('_') && k != '_liquidoInterno')
+            .toList();
     sb.writeln(cols.map(_escaparCsv).join(';'));
     // Datos desde fila 2
     for (final row in datos) {
@@ -136,9 +168,11 @@ class BancosExportService extends BaseApiRepository {
         cols.map((c) => _escaparCsv(row[c]?.toString() ?? '')).join(';'),
       );
     }
+
+    final sufijo = empresa.isNotEmpty ? '-$empresa' : '';
     _descargar(
       sb.toString(),
-      '$prefijo-$mes-$anio.csv',
+      '$prefijo-$mes-$anio$sufijo.csv',
       'text/csv;charset=utf-8',
     );
   }
@@ -157,8 +191,9 @@ class BancosExportService extends BaseApiRepository {
   void _exportarEconomico(
     List<Map<String, dynamic>> datos,
     String mes,
-    String anio,
-  ) {
+    String anio, [
+    String empresa = '',
+  ]) {
     if (datos.isEmpty) return;
 
     var excel = Excel.createExcel();
@@ -249,9 +284,10 @@ class BancosExportService extends BaseApiRepository {
 
     final bytes = excel.encode();
     if (bytes != null) {
+      final sufijo = empresa.isNotEmpty ? '-$empresa' : '';
       _descargarBytes(
         bytes,
-        'PlanillaEconomico-$mes-$anio.xlsx',
+        'PlanillaEconomico-$mes-$anio$sufijo.xlsx',
         'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
       );
     }

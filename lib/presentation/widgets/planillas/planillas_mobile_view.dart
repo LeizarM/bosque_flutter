@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:bosque_flutter/presentation/widgets/planillas/planillas_constants.dart';
 import 'package:bosque_flutter/core/utils/descargar_reportes_jasper.dart';
+import 'package:bosque_flutter/core/utils/responsive_utils_bosque.dart';
 
 class PlanillasMobileView extends StatelessWidget {
   final PlanillaState st;
@@ -47,7 +48,10 @@ class PlanillasMobileView extends StatelessWidget {
       children: [
         Expanded(
           child: ListView.builder(
-            padding: const EdgeInsets.all(16),
+            padding: EdgeInsets.symmetric(
+              horizontal: ResponsiveUtilsBosque.getHorizontalPadding(context),
+              vertical: ResponsiveUtilsBosque.getVerticalPadding(context),
+            ),
             itemCount: st.items.length,
             itemBuilder: (context, i) {
               final item = st.items[i];
@@ -72,8 +76,11 @@ class PlanillasMobileView extends StatelessWidget {
                                 fontWeight: FontWeight.bold,
                                 fontSize: 16,
                               ),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
                             ),
                           ),
+                          const SizedBox(width: 8),
                           Builder(
                             builder: (context) {
                               final isDark =
@@ -110,7 +117,11 @@ class PlanillasMobileView extends StatelessWidget {
                         ],
                       ),
                       const SizedBox(height: 8),
-                      Text('Caja: ${item.caja}'),
+                      Text(
+                        'Caja: ${item.caja}',
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                       if (item.fechaPeriodo != null)
                         Text(
                           'Periodo: ${monthsMap[item.fechaPeriodo!.month.toString()]} ${item.fechaPeriodo!.year}',
@@ -169,7 +180,19 @@ class PlanillasMobileView extends StatelessWidget {
                                             ).future,
                                           ),
                                       filename:
-                                          'PlanillaCompacta_${item.codPlanilla}.pdf',
+                                          'PlanillaCompacta_${item.empresa.replaceAll(" ", "_")}_${item.caja.replaceAll(" ", "_")}.pdf',
+                                    );
+                                  } else if (value == 'excel_compacta') {
+                                    await mostrarReportePdf(
+                                      context: context,
+                                      downloadFunction:
+                                          () async => await ref.read(
+                                            excelPlanillaCompactaProvider(
+                                              item.codPlanilla,
+                                            ).future,
+                                          ),
+                                      filename:
+                                          'PlanillaCompacta_${item.empresa.replaceAll(" ", "_")}_${item.caja.replaceAll(" ", "_")}.xlsx',
                                     );
                                   } else if (value == 'extendida') {
                                     await mostrarReportePdf(
@@ -181,7 +204,19 @@ class PlanillasMobileView extends StatelessWidget {
                                             ).future,
                                           ),
                                       filename:
-                                          'PlanillaExtendida_${item.codPlanilla}.pdf',
+                                          'PlanillaExtendida_${item.empresa.replaceAll(" ", "_")}_${item.caja.replaceAll(" ", "_")}.pdf',
+                                    );
+                                  } else if (value == 'papeleta') {
+                                    await mostrarReportePdf(
+                                      context: context,
+                                      downloadFunction:
+                                          () async => await ref.read(
+                                            pdfPapeletaPagoProvider(
+                                              item.codPlanilla,
+                                            ).future,
+                                          ),
+                                      filename:
+                                          'PapeletaPago_${item.empresa.replaceAll(" ", "_")}_${item.caja.replaceAll(" ", "_")}.pdf',
                                     );
                                   }
                                 },
@@ -202,6 +237,20 @@ class PlanillasMobileView extends StatelessWidget {
                                         ),
                                       ),
                                       const PopupMenuItem(
+                                        value: 'excel_compacta',
+                                        child: Row(
+                                          children: [
+                                            Icon(
+                                              Icons.table_view,
+                                              color: Colors.green,
+                                              size: 18,
+                                            ),
+                                            SizedBox(width: 8),
+                                            Text('Exportar a Excel'),
+                                          ],
+                                        ),
+                                      ),
+                                      const PopupMenuItem(
                                         value: 'extendida',
                                         child: Row(
                                           children: [
@@ -212,6 +261,20 @@ class PlanillasMobileView extends StatelessWidget {
                                             ),
                                             SizedBox(width: 8),
                                             Text('Planilla Extendida'),
+                                          ],
+                                        ),
+                                      ),
+                                      const PopupMenuItem(
+                                        value: 'papeleta',
+                                        child: Row(
+                                          children: [
+                                            Icon(
+                                              Icons.picture_as_pdf,
+                                              color: Colors.red,
+                                              size: 18,
+                                            ),
+                                            SizedBox(width: 8),
+                                            Text('Boletas de Pago'),
                                           ],
                                         ),
                                       ),
