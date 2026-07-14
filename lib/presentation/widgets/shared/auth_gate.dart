@@ -14,8 +14,16 @@ class AuthGate extends ConsumerWidget {
       loading: () => const Scaffold(
         body: Center(child: CircularProgressIndicator()),
       ),
-      error: (e, _) => Scaffold(
-        body: Center(child: Text('Error de autenticación: $e')),
+      error: (e, _) => const Scaffold(
+        body: Center(
+          child: Padding(
+            padding: EdgeInsets.all(24),
+            child: Text(
+              'No se pudo validar tu sesión. Inicia sesión nuevamente.',
+              textAlign: TextAlign.center,
+            ),
+          ),
+        ),
       ),
       data: (user) {
         if (user == null) {

@@ -8,7 +8,16 @@
     <application
         android:label="IPX - ESP"
         android:name="${applicationName}"
+        android:allowBackup="false"
+        android:fullBackupContent="false"
+        android:dataExtractionRules="@xml/data_extraction_rules"
         android:icon="@mipmap/ic_launcher">
+        <!-- Backup deshabilitado a propósito: flutter_secure_storage guarda el
+             token cifrado con una llave del Android Keystore que NO se respalda.
+             Si Auto Backup / transferencia device-to-device restaura el blob
+             cifrado en otro contexto, la llave ya no existe y el descifrado
+             falla de forma permanente (bug de 401 persistente). -->
+
         <activity
             android:name=".MainActivity"
             android:exported="true"

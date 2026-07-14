@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:bosque_flutter/core/network/dio_client.dart';
+import 'package:bosque_flutter/core/state/button_permissions_provider.dart';
 import 'package:bosque_flutter/core/state/user_provider.dart';
 import 'package:bosque_flutter/core/utils/console_log.dart';
 import 'package:bosque_flutter/core/utils/secure_storage.dart';
@@ -527,18 +528,19 @@ final routerProvider = Provider<GoRouter>((ref) {
       },
     );
 
-    // Configurar el callback de error de autenticación para redireccionar
-    // Usando una referencia al router
+    // Configurar el callback de error de autenticación para redireccionar.
+    // IMPORTANTE: usamos el `ref` REAL del routerProvider (no un
+    // ProviderContainer aislado, que no afectaba el estado vivo de la app),
+    // para que la limpieza de sesión sea efectiva antes de navegar al login.
     DioClient.setAuthErrorCallback(() {
-      // Usar un container aislado para evitar conflictos de dependencias
-      final container = ProviderContainer();
       try {
-        container.read(authStateProvider.notifier).state = false;
-      } finally {
-        container.dispose();
+        ref.read(userProvider.notifier).clearUser();
+        ref.read(buttonPermissionsProvider.notifier).clearPermisos();
+        ref.invalidate(asyncUserProvider);
+        ref.read(authStateProvider.notifier).state = false;
+      } catch (e) {
+        console('⚠️ Error limpiando sesión tras 401: $e');
       }
-
-      // Usar el router para navegar
       _router?.go('/login');
     });
   }

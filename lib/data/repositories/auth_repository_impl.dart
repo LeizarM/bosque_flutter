@@ -38,15 +38,27 @@ class AuthRepositoryImpl implements AuthRepository {
         return (null, loginModel.mensaje);
       }
     } on DioException catch (e) {
-      // Manejar errores de red o del servidor
-      String errorMessage = 'Error de conexión: ${e.message}';
-      if (e.response != null && e.response!.data != null) {
-        final errorModel = LoginModel.fromJson(e.response!.data);
-        errorMessage = errorModel.mensaje;
+      // Preferir el mensaje estructurado del backend, si vino.
+      if (e.response?.data != null) {
+        try {
+          final errorModel = LoginModel.fromJson(e.response!.data);
+          if (errorModel.mensaje.isNotEmpty) {
+            return (null, errorModel.mensaje);
+          }
+        } catch (_) {
+          // El cuerpo no era el JSON esperado: caemos al mensaje amigable.
+        }
       }
-      return (null, errorMessage);
+      // Mensaje amigable por tipo de error (nunca el crudo de DioException).
+      return (
+        null,
+        DioClient.handleDioError(
+          e,
+          'No se pudo iniciar sesión. Revisa tu conexión e inténtalo de nuevo.',
+        ),
+      );
     } catch (e) {
-      return (null, 'Error desconocido: ${e.toString()}');
+      return (null, 'No se pudo iniciar sesión. Inténtalo de nuevo.');
     }
   }
 

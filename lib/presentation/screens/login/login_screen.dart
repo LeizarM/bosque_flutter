@@ -11,6 +11,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 
+/// Mensaje mostrado cuando el dispositivo no puede persistir la sesión
+/// (Keystore que no escribe en ciertos Android). Evita el bucle de login.
+const String _msgErrorPersistencia =
+    'No se pudo guardar tu sesión en este dispositivo. '
+    'Cierra otras apps o reinicia el teléfono e inténtalo de nuevo.';
+
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
 
@@ -107,10 +113,24 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
           return;
         } else if (_passwordController.text == '123456789') {
           // Contraseña por defecto, obligar cambio
-          await ref.read(userProvider.notifier).setUser(loginEntity);
+          final ok = await ref.read(userProvider.notifier).setUser(loginEntity);
+          if (!mounted) return;
+          if (!ok) {
+            setState(() => _message = _msgErrorPersistencia);
+            return;
+          }
           context.go('/change-password', extra: loginEntity);
         } else {
-          ref.read(userProvider.notifier).setUser(loginEntity);
+          // await: la escritura de user_data/token debe completarse ANTES de
+          // navegar, o el redirect del router puede leer storage vacío y rebotar.
+          final ok = await ref.read(userProvider.notifier).setUser(loginEntity);
+          if (!mounted) return;
+          if (!ok) {
+            // El dispositivo no pudo guardar la sesión (Keystore). Evita el
+            // bucle de login silencioso mostrando un mensaje claro.
+            setState(() => _message = _msgErrorPersistencia);
+            return;
+          }
           context.go('/dashboard');
         }
       } else {

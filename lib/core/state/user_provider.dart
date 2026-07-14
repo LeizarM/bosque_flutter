@@ -1,7 +1,5 @@
 import 'dart:convert';
 import 'package:bosque_flutter/core/constants/app_constants.dart';
-import 'package:bosque_flutter/core/state/button_permissions_provider.dart';
-import 'package:bosque_flutter/core/utils/console_log.dart';
 import 'package:bosque_flutter/domain/entities/empleado_entity.dart';
 import 'package:bosque_flutter/domain/entities/login_entity.dart';
 import 'package:bosque_flutter/core/utils/secure_storage.dart';
@@ -80,47 +78,39 @@ class UserStateNotifier extends StateNotifier<LoginEntity?> {
     }
   }
 
-  Future<void> setUser(LoginEntity user) async {
+  /// Persiste el usuario en el estado y en el storage seguro.
+  /// Devuelve `true` sólo si AMBAS escrituras (user_data y token) se
+  /// persistieron; `false` permite al login detectar dispositivos donde el
+  /// Keystore no puede escribir y evitar un bucle de login silencioso.
+  Future<bool> setUser(LoginEntity user) async {
     state = user;
-    // Guardar los datos del usuario en almacenamiento seguro
     final storage = SecureStorage();
     final userDataJson = jsonEncode(user.toJson());
-    await storage.saveUserData(userDataJson);
-    // Guardar el token por separado si es necesario
-    await storage.saveToken(user.token);
+    final okData = await storage.saveUserData(userDataJson);
+    final okToken = await storage.saveToken(user.token);
+    return okData && okToken;
   }
 
   Future<void> clearUser() async {
     state = null;
-    // Limpiar los datos del usuario y el token del almacenamiento
+    // Limpiar los datos del usuario y el token del almacenamiento.
     final storage = SecureStorage();
-    await storage.deleteUserData();
-    await storage.deleteToken();
+    await storage.clearSession();
 
-    // Reiniciar completamente el estado de permisos
-    // Usamos una referencia global al contenedor de providers para asegurarnos de limpiar el estado
-    try {
-      // Obtener el notificador de permisos directamente desde el container global
-      final providerContainer = ProviderContainer();
-      // Esto asegura que el estado se establezca en "loading" nuevamente
-      providerContainer
-          .read(buttonPermissionsProvider.notifier)
-          .clearPermisos();
-      providerContainer.refresh(buttonPermissionsProvider);
-    } catch (e) {
-      console('Error al limpiar permisos: $e');
-    }
+    // NOTA: la limpieza del estado de permisos (buttonPermissionsProvider) la
+    // hace el llamador que posee el `ref` REAL de la app (el callback de 401 en
+    // router.dart y los handlers de logout). Antes se creaba aquí un
+    // ProviderContainer() aislado que NO afectaba el estado vivo de la app.
   }
 
   Future<int> getCodCiudad() async {
-    // Obtener el código de la ciudad del usuario desde el estado
-    if (state != null) {
-      return state!.codCiudad;
-    } else {
-      final storage = SecureStorage();
-      final userDataJson = await storage.getUserData();
-
-      return jsonDecode(userDataJson!)['codCiudad'] ?? 0;
+    if (state != null) return state!.codCiudad;
+    final userDataJson = await SecureStorage().getUserData();
+    if (userDataJson == null) return 0;
+    try {
+      return jsonDecode(userDataJson)['codCiudad'] ?? 0;
+    } catch (_) {
+      return 0;
     }
   }
 
@@ -128,47 +118,50 @@ class UserStateNotifier extends StateNotifier<LoginEntity?> {
     // Obtener el token del usuario desde el estado
     if (state != null) {
       return state!.token;
-    } else {
-      final storage = SecureStorage();
-      final userDataJson = await storage.getUserData();
-
-      return jsonDecode(userDataJson!)['token'] ?? 0;
+    }
+    // Fallback al storage, con null-safety (antes usaba userDataJson! y '?? 0',
+    // que crasheaba o devolvía un int en un Future<String>).
+    final storage = SecureStorage();
+    final userDataJson = await storage.getUserData();
+    if (userDataJson == null) return '';
+    try {
+      final token = jsonDecode(userDataJson)['token'];
+      return token is String ? token : '';
+    } catch (_) {
+      return '';
     }
   }
 
   Future<int> getCodUsuario() async {
-    // Obtener el código del usuario desde el estado
-    if (state != null) {
-      return state!.codUsuario;
-    } else {
-      final storage = SecureStorage();
-      final userDataJson = await storage.getUserData();
-
-      return jsonDecode(userDataJson!)['codUsuario'] ?? 0;
+    if (state != null) return state!.codUsuario;
+    final userDataJson = await SecureStorage().getUserData();
+    if (userDataJson == null) return 0;
+    try {
+      return jsonDecode(userDataJson)['codUsuario'] ?? 0;
+    } catch (_) {
+      return 0;
     }
   }
 
   Future<int> getCodEmpleado() async {
-    // Obtener el código del empleado desde el estado
-    if (state != null) {
-      return state!.codEmpleado;
-    } else {
-      final storage = SecureStorage();
-      final userDataJson = await storage.getUserData();
-
-      return jsonDecode(userDataJson!)['codEmpleado'] ?? 0;
+    if (state != null) return state!.codEmpleado;
+    final userDataJson = await SecureStorage().getUserData();
+    if (userDataJson == null) return 0;
+    try {
+      return jsonDecode(userDataJson)['codEmpleado'] ?? 0;
+    } catch (_) {
+      return 0;
     }
   }
 
   Future<int> getCodSucursal() async {
-    // Obtener el código de la sucursal desde el estado
-    if (state != null) {
-      return state!.codSucursal;
-    } else {
-      final storage = SecureStorage();
-      final userDataJson = await storage.getUserData();
-
-      return jsonDecode(userDataJson!)['codSucursal'] ?? 0;
+    if (state != null) return state!.codSucursal;
+    final userDataJson = await SecureStorage().getUserData();
+    if (userDataJson == null) return 0;
+    try {
+      return jsonDecode(userDataJson)['codSucursal'] ?? 0;
+    } catch (_) {
+      return 0;
     }
   }
 
@@ -217,14 +210,14 @@ class UserStateNotifier extends StateNotifier<LoginEntity?> {
   }
 
   Future<String> getTipoUsuario() async {
-    // Obtener el tipo de usuario desde el estado
-    if (state != null) {
-      return state!.tipoUsuario;
-    } else {
-      final storage = SecureStorage();
-      final userDataJson = await storage.getUserData();
-
-      return jsonDecode(userDataJson!)['tipoUsuario'] ?? 0;
+    if (state != null) return state!.tipoUsuario;
+    final userDataJson = await SecureStorage().getUserData();
+    if (userDataJson == null) return '';
+    try {
+      final v = jsonDecode(userDataJson)['tipoUsuario'];
+      return v is String ? v : '';
+    } catch (_) {
+      return '';
     }
   }
 

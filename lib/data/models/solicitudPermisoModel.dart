@@ -70,10 +70,15 @@ class SolicitudPermisoModel {
 
   // ── Auxiliares para previsualizar saldo (acción 'C') ──────────
   final double? diasSolicitados;
+  final String? diasSolicitadosTxt;
   final double? saldoRestante;
+  final String? saldoRestanteTxt;
   final double? saldoActualBase;
+  final String? saldoActualBaseTxt;
   final double? diasDisponibles;
+  final String? diasDisponiblesTxt;
   final String? motivoRechazo;
+  final String? fechasTxt;
 
   SolicitudPermisoModel({
     this.codSolicitud,
@@ -93,10 +98,15 @@ class SolicitudPermisoModel {
     this.codPermiso,
     this.autorizador,
     this.diasDisponibles,
+    this.diasDisponiblesTxt,
     this.motivoRechazo,
+    this.fechasTxt,
     this.diasSolicitados,
+    this.diasSolicitadosTxt,
     this.saldoRestante,
+    this.saldoRestanteTxt,
     this.saldoActualBase,
+    this.saldoActualBaseTxt,
   });
 
   factory SolicitudPermisoModel.fromJson(Map<String, dynamic> json) =>
@@ -136,10 +146,15 @@ class SolicitudPermisoModel {
         codPermiso: json['codPermiso'],
         autorizador: json['autorizador'],
         diasDisponibles: json['diasDisponibles']?.toDouble(),
+        diasDisponiblesTxt: json['diasDisponiblesTxt'],
         motivoRechazo: json['motivoRechazo'],
+        fechasTxt: json['fechasTxt'],
         diasSolicitados: json['diasSolicitados']?.toDouble(),
+        diasSolicitadosTxt: json['diasSolicitadosTxt'],
         saldoRestante: json['saldoRestante']?.toDouble(),
+        saldoRestanteTxt: json['saldoRestanteTxt'],
         saldoActualBase: json['saldoActualBase']?.toDouble(),
+        saldoActualBaseTxt: json['saldoActualBaseTxt'],
       );
 
   Map<String, dynamic> toJson() => {
@@ -156,10 +171,15 @@ class SolicitudPermisoModel {
     "codPermiso": codPermiso,
     "autorizador": autorizador,
     "diasDisponibles": diasDisponibles,
+    "diasDisponiblesTxt": diasDisponiblesTxt,
     "motivoRechazo": motivoRechazo,
+    "fechasTxt": fechasTxt,
     "diasSolicitados": diasSolicitados,
+    "diasSolicitadosTxt": diasSolicitadosTxt,
     "saldoRestante": saldoRestante,
+    "saldoRestanteTxt": saldoRestanteTxt,
     "saldoActualBase": saldoActualBase,
+    "saldoActualBaseTxt": saldoActualBaseTxt,
   };
   SolicitudPermisoEntity toEntity() => SolicitudPermisoEntity(
     codSolicitud: codSolicitud,
@@ -179,10 +199,15 @@ class SolicitudPermisoModel {
     codPermiso: codPermiso,
     autorizador: autorizador,
     diasDisponibles: diasDisponibles,
+    diasDisponiblesTxt: diasDisponiblesTxt,
     motivoRechazo: motivoRechazo,
+    fechasTxt: fechasTxt,
     diasSolicitados: diasSolicitados,
+    diasSolicitadosTxt: diasSolicitadosTxt,
     saldoRestante: saldoRestante,
+    saldoRestanteTxt: saldoRestanteTxt,
     saldoActualBase: saldoActualBase,
+    saldoActualBaseTxt: saldoActualBaseTxt,
   );
   factory SolicitudPermisoModel.fromEntity(SolicitudPermisoEntity entity) =>
       SolicitudPermisoModel(
@@ -203,9 +228,14 @@ class SolicitudPermisoModel {
         codPermiso: entity.codPermiso,
         autorizador: entity.autorizador,
         diasDisponibles: entity.diasDisponibles,
+        diasDisponiblesTxt: entity.diasDisponiblesTxt,
         motivoRechazo: entity.motivoRechazo,
+        fechasTxt: entity.fechasTxt,
         diasSolicitados: entity.diasSolicitados,
+        diasSolicitadosTxt: entity.diasSolicitadosTxt,
         saldoRestante: entity.saldoRestante,
+        saldoRestanteTxt: entity.saldoRestanteTxt,
         saldoActualBase: entity.saldoActualBase,
+        saldoActualBaseTxt: entity.saldoActualBaseTxt,
       );
 }

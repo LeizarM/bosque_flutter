@@ -198,47 +198,6 @@ class _SolicitudPermisoFormState extends ConsumerState<SolicitudPermisoForm> {
     super.dispose();
   }
 
-  String _formatearDiasYHoras(double? dias) {
-    if (dias == null) return '0 días';
-    final bool esNegativo = dias < 0;
-    final double valorAbs = dias.abs();
-
-    final int diasEnteros = valorAbs.floor();
-    final double fraccionDia = valorAbs - diasEnteros;
-    // Asumiendo jornada laboral de 8 horas
-    final double horas = fraccionDia * 8;
-    // Redondeamos al 0.5 más cercano
-    final double horasRedondeadas = (horas * 2).round() / 2;
-
-    int diasFinales = diasEnteros;
-    double horasFinales = horasRedondeadas;
-    if (horasRedondeadas >= 8.0) {
-      diasFinales += 1;
-      horasFinales = 0.0;
-    }
-
-    final List<String> partes = [];
-    if (diasFinales > 0) {
-      partes.add('$diasFinales ${diasFinales == 1 ? "día" : "días"}');
-    }
-    if (horasFinales > 0) {
-      if (horasFinales % 1 == 0) {
-        partes.add(
-          '${horasFinales.toInt()} ${horasFinales.toInt() == 1 ? "hr" : "hrs"}',
-        );
-      } else {
-        partes.add('${horasFinales.toStringAsFixed(1)} hrs');
-      }
-    }
-
-    if (partes.isEmpty) {
-      return '0 días';
-    }
-
-    final String prefijo = esNegativo ? '-' : '';
-    return '$prefijo${partes.join(" y ")}';
-  }
-
   @override
   void initState() {
     super.initState();
@@ -310,7 +269,8 @@ class _SolicitudPermisoFormState extends ConsumerState<SolicitudPermisoForm> {
 
     final saldoRestante = _previewResult?.saldoRestante ?? 0.0;
     if (saldoRestante < 0) {
-      final saldoFaltanteTexto = _formatearDiasYHoras(saldoRestante.abs());
+      final saldoFaltanteTexto = (_previewResult?.saldoRestanteTxt ?? '0 días')
+          .replaceAll('-', '');
       showDialog(
         context: context,
         builder:
@@ -392,16 +352,15 @@ class _SolicitudPermisoFormState extends ConsumerState<SolicitudPermisoForm> {
     final vPadding = ResponsiveUtilsBosque.getVerticalPadding(context);
 
     return Padding(
-      // Padding dinámico para que el teclado no tape el formulario
-      padding: EdgeInsets.only(
-        bottom: MediaQuery.of(context).viewInsets.bottom,
-        left: hPadding,
-        right: hPadding,
-        top: vPadding,
-      ),
+      padding: EdgeInsets.only(left: hPadding, right: hPadding, top: vPadding),
       child: Form(
         key: _formKey,
         child: SingleChildScrollView(
+          padding: EdgeInsets.only(
+            // Padding dinámico dentro del scroll para que Flutter haga el auto-scroll
+            // sin desbordar el BottomSheet abruptamente en navegadores móviles.
+            bottom: MediaQuery.of(context).viewInsets.bottom + 20,
+          ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -574,9 +533,7 @@ class _SolicitudPermisoFormState extends ConsumerState<SolicitudPermisoForm> {
                         children: [
                           const Text('Días a solicitar:'),
                           Text(
-                            _formatearDiasYHoras(
-                              _previewResult!.diasSolicitados,
-                            ),
+                            _previewResult!.diasSolicitadosTxt ?? '0 días',
                             style: const TextStyle(fontWeight: FontWeight.w600),
                           ),
                         ],
@@ -588,9 +545,7 @@ class _SolicitudPermisoFormState extends ConsumerState<SolicitudPermisoForm> {
                           children: [
                             const Text('Saldo actual:'),
                             Text(
-                              _formatearDiasYHoras(
-                                _previewResult!.saldoActualBase,
-                              ),
+                              _previewResult!.saldoActualBaseTxt ?? '0 días',
                               style: const TextStyle(
                                 fontWeight: FontWeight.w600,
                               ),
@@ -603,9 +558,7 @@ class _SolicitudPermisoFormState extends ConsumerState<SolicitudPermisoForm> {
                           children: [
                             const Text('Saldo restante (proyectado):'),
                             Text(
-                              _formatearDiasYHoras(
-                                _previewResult!.saldoRestante,
-                              ),
+                              _previewResult!.saldoRestanteTxt ?? '0 días',
                               style: TextStyle(
                                 fontWeight: FontWeight.bold,
                                 color:
@@ -640,7 +593,7 @@ class _SolicitudPermisoFormState extends ConsumerState<SolicitudPermisoForm> {
                               const SizedBox(width: 8),
                               Expanded(
                                 child: Text(
-                                  'Solicitarás vacación de ${_formatearDiasYHoras(_previewResult!.saldoRestante!.abs())}, que se descontarán de tus futuras asignaciones de vacación.',
+                                  'Solicitarás vacación de ${(_previewResult!.saldoRestanteTxt ?? "0 días").replaceAll("-", "")}, que se descontarán de tus futuras asignaciones de vacación.',
                                   style: TextStyle(
                                     fontSize: 12,
                                     color: Colors.orange[800],
@@ -731,18 +684,20 @@ class _SolicitudPermisoFormState extends ConsumerState<SolicitudPermisoForm> {
     required String texto,
     required VoidCallback onTap,
   }) {
-    return TextFormField(
-      readOnly: true,
+    return InkWell(
       onTap: onTap,
-      controller: TextEditingController(text: texto),
-      decoration: InputDecoration(
-        labelText: label,
-        prefixIcon: const Icon(Icons.calendar_today, size: 18),
-        border: const OutlineInputBorder(),
-        contentPadding: const EdgeInsets.symmetric(
-          horizontal: 10,
-          vertical: 10,
+      borderRadius: BorderRadius.circular(4),
+      child: InputDecorator(
+        decoration: InputDecoration(
+          labelText: label,
+          prefixIcon: const Icon(Icons.calendar_today, size: 18),
+          border: const OutlineInputBorder(),
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 10,
+            vertical: 10,
+          ),
         ),
+        child: Text(texto, style: const TextStyle(fontSize: 16)),
       ),
     );
   }

@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Reglas de extracción de datos (Android 12 / API 31+).
+  Excluimos TODO el almacenamiento del respaldo en la nube y de la
+  transferencia device-to-device. Motivo: flutter_secure_storage cifra el
+  token con una llave del Keystore que no es respaldable; restaurar el blob
+  cifrado en otro dispositivo/contexto lo deja indescifrable y provoca 401
+  persistentes. Combinar con android:allowBackup="false" en el manifest.
+-->
+<data-extraction-rules>
+    <cloud-backup>
+        <exclude domain="sharedpref" path="." />
+        <exclude domain="file" path="." />
+        <exclude domain="database" path="." />
+    </cloud-backup>
+    <device-transfer>
+        <exclude domain="sharedpref" path="." />
+        <exclude domain="file" path="." />
+        <exclude domain="database" path="." />
+    </device-transfer>
+</data-extraction-rules>

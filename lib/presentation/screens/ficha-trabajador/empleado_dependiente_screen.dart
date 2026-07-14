@@ -257,294 +257,304 @@ class _EmpleadosDependientesViewState
                                           dividerThickness: 1,
                                         ),
                                       ),
-                                      child: DataTable(
-                                        columnSpacing: 24,
-                                        horizontalMargin: 16,
-                                        columns: const [
-                                          DataColumn(
-                                            label: Text(
-                                              '#',
-                                              style: TextStyle(
-                                                fontWeight: FontWeight.bold,
+                                      child: Scrollbar(
+                                        child: SingleChildScrollView(
+                                          scrollDirection: Axis.horizontal,
+                                          child: DataTable(
+                                            columnSpacing: 24,
+                                            horizontalMargin: 16,
+                                            columns: const [
+                                              DataColumn(
+                                                label: Text(
+                                                  '#',
+                                                  style: TextStyle(
+                                                    fontWeight: FontWeight.bold,
+                                                  ),
+                                                ),
                                               ),
-                                            ),
-                                          ),
-                                          DataColumn(
-                                            label: Text(
-                                              'Foto',
-                                              style: TextStyle(
-                                                fontWeight: FontWeight.bold,
-                                                color: Colors.teal,
+                                              DataColumn(
+                                                label: Text(
+                                                  'Foto',
+                                                  style: TextStyle(
+                                                    fontWeight: FontWeight.bold,
+                                                    color: Colors.teal,
+                                                  ),
+                                                ),
                                               ),
-                                            ),
-                                          ),
-                                          DataColumn(
-                                            label: Text(
-                                              'Nombre',
-                                              style: TextStyle(
-                                                fontWeight: FontWeight.bold,
-                                                color: Colors.teal,
+                                              DataColumn(
+                                                label: Text(
+                                                  'Nombre',
+                                                  style: TextStyle(
+                                                    fontWeight: FontWeight.bold,
+                                                    color: Colors.teal,
+                                                  ),
+                                                ),
                                               ),
-                                            ),
-                                          ),
-                                          DataColumn(
-                                            label: Text(
-                                              'Cargo',
-                                              style: TextStyle(
-                                                fontWeight: FontWeight.bold,
-                                                color: Colors.teal,
+                                              DataColumn(
+                                                label: Text(
+                                                  'Cargo',
+                                                  style: TextStyle(
+                                                    fontWeight: FontWeight.bold,
+                                                    color: Colors.teal,
+                                                  ),
+                                                ),
                                               ),
-                                            ),
-                                          ),
-                                          DataColumn(
-                                            label: Text(
-                                              'Empresa',
-                                              style: TextStyle(
-                                                fontWeight: FontWeight.bold,
-                                                color: Colors.teal,
+                                              DataColumn(
+                                                label: Text(
+                                                  'Empresa',
+                                                  style: TextStyle(
+                                                    fontWeight: FontWeight.bold,
+                                                    color: Colors.teal,
+                                                  ),
+                                                ),
                                               ),
-                                            ),
-                                          ),
-                                          DataColumn(
-                                            label: Text(
-                                              'Sucursal',
-                                              style: TextStyle(
-                                                fontWeight: FontWeight.bold,
-                                                color: Colors.teal,
+                                              DataColumn(
+                                                label: Text(
+                                                  'Sucursal',
+                                                  style: TextStyle(
+                                                    fontWeight: FontWeight.bold,
+                                                    color: Colors.teal,
+                                                  ),
+                                                ),
                                               ),
-                                            ),
-                                          ),
-                                          DataColumn(
-                                            label: Text(
-                                              'Activo',
-                                              style: TextStyle(
-                                                fontWeight: FontWeight.bold,
-                                                color: Colors.teal,
+                                              DataColumn(
+                                                label: Text(
+                                                  'Activo',
+                                                  style: TextStyle(
+                                                    fontWeight: FontWeight.bold,
+                                                    color: Colors.teal,
+                                                  ),
+                                                ),
                                               ),
-                                            ),
-                                          ),
 
-                                          DataColumn(
-                                            label: Text(
-                                              'Acciones',
-                                              style: TextStyle(
-                                                fontWeight: FontWeight.bold,
-                                                color: Colors.teal,
+                                              DataColumn(
+                                                label: Text(
+                                                  'Acciones',
+                                                  style: TextStyle(
+                                                    fontWeight: FontWeight.bold,
+                                                    color: Colors.teal,
+                                                  ),
+                                                ),
                                               ),
-                                            ),
-                                          ),
-                                        ],
-                                        rows:
-                                            (_searchTerm.isEmpty
-                                                    ? filtered
-                                                        .skip(
-                                                          _currentPage *
-                                                              _itemsPerPage,
-                                                        )
-                                                        .take(_itemsPerPage)
-                                                        .toList()
-                                                    : filtered)
-                                                .asMap()
-                                                .entries
-                                                .map((entry) {
-                                                  final index = entry.key;
-                                                  final empleado = entry.value;
-                                                  final numeroFila =
-                                                      _searchTerm.isEmpty
-                                                          ? (_currentPage *
-                                                                  _itemsPerPage) +
-                                                              index +
-                                                              1
-                                                          : index + 1;
-                                                  //comprobar si el empleado es el usuario logueado
-                                                  final esUsuarioLogeado =
-                                                      empleado.codEmpleado ==
-                                                      _codEmpleadoUsuario;
-
-                                                  return DataRow(
-                                                    //resaltar fila si es el usuario logueado
-                                                    color:
-                                                        esUsuarioLogeado
-                                                            ? WidgetStateProperty.all(
-                                                              Colors.blueAccent
-                                                                  .withAlpha(
-                                                                    25,
-                                                                  ), // Sutil, no llamativo
+                                            ],
+                                            rows:
+                                                (_searchTerm.isEmpty
+                                                        ? filtered
+                                                            .skip(
+                                                              _currentPage *
+                                                                  _itemsPerPage,
                                                             )
-                                                            : null, //fin resaltar fila
-                                                    cells: [
-                                                      DataCell(
-                                                        Text(
-                                                          numeroFila.toString(),
-                                                          style: TextStyle(
-                                                            fontWeight:
-                                                                FontWeight.bold,
-                                                            color:
-                                                                Theme.of(
-                                                                      context,
-                                                                    )
-                                                                    .colorScheme
-                                                                    .primary,
-                                                          ),
-                                                        ),
-                                                      ),
-                                                      DataCell(
-                                                        Container(
-                                                          width: 40,
-                                                          height: 40,
-                                                          decoration: BoxDecoration(
-                                                            shape:
-                                                                BoxShape.circle,
-                                                            border: Border.all(
-                                                              color:
-                                                                  Colors
-                                                                      .teal
-                                                                      .shade100,
-                                                              width: 2,
-                                                            ),
-                                                          ),
-                                                          child: ClipRRect(
-                                                            borderRadius:
-                                                                BorderRadius.circular(
-                                                                  20,
-                                                                ),
-                                                            child: _buildEmpleadoAvatar(
-                                                              empleado
-                                                                  .codEmpleado,
-                                                            ),
-                                                          ),
-                                                        ),
-                                                      ),
-                                                      DataCell(
-                                                        Text(
+                                                            .take(_itemsPerPage)
+                                                            .toList()
+                                                        : filtered)
+                                                    .asMap()
+                                                    .entries
+                                                    .map((entry) {
+                                                      final index = entry.key;
+                                                      final empleado =
+                                                          entry.value;
+                                                      final numeroFila =
+                                                          _searchTerm.isEmpty
+                                                              ? (_currentPage *
+                                                                      _itemsPerPage) +
+                                                                  index +
+                                                                  1
+                                                              : index + 1;
+                                                      //comprobar si el empleado es el usuario logueado
+                                                      final esUsuarioLogeado =
                                                           empleado
-                                                                  .persona
-                                                                  .datoPersona ??
-                                                              'N/A',
-                                                          style:
-                                                              const TextStyle(
+                                                              .codEmpleado ==
+                                                          _codEmpleadoUsuario;
+
+                                                      return DataRow(
+                                                        //resaltar fila si es el usuario logueado
+                                                        color:
+                                                            esUsuarioLogeado
+                                                                ? WidgetStateProperty.all(
+                                                                  Colors
+                                                                      .blueAccent
+                                                                      .withAlpha(
+                                                                        25,
+                                                                      ), // Sutil, no llamativo
+                                                                )
+                                                                : null, //fin resaltar fila
+                                                        cells: [
+                                                          DataCell(
+                                                            Text(
+                                                              numeroFila
+                                                                  .toString(),
+                                                              style: TextStyle(
+                                                                fontWeight:
+                                                                    FontWeight
+                                                                        .bold,
+                                                                color:
+                                                                    Theme.of(
+                                                                          context,
+                                                                        )
+                                                                        .colorScheme
+                                                                        .primary,
+                                                              ),
+                                                            ),
+                                                          ),
+                                                          DataCell(
+                                                            Container(
+                                                              width: 40,
+                                                              height: 40,
+                                                              decoration: BoxDecoration(
+                                                                shape:
+                                                                    BoxShape
+                                                                        .circle,
+                                                                border: Border.all(
+                                                                  color:
+                                                                      Colors
+                                                                          .teal
+                                                                          .shade100,
+                                                                  width: 2,
+                                                                ),
+                                                              ),
+                                                              child: ClipRRect(
+                                                                borderRadius:
+                                                                    BorderRadius.circular(
+                                                                      20,
+                                                                    ),
+                                                                child: _buildEmpleadoAvatar(
+                                                                  empleado
+                                                                      .codEmpleado,
+                                                                ),
+                                                              ),
+                                                            ),
+                                                          ),
+                                                          DataCell(
+                                                            Text(
+                                                              empleado
+                                                                      .persona
+                                                                      .datoPersona ??
+                                                                  'N/A',
+                                                              style: const TextStyle(
                                                                 fontWeight:
                                                                     FontWeight
                                                                         .w500,
                                                               ),
-                                                        ),
-                                                      ),
-                                                      DataCell(
-                                                        Text(
-                                                          empleado
-                                                              .empleadoCargo
-                                                              .cargoSucursal!
-                                                              .cargo!
-                                                              .descripcion,
-                                                        ),
-                                                      ),
-                                                      DataCell(
-                                                        Text(
-                                                          empleado
-                                                              .empresa
-                                                              .nombre,
-                                                        ),
-                                                      ),
-                                                      DataCell(
-                                                        Text(
-                                                          (empleado
-                                                                  .sucursal
-                                                                  .nombre)
-                                                              .toUpperCase(),
-                                                        ),
-                                                      ),
-                                                      DataCell(
-                                                        Text(
-                                                          (empleado
-                                                                      .relEmpEmpr
-                                                                      .esActivo ==
-                                                                  1
-                                                              ? 'Activo'
-                                                              : 'Inactivo'),
-                                                          //cambiar a color rojo si es inactivo
-                                                          style: TextStyle(
-                                                            color:
-                                                                empleado.relEmpEmpr.esActivo ==
-                                                                        1
-                                                                    ? Colors
-                                                                        .green
-                                                                    : Colors
-                                                                        .red,
+                                                            ),
                                                           ),
-                                                        ),
-                                                      ),
-                                                      DataCell(
-                                                        FittedBox(
-                                                          fit: BoxFit.scaleDown,
-                                                          child: Row(
-                                                            mainAxisSize:
-                                                                MainAxisSize
-                                                                    .min,
-                                                            children: [
-                                                              _buildReferenciasButton(
-                                                                empleado
-                                                                    .codEmpleado,
-                                                                empleado
-                                                                    .dependiente!
-                                                                    .codEmpleado,
+                                                          DataCell(
+                                                            Text(
+                                                              empleado
+                                                                  .empleadoCargo
+                                                                  .cargoSucursal!
+                                                                  .cargo!
+                                                                  .descripcion,
+                                                            ),
+                                                          ),
+                                                          DataCell(
+                                                            Text(
+                                                              empleado
+                                                                  .empresa
+                                                                  .nombre,
+                                                            ),
+                                                          ),
+                                                          DataCell(
+                                                            Text(
+                                                              (empleado
+                                                                      .sucursal
+                                                                      .nombre)
+                                                                  .toUpperCase(),
+                                                            ),
+                                                          ),
+                                                          DataCell(
+                                                            Text(
+                                                              (empleado
+                                                                          .relEmpEmpr
+                                                                          .esActivo ==
+                                                                      1
+                                                                  ? 'Activo'
+                                                                  : 'Inactivo'),
+                                                              //cambiar a color rojo si es inactivo
+                                                              style: TextStyle(
+                                                                color:
+                                                                    empleado.relEmpEmpr.esActivo ==
+                                                                            1
+                                                                        ? Colors
+                                                                            .green
+                                                                        : Colors
+                                                                            .red,
                                                               ),
-                                                              const SizedBox(
-                                                                width: 8,
-                                                              ),
-                                                              TextButton.icon(
-                                                                onPressed:
-                                                                    () => _navigateToDetails(
-                                                                      empleado
-                                                                          .codEmpleado,
+                                                            ),
+                                                          ),
+                                                          DataCell(
+                                                            FittedBox(
+                                                              fit:
+                                                                  BoxFit
+                                                                      .scaleDown,
+                                                              child: Row(
+                                                                mainAxisSize:
+                                                                    MainAxisSize
+                                                                        .min,
+                                                                children: [
+                                                                  _buildReferenciasButton(
+                                                                    empleado
+                                                                        .codEmpleado,
+                                                                    empleado
+                                                                        .dependiente!
+                                                                        .codEmpleado,
+                                                                  ),
+                                                                  const SizedBox(
+                                                                    width: 8,
+                                                                  ),
+                                                                  TextButton.icon(
+                                                                    onPressed:
+                                                                        () => _navigateToDetails(
+                                                                          empleado
+                                                                              .codEmpleado,
+                                                                        ),
+                                                                    icon: const Icon(
+                                                                      Icons
+                                                                          .info_outline,
+                                                                      color:
+                                                                          Colors
+                                                                              .teal,
                                                                     ),
-                                                                icon: const Icon(
-                                                                  Icons
-                                                                      .info_outline,
-                                                                  color:
-                                                                      Colors
-                                                                          .teal,
-                                                                ),
-                                                                label: const Text(
-                                                                  'Ver detalles',
-                                                                ),
-                                                                style: TextButton.styleFrom(
-                                                                  foregroundColor:
-                                                                      Colors
-                                                                          .teal,
-                                                                  backgroundColor: Colors
-                                                                      .teal
-                                                                      .withValues(
-                                                                        alpha:
-                                                                            0.08,
-                                                                      ),
-                                                                  padding:
-                                                                      const EdgeInsets.symmetric(
+                                                                    label: const Text(
+                                                                      'Ver detalles',
+                                                                    ),
+                                                                    style: TextButton.styleFrom(
+                                                                      foregroundColor:
+                                                                          Colors
+                                                                              .teal,
+                                                                      backgroundColor: Colors
+                                                                          .teal
+                                                                          .withValues(
+                                                                            alpha:
+                                                                                0.08,
+                                                                          ),
+                                                                      padding: const EdgeInsets.symmetric(
                                                                         horizontal:
                                                                             12,
                                                                         vertical:
                                                                             10,
                                                                       ),
-                                                                  shape: RoundedRectangleBorder(
-                                                                    borderRadius:
-                                                                        BorderRadius.circular(
-                                                                          10,
-                                                                        ),
+                                                                      shape: RoundedRectangleBorder(
+                                                                        borderRadius:
+                                                                            BorderRadius.circular(
+                                                                              10,
+                                                                            ),
+                                                                      ),
+                                                                      textStyle: const TextStyle(
+                                                                        fontWeight:
+                                                                            FontWeight.w600,
+                                                                      ),
+                                                                    ),
                                                                   ),
-                                                                  textStyle: const TextStyle(
-                                                                    fontWeight:
-                                                                        FontWeight
-                                                                            .w600,
-                                                                  ),
-                                                                ),
+                                                                ],
                                                               ),
-                                                            ],
+                                                            ),
                                                           ),
-                                                        ),
-                                                      ),
-                                                    ],
-                                                  );
-                                                })
-                                                .toList(),
+                                                        ],
+                                                      );
+                                                    })
+                                                    .toList(),
+                                          ),
+                                        ),
                                       ),
                                     ),
                                     Container(

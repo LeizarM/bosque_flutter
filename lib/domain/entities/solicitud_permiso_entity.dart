@@ -17,12 +17,17 @@ class SolicitudPermisoEntity {
   final int? codPermiso;
   final String? autorizador;
   final double? diasDisponibles;
+  final String? diasDisponiblesTxt;
   final String? motivoRechazo;
+  final String? fechasTxt;
 
   // ── Auxiliares para previsualizar saldo (acción 'C') ──────────
   final double? diasSolicitados;
+  final String? diasSolicitadosTxt;
   final double? saldoRestante;
+  final String? saldoRestanteTxt;
   final double? saldoActualBase;
+  final String? saldoActualBaseTxt;
 
   SolicitudPermisoEntity({
     required this.codEmpleado,
@@ -42,9 +47,14 @@ class SolicitudPermisoEntity {
     this.codPermiso,
     this.autorizador,
     this.diasDisponibles,
+    this.diasDisponiblesTxt,
     this.motivoRechazo,
+    this.fechasTxt,
     this.diasSolicitados,
+    this.diasSolicitadosTxt,
     this.saldoRestante,
+    this.saldoRestanteTxt,
     this.saldoActualBase,
+    this.saldoActualBaseTxt,
   });
 }
