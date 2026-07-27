@@ -1,3 +1,4 @@
+import 'package:bosque_flutter/domain/entities/solicitud_permiso_entity.dart';
 import 'package:bosque_flutter/presentation/widgets/permisos-vacaciones/solicitud_permiso_vacacion.dart';
 import 'package:flutter/material.dart';
 import 'package:printing/printing.dart';
@@ -7,6 +8,7 @@ import 'package:bosque_flutter/core/state/user_provider.dart';
 import 'package:bosque_flutter/core/state/empleados_dependientes_provider.dart';
 import 'package:bosque_flutter/core/utils/responsive_utils_bosque.dart';
 import 'package:bosque_flutter/presentation/widgets/permisos-vacaciones/solicitud_permiso_card.dart';
+import 'package:bosque_flutter/presentation/widgets/shared/permission_widget.dart';
 
 class MisSolicitudesWidget extends ConsumerWidget {
   final int codEmpleado;
@@ -84,6 +86,7 @@ class MisSolicitudesWidget extends ConsumerWidget {
                     codEmpleado: codEmpleado,
                     codRelEmplEmpr: codRelReal,
                     audUsuarioI: currentUser?.codUsuario ?? 0,
+                    actorCodEmpleado: currentUser?.codEmpleado ?? 0,
                   );
                 },
               ),
@@ -131,6 +134,9 @@ class MisSolicitudesWidget extends ConsumerWidget {
                 } else if (sol.estado == 3) {
                   estadoColor = Colors.red;
                   estadoIcon = Icons.cancel_outlined;
+                } else if (sol.estado == 4) {
+                  estadoColor = Colors.grey;
+                  estadoIcon = Icons.remove_circle_outline;
                 } else {
                   estadoColor = Colors.orange;
                   estadoIcon = Icons.schedule;
@@ -139,6 +145,33 @@ class MisSolicitudesWidget extends ConsumerWidget {
                 return SolicitudPermisoCard(
                   item: sol,
                   showEmployeeInfo: false,
+                  actionButtons:
+                      sol.estado == 2
+                          ? PermissionWidget(
+                            buttonName: 'btnAnularVacacion',
+                            child: ElevatedButton.icon(
+                              icon: const Icon(
+                                Icons.cancel,
+                                color: Colors.white,
+                                size: 16,
+                              ),
+                              label: const Text(
+                                'Anular',
+                                style: TextStyle(color: Colors.white),
+                              ),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.red,
+                                elevation: 0,
+                              ),
+                              onPressed:
+                                  () => _mostrarDialogoAnulacion(
+                                    context,
+                                    ref,
+                                    sol,
+                                  ),
+                            ),
+                          )
+                          : null,
                   topTrailingWidget:
                       esEditable
                           ? IconButton(
@@ -149,12 +182,13 @@ class MisSolicitudesWidget extends ConsumerWidget {
                             ),
                             onPressed: () {
                               SolicitudPermisoForm.mostrar(
-                                context,
-                                codEmpleado: codEmpleado,
-                                codRelEmplEmpr: sol.codRelEmplEmpr,
-                                audUsuarioI: currentUser!.codUsuario,
-                                solicitudAEditar: sol,
-                              );
+                                  context,
+                                  codEmpleado: codEmpleado,
+                                  codRelEmplEmpr: sol.codRelEmplEmpr,
+                                  audUsuarioI: currentUser!.codUsuario,
+                                  actorCodEmpleado: currentUser!.codEmpleado,
+                                  solicitudAEditar: sol,
+                                );
                             },
                           )
                           : const Icon(
@@ -301,6 +335,125 @@ class MisSolicitudesWidget extends ConsumerWidget {
           },
         ),
       ],
+    );
+  }
+
+  void _mostrarDialogoAnulacion(
+    BuildContext context,
+    WidgetRef ref,
+    SolicitudPermisoEntity sol,
+  ) {
+    final TextEditingController motivoCtrl = TextEditingController();
+    final currentUser = ref.read(userProvider);
+    if (currentUser == null) return;
+
+    showDialog(
+      context: context,
+      builder: (ctx) {
+        bool isLoading = false;
+        return StatefulBuilder(
+          builder: (ctx, setState) {
+            return AlertDialog(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              title: const Row(
+                children: [
+                  Icon(Icons.warning_amber_rounded, color: Colors.red),
+                  SizedBox(width: 8),
+                  Text('Anular Solicitud', style: TextStyle(fontSize: 18)),
+                ],
+              ),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    '¿Está seguro de anular esta solicitud aprobada?',
+                    style: const TextStyle(fontSize: 14),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: motivoCtrl,
+                    decoration: const InputDecoration(
+                      labelText: 'Motivo de anulación (Obligatorio)',
+                      border: OutlineInputBorder(),
+                    ),
+                    maxLines: 2,
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: isLoading ? null : () => Navigator.pop(ctx),
+                  child: const Text(
+                    'Cancelar',
+                    style: TextStyle(color: Colors.grey),
+                  ),
+                ),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+                  onPressed:
+                      isLoading
+                          ? null
+                          : () {
+                            final motivo = motivoCtrl.text.trim();
+                            if (motivo.isEmpty) {
+                              ScaffoldMessenger.of(ctx).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Debe ingresar un motivo'),
+                                ),
+                              );
+                              return;
+                            }
+                            setState(() => isLoading = true);
+                            ref
+                                .read(accionSolicitudProvider.notifier)
+                                .anular(
+                                  codSolicitud: sol.codSolicitud!,
+                                  audUsuarioI: currentUser.codUsuario,
+                                  motivo: motivo,
+                                    onSuccess: (msg) {
+                                      Navigator.pop(ctx);
+                                      ref.invalidate(misSolicitudesProvider);
+                                      ref.invalidate(solicitudesPendientesProvider);
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text(msg),
+                                        backgroundColor: Colors.green,
+                                      ),
+                                    );
+                                  },
+                                  onError: (err) {
+                                    setState(() => isLoading = false);
+                                    ScaffoldMessenger.of(ctx).showSnackBar(
+                                      SnackBar(
+                                        content: Text(err),
+                                        backgroundColor: Colors.red,
+                                      ),
+                                    );
+                                  },
+                                );
+                          },
+                  child:
+                      isLoading
+                          ? const SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(
+                              color: Colors.white,
+                              strokeWidth: 2,
+                            ),
+                          )
+                          : const Text(
+                            'Confirmar Anulación',
+                            style: TextStyle(color: Colors.white),
+                          ),
+                ),
+              ],
+            );
+          },
+        );
+      },
     );
   }
 }

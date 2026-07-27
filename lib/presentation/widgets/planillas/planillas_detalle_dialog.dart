@@ -198,32 +198,27 @@ class _PlanillasDetalleDialogState
                                     ),
                                   ),
                                 ),
-                                title: Row(
+                                title: Wrap(
+                                  crossAxisAlignment: WrapCrossAlignment.center,
+                                  spacing: 8,
+                                  runSpacing: 8,
                                   children: [
-                                    Expanded(
-                                      child: Text(
-                                        emp.nombreCompleto,
-                                        style: TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                          color:
-                                              emp.tieneError ? cs.error : null,
-                                        ),
+                                    Text(
+                                      emp.nombreCompleto,
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        color: emp.tieneError ? cs.error : null,
                                       ),
                                     ),
                                     if (emp.tieneError)
-                                      Padding(
-                                        padding: const EdgeInsets.only(
-                                          right: 8.0,
-                                        ),
-                                        child: Tooltip(
-                                          message:
-                                              emp.mensajeError ??
-                                              'Error en el detalle',
-                                          child: Icon(
-                                            Icons.warning_rounded,
-                                            color: cs.error,
-                                            size: 20,
-                                          ),
+                                      Tooltip(
+                                        message:
+                                            emp.mensajeError ??
+                                            'Error en el detalle',
+                                        child: Icon(
+                                          Icons.warning_rounded,
+                                          color: cs.error,
+                                          size: 20,
                                         ),
                                       ),
                                     Container(
@@ -262,11 +257,51 @@ class _PlanillasDetalleDialogState
                                     ),
                                   ],
                                 ),
-                                subtitle: Text(
-                                  'Cargo: ${emp.cargo} | CI: ${emp.ciNumero}${emp.mensajeError != null ? '\nError: ${emp.mensajeError}' : ''}',
-                                  style: TextStyle(
-                                    color: emp.tieneError ? cs.error : null,
-                                  ),
+                                subtitle: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      'Cargo: ${emp.cargo} | CI: ${emp.ciNumero}',
+                                      style: TextStyle(
+                                        color: emp.tieneError ? cs.error : null,
+                                      ),
+                                    ),
+                                    if (emp.fechaIngreso != null ||
+                                        emp.fechaSalida != null) ...[
+                                      const SizedBox(height: 6),
+                                      Wrap(
+                                        spacing: 8,
+                                        runSpacing: 4,
+                                        children: [
+                                          if (emp.fechaIngreso != null)
+                                            _buildDateChip(
+                                              'Fecha Ingreso',
+                                              emp.fechaIngreso!,
+                                              const Color(0xFF2E7D32),
+                                              Icons.login,
+                                            ),
+                                          if (emp.fechaSalida != null)
+                                            _buildDateChip(
+                                              'Fecha Salida',
+                                              emp.fechaSalida!,
+                                              cs.error,
+                                              Icons.logout,
+                                            ),
+                                        ],
+                                      ),
+                                    ],
+                                    if (emp.mensajeError != null) ...[
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        'Error: ${emp.mensajeError}',
+                                        style: TextStyle(
+                                          color: cs.error,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ],
+                                  ],
                                 ),
                                 children: [
                                   Padding(
@@ -758,6 +793,37 @@ class _PlanillasDetalleDialogState
               fontSize: 13,
               color: fg,
               fontWeight: FontWeight.bold,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDateChip(
+    String label,
+    DateTime date,
+    Color color,
+    IconData icon,
+  ) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.1),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
+        borderRadius: BorderRadius.circular(4),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 12, color: color),
+          const SizedBox(width: 4),
+          Text(
+            '$label: ${DateFormat('dd/MM/yyyy').format(date)}',
+            style: TextStyle(
+              fontSize: 11,
+              color: color,
+              fontWeight: FontWeight.w500,
             ),
           ),
         ],

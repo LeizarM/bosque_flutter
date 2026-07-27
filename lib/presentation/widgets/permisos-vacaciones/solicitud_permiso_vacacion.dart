@@ -12,6 +12,7 @@ class SolicitudPermisoForm extends ConsumerStatefulWidget {
   final int codEmpleado;
   final int codRelEmplEmpr;
   final int audUsuarioI;
+  final int actorCodEmpleado;
   final SolicitudPermisoEntity? solicitudAEditar;
 
   const SolicitudPermisoForm({
@@ -19,6 +20,7 @@ class SolicitudPermisoForm extends ConsumerStatefulWidget {
     required this.codEmpleado,
     required this.codRelEmplEmpr,
     required this.audUsuarioI,
+    required this.actorCodEmpleado,
     this.solicitudAEditar,
   });
 
@@ -28,6 +30,7 @@ class SolicitudPermisoForm extends ConsumerStatefulWidget {
     required int codEmpleado,
     required int codRelEmplEmpr,
     required int audUsuarioI,
+    required int actorCodEmpleado,
     SolicitudPermisoEntity? solicitudAEditar,
   }) {
     showModalBottomSheet(
@@ -36,11 +39,13 @@ class SolicitudPermisoForm extends ConsumerStatefulWidget {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
+      useSafeArea: true,
       builder:
-          (context) => SolicitudPermisoForm(
+          (_) => SolicitudPermisoForm(
             codEmpleado: codEmpleado,
             codRelEmplEmpr: codRelEmplEmpr,
             audUsuarioI: audUsuarioI,
+            actorCodEmpleado: actorCodEmpleado,
             solicitudAEditar: solicitudAEditar,
           ),
     );
@@ -376,7 +381,12 @@ class _SolicitudPermisoFormState extends ConsumerState<SolicitudPermisoForm> {
 
               // TIPO DE PERMISO
               CustomDropdown<TipoPermisoVacacionEntity>(
-                asyncValue: ref.watch(tiposPermisoProvider),
+                asyncValue: ref.watch(
+                  tiposPermisoProvider((
+                    codEmpleado: widget.codEmpleado,
+                    codUsuarioLogueado: widget.actorCodEmpleado,
+                  )),
+                ),
                 label: 'Tipo de Permiso',
                 currentValue: _tipoPermiso,
                 onChanged: (val) {

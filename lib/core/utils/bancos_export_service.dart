@@ -3,6 +3,10 @@ import 'dart:typed_data';
 import 'package:bosque_flutter/core/constants/app_constants.dart';
 import 'package:bosque_flutter/core/network/base_api_repository.dart';
 import 'package:excel/excel.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:path_provider/path_provider.dart';
+import 'package:flutter_file_dialog/flutter_file_dialog.dart';
+import 'dart:io' as io;
 import 'package:universal_html/html.dart' as html;
 
 /// Servicio de exportación de planillas bancarias.
@@ -62,10 +66,10 @@ class BancosExportService extends BaseApiRepository {
 
       switch (codBanco) {
         case 3: // BCP → TXT con comas
-          _exportarBCP(datosEmpresa, mes, anio, empresaKey);
+          await _exportarBCP(datosEmpresa, mes, anio, empresaKey);
           break;
         case 5: // Ganadero → Excel (CSV sin encabezado especial)
-          _exportarExcelSimple(
+          await _exportarExcelSimple(
             datosEmpresa,
             'PlanillaGanadero',
             mes,
@@ -75,7 +79,7 @@ class BancosExportService extends BaseApiRepository {
           );
           break;
         case 2: // Mercantil → Excel (CSV sin encabezado especial)
-          _exportarExcelSimple(
+          await _exportarExcelSimple(
             datosEmpresa,
             'PlanillaMercantil',
             mes,
@@ -85,10 +89,10 @@ class BancosExportService extends BaseApiRepository {
           );
           break;
         case 9: // Económico → Excel con encabezado especial
-          _exportarEconomico(datosEmpresa, mes, anio, empresaKey);
+          await _exportarEconomico(datosEmpresa, mes, anio, empresaKey);
           break;
         default: // 0 = Global → Excel simple
-          _exportarExcelSimple(
+          await _exportarExcelSimple(
             datosEmpresa,
             'PlanillaGlobal',
             mes,
@@ -107,12 +111,12 @@ class BancosExportService extends BaseApiRepository {
   // BCP: TXT con comas, SIN cabecera
   // Columnas: Nro,numCuenta,liquido,Comentario,TipoDocID,DocID,ExtensionDocID,,
   // ─────────────────────────────────────────────────────────────────────────────
-  void _exportarBCP(
+  Future<void> _exportarBCP(
     List<Map<String, dynamic>> datos,
     String mes,
     String anio, [
     String empresa = '',
-  ]) {
+  ]) async {
     final sb = StringBuffer();
     int nro = 1;
     for (final row in datos) {
@@ -135,7 +139,7 @@ class BancosExportService extends BaseApiRepository {
     }
 
     final sufijo = empresa.isNotEmpty ? '-$empresa' : '';
-    _descargar(
+    await _descargar(
       sb.toString(),
       'PlanillaBCP-$mes-$anio$sufijo.txt',
       'text/plain',
@@ -146,14 +150,14 @@ class BancosExportService extends BaseApiRepository {
   // ─────────────────────────────────────────────────────────────────────────────
   // Ganadero y Mercantil: Excel/CSV simple, cabeceras en fila 1
   // ─────────────────────────────────────────────────────────────────────────────
-  void _exportarExcelSimple(
+  Future<void> _exportarExcelSimple(
     List<Map<String, dynamic>> datos,
     String prefijo,
     String mes,
     String anio,
     String nombreHoja, [
     String empresa = '',
-  ]) {
+  ]) async {
     if (datos.isEmpty) return;
     final sb = StringBuffer();
     // Fila 1: cabeceras
@@ -170,10 +174,11 @@ class BancosExportService extends BaseApiRepository {
     }
 
     final sufijo = empresa.isNotEmpty ? '-$empresa' : '';
-    _descargar(
+    await _descargar(
       sb.toString(),
       '$prefijo-$mes-$anio$sufijo.csv',
       'text/csv;charset=utf-8',
+      bom: true,
     );
   }
 
@@ -188,12 +193,12 @@ class BancosExportService extends BaseApiRepository {
   //   Fila 9: CABECERAS DE DATOS
   //   Fila 10+: filas de datos
   // ─────────────────────────────────────────────────────────────────────────────
-  void _exportarEconomico(
+  Future<void> _exportarEconomico(
     List<Map<String, dynamic>> datos,
     String mes,
     String anio, [
     String empresa = '',
-  ]) {
+  ]) async {
     if (datos.isEmpty) return;
 
     var excel = Excel.createExcel();
@@ -285,7 +290,7 @@ class BancosExportService extends BaseApiRepository {
     final bytes = excel.encode();
     if (bytes != null) {
       final sufijo = empresa.isNotEmpty ? '-$empresa' : '';
-      _descargarBytes(
+      await _descargarBytes(
         bytes,
         'PlanillaEconomico-$mes-$anio$sufijo.xlsx',
         'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
@@ -320,24 +325,45 @@ class BancosExportService extends BaseApiRepository {
     return s;
   }
 
-  void _descargar(
+  Future<void> _descargar(
     String contenido,
     String nombreArchivo,
     String mimeType, {
     bool bom = true,
-  }) {
+  }) async {
     final bytes = utf8.encode(contenido);
     final data = bom ? [0xEF, 0xBB, 0xBF, ...bytes] : bytes;
-    _descargarBytes(data, nombreArchivo, mimeType);
+    await _descargarBytes(data, nombreArchivo, mimeType);
   }
 
-  void _descargarBytes(List<int> bytes, String nombreArchivo, String mimeType) {
+  Future<void> _descargarBytes(
+    List<int> bytes,
+    String nombreArchivo,
+    String mimeType,
+  ) async {
     final uint8List = Uint8List.fromList(bytes);
-    final blob = html.Blob([uint8List], mimeType);
-    final url = html.Url.createObjectUrlFromBlob(blob);
-    html.AnchorElement(href: url)
-      ..setAttribute('download', nombreArchivo)
-      ..click();
-    html.Url.revokeObjectUrl(url);
+
+    if (kIsWeb) {
+      final blob = html.Blob([uint8List], mimeType);
+      final url = html.Url.createObjectUrlFromBlob(blob);
+      html.AnchorElement(href: url)
+        ..setAttribute('download', nombreArchivo)
+        ..click();
+      html.Url.revokeObjectUrl(url);
+    } else {
+      // Descarga nativa en móvil (Android/iOS)
+      final tempDir = await getTemporaryDirectory();
+      final tempFile = io.File('${tempDir.path}/$nombreArchivo');
+      await tempFile.writeAsBytes(uint8List);
+
+      final params = SaveFileDialogParams(
+        sourceFilePath: tempFile.path,
+        fileName: nombreArchivo,
+        mimeTypesFilter: [mimeType],
+      );
+
+      // flutter_file_dialog maneja la intención nativa de guardar archivos.
+      await FlutterFileDialog.saveFile(params: params);
+    }
   }
 }

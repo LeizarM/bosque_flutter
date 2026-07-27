@@ -10,7 +10,7 @@ class AppConstants {
 
   static const String _compiledBaseUrlDev = String.fromEnvironment(
     'BASE_URL_DEV',
-    defaultValue: 'http://192.168.3.108:9223',
+    defaultValue: 'http://192.168.3.107:9223',
   );
 
   // Selector inteligente de URL base
@@ -275,6 +275,7 @@ class AppConstants {
   static const String rrhhObtenerCargosXEmpresa = '/rrhh/cargoXSucursal';
   static const String rrhhRegistrarRelacionLaboral = '/rrhh/registroRelEmp';
   static const String bncGetBancos = '/banco/bancosX';
+  static const String bncGetBancosPlanilla = '/banco/bancosPlanilla';
   static const String rrhhGetCuentaBancoXEmpleado =
       '/rrhh/obtenerNroCuentaBanco';
   static const String rrhhRegistrarCuentaBancaria = '/rrhh/registroCuentaBanco';
@@ -282,6 +283,8 @@ class AppConstants {
       '/rrhh/eliminarCuentaBancaria';
   static const String rrhhTipoRealacionLaboral = '/rrhh/tipoRelacionLaboral';
   static const String pdfRptNominaEmpleados = '/rrhh/pdfNominaEmpleados';
+  static const String pdfRptPermVacTotal = '/rrhh/pdfRptPermVacTotal';
+  static const String excelRptPermVacTotal = '/rrhh/excelRptPermVacTotal';
   static const String rrhhRegistrarEmpleadoCargo =
       '/rrhh/registroEmpleadoCargo';
   static const String rrhhObtenerUltimoCodEmpleado = '/rrhh/ultimoCodEmpleado';
@@ -481,6 +484,7 @@ class AppConstants {
   static const String solicitarVacacion = '/vacacion/solicitar';
   static const String aprobarVacacion = '/vacacion/aprobar';
   static const String rechazarVacacion = '/vacacion/rechazar';
+  static const String anularVacacion = '/vacacion/anular';
   static const String pendientesVacacion = '/vacacion/pendientes';
   static const String solicitudesIndividuales =
       '/vacacion/solicitudesIndividuales';

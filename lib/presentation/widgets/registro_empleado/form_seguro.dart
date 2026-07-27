@@ -288,7 +288,7 @@ class _FormSeguroState extends ConsumerState<FormSeguro> {
       nombre: _nombreCtrl.text.trim(),
       nombreCorto: _nombreCortoCtrl.text.trim(),
       numero: _numeroCtrl.text.trim(),
-      regional: _selectedCiudad?.ciudad ?? '',
+      regional: _selectedCiudad?.ciudad ?? widget.seguroInicial?.regional ?? '',
       tipo: _selectedTipo!,
       descripcion: widget.seguroInicial?.descripcion ?? '',
       audUsuarioI: widget.audUsuario,

@@ -68,6 +68,25 @@ class PermisosVacacionImpl extends BaseApiRepository
     return response.message;
   }
 
+  @override
+  Future<String> anularSolicitud(
+    int codSolicitud,
+    int audUsuarioI,
+    String motivoAnulacion,
+  ) async {
+    final response = await postAndReturnFullResponse<SolicitudPermisoResponse>(
+      endpoint: AppConstants.anularVacacion,
+      data: {
+        'codSolicitud': codSolicitud,
+        'motivo': motivoAnulacion,
+        'audUsuarioI': audUsuarioI,
+      },
+      fromJson: (json) => SolicitudPermisoResponse.fromJson(json),
+      errorMessage: 'Error al anular la solicitud',
+    );
+    return response.message;
+  }
+
   // ════════════════════════════════════════════════════════════════════════════
   // permisos_vacacion_impl.dart
   // ════════════════════════════════════════════════════════════════════════════
@@ -99,7 +118,9 @@ class PermisosVacacionImpl extends BaseApiRepository
   }
 
   @override
-  Future<SolicitudPermisoEntity?> previsualizarSaldo(SolicitudPermisoEntity filtro) async {
+  Future<SolicitudPermisoEntity?> previsualizarSaldo(
+    SolicitudPermisoEntity filtro,
+  ) async {
     final model = SolicitudPermisoModel.fromEntity(filtro);
     final modelos = await postAndReturnList<SolicitudPermisoModel>(
       endpoint: AppConstants.previsualizarSaldo,
@@ -113,9 +134,10 @@ class PermisosVacacionImpl extends BaseApiRepository
   }
 
   @override
-  Future<List<TipoPermisoVacacionEntity>> getTiposPermiso() async {
+  Future<List<TipoPermisoVacacionEntity>> getTiposPermisosVacaciones(int codEmpleado, int codUsuarioLogueado) async {
     final modelos = await postAndReturnList<TipoPermisoVacacionModel>(
       endpoint: AppConstants.tipoPermisoSolicitudVacacion,
+      data: {'codEmpleado': codEmpleado, 'codUsuarioLogueado': codUsuarioLogueado},
       fromJson: (json) => TipoPermisoVacacionModel.fromJson(json),
     );
     return modelos.map((m) => m.toEntity()).toList();

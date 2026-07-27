@@ -43,7 +43,10 @@ class SolicitudPermisoCard extends ConsumerWidget {
   Widget get _tipoLabelWidget {
     return DisplayValue<TipoPermisoVacacionEntity>(
       code: item.tipoPermiso,
-      provider: tiposPermisoProvider,
+      provider: tiposPermisoProvider((
+        codEmpleado: item.codEmpleado,
+        codUsuarioLogueado: 0, // 0 = Mostrar todos para labels
+      )),
       getCode: (e) => e.codTipos,
       getDescription: (e) => e.nombre,
       fallback: item.tipoPermiso,
@@ -264,27 +267,40 @@ class SolicitudPermisoCard extends ConsumerWidget {
                 Container(
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: Colors.red.withValues(alpha: 0.1),
+                    color:
+                        item.estado == 4
+                            ? Colors.grey.withValues(alpha: 0.1)
+                            : Colors.red.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(
-                      color: Colors.red.withValues(alpha: 0.3),
+                      color:
+                          item.estado == 4
+                              ? Colors.grey.withValues(alpha: 0.3)
+                              : Colors.red.withValues(alpha: 0.3),
                     ),
                   ),
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Icon(
-                        Icons.error_outline,
+                      Icon(
+                        item.estado == 4
+                            ? Icons.info_outline
+                            : Icons.error_outline,
                         size: 16,
-                        color: Colors.red,
+                        color: item.estado == 4 ? Colors.grey[700] : Colors.red,
                       ),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
-                          'Motivo rechazo: ${item.motivoRechazo}',
-                          style: const TextStyle(
+                          item.estado == 4
+                              ? 'Motivo anulación: ${item.motivoRechazo}'
+                              : 'Motivo rechazo: ${item.motivoRechazo}',
+                          style: TextStyle(
                             fontSize: 12,
-                            color: Colors.red,
+                            color:
+                                item.estado == 4
+                                    ? Colors.grey[700]
+                                    : Colors.red,
                             fontWeight: FontWeight.w500,
                           ),
                         ),

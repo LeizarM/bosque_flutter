@@ -31,6 +31,13 @@ class _PlanillasScreenState extends ConsumerState<PlanillasScreen> {
 
     final int count = (anioActual - anioInicio + 1).clamp(1, _maxGestiones);
     _anios = List.generate(count, (i) => (anioActual - i).toString());
+
+    Future.microtask(() {
+      if (mounted) {
+        final uid = ref.read(userProvider)?.codUsuario ?? 0;
+        ref.read(planillaProvider.notifier).generarPlanilla(uid);
+      }
+    });
   }
 
   int get _uid => ref.read(userProvider)?.codUsuario ?? 0;

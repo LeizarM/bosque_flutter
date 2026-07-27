@@ -1938,7 +1938,7 @@ class _DetalleInformacionLaboralState
                         fechaIni: relacion.fechaIni ?? DateTime.now(),
                         fechaFin: relacion.fechaFin,
                         motivoFin: '',
-                        audUsuario: 0,
+                        audUsuario: audUsuario,
                         fechaInicioBeneficio: null,
                         fechaInicioPlanilla: null,
                         datoFechasBeneficio: null,
@@ -1948,7 +1948,7 @@ class _DetalleInformacionLaboralState
                         empresaInterna: '',
                       ),
                       codEmpleado: widget.codEmpleado,
-                      audUsuario: 0,
+                      audUsuario: audUsuario,
                       forceInactivo: true,
                       onSave:
                           (rel) => _saveToServer(

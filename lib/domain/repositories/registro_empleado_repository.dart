@@ -30,6 +30,7 @@ abstract class RegistroEmpleadoRepository{
   Future<List<CargoSucursalEntity>> obtenerCargoXsucursal(int codSucursal);
   Future<RelacionLaboralEntity>registrarRelacionLaboral(RelacionLaboralEntity relLab);
   Future<List<BancoEntity>> getBancos();
+  Future<List<BancoEntity>> getBancosPlanilla();
   Future<List<NroCuentaBancariaEntity>> getCuentaBancoXEmpleado(int codEmpleado);
   Future<NroCuentaBancariaEntity>registrarCuentaBancaria(NroCuentaBancariaEntity cuenta);
   Future<bool> eliminarCuentaBancaria(int codCuenta);

@@ -15,10 +15,17 @@ abstract class PermisosVacacionRepository {
     int audUsuarioI,
     String motivoRechazo,
   );
+  Future<String> anularSolicitud(
+    int codSolicitud,
+    int audUsuarioI,
+    String motivoAnulacion,
+  );
   Future<List<SolicitudPermisoEntity>> listarPendientes(int codUsuarioLogueado);
   Future<List<SolicitudPermisoEntity>> listarMisSolicitudes(int codEmpleado);
-  Future<List<TipoPermisoVacacionEntity>> getTiposPermiso();
+  Future<List<TipoPermisoVacacionEntity>> getTiposPermisosVacaciones(int codEmpleado, int codUsuarioLogueado);
   Future<Uint8List> descargarRptPermisoVacacion(int codPermiso);
   Future<List<FeriadoModel>> getFeriados(int codEmpleado);
-  Future<SolicitudPermisoEntity?> previsualizarSaldo(SolicitudPermisoEntity filtro);
+  Future<SolicitudPermisoEntity?> previsualizarSaldo(
+    SolicitudPermisoEntity filtro,
+  );
 }

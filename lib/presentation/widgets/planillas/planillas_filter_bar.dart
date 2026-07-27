@@ -1,4 +1,6 @@
 import 'package:bosque_flutter/core/state/planilla_provider.dart';
+import 'package:bosque_flutter/core/state/rrhh_provider.dart'; // Para empresasProvider
+import 'package:bosque_flutter/core/utils/responsive_utils_bosque.dart';
 import 'package:bosque_flutter/presentation/widgets/anticipos/anticipos_filter_bar.dart'; // Para BosqueFiltroDropdown
 import 'package:bosque_flutter/presentation/widgets/planillas/planillas_export_banco_dialog.dart';
 import 'package:flutter/material.dart';
@@ -92,167 +94,360 @@ class PlanillasFilterBar extends StatelessWidget {
                 },
               ),
             ),
-
-            // Spacer and Action Button
+            const SizedBox(width: 8),
             const SizedBox(width: 24),
             _PlanillasFilterDivider(),
             const SizedBox(width: 24),
 
-            FilledButton.icon(
-              icon: const Icon(Icons.calculate, size: 18),
-              label: const Text('Generar Planillas'),
-              style: FilledButton.styleFrom(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 14,
-                ),
-              ),
-              onPressed:
-                  st.cargando || st.generando
-                      ? null
-                      : () async {
-                        final confirm = await showDialog<bool>(
-                          context: context,
-                          builder:
-                              (c) => AlertDialog(
-                                title: const Text('Confirmar Generación'),
-                                content: const Text(
-                                  '¿Estás seguro que deseas generar la planilla para el periodo actual? '
-                                  'Esto reemplazará cualquier planilla no ejecutada del mes.',
-                                ),
-                                actions: [
-                                  TextButton(
-                                    onPressed: () => Navigator.pop(c, false),
-                                    child: const Text('Cancelar'),
-                                  ),
-                                  FilledButton(
-                                    onPressed: () => Navigator.pop(c, true),
-                                    child: const Text('Generar'),
-                                  ),
-                                ],
-                              ),
-                        );
-                        if (confirm == true) {
-                          ntf.generarPlanilla(uid);
-                        }
-                      },
-            ),
+            // =========================================================
+            // VALIDACIÓN DE SEGURIDAD (Cinturón en el Frontend)
+            // =========================================================
+            Builder(
+              builder: (context) {
+                final now = DateTime.now();
+                final bool isCurrentPeriod =
+                    st.mes == now.month.toString() &&
+                    st.anio == now.year.toString();
+                final bool isBusy = st.cargando || st.generando;
+                final bool isButtonDisabled = isBusy || !isCurrentPeriod;
 
-            const SizedBox(width: 8),
-
-            FilledButton.icon(
-              icon: const Icon(Icons.lock_person, size: 18),
-              label: const Text('Ejecutar Planillas'),
-              style: FilledButton.styleFrom(
-                backgroundColor: cs.error,
-                foregroundColor: cs.onError,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 14,
-                ),
-              ),
-              onPressed:
-                  st.cargando || st.generando
-                      ? null
-                      : () async {
-                        final confirm = await showDialog<bool>(
-                          context: context,
-                          builder:
-                              (c) => AlertDialog(
-                                icon: Icon(
-                                  Icons.warning_amber_rounded,
-                                  color: cs.error,
-                                  size: 40,
-                                ),
-                                title: const Text('EJECUTAR PLANILLAS CRÍTICO'),
-                                content: const Text(
-                                  '¿Está seguro de Ejecutar las Planillas de este mes?\n\n'
-                                  'Una vez ejecutadas, no podrán ser modificadas ni eliminadas, y todos los bonos y cuotas serán liquidados.',
-                                  style: TextStyle(fontWeight: FontWeight.bold),
-                                ),
-                                actions: [
-                                  TextButton(
-                                    onPressed: () => Navigator.pop(c, false),
-                                    child: const Text('Cancelar'),
-                                  ),
-                                  FilledButton(
-                                    style: FilledButton.styleFrom(
-                                      backgroundColor: cs.error,
-                                    ),
-                                    onPressed: () => Navigator.pop(c, true),
-                                    child: const Text(
-                                      'Sí, Ejecutar Definitivamente',
-                                    ),
-                                  ),
-                                ],
-                              ),
-                        );
-                        if (confirm == true) {
-                          ntf.ejecutarPlanilla();
-                        }
-                      },
-            ),
-
-            const SizedBox(width: 8),
-
-            FilledButton.icon(
-              icon: const Icon(Icons.download_for_offline, size: 18),
-              label: const Text('Exportar Bancos'),
-              style: FilledButton.styleFrom(
-                backgroundColor: cs.tertiary,
-                foregroundColor: cs.onTertiary,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 14,
-                ),
-              ),
-              onPressed:
-                  st.mes.isEmpty || st.anio.isEmpty
-                      ? null
-                      : () {
-                        showDialog(
-                          context: context,
-                          builder:
-                              (_) => PlanillasExportBancoDialog(
-                                mes: int.parse(st.mes),
-                                anio: int.parse(st.anio),
-                                nombreMes: monthsMap[st.mes] ?? 'Mes',
-                              ),
-                        );
-                      },
-            ),
-
-            const SizedBox(width: 8),
-
-            Consumer(
-              builder: (context, ref, child) {
-                return FilledButton.icon(
-                  icon: const Icon(Icons.picture_as_pdf, size: 18),
-                  label: const Text('Estimado Pago'),
-                  style: FilledButton.styleFrom(
-                    backgroundColor: Colors.red.shade700,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 14,
+                return Row(
+                  children: [
+                    FilledButton.icon(
+                      icon: const Icon(Icons.calculate, size: 18),
+                      label: const Text('Generar Planillas'),
+                      style: FilledButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 14,
+                        ),
+                      ),
+                      onPressed:
+                          isButtonDisabled
+                              ? null
+                              : () {
+                                ntf.generarPlanilla(uid);
+                              },
                     ),
-                  ),
-                  onPressed: () async {
-                    await mostrarReportePdf(
-                      context: context,
-                      downloadFunction: () async {
-                        final pdfBytes = await ref.read(pdfEstimadoPagoBancoProvider.future);
-                        return pdfBytes;
-                      },
-                      filename: 'EstimadoPagoPlanilla.pdf',
-                    );
-                  },
+
+                    const SizedBox(width: 8),
+
+                    FilledButton.icon(
+                      icon: const Icon(Icons.lock_person, size: 18),
+                      label: const Text('Ejecutar Planillas'),
+                      style: FilledButton.styleFrom(
+                        backgroundColor: cs.error,
+                        foregroundColor: cs.onError,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 14,
+                        ),
+                      ),
+                      onPressed:
+                          isButtonDisabled
+                              ? null
+                              : () async {
+                                final advertencias =
+                                    await ntf.preValidarEjecutarPlanilla();
+                                if (advertencias == null)
+                                  return; // Error bloqueante detectado, abortar y dejar que el listener muestre el error.
+
+                                final hasWarnings = advertencias.isNotEmpty;
+
+                                final confirm = await showDialog<bool>(
+                                  context: context,
+                                  builder:
+                                      (c) => AlertDialog(
+                                        icon: Icon(
+                                          Icons.warning_amber_rounded,
+                                          color: cs.error,
+                                          size: 40,
+                                        ),
+                                        title: const Text('EJECUTAR PLANILLAS'),
+                                        content: Text.rich(
+                                          TextSpan(
+                                            children: [
+                                              const TextSpan(
+                                                text:
+                                                    '¿Está seguro de Ejecutar las Planillas de este mes?\n\n'
+                                                    'Una vez ejecutadas, no podrán ser modificadas ni eliminadas.',
+                                                style: TextStyle(
+                                                  fontWeight: FontWeight.bold,
+                                                ),
+                                              ),
+                                              if (hasWarnings)
+                                                TextSpan(
+                                                  text:
+                                                      '\n\nADVERTENCIAS:\n$advertencias',
+                                                  style: TextStyle(
+                                                    color: cs.error,
+                                                    fontWeight:
+                                                        FontWeight.normal,
+                                                  ),
+                                                ),
+                                            ],
+                                          ),
+                                        ),
+                                        actions: [
+                                          TextButton(
+                                            onPressed:
+                                                () => Navigator.pop(c, false),
+                                            child: const Text('Cancelar'),
+                                          ),
+                                          FilledButton(
+                                            style: FilledButton.styleFrom(
+                                              backgroundColor: cs.error,
+                                            ),
+                                            onPressed:
+                                                () => Navigator.pop(c, true),
+                                            child: const Text(
+                                              'Sí, Ejecutar Definitivamente',
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                );
+                                if (confirm == true) {
+                                  ntf.ejecutarPlanilla();
+                                }
+                              },
+                    ),
+                  ],
                 );
               },
             ),
+
+            const SizedBox(width: 8),
+
+            // ── Botón consolidado "Reportes" ──
+            _ReportesMenuButton(st: st),
           ],
         ),
       ),
+    );
+  }
+}
+
+/// Botón con MenuAnchor para reportes, extraído para manejar estado del controlador
+class _ReportesMenuButton extends ConsumerStatefulWidget {
+  final PlanillaState st;
+
+  const _ReportesMenuButton({required this.st});
+
+  @override
+  ConsumerState<_ReportesMenuButton> createState() =>
+      _ReportesMenuButtonState();
+}
+
+class _ReportesMenuButtonState extends ConsumerState<_ReportesMenuButton> {
+  @override
+  Widget build(BuildContext context) {
+    final empresasAsync = ref.watch(empresasProvider);
+    final nombreMes = monthsMap[widget.st.mes] ?? 'Mes';
+    final habilitado = widget.st.mes.isNotEmpty && widget.st.anio.isNotEmpty;
+    final cs = Theme.of(context).colorScheme;
+
+    return PopupMenuButton<void>(
+      //tooltip: 'Reportes y Descargas',
+      position: PopupMenuPosition.under,
+      offset: const Offset(0, 8),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+      child: IgnorePointer(
+        child: FilledButton.icon(
+          icon: const Icon(Icons.summarize_rounded, size: 18),
+          label: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text('Reportes'),
+              const SizedBox(width: 4),
+              const Icon(Icons.arrow_drop_down, size: 18),
+            ],
+          ),
+          style: FilledButton.styleFrom(
+            backgroundColor: cs.tertiary,
+            foregroundColor: cs.onTertiary,
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          ),
+          onPressed: () {},
+        ),
+      ),
+      itemBuilder: (context) {
+        final items = <PopupMenuEntry<void>>[];
+
+        // ── Exportar Bancos ──
+        items.add(
+          PopupMenuItem<void>(
+            enabled: habilitado,
+            onTap: () {
+              Future.delayed(Duration.zero, () {
+                showDialog(
+                  context: context,
+                  builder:
+                      (_) => PlanillasExportBancoDialog(
+                        mes: int.parse(widget.st.mes),
+                        anio: int.parse(widget.st.anio),
+                        nombreMes: nombreMes,
+                      ),
+                );
+              });
+            },
+            child: Row(
+              children: [
+                Icon(Icons.account_balance, size: 20, color: cs.tertiary),
+                const SizedBox(width: 12),
+                const Text('Exportar Bancos'),
+              ],
+            ),
+          ),
+        );
+
+        // ── Estimado Pago ──
+        items.add(
+          PopupMenuItem<void>(
+            onTap: () {
+              Future.delayed(Duration.zero, () async {
+                await mostrarReportePdf(
+                  context: context,
+                  downloadFunction: () async {
+                    return await ref.read(pdfEstimadoPagoBancoProvider.future);
+                  },
+                  filename: 'EstimadoPagoPlanilla.pdf',
+                );
+              });
+            },
+            child: Row(
+              children: [
+                Icon(
+                  Icons.picture_as_pdf,
+                  size: 20,
+                  color: Colors.red.shade700,
+                ),
+                const SizedBox(width: 12),
+                const Text('Estimado Pago'),
+              ],
+            ),
+          ),
+        );
+
+        items.add(const PopupMenuDivider());
+
+        // ── Título Planilla Tributaria ──
+        items.add(
+          PopupMenuItem<void>(
+            enabled: false,
+            height: 32,
+            child: Row(
+              children: [
+                Icon(
+                  Icons.table_view_rounded,
+                  size: 16,
+                  color: Colors.green.shade700,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  'PLANILLA TRIBUTARIA',
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.green.shade700,
+                    letterSpacing: 0.5,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+
+        // ── Opciones Planilla Tributaria (por empresa) ──
+        empresasAsync.when(
+          data: (empresas) {
+            for (final empresa in empresas) {
+              final label =
+                  '${empresa.nombre.toUpperCase()} $nombreMes ${widget.st.anio}';
+              items.add(
+                PopupMenuItem<void>(
+                  enabled: habilitado,
+                  onTap: () {
+                    Future.delayed(Duration.zero, () async {
+                      await descargarArchivo(
+                        context: context,
+                        downloadFunction: () async {
+                          return await ref.read(
+                            excelPlanillaTributariaProvider({
+                              'mes': int.parse(widget.st.mes),
+                              'anio': int.parse(widget.st.anio),
+                              'codEmpresa': empresa.codEmpresa,
+                            }).future,
+                          );
+                        },
+                        filename:
+                            'Planilla_Tributaria_${empresa.sigla}_${widget.st.anio}_${widget.st.mes}.xlsx',
+                        mimeType:
+                            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                      );
+                    });
+                  },
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.download_rounded,
+                        size: 18,
+                        color: Colors.green.shade700,
+                      ),
+                      const SizedBox(width: 12),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            empresa.nombre.toUpperCase(),
+                            style: const TextStyle(fontWeight: FontWeight.w500),
+                          ),
+                          Text(
+                            '$nombreMes ${widget.st.anio}',
+                            style: TextStyle(
+                              fontSize: 11,
+                              color:
+                                  Theme.of(
+                                    context,
+                                  ).textTheme.bodySmall?.color ??
+                                  Colors.grey.shade600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            }
+          },
+          loading: () {
+            items.add(
+              const PopupMenuItem<void>(
+                enabled: false,
+                child: Center(
+                  child: SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  ),
+                ),
+              ),
+            );
+          },
+          error: (_, __) {
+            items.add(
+              const PopupMenuItem<void>(
+                enabled: false,
+                child: Text('Error al cargar empresas'),
+              ),
+            );
+          },
+        );
+
+        return items;
+      },
     );
   }
 }

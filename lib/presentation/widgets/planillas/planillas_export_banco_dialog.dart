@@ -1,41 +1,11 @@
 import 'package:bosque_flutter/core/utils/bancos_export_service.dart';
+import 'package:bosque_flutter/core/state/registro_empleado_provider.dart';
+import 'package:bosque_flutter/core/utils/responsive_utils_bosque.dart';
+import 'package:bosque_flutter/domain/entities/banco_entity.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-// Metadatos fijos por banco — el formato lo decide el sistema, no el usuario.
-const _bancos = [
-  {
-    'id': 0,
-    'nombre': 'Todos los Bancos (Global)',
-    'formato': 'EXCEL',
-    'icon': Icons.table_chart,
-  },
-  {
-    'id': 3,
-    'nombre': 'Crédito BCP',
-    'formato': 'TXT',
-    'icon': Icons.description,
-  },
-  {
-    'id': 2,
-    'nombre': 'Mercantil Santa Cruz (MSC)',
-    'formato': 'EXCEL',
-    'icon': Icons.table_chart,
-  },
-  {
-    'id': 5,
-    'nombre': 'Ganadero (BG)',
-    'formato': 'EXCEL',
-    'icon': Icons.table_chart,
-  },
-  {
-    'id': 9,
-    'nombre': 'Económico (BANECO)',
-    'formato': 'EXCEL',
-    'icon': Icons.table_chart_rounded,
-  },
-];
-
-class PlanillasExportBancoDialog extends StatefulWidget {
+class PlanillasExportBancoDialog extends ConsumerStatefulWidget {
   final int mes;
   final int anio;
   final String nombreMes;
@@ -48,18 +18,19 @@ class PlanillasExportBancoDialog extends StatefulWidget {
   });
 
   @override
-  State<PlanillasExportBancoDialog> createState() =>
+  ConsumerState<PlanillasExportBancoDialog> createState() =>
       _PlanillasExportBancoDialogState();
 }
 
 class _PlanillasExportBancoDialogState
-    extends State<PlanillasExportBancoDialog> {
+    extends ConsumerState<PlanillasExportBancoDialog> {
   final BancosExportService _exportService = BancosExportService();
 
   int _codBancoSeleccionado = 0;
   bool _isLoading = false;
   List<Map<String, dynamic>> _datosActuales = [];
   double _totalActual = 0;
+  String _nombreBancoActual = 'Todos los Bancos (Global)';
 
   @override
   void initState() {
@@ -97,9 +68,38 @@ class _PlanillasExportBancoDialogState
     }
   }
 
-  Map<String, dynamic> get _bancoActual =>
-      _bancos.firstWhere((b) => b['id'] == _codBancoSeleccionado)
-          as Map<String, dynamic>;
+  Map<String, dynamic> _getBancoMeta(int codBanco, String nombreBanco) {
+    if (codBanco == 0) {
+      return {
+        'id': 0,
+        'nombre': 'Todos los Bancos (Global)',
+        'formato': 'EXCEL',
+        'icon': Icons.table_chart,
+      };
+    }
+    if (codBanco == 3) {
+      return {
+        'id': 3,
+        'nombre': nombreBanco,
+        'formato': 'TXT',
+        'icon': Icons.description,
+      };
+    }
+    if (codBanco == 9) {
+      return {
+        'id': 9,
+        'nombre': nombreBanco,
+        'formato': 'EXCEL',
+        'icon': Icons.table_chart_rounded,
+      };
+    }
+    return {
+      'id': codBanco,
+      'nombre': nombreBanco,
+      'formato': 'EXCEL',
+      'icon': Icons.table_chart,
+    };
+  }
 
   Future<void> _exportar() async {
     if (_datosActuales.isEmpty) {
@@ -126,7 +126,7 @@ class _PlanillasExportBancoDialogState
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            'Archivo "${_bancoActual['nombre']}" generado correctamente.',
+            'Archivo "$_nombreBancoActual" generado correctamente.',
           ),
           backgroundColor: Colors.green,
         ),
@@ -148,18 +148,19 @@ class _PlanillasExportBancoDialogState
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    final banco = _bancoActual;
+    final banco = _getBancoMeta(_codBancoSeleccionado, _nombreBancoActual);
+    final bancosAsync = ref.watch(obtenerBancosPlanilla);
 
     return AlertDialog(
       title: Row(
         children: [
           Icon(Icons.account_balance, color: cs.primary),
           const SizedBox(width: 8),
-          const Text('Exportar Archivo para Banco'),
+          const Expanded(child: Text('Exportar Archivos')),
         ],
       ),
       content: SizedBox(
-        width: 420,
+        width: ResponsiveUtilsBosque.isMobile(context) ? double.maxFinite : 420,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -183,29 +184,65 @@ class _PlanillasExportBancoDialogState
             const SizedBox(height: 20),
 
             // Selector de banco
-            DropdownButtonFormField<int>(
-              decoration: const InputDecoration(
-                labelText: 'Seleccionar Banco',
-                border: OutlineInputBorder(),
-                prefixIcon: Icon(Icons.account_balance_wallet_outlined),
-              ),
-              value: _codBancoSeleccionado,
-              items:
-                  _bancos.map((b) {
-                    return DropdownMenuItem<int>(
-                      value: b['id'] as int,
-                      child: Text(b['nombre'] as String),
-                    );
-                  }).toList(),
-              onChanged:
-                  _isLoading
-                      ? null
-                      : (val) {
-                        if (val != null && val != _codBancoSeleccionado) {
-                          _codBancoSeleccionado = val;
-                          _fetchDatosBanco();
-                        }
-                      },
+            bancosAsync.when(
+              data: (bancos) {
+                final allOptions = [
+                  BancoEntity(
+                    codBanco: 0,
+                    nombre: 'Todos los Bancos (Global)',
+                    audUsuario: 0,
+                    fila: 0,
+                  ),
+                  ...bancos,
+                ];
+
+                // Asegurar que el valor seleccionado existe en la lista
+                if (!allOptions.any(
+                  (b) => b.codBanco == _codBancoSeleccionado,
+                )) {
+                  _codBancoSeleccionado = 0;
+                  _nombreBancoActual = 'Todos los Bancos (Global)';
+                }
+
+                return DropdownButtonFormField<int>(
+                  decoration: const InputDecoration(
+                    labelText: 'Seleccionar Banco',
+                    border: OutlineInputBorder(),
+                    prefixIcon: Icon(Icons.account_balance_wallet_outlined),
+                  ),
+                  isExpanded: true,
+                  value: _codBancoSeleccionado,
+                  items:
+                      allOptions.map((b) {
+                        return DropdownMenuItem<int>(
+                          value: b.codBanco,
+                          child: Text(b.nombre),
+                        );
+                      }).toList(),
+                  onChanged:
+                      _isLoading
+                          ? null
+                          : (val) {
+                            if (val != null && val != _codBancoSeleccionado) {
+                              final nombre =
+                                  allOptions
+                                      .firstWhere((b) => b.codBanco == val)
+                                      .nombre;
+                              setState(() {
+                                _codBancoSeleccionado = val;
+                                _nombreBancoActual = nombre;
+                              });
+                              _fetchDatosBanco();
+                            }
+                          },
+                );
+              },
+              loading: () => const Center(child: CircularProgressIndicator()),
+              error:
+                  (err, stack) => Text(
+                    'Error al cargar bancos: $err',
+                    style: TextStyle(color: cs.error),
+                  ),
             ),
             const SizedBox(height: 16),
 

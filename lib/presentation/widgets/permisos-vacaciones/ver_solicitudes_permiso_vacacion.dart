@@ -137,6 +137,7 @@ class SolicitudesPendientesWidget extends ConsumerWidget {
                       (ctx, i) => _SolicitudCard(
                         item: lista[i],
                         codUsuario: codUsuario,
+                        actorCodEmpleado: user.codEmpleado,
                         onAccionCompletada:
                             () => ref.invalidate(
                               solicitudesPendientesProvider(codUsuario),
@@ -155,13 +156,15 @@ class SolicitudesPendientesWidget extends ConsumerWidget {
 // Card individual — ahora usa SolicitudPermisoEntity directamente
 // ─────────────────────────────────────────────────────────────────────────────
 class _SolicitudCard extends ConsumerStatefulWidget {
-  final SolicitudPermisoEntity item; // ← tipo unificado
+  final SolicitudPermisoEntity item;
   final int codUsuario;
+  final int actorCodEmpleado;
   final VoidCallback onAccionCompletada;
 
   const _SolicitudCard({
     required this.item,
     required this.codUsuario,
+    required this.actorCodEmpleado,
     required this.onAccionCompletada,
   });
 
@@ -188,6 +191,7 @@ class _SolicitudCardState extends ConsumerState<_SolicitudCard> {
                   codEmpleado: widget.item.codEmpleado,
                   codRelEmplEmpr: widget.item.codRelEmplEmpr,
                   audUsuarioI: widget.codUsuario,
+                  actorCodEmpleado: widget.actorCodEmpleado,
                   solicitudAEditar: widget.item,
                 );
               },

@@ -16,9 +16,14 @@ final permisosVacacionRepositoryProvider = Provider<PermisosVacacionRepository>(
   },
 );
 
-final tiposPermisoProvider = FutureProvider<List<TipoPermisoVacacionEntity>>((ref) async {
+typedef TiposPermisoParams = ({int codEmpleado, int codUsuarioLogueado});
+
+final tiposPermisoProvider = FutureProvider.family<List<TipoPermisoVacacionEntity>, TiposPermisoParams>((
+  ref,
+  params,
+) async {
   final repo = ref.watch(permisosVacacionRepositoryProvider);
-  return await repo.getTiposPermiso();
+  return await repo.getTiposPermisosVacaciones(params.codEmpleado, params.codUsuarioLogueado);
 });
 
 /// Provider que obtiene el resumen de vacaciones (días disponibles, asignados, abonados)
@@ -122,6 +127,28 @@ class AccionSolicitudNotifier extends StateNotifier<AsyncValue<void>> {
       onError(e.toString().replaceAll('Exception: ', ''));
     }
   }
+
+  Future<void> anular({
+    required int codSolicitud,
+    required int audUsuarioI,
+    required String motivo,
+    required Function(String) onSuccess,
+    required Function(String) onError,
+  }) async {
+    state = const AsyncValue.loading();
+    try {
+      final msg = await _repo.anularSolicitud(
+        codSolicitud,
+        audUsuarioI,
+        motivo,
+      );
+      state = const AsyncValue.data(null);
+      onSuccess(msg);
+    } catch (e, s) {
+      state = AsyncValue.error(e, s);
+      onError(e.toString().replaceAll('Exception: ', ''));
+    }
+  }
 }
 
 final misSolicitudesProvider = FutureProvider.family
@@ -131,17 +158,27 @@ final misSolicitudesProvider = FutureProvider.family
           .listarMisSolicitudes(codEmpleado);
     });
 
-final rptPermisoVacacionProvider = FutureProvider.family<Uint8List, int>((ref, codPermiso) async {
+final rptPermisoVacacionProvider = FutureProvider.family<Uint8List, int>((
+  ref,
+  codPermiso,
+) async {
   final repo = ref.watch(permisosVacacionRepositoryProvider);
   return await repo.descargarRptPermisoVacacion(codPermiso);
 });
 
-final feriadosProvider = FutureProvider.family<List<FeriadoModel>, int>((ref, codEmpleado) async {
+final feriadosProvider = FutureProvider.family<List<FeriadoModel>, int>((
+  ref,
+  codEmpleado,
+) async {
   final repo = ref.watch(permisosVacacionRepositoryProvider);
   return await repo.getFeriados(codEmpleado);
 });
 
-final previsualizarSaldoProvider = FutureProvider.family<SolicitudPermisoEntity?, SolicitudPermisoEntity>((ref, solicitudFiltro) async {
-  final repo = ref.watch(permisosVacacionRepositoryProvider);
-  return await repo.previsualizarSaldo(solicitudFiltro);
-});
+final previsualizarSaldoProvider =
+    FutureProvider.family<SolicitudPermisoEntity?, SolicitudPermisoEntity>((
+      ref,
+      solicitudFiltro,
+    ) async {
+      final repo = ref.watch(permisosVacacionRepositoryProvider);
+      return await repo.previsualizarSaldo(solicitudFiltro);
+    });

@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:bosque_flutter/domain/entities/planilla_entity.dart';
 import 'package:bosque_flutter/domain/entities/planilla_detalle_entity.dart';
 import 'package:bosque_flutter/data/models/planilla_model.dart';
@@ -21,12 +23,18 @@ abstract class PlanillaRepository {
 
   Future<PlanillaResponse> generarPlanilla({required int audUsuarioI});
 
-  Future<PlanillaResponse> ejecutarPlanilla();
+  Future<PlanillaResponse> ejecutarPlanilla({bool soloValidar = false});
 
   Future<List<Map<String, dynamic>>> obtenerPagosBancarios({
     required int mes,
     required int anio,
     required int codBanco,
     int? codEmpresa,
+  });
+
+  Future<Uint8List> descargarExcelPlanillaTributaria({
+    required int mes,
+    required int anio,
+    required int codEmpresa,
   });
 }

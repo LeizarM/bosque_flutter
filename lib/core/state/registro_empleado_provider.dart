@@ -185,6 +185,13 @@ final obtenerBancos = FutureProvider<List<BancoEntity>>((ref) async {
   final listaBancos = await repo.getBancos();
   return listaBancos;
 });
+
+//OBTENER BANCOS PLANILLA
+final obtenerBancosPlanilla = FutureProvider<List<BancoEntity>>((ref) async {
+  final repo = RegistroEmpleadoImpl();
+  final listaBancos = await repo.getBancosPlanilla();
+  return listaBancos;
+});
 //provider para obtener la lista de tipos de educacion
 final getTipoRelacionLaboral = FutureProvider<List<TipoRelacionLaboralEntity>>((
   ref,
@@ -197,6 +204,16 @@ final getTipoRelacionLaboral = FutureProvider<List<TipoRelacionLaboralEntity>>((
 final rptNominaEmpleados = FutureProvider<Uint8List>((ref) async {
   final repo = RegistroEmpleadoImpl();
   return await repo.rptNominaEmpleados();
+});
+//Reporte Permisos y Vacaciones Total (PDF)
+final rptPermVacTotalPdfProvider = FutureProvider<Uint8List>((ref) async {
+  final repo = RegistroEmpleadoImpl();
+  return await repo.rptPermVacTotalPdf();
+});
+//Reporte Permisos y Vacaciones Total (Excel)
+final rptPermVacTotalExcelProvider = FutureProvider<Uint8List>((ref) async {
+  final repo = RegistroEmpleadoImpl();
+  return await repo.rptPermVacTotalExcel();
 });
 //guardar datos temporales persona
 final tempPersonaProvider = StateProvider<PersonaEntity?>((ref) => null);

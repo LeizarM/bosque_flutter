@@ -67,17 +67,18 @@ class _ListaEmpleadosState extends ConsumerState<ListaEmpleados> {
   }
 
   Widget _buildSearchBar() {
+    final colorScheme = Theme.of(context).colorScheme;
     return Container(
       constraints: BoxConstraints(
         maxWidth: context.isMobile ? double.infinity : 600,
       ),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: Colors.green.shade100),
+        border: Border.all(color: colorScheme.primary.withOpacity(0.2)),
         boxShadow: [
           BoxShadow(
-            color: Colors.green.shade50.withOpacity(0.6),
+            color: colorScheme.primaryContainer.withOpacity(0.6),
             blurRadius: 6,
             offset: const Offset(0, 2),
           ),
@@ -89,7 +90,11 @@ class _ListaEmpleadosState extends ConsumerState<ListaEmpleados> {
       ),
       child: Row(
         children: [
-          Icon(Icons.search, color: Colors.green, size: context.iconSize),
+          Icon(
+            Icons.search,
+            color: colorScheme.primary,
+            size: context.iconSize,
+          ),
           SizedBox(width: context.smallSpacing),
           Expanded(
             child: TextField(
@@ -134,6 +139,105 @@ class _ListaEmpleadosState extends ConsumerState<ListaEmpleados> {
     );
   }
 
+  Widget _buildReportDropdown(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return PopupMenuButton<int>(
+      tooltip: 'Descargar Reportes',
+      offset: const Offset(0, 45),
+      child: Container(
+        padding: EdgeInsets.symmetric(
+          horizontal: context.spacing,
+          vertical: context.smallSpacing,
+        ),
+        decoration: BoxDecoration(
+          color: colorScheme.secondaryContainer,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: colorScheme.secondary.withOpacity(0.3)),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.download,
+              color: colorScheme.onSecondaryContainer,
+              size: context.iconSize,
+            ),
+            SizedBox(width: context.smallSpacing),
+            Text(
+              'Reportes',
+              style: context.bodyStyle.copyWith(
+                color: colorScheme.onSecondaryContainer,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            SizedBox(width: context.smallSpacing),
+            Icon(
+              Icons.arrow_drop_down,
+              color: colorScheme.onSecondaryContainer,
+              size: context.iconSize,
+            ),
+          ],
+        ),
+      ),
+      onSelected: (value) async {
+        if (value == 1) {
+          await mostrarReportePdf(
+            context: context,
+            downloadFunction: downloadFunction,
+            filename: 'RptNominaEmpleados.pdf',
+          );
+        } else if (value == 2) {
+          await mostrarReportePdf(
+            context: context,
+            downloadFunction: downloadPermVacPdf,
+            filename: 'RptPermVacTotal.pdf',
+          );
+        } else if (value == 3) {
+          await descargarArchivo(
+            context: context,
+            downloadFunction: downloadPermVacExcel,
+            filename: 'RptPermVacTotal.xlsx',
+            mimeType:
+                'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+          );
+        }
+      },
+      itemBuilder:
+          (context) => [
+            const PopupMenuItem(
+              value: 1,
+              child: Row(
+                children: [
+                  Icon(Icons.picture_as_pdf, color: Colors.red),
+                  SizedBox(width: 8),
+                  Text('Nómina de Empleados (PDF)'),
+                ],
+              ),
+            ),
+            const PopupMenuItem(
+              value: 2,
+              child: Row(
+                children: [
+                  Icon(Icons.picture_as_pdf, color: Colors.red),
+                  SizedBox(width: 8),
+                  Text('Permisos y Vacaciones (PDF)'),
+                ],
+              ),
+            ),
+            const PopupMenuItem(
+              value: 3,
+              child: Row(
+                children: [
+                  Icon(Icons.table_chart, color: Colors.green),
+                  SizedBox(width: 8),
+                  Text('Permisos y Vacaciones (Excel)'),
+                ],
+              ),
+            ),
+          ],
+    );
+  }
+
   Widget _buildStatusChip({
     required String label,
     required bool selected,
@@ -142,6 +246,7 @@ class _ListaEmpleadosState extends ConsumerState<ListaEmpleados> {
     required Color selectedColor,
     required Color textColor,
   }) {
+    final colorScheme = Theme.of(context).colorScheme;
     return ChoiceChip(
       label: Row(
         mainAxisSize: MainAxisSize.min,
@@ -155,9 +260,11 @@ class _ListaEmpleadosState extends ConsumerState<ListaEmpleados> {
       ),
       selected: selected,
       onSelected: (_) => onSelected(),
-      backgroundColor: Colors.grey.shade100,
+      backgroundColor: colorScheme.surfaceContainerHighest,
       selectedColor: selectedColor,
-      labelStyle: TextStyle(color: selected ? textColor : Colors.black87),
+      labelStyle: TextStyle(
+        color: selected ? textColor : colorScheme.onSurface,
+      ),
       elevation: 0,
       padding: EdgeInsets.symmetric(
         horizontal: context.spacing * 0.75,
@@ -167,6 +274,7 @@ class _ListaEmpleadosState extends ConsumerState<ListaEmpleados> {
   }
 
   Widget _buildStatusFilters(BuildContext context, bool isMobile) {
+    final colorScheme = Theme.of(context).colorScheme;
     if (isMobile) {
       return SingleChildScrollView(
         scrollDirection: Axis.horizontal,
@@ -181,8 +289,8 @@ class _ListaEmpleadosState extends ConsumerState<ListaEmpleados> {
                     _pageNumber = 1;
                   }),
               icon: null,
-              selectedColor: Colors.blue.shade100,
-              textColor: Colors.blue.shade800,
+              selectedColor: colorScheme.primaryContainer,
+              textColor: colorScheme.onPrimaryContainer,
             ),
             SizedBox(width: context.smallSpacing),
             _buildStatusChip(
@@ -227,8 +335,8 @@ class _ListaEmpleadosState extends ConsumerState<ListaEmpleados> {
                   _pageNumber = 1;
                 }),
             icon: null,
-            selectedColor: Colors.blue.shade100,
-            textColor: Colors.blue.shade800,
+            selectedColor: colorScheme.primaryContainer,
+            textColor: colorScheme.onPrimaryContainer,
           ),
           _buildStatusChip(
             label: 'Activos',
@@ -260,6 +368,7 @@ class _ListaEmpleadosState extends ConsumerState<ListaEmpleados> {
   }
 
   Widget _buildEmpresaFilter(BuildContext context, bool isMobile) {
+    final colorScheme = Theme.of(context).colorScheme;
     final empresasAsync = ref.watch(empresasProvider);
 
     return empresasAsync.when(
@@ -294,7 +403,7 @@ class _ListaEmpleadosState extends ConsumerState<ListaEmpleados> {
                   children: [
                     /*Icon(
                       Icons.business,
-                      color: Colors.blue.shade600,
+                      color: colorScheme.primary,
                       size: context.iconSize,
                     ),*/
                     SizedBox(width: context.smallSpacing),
@@ -302,7 +411,7 @@ class _ListaEmpleadosState extends ConsumerState<ListaEmpleados> {
                       'Ver por empresa:',
                       style: context.bodyStyle.copyWith(
                         fontWeight: FontWeight.w600,
-                        color: Colors.black87,
+                        color: colorScheme.onSurface,
                       ),
                     ),
                   ],
@@ -322,8 +431,8 @@ class _ListaEmpleadosState extends ConsumerState<ListaEmpleados> {
                           _codEmpresa = null;
                           _pageNumber = 1;
                         }),
-                    selectedColor: Colors.purple.shade100,
-                    textColor: Colors.purple.shade800,
+                    selectedColor: colorScheme.tertiaryContainer,
+                    textColor: colorScheme.onTertiaryContainer,
                   ),
                   SizedBox(width: context.smallSpacing),
                   // Chips de empresas
@@ -340,8 +449,8 @@ class _ListaEmpleadosState extends ConsumerState<ListaEmpleados> {
                                       .codEmpresa; // ✅ Asignar el int correctamente
                               _pageNumber = 1;
                             }),
-                        selectedColor: Colors.blue.shade100,
-                        textColor: Colors.blue.shade800,
+                        selectedColor: colorScheme.primaryContainer,
+                        textColor: colorScheme.onPrimaryContainer,
                       ),
                     );
                   }),
@@ -361,6 +470,7 @@ class _ListaEmpleadosState extends ConsumerState<ListaEmpleados> {
     required Color selectedColor,
     required Color textColor,
   }) {
+    final colorScheme = Theme.of(context).colorScheme;
     return ChoiceChip(
       label: Text(
         label,
@@ -371,16 +481,18 @@ class _ListaEmpleadosState extends ConsumerState<ListaEmpleados> {
       ),
       selected: selected,
       onSelected: (_) => onSelected(),
-      backgroundColor: Colors.grey.shade100,
+      backgroundColor: colorScheme.surfaceContainerHighest,
       selectedColor: selectedColor,
-      labelStyle: TextStyle(color: selected ? textColor : Colors.black87),
+      labelStyle: TextStyle(
+        color: selected ? textColor : colorScheme.onSurface,
+      ),
       elevation: 0,
       padding: EdgeInsets.symmetric(
         horizontal: context.spacing * 0.75,
         vertical: context.smallSpacing * 0.5,
       ),
       side: BorderSide(
-        color: selected ? textColor : Colors.grey.shade300,
+        color: selected ? textColor : colorScheme.outlineVariant,
         width: selected ? 1.5 : 1,
       ),
     );
@@ -397,8 +509,14 @@ class _ListaEmpleadosState extends ConsumerState<ListaEmpleados> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Buscador
-          _buildSearchBar(),
+          // Buscador y Reportes
+          Row(
+            children: [
+              Flexible(child: _buildSearchBar()),
+              SizedBox(width: context.spacing),
+              _buildReportDropdown(context),
+            ],
+          ),
           SizedBox(height: context.spacing),
 
           // Filtro de Empresa
@@ -411,7 +529,7 @@ class _ListaEmpleadosState extends ConsumerState<ListaEmpleados> {
               'Ver empleados:',
               style: context.bodyStyle.copyWith(
                 fontWeight: FontWeight.w600,
-                color: Colors.black87,
+                color: Theme.of(context).colorScheme.onSurface,
               ),
             ),
           if (!isMobile) SizedBox(height: context.smallSpacing),
@@ -584,10 +702,11 @@ class _ListaEmpleadosState extends ConsumerState<ListaEmpleados> {
     String label,
     String value,
   ) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Icon(icon, size: 16, color: Colors.blue.shade600),
+        Icon(icon, size: 16, color: colorScheme.primary),
         SizedBox(width: context.smallSpacing),
         SizedBox(
           width: 110,
@@ -595,7 +714,7 @@ class _ListaEmpleadosState extends ConsumerState<ListaEmpleados> {
             label,
             style: context.bodyStyle.copyWith(
               fontWeight: FontWeight.w600,
-              color: Colors.grey.shade700,
+              color: colorScheme.onSurfaceVariant,
             ),
           ),
         ),
@@ -604,7 +723,7 @@ class _ListaEmpleadosState extends ConsumerState<ListaEmpleados> {
             value,
             style: context.bodyStyle.copyWith(
               fontWeight: FontWeight.w500,
-              color: Colors.black87,
+              color: colorScheme.onSurface,
             ),
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
@@ -752,11 +871,22 @@ class _ListaEmpleadosState extends ConsumerState<ListaEmpleados> {
     return ref.read(rptNominaEmpleados.future);
   }
 
+  Future<Uint8List> downloadPermVacPdf() async {
+    ref.invalidate(rptPermVacTotalPdfProvider);
+    return ref.read(rptPermVacTotalPdfProvider.future);
+  }
+
+  Future<Uint8List> downloadPermVacExcel() async {
+    ref.invalidate(rptPermVacTotalExcelProvider);
+    return ref.read(rptPermVacTotalExcelProvider.future);
+  }
+
   @override
   Widget build(BuildContext context) {
     final String? search =
         _searchTerm.trim().isEmpty ? null : _searchTerm.trim();
     final isMobile = context.isMobile;
+    final colorScheme = Theme.of(context).colorScheme;
 
     final empleadosAsync = ref.watch(
       getListaEmpleados((
@@ -772,22 +902,9 @@ class _ListaEmpleadosState extends ConsumerState<ListaEmpleados> {
       appBar: AppBar(
         title: const Text('Lista de Empleados'),
         elevation: 0,
-        backgroundColor: Colors.blue.shade700,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.picture_as_pdf),
-            tooltip: 'Generar Reporte de Empleados',
-            onPressed: () async {
-              await mostrarReportePdf(
-                context: context,
-                downloadFunction: downloadFunction,
-                filename: 'RptNominaEmpleados.pdf',
-              );
-            },
-          ),
-          refreshButton(),
-          SizedBox(width: context.spacing),
-        ],
+        backgroundColor: colorScheme.primary,
+        foregroundColor: colorScheme.onPrimary,
+        actions: [refreshButton(), SizedBox(width: context.spacing)],
       ),
       body: Column(
         children: [
@@ -830,7 +947,8 @@ class _ListaEmpleadosState extends ConsumerState<ListaEmpleados> {
                   );
                 },
                 tooltip: 'Nuevo Empleado',
-                backgroundColor: Colors.green,
+                backgroundColor: colorScheme.primary,
+                foregroundColor: colorScheme.onPrimary,
                 child: const Icon(Icons.person_add),
               )
               : FloatingActionButton.extended(
@@ -844,7 +962,8 @@ class _ListaEmpleadosState extends ConsumerState<ListaEmpleados> {
                 },
                 label: const Text('Nuevo Empleado'),
                 icon: const Icon(Icons.person_add),
-                backgroundColor: Colors.green,
+                backgroundColor: colorScheme.primary,
+                foregroundColor: colorScheme.onPrimary,
               ),
     );
   }

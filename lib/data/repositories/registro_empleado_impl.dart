@@ -530,6 +530,30 @@ class RegistroEmpleadoImpl implements RegistroEmpleadoRepository {
       return [];
     }
   }
+
+  //OBTENER LISTA DE BANCOS PARA PLANILLA
+  @override
+  Future<List<BancoEntity>> getBancosPlanilla() async {
+    try {
+      final response = await _dio.post(AppConstants.bncGetBancosPlanilla);
+      if (response.statusCode == 200 && response.data != null) {
+        final data = response.data ?? [];
+        final items =
+            (data as List<dynamic>)
+                .map((json) => BancoModel.fromJson(json))
+                .toList();
+        return items.map((model) => model.toEntity()).toList();
+      } else {
+        return [];
+      }
+    } on DioException catch (e) {
+      console('Error al obtener lista de bancos de planilla: ${e.message}');
+      return [];
+    } catch (e) {
+      console('Error al obtener los bancos de planilla: $e');
+      return [];
+    }
+  }
   //REGISTRAR NUEVO BANCO (PENDIENTE)
 
   //OBTENER NROCUENTABANCARIA X EMPLEADO
@@ -640,6 +664,20 @@ class RegistroEmpleadoImpl implements RegistroEmpleadoRepository {
   Future<Uint8List> rptNominaEmpleados() async {
     return DioClient.descargarReportePdf(
       endpoint: AppConstants.pdfRptNominaEmpleados,
+    );
+  }
+
+  //RPT permisos y vacaciones (PDF)
+  Future<Uint8List> rptPermVacTotalPdf() async {
+    return DioClient.descargarReportePdf(
+      endpoint: AppConstants.pdfRptPermVacTotal,
+    );
+  }
+
+  //RPT permisos y vacaciones (Excel)
+  Future<Uint8List> rptPermVacTotalExcel() async {
+    return DioClient.descargarReportePdf(
+      endpoint: AppConstants.excelRptPermVacTotal,
     );
   }
 

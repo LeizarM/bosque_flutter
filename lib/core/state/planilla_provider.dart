@@ -99,7 +99,11 @@ class PlanillaNotifier extends StateNotifier<PlanillaState> {
 
   PlanillaNotifier(this._repo, this._ref) : super(const PlanillaState()) {
     final f = _ref.read(_filtrosPersistidosPlanillaProvider);
-    state = PlanillaState(mes: f.mes, anio: f.anio, tamanoPagina: f.tamanoPagina);
+    state = PlanillaState(
+      mes: f.mes,
+      anio: f.anio,
+      tamanoPagina: f.tamanoPagina,
+    );
     Future.microtask(() => cargar());
   }
 
@@ -185,6 +189,27 @@ class PlanillaNotifier extends StateNotifier<PlanillaState> {
     }
   }
 
+  Future<String?> preValidarEjecutarPlanilla() async {
+    state = state.copyWith(generando: true, mensajeError: null, mensajeExito: null);
+    try {
+      final response = await _repo.ejecutarPlanilla(soloValidar: true);
+      state = state.copyWith(generando: false);
+      // Si todo está bien y no hay advertencias, retornamos un string vacío.
+      return response.errormsg ?? '';
+    } catch (e) {
+      final msg = e.toString();
+      // Si es una advertencia, la procesamos y evitamos marcarlo como un error global.
+      if (msg.contains('ADVERTENCIAS_SQL|')) {
+        state = state.copyWith(generando: false);
+        return msg.split('ADVERTENCIAS_SQL|').last.trim();
+      }
+      
+      // Si es un error real bloqueante, lo marcamos en el estado para el snackbar.
+      state = state.copyWith(generando: false, mensajeError: msg);
+      return null;
+    }
+  }
+
   Future<void> ejecutarPlanilla() async {
     state = state.copyWith(
       generando: true,
@@ -192,7 +217,7 @@ class PlanillaNotifier extends StateNotifier<PlanillaState> {
       mensajeExito: null,
     );
     try {
-      final response = await _repo.ejecutarPlanilla();
+      final response = await _repo.ejecutarPlanilla(soloValidar: false);
       if (!mounted) return;
       state = state.copyWith(mensajeExito: response.errormsg, generando: false);
       cargar();
@@ -205,11 +230,10 @@ class PlanillaNotifier extends StateNotifier<PlanillaState> {
 
 final _planillaRepoProvider = Provider((ref) => PlanillaImpl());
 
-final planillaProvider = StateNotifierProvider.autoDispose<PlanillaNotifier, PlanillaState>(
-  (ref) {
-    return PlanillaNotifier(ref.read(_planillaRepoProvider), ref);
-  },
-);
+final planillaProvider =
+    StateNotifierProvider.autoDispose<PlanillaNotifier, PlanillaState>((ref) {
+      return PlanillaNotifier(ref.read(_planillaRepoProvider), ref);
+    });
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // STATE + NOTIFIER: Detalle de Planilla (empleados de una planilla)
@@ -304,10 +328,13 @@ class PlanillaDetalleNotifier extends StateNotifier<PlanillaDetalleState> {
   }
 }
 
-final planillaDetalleProvider = StateNotifierProvider.family
-    .autoDispose<PlanillaDetalleNotifier, PlanillaDetalleState, int>((ref, codPlanilla) {
-      return PlanillaDetalleNotifier(ref.read(_planillaRepoProvider), codPlanilla);
-    });
+final planillaDetalleProvider = StateNotifierProvider.family.autoDispose<
+  PlanillaDetalleNotifier,
+  PlanillaDetalleState,
+  int
+>((ref, codPlanilla) {
+  return PlanillaDetalleNotifier(ref.read(_planillaRepoProvider), codPlanilla);
+});
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // PDF PROVIDERS
@@ -318,22 +345,46 @@ final pdfEstimadoPagoBancoProvider = FutureProvider<Uint8List>((ref) async {
   return await repo.descargarEstimadoPagoBanco();
 });
 
-final pdfPlanillaCompactaProvider = FutureProvider.family<Uint8List, int>((ref, codPlanilla) async {
+final excelPlanillaTributariaProvider = FutureProvider.family<Uint8List, Map<String, int>>((
+  ref,
+  params,
+) async {
+  final repo = PlanillaImpl();
+  return await repo.descargarExcelPlanillaTributaria(
+    mes: params['mes']!,
+    anio: params['anio']!,
+    codEmpresa: params['codEmpresa']!,
+  );
+});
+
+final pdfPlanillaCompactaProvider = FutureProvider.family<Uint8List, int>((
+  ref,
+  codPlanilla,
+) async {
   final repo = PlanillaImpl();
   return await repo.descargarPlanillaCompacta(codPlanilla);
 });
 
-final excelPlanillaCompactaProvider = FutureProvider.family<Uint8List, int>((ref, codPlanilla) async {
+final excelPlanillaCompactaProvider = FutureProvider.family<Uint8List, int>((
+  ref,
+  codPlanilla,
+) async {
   final repo = PlanillaImpl();
   return await repo.descargarPlanillaExcelCompacta(codPlanilla);
 });
 
-final pdfPlanillaExtendidaProvider = FutureProvider.family<Uint8List, int>((ref, codPlanilla) async {
+final pdfPlanillaExtendidaProvider = FutureProvider.family<Uint8List, int>((
+  ref,
+  codPlanilla,
+) async {
   final repo = PlanillaImpl();
   return await repo.descargarPlanillaExtendida(codPlanilla);
 });
 
-final pdfPapeletaPagoProvider = FutureProvider.family<Uint8List, int>((ref, codPlanilla) async {
+final pdfPapeletaPagoProvider = FutureProvider.family<Uint8List, int>((
+  ref,
+  codPlanilla,
+) async {
   final repo = PlanillaImpl();
   return await repo.descargarPapeletaPago(codPlanilla);
 });

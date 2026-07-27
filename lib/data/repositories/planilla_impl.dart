@@ -67,10 +67,10 @@ class PlanillaImpl extends BaseApiRepository implements PlanillaRepository {
   }
 
   @override
-  Future<PlanillaResponse> ejecutarPlanilla() async {
+  Future<PlanillaResponse> ejecutarPlanilla({bool soloValidar = false}) async {
     final responseMap = await postAndReturnFullResponse<PlanillaResponse>(
       endpoint: AppConstants.planillaEjecutar,
-      data: {},
+      data: {'soloValidar': soloValidar},
       fromJson: (json) => PlanillaResponse.fromJson(json),
     );
     return responseMap;
@@ -83,7 +83,7 @@ class PlanillaImpl extends BaseApiRepository implements PlanillaRepository {
     required int codBanco,
     int? codEmpresa,
   }) async {
-    final list = await postAndReturnList<Map<String, dynamic>>(
+    return await postAndReturnList<Map<String, dynamic>>(
       endpoint: AppConstants.planillaPagosBancarios,
       data: {
         'mes': mes,
@@ -93,7 +93,31 @@ class PlanillaImpl extends BaseApiRepository implements PlanillaRepository {
       },
       fromJson: (json) => json as Map<String, dynamic>,
     );
-    return list;
+  }
+
+  @override
+  Future<Uint8List> descargarExcelPlanillaTributaria({
+    required int mes,
+    required int anio,
+    required int codEmpresa,
+  }) async {
+    final response = await _dio.post(
+      '${AppConstants.baseUrl}/planilla/excelPlanillaTributaria',
+      data: {
+        'mes': mes,
+        'anio': anio,
+        'codEmpresa': codEmpresa,
+      },
+      options: Options(
+        headers: {'Content-Type': 'application/json'},
+        responseType: ResponseType.bytes,
+      ),
+    );
+    if (response.statusCode == 200) {
+      return response.data;
+    } else {
+      throw Exception('No se pudo descargar el Excel Tributario');
+    }
   }
 
   Future<Uint8List> descargarEstimadoPagoBanco() async {

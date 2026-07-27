@@ -4,6 +4,7 @@ import 'package:bosque_flutter/core/utils/abm_service.dart';
 import 'package:bosque_flutter/domain/entities/banco_entity.dart';
 import 'package:bosque_flutter/domain/entities/nro_cuenta_bancaria_entity.dart';
 import 'package:bosque_flutter/presentation/widgets/registro_empleado/responsive_utils_registro_empleado.dart';
+import 'package:bosque_flutter/presentation/widgets/shared/permission_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'form_informacion_bancaria.dart';
@@ -72,12 +73,12 @@ class _DetalleInformacionBancariaState
 
     // Si tempCuentasBancariasProvider está vacío, cargar del servidor SOLO UNA VEZ
     if (listaCuentas.isEmpty) {
-      final cuentasDelServidorAsync =
-          ref.watch(cuentaBancariaEmpleadoProvider(widget.codEmpleado));
+      final cuentasDelServidorAsync = ref.watch(
+        cuentaBancariaEmpleadoProvider(widget.codEmpleado),
+      );
 
       return cuentasDelServidorAsync.when(
-        loading: () =>
-            const Center(child: CircularProgressIndicator()),
+        loading: () => const Center(child: CircularProgressIndicator()),
         error: (err, _) => Center(child: Text('Error: $err')),
         data: (cuentasDelServidor) {
           // IMPORTANTE: Cargar en tempCuentasBancariasProvider SOLO una vez
@@ -102,14 +103,14 @@ class _DetalleInformacionBancariaState
   // ============================================================================
 
   Widget _buildEdicionMode(BuildContext context) {
-    final cuentasAsync =
-        ref.watch(cuentaBancariaEmpleadoProvider(widget.codEmpleado));
+    final cuentasAsync = ref.watch(
+      cuentaBancariaEmpleadoProvider(widget.codEmpleado),
+    );
 
     return cuentasAsync.when(
       loading: () => const Center(child: CircularProgressIndicator()),
       error: (err, _) => Center(child: Text('Error: $err')),
-      data: (listaCuentas) =>
-          _buildUI(context, listaCuentas, isEdition: true),
+      data: (listaCuentas) => _buildUI(context, listaCuentas, isEdition: true),
     );
   }
 
@@ -117,8 +118,11 @@ class _DetalleInformacionBancariaState
   // UI PRINCIPAL
   // ============================================================================
 
-  Widget _buildUI(BuildContext context, List<NroCuentaBancariaEntity> lista,
-      {required bool isEdition}) {
+  Widget _buildUI(
+    BuildContext context,
+    List<NroCuentaBancariaEntity> lista, {
+    required bool isEdition,
+  }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -131,9 +135,10 @@ class _DetalleInformacionBancariaState
             else
               ...List.generate(
                 lista.length,
-                (idx) => _editingIndex == idx
-                    ? _buildEditForm(context, idx, lista, isEdition)
-                    : _buildCuentaCard(context, idx, lista[idx], isEdition),
+                (idx) =>
+                    _editingIndex == idx
+                        ? _buildEditForm(context, idx, lista, isEdition)
+                        : _buildCuentaCard(context, idx, lista[idx], isEdition),
               ),
             // Formulario nuevo si está activo
             if (_isAddingNew) _buildNewForm(context, isEdition),
@@ -162,9 +167,7 @@ class _DetalleInformacionBancariaState
           SizedBox(width: context.smallSpacing),
           Text(
             'Información Bancaria',
-            style: context.subtitleStyle.copyWith(
-              fontWeight: FontWeight.bold,
-            ),
+            style: context.subtitleStyle.copyWith(fontWeight: FontWeight.bold),
           ),
         ],
       ),
@@ -223,20 +226,25 @@ class _DetalleInformacionBancariaState
   // TARJETA DE CUENTA (LECTURA)
   // ============================================================================
 
-  Widget _buildCuentaCard(BuildContext context, int index,
-      NroCuentaBancariaEntity cuenta, bool isEdition) {
+  Widget _buildCuentaCard(
+    BuildContext context,
+    int index,
+    NroCuentaBancariaEntity cuenta,
+    bool isEdition,
+  ) {
     final bancosAsync = ref.watch(obtenerBancos);
 
     return bancosAsync.when(
       data: (bancos) {
         final banco = bancos.firstWhere(
           (b) => b.codBanco == cuenta.codBanco,
-          orElse: () => BancoEntity(
-            codBanco: 0,
-            nombre: 'Banco desconocido',
-            audUsuario: 0,
-            fila: 0,
-          ),
+          orElse:
+              () => BancoEntity(
+                codBanco: 0,
+                nombre: 'Banco desconocido',
+                audUsuario: 0,
+                fila: 0,
+              ),
         );
 
         final estado = cuenta.estado == 1 ? 'Activa' : 'Inactiva';
@@ -257,7 +265,10 @@ class _DetalleInformacionBancariaState
                 _buildDataRowBancaria(context, 'Banco:', banco.nombre),
                 SizedBox(height: context.spacing),
                 _buildDataRowBancaria(
-                    context, 'Nro. Cuenta:', cuenta.nroCuentaBancaria),
+                  context,
+                  'Nro. Cuenta:',
+                  cuenta.nroCuentaBancaria,
+                ),
                 SizedBox(height: context.spacing),
                 _buildEstadoBadge(context, estado, estadoColor),
                 SizedBox(height: context.spacing),
@@ -273,7 +284,10 @@ class _DetalleInformacionBancariaState
   }
 
   Widget _buildDataRowBancaria(
-      BuildContext context, String label, String value) {
+    BuildContext context,
+    String label,
+    String value,
+  ) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -290,9 +304,7 @@ class _DetalleInformacionBancariaState
         Expanded(
           child: Text(
             value,
-            style: context.bodyStyle.copyWith(
-              fontWeight: FontWeight.w500,
-            ),
+            style: context.bodyStyle.copyWith(fontWeight: FontWeight.w500),
           ),
         ),
       ],
@@ -300,7 +312,10 @@ class _DetalleInformacionBancariaState
   }
 
   Widget _buildEstadoBadge(
-      BuildContext context, String estado, Color estadoColor) {
+    BuildContext context,
+    String estado,
+    Color estadoColor,
+  ) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -337,8 +352,12 @@ class _DetalleInformacionBancariaState
     );
   }
 
-  Widget _buildActionsBancaria(BuildContext context, int index,
-      NroCuentaBancariaEntity cuenta, bool isEdition) {
+  Widget _buildActionsBancaria(
+    BuildContext context,
+    int index,
+    NroCuentaBancariaEntity cuenta,
+    bool isEdition,
+  ) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.end,
       children: [
@@ -351,16 +370,21 @@ class _DetalleInformacionBancariaState
           onPressed: () => _startEditing(index),
           tooltip: 'Editar',
         ),
-        IconButton(
-          icon: Icon(
-            Icons.delete_outline,
-            size: context.smallIconSize,
-            color: Colors.redAccent,
+        PermissionWidget(
+          buttonName: 'btnEliminarCuentaBancaria',
+          child: IconButton(
+            icon: Icon(
+              Icons.delete_outline,
+              size: context.smallIconSize,
+              color: Colors.redAccent,
+            ),
+            onPressed:
+                () =>
+                    isEdition
+                        ? _deleteFromServer(cuenta.codCuenta)
+                        : _deleteFromList(index),
+            tooltip: 'Eliminar',
           ),
-          onPressed: () => isEdition
-              ? _deleteFromServer(cuenta.codCuenta)
-              : _deleteFromList(index),
-          tooltip: 'Eliminar',
         ),
       ],
     );
@@ -370,15 +394,20 @@ class _DetalleInformacionBancariaState
   // FORMULARIOS
   // ============================================================================
 
-  Widget _buildEditForm(BuildContext context, int index,
-      List<NroCuentaBancariaEntity> lista, bool isEdition) {
+  Widget _buildEditForm(
+    BuildContext context,
+    int index,
+    List<NroCuentaBancariaEntity> lista,
+    bool isEdition,
+  ) {
     return FormInformacionBancaria(
       key: ValueKey('edit_cuenta_${lista[index].codCuenta}'),
       dataInicial: lista[index],
       codEmpleado: widget.codEmpleado,
       audUsuario: _audUsuario,
-      onSave: (cuenta) =>
-          isEdition ? _saveToServer(cuenta) : _updateInList(cuenta, index),
+      onSave:
+          (cuenta) =>
+              isEdition ? _saveToServer(cuenta) : _updateInList(cuenta, index),
       onCancel: () {
         FocusManager.instance.primaryFocus?.unfocus();
         setState(() => _editingIndex = -1);
@@ -399,7 +428,8 @@ class _DetalleInformacionBancariaState
       ),
       codEmpleado: widget.codEmpleado,
       audUsuario: _audUsuario,
-      onSave: (cuenta) => isEdition ? _saveToServer(cuenta) : _addToList(cuenta),
+      onSave:
+          (cuenta) => isEdition ? _saveToServer(cuenta) : _addToList(cuenta),
       onCancel: () {
         FocusManager.instance.primaryFocus?.unfocus();
         setState(() => _isAddingNew = false);
@@ -439,7 +469,8 @@ class _DetalleInformacionBancariaState
 
   void _addToList(NroCuentaBancariaEntity cuenta) {
     final list = List<NroCuentaBancariaEntity>.from(
-        ref.read(tempCuentasBancariasProvider));
+      ref.read(tempCuentasBancariasProvider),
+    );
     list.add(cuenta);
     ref.read(tempCuentasBancariasProvider.notifier).state = list;
     setState(() => _isAddingNew = false);
@@ -448,7 +479,8 @@ class _DetalleInformacionBancariaState
 
   void _updateInList(NroCuentaBancariaEntity cuenta, int index) {
     final list = List<NroCuentaBancariaEntity>.from(
-        ref.read(tempCuentasBancariasProvider));
+      ref.read(tempCuentasBancariasProvider),
+    );
     list[index] = cuenta;
     ref.read(tempCuentasBancariasProvider.notifier).state = list;
     setState(() => _editingIndex = -1);
@@ -457,7 +489,8 @@ class _DetalleInformacionBancariaState
 
   void _deleteFromList(int index) {
     final list = List<NroCuentaBancariaEntity>.from(
-        ref.read(tempCuentasBancariasProvider));
+      ref.read(tempCuentasBancariasProvider),
+    );
     list.removeAt(index);
     ref.read(tempCuentasBancariasProvider.notifier).state = list;
     _resetFormState();
@@ -472,8 +505,7 @@ class _DetalleInformacionBancariaState
     await executeABM(
       ref: ref,
       context: context,
-      operation: () =>
-          ref.read(registroCuentaBancaria(cuenta).future),
+      operation: () => ref.read(registroCuentaBancaria(cuenta).future),
       providersToInvalidate: [
         cuentaBancariaEmpleadoProvider(widget.codEmpleado),
         detalleEmpleadoProvider(widget.codEmpleado),
@@ -490,8 +522,7 @@ class _DetalleInformacionBancariaState
     final success = await executeABM(
       ref: ref,
       context: context,
-      operation: () =>
-          ref.read(eliminarCuentaBancaria(codCuenta).future),
+      operation: () => ref.read(eliminarCuentaBancaria(codCuenta).future),
       providersToInvalidate: [
         cuentaBancariaEmpleadoProvider(widget.codEmpleado),
       ],
