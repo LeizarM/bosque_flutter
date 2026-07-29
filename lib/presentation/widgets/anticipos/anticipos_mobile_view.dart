@@ -205,27 +205,37 @@ class AnticiposMobileCard extends StatelessWidget {
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
-                      Text(
-                        'Bs. ${fmtAnticipo.format(e.debe)}',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 13,
-                          color:
-                              isDark
-                                  ? Colors.greenAccent.shade200
-                                  : const Color(0xFF1B5E20),
+                      if (e.debe == 0 && e.haber > 0)
+                        Text(
+                          '- Bs. ${fmtAnticipo.format(e.haber)}',
+                          style: const TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.red,
+                          ),
+                        )
+                      else ...[
+                        Text(
+                          'Bs. ${fmtAnticipo.format(e.debe)}',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 13,
+                            color:
+                                isDark
+                                    ? Colors.greenAccent.shade200
+                                    : const Color(0xFF1B5E20),
+                          ),
                         ),
-                      ),
-                      // ── HABER — descomentar para activar ──────────────────
-                      // if (e.haber > 0)
-                      //   Text(
-                      //     '- Bs. ${fmtAnticipo.format(e.haber)}',
-                      //     style: const TextStyle(
-                      //       fontSize: 10,
-                      //       fontWeight: FontWeight.w600,
-                      //       color: Colors.red,
-                      //     ),
-                      //   ),
+                        if (e.haber > 0)
+                          Text(
+                            '- Bs. ${fmtAnticipo.format(e.haber)}',
+                            style: const TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.red,
+                            ),
+                          ),
+                      ],
                       const SizedBox(height: 4),
                       Text(
                         fmtFechaAnticipo.format(e.fechaAsiento),

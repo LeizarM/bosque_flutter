@@ -194,6 +194,7 @@ class AnticipoImpl extends BaseApiRepository implements AnticipoRepository {
       data: {
         'codEmpresa': cabecera.codEmpresa,
         'debe': cabecera.debe,
+        'haber': cabecera.haber,
         'xmlEmpleados': xmlEmpleados,
         // ✅ Agregar los campos que el SP valida:
         'numAsiento': cabecera.numAsiento,

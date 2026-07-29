@@ -1,6 +1,7 @@
 import 'package:bosque_flutter/data/models/anticipo_model.dart';
 import 'package:bosque_flutter/domain/entities/anticipo_detalle_entity.dart';
 import 'package:bosque_flutter/domain/entities/anticipo_entity.dart';
+import 'package:bosque_flutter/data/models/anticipo_preview_model.dart';
 
 abstract class AnticipoRepository {
   Future<List<AnticipoEntity>> getAnticiposSAP(
@@ -34,6 +35,11 @@ abstract class AnticipoRepository {
     String? anio,
   );
   // --- ABMs (Ahora devuelven AnticipoResponse) ---
+  Future<List<AnticipoPreviewEntity>> previsualizarAsignacion({
+    required AnticipoEntity cabecera,
+    required String xmlEmpleados,
+  });
+
   Future<AnticipoResponse> asignarAnticipo({
     required AnticipoEntity cabecera,
     required List<int> codAntDetalles,

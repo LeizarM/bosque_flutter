@@ -310,27 +310,38 @@ class _AnticiposDesktopRowState extends State<AnticiposDesktopRow> {
                           color: cs.onSurface.withOpacity(0.45),
                         ),
                       ),
-                      Text(
-                        fmtAnticipo.format(e.debe),
-                        style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.bold,
-                          color:
-                              isDark
-                                  ? Colors.greenAccent.shade200
-                                  : const Color(0xFF1B5E20),
-                        ),
-                      ),
-                      // ── HABER — descomentar para activar (muestra en rojo cuando hay valor) ──
-                      if (e.haber > 0)
+                      if (e.debe == 0 && e.haber > 0)
                         Text(
                           '- Bs. ${fmtAnticipo.format(e.haber)}',
                           style: const TextStyle(
-                            fontSize: 10,
-                            fontWeight: FontWeight.w600,
+                            fontSize: 13,
+                            fontWeight: FontWeight.bold,
                             color: Colors.red,
                           ),
+                        )
+                      else ...[
+                        Text(
+                          fmtAnticipo.format(e.debe),
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.bold,
+                            color:
+                                isDark
+                                    ? Colors.greenAccent.shade200
+                                    : const Color(0xFF1B5E20),
+                          ),
                         ),
+                        // ── HABER — descomentar para activar (muestra en rojo cuando hay valor) ──
+                        if (e.haber > 0)
+                          Text(
+                            '- Bs. ${fmtAnticipo.format(e.haber)}',
+                            style: const TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.red,
+                            ),
+                          ),
+                      ],
                     ],
                   ),
                 ),
