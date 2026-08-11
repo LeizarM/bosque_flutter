@@ -13,6 +13,7 @@ import 'package:bosque_flutter/domain/entities/solicitud_pago_entity.dart';
 import 'package:bosque_flutter/domain/entities/transaccion_participante_entity.dart';
 import 'package:bosque_flutter/domain/entities/transacciones_entity.dart';
 import 'package:bosque_flutter/presentation/widgets/pagos-extranjeros/tpex_estado_ui.dart';
+import 'package:bosque_flutter/presentation/widgets/shared/aviso.dart';
 import 'package:printing/printing.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -106,9 +107,11 @@ Future<void> _verVoucherPost(
   } catch (e) {
     if (!context.mounted) return;
     Navigator.of(context).pop();
-    ScaffoldMessenger.of(
+    mostrarAviso(
       context,
-    ).showSnackBar(SnackBar(content: Text('Error al descargar voucher: $e')));
+      'Error al descargar voucher: $e',
+      tono: TonoAviso.error,
+    );
   }
 }
 
@@ -1005,16 +1008,13 @@ class _CotizacionAprobarButtonState
       ref.invalidate(
         cotizacionesXSolicitudProvider(widget.cotizacion.idSolicitud),
       );
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Cotización aprobada exitosamente')),
-      );
+      mostrarAviso(context, 'Cotización aprobada exitosamente');
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(e.toString().replaceFirst('Exception: ', '')),
-          backgroundColor: Theme.of(context).colorScheme.error,
-        ),
+      mostrarAviso(
+        context,
+        e.toString().replaceFirst('Exception: ', ''),
+        tono: TonoAviso.error,
       );
     } finally {
       if (mounted) setState(() => _cargando = false);
@@ -1313,16 +1313,13 @@ class _TransaccionCardState extends ConsumerState<_TransaccionCard> {
           codEmpresa: widget.codEmpresa,
         )),
       );
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Comprobante actualizado')),
-      );
+      mostrarAviso(context, 'Comprobante actualizado');
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(e.toString().replaceFirst('Exception: ', '')),
-          backgroundColor: Theme.of(context).colorScheme.error,
-        ),
+      mostrarAviso(
+        context,
+        e.toString().replaceFirst('Exception: ', ''),
+        tono: TonoAviso.error,
       );
     }
   }
@@ -1657,16 +1654,13 @@ class _VoucherSectionState extends ConsumerState<_VoucherSection> {
       );
       if (!mounted) return;
       setState(() => _tieneVoucher = true);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Voucher subido exitosamente')),
-      );
+      mostrarAviso(context, 'Voucher subido exitosamente');
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(e.toString().replaceFirst('Exception: ', '')),
-          backgroundColor: Theme.of(context).colorScheme.error,
-        ),
+      mostrarAviso(
+        context,
+        e.toString().replaceFirst('Exception: ', ''),
+        tono: TonoAviso.error,
       );
     } finally {
       if (mounted) setState(() => _subiendo = false);
@@ -2659,16 +2653,13 @@ class _AsientoFilaState extends ConsumerState<_AsientoFila> {
       if (!mounted) return;
       ref.invalidate(asientosTransaccionProvider(widget.txn.idTransaccion));
       ref.invalidate(cuadreAsientosProvider(widget.txn.idTransaccion));
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Asiento eliminado')));
+      mostrarAviso(context, 'Asiento eliminado');
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(e.toString().replaceFirst('Exception: ', '')),
-          backgroundColor: Theme.of(context).colorScheme.error,
-        ),
+      mostrarAviso(
+        context,
+        e.toString().replaceFirst('Exception: ', ''),
+        tono: TonoAviso.error,
       );
     } finally {
       if (mounted) setState(() => _eliminando = false);
@@ -2958,16 +2949,13 @@ class _DialogoAsientoState extends ConsumerState<_DialogoAsiento> {
       ref.invalidate(asientosTransaccionProvider(widget.txn.idTransaccion));
       ref.invalidate(cuadreAsientosProvider(widget.txn.idTransaccion));
       Navigator.of(context).pop();
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Asiento guardado exitosamente')),
-      );
+      mostrarAviso(context, 'Asiento guardado exitosamente');
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(e.toString().replaceFirst('Exception: ', '')),
-          backgroundColor: Theme.of(context).colorScheme.error,
-        ),
+      mostrarAviso(
+        context,
+        e.toString().replaceFirst('Exception: ', ''),
+        tono: TonoAviso.error,
       );
     } finally {
       if (mounted) setState(() => _cargando = false);
@@ -3612,16 +3600,13 @@ class _ParticipanteFilaState extends ConsumerState<_ParticipanteFila> {
         participantesTransaccionProvider(widget.txn.idTransaccion),
       );
       ref.invalidate(cuadreParticipantesProvider(widget.txn.idTransaccion));
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Participante eliminado')));
+      mostrarAviso(context, 'Participante eliminado');
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(e.toString().replaceFirst('Exception: ', '')),
-          backgroundColor: Theme.of(context).colorScheme.error,
-        ),
+      mostrarAviso(
+        context,
+        e.toString().replaceFirst('Exception: ', ''),
+        tono: TonoAviso.error,
       );
     } finally {
       if (mounted) setState(() => _eliminando = false);
@@ -3865,16 +3850,13 @@ class _DialogoParticipanteState extends ConsumerState<_DialogoParticipante> {
       );
       ref.invalidate(cuadreParticipantesProvider(widget.txn.idTransaccion));
       Navigator.of(context).pop();
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Participante guardado exitosamente')),
-      );
+      mostrarAviso(context, 'Participante guardado exitosamente');
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(e.toString().replaceFirst('Exception: ', '')),
-          backgroundColor: Theme.of(context).colorScheme.error,
-        ),
+      mostrarAviso(
+        context,
+        e.toString().replaceFirst('Exception: ', ''),
+        tono: TonoAviso.error,
       );
     } finally {
       if (mounted) setState(() => _cargando = false);

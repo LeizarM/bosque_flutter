@@ -36,11 +36,23 @@ class AppTheme {
       appBarTheme: const AppBarTheme(centerTitle: false),
       // Add proper mouse cursor hover effects for desktop
       visualDensity: VisualDensity.adaptivePlatformDensity,
-      // Improve data table rendering for desktop
+      // Encabezados de tabla.
+      //
+      // Antes: `color: colorList[selectedColor]`, o sea el color CRUDO y
+      // saturado de la paleta Material (el magenta que se veia en Entregas).
+      // Un encabezado pintado con el acento a full compite con los datos y
+      // ademas ignora el ColorScheme: en modo oscuro quedaba ilegible.
+      //
+      // Ahora es un rotulo gris, chico y con tracking abierto. El acento queda
+      // libre para lo accionable. Aplica a todas las tablas de la app.
       dataTableTheme: DataTableThemeData(
         headingTextStyle: TextStyle(
-          fontWeight: FontWeight.bold,
-          color: colorList[selectedColor],
+          fontSize: 11,
+          fontWeight: FontWeight.w600,
+          letterSpacing: 0.8,
+          color: (isDarkMode ? ThemeData.dark() : ThemeData.light())
+              .colorScheme
+              .onSurfaceVariant,
         ),
         dividerThickness: 1,
       ),

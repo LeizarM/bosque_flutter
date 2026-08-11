@@ -11,6 +11,7 @@ import 'package:bosque_flutter/domain/entities/transacciones_entity.dart';
 import 'package:bosque_flutter/presentation/screens/pagos-extranjeros/solicitud_detail_panel.dart';
 import 'package:bosque_flutter/presentation/widgets/pagos-extranjeros/tpex_estado_ui.dart';
 import 'package:bosque_flutter/presentation/widgets/pagos-extranjeros/voucher_button.dart';
+import 'package:bosque_flutter/presentation/widgets/shared/aviso.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -112,14 +113,11 @@ class _PagosAlExtranjerosViewScreenState
       );
       if (cotizaciones.any((c) => c.estado.toUpperCase() == 'ACEPTADA')) {
         if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text(
-              'Esta solicitud ya tiene una cotización ACEPTADA. '
-              'No se pueden registrar nuevas cotizaciones.',
-            ),
-            backgroundColor: Theme.of(context).colorScheme.error,
-          ),
+        mostrarAviso(
+          context,
+          'Esta solicitud ya tiene una cotización ACEPTADA. '
+          'No se pueden registrar nuevas cotizaciones.',
+          tono: TonoAviso.error,
         );
         return;
       }
@@ -253,13 +251,10 @@ class _PagosAlExtranjerosViewScreenState
 
     if (aceptada == null) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text(
-            'Primero acepte una cotización en la Comparativa.',
-          ),
-          backgroundColor: Colors.orange.shade700,
-        ),
+      mostrarAviso(
+        context,
+        'Primero acepte una cotización en la Comparativa.',
+        tono: TonoAviso.aviso,
       );
       return;
     }
@@ -303,14 +298,11 @@ class _PagosAlExtranjerosViewScreenState
       }
       if (!cuadrado) {
         if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text(
-              'Primero se deben cargar y cuadrar los asientos (Debe/Haber) en '
-              '"Cobranzas — Asientos" antes de confirmar el pago.',
-            ),
-            backgroundColor: Colors.orange.shade700,
-          ),
+        mostrarAviso(
+          context,
+          'Primero se deben cargar y cuadrar los asientos (Debe/Haber) en '
+          '"Cobranzas — Asientos" antes de confirmar el pago.',
+          tono: TonoAviso.aviso,
         );
         return;
       }
@@ -1880,14 +1872,10 @@ class _DialogoTransaccionState extends ConsumerState<_DialogoTransaccion> {
     if (ok) {
       widget.onGuardado();
       Navigator.of(context).pop();
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'Pago confirmado: transacción CONFIRMADA (con N° y voucher). '
-            'La solicitud #${widget.solicitud.idSolicitud} sigue PENDIENTE.',
-          ),
-          backgroundColor: Colors.teal.shade700,
-        ),
+      mostrarAviso(
+        context,
+        'Pago confirmado: transacción CONFIRMADA (con N° y voucher). '
+        'La solicitud #${widget.solicitud.idSolicitud} sigue PENDIENTE.',
       );
     }
   }
@@ -3812,21 +3800,15 @@ class _DialogoComparativaState extends ConsumerState<_DialogoComparativa> {
       if (ok) {
         widget.onAceptada();
         Navigator.of(context).pop();
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              'Cotización #${cotizacion.idCotizacion} aceptada exitosamente.',
-            ),
-            backgroundColor: Colors.green.shade700,
-          ),
+        mostrarAviso(
+          context,
+          'Cotización #${cotizacion.idCotizacion} aceptada exitosamente.',
         );
       } else {
         final error =
             ref.read(cotizacionFormProvider).mensajeError ??
             'Error al aceptar la cotización.';
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(error), backgroundColor: Colors.red),
-        );
+        mostrarAviso(context, error, tono: TonoAviso.error);
       }
     } finally {
       if (mounted) setState(() => _acceptingId = null);
@@ -4401,13 +4383,9 @@ class _DialogoCotizacionState extends ConsumerState<_DialogoCotizacion> {
     if (ok) {
       widget.onGuardado();
       Navigator.of(context).pop();
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'Cotización registrada para solicitud #${widget.solicitud.idSolicitud}.',
-          ),
-          backgroundColor: Colors.green.shade700,
-        ),
+      mostrarAviso(
+        context,
+        'Cotización registrada para solicitud #${widget.solicitud.idSolicitud}.',
       );
     }
   }

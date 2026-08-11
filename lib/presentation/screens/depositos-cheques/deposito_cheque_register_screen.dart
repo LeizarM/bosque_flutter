@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:bosque_flutter/core/state/depositos_cheques_provider.dart';
 import 'package:bosque_flutter/core/utils/responsive_utils_bosque.dart';
+import 'package:bosque_flutter/presentation/widgets/shared/aviso.dart';
 import 'dart:typed_data';
 import 'package:universal_html/html.dart' as html;
 
@@ -291,27 +292,19 @@ class _DepositoChequeRegisterScreenState
                                             state.notasSeleccionadas.isNotEmpty;
                                         final tieneACuenta = state.aCuenta > 0;
                                         if (state.bancoSeleccionado == null) {
-                                          ScaffoldMessenger.of(
+                                          mostrarAviso(
                                             context,
-                                          ).showSnackBar(
-                                            const SnackBar(
-                                              content: Text(
-                                                'Debe seleccionar un banco.',
-                                              ),
-                                            ),
+                                            'Debe seleccionar un banco.',
+                                            tono: TonoAviso.aviso,
                                           );
                                           return;
                                         }
                                         if (!(tieneNotas || tieneACuenta) ||
                                             state.importeTotal <= 0) {
-                                          ScaffoldMessenger.of(
+                                          mostrarAviso(
                                             context,
-                                          ).showSnackBar(
-                                            const SnackBar(
-                                              content: Text(
-                                                'Debe seleccionar al menos una nota de remisión o ingresar un valor a cuenta mayor a 0. El importe total debe ser mayor a 0.',
-                                              ),
-                                            ),
+                                            'Debe seleccionar al menos una nota de remisión o ingresar un valor a cuenta mayor a 0. El importe total debe ser mayor a 0.',
+                                            tono: TonoAviso.aviso,
                                           );
                                           return;
                                         }
@@ -323,14 +316,10 @@ class _DepositoChequeRegisterScreenState
                                                 ? imageBytes
                                                 : state.imagenDeposito;
                                         if (imagen == null) {
-                                          ScaffoldMessenger.of(
+                                          mostrarAviso(
                                             context,
-                                          ).showSnackBar(
-                                            const SnackBar(
-                                              content: Text(
-                                                'Debe cargar una imagen del depósito.',
-                                              ),
-                                            ),
+                                            'Debe cargar una imagen del depósito.',
+                                            tono: TonoAviso.aviso,
                                           );
                                           return;
                                         }
@@ -350,28 +339,19 @@ class _DepositoChequeRegisterScreenState
                                               'No se pudieron registrar todas las notas de remisión',
                                             );
                                           }
-                                          ScaffoldMessenger.of(
+                                          mostrarAviso(
                                             context,
-                                          ).showSnackBar(
-                                            const SnackBar(
-                                              content: Text(
-                                                'Depósito y notas de remisión registrados correctamente.',
-                                              ),
-                                            ),
+                                            'Depósito y notas de remisión registrados correctamente.',
                                           );
                                           notifier.limpiarFormulario();
                                           ref
                                               .read(imageBytesProvider.notifier)
                                               .state = null;
                                         } catch (e) {
-                                          ScaffoldMessenger.of(
+                                          mostrarAviso(
                                             context,
-                                          ).showSnackBar(
-                                            SnackBar(
-                                              content: Text(
-                                                'Error: ${e.toString()}',
-                                              ),
-                                            ),
+                                            'Error: ${e.toString()}',
+                                            tono: TonoAviso.error,
                                           );
                                         }
                                       }

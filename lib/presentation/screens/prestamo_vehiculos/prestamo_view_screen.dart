@@ -7,6 +7,7 @@ import 'package:bosque_flutter/core/utils/responsive_utils_bosque.dart';
 import 'package:intl/intl.dart';
 import 'package:bosque_flutter/presentation/widgets/prestamo_vehiculos/entrega_prestamo_dialog.dart';
 import 'package:bosque_flutter/presentation/widgets/prestamo_vehiculos/recepcion_prestamo_dialog.dart';
+import 'package:bosque_flutter/presentation/widgets/shared/aviso.dart';
 
 class PrestamoViewScreen extends ConsumerStatefulWidget {
   const PrestamoViewScreen({super.key});
@@ -351,33 +352,18 @@ class _PrestamoViewScreenState extends ConsumerState<PrestamoViewScreen> {
           .aprobarSolicitud(solicitud.idSolicitud);
 
       if (success) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              'Solicitud #${solicitud.idSolicitud} aprobada exitosamente',
-            ),
-            backgroundColor: Colors.green,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
-            ),
-          ),
+        mostrarAviso(
+          context,
+          'Solicitud #${solicitud.idSolicitud} aprobada exitosamente',
         );
         // Recargar la lista
         _cargarSolicitudesPrestamos();
       } else {
         final state = ref.read(solicitudesPrestamosNotifierProvider);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              'Error al aprobar solicitud: ${state.errorMessage ?? "Error desconocido"}',
-            ),
-            backgroundColor: Theme.of(context).colorScheme.error,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
-            ),
-          ),
+        mostrarAviso(
+          context,
+          'Error al aprobar solicitud: ${state.errorMessage ?? "Error desconocido"}',
+          tono: TonoAviso.error,
         );
       }
     }
@@ -416,33 +402,19 @@ class _PrestamoViewScreenState extends ConsumerState<PrestamoViewScreen> {
           .rechazarSolicitud(solicitud.idSolicitud);
 
       if (success) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              'Solicitud #${solicitud.idSolicitud} rechazada exitosamente',
-            ),
-            backgroundColor: Colors.red,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
-            ),
-          ),
+        mostrarAviso(
+          context,
+          'Solicitud #${solicitud.idSolicitud} rechazada exitosamente',
+          tono: TonoAviso.error,
         );
         // Recargar la lista
         _cargarSolicitudesPrestamos();
       } else {
         final state = ref.read(solicitudesPrestamosNotifierProvider);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              'Error al rechazar solicitud: ${state.errorMessage ?? "Error desconocido"}',
-            ),
-            backgroundColor: Theme.of(context).colorScheme.error,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
-            ),
-          ),
+        mostrarAviso(
+          context,
+          'Error al rechazar solicitud: ${state.errorMessage ?? "Error desconocido"}',
+          tono: TonoAviso.error,
         );
       }
     }
@@ -469,31 +441,15 @@ class _PrestamoViewScreenState extends ConsumerState<PrestamoViewScreen> {
           .registrarEntregaPrestamo(entrega);
 
       if (success) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('Entrega registrada exitosamente'),
-            backgroundColor: Theme.of(context).colorScheme.primary,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
-            ),
-          ),
-        );
+        mostrarAviso(context, 'Entrega registrada exitosamente');
         // Recargar la lista
         _cargarSolicitudesPrestamos();
       } else {
         final state = ref.read(solicitudesPrestamosNotifierProvider);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              'Error al registrar entrega: ${state.errorMessage ?? "Error desconocido"}',
-            ),
-            backgroundColor: Theme.of(context).colorScheme.error,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
-            ),
-          ),
+        mostrarAviso(
+          context,
+          'Error al registrar entrega: ${state.errorMessage ?? "Error desconocido"}',
+          tono: TonoAviso.error,
         );
       }
     }
@@ -513,31 +469,15 @@ class _PrestamoViewScreenState extends ConsumerState<PrestamoViewScreen> {
           .registrarRecepcionPrestamo(recepcion);
 
       if (success) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('Recepción registrada exitosamente'),
-            backgroundColor: Theme.of(context).colorScheme.primary,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
-            ),
-          ),
-        );
+        mostrarAviso(context, 'Recepción registrada exitosamente');
         // Recargar la lista
         _cargarSolicitudesPrestamos();
       } else {
         final state = ref.read(solicitudesPrestamosNotifierProvider);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              'Error al registrar recepción: ${state.errorMessage ?? "Error desconocido"}',
-            ),
-            backgroundColor: Theme.of(context).colorScheme.error,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
-            ),
-          ),
+        mostrarAviso(
+          context,
+          'Error al registrar recepción: ${state.errorMessage ?? "Error desconocido"}',
+          tono: TonoAviso.error,
         );
       }
     }

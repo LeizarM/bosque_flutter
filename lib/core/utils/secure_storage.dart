@@ -214,14 +214,53 @@ class SecureStorage {
     return null;
   }
 
+
+
+  /// ¿La sesión venció?
+  ///
+  /// <h3>Por qué las dos lecturas van en paralelo</h3>
+  /// Lo llama el `redirect` del router en CADA navegación, y hacía las dos
+  /// lecturas del almacenamiento cifrado **una después de la otra**
+  /// (`getToken()` y luego `getTokenExpiry()`), cada una con 3 s de tope: hasta
+  /// 6 s en serie. El router envuelve la llamada en un `timeout(4s)` cuyo
+  /// `onTimeout` devuelve `true`, o sea **"asumo que la sesión venció"**.
+  ///
+  /// Esos dos números nunca se llevaron bien: bastaba el almacenamiento frío
+  /// —primer arranque, o web derivando la clave de cifrado— para que la segunda
+  /// lectura no llegara a tiempo, el redirect concluyera "vencido" y el usuario
+  /// recién logueado rebotara al login. Recargar lo arreglaba porque el storage
+  /// ya estaba caliente. Con `Future.wait` el peor caso baja a ~3 s, por debajo
+  /// del tope del router.
+  ///
+  /// <h3>Y por qué NO hay caché acá</h3>
+  /// Se intentó cachear el vencimiento en memoria y salió mal. `saveToken`
+  /// escribe el token y guarda la expiración en una llamada APARTE; entre las
+  /// dos hay una ventana donde el estado es "token sí, expiración todavía no".
+  /// Si el redirect caía justo ahí, el "no hay sesión" quedaba latcheado y este
+  /// método devolvía `true` para siempre con la sesión perfectamente válida:
+  /// bucle AuthGate → /login → redirect → /dashboard → AuthGate, spinner sin fin.
+  ///
+  /// La lección: no se cachea estado de autenticación en un camino que también
+  /// atraviesa el login. El ahorro era una lectura; el costo fue quedar afuera.
   Future<bool> isTokenExpired() async {
     try {
-      final token = await getToken();
+      // En paralelo, no en serie. Son dos claves independientes del mismo
+      // almacén y no hay razón para esperar una antes de pedir la otra.
+      final resultados = await Future.wait<Object?>([
+        getToken(),
+        getTokenExpiry(),
+      ]);
+      final token = resultados[0] as String?;
+      final expiry = resultados[1] as DateTime?;
+
+      // Los dos "no" de acá abajo son BARATOS de recalcular y pueden ser
+      // transitorios (la ventana entre escribir el token y escribir su
+      // expiración es un estado real que dura milisegundos). Por eso no se
+      // memoriza ninguno: se vuelve a preguntar y listo.
       if (token == null) {
         return true; // No hay token, considerarlo expirado
       }
 
-      final expiry = await getTokenExpiry();
       if (expiry == null) {
         return true; // No hay fecha de expiración, considerarlo expirado
       }

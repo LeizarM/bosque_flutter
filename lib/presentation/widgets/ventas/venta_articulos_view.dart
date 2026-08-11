@@ -4,6 +4,7 @@ import 'package:bosque_flutter/core/utils/console_log.dart';
 import 'package:bosque_flutter/core/utils/responsive_utils_bosque.dart';
 import 'package:bosque_flutter/domain/entities/articulos_almacen_entity.dart';
 import 'package:bosque_flutter/domain/entities/articulos_ciudad_entity.dart';
+import 'package:bosque_flutter/presentation/widgets/shared/aviso.dart';
 import 'package:bosque_flutter/presentation/widgets/ventas/database_section.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -945,16 +946,7 @@ class _VentasArticulosViewState extends ConsumerState<VentasArticulosView> {
                       Clipboard.setData(
                         ClipboardData(text: articuloPrincipal.datoArt),
                       );
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: const Text('Descripción copiada'),
-                          duration: const Duration(seconds: 1),
-                          behavior: SnackBarBehavior.floating,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                        ),
-                      );
+                      mostrarAviso(context, 'Descripción copiada');
                     },
                     borderRadius: BorderRadius.circular(8),
                     child: Padding(
@@ -1314,16 +1306,7 @@ class _VentasArticulosViewState extends ConsumerState<VentasArticulosView> {
                                     text: articuloPrincipal.datoArt,
                                   ),
                                 );
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: const Text('Descripción copiada'),
-                                    duration: const Duration(seconds: 1),
-                                    behavior: SnackBarBehavior.floating,
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(8),
-                                    ),
-                                  ),
-                                );
+                                mostrarAviso(context, 'Descripción copiada');
                               },
                               borderRadius: BorderRadius.circular(12),
                               child: Padding(
@@ -1513,21 +1496,9 @@ class _VentasArticulosViewState extends ConsumerState<VentasArticulosView> {
                                           text: articuloPrincipal.datoArt,
                                         ),
                                       );
-                                      ScaffoldMessenger.of(
+                                      mostrarAviso(
                                         context,
-                                      ).showSnackBar(
-                                        SnackBar(
-                                          content: const Text(
-                                            'Descripción copiada',
-                                          ),
-                                          duration: const Duration(seconds: 1),
-                                          behavior: SnackBarBehavior.floating,
-                                          shape: RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.circular(
-                                              8,
-                                            ),
-                                          ),
-                                        ),
+                                        'Descripción copiada',
                                       );
                                     },
                                     borderRadius: BorderRadius.circular(12),

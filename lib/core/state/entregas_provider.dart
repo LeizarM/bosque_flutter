@@ -1,6 +1,7 @@
 import 'package:bosque_flutter/core/utils/console_log.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:bosque_flutter/domain/entities/entregas_entity.dart';
+import 'package:bosque_flutter/data/repositories/entregas_impl.dart';
 import 'package:bosque_flutter/domain/repositories/entregas_repository.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -108,15 +109,52 @@ class EntregasNotifier extends StateNotifier<EntregasState> {
       final fechaInicio =
           fechaInicioStr != null ? DateTime.parse(fechaInicioStr) : null;
 
-      if (rutaIniciada) {
-        state = state.copyWith(
-          rutaIniciada: rutaIniciada,
-          fechaInicio: fechaInicio,
-        );
-        console('📁 Estado de ruta cargado: iniciada=$rutaIniciada');
+      if (!rutaIniciada) {
+        return;
       }
+
+      // La ruta guardada solo vale si es de HOY.
+      //
+      // Sin esta comprobación el flag vivía para siempre: un chofer que arranca la ruta el
+      // lunes y se olvida de finalizarla, el martes abre la app y ve "Ruta iniciada · desde
+      // el lunes 07:40". Y no es un detalle cosmético — con la ruta creída como iniciada, el
+      // botón "Marcar" queda habilitado sobre entregas de un día que en el backend ya se
+      // cerró: el cron de las 23:58:59 corre la ACCIÓN 'C' contra la base, pero no tiene
+      // forma de tocar el SharedPreferences del teléfono. El estado local quedaba mintiendo.
+      final hoy = DateTime.now();
+      final esDeHoy = fechaInicio != null &&
+          fechaInicio.year == hoy.year &&
+          fechaInicio.month == hoy.month &&
+          fechaInicio.day == hoy.day;
+
+      if (!esDeHoy) {
+        console('🧹 Ruta guardada del ${fechaInicio ?? "sin fecha"}: no es de hoy, se descarta.');
+        await _limpiarEstadoRuta();
+        return;
+      }
+
+      state = state.copyWith(rutaIniciada: true, fechaInicio: fechaInicio);
+      console('📁 Estado de ruta cargado: iniciada desde $fechaInicio');
     } catch (e) {
       console('Error cargando estado guardado: $e');
+    }
+  }
+
+  /// Borra la ruta guardada en el teléfono.
+  ///
+  /// Se usa cuando la ruta persistida quedó vieja (de otro día). No toca el backend: allá el
+  /// cierre lo hace el cron de las 23:58:59 con la ACCIÓN 'C'. Acá solo se limpia la copia
+  /// local, que es la que estaba quedando desincronizada.
+  Future<void> _limpiarEstadoRuta() async {
+    state = state.copyWith(rutaIniciada: false, fechaInicio: null, fechaFin: null);
+    if (!_prefsInitialized || _prefs == null) {
+      return;
+    }
+    try {
+      await _prefs!.setBool('ruta_iniciada', false);
+      await _prefs!.remove('fecha_inicio');
+    } catch (e) {
+      console('⚠️ No se pudo limpiar la ruta guardada: $e');
     }
   }
 
@@ -504,9 +542,24 @@ class EntregasNotifier extends StateNotifier<EntregasState> {
 }
 
 // Proveedor para el repositorio de entregas
-final entregasRepositoryProvider = Provider<EntregasRepository>((ref) {
-  throw UnimplementedError('Debe ser sobrescrito en el main.dart');
-});
+/// Repositorio de entregas.
+///
+/// <h3>Por qué ya no lanza UnimplementedError</h3>
+/// Antes este provider explotaba a propósito para obligar a sobrescribirlo desde `main.dart`
+/// con `overrideWithValue(EntregasImpl())`. El problema es lo que significa `overrideWithValue`:
+/// **construye la instancia en el acto**, antes de `runApp`. O sea que toda la app —incluido
+/// quien solo va a ver el dashboard o RR.HH.— pagaba en el arranque la creación de
+/// `EntregasImpl`, que en su campo `_dio` llama a `DioClient.getInstance()` y arma el cliente
+/// HTTP con sus interceptores. Un módulo entre veinte retrasando el primer frame de todos.
+///
+/// Ahora la fábrica está acá y Riverpod la ejecuta LAZY: la primera vez que alguien lea este
+/// provider. Si el usuario nunca entra a Entregas, nunca se construye nada.
+///
+/// Sigue siendo sobrescribible para tests con `ProviderScope(overrides: [...])`; lo único que
+/// cambia es que ya no hace falta hacerlo para que la app funcione.
+final entregasRepositoryProvider = Provider<EntregasRepository>(
+  (ref) => EntregasImpl(),
+);
 
 // Proveedor LAZY para SharedPreferences - se carga cuando se necesita
 final sharedPreferencesProvider = FutureProvider<SharedPreferences>((

@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:bosque_flutter/core/state/depositos_cheques_provider.dart';
 import 'package:bosque_flutter/core/utils/responsive_utils_bosque.dart';
+import 'package:bosque_flutter/presentation/widgets/shared/aviso.dart';
 import 'dart:typed_data';
 import 'package:universal_html/html.dart' as html;
 
@@ -265,50 +266,34 @@ class _DepositoChequeIdentificarScreenState
                                   _isGuardarEnabled(state)
                                       ? () async {
                                         if (state.empresaSeleccionada == null) {
-                                          ScaffoldMessenger.of(
+                                          mostrarAviso(
                                             context,
-                                          ).showSnackBar(
-                                            const SnackBar(
-                                              content: Text(
-                                                'Debe seleccionar una empresa.',
-                                              ),
-                                            ),
+                                            'Debe seleccionar una empresa.',
+                                            tono: TonoAviso.aviso,
                                           );
                                           return;
                                         }
                                         if (state.bancoSeleccionado == null) {
-                                          ScaffoldMessenger.of(
+                                          mostrarAviso(
                                             context,
-                                          ).showSnackBar(
-                                            const SnackBar(
-                                              content: Text(
-                                                'Debe seleccionar un banco.',
-                                              ),
-                                            ),
+                                            'Debe seleccionar un banco.',
+                                            tono: TonoAviso.aviso,
                                           );
                                           return;
                                         }
                                         if (state.monedaSeleccionada == '') {
-                                          ScaffoldMessenger.of(
+                                          mostrarAviso(
                                             context,
-                                          ).showSnackBar(
-                                            const SnackBar(
-                                              content: Text(
-                                                'Debe seleccionar una moneda.',
-                                              ),
-                                            ),
+                                            'Debe seleccionar una moneda.',
+                                            tono: TonoAviso.aviso,
                                           );
                                           return;
                                         }
                                         if (state.importeTotal <= 0) {
-                                          ScaffoldMessenger.of(
+                                          mostrarAviso(
                                             context,
-                                          ).showSnackBar(
-                                            const SnackBar(
-                                              content: Text(
-                                                'El importe total debe ser mayor a 0.',
-                                              ),
-                                            ),
+                                            'El importe total debe ser mayor a 0.',
+                                            tono: TonoAviso.aviso,
                                           );
                                           return;
                                         }
@@ -319,14 +304,10 @@ class _DepositoChequeIdentificarScreenState
                                                 )
                                                 : state.imagenDeposito;
                                         if (imagenParaEnviar == null) {
-                                          ScaffoldMessenger.of(
+                                          mostrarAviso(
                                             context,
-                                          ).showSnackBar(
-                                            const SnackBar(
-                                              content: Text(
-                                                'Debe cargar una imagen del depósito.',
-                                              ),
-                                            ),
+                                            'Debe cargar una imagen del depósito.',
+                                            tono: TonoAviso.aviso,
                                           );
                                           return;
                                         }
@@ -340,14 +321,9 @@ class _DepositoChequeIdentificarScreenState
                                               'No se pudo registrar el depósito',
                                             );
                                           }
-                                          ScaffoldMessenger.of(
+                                          mostrarAviso(
                                             context,
-                                          ).showSnackBar(
-                                            const SnackBar(
-                                              content: Text(
-                                                'Depósito registrado correctamente.',
-                                              ),
-                                            ),
+                                            'Depósito registrado correctamente.',
                                           );
                                           notifier.limpiarFormulario();
                                           ref
@@ -357,14 +333,10 @@ class _DepositoChequeIdentificarScreenState
                                               )
                                               .state = null;
                                         } catch (e) {
-                                          ScaffoldMessenger.of(
+                                          mostrarAviso(
                                             context,
-                                          ).showSnackBar(
-                                            SnackBar(
-                                              content: Text(
-                                                'Error: ${e.toString()}',
-                                              ),
-                                            ),
+                                            'Error: ${e.toString()}',
+                                            tono: TonoAviso.error,
                                           );
                                         }
                                       }

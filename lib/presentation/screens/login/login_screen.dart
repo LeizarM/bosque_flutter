@@ -119,6 +119,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
             setState(() => _message = _msgErrorPersistencia);
             return;
           }
+          ref.invalidate(asyncUserProvider);
           context.go('/change-password', extra: loginEntity);
         } else {
           // await: la escritura de user_data/token debe completarse ANTES de
@@ -131,6 +132,17 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
             setState(() => _message = _msgErrorPersistencia);
             return;
           }
+
+          // `asyncUserProvider` es un FutureProvider SIN autoDispose: lee
+          // `user_data` del storage una vez y se queda con ese valor. Si en esta
+          // misma carga de la app alguien ya lo evaluó cuando no había sesión,
+          // tiene cacheado un `null` que sobrevive al login — y el `AuthGate`,
+          // que es quien lo mira, seguiría creyendo que no hay usuario.
+          //
+          // `setUser` acaba de escribir el storage, así que este es el momento
+          // exacto en que ese caché quedó viejo. Invalidarlo acá lo obliga a
+          // releer y a ver la sesión nueva.
+          ref.invalidate(asyncUserProvider);
           context.go('/dashboard');
         }
       } else {

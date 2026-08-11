@@ -6,6 +6,7 @@ import 'package:bosque_flutter/core/state/control_combustible_maquina_montacarga
 import 'package:bosque_flutter/domain/entities/control_combustible_entity.dart';
 
 import 'package:bosque_flutter/core/state/user_provider.dart';
+import 'package:bosque_flutter/presentation/widgets/shared/aviso.dart';
 
 enum FuelType { gasolina, diesel, electrico, gas }
 
@@ -567,13 +568,10 @@ class _ControlCombustibleScreenState
           if (selectedBidonIdMovimiento == null) {
             // Usuario canceló la selección
             if (mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text(
-                    'Debe seleccionar un bidón para continuar con el registro',
-                  ),
-                  backgroundColor: Colors.orange,
-                ),
+              mostrarAviso(
+                context,
+                'Debe seleccionar un bidón para continuar con el registro',
+                tono: TonoAviso.aviso,
               );
             }
             return;
@@ -591,12 +589,7 @@ class _ControlCombustibleScreenState
       await _proceedWithRegistration(selectedMovimiento, consumoData);
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error al validar: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        mostrarAviso(context, 'Error al validar: $e', tono: TonoAviso.error);
       }
     }
   }
@@ -737,12 +730,10 @@ class _ControlCombustibleScreenState
         );
       } else {
         // AsyncLoading o estado desconocido
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('El registro está siendo procesado...'),
-            backgroundColor: Colors.orange,
-            duration: Duration(seconds: 2),
-          ),
+        mostrarAviso(
+          context,
+          'El registro está siendo procesado...',
+          tono: TonoAviso.aviso,
         );
       }
     } catch (e) {

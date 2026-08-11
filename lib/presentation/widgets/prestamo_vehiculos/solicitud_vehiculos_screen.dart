@@ -4,6 +4,7 @@ import 'package:bosque_flutter/core/state/prestamo_vehiculos_provider.dart';
 import 'package:bosque_flutter/core/state/user_provider.dart';
 import 'package:bosque_flutter/core/utils/responsive_utils_bosque.dart';
 import 'package:bosque_flutter/domain/entities/solicitud_chofer_entity.dart';
+import 'package:bosque_flutter/presentation/widgets/shared/aviso.dart';
 
 class SolicitudVehiculosScreen extends ConsumerStatefulWidget {
   const SolicitudVehiculosScreen({super.key});
@@ -33,11 +34,10 @@ class _SolicitudVehiculosScreenState
           .read(solicitudesNotifierProvider.notifier)
           .cargarSolicitudesEmpleado(codEmpleado);
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error al obtener datos del usuario: $e'),
-          backgroundColor: Theme.of(context).colorScheme.error,
-        ),
+      mostrarAviso(
+        context,
+        'Error al obtener datos del usuario: $e',
+        tono: TonoAviso.error,
       );
     }
   }

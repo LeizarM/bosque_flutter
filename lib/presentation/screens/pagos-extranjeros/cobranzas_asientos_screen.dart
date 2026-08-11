@@ -6,6 +6,7 @@ import 'package:bosque_flutter/domain/entities/asiento_entity.dart';
 import 'package:bosque_flutter/domain/entities/transacciones_entity.dart';
 import 'package:bosque_flutter/presentation/widgets/pagos-extranjeros/dialogo_operacion_tesoreria.dart';
 import 'package:bosque_flutter/presentation/widgets/pagos-extranjeros/tpex_estado_ui.dart';
+import 'package:bosque_flutter/presentation/widgets/shared/aviso.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -985,16 +986,13 @@ class _AsientoFilaCobState extends ConsumerState<_AsientoFilaCob> {
       if (!mounted) return;
       ref.invalidate(asientosTransaccionProvider(widget.txn.idTransaccion));
       ref.invalidate(cuadreAsientosProvider(widget.txn.idTransaccion));
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Asiento eliminado')));
+      mostrarAviso(context, 'Asiento eliminado');
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(e.toString().replaceFirst('Exception: ', '')),
-          backgroundColor: Theme.of(context).colorScheme.error,
-        ),
+      mostrarAviso(
+        context,
+        e.toString().replaceFirst('Exception: ', ''),
+        tono: TonoAviso.error,
       );
     } finally {
       if (mounted) setState(() => _eliminando = false);
@@ -1272,16 +1270,13 @@ class _DialogoAsientoCobState extends ConsumerState<_DialogoAsientoCob> {
       ref.invalidate(asientosTransaccionProvider(widget.txn.idTransaccion));
       ref.invalidate(cuadreAsientosProvider(widget.txn.idTransaccion));
       Navigator.of(context).pop();
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Asiento guardado exitosamente')),
-      );
+      mostrarAviso(context, 'Asiento guardado exitosamente');
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(e.toString().replaceFirst('Exception: ', '')),
-          backgroundColor: Theme.of(context).colorScheme.error,
-        ),
+      mostrarAviso(
+        context,
+        e.toString().replaceFirst('Exception: ', ''),
+        tono: TonoAviso.error,
       );
     } finally {
       if (mounted) setState(() => _cargando = false);

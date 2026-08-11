@@ -5,6 +5,7 @@ import 'package:bosque_flutter/domain/entities/solicitud_proveedor_entity.dart';
 import 'package:bosque_flutter/domain/entities/detalle_solicitud_entity.dart';
 import 'package:bosque_flutter/presentation/screens/pagos-extranjeros/solicitud_detail_panel.dart';
 import 'package:bosque_flutter/presentation/widgets/pagos-extranjeros/tpex_estado_ui.dart';
+import 'package:bosque_flutter/presentation/widgets/shared/aviso.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -271,12 +272,10 @@ class _SolicitudPendienteCardState
 
   Future<void> _aprobarSolicitud() async {
     if (!_algunProveedorAprobado) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Apruebe al menos una cuota (de cualquier proveedor) antes de aprobar la solicitud.',
-          ),
-        ),
+      mostrarAviso(
+        context,
+        'Apruebe al menos una cuota (de cualquier proveedor) antes de aprobar la solicitud.',
+        tono: TonoAviso.aviso,
       );
       return;
     }
@@ -330,17 +329,14 @@ class _SolicitudPendienteCardState
     try {
       await op();
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(mensajeOk), backgroundColor: Colors.green),
-      );
+      mostrarAviso(context, mensajeOk);
       widget.onChanged();
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(e.toString().replaceFirst('Exception: ', '')),
-          backgroundColor: Theme.of(context).colorScheme.error,
-        ),
+      mostrarAviso(
+        context,
+        e.toString().replaceFirst('Exception: ', ''),
+        tono: TonoAviso.error,
       );
     } finally {
       if (mounted) setState(() => _cargando = false);

@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:bosque_flutter/core/network/dio_client.dart';
 import 'package:bosque_flutter/core/state/button_permissions_provider.dart';
+import 'package:bosque_flutter/core/state/rol_sabados_provider.dart';
 import 'package:bosque_flutter/core/state/user_provider.dart';
 import 'package:bosque_flutter/core/utils/console_log.dart';
 import 'package:bosque_flutter/core/utils/secure_storage.dart';
@@ -265,11 +266,13 @@ final routerProvider = Provider<GoRouter>((ref) {
               builder: (context, state) => const PlanillasScreen(),
             ),
 
-            // Multas Empleados
+            // Rol de Turnos de Sábado
+            // La ruta tiene que ser EXACTAMENTE tb_vista.direccion (codVista 154
+            // = 'trs_Sabados/Main'): el sidebar arma el destino con '/'+direccion.
             GoRoute(
-              path: '/dashboard/tplMulta/multas',
-              name: 'tplMulta',
-              builder: (context, state) => const MultasScreen(),
+              path: '/dashboard/trs_Sabados/Main',
+              name: 'trsSabados',
+              builder: (context, state) => const RolSabadosScreen(),
             ),
           ],
         ),
@@ -445,6 +448,11 @@ final routerProvider = Provider<GoRouter>((ref) {
           path: '/tplPlanilla/planilla',
           redirect: (context, state) => '/dashboard/tplPlanilla/planilla',
         ),
+        // ROL DE TURNOS DE SABADO
+        GoRoute(
+          path: '/trs_Sabados/Main',
+          redirect: (context, state) => '/dashboard/trs_Sabados/Main',
+        ),
 
         GoRoute(
           path: '/change-password',
@@ -537,6 +545,10 @@ final routerProvider = Provider<GoRouter>((ref) {
         ref.read(userProvider.notifier).clearUser();
         ref.read(buttonPermissionsProvider.notifier).clearPermisos();
         ref.invalidate(asyncUserProvider);
+        // «Su Equipo» sabe quién es el jefe y a quiénes manda. Ese provider no
+        // es autoDispose (la pestaña se arma con él y se consulta seguido), así
+        // que sin esta línea el próximo login hereda el equipo del anterior.
+        ref.invalidate(miEquipoProvider);
         ref.read(authStateProvider.notifier).state = false;
       } catch (e) {
         console('⚠️ Error limpiando sesión tras 401: $e');

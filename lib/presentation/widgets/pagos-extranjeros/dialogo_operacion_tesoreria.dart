@@ -1,5 +1,6 @@
 import 'package:bosque_flutter/core/state/pagos_extranjeros_provider.dart';
 import 'package:bosque_flutter/core/state/user_provider.dart';
+import 'package:bosque_flutter/presentation/widgets/shared/aviso.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -95,19 +96,14 @@ class _DialogoOperacionTesoreriaState
         _idMonDestino == null ||
         _monto <= 0 ||
         _tc <= 0) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Complete empresa, tipo, monedas, monto y TC aplicado.'),
-        ),
+      mostrarAviso(
+        context,
+        'Complete empresa, tipo, monedas, monto y TC aplicado.',
       );
       return;
     }
     if (_esDevolucion && _idTxnOrigen == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Seleccione la transacción a devolver.'),
-        ),
-      );
+      mostrarAviso(context, 'Seleccione la transacción a devolver.');
       return;
     }
     setState(() => _guardando = true);
@@ -138,18 +134,15 @@ class _DialogoOperacionTesoreriaState
     if (ok) {
       widget.onGuardado?.call();
       Navigator.of(context).pop();
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(st.mensajeExito ?? 'Operación de tesorería registrada.'),
-          backgroundColor: Colors.teal.shade700,
-        ),
+      mostrarAviso(
+        context,
+        st.mensajeExito ?? 'Operación de tesorería registrada.',
       );
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(st.mensajeError ?? 'No se pudo registrar la operación.'),
-          backgroundColor: Theme.of(context).colorScheme.error,
-        ),
+      mostrarAviso(
+        context,
+        st.mensajeError ?? 'No se pudo registrar la operación.',
+        tono: TonoAviso.error,
       );
     }
   }

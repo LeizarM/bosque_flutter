@@ -10,6 +10,7 @@ import 'package:bosque_flutter/domain/entities/nota_remision_entity.dart';
 import 'package:bosque_flutter/domain/entities/socio_negocio_entity.dart';
 import 'package:bosque_flutter/presentation/screens/depositos-cheques/deposito_cheque_register_screen.dart';
 import 'package:bosque_flutter/presentation/screens/depositos-cheques/editable_saldo_pendiente_cell.dart';
+import 'package:bosque_flutter/presentation/widgets/shared/aviso.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../../core/state/depositos_cheques_provider.dart';
 import '../../../core/utils/responsive_utils_bosque.dart';
@@ -344,9 +345,7 @@ class _DepositosIdentificarTable extends ConsumerWidget {
       if (result != null) {
         // Actualizar el estado con el resultado del diálogo
         // notifier.actualizarDeposito(result);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Depósito actualizado correctamente')),
-        );
+        mostrarAviso(context, 'Depósito actualizado correctamente');
       }
     }
 
@@ -1158,8 +1157,10 @@ class _ActualizacionDepositoDialogState
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error al seleccionar imagen: $e')),
+        mostrarAviso(
+          context,
+          'Error al seleccionar imagen: $e',
+          tono: TonoAviso.error,
         );
       }
     }
@@ -2050,18 +2051,7 @@ class _ActualizacionDepositoDialogState
 
   void _mostrarError(String mensaje) {
     if (mounted) {
-      // Usar el ScaffoldMessenger del Scaffold interno del diálogo
-      ScaffoldMessenger.of(context).hideCurrentSnackBar();
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(mensaje),
-          backgroundColor: Colors.red,
-          behavior: SnackBarBehavior.floating,
-          margin: const EdgeInsets.all(16),
-          elevation: 8,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-        ),
-      );
+      mostrarAviso(context, mensaje, tono: TonoAviso.error);
     }
   }
 

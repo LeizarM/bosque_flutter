@@ -7,6 +7,7 @@ import 'package:bosque_flutter/domain/entities/cargo_sucursal_entity.dart';
 import 'package:bosque_flutter/domain/entities/sucursal_entity.dart';
 import 'package:bosque_flutter/presentation/widgets/estructura-organizacional/form_area.dart';
 import 'package:bosque_flutter/presentation/widgets/registro_empleado/registro_empleado_utils.dart';
+import 'package:bosque_flutter/presentation/widgets/shared/aviso.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -1551,13 +1552,9 @@ class _EditarCargoFormState extends ConsumerState<EditarCargoForm>
             .refresh();
 
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                'Sucursal cambiada a "${nuevaSucursal.nombre}" correctamente',
-              ),
-              backgroundColor: Colors.green,
-            ),
+          mostrarAviso(
+            context,
+            'Sucursal cambiada a "${nuevaSucursal.nombre}" correctamente',
           );
         }
         return true;
@@ -1565,11 +1562,10 @@ class _EditarCargoFormState extends ConsumerState<EditarCargoForm>
       return false;
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error al actualizar: $e'),
-            backgroundColor: Colors.red,
-          ),
+        mostrarAviso(
+          context,
+          'Error al actualizar: $e',
+          tono: TonoAviso.error,
         );
       }
       return false;
@@ -1599,24 +1595,15 @@ class _EditarCargoFormState extends ConsumerState<EditarCargoForm>
             .refresh();
 
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                'Sucursal "${sucursal.nombre}" asignada correctamente',
-              ),
-              backgroundColor: Colors.green,
-            ),
+          mostrarAviso(
+            context,
+            'Sucursal "${sucursal.nombre}" asignada correctamente',
           );
         }
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error al asignar: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        mostrarAviso(context, 'Error al asignar: $e', tono: TonoAviso.error);
       }
     }
   }
@@ -1674,24 +1661,15 @@ class _EditarCargoFormState extends ConsumerState<EditarCargoForm>
             .refresh();
 
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                'Asignación a "${cargoSucursal.sucursal?.nombre}" eliminada',
-              ),
-              backgroundColor: Colors.green,
-            ),
+          mostrarAviso(
+            context,
+            'Asignación a "${cargoSucursal.sucursal?.nombre}" eliminada',
           );
         }
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error al eliminar: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        mostrarAviso(context, 'Error al eliminar: $e', tono: TonoAviso.error);
       }
     }
   }

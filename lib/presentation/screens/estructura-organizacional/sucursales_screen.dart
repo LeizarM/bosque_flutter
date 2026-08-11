@@ -1,6 +1,7 @@
 import 'package:bosque_flutter/core/state/rrhh_provider.dart';
 import 'package:bosque_flutter/core/utils/responsive_utils_bosque.dart';
 import 'package:bosque_flutter/domain/entities/sucursal_entity.dart';
+import 'package:bosque_flutter/presentation/widgets/shared/aviso.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -30,8 +31,10 @@ class SucursalesScreen extends ConsumerWidget {
                   break;
                 case 'editar':
                   // TODO: Implementar edición de sucursal
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Función no implementada')),
+                  mostrarAviso(
+                    context,
+                    'Función no implementada',
+                    tono: TonoAviso.aviso,
                   );
                   break;
               }
@@ -191,9 +194,7 @@ class SucursalesScreen extends ConsumerWidget {
 
   void _showNuevaSucursalDialog(BuildContext context) {
     // TODO: Implementar diálogo para nueva sucursal
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text('Función no implementada')));
+    mostrarAviso(context, 'Función no implementada', tono: TonoAviso.aviso);
   }
 
   void _showSucursalDetails(BuildContext context, SucursalEntity sucursal) {

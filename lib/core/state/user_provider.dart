@@ -38,11 +38,28 @@ final asyncUserProvider = FutureProvider<LoginEntity?>((ref) async {
 });
 
 class UserStateNotifier extends StateNotifier<LoginEntity?> {
-  final AuthRepository _authRepository = AuthRepositoryImpl();
+  /// `late` para que se construya recién cuando alguien lo use.
+  ///
+  /// `AuthRepositoryImpl` levanta el cliente HTTP en un inicializador de campo,
+  /// así que sin el `late` basta con *leer* `userProvider` para armar la red
+  /// entera. En la app da igual porque eso ya pasó al iniciar sesión, pero
+  /// cualquier pantalla que lo observe queda atada a que haya plataforma
+  /// debajo. Sólo lo usan `getUsers` y `changePassword`.
+  late final AuthRepository _authRepository = AuthRepositoryImpl();
 
   UserStateNotifier() : super(null) {
     _loadUserFromStorage(); // Cargar datos del usuario al inicializar
   }
+
+  /// Igual que el de arriba pero **sin tocar el storage seguro**.
+  ///
+  /// El constructor normal arranca `getUserData()` con un `timeout` de 4 s, y
+  /// en un widget test ese Timer queda pendiente cuando se desmonta el árbol:
+  /// el framework lo denuncia como «A Timer is still pending» y da el caso por
+  /// fallado. Como el problema lo hereda **cualquier** pantalla que observe
+  /// `userProvider`, la costura vive acá y no repetida en cada archivo de
+  /// prueba. En producción nadie lo llama.
+  UserStateNotifier.sinStorage(LoginEntity? inicial) : super(inicial);
 
   Future<void> _loadUserFromStorage() async {
     try {

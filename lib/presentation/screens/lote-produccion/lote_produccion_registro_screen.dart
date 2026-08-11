@@ -11,6 +11,7 @@ import 'package:bosque_flutter/domain/entities/maquina_produccion_entity.dart';
 import 'package:bosque_flutter/domain/entities/material_ingreso_entity.dart';
 import 'package:bosque_flutter/domain/entities/material_salida_entity.dart';
 import 'package:bosque_flutter/domain/entities/merma_entity.dart';
+import 'package:bosque_flutter/presentation/widgets/shared/aviso.dart';
 
 class LoteProduccionRegistroScreen extends ConsumerStatefulWidget {
   const LoteProduccionRegistroScreen({super.key});
@@ -187,13 +188,10 @@ class _LoteProduccionRegistroScreenState
             ? (st.successMessage ?? 'Lote guardado correctamente')
             : (st.errorMessage ?? 'Error al guardar');
     if (ok) notifier.resetState();
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(mensaje),
-        backgroundColor: ok ? Colors.green[700] : Colors.red[700],
-        behavior: SnackBarBehavior.floating,
-        duration: const Duration(seconds: 4),
-      ),
+    mostrarAviso(
+      context,
+      mensaje,
+      tono: ok ? TonoAviso.exito : TonoAviso.error,
     );
   }
 

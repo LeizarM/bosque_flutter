@@ -1,4 +1,5 @@
 import 'package:bosque_flutter/domain/entities/cargo_entity.dart';
+import 'package:bosque_flutter/presentation/widgets/shared/aviso.dart';
 import 'package:flutter/material.dart';
 
 /// Diálogo para cambiar la posición de un cargo
@@ -149,13 +150,9 @@ class _CambiarPosicionDialogState extends State<CambiarPosicionDialog> {
                 suffixIcon: IconButton(
                   icon: const Icon(Icons.info_outline, size: 20),
                   onPressed: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text(
-                          'Los cargos se ordenan por posición en el mismo nivel',
-                        ),
-                        duration: Duration(seconds: 2),
-                      ),
+                    mostrarAviso(
+                      context,
+                      'Los cargos se ordenan por posición en el mismo nivel',
                     );
                   },
                 ),
@@ -174,20 +171,18 @@ class _CambiarPosicionDialogState extends State<CambiarPosicionDialog> {
           onPressed: () {
             final nuevaPosicion = int.tryParse(posicionController.text);
             if (nuevaPosicion == null) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Por favor ingresa un número válido'),
-                  backgroundColor: Colors.red,
-                ),
+              mostrarAviso(
+                context,
+                'Por favor ingresa un número válido',
+                tono: TonoAviso.error,
               );
               return;
             }
             if (nuevaPosicion == widget.cargo.posicion) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('La posición es la misma que la actual'),
-                  backgroundColor: Colors.orange,
-                ),
+              mostrarAviso(
+                context,
+                'La posición es la misma que la actual',
+                tono: TonoAviso.aviso,
               );
               return;
             }

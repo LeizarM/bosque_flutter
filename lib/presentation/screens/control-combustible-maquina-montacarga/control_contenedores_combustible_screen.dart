@@ -8,6 +8,7 @@ import 'package:bosque_flutter/core/utils/responsive_utils_bosque.dart';
 import 'package:bosque_flutter/core/utils/movimiento_business_logic.dart';
 import 'package:bosque_flutter/domain/entities/contenedor_entity.dart';
 import 'package:bosque_flutter/domain/entities/movimiento_entity.dart';
+import 'package:bosque_flutter/presentation/widgets/shared/aviso.dart';
 
 class ControlContenedoresCombustibleScreen extends ConsumerStatefulWidget {
   const ControlContenedoresCombustibleScreen({super.key});
@@ -205,13 +206,7 @@ class _ControlContenedoresCombustibleScreenState
         );
 
         if (mensajeError != null) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(mensajeError),
-              backgroundColor: Colors.red,
-              duration: const Duration(seconds: 4),
-            ),
-          );
+          mostrarAviso(context, mensajeError, tono: TonoAviso.error);
         }
 
         setState(() {
@@ -1461,13 +1456,7 @@ class _ControlContenedoresCombustibleScreenState
 
     // Si hay error de saldo, mostrar mensaje y cancelar operación
     if (mensajeErrorSaldo != null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(mensajeErrorSaldo),
-          backgroundColor: Colors.red,
-          duration: const Duration(seconds: 4),
-        ),
-      );
+      mostrarAviso(context, mensajeErrorSaldo, tono: TonoAviso.error);
       return;
     }
 
@@ -1683,13 +1672,7 @@ class _ControlContenedoresCombustibleScreenState
           _isLoading = false;
         });
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(mensajeErrorSaldo),
-            backgroundColor: Colors.red,
-            duration: const Duration(seconds: 4),
-          ),
-        );
+        mostrarAviso(context, mensajeErrorSaldo, tono: TonoAviso.error);
         return;
       }
 
@@ -1821,37 +1804,23 @@ class _ControlContenedoresCombustibleScreenState
           // y necesitamos mostrar la información actualizada en los dropdowns
           ref.invalidate(contenedoresProvider);
 
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Movimiento registrado exitosamente'),
-              backgroundColor: Colors.green,
-              behavior: SnackBarBehavior.floating,
-            ),
-          );
+          mostrarAviso(context, 'Movimiento registrado exitosamente');
 
           // Limpiar formulario para permitir nuevos movimientos con datos frescos
           _resetForm();
         }
       } else {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Error al registrar el movimiento'),
-              backgroundColor: Colors.red,
-              behavior: SnackBarBehavior.floating,
-            ),
+          mostrarAviso(
+            context,
+            'Error al registrar el movimiento',
+            tono: TonoAviso.error,
           );
         }
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error: ${e.toString()}'),
-            backgroundColor: Colors.red,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
+        mostrarAviso(context, 'Error: ${e.toString()}', tono: TonoAviso.error);
       }
     } finally {
       if (mounted) {

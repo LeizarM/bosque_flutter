@@ -1,4 +1,5 @@
 import 'package:bosque_flutter/core/state/menu_provider.dart';
+import 'package:bosque_flutter/core/state/rol_sabados_provider.dart';
 import 'package:bosque_flutter/core/state/user_provider.dart';
 import 'package:bosque_flutter/core/utils/console_log.dart';
 import 'package:flutter/material.dart';
@@ -673,6 +674,10 @@ class _AppSidebarState extends ConsumerState<AppSidebar> {
                 onTap: () async {
                   await ref.read(menuProvider.notifier).clearCache();
                   await ref.read(userProvider.notifier).clearUser();
+                  // El equipo del jefe queda cacheado (miEquipoProvider no es
+                  // autoDispose). Si no se tira acá, quien entre después ve la
+                  // pestaña «Su Equipo» con la gente del que se fue.
+                  ref.invalidate(miEquipoProvider);
                   context.go('/login');
                   if (isSmallScreen) Navigator.pop(context);
                 },

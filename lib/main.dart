@@ -4,16 +4,23 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:responsive_framework/responsive_framework.dart';
 import 'package:bosque_flutter/core/config/router.dart';
-import 'package:bosque_flutter/core/state/entregas_provider.dart';
 import 'package:bosque_flutter/core/state/theme_mode_provider.dart';
 import 'package:bosque_flutter/core/theme/app_theme.dart';
 import 'package:bosque_flutter/core/utils/console_log.dart';
 import 'package:bosque_flutter/core/utils/responsive_utils_bosque.dart';
-import 'package:bosque_flutter/data/repositories/entregas_impl.dart';
 import 'package:bosque_flutter/presentation/widgets/shared/connectivity_wrapper.dart';
+
+/// Marca de build, para poder confirmar de un vistazo qué código está corriendo.
+///
+/// Existe porque diagnosticar un bucle de navegación a ciegas cuesta caro: si el
+/// navegador sirve un bundle viejo, los logs nuevos simplemente no aparecen y uno
+/// termina buscando el problema en código que no se está ejecutando. Con esta
+/// línea en la consola se descarta esa posibilidad en dos segundos.
+const String kBuildMarker = 'sesion-fix-4 · AuthGate ya no destruye la sesión';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  console('🏷️  BUILD: $kBuildMarker');
 
   // Solo cargar .env en plataformas móviles y desktop (no web)
   if (!kIsWeb) {
@@ -35,12 +42,11 @@ void main() async {
     }
   }
 
-  runApp(
-    ProviderScope(
-      overrides: [entregasRepositoryProvider.overrideWithValue(EntregasImpl())],
-      child: const MyApp(),
-    ),
-  );
+  // Sin overrides. El de entregasRepositoryProvider que estaba acá construía EntregasImpl
+  // —y con él todo el cliente Dio— antes del primer frame, para TODOS los usuarios, entraran
+  // o no al módulo de entregas. Ahora ese provider se fabrica solo y de forma lazy
+  // (ver core/state/entregas_provider.dart).
+  runApp(const ProviderScope(child: MyApp()));
 }
 
 class MyApp extends ConsumerWidget {

@@ -3,6 +3,7 @@ import 'dart:typed_data';
 import 'package:bosque_flutter/core/state/pagos_extranjeros_provider.dart';
 import 'package:bosque_flutter/core/state/user_provider.dart';
 import 'package:bosque_flutter/data/repositories/pagos_extranjeros_impl.dart';
+import 'package:bosque_flutter/presentation/widgets/shared/aviso.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
@@ -64,9 +65,7 @@ class VoucherButton extends ConsumerWidget {
     } catch (e) {
       if (!context.mounted) return;
       Navigator.of(context).pop(); // quitar loading
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Error al descargar voucher: $e')));
+      mostrarAviso(context, 'Error al descargar voucher: $e');
     }
   }
 

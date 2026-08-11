@@ -7,6 +7,7 @@ import 'package:bosque_flutter/core/state/resmado_provider.dart';
 import 'package:bosque_flutter/core/state/user_provider.dart';
 import 'package:bosque_flutter/core/utils/responsive_utils_bosque.dart';
 import 'package:bosque_flutter/domain/entities/lote_produccion_entity.dart';
+import 'package:bosque_flutter/presentation/widgets/shared/aviso.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Screen principal
@@ -195,13 +196,10 @@ class _ResmadoRegistroScreenState extends ConsumerState<ResmadoRegistroScreen> {
         ok
             ? (st.successMessage ?? 'Registrado correctamente')
             : (st.errorMessage ?? 'Error al registrar');
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(mensaje),
-        backgroundColor: ok ? Colors.green[700] : Colors.red[700],
-        behavior: SnackBarBehavior.floating,
-        duration: const Duration(seconds: 4),
-      ),
+    mostrarAviso(
+      context,
+      mensaje,
+      tono: ok ? TonoAviso.exito : TonoAviso.error,
     );
     if (ok) notifier.resetState();
   }
@@ -221,14 +219,10 @@ class _ResmadoRegistroScreenState extends ConsumerState<ResmadoRegistroScreen> {
 
     if (!mounted) return;
     if (duplicados.isNotEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'Los siguientes artículos ya existen en el detalle: ${duplicados.join(', ')}',
-          ),
-          backgroundColor: Colors.orange[800],
-          behavior: SnackBarBehavior.floating,
-        ),
+      mostrarAviso(
+        context,
+        'Los siguientes artículos ya existen en el detalle: ${duplicados.join(', ')}',
+        tono: TonoAviso.aviso,
       );
     }
   }

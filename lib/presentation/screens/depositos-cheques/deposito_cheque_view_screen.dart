@@ -1,5 +1,6 @@
 import 'package:bosque_flutter/core/utils/pdf_service.dart';
 import 'package:bosque_flutter/domain/entities/banco_cuenta_entity.dart';
+import 'package:bosque_flutter/presentation/widgets/shared/aviso.dart';
 import 'package:bosque_flutter/presentation/widgets/shared/permission_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -1282,14 +1283,12 @@ class _DepositosTableState extends ConsumerState<_DepositosTable> {
                                                                   context,
                                                                 );
                                                           } catch (e) {
-                                                            ScaffoldMessenger.of(
+                                                            mostrarAviso(
                                                               context,
-                                                            ).showSnackBar(
-                                                              SnackBar(
-                                                                content: Text(
-                                                                  'Error al descargar imagen: $e',
-                                                                ),
-                                                              ),
+                                                              'Error al descargar imagen: $e',
+                                                              tono:
+                                                                  TonoAviso
+                                                                      .error,
                                                             );
                                                           }
                                                         },
@@ -1318,14 +1317,12 @@ class _DepositosTableState extends ConsumerState<_DepositosTable> {
                                                                 );
                                                           } catch (e) {
                                                             // Mostrar un mensaje de error
-                                                            ScaffoldMessenger.of(
+                                                            mostrarAviso(
                                                               context,
-                                                            ).showSnackBar(
-                                                              SnackBar(
-                                                                content: Text(
-                                                                  'Error al descargar el PDF: $e',
-                                                                ),
-                                                              ),
+                                                              'Error al descargar el PDF: $e',
+                                                              tono:
+                                                                  TonoAviso
+                                                                      .error,
                                                             );
                                                           }
                                                         },
@@ -1377,17 +1374,12 @@ class _DepositosTableState extends ConsumerState<_DepositosTable> {
 
                                                             if (bancos
                                                                 .isEmpty) {
-                                                              ScaffoldMessenger.of(
+                                                              mostrarAviso(
                                                                 context,
-                                                              ).showSnackBar(
-                                                                SnackBar(
-                                                                  content: Text(
-                                                                    'No hay bancos disponibles para esta empresa',
-                                                                  ),
-                                                                  backgroundColor:
-                                                                      Colors
-                                                                          .orange,
-                                                                ),
+                                                                'No hay bancos disponibles para esta empresa',
+                                                                tono:
+                                                                    TonoAviso
+                                                                        .aviso,
                                                               );
                                                               return;
                                                             }
@@ -1513,16 +1505,11 @@ class _DepositosTableState extends ConsumerState<_DepositosTable> {
                                                                                 dialogContext,
                                                                               );
                                                                             } else {
-                                                                              ScaffoldMessenger.of(
+                                                                              mostrarAviso(
                                                                                 context,
-                                                                              ).showSnackBar(
-                                                                                SnackBar(
-                                                                                  content: Text(
-                                                                                    'Debe seleccionar un banco',
-                                                                                  ),
-                                                                                  backgroundColor:
-                                                                                      Colors.orange,
-                                                                                ),
+                                                                                'Debe seleccionar un banco',
+                                                                                tono:
+                                                                                    TonoAviso.aviso,
                                                                               );
                                                                             }
                                                                           },

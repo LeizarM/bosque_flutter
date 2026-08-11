@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:bosque_flutter/core/state/user_provider.dart';
 import 'package:bosque_flutter/core/utils/responsive_utils_bosque.dart';
+import 'package:bosque_flutter/presentation/widgets/shared/aviso.dart';
 
 class UsuariosHomeScreen extends ConsumerStatefulWidget {
   const UsuariosHomeScreen({super.key});
@@ -106,15 +107,12 @@ class _UsuariosHomeScreenState extends ConsumerState<UsuariosHomeScreen> {
       final userNotifier = ref.read(userProvider.notifier);
       final result = await userNotifier.changePassword(user);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              result
-                  ? 'Contraseña restablecida correctamente'
-                  : 'No se pudo restablecer la contraseña',
-            ),
-            backgroundColor: result ? colorScheme.primary : colorScheme.error,
-          ),
+        mostrarAviso(
+          context,
+          result
+              ? 'Contraseña restablecida correctamente'
+              : 'No se pudo restablecer la contraseña',
+          tono: result ? TonoAviso.exito : TonoAviso.error,
         );
       }
     }
@@ -152,12 +150,10 @@ class _UsuariosHomeScreenState extends ConsumerState<UsuariosHomeScreen> {
               }
               Future.delayed(Duration(milliseconds: 300), () {
                 if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(message),
-                      backgroundColor:
-                          isSuccess ? colorScheme.primary : colorScheme.error,
-                    ),
+                  mostrarAviso(
+                    context,
+                    message,
+                    tono: isSuccess ? TonoAviso.exito : TonoAviso.error,
                   );
                 }
               });
@@ -215,28 +211,21 @@ class _UsuariosHomeScreenState extends ConsumerState<UsuariosHomeScreen> {
 
               Navigator.of(dialogContext).pop();
               Future.delayed(const Duration(milliseconds: 300), () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(
-                      resultado
-                          ? 'Permisos de ${selectedUser.login} copiados a ${user.login}'
-                          : 'Error al copiar permisos',
-                    ),
-                    backgroundColor:
-                        resultado ? colorScheme.primary : colorScheme.error,
-                    duration: const Duration(seconds: 3),
-                  ),
+                mostrarAviso(
+                  context,
+                  resultado
+                      ? 'Permisos de ${selectedUser.login} copiados a ${user.login}'
+                      : 'Error al copiar permisos',
+                  tono: resultado ? TonoAviso.exito : TonoAviso.error,
                 );
               });
             } catch (e) {
               Navigator.of(dialogContext).pop();
               Future.delayed(const Duration(milliseconds: 300), () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('Error al copiar permisos: $e'),
-                    backgroundColor: colorScheme.error,
-                    duration: const Duration(seconds: 3),
-                  ),
+                mostrarAviso(
+                  context,
+                  'Error al copiar permisos: $e',
+                  tono: TonoAviso.error,
                 );
               });
             }
@@ -262,12 +251,7 @@ class _UsuariosHomeScreenState extends ConsumerState<UsuariosHomeScreen> {
           onConfirm: () {
             Navigator.of(dialogContext).pop();
             Future.delayed(const Duration(milliseconds: 300), () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: const Text('Permisos asignados correctamente'),
-                  backgroundColor: colorScheme.primary,
-                ),
-              );
+              mostrarAviso(context, 'Permisos asignados correctamente');
             });
           },
         );
@@ -300,12 +284,10 @@ class _UsuariosHomeScreenState extends ConsumerState<UsuariosHomeScreen> {
               }
               Future.delayed(Duration(milliseconds: 300), () {
                 if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(message),
-                      backgroundColor:
-                          isSuccess ? colorScheme.primary : colorScheme.error,
-                    ),
+                  mostrarAviso(
+                    context,
+                    message,
+                    tono: isSuccess ? TonoAviso.exito : TonoAviso.error,
                   );
                 }
               });
@@ -2630,13 +2612,9 @@ class _AssignPermissionsDialogState
                           Navigator.of(context).pop(); // Cerrar loading
 
                           if (success) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text(
-                                  'Permiso actualizado correctamente',
-                                ),
-                                backgroundColor: Colors.green,
-                              ),
+                            mostrarAviso(
+                              context,
+                              'Permiso actualizado correctamente',
                             );
 
                             // Actualizar el estado local
@@ -2647,22 +2625,20 @@ class _AssignPermissionsDialogState
                             // Refrescar el provider para recargar los datos
                             ref.invalidate(_permisosProvider);
                           } else {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Error al actualizar el permiso'),
-                                backgroundColor: Colors.red,
-                              ),
+                            mostrarAviso(
+                              context,
+                              'Error al actualizar el permiso',
+                              tono: TonoAviso.error,
                             );
                           }
                         }
                       } catch (e) {
                         if (context.mounted) {
                           Navigator.of(context).pop(); // Cerrar loading
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text('Error: ${e.toString()}'),
-                              backgroundColor: Colors.red,
-                            ),
+                          mostrarAviso(
+                            context,
+                            'Error: ${e.toString()}',
+                            tono: TonoAviso.error,
                           );
                         }
                       }

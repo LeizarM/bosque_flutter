@@ -12,6 +12,14 @@ typedef AuthErrorCallback = void Function();
 class DioClient {
   static AuthErrorCallback? _onAuthError;
 
+  /// ¿Ya se avisó que no hay sesión, y todavía no volvió a haber token?
+  ///
+  /// Evita la tormenta de avisos cuando varias peticiones en vuelo se quedan sin
+  /// token a la vez —y, sobre todo, el bucle que se produce cuando el propio
+  /// callback de sesión inválida invalida providers que vuelven a pedir datos.
+  /// Se re-arma en cuanto una petición encuentra token.
+  static bool _sesionInvalidaAvisada = false;
+
   // 1. Instancia estática privada para el Singleton
   static Dio? _dioInstance;
 
@@ -43,6 +51,8 @@ class DioClient {
           final result = await SecureStorage().readTokenDetailed();
           switch (result.status) {
             case TokenReadStatus.ok:
+              // Hay sesión otra vez: se re-arma el aviso de sesión inválida.
+              _sesionInvalidaAvisada = false;
               options.headers['Authorization'] = 'Bearer ${result.token}';
               return handler.next(options);
 
@@ -63,8 +73,31 @@ class DioClient {
             case TokenReadStatus.absent:
               // Sesión genuinamente ausente: NO enviar sin auth. Cortamos y
               // disparamos el flujo de sesión inválida (→ login).
-              console('⚠️ Request a ${options.path} sin sesión: redirigiendo al login');
-              _onAuthError?.call();
+              //
+              // PERO una sola vez. El callback de sesión inválida hace
+              // `ref.invalidate(...)` sobre providers que, si alguien los sigue
+              // observando, Riverpod recalcula EN EL ACTO — y ese recálculo
+              // dispara otra petición autenticada, que tampoco encuentra token,
+              // que vuelve a llamar acá. El bucle se veía tal cual en la consola:
+              //
+              //     Request a /rol-sabados/mi-equipo sin sesión: redirigiendo al login
+              //     Limpiando permisos de botones
+              //     Request a /rol-sabados/mi-equipo sin sesión: redirigiendo al login
+              //     Limpiando permisos de botones      ...
+              //
+              // Y como cada vuelta ejecuta clearUser(), alcanzaba con que una
+              // cayera DESPUÉS de un login exitoso para borrarle la sesión al
+              // usuario recién logueado y dejarlo con el spinner del AuthGate.
+              //
+              // El aviso se re-arma solo en cuanto vuelve a haber token (rama
+              // `ok` de arriba), así que un logout real posterior avisa igual.
+              if (_sesionInvalidaAvisada) {
+                console('⚠️ Request a ${options.path} sin sesión (aviso ya emitido, no se repite)');
+              } else {
+                _sesionInvalidaAvisada = true;
+                console('⚠️ Request a ${options.path} sin sesión: redirigiendo al login');
+                _onAuthError?.call();
+              }
               return handler.reject(
                 DioException(
                   requestOptions: options,

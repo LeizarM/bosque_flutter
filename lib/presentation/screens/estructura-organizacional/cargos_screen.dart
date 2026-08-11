@@ -9,6 +9,7 @@ import 'package:bosque_flutter/presentation/widgets/estructura-organizacional/ca
 import 'package:bosque_flutter/presentation/widgets/estructura-organizacional/editar_cargo_form.dart';
 import 'package:bosque_flutter/presentation/widgets/estructura-organizacional/form_area.dart';
 import 'package:bosque_flutter/presentation/widgets/registro_empleado/registro_empleado_utils.dart';
+import 'package:bosque_flutter/presentation/widgets/shared/aviso.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -637,11 +638,10 @@ class _CargosScreenState extends ConsumerState<CargosScreen> {
             },
             onDuplicate: () {
               Navigator.of(context).pop();
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Función no implementada aún'),
-                  backgroundColor: Colors.orange,
-                ),
+              mostrarAviso(
+                context,
+                'Función no implementada aún',
+                tono: TonoAviso.aviso,
               );
             },
           ),
@@ -721,21 +721,19 @@ class _CargosScreenState extends ConsumerState<CargosScreen> {
   // Procesar nuevo cargo
   Future<void> _procesarNuevoCargo(CargoEditData data) async {
     if (data.nuevoNombre == null || data.nuevoNombre!.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('⚠️ El nombre del cargo es obligatorio'),
-          backgroundColor: Colors.orange,
-        ),
+      mostrarAviso(
+        context,
+        '⚠️ El nombre del cargo es obligatorio',
+        tono: TonoAviso.aviso,
       );
       return;
     }
 
     if (data.nuevoNivelJerarquico == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('⚠️ El nivel jerárquico es obligatorio'),
-          backgroundColor: Colors.orange,
-        ),
+      mostrarAviso(
+        context,
+        '⚠️ El nivel jerárquico es obligatorio',
+        tono: TonoAviso.aviso,
       );
       return;
     }
@@ -815,37 +813,28 @@ class _CargosScreenState extends ConsumerState<CargosScreen> {
         ScaffoldMessenger.of(context).clearSnackBars();
 
         if (success) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                '✅ Cargo "${data.nuevoNombre}" creado exitosamente',
-              ),
-              backgroundColor: Colors.green,
-              duration: const Duration(seconds: 3),
-            ),
+          mostrarAviso(
+            context,
+            '✅ Cargo "${data.nuevoNombre}" creado exitosamente',
           );
 
           // Refrescar la lista de cargos
           ref.invalidate(cargosXEmpresaProvider(widget.codEmpresa));
         } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('❌ Error al crear el cargo'),
-              backgroundColor: Colors.red,
-              duration: Duration(seconds: 3),
-            ),
+          mostrarAviso(
+            context,
+            '❌ Error al crear el cargo',
+            tono: TonoAviso.error,
           );
         }
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).clearSnackBars();
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('❌ Error: ${e.toString()}'),
-            backgroundColor: Colors.red,
-            duration: const Duration(seconds: 5),
-          ),
+        mostrarAviso(
+          context,
+          '❌ Error: ${e.toString()}',
+          tono: TonoAviso.error,
         );
       }
     }
@@ -878,11 +867,10 @@ class _CargosScreenState extends ConsumerState<CargosScreen> {
   ) async {
     // Validar que el codCargo sea diferente de cero (es un cargo existente)
     if (data.codCargo == 0) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('⚠️ Error: El cargo no tiene un código válido'),
-          backgroundColor: Colors.red,
-        ),
+      mostrarAviso(
+        context,
+        '⚠️ Error: El cargo no tiene un código válido',
+        tono: TonoAviso.error,
       );
       return;
     }
@@ -963,35 +951,25 @@ class _CargosScreenState extends ConsumerState<CargosScreen> {
         ScaffoldMessenger.of(context).clearSnackBars();
 
         if (success) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('✅ Cargo actualizado exitosamente'),
-              backgroundColor: Colors.green,
-              duration: Duration(seconds: 3),
-            ),
-          );
+          mostrarAviso(context, '✅ Cargo actualizado exitosamente');
 
           // Refrescar la lista de cargos
           ref.invalidate(cargosXEmpresaProvider(widget.codEmpresa));
         } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('❌ Error al actualizar el cargo'),
-              backgroundColor: Colors.red,
-              duration: Duration(seconds: 3),
-            ),
+          mostrarAviso(
+            context,
+            '❌ Error al actualizar el cargo',
+            tono: TonoAviso.error,
           );
         }
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).clearSnackBars();
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('❌ Error: ${e.toString()}'),
-            backgroundColor: Colors.red,
-            duration: const Duration(seconds: 5),
-          ),
+        mostrarAviso(
+          context,
+          '❌ Error: ${e.toString()}',
+          tono: TonoAviso.error,
         );
       }
     }
@@ -1659,31 +1637,25 @@ class _CrearCargoDialogState extends ConsumerState<_CrearCargoDialog> {
                           cargosXEmpresaProvider(widget.codEmpresa),
                         );
 
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(
-                              '✅ Cargo "${cargo.descripcion}" activado exitosamente',
-                            ),
-                            backgroundColor: Colors.green,
-                          ),
+                        mostrarAviso(
+                          context,
+                          '✅ Cargo "${cargo.descripcion}" activado exitosamente',
                         );
                       } else {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('❌ Error al activar el cargo'),
-                            backgroundColor: Colors.red,
-                          ),
+                        mostrarAviso(
+                          context,
+                          '❌ Error al activar el cargo',
+                          tono: TonoAviso.error,
                         );
                       }
                     }
                   } catch (e) {
                     if (mounted) {
                       ScaffoldMessenger.of(context).clearSnackBars();
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text('❌ Error al activar cargo: $e'),
-                          backgroundColor: Colors.red,
-                        ),
+                      mostrarAviso(
+                        context,
+                        '❌ Error al activar cargo: $e',
+                        tono: TonoAviso.error,
                       );
                     }
                   }

@@ -1,5 +1,6 @@
 import 'package:bosque_flutter/core/utils/console_log.dart';
 import 'package:bosque_flutter/presentation/widgets/entregas/entrega_detalle_screen.dart';
+import 'package:bosque_flutter/presentation/widgets/shared/aviso.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pluto_grid/pluto_grid.dart';
@@ -49,9 +50,7 @@ class _EntregasPorChoferContentState
 
   void _buscarEntregas() {
     if (selectedChoferId == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Por favor seleccione un chofer')),
-      );
+      mostrarAviso(context, 'Por favor seleccione un chofer');
       return;
     }
 
@@ -72,11 +71,7 @@ class _EntregasPorChoferContentState
           setState(() {
             isLoading = false;
           });
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Error al cargar los datos: ${error.toString()}'),
-            ),
-          );
+          mostrarAviso(context, 'Error al cargar los datos: ${error.toString()}');
         });
   }
 

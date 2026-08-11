@@ -1,6 +1,7 @@
 import 'package:bosque_flutter/core/state/rrhh_provider.dart';
 import 'package:bosque_flutter/core/state/user_provider.dart';
 import 'package:bosque_flutter/domain/entities/area_entity.dart';
+import 'package:bosque_flutter/presentation/widgets/shared/aviso.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -88,23 +89,18 @@ class _NuevaAreaExpandableState extends ConsumerState<NuevaAreaExpandable> {
           _guardando = false;
         });
 
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('✅ ${response.message}')));
+        mostrarAviso(context, '✅ ${response.message}');
       } else {
         setState(() => _guardando = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('⚠️ ${response.message}'),
-            backgroundColor: Colors.orange.shade800,
-          ),
+        mostrarAviso(
+          context,
+          '⚠️ ${response.message}',
+          tono: TonoAviso.aviso,
         );
       }
     } catch (e) {
       setState(() => _guardando = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('❌ Error: $e'), backgroundColor: Colors.red),
-      );
+      mostrarAviso(context, '❌ Error: $e', tono: TonoAviso.error);
     }
   }
 

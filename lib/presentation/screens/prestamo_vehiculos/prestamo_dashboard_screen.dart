@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:bosque_flutter/presentation/widgets/prestamo_vehiculos/estado_vehiculos_screen.dart';
 import 'package:bosque_flutter/presentation/widgets/prestamo_vehiculos/solicitud_vehiculos_screen.dart';
+import 'package:bosque_flutter/presentation/widgets/shared/aviso.dart';
 import 'package:bosque_flutter/core/state/prestamo_vehiculos_provider.dart'
     as prestamo;
 import 'package:bosque_flutter/domain/entities/solicitud_chofer_entity.dart';
@@ -147,8 +148,10 @@ class _NuevaSolicitudDialogState extends ConsumerState<NuevaSolicitudDialog> {
           _isLoadingUserData = false;
           _cargo = "ERROR AL CARGAR CARGO";
         });
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error al cargar datos del usuario: $e')),
+        mostrarAviso(
+          context,
+          'Error al cargar datos del usuario: $e',
+          tono: TonoAviso.error,
         );
       }
     }
@@ -451,14 +454,9 @@ class _NuevaSolicitudDialogState extends ConsumerState<NuevaSolicitudDialog> {
 
                                           if (result && mounted) {
                                             Navigator.of(context).pop();
-                                            ScaffoldMessenger.of(
+                                            mostrarAviso(
                                               context,
-                                            ).showSnackBar(
-                                              const SnackBar(
-                                                content: Text(
-                                                  'Solicitud guardada con éxito',
-                                                ),
-                                              ),
+                                              'Solicitud guardada con éxito',
                                             );
                                             // Refresh the lists after successful submission
                                             ref.refresh(

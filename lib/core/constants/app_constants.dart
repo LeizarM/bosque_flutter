@@ -536,7 +536,122 @@ class AppConstants {
   static const String planillaExcelCompacta = '/planilla/excelPlanillaCompacta';
   static const String planillaPdfExtendida = '/planilla/pdfPlanillaExtendida';
   static const String planillaPdfPapeletaPago = '/planilla/pdfPapeletaPago';
-  // ── TPROD: Lote de Produccion ────────────────────────────────────────────────────────────
+
+  // ==========================================================================
+  // ROL DE TURNOS DE SABADO (modulo trs_)
+  // ==========================================================================
+  static const String _rolSab = '/rol-sabados';
+
+  // Generacion (SPs de proceso)
+  static const String rolSabGenerarRol = '$_rolSab/generar-rol';
+  static const String rolSabRegenerarSabado = '$_rolSab/regenerar-sabado';
+  static const String rolSabRefrescarFeriados = '$_rolSab/refrescar-feriados';
+
+  // Cabecera
+  static const String rolSabObtenerRoles = '$_rolSab/obtener-roles';
+  static const String rolSabObtenerRol = '$_rolSab/obtener-rol';
+  // Es un UPDATE de la cabecera, no un alta: el backend manda 'I' solo cuando
+  // idRol viene en 0, y el alta de un rol va por generar-rol. Hoy lo usa el
+  // cambio de estado (publicar / reabrir / cerrar).
+  static const String rolSabRegistrarRol = '$_rolSab/registrar-rol';
+  static const String rolSabObtenerIntervenciones =
+      '$_rolSab/obtener-intervenciones';
+
+  // Sabados
+  static const String rolSabMarcarEvento = '$_rolSab/marcar-evento';
+  static const String rolSabObtenerSabados = '$_rolSab/obtener-sabados';
+  static const String rolSabObtenerCobertura = '$_rolSab/obtener-cobertura';
+  static const String rolSabObtenerFeriadosDesincronizados =
+      '$_rolSab/obtener-feriados-desincronizados';
+  static const String rolSabObtenerDiasNoLaborables =
+      '$_rolSab/obtener-dias-no-laborables';
+
+  // Participantes
+  static const String rolSabObtenerParticipantes =
+      '$_rolSab/obtener-participantes';
+  static const String rolSabObtenerTurnosPorParticipante =
+      '$_rolSab/obtener-turnos-por-participante';
+  static const String rolSabObtenerCumplesSabado =
+      '$_rolSab/obtener-cumples-sabado';
+
+  // Convocatoria (eventos)
+  static const String rolSabConvocar = '$_rolSab/convocar';
+  static const String rolSabObtenerDetalleEvento =
+      '$_rolSab/obtener-detalle-evento';
+
+  // Celdas
+  static const String rolSabObtenerAsignaciones =
+      '$_rolSab/obtener-asignaciones';
+  static const String rolSabCorregirCelda = '$_rolSab/corregir-celda';
+  static const String rolSabLiberarCelda = '$_rolSab/liberar-celda';
+  static const String rolSabObtenerEstadosTurno =
+      '$_rolSab/obtener-estados-turno';
+  static const String rolSabObtenerAutomatizacion =
+      '$_rolSab/obtener-automatizacion';
+
+  // Cambios
+  static const String rolSabRegistrarCambio = '$_rolSab/registrar-cambio';
+  static const String rolSabAprobarCambio = '$_rolSab/aprobar-cambio';
+  static const String rolSabObtenerCambios = '$_rolSab/obtener-cambios';
+
+  static const String rolSabObtenerProgramaciones =
+      '$_rolSab/obtener-programaciones';
+  static const String rolSabAnularCambio = '$_rolSab/anular-cambio';
+
+  // La ventana de sabados de una persona: desde y hasta cuando hace sabados.
+  //
+  // El primero es el endpoint que ya existia (/eliminar-participante) con la
+  // semantica arreglada: NO da de baja al empleado — le cierra la ventana. Lo
+  // que ya trabajo queda en la grilla; se liberan los sabados de adelante.
+  static const String rolSabSacarDeSabados = '$_rolSab/eliminar-participante';
+  static const String rolSabReincorporar = '$_rolSab/reincorporar-participante';
+
+  // Vacaciones y permisos de RR.HH. (trh_permiso)
+  static const String rolSabAsignarGrupo = '$_rolSab/asignar-grupo';
+  static const String rolSabRefrescarPermisos = '$_rolSab/refrescar-permisos';
+  static const String rolSabObtenerDesfasesPermiso =
+      '$_rolSab/obtener-desfases-permiso';
+
+  // Su Equipo: lo que usa un jefe para decidir quien de su gente viene.
+  // mi-equipo y programar NO llevan identidad en el body: el servidor la saca
+  // del token, asi que nadie puede programar a nombre de otro.
+  static const String rolSabMiEquipo = '$_rolSab/mi-equipo';
+  static const String rolSabProgramar = '$_rolSab/programar';
+
+  // ABM de programadores (solo ROLE_ADM)
+  static const String rolSabObtenerProgramadores =
+      '$_rolSab/obtener-programadores';
+  static const String rolSabRegistrarProgramador =
+      '$_rolSab/registrar-programador';
+  static const String rolSabEliminarProgramador =
+      '$_rolSab/eliminar-programador';
+
+  /// A quiénes le quedaría a cargo un permiso que **todavía no existe**: lo que
+  /// se mira antes de dar de alta.
+  ///
+  /// No es lo mismo que `/obtener-dependientes`, que sólo sabe de permisos ya
+  /// guardados. Los dos salen del mismo árbol del organigrama, que es lo que
+  /// hace que lo previsualizado sea lo que después se acepta.
+  static const String rolSabPrevisualizarDependientes =
+      '$_rolSab/previsualizar-dependientes';
+
+  // Puente a cuenta de vacación: la empresa cierra el sábado y se lo cobra a la
+  // vacación de todos. Simular NO escribe; aplicar da de alta los permisos en
+  // trh_permiso y deja las celdas en 'V'.
+  static const String rolSabSimularPuente = '$_rolSab/simular-puente-vacacion';
+  static const String rolSabAplicarPuente = '$_rolSab/aplicar-puente-vacacion';
+
+  // El padrón de RR.HH.: quiénes pueden corregir CUALQUIER celda (solo ROLE_ADM)
+  static const String rolSabObtenerRrhh = '$_rolSab/obtener-rrhh';
+  static const String rolSabRegistrarRrhh = '$_rolSab/registrar-rrhh';
+  static const String rolSabEliminarRrhh = '$_rolSab/eliminar-rrhh';
+
+  // Reportes
+  // Devuelve el PDF en bytes (application/pdf), no JSON: se baja con
+  // DioClient.descargarReportePdf y no con el BaseApiRepository.
+  // El backend la expone con el sufijo del formato: deja lugar a que mañana
+  // haya un '/reporte-sabado-excel' sin renombrar ésta.
+  static const String rolSabReporteSabado = '$_rolSab/reporte-sabado-pdf';
 
   //Para cargar permisos de botones por usuario
   static const String ubtnPermisosBotones = '/view/vistaBtn';

@@ -1,5 +1,6 @@
 import 'dart:typed_data';
 import 'package:bosque_flutter/domain/entities/cargo_entity.dart';
+import 'package:bosque_flutter/presentation/widgets/shared/aviso.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:graphview/GraphView.dart';
@@ -222,14 +223,10 @@ class _OrganigramaCustomState extends State<OrganigramaCustom> {
       final currentContext = _organigramaKey.currentContext;
       if (currentContext == null) {
         if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text(
-                'Error: El organigrama no está listo para exportar. Intente de nuevo.',
-              ),
-              backgroundColor: Colors.orange,
-              duration: Duration(seconds: 3),
-            ),
+          mostrarAviso(
+            context,
+            'Error: El organigrama no está listo para exportar. Intente de nuevo.',
+            tono: TonoAviso.aviso,
           );
         }
         return;
@@ -238,14 +235,10 @@ class _OrganigramaCustomState extends State<OrganigramaCustom> {
       final renderObject = currentContext.findRenderObject();
       if (renderObject == null || renderObject is! RenderRepaintBoundary) {
         if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text(
-                'Error: No se pudo acceder al renderizado del organigrama.',
-              ),
-              backgroundColor: Colors.orange,
-              duration: Duration(seconds: 3),
-            ),
+          mostrarAviso(
+            context,
+            'Error: No se pudo acceder al renderizado del organigrama.',
+            tono: TonoAviso.aviso,
           );
         }
         return;
@@ -310,13 +303,7 @@ class _OrganigramaCustomState extends State<OrganigramaCustom> {
       }
 
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error al exportar: $e'),
-            backgroundColor: Colors.red,
-            duration: const Duration(seconds: 4),
-          ),
-        );
+        mostrarAviso(context, 'Error al exportar: $e', tono: TonoAviso.error);
       }
     }
   }
@@ -338,24 +325,14 @@ class _OrganigramaCustomState extends State<OrganigramaCustom> {
       await exportManager.descargarPNG(pngBytes, nombreArchivo);
 
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              'Organigrama descargado exitosamente\nResolución: ${ancho}x$alto pixels',
-            ),
-            backgroundColor: Colors.green,
-            duration: const Duration(seconds: 4),
-          ),
+        mostrarAviso(
+          context,
+          'Organigrama descargado exitosamente\nResolución: ${ancho}x$alto pixels',
         );
       }
     } catch (e) {
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error al descargar: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        mostrarAviso(context, 'Error al descargar: $e', tono: TonoAviso.error);
       }
     }
   }
@@ -368,14 +345,10 @@ class _OrganigramaCustomState extends State<OrganigramaCustom> {
     BuildContext context,
   ) async {
     if (context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'Organigrama generado exitosamente\nResolución: ${ancho}x$alto pixels\n(Imagen lista para compartir)',
-          ),
-          backgroundColor: Colors.orange,
-          duration: const Duration(seconds: 4),
-        ),
+      mostrarAviso(
+        context,
+        'Organigrama generado exitosamente\nResolución: ${ancho}x$alto pixels\n(Imagen lista para compartir)',
+        tono: TonoAviso.aviso,
       );
     }
     // Aquí se puede implementar la exportación nativa usando:

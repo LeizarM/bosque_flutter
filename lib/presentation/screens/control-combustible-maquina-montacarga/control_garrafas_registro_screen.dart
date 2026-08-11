@@ -6,6 +6,7 @@ import 'package:bosque_flutter/core/state/user_provider.dart';
 import 'package:bosque_flutter/core/utils/responsive_utils_bosque.dart';
 import 'package:bosque_flutter/domain/entities/compra_garrafa_entity.dart';
 import 'package:bosque_flutter/domain/entities/sucursal_entity.dart';
+import 'package:bosque_flutter/presentation/widgets/shared/aviso.dart';
 
 class ControlGarrafasRegistroScreen extends ConsumerStatefulWidget {
   const ControlGarrafasRegistroScreen({super.key});
@@ -442,23 +443,15 @@ class _ControlGarrafasRegistroScreenState
         );
         _resetForm();
       } else if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Error al registrar la garrafa'),
-            backgroundColor: Colors.red,
-            behavior: SnackBarBehavior.floating,
-          ),
+        mostrarAviso(
+          context,
+          'Error al registrar la garrafa',
+          tono: TonoAviso.error,
         );
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error: ${e.toString()}'),
-            backgroundColor: Colors.red,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
+        mostrarAviso(context, 'Error: ${e.toString()}', tono: TonoAviso.error);
       }
     } finally {
       if (mounted) {

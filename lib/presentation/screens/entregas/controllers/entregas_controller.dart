@@ -5,6 +5,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:bosque_flutter/core/state/entregas_provider.dart';
 import 'package:bosque_flutter/core/state/user_provider.dart';
 import 'package:bosque_flutter/domain/entities/entregas_entity.dart';
+import 'package:bosque_flutter/presentation/widgets/shared/aviso.dart';
 
 class EntregasController {
   final WidgetRef ref;
@@ -103,20 +104,10 @@ class EntregasController {
   }
 
   void mostrarMensajeError(String mensaje) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(mensaje),
-        backgroundColor: Theme.of(context).colorScheme.error,
-      ),
-    );
+    mostrarAviso(context, mensaje, tono: TonoAviso.error);
   }
 
   void mostrarMensajeExito(String mensaje) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(mensaje),
-        backgroundColor: Theme.of(context).colorScheme.primary,
-      ),
-    );
+    mostrarAviso(context, mensaje);
   }
 }
