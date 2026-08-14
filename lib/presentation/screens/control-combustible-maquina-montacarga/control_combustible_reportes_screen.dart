@@ -82,22 +82,98 @@ class _ControlCombustibleReportesScreenState
     RegistroState state,
     ColorScheme colorScheme,
   ) {
-    return Row(
+    return Column(
       children: [
-        // Panel de filtros lateral (izquierdo)
-        Container(
-          width: 350,
-          height: double.infinity,
-          color: colorScheme.surface,
-          child: Column(children: [_buildFiltersSection(context, colorScheme)]),
-        ),
-
-        // Divisor vertical
-        Container(width: 1, color: colorScheme.outline.withValues(alpha: 0.3)),
-
-        // Panel de resultados (derecho)
+        _buildFilterBar(context, colorScheme),
         Expanded(child: _buildResultsSection(context, state, colorScheme)),
       ],
+    );
+  }
+
+  /// Filtros en una franja horizontal sobre los resultados.
+  ///
+  /// Antes eran un panel lateral fijo de 350 px: los resultados quedaban
+  /// encajonados a la derecha y, mientras no se buscara nada, media pantalla
+  /// quedaba en blanco. Con la barra arriba, la tabla usa todo el ancho.
+  Widget _buildFilterBar(BuildContext context, ColorScheme colorScheme) {
+    final sucursalesAsync = ref.watch(sucursalesProvider);
+    final tipoContenedorAsync = ref.watch(tipoContenedorProvider);
+
+    final botonBuscar = SizedBox(
+      height: 48,
+      child: ElevatedButton.icon(
+        onPressed: _cargarDatos,
+        icon: const Icon(Icons.search, size: 18),
+        label: const Text('Buscar'),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: colorScheme.primary,
+          foregroundColor: colorScheme.onPrimary,
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+        ),
+      ),
+    );
+
+    return Container(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 14),
+      decoration: BoxDecoration(
+        color: colorScheme.surface,
+        border: Border(bottom: BorderSide(color: colorScheme.outlineVariant)),
+      ),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          const separacion = 12.0;
+
+          final campos = <Widget>[
+            _buildDateField(
+              label: 'Fecha Inicio',
+              selectedDate: _fechaInicio,
+              onDateSelected: (date) => setState(() => _fechaInicio = date),
+              colorScheme: colorScheme,
+            ),
+            _buildDateField(
+              label: 'Fecha Fin',
+              selectedDate: _fechaFin,
+              onDateSelected: (date) => setState(() => _fechaFin = date),
+              colorScheme: colorScheme,
+            ),
+            _buildSucursalDropdown(sucursalesAsync, colorScheme),
+            _buildTipoContenedorDropdown(tipoContenedorAsync, colorScheme),
+          ];
+
+          // Los cuatro filtros más el botón entran en una sola fila recién
+          // pasados ~1100 px; por debajo se reparten en dos.
+          final unaSolaFila = constraints.maxWidth >= 1100;
+
+          if (unaSolaFila) {
+            return Row(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                for (final campo in campos) ...[
+                  Expanded(child: campo),
+                  const SizedBox(width: separacion),
+                ],
+                botonBuscar,
+              ],
+            );
+          }
+
+          final ancho = (constraints.maxWidth - separacion) / 2;
+          return Column(
+            children: [
+              Wrap(
+                spacing: separacion,
+                runSpacing: separacion,
+                children: [
+                  for (final campo in campos)
+                    SizedBox(width: ancho, child: campo),
+                ],
+              ),
+              const SizedBox(height: separacion),
+              SizedBox(width: double.infinity, child: botonBuscar),
+            ],
+          );
+        },
+      ),
     );
   }
 
@@ -239,26 +315,88 @@ class _ControlCombustibleReportesScreenState
     }
   }
 
+  /// Estado vacío acotado: tarjeta centrada con ancho máximo, en vez de un
+  /// ícono de 64 px flotando solo en medio de la pantalla.
+  Widget _buildPlaceholder({
+    required ColorScheme colorScheme,
+    required IconData icono,
+    required String titulo,
+    String? detalle,
+    Widget? accion,
+  }) {
+    return Center(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 420),
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: colorScheme.surfaceContainerHighest,
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  icono,
+                  size: 30,
+                  color: colorScheme.onSurfaceVariant,
+                ),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                titulo,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 17,
+                  fontWeight: FontWeight.w600,
+                  color: colorScheme.onSurface,
+                ),
+              ),
+              if (detalle != null) ...[
+                const SizedBox(height: 6),
+                Text(
+                  detalle,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 13,
+                    height: 1.4,
+                    color: colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ],
+              if (accion != null) ...[const SizedBox(height: 20), accion],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildResultsSection(
     BuildContext context,
     RegistroState state,
     ColorScheme colorScheme,
   ) {
     if (!_hasSearched) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.search, size: 64, color: colorScheme.onSurfaceVariant),
-            const SizedBox(height: 16),
-            Text(
-              'Presiona "Buscar" para ver los movimientos',
-              style: TextStyle(
-                fontSize: 16,
-                color: colorScheme.onSurfaceVariant,
-              ),
-            ),
-          ],
+      final formato = DateFormat('dd/MM/yyyy');
+      return _buildPlaceholder(
+        colorScheme: colorScheme,
+        icono: Icons.query_stats_outlined,
+        titulo: 'Listo para consultar',
+        detalle:
+            'Rango seleccionado: ${formato.format(_fechaInicio)} — '
+            '${formato.format(_fechaFin)}',
+        accion: ElevatedButton.icon(
+          onPressed: _cargarDatos,
+          icon: const Icon(Icons.search, size: 18),
+          label: const Text('Buscar movimientos'),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: colorScheme.primary,
+            foregroundColor: colorScheme.onPrimary,
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+          ),
         ),
       );
     }
@@ -310,42 +448,13 @@ class _ControlCombustibleReportesScreenState
     final movimientos = state.movimientos;
 
     if (movimientos.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.filter_list_off,
-              size: 64,
-              color: colorScheme.onSurfaceVariant,
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'No se encontraron movimientos',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-                color: colorScheme.onSurface,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Intenta ajustar los filtros de búsqueda',
-              style: TextStyle(
-                fontSize: 14,
-                color: colorScheme.onSurfaceVariant,
-              ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              'o selecciona un rango de fechas diferente',
-              style: TextStyle(
-                fontSize: 14,
-                color: colorScheme.onSurfaceVariant,
-              ),
-            ),
-          ],
-        ),
+      return _buildPlaceholder(
+        colorScheme: colorScheme,
+        icono: Icons.filter_list_off,
+        titulo: 'No se encontraron movimientos',
+        detalle:
+            'Probá con otro rango de fechas, otra sucursal '
+            'u otro tipo de combustible.',
       );
     }
 
@@ -476,7 +585,7 @@ class _ControlCombustibleReportesScreenState
         Text(
           label,
           style: TextStyle(
-            fontWeight: FontWeight.w400,
+            fontWeight: FontWeight.w500,
             color: colorScheme.onSurfaceVariant,
             fontSize: 12,
           ),
@@ -537,14 +646,16 @@ class _ControlCombustibleReportesScreenState
           style: TextStyle(
             fontWeight: FontWeight.w500,
             color: colorScheme.onSurfaceVariant,
-            fontSize: 14,
+            fontSize: 12,
           ),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 4),
         sucursalesAsync.when(
           data:
               (sucursales) => DropdownButtonFormField<int>(
                 value: _selectedSucursal,
+                // Mismo motivo: los nombres de sucursal largos desbordaban.
+                isExpanded: true,
                 decoration: InputDecoration(
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
@@ -623,14 +734,17 @@ class _ControlCombustibleReportesScreenState
           style: TextStyle(
             fontWeight: FontWeight.w500,
             color: colorScheme.onSurfaceVariant,
-            fontSize: 14,
+            fontSize: 12,
           ),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 4),
         tipoContenedorAsync.when(
           data:
               (tipos) => DropdownButtonFormField<int>(
                 value: _selectedTipoContenedor,
+                // Sin esto el dropdown se dimensiona al ítem más ancho y
+                // desborda cuando la columna es más angosta que ese texto.
+                isExpanded: true,
                 decoration: InputDecoration(
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
@@ -731,211 +845,239 @@ class _ControlCombustibleReportesScreenState
             ),
             child: Scrollbar(
               child: SingleChildScrollView(
-                child: SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: DataTable(
-                    columnSpacing: 24,
-                    horizontalMargin: 16,
-                    headingRowHeight: 56,
-                    dataRowHeight: 48,
-                    headingRowColor: WidgetStatePropertyAll(
-                      colorScheme.surfaceContainerHighest,
-                    ),
-                    columns: const [
-                      DataColumn(
-                        label: Text(
-                          'Fecha',
-                          style: TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                      ),
-                      DataColumn(
-                        label: Text(
-                          'Tipo',
-                          style: TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                      ),
-                      DataColumn(
-                        label: Text(
-                          'Origen',
-                          style: TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                      ),
-                      DataColumn(
-                        label: Text(
-                          'Destino',
-                          style: TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                      ),
-                      DataColumn(
-                        label: Text(
-                          'Entrada (L)',
-                          style: TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                        numeric: true,
-                      ),
-                      DataColumn(
-                        label: Text(
-                          'Salida (L)',
-                          style: TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                        numeric: true,
-                      ),
-                      DataColumn(
-                        label: Text(
-                          'Saldo (L)',
-                          style: TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                        numeric: true,
-                      ),
-                      DataColumn(
-                        label: Text(
-                          'Empleado',
-                          style: TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                      ),
-                      DataColumn(
-                        label: Text(
-                          'Observaciones',
-                          style: TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                      ),
-                    ],
-                    rows:
-                        movimientos.map((movimiento) {
-                          final tipoColor = _getTipoMovimientoColor(
-                            movimiento.tipoMovimiento,
-                          );
-
-                          return DataRow(
-                            cells: [
-                              DataCell(
-                                Text(
-                                  movimiento.fechaMovimientoString,
-                                  style: const TextStyle(fontSize: 12),
+                // La tabla se estira hasta llenar el ancho disponible y recién
+                // scrollea en horizontal si de verdad necesita más. Antes
+                // tomaba su ancho intrínseco y dejaba la derecha vacía.
+                child: LayoutBuilder(
+                  builder:
+                      (context, restricciones) => SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        child: ConstrainedBox(
+                          constraints: BoxConstraints(
+                            minWidth: restricciones.maxWidth,
+                          ),
+                          child: DataTable(
+                            columnSpacing: 24,
+                            horizontalMargin: 16,
+                            headingRowHeight: 56,
+                            dataRowHeight: 48,
+                            headingRowColor: WidgetStatePropertyAll(
+                              colorScheme.surfaceContainerHighest,
+                            ),
+                            columns: const [
+                              DataColumn(
+                                label: Text(
+                                  'Fecha',
+                                  style: TextStyle(fontWeight: FontWeight.bold),
                                 ),
                               ),
-                              DataCell(
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 8,
-                                    vertical: 4,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: tipoColor.withValues(alpha: 0.1),
-                                    borderRadius: BorderRadius.circular(4),
-                                    border: Border.all(color: tipoColor),
-                                  ),
-                                  child: Text(
-                                    movimiento.tipoMovimiento,
-                                    style: TextStyle(
-                                      color: tipoColor,
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 11,
-                                    ),
-                                  ),
+                              DataColumn(
+                                label: Text(
+                                  'Tipo',
+                                  style: TextStyle(fontWeight: FontWeight.bold),
                                 ),
                               ),
-                              DataCell(
-                                SizedBox(
-                                  width: 180,
-                                  child: Text(
-                                    movimiento.origen,
-                                    overflow: TextOverflow.ellipsis,
-                                    maxLines: 2,
-                                    style: const TextStyle(fontSize: 12),
-                                  ),
+                              DataColumn(
+                                label: Text(
+                                  'Origen',
+                                  style: TextStyle(fontWeight: FontWeight.bold),
                                 ),
                               ),
-                              DataCell(
-                                SizedBox(
-                                  width: 180,
-                                  child: Text(
-                                    movimiento.destino,
-                                    overflow: TextOverflow.ellipsis,
-                                    maxLines: 2,
-                                    style: const TextStyle(fontSize: 12),
-                                  ),
+                              DataColumn(
+                                label: Text(
+                                  'Destino',
+                                  style: TextStyle(fontWeight: FontWeight.bold),
                                 ),
                               ),
-                              DataCell(
-                                Text(
-                                  movimiento.valorEntrada > 0
-                                      ? movimiento.valorEntrada.toStringAsFixed(
-                                        1,
-                                      )
-                                      : '-',
-                                  style: TextStyle(
-                                    color:
-                                        movimiento.valorEntrada > 0
-                                            ? Colors.green
-                                            : colorScheme.onSurfaceVariant,
-                                    fontWeight:
-                                        movimiento.valorEntrada > 0
-                                            ? FontWeight.bold
-                                            : null,
-                                    fontSize: 12,
-                                  ),
+                              DataColumn(
+                                label: Text(
+                                  'Entrada (L)',
+                                  style: TextStyle(fontWeight: FontWeight.bold),
+                                ),
+                                numeric: true,
+                              ),
+                              DataColumn(
+                                label: Text(
+                                  'Salida (L)',
+                                  style: TextStyle(fontWeight: FontWeight.bold),
+                                ),
+                                numeric: true,
+                              ),
+                              DataColumn(
+                                label: Text(
+                                  'Saldo (L)',
+                                  style: TextStyle(fontWeight: FontWeight.bold),
+                                ),
+                                numeric: true,
+                              ),
+                              DataColumn(
+                                label: Text(
+                                  'Empleado',
+                                  style: TextStyle(fontWeight: FontWeight.bold),
                                 ),
                               ),
-                              DataCell(
-                                Text(
-                                  movimiento.valorSalida > 0
-                                      ? movimiento.valorSalida.toStringAsFixed(
-                                        1,
-                                      )
-                                      : '-',
-                                  style: TextStyle(
-                                    color:
-                                        movimiento.valorSalida > 0
-                                            ? Colors.red
-                                            : colorScheme.onSurfaceVariant,
-                                    fontWeight:
-                                        movimiento.valorSalida > 0
-                                            ? FontWeight.bold
-                                            : null,
-                                    fontSize: 12,
-                                  ),
-                                ),
-                              ),
-                              DataCell(
-                                Text(
-                                  movimiento.valorSaldo.toStringAsFixed(1),
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.w600,
-                                    fontSize: 12,
-                                    color:
-                                        movimiento.valorSaldo > 0
-                                            ? Colors.blue
-                                            : colorScheme.onSurfaceVariant,
-                                  ),
-                                ),
-                              ),
-                              DataCell(
-                                SizedBox(
-                                  width: 140,
-                                  child: Text(
-                                    movimiento.nombreCompleto,
-                                    overflow: TextOverflow.ellipsis,
-                                    maxLines: 2,
-                                    style: const TextStyle(fontSize: 12),
-                                  ),
-                                ),
-                              ),
-                              DataCell(
-                                SizedBox(
-                                  width: 200,
-                                  child: Text(
-                                    movimiento.obs,
-                                    overflow: TextOverflow.ellipsis,
-                                    maxLines: 2,
-                                    style: const TextStyle(fontSize: 12),
-                                  ),
+                              DataColumn(
+                                label: Text(
+                                  'Observaciones',
+                                  style: TextStyle(fontWeight: FontWeight.bold),
                                 ),
                               ),
                             ],
-                          );
-                        }).toList(),
-                  ),
+                            rows:
+                                movimientos.map((movimiento) {
+                                  final tipoColor = _getTipoMovimientoColor(
+                                    movimiento.tipoMovimiento,
+                                  );
+
+                                  return DataRow(
+                                    cells: [
+                                      DataCell(
+                                        Text(
+                                          movimiento.fechaMovimientoString,
+                                          style: const TextStyle(fontSize: 12),
+                                        ),
+                                      ),
+                                      DataCell(
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 8,
+                                            vertical: 4,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color: tipoColor.withValues(
+                                              alpha: 0.1,
+                                            ),
+                                            borderRadius: BorderRadius.circular(
+                                              4,
+                                            ),
+                                            border: Border.all(
+                                              color: tipoColor,
+                                            ),
+                                          ),
+                                          child: Text(
+                                            movimiento.tipoMovimiento,
+                                            style: TextStyle(
+                                              color: tipoColor,
+                                              fontWeight: FontWeight.bold,
+                                              fontSize: 11,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                      DataCell(
+                                        SizedBox(
+                                          width: 180,
+                                          child: Text(
+                                            movimiento.origen,
+                                            overflow: TextOverflow.ellipsis,
+                                            maxLines: 2,
+                                            style: const TextStyle(
+                                              fontSize: 12,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                      DataCell(
+                                        SizedBox(
+                                          width: 180,
+                                          child: Text(
+                                            movimiento.destino,
+                                            overflow: TextOverflow.ellipsis,
+                                            maxLines: 2,
+                                            style: const TextStyle(
+                                              fontSize: 12,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                      DataCell(
+                                        Text(
+                                          movimiento.valorEntrada > 0
+                                              ? movimiento.valorEntrada
+                                                  .toStringAsFixed(1)
+                                              : '-',
+                                          style: TextStyle(
+                                            color:
+                                                movimiento.valorEntrada > 0
+                                                    ? Colors.green
+                                                    : colorScheme
+                                                        .onSurfaceVariant,
+                                            fontWeight:
+                                                movimiento.valorEntrada > 0
+                                                    ? FontWeight.bold
+                                                    : null,
+                                            fontSize: 12,
+                                          ),
+                                        ),
+                                      ),
+                                      DataCell(
+                                        Text(
+                                          movimiento.valorSalida > 0
+                                              ? movimiento.valorSalida
+                                                  .toStringAsFixed(1)
+                                              : '-',
+                                          style: TextStyle(
+                                            color:
+                                                movimiento.valorSalida > 0
+                                                    ? Colors.red
+                                                    : colorScheme
+                                                        .onSurfaceVariant,
+                                            fontWeight:
+                                                movimiento.valorSalida > 0
+                                                    ? FontWeight.bold
+                                                    : null,
+                                            fontSize: 12,
+                                          ),
+                                        ),
+                                      ),
+                                      DataCell(
+                                        Text(
+                                          movimiento.valorSaldo.toStringAsFixed(
+                                            1,
+                                          ),
+                                          style: TextStyle(
+                                            fontWeight: FontWeight.w600,
+                                            fontSize: 12,
+                                            color:
+                                                movimiento.valorSaldo > 0
+                                                    ? Colors.blue
+                                                    : colorScheme
+                                                        .onSurfaceVariant,
+                                          ),
+                                        ),
+                                      ),
+                                      DataCell(
+                                        SizedBox(
+                                          width: 140,
+                                          child: Text(
+                                            movimiento.nombreCompleto,
+                                            overflow: TextOverflow.ellipsis,
+                                            maxLines: 2,
+                                            style: const TextStyle(
+                                              fontSize: 12,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                      DataCell(
+                                        SizedBox(
+                                          width: 200,
+                                          child: Text(
+                                            movimiento.obs,
+                                            overflow: TextOverflow.ellipsis,
+                                            maxLines: 2,
+                                            style: const TextStyle(
+                                              fontSize: 12,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  );
+                                }).toList(),
+                          ),
+                        ),
+                      ),
                 ),
               ),
             ),

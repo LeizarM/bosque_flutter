@@ -105,13 +105,20 @@ class PermisosVacacionImpl extends BaseApiRepository
 
   @override
   Future<List<SolicitudPermisoEntity>> listarMisSolicitudes(
-    int codEmpleado,
-  ) async {
+    int codEmpleado, {
+    int? anio,
+    int? mes,
+  }) async {
     final modelos = await postAndReturnList(
       endpoint: AppConstants.solicitudesIndividuales,
       data: {
         'codEmpleado': codEmpleado,
-      }, // El backend Java armará el filtro con esto
+        // Las claves ausentes llegan al modelo Java como null y `SpHelper` las
+        // borra del Map antes del EXEC, así que el SP usa su DEFAULT NULL = sin
+        // filtrar. Mandar 0 filtraría por el año 0 y no devolvería nada.
+        if (anio != null) 'anio': anio,
+        if (mes != null) 'mes': mes,
+      },
       fromJson: (json) => SolicitudPermisoModel.fromJson(json),
     );
     return modelos.map((m) => m.toEntity()).toList();

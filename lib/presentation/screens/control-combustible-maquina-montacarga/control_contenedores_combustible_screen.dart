@@ -1391,8 +1391,9 @@ class _ControlContenedoresCombustibleScreenState
                       width: 20,
                       child: CircularProgressIndicator(
                         strokeWidth: 2,
-                        valueColor:
-                            AlwaysStoppedAnimation<Color>(colorScheme.onPrimary),
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                          colorScheme.onPrimary,
+                        ),
                       ),
                     )
                     : const Text('Registrar Movimiento'),

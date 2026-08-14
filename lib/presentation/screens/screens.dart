@@ -40,3 +40,4 @@ export 'package:bosque_flutter/presentation/screens/multas/multas_screen.dart';
 export 'package:bosque_flutter/presentation/screens/bonos/bonos_screen.dart';
 export 'package:bosque_flutter/presentation/screens/planillas/planillas_screen.dart';
 export 'package:bosque_flutter/presentation/screens/rol-sabados/rol_sabados_screen.dart';
+export 'package:bosque_flutter/presentation/screens/permisos-rrhh/permisos_rrhh_screen.dart';

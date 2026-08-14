@@ -4,6 +4,32 @@ import 'package:bosque_flutter/core/state/control_combustible_maquina_montacarga
 import 'package:bosque_flutter/core/utils/responsive_utils_bosque.dart';
 import 'package:bosque_flutter/domain/entities/movimiento_entity.dart';
 
+/// Identidad visual de un tipo de combustible.
+///
+/// El color identifica al tipo (categórico) y es independiente del color de
+/// estado del saldo (bueno / bajo / sin stock). Mezclar ambos roles hacía que
+/// "verde" significara a la vez "Gasolina" y "saldo sano".
+class _FuelVisual {
+  const _FuelVisual({
+    required this.light,
+    required this.dark,
+    required this.icon,
+    required this.unidad,
+  });
+
+  final Color light;
+  final Color dark;
+  final IconData icon;
+  final String unidad;
+
+  Color color(Brightness brightness) =>
+      brightness == Brightness.dark ? dark : light;
+}
+
+/// Estado del saldo. Nunca se comunica sólo con color: siempre lleva ícono +
+/// etiqueta, porque los tonos de estado no alcanzan 3:1 sobre fondo claro.
+enum _StockStatus { sinStock, bajo, normal }
+
 class ControlCombustibleDashboardScreen extends ConsumerStatefulWidget {
   const ControlCombustibleDashboardScreen({super.key});
 
@@ -14,12 +40,57 @@ class ControlCombustibleDashboardScreen extends ConsumerStatefulWidget {
 
 class _ControlCombustibleDashboardScreenState
     extends ConsumerState<ControlCombustibleDashboardScreen> {
-  bool _isStatsExpanded = true; // Estado para expandir/colapsar estadísticas
+  bool _isStatsExpanded = true;
+
+  // ---------------------------------------------------------------------------
+  // Paleta categórica (validada para daltonismo en modo claro y oscuro).
+  // El orden de los slots es el mecanismo de seguridad CVD: no reordenar sin
+  // volver a validar.
+  // ---------------------------------------------------------------------------
+  static const List<_FuelVisual> _slots = [
+    _FuelVisual(
+      light: Color(0xFF2A78D6),
+      dark: Color(0xFF3987E5),
+      icon: Icons.local_gas_station,
+      unidad: 'L',
+    ),
+    _FuelVisual(
+      light: Color(0xFFEB6834),
+      dark: Color(0xFFD95926),
+      icon: Icons.oil_barrel,
+      unidad: 'L',
+    ),
+    _FuelVisual(
+      light: Color(0xFF1BAF7A),
+      dark: Color(0xFF199E70),
+      icon: Icons.propane_tank,
+      unidad: 'U',
+    ),
+    _FuelVisual(
+      light: Color(0xFFEDA100),
+      dark: Color(0xFFC98500),
+      icon: Icons.local_gas_station_outlined,
+      unidad: 'L',
+    ),
+  ];
+
+  /// Registro explícito por nombre normalizado. Cualquier tipo nuevo dado de
+  /// alta en `tgas_tipo` cae al fallback determinista de abajo en vez de
+  /// quedar en gris.
+  static const Map<String, int> _slotPorTipo = {
+    'gasolina': 0,
+    'diesel': 1,
+    'garrafa': 2,
+    'gasolina particular': 3,
+  };
+
+  // Umbrales de saldo bajo. Son reglas de negocio: ajustar acá, no disperso.
+  static const double _umbralBajoLitros = 20;
+  static const double _umbralBajoUnidades = 2;
 
   @override
   void initState() {
     super.initState();
-    // Cargar datos al inicializar
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _cargarSaldosActuales();
     });
@@ -30,6 +101,43 @@ class _ControlCombustibleDashboardScreenState
         .read(controlCombustibleMaquinaMontacargaNotifierProvider.notifier)
         .cargarSaldosActuales();
   }
+
+  // ---------------------------------------------------------------------------
+  // Mapeo tipo -> identidad visual
+  // ---------------------------------------------------------------------------
+
+  _FuelVisual _visual(String tipo) {
+    final key = tipo.trim().toLowerCase();
+
+    final exacto = _slotPorTipo[key];
+    if (exacto != null) return _slots[exacto];
+
+    // Tipo nuevo todavía sin slot asignado: se resuelve de forma determinista
+    // a partir del nombre, así el mismo tipo conserva siempre el mismo color.
+    var hash = 0;
+    for (final code in key.codeUnits) {
+      hash = (hash * 31 + code) & 0x7FFFFFFF;
+    }
+    final base = _slots[hash % _slots.length];
+
+    // La unidad sí se puede inferir con confianza por el nombre.
+    return _FuelVisual(
+      light: base.light,
+      dark: base.dark,
+      icon: key.contains('garrafa') ? Icons.propane_tank : Icons.inventory_2,
+      unidad: key.contains('garrafa') ? 'U' : 'L',
+    );
+  }
+
+  _StockStatus _status(double saldo, String unidad) {
+    if (saldo <= 0) return _StockStatus.sinStock;
+    final umbral = unidad == 'U' ? _umbralBajoUnidades : _umbralBajoLitros;
+    return saldo < umbral ? _StockStatus.bajo : _StockStatus.normal;
+  }
+
+  // Paleta de estado: fija, nunca tematizada, distinta de la categórica.
+  static const Color _statusCritical = Color(0xFFD03B3B);
+  static const Color _statusWarning = Color(0xFFFAB219);
 
   @override
   Widget build(BuildContext context) {
@@ -177,73 +285,79 @@ class _ControlCombustibleDashboardScreenState
     ColorScheme colorScheme,
     bool isDesktop,
   ) {
-    // Agrupar por sucursal
     final saldosPorSucursal = <String, List<MovimientoEntity>>{};
     for (final saldo in saldos) {
-      final sucursal = saldo.nombreSucursal;
-      if (!saldosPorSucursal.containsKey(sucursal)) {
-        saldosPorSucursal[sucursal] = [];
-      }
-      saldosPorSucursal[sucursal]!.add(saldo);
+      saldosPorSucursal.putIfAbsent(saldo.nombreSucursal, () => []).add(saldo);
+    }
+
+    // Orden estable: sucursales alfabéticas, y dentro de cada una los tipos
+    // por nombre. Sin esto el orden depende del retorno del SP y las tarjetas
+    // "bailan" entre refrescos.
+    final sucursales = saldosPorSucursal.keys.toList()..sort();
+    for (final lista in saldosPorSucursal.values) {
+      lista.sort((a, b) => a.tipo.compareTo(b.tipo));
     }
 
     return Column(
       children: [
-        // Header con estadísticas generales
-        _buildStatsHeader(saldos, saldosPorSucursal, colorScheme, isDesktop),
-
-        // Contenido principal
+        _buildStatsHeader(saldos, colorScheme, isDesktop),
         Expanded(
-          child:
-              isDesktop
-                  ? _buildDesktopLayout(saldosPorSucursal, colorScheme)
-                  : _buildMobileLayout(saldosPorSucursal, colorScheme),
+          child: _buildSucursalesLayout(
+            sucursales,
+            saldosPorSucursal,
+            colorScheme,
+          ),
         ),
       ],
     );
   }
 
+  // ---------------------------------------------------------------------------
+  // Totales por tipo
+  // ---------------------------------------------------------------------------
+
   Widget _buildStatsHeader(
     List<MovimientoEntity> saldos,
-    Map<String, List<MovimientoEntity>> saldosPorSucursal,
     ColorScheme colorScheme,
     bool isDesktop,
   ) {
-    // Agrupar y sumar por tipo de combustible
     final saldosPorTipo = <String, double>{};
     for (final saldo in saldos) {
-      final tipo = saldo.tipo;
-      saldosPorTipo[tipo] = (saldosPorTipo[tipo] ?? 0) + saldo.valorSaldo;
+      saldosPorTipo[saldo.tipo] =
+          (saldosPorTipo[saldo.tipo] ?? 0) + saldo.valorSaldo;
     }
 
-    // Ordenar por cantidad descendente
-    final tiposOrdenados =
-        saldosPorTipo.entries.toList()
-          ..sort((a, b) => b.value.compareTo(a.value));
+    // Alfabético, no por magnitud: el color sigue a la entidad, así que el
+    // orden no debe cambiar cuando cambian los valores.
+    final tipos =
+        saldosPorTipo.entries.toList()..sort((a, b) => a.key.compareTo(b.key));
 
-    return Container(
-      padding: const EdgeInsets.all(16),
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header con botón de expandir/colapsar
           InkWell(
-            onTap: () {
-              setState(() {
-                _isStatsExpanded = !_isStatsExpanded;
-              });
-            },
+            onTap: () => setState(() => _isStatsExpanded = !_isStatsExpanded),
             borderRadius: BorderRadius.circular(8),
             child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 8),
+              padding: const EdgeInsets.symmetric(vertical: 6),
               child: Row(
                 children: [
                   Text(
                     'Totales por Tipo de Combustible',
                     style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
                       color: colorScheme.onSurface,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    '${tipos.length}',
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: colorScheme.onSurfaceVariant,
                     ),
                   ),
                   const Spacer(),
@@ -255,49 +369,41 @@ class _ControlCombustibleDashboardScreenState
               ),
             ),
           ),
-
-          // Contenido expandible
           if (_isStatsExpanded) ...[
-            const SizedBox(height: 12),
-            isDesktop
-                ? Row(
-                  children:
-                      tiposOrdenados
-                          .map(
-                            (entry) => Expanded(
-                              child: Padding(
-                                padding: const EdgeInsets.only(
-                                  right: 8,
-                                ), // Reducido de 16 a 8
-                                child: _buildTipoStatCard(
-                                  entry.key,
-                                  '${entry.value.toStringAsFixed(1)} ${_getUnidadMedida(entry.key)}',
-                                  _getCombustibleIcon(entry.key),
-                                  _getCombustibleColor(entry.key),
-                                  colorScheme,
-                                ),
-                              ),
-                            ),
-                          )
-                          .toList(),
-                )
-                : Column(
-                  children:
-                      tiposOrdenados
-                          .map(
-                            (entry) => Padding(
-                              padding: const EdgeInsets.only(bottom: 12),
-                              child: _buildTipoStatCard(
-                                entry.key,
-                                '${entry.value.toStringAsFixed(1)} ${_getUnidadMedida(entry.key)}',
-                                _getCombustibleIcon(entry.key),
-                                _getCombustibleColor(entry.key),
-                                colorScheme,
-                              ),
-                            ),
-                          )
-                          .toList(),
-                ),
+            const SizedBox(height: 8),
+            // Los tiles se reparten el ancho disponible en partes iguales, en
+            // vez de quedarse en un ancho fijo y dejar la derecha vacía.
+            LayoutBuilder(
+              builder: (context, constraints) {
+                const separacion = 12.0;
+                const anchoMinimo = 210.0;
+
+                var columnas =
+                    ((constraints.maxWidth + separacion) /
+                            (anchoMinimo + separacion))
+                        .floor();
+                columnas = columnas.clamp(1, tipos.length);
+                final ancho =
+                    (constraints.maxWidth - separacion * (columnas - 1)) /
+                    columnas;
+
+                return Wrap(
+                  spacing: separacion,
+                  runSpacing: separacion,
+                  children: [
+                    for (final entry in tipos)
+                      SizedBox(
+                        width: ancho,
+                        child: _buildTipoStatCard(
+                          entry.key,
+                          entry.value,
+                          colorScheme,
+                        ),
+                      ),
+                  ],
+                );
+              },
+            ),
           ],
         ],
       ),
@@ -306,52 +412,59 @@ class _ControlCombustibleDashboardScreenState
 
   Widget _buildTipoStatCard(
     String tipo,
-    String value,
-    IconData icon,
-    Color iconColor,
+    double total,
     ColorScheme colorScheme,
   ) {
+    final visual = _visual(tipo);
+    final color = visual.color(Theme.of(context).brightness);
+
     return Card(
-      elevation: 2,
+      elevation: 0,
+      margin: EdgeInsets.zero,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(color: colorScheme.outlineVariant),
+      ),
       child: Padding(
-        padding: const EdgeInsets.all(10), // Reducido de 12 a 10
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        padding: const EdgeInsets.all(12),
+        child: Row(
           children: [
-            Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(5), // Reducido de 6 a 5
-                  decoration: BoxDecoration(
-                    color: iconColor.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(5), // Reducido de 6 a 5
-                  ),
-                  child: Icon(
-                    icon,
-                    color: iconColor,
-                    size: 18, // Reducido de 20 a 18
-                  ),
-                ),
-                const SizedBox(width: 6), // Reducido de 8 a 6
-                Expanded(
-                  child: Text(
+            // Barra de identidad: el color va en la marca, no en el texto.
+            Container(
+              width: 4,
+              height: 34,
+              decoration: BoxDecoration(
+                color: color,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(width: 10),
+            Icon(visual.icon, color: color, size: 20),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
                     tipo,
                     style: TextStyle(
-                      fontSize: 13, // Aumentado de 12 a 13
+                      fontSize: 12,
                       color: colorScheme.onSurfaceVariant,
                       fontWeight: FontWeight.w500,
                     ),
+                    overflow: TextOverflow.ellipsis,
                   ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 6), // Reducido de 8 a 6
-            Text(
-              value,
-              style: TextStyle(
-                fontSize: 18, // Aumentado de 16 a 18
-                fontWeight: FontWeight.bold,
-                color: colorScheme.onSurface,
+                  const SizedBox(height: 2),
+                  Text(
+                    '${total.toStringAsFixed(1)} ${visual.unidad}',
+                    style: TextStyle(
+                      fontSize: 19,
+                      fontWeight: FontWeight.w700,
+                      color: colorScheme.onSurface,
+                    ),
+                  ),
+                ],
               ),
             ),
           ],
@@ -360,43 +473,108 @@ class _ControlCombustibleDashboardScreenState
     );
   }
 
-  Widget _buildDesktopLayout(
-    Map<String, List<MovimientoEntity>> saldosPorSucursal,
-    ColorScheme colorScheme,
-  ) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: GridView.builder(
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 4, // Aumentado de 3 a 4 para cards más pequeños
-          crossAxisSpacing: 8, // Reducido de 12 a 8
-          mainAxisSpacing: 8, // Reducido de 12 a 8
-          childAspectRatio:
-              1.1, // Reducido de 1.3 a 1.1 para cards más compactos
-        ),
-        itemCount: saldosPorSucursal.keys.length,
-        itemBuilder: (context, index) {
-          final sucursal = saldosPorSucursal.keys.elementAt(index);
-          final saldos = saldosPorSucursal[sucursal]!;
-          return _buildSucursalCard(sucursal, saldos, colorScheme, true);
-        },
-      ),
-    );
+  // ---------------------------------------------------------------------------
+  // Grilla de sucursales
+  // ---------------------------------------------------------------------------
+
+  /// Cuántas columnas usar. Entran las que permita el ancho (máximo 4), pero
+  /// entre las que caben se prefiere el reparto que deje la última fila lo más
+  /// completa posible: con 6 sucursales, 3+3 se ve parejo y 4+2 no.
+  int _columnas(double ancho, int total) {
+    const anchoMinimo = 300.0;
+    const separacion = 12.0;
+
+    var maximo = ((ancho + separacion) / (anchoMinimo + separacion)).floor();
+    if (maximo < 1) maximo = 1;
+    if (maximo > 4) maximo = 4;
+    if (maximo > total) maximo = total;
+    if (maximo <= 1) return 1;
+
+    var mejor = maximo;
+    var menorSobrante = (maximo - total % maximo) % maximo;
+    for (var c = maximo - 1; c >= 2; c--) {
+      final sobrante = (c - total % c) % c;
+      if (sobrante < menorSobrante) {
+        menorSobrante = sobrante;
+        mejor = c;
+      }
+    }
+    return mejor;
   }
 
-  Widget _buildMobileLayout(
+  /// Grilla de sucursales, pareja por filas.
+  ///
+  /// Cada fila usa `IntrinsicHeight` + `stretch`: todas sus tarjetas comparten
+  /// el alto de la más alta de esa fila. Así la grilla queda alineada sin fijar
+  /// un alto global —que sobraba en las sucursales de un solo tipo— ni dejar
+  /// los bordes irregulares de un masonry. El número de columnas sale del
+  /// ancho real, con lo que el mismo código va de móvil (1 columna) a 4K.
+  Widget _buildSucursalesLayout(
+    List<String> sucursales,
     Map<String, List<MovimientoEntity>> saldosPorSucursal,
     ColorScheme colorScheme,
   ) {
-    return ListView.builder(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      itemCount: saldosPorSucursal.keys.length,
-      itemBuilder: (context, index) {
-        final sucursal = saldosPorSucursal.keys.elementAt(index);
-        final saldos = saldosPorSucursal[sucursal]!;
-        return Padding(
-          padding: const EdgeInsets.only(bottom: 12),
-          child: _buildSucursalCard(sucursal, saldos, colorScheme, false),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        const separacion = 12.0;
+        final columnas = _columnas(constraints.maxWidth, sucursales.length);
+
+        if (columnas <= 1) {
+          return ListView.separated(
+            padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
+            itemCount: sucursales.length,
+            separatorBuilder: (_, __) => const SizedBox(height: separacion),
+            itemBuilder: (context, index) {
+              final sucursal = sucursales[index];
+              return _buildSucursalCard(
+                sucursal,
+                saldosPorSucursal[sucursal]!,
+                colorScheme,
+              );
+            },
+          );
+        }
+
+        final filas = <List<String>>[];
+        for (var i = 0; i < sucursales.length; i += columnas) {
+          final fin =
+              i + columnas < sucursales.length
+                  ? i + columnas
+                  : sucursales.length;
+          filas.add(sucursales.sublist(i, fin));
+        }
+
+        return SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
+          child: Column(
+            children: [
+              for (var f = 0; f < filas.length; f++) ...[
+                if (f > 0) const SizedBox(height: separacion),
+                IntrinsicHeight(
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      for (var c = 0; c < columnas; c++) ...[
+                        if (c > 0) const SizedBox(width: separacion),
+                        Expanded(
+                          // Los huecos de la última fila se rellenan vacíos
+                          // para que las columnas mantengan el mismo ancho.
+                          child:
+                              c < filas[f].length
+                                  ? _buildSucursalCard(
+                                    filas[f][c],
+                                    saldosPorSucursal[filas[f][c]]!,
+                                    colorScheme,
+                                  )
+                                  : const SizedBox.shrink(),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ],
+            ],
+          ),
         );
       },
     );
@@ -406,87 +584,53 @@ class _ControlCombustibleDashboardScreenState
     String sucursal,
     List<MovimientoEntity> saldos,
     ColorScheme colorScheme,
-    bool isDesktop,
   ) {
-    // Agrupar saldos por tipo para evitar sumar unidades incompatibles
-    final saldosPorTipo = <String, double>{};
-    for (final saldo in saldos) {
-      final tipo = saldo.tipo;
-      saldosPorTipo[tipo] = (saldosPorTipo[tipo] ?? 0) + saldo.valorSaldo;
-    }
-
-    // Crear texto de resumen para mostrar en lugar de total incorrecto
-    final resumenTexto = saldosPorTipo.entries
-        .map(
-          (entry) =>
-              '${entry.value.toStringAsFixed(1)} ${_getUnidadMedida(entry.key)} ${entry.key}',
-        )
-        .join(' • ');
+    // Cuántos tipos de esta sucursal están sin stock: se resume en el
+    // encabezado para poder escanear la grilla sin leer cada fila.
+    final sinStock = saldos.where((s) => s.valorSaldo <= 0).length;
 
     return Card(
-      elevation: isDesktop ? 2 : 3, // Menor elevación en desktop
+      elevation: 0,
+      margin: EdgeInsets.zero,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(color: colorScheme.outlineVariant),
+      ),
       child: Padding(
-        padding: EdgeInsets.all(
-          isDesktop ? 8 : 16,
-        ), // Reducido de 12 a 8 en desktop para cards más pequeños
+        padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Header de la sucursal
             Row(
               children: [
                 Icon(
-                  Icons.location_on,
-                  color: colorScheme.primary,
-                  size: isDesktop ? 16 : 20,
+                  Icons.location_on_outlined,
+                  color: colorScheme.onSurfaceVariant,
+                  size: 16,
                 ),
-                SizedBox(width: isDesktop ? 4 : 8),
+                const SizedBox(width: 6),
                 Expanded(
                   child: Text(
                     sucursal,
                     style: TextStyle(
-                      fontSize:
-                          isDesktop
-                              ? 16
-                              : 16, // Aumentado de 14 a 16 en desktop
-                      fontWeight: FontWeight.bold,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 0.2,
                       color: colorScheme.onSurface,
                     ),
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
-                Flexible(
-                  child: Container(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: isDesktop ? 4 : 8,
-                      vertical: isDesktop ? 1 : 4,
-                    ),
-                    decoration: BoxDecoration(
-                      color: colorScheme.primaryContainer,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Text(
-                      resumenTexto.isNotEmpty ? resumenTexto : 'Sin saldos',
-                      style: TextStyle(
-                        fontSize:
-                            isDesktop
-                                ? 9
-                                : 12, // Ligeramente reducido para que quepa
-                        fontWeight: FontWeight.bold,
-                        color: colorScheme.onPrimaryContainer,
-                      ),
-                      overflow: TextOverflow.ellipsis,
-                      maxLines: 2,
-                    ),
+                if (sinStock > 0)
+                  _StatusChip(
+                    label: sinStock == 1 ? 'Sin stock' : '$sinStock sin stock',
+                    color: _statusCritical,
+                    icon: Icons.error_outline,
                   ),
-                ),
               ],
             ),
-            SizedBox(height: isDesktop ? 6 : 12),
-
-            // Lista de combustibles
-            ...saldos.map(
-              (saldo) => _buildCombustibleItem(saldo, colorScheme, isDesktop),
-            ),
+            const SizedBox(height: 8),
+            ...saldos.map((saldo) => _buildCombustibleItem(saldo, colorScheme)),
           ],
         ),
       ),
@@ -496,104 +640,133 @@ class _ControlCombustibleDashboardScreenState
   Widget _buildCombustibleItem(
     MovimientoEntity saldo,
     ColorScheme colorScheme,
-    bool isDesktop,
   ) {
-    final icon = _getCombustibleIcon(saldo.tipo);
-    final color = _getCombustibleColor(saldo.tipo);
+    final visual = _visual(saldo.tipo);
+    final color = visual.color(Theme.of(context).brightness);
+    final unidad = visual.unidad;
+    final estado = _status(saldo.valorSaldo, unidad);
 
     return Padding(
-      padding: EdgeInsets.symmetric(vertical: isDesktop ? 3 : 6),
+      padding: const EdgeInsets.symmetric(vertical: 5),
       child: Row(
         children: [
           Container(
-            padding: EdgeInsets.all(isDesktop ? 4 : 8),
+            padding: const EdgeInsets.all(5),
             decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(isDesktop ? 4 : 8),
+              color: color.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(6),
             ),
-            child: Icon(icon, color: color, size: isDesktop ? 12 : 16),
+            child: Icon(visual.icon, color: color, size: 14),
           ),
-          SizedBox(width: isDesktop ? 6 : 12),
+          const SizedBox(width: 10),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
                   saldo.tipo,
                   style: TextStyle(
-                    fontSize:
-                        isDesktop ? 14 : 14, // Aumentado de 12 a 14 en desktop
-                    fontWeight: FontWeight.w500,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
                     color: colorScheme.onSurface,
                   ),
+                  overflow: TextOverflow.ellipsis,
                 ),
-                if (saldo.fechaMovimientoString.isNotEmpty)
+                if (saldo.fechaMovimientoString.isNotEmpty &&
+                    saldo.fechaMovimientoString != 'N/A')
                   Text(
-                    'Último mov: ${saldo.fechaMovimientoString}',
+                    saldo.fechaMovimientoString,
                     style: TextStyle(
-                      fontSize:
-                          isDesktop ? 10 : 11, // Aumentado de 9 a 10 en desktop
+                      fontSize: 10,
                       color: colorScheme.onSurfaceVariant,
                     ),
+                    overflow: TextOverflow.ellipsis,
                   ),
               ],
             ),
           ),
-          Text(
-            '${saldo.valorSaldo.toStringAsFixed(1)} ${_getUnidadMedida(saldo.tipo)}',
-            style: TextStyle(
-              fontSize: isDesktop ? 14 : 14, // Aumentado de 12 a 14 en desktop
-              fontWeight: FontWeight.bold,
-              color: _getSaldoColor(saldo.valorSaldo, colorScheme),
-            ),
+          const SizedBox(width: 8),
+          // El valor va en tinta normal. El estado se comunica aparte, con
+          // ícono + etiqueta, nunca sólo con color.
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                '${saldo.valorSaldo.toStringAsFixed(1)} $unidad',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w700,
+                  fontFeatures: const [FontFeature.tabularFigures()],
+                  color: colorScheme.onSurface,
+                ),
+              ),
+              if (estado != _StockStatus.normal)
+                Padding(
+                  padding: const EdgeInsets.only(top: 2),
+                  child: _StatusChip(
+                    label:
+                        estado == _StockStatus.sinStock ? 'Sin stock' : 'Bajo',
+                    color:
+                        estado == _StockStatus.sinStock
+                            ? _statusCritical
+                            : _statusWarning,
+                    icon:
+                        estado == _StockStatus.sinStock
+                            ? Icons.error_outline
+                            : Icons.warning_amber_rounded,
+                    dense: true,
+                  ),
+                ),
+            ],
           ),
         ],
       ),
     );
   }
+}
 
-  String _getUnidadMedida(String tipo) {
-    switch (tipo.toLowerCase()) {
-      case 'garrafa':
-        return 'U';
-      default:
-        return 'L';
-    }
-  }
+/// Indicador de estado: color + ícono + texto. El color nunca va solo.
+class _StatusChip extends StatelessWidget {
+  const _StatusChip({
+    required this.label,
+    required this.color,
+    required this.icon,
+    this.dense = false,
+  });
 
-  IconData _getCombustibleIcon(String tipo) {
-    switch (tipo.toLowerCase()) {
-      case 'gasolina':
-        return Icons.local_gas_station;
-      case 'diesel':
-        return Icons.oil_barrel;
-      case 'garrafa':
-        return Icons.propane_tank;
-      default:
-        return Icons.inventory_2;
-    }
-  }
+  final String label;
+  final Color color;
+  final IconData icon;
+  final bool dense;
 
-  Color _getCombustibleColor(String tipo) {
-    switch (tipo.toLowerCase()) {
-      case 'gasolina':
-        return Colors.green;
-      case 'diesel':
-        return Colors.blue;
-      case 'garrafa':
-        return Colors.orange;
-      default:
-        return Colors.grey;
-    }
-  }
-
-  Color _getSaldoColor(double saldo, ColorScheme colorScheme) {
-    if (saldo <= 0) {
-      return Colors.red;
-    } else if (saldo < 20) {
-      return Colors.orange;
-    } else {
-      return Colors.green;
-    }
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: EdgeInsets.symmetric(
+        horizontal: dense ? 5 : 7,
+        vertical: dense ? 1 : 3,
+      ),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(5),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: dense ? 10 : 12, color: color),
+          const SizedBox(width: 3),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: dense ? 9 : 10,
+              fontWeight: FontWeight.w700,
+              color: color,
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }

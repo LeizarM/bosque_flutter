@@ -21,7 +21,16 @@ abstract class PermisosVacacionRepository {
     String motivoAnulacion,
   );
   Future<List<SolicitudPermisoEntity>> listarPendientes(int codUsuarioLogueado);
-  Future<List<SolicitudPermisoEntity>> listarMisSolicitudes(int codEmpleado);
+  /// El kardex de solicitudes y permisos de una persona.
+  ///
+  /// [anio] y [mes] en `null` son «no filtres»: el SP los recibe como NULL y
+  /// devuelve todo el histórico. La pantalla manda el año corriente por defecto
+  /// porque esta lista no se purga nunca y crece con cada solicitud.
+  Future<List<SolicitudPermisoEntity>> listarMisSolicitudes(
+    int codEmpleado, {
+    int? anio,
+    int? mes,
+  });
   Future<List<TipoPermisoVacacionEntity>> getTiposPermisosVacaciones(int codEmpleado, int codUsuarioLogueado);
   Future<Uint8List> descargarRptPermisoVacacion(int codPermiso);
   Future<List<FeriadoModel>> getFeriados(int codEmpleado);

@@ -653,6 +653,152 @@ class AppConstants {
   // haya un '/reporte-sabado-excel' sin renombrar ésta.
   static const String rolSabReporteSabado = '$_rolSab/reporte-sabado-pdf';
 
+  // ═══════════════════════════════════════════════════════════════════════════════
+  // RUTAS MODULO: PERMISOS RR.HH. (consola administrativa de trh_permiso)
+  // ═══════════════════════════════════════════════════════════════════════════════
+  //
+  // Es la consola de RR.HH., NO el flujo del empleado: por eso NO reutiliza el
+  // prefijo '/vacacion/...' de más arriba, que tiene otro contrato y otra
+  // audiencia. kebab-case adentro del módulo, siguiendo a '/rol-sabados'.
+  //
+  // El buscador de empleados NO tiene constante propia: reutiliza
+  // `rrhhObtenerLstEmpleados` (más arriba en este archivo), que ya pagina en SQL.
+  static const String _permRrhh = '/permiso-rrhh';
+  static const String permRrhhSaldoFicha = '$_permRrhh/saldo/ficha';
+  static const String permRrhhSaldoDesglose = '$_permRrhh/saldo/desglose';
+
+  /// Los permisos que suman un tramo del desglose. El cuerpo lleva la clave del
+  /// tramo (`SALDO_PENULTIMO`, `UTILIZADA`, `PROGRAMADA`) y **no** las fechas:
+  /// ésas las resuelve el servidor con la misma consulta que dio el monto, así
+  /// el detalle no puede discrepar del total.
+  static const String permRrhhSaldoDetalleTramo =
+      '$_permRrhh/saldo/detalle-tramo';
+  /// El «DETALLE COMPLETO» del sistema anterior: el estado de cuenta del
+  /// empleado en PDF. La variante fiscal oculta los días abonados, y ese flag
+  /// vive dentro del `.jrxml`, no acá: son dos rutas y no un parámetro.
+  static const String permRrhhEstadoCuenta = '$_permRrhh/reportes/estado-cuenta';
+  static const String permRrhhEstadoCuentaFiscal =
+      '$_permRrhh/reportes/estado-cuenta-fiscal';
+  /// Los días del rango que NO descuentan: feriados de la sucursal del
+  /// empleado y sábados que el rol dice que no le tocan. Los domingos no
+  /// vienen — la UI los deduce de la fecha.
+  /// «Quién está fuera»: los permisos de TODA la empresa en una fecha o rango.
+  /// Es la única consulta del módulo que no es por empleado.
+  /// El buscador global de boletas entre fechas, para cuando alguien pide una
+  /// copia y no se sabe de quién era.
+  static const String permRrhhBoletas = '$_permRrhh/permisos/boletas';
+  static const String permRrhhQuienEstaFuera =
+      '$_permRrhh/permisos/quien-esta-fuera';
+  static const String permRrhhDiasNoHabiles =
+      '$_permRrhh/permisos/dias-no-habiles';
+  static const String permRrhhCalculoAntiguedad =
+      '$_permRrhh/herramientas/calculo-antiguedad';
+
+  // ── Escrituras (Fase 2) ────────────────────────────────────────────────
+  //
+  // El alta y la edición son la MISMA ruta, como en el legacy: la acción la
+  // decide el id (0 = 'I', > 0 = 'U'), no un flag ni un endpoint aparte.
+  //
+  // La baja va por ruta propia y no por un `eliminar: true` en el cuerpo: es un
+  // DELETE físico (lo archiva el trigger `dad_`), y una operación que borra no
+  // comparte URL con una que guarda.
+  //
+  // **Estas rutas son las que expone `PermisoRrhhController`, letra por letra.**
+  // Hasta la corrección de agosto de 2026 seis de las diez apuntaban a un
+  // camino que no existe (`/abonos/...` en vez de `/abono-dias/...`,
+  // `/colectivas/...` en vez de `/colectivo/...`): la escritura daba 404 y la
+  // pantalla lo mostraba como «error de conexión». `permisos_rrhh_contrato_test`
+  // las compara contra la lista canónica para que no vuelva a pasar en silencio.
+  static const String permRrhhVacAsigHistorial =
+      '$_permRrhh/vacacion-asignada/historial';
+  static const String permRrhhVacAsigRegistrar =
+      '$_permRrhh/vacacion-asignada/registrar';
+  static const String permRrhhVacAsigEliminar =
+      '$_permRrhh/vacacion-asignada/eliminar';
+
+  // `historial` y no `detalle`: es el listado de una persona, el mismo papel
+  // que su hermano de vacación asignada. El detalle de UNA fila no tiene
+  // endpoint porque no hace falta — el alta y la edición devuelven la fila
+  // releída.
+  static const String permRrhhAbonoHistorial =
+      '$_permRrhh/abono-dias/historial';
+  static const String permRrhhAbonoRegistrar =
+      '$_permRrhh/abono-dias/registrar';
+  static const String permRrhhAbonoEliminar = '$_permRrhh/abono-dias/eliminar';
+
+  // Cargas colectivas. `/empleados` es el padrón para tildar (p_list_Permiso
+  // 'E'); `simular` no escribe nada y `aplicar` escribe N filas en una sola
+  // transacción del lado de Java.
+  //
+  // **Las dos tienen `simular`.** La vacación porque los días salen distintos
+  // por sucursal; el abono porque —aunque los días sean uno solo para todos— el
+  // servidor es el único que sabe quién tiene relación activa y quién ya cobró
+  // ese día. Armar la confirmación con la selección local decía «3 días a 40
+  // personas» sin saber a cuántas alcanzaba de verdad.
+  static const String permRrhhColectivaEmpleados =
+      '$_permRrhh/colectivo/empleados';
+  static const String permRrhhColectivaAbonoSimular =
+      '$_permRrhh/colectivo/abono-dias/simular';
+  static const String permRrhhColectivaAbonoAplicar =
+      '$_permRrhh/colectivo/abono-dias/aplicar';
+  static const String permRrhhColectivaVacacionSimular =
+      '$_permRrhh/colectivo/vacacion/simular';
+  static const String permRrhhColectivaVacacionAplicar =
+      '$_permRrhh/colectivo/vacacion/aplicar';
+
+  // ── El permiso individual (Fase 3) ─────────────────────────────────────
+  //
+  // Las cuatro pantallas del kardex legacy: la Nómina de Permisos y los tres
+  // modales que escriben en `trh_permiso`.
+  //
+  // **Los nombres son los del backend, letra por letra** (`/permisos/...` en
+  // plural para lo que cuelga del kardex, `/vacacion/...` para las dos que son
+  // de vacación). Hasta la corrección de agosto de 2026 las cinco apuntaban a
+  // `/permiso/...`, que no existe de aquel lado: 404 en las cuatro pantallas,
+  // que `DioClient` muestra como «error de conexión». Es exactamente la falla
+  // que documenta el bloque de arriba, repetida.
+  //
+  // **`registrar` son DOS rutas y no una.** El servidor partió el alta con dos
+  // botones de ACL distintos —`btnProgramarPermiso` (4 usuarios) contra
+  // `btnProgramarVacacion` (5)— y `/permisos/registrar` rechaza `tipoPermiso:
+  // 'vac'` con un 400 explícito. La vacación va por `/vacacion/registrar`, que
+  // pone el tipo del lado del servidor: si viniera del cuerpo, esa ruta sería
+  // un segundo camino para dar de alta cualquier permiso salteándose el botón
+  // del otro. Del otro lado igual terminan las dos en el mismo `p_abm_Permiso`.
+  //
+  // **`vacacion/pagar` va aparte**, aunque escriba en la misma tabla: el
+  // servidor le fuerza `tipoPermiso='pva'` y `hasta = desde`, no pasa por el
+  // cálculo de días —los tipea el usuario— y es la única de las tres que paga
+  // plata sin que ningún SP valide nada.
+  //
+  // **`calcular` no escribe**: alimenta «Horas de permiso» / «Días de permiso» /
+  // «Total días de vacación» en vivo y devuelve además si el alta va a poder
+  // guardarse. Es el equivalente individual de `/colectivo/vacacion/simular`.
+  //
+  // **`vacaciones-ganadas` es el otro botón de la nómina** (`p_list_vacacionAsignada`
+  // ACCION 'D'): un SELECT por rango sobre las filas REALES. No se recorta el
+  // historial (ACCION 'B') en memoria, porque aquel además inventa filas
+  // sintéticas por aniversario y se pide con una fecha de corte: sería otro
+  // conjunto de partida y otra respuesta para el mismo botón.
+  static const String permRrhhPermisoHistorial = '$_permRrhh/permisos/kardex';
+  static const String permRrhhPermisoSimular = '$_permRrhh/permisos/calcular';
+  static const String permRrhhPermisoRegistrar = '$_permRrhh/permisos/registrar';
+  static const String permRrhhVacacionRegistrar =
+      '$_permRrhh/vacacion/registrar';
+  static const String permRrhhPermisoVacacionPagada =
+      '$_permRrhh/vacacion/pagar';
+  static const String permRrhhVacacionesGanadas =
+      '$_permRrhh/permisos/vacaciones-ganadas';
+
+  // El combo de tipos (`v_tipos` grupo 13). `incluirVacacionYPago: false`
+  // replica `Tipos.cargarList13A()` —los 7 del modal de permiso, sin 'vac' ni
+  // 'pva'—; `true` devuelve los 9 para el filtro de la Nómina.
+  //
+  // **No se reutiliza `tipoPermisoSolicitudVacacion`**: aquel filtra por
+  // `codEmpleado` + `codUsuarioLogueado` (los tipos que ESA persona puede
+  // pedirse) y esto es la consola de RR.HH., que carga a nombre de otro.
+  static const String permRrhhPermisoTipos = '$_permRrhh/permisos/tipos';
+
   //Para cargar permisos de botones por usuario
   static const String ubtnPermisosBotones = '/view/vistaBtn';
 

@@ -1,5 +1,4 @@
 import 'package:bosque_flutter/core/state/rol_sabados_provider.dart';
-import 'package:bosque_flutter/core/state/user_provider.dart';
 import 'package:bosque_flutter/domain/entities/participante_turno_entity.dart';
 import 'package:bosque_flutter/domain/entities/sabado_entity.dart';
 import 'package:bosque_flutter/presentation/widgets/rol-sabados/filtros_grilla.dart';
@@ -27,8 +26,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 /// tener otro horario y no venir nunca, o dejar de venir a mitad de año, o
 /// volver en octubre. Eso NO es dar de baja al empleado: es cerrar y abrir su
 /// ventana de participación. Lo que ya trabajó queda escrito en la grilla — el
-/// backend borra sólo celdas futuras y de la rotación. Es de RR.HH. (ROLE_ADM);
-/// el resto ve la lista y no la toca.
+/// backend borra sólo celdas futuras y de la rotación. Es de Sistemas o de
+/// RR.HH.; el resto ve la lista y no la toca.
 class PersonalTab extends ConsumerWidget {
   const PersonalTab({super.key, required this.idRol});
 
@@ -79,7 +78,13 @@ class PersonalTab extends ConsumerWidget {
         // decide quién viene a trabajar un sábado, y eso no se delega en quien
         // va a venir. Un jefe ve la lista completa —también a los excluidos— y
         // no puede tocarla.
-        final esAdmin = ref.watch(userProvider)?.tipoUsuario == 'ROLE_ADM';
+        //
+        // Sale de [administraRolProvider] y no de `tipoUsuario == 'ROLE_ADM'`.
+        // Era la cuarta copia de esa cuenta y estaba desactualizada: le escondía
+        // el menú a RR.HH., que es de quien es la decisión. El provider existe
+        // justamente para que la regla se escriba una vez — cada copia suelta
+        // termina así, no fallando sino dejando afuera a quien debía entrar.
+        final administra = ref.watch(administraRolProvider);
 
         // Una sola vez para las 85 filas, y no una por fila: es un recorrido de
         // 52 sábados y la respuesta es la misma para todos.
@@ -108,7 +113,7 @@ class PersonalTab extends ConsumerWidget {
                               idRol: idRol,
                               persona: personas[i],
                               grilla: g,
-                              esAdmin: esAdmin,
+                              administra: administra,
                               quedanSabados: quedanSabados,
                             ),
                       ),
@@ -435,7 +440,7 @@ class _FilaPersona extends ConsumerStatefulWidget {
     required this.idRol,
     required this.persona,
     required this.grilla,
-    required this.esAdmin,
+    required this.administra,
     required this.quedanSabados,
   });
 
@@ -447,7 +452,8 @@ class _FilaPersona extends ConsumerStatefulWidget {
   /// poder decir cuántos sábados se liberan y cuántos sobreviven.
   final GrillaRol grilla;
 
-  final bool esAdmin;
+  /// Sistemas o RR.HH.: los dos únicos que mueven la ventana de sábados.
+  final bool administra;
 
   /// Si el rol todavía tiene algún sábado por delante.
   final bool quedanSabados;
@@ -481,7 +487,7 @@ class _FilaPersonaState extends ConsumerState<_FilaPersona> {
     // reconcilia la regeneración contra RR.HH., y devolverlo a los sábados con
     // un clic sería saltearse el alta que todavía no existe.
     final puedeMoverVentana =
-        widget.esAdmin &&
+        widget.administra &&
         !widget.bloqueado &&
         widget.quedanSabados &&
         !p.fueraDeLaEmpresa;

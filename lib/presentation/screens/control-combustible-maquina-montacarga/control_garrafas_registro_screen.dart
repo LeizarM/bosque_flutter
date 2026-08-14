@@ -324,8 +324,9 @@ class _ControlGarrafasRegistroScreenState
                       width: 20,
                       child: CircularProgressIndicator(
                         strokeWidth: 2,
-                        valueColor:
-                            AlwaysStoppedAnimation<Color>(colorScheme.onPrimary),
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                          colorScheme.onPrimary,
+                        ),
                       ),
                     )
                     : const Text('Registrar Garrafa'),
@@ -345,26 +346,26 @@ class _ControlGarrafasRegistroScreenState
           const SizedBox(height: 12),
           SizedBox(
             width: double.infinity,
-          child: ElevatedButton(
-            onPressed: _isLoading ? null : _registrarGarrafa,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: colorScheme.primary,
-              foregroundColor: colorScheme.onPrimary,
-              padding: const EdgeInsets.symmetric(vertical: 16),
-            ),
-            child:
-                _isLoading
-                    ? SizedBox(
-                      height: 20,
-                      width: 20,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        valueColor: AlwaysStoppedAnimation<Color>(
-                          colorScheme.onPrimary,
+            child: ElevatedButton(
+              onPressed: _isLoading ? null : _registrarGarrafa,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: colorScheme.primary,
+                foregroundColor: colorScheme.onPrimary,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+              ),
+              child:
+                  _isLoading
+                      ? SizedBox(
+                        height: 20,
+                        width: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            colorScheme.onPrimary,
+                          ),
                         ),
-                      ),
-                    )
-                    : const Text('Registrar Garrafa'),
+                      )
+                      : const Text('Registrar Garrafa'),
             ),
           ),
         ],

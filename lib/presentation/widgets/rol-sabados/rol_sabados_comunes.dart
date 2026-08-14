@@ -3,6 +3,7 @@ library;
 
 import 'dart:math' as math;
 
+import 'package:bosque_flutter/core/ui/piezas_bosque.dart';
 import 'package:bosque_flutter/domain/entities/celda_turno_entity.dart';
 import 'package:bosque_flutter/domain/entities/participante_turno_entity.dart';
 import 'package:bosque_flutter/presentation/widgets/rol-sabados/estilo_modulo.dart';
@@ -11,13 +12,13 @@ import 'package:bosque_flutter/presentation/widgets/shared/aviso.dart'
     as compartido;
 import 'package:flutter/material.dart';
 
-/// `dd/MM/yyyy`, o `--` si no hay fecha. Sin `intl` para no arrastrar locale
-/// por tres usos.
-String fechaCorta(DateTime? f) =>
-    f == null
-        ? '--'
-        : '${f.day.toString().padLeft(2, '0')}/'
-            '${f.month.toString().padLeft(2, '0')}/${f.year}';
+export 'package:bosque_flutter/core/ui/tokens_bosque.dart' show Aire;
+
+// `MensajeVacio`, `Etiqueta`, `TonoEtiqueta`, `ComboBuscable` y `fechaCorta` se
+// mudaron a `core/ui/piezas_bosque.dart` —sin cambiar una línea— cuando el
+// segundo módulo las necesitó igual. Se re-exportan desde acá para que los
+// widgets de sábados, que las toman de este archivo, no se enteren.
+export 'package:bosque_flutter/core/ui/piezas_bosque.dart';
 
 String fechaHora(DateTime? f) =>
     f == null
@@ -35,85 +36,6 @@ Color? colorDesdeHex(String hex) {
   final v = int.tryParse(h, radix: 16);
   return v == null ? null : Color(v);
 }
-
-/// Estado vacío o de error, con una explicación de qué significa.
-class MensajeVacio extends StatelessWidget {
-  const MensajeVacio({
-    super.key,
-    required this.icono,
-    required this.titulo,
-    required this.detalle,
-  });
-
-  final IconData icono;
-  final String titulo;
-  final String detalle;
-
-  @override
-  Widget build(BuildContext context) => Center(
-    child: Padding(
-      padding: const EdgeInsets.all(32),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icono, size: 44, color: Theme.of(context).hintColor),
-          const SizedBox(height: 12),
-          Text(
-            titulo,
-            textAlign: TextAlign.center,
-            style: Theme.of(context).textTheme.titleMedium,
-          ),
-          const SizedBox(height: 6),
-          Text(
-            detalle,
-            textAlign: TextAlign.center,
-            style: Theme.of(context).textTheme.bodySmall,
-          ),
-        ],
-      ),
-    ),
-  );
-}
-
-/// Etiqueta de estado. El color viene del significado, no del texto.
-class Etiqueta extends StatelessWidget {
-  const Etiqueta({
-    super.key,
-    required this.texto,
-    this.tono = TonoEtiqueta.neutro,
-  });
-
-  final String texto;
-  final TonoEtiqueta tono;
-
-  @override
-  Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    final (fondo, letra) = switch (tono) {
-      TonoEtiqueta.exito => (cs.primaryContainer, cs.onPrimaryContainer),
-      TonoEtiqueta.aviso => (cs.tertiaryContainer, cs.onTertiaryContainer),
-      TonoEtiqueta.error => (cs.errorContainer, cs.onErrorContainer),
-      TonoEtiqueta.neutro => (cs.surfaceContainerHighest, cs.onSurfaceVariant),
-    };
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-      decoration: BoxDecoration(
-        color: fondo,
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Text(
-        texto,
-        style: Theme.of(context).textTheme.labelSmall?.copyWith(
-          color: letra,
-          fontWeight: FontWeight.w600,
-        ),
-      ),
-    );
-  }
-}
-
-enum TonoEtiqueta { neutro, exito, aviso, error }
 
 // ═══════════════════════════════════════════════════════════════════════════
 // EL AVISO
@@ -163,30 +85,10 @@ Future<bool> ejecutarAccion(
 // MEDIDAS SEGÚN EL DISPOSITIVO
 // ═══════════════════════════════════════════════════════════════════════════
 
-/// Cuánto espacio hay, medido en lo que el módulo necesita.
-///
-/// No se usa `ResponsiveUtilsBosque` directamente en los widgets porque acá el
-/// corte no es "es un teléfono": es **cuántas columnas de la matriz entran**.
-/// Una tablet en vertical y un teléfono en horizontal necesitan tratos
-/// distintos aunque el paquete los clasifique igual.
-enum Aire {
-  /// Menos de ~7 columnas visibles: la matriz no se puede leer.
-  justo,
-
-  /// Entra la matriz, pero apretada.
-  medio,
-
-  /// Entra cómoda.
-  amplio;
-
-  static Aire de(double ancho) {
-    if (ancho < 600) return Aire.justo;
-    if (ancho < 1000) return Aire.medio;
-    return Aire.amplio;
-  }
-
-  bool get esChico => this == Aire.justo;
-}
+// `Aire` se mudó a `core/ui/tokens_bosque.dart` —sin cambiar los cortes de 600
+// y 1000— porque el segundo módulo que decide su layout por el ancho del cajón
+// lo necesitaba igual. Se re-exporta desde acá para que los widgets del módulo,
+// que lo toman de este archivo, no se enteren.
 
 /// Medidas de la matriz. Se calculan del ancho real disponible, no del tamaño
 /// de pantalla: dentro del dashboard hay un sidebar que se come su parte.
@@ -533,73 +435,24 @@ class Dato extends StatelessWidget {
   );
 }
 
-/// Un combo con buscador, para listas de gente.
-///
-/// **Por qué no un `DropdownButtonFormField`.** Con 85 personas, el desplegable
-/// común obliga a recorrer una lista larguísima en el orden en que vinieron de
-/// la base —que es el del organigrama, no uno que ayude a buscar— y sin forma de
-/// escribir. Encontrar a alguien es scroll y suerte.
-///
-/// Acá las opciones vienen **ordenadas alfabéticamente** y se filtran a medida
-/// que se escribe.
-class ComboBuscable<T> extends StatelessWidget {
-  const ComboBuscable({
-    super.key,
-    required this.etiqueta,
-    required this.valor,
-    required this.opciones,
-    required this.onElegir,
-    this.ayuda,
-    this.pista,
-  });
-
-  final String etiqueta;
-  final T? valor;
-
-  /// Ya ordenadas por quien las arma: el orden depende de qué son.
-  final List<DropdownMenuEntry<T>> opciones;
-
-  final ValueChanged<T?> onElegir;
-  final String? ayuda;
-  final String? pista;
-
-  @override
-  Widget build(BuildContext context) => DropdownMenu<T>(
-    // La clave incluye el valor para que el campo de texto se limpie solo
-    // cuando el valor lo resetea alguien de afuera — al cambiar de sábado, por
-    // ejemplo, donde las dos listas de personas dejan de servir.
-    key: ValueKey('$etiqueta-$valor-${opciones.length}'),
-    initialSelection: valor,
-    label: Text(etiqueta),
-    helperText: ayuda,
-    hintText: pista ?? 'Escribe para buscar…',
-    enableFilter: true,
-    requestFocusOnTap: true,
-    expandedInsets: EdgeInsets.zero,
-    menuHeight: 320,
-    leadingIcon: const Icon(Icons.search, size: 18),
-    inputDecorationTheme: const InputDecorationTheme(
-      border: OutlineInputBorder(),
-      isDense: true,
-    ),
-    dropdownMenuEntries: opciones,
-    onSelected: opciones.isEmpty ? null : onElegir,
-  );
-}
-
 /// Las personas en orden alfabético, listas para un [ComboBuscable].
 ///
-/// El orden de la base es el del organigrama —sucursal, nivel, cargo— que sirve
-/// para repartir los grupos pero no para encontrar a alguien por el apellido.
+/// **El orden llega hecho y acá no se rehace.** `p_list_trs_Participante`
+/// —`@ACCION='L'`, el mismo listado que dibuja la grilla— ya viene por apellido
+/// desde el script `17`, y ordena mejor de lo que se puede ordenar acá: la base
+/// es `Modern_Spanish_CI_AS`, así que CÁCERES cae entre BUITRAGO y CALLANCHO y
+/// la Ñ va después de la N. El `compareTo` de Dart compara code units: con él
+/// —que es lo que había acá— CÁCERES, LECOÑA y SIÑANI caían después de la Z, y
+/// el combo terminaba ordenado distinto que la grilla que tiene al lado.
+///
+/// Todas las listas que llegan son `grilla.participantes` o un `where` sobre
+/// ella, y filtrar no cambia el orden.
 List<DropdownMenuEntry<int>> entradasDePersonas(
   List<ParticipanteTurnoEntity> personas, {
   bool mostrarGrupo = true,
 }) {
-  final ordenadas = [...personas]..sort(
-    (a, b) => a.nombreRol.toLowerCase().compareTo(b.nombreRol.toLowerCase()),
-  );
   return [
-    for (final p in ordenadas)
+    for (final p in personas)
       DropdownMenuEntry(
         value: p.codEmpleado,
         label:

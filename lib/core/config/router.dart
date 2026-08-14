@@ -274,6 +274,16 @@ final routerProvider = Provider<GoRouter>((ref) {
               name: 'trsSabados',
               builder: (context, state) => const RolSabadosScreen(),
             ),
+
+            // Permisos y Vacaciones de RR.HH. (consola de consulta)
+            // Misma regla que arriba: la ruta es EXACTAMENTE tb_vista.direccion
+            // (codVista 24 = 'trhPermiso/permiso'), porque el sidebar arma el
+            // destino con '/'+direccion (menu_provider.dart:481).
+            GoRoute(
+              path: '/dashboard/trhPermiso/permiso',
+              name: 'trhPermisoPermiso',
+              builder: (context, state) => const PermisosRrhhScreen(),
+            ),
           ],
         ),
 
@@ -452,6 +462,13 @@ final routerProvider = Provider<GoRouter>((ref) {
         GoRoute(
           path: '/trs_Sabados/Main',
           redirect: (context, state) => '/dashboard/trs_Sabados/Main',
+        ),
+        // PERMISOS Y VACACIONES DE RR.HH.
+        // Sin esta entrada el item del menu cae en el errorBuilder: el sidebar
+        // navega a '/trhPermiso/permiso' (sin '/dashboard'), que no existe.
+        GoRoute(
+          path: '/trhPermiso/permiso',
+          redirect: (context, state) => '/dashboard/trhPermiso/permiso',
         ),
 
         GoRoute(

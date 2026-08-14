@@ -1,13 +1,7 @@
-import 'dart:convert';
-import 'dart:typed_data';
 import 'package:bosque_flutter/core/constants/app_constants.dart';
 import 'package:bosque_flutter/core/network/base_api_repository.dart';
+import 'package:bosque_flutter/core/utils/descargar_archivo.dart';
 import 'package:excel/excel.dart';
-import 'package:flutter/foundation.dart' show kIsWeb;
-import 'package:path_provider/path_provider.dart';
-import 'package:flutter_file_dialog/flutter_file_dialog.dart';
-import 'dart:io' as io;
-import 'package:universal_html/html.dart' as html;
 
 /// Servicio de exportación de planillas bancarias.
 /// El FORMATO de salida es fijo por banco (igual que el sistema antiguo):
@@ -325,45 +319,19 @@ class BancosExportService extends BaseApiRepository {
     return s;
   }
 
+  // La descarga vive en `core/utils/descargar_archivo.dart`: la comparte con el
+  // reporte de boletas de RR.HH. Acá quedan sólo los dos nombres que usa el
+  // resto de la clase.
   Future<void> _descargar(
     String contenido,
     String nombreArchivo,
     String mimeType, {
     bool bom = true,
-  }) async {
-    final bytes = utf8.encode(contenido);
-    final data = bom ? [0xEF, 0xBB, 0xBF, ...bytes] : bytes;
-    await _descargarBytes(data, nombreArchivo, mimeType);
-  }
+  }) => descargarTexto(contenido, nombreArchivo, mimeType, bom: bom);
 
   Future<void> _descargarBytes(
     List<int> bytes,
     String nombreArchivo,
     String mimeType,
-  ) async {
-    final uint8List = Uint8List.fromList(bytes);
-
-    if (kIsWeb) {
-      final blob = html.Blob([uint8List], mimeType);
-      final url = html.Url.createObjectUrlFromBlob(blob);
-      html.AnchorElement(href: url)
-        ..setAttribute('download', nombreArchivo)
-        ..click();
-      html.Url.revokeObjectUrl(url);
-    } else {
-      // Descarga nativa en móvil (Android/iOS)
-      final tempDir = await getTemporaryDirectory();
-      final tempFile = io.File('${tempDir.path}/$nombreArchivo');
-      await tempFile.writeAsBytes(uint8List);
-
-      final params = SaveFileDialogParams(
-        sourceFilePath: tempFile.path,
-        fileName: nombreArchivo,
-        mimeTypesFilter: [mimeType],
-      );
-
-      // flutter_file_dialog maneja la intención nativa de guardar archivos.
-      await FlutterFileDialog.saveFile(params: params);
-    }
-  }
+  ) => descargarBytes(bytes, nombreArchivo, mimeType);
 }

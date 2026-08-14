@@ -854,23 +854,32 @@ void main() {
     // aparece si queda algún sábado al que llegar, así que con el rol 2026 fijo
     // este test se caería solo cuando ese año quede atrás.
     final hoy = DateTime.now();
-    final repo = _RepoFalso(
-      primerSabado: DateTime(
-        hoy.year,
-        hoy.month,
-        hoy.day,
-      ).subtract(const Duration(days: 7 * 26)),
-    );
+    final origen = DateTime(
+      hoy.year,
+      hoy.month,
+      hoy.day,
+    ).subtract(const Duration(days: 7 * 26));
+    final repo = _RepoFalso(primerSabado: origen);
 
-    Future<void> montar({required bool admin}) async {
+    Future<void> montar(
+      String clave, {
+      bool admin = false,
+      MiEquipoEntity? equipo,
+    }) async {
       await tester.pumpWidget(
         ProviderScope(
-          key: ValueKey(admin),
+          key: ValueKey(clave),
           overrides: [
             userProvider.overrideWith(
               (ref) => UserStateNotifier.sinStorage(admin ? _admin : null),
             ),
-            rolSabadosRepositoryProvider.overrideWithValue(repo),
+            // El mismo rol siempre; sólo cambia quién lo mira. El origen va
+            // aparte porque el menú sólo aparece si queda un sábado por venir.
+            rolSabadosRepositoryProvider.overrideWithValue(
+              equipo == null
+                  ? repo
+                  : _RepoFalso(miEquipo: equipo, primerSabado: origen),
+            ),
             rolSeleccionadoProvider.overrideWith((ref) => 1),
           ],
           child: const MaterialApp(home: RolSabadosScreen()),
@@ -884,13 +893,24 @@ void main() {
 
     // Un jefe ve quién quedó afuera —si no lo viera, nadie podría pedir que lo
     // devuelvan— pero no tiene cómo tocarlo.
-    await montar(admin: false);
+    await montar('jefe');
     expect(find.textContaining('Sin sábados · 2'), findsOneWidget);
     expect(find.byIcon(Icons.more_vert), findsNothing);
     _sinDesborde(tester, 'Grupos con excluidos · jefe');
 
-    // RR.HH. sobre el mismo rol.
-    await montar(admin: true);
+    // RR.HH. SIN ROLE_ADM, que es el caso que se rompía: esta pestaña resolvía
+    // el permiso por su cuenta con `tipoUsuario == 'ROLE_ADM'` en vez de mirar
+    // `administraRolProvider`, así que le escondía el menú justo al área dueña
+    // de la decisión. Sin este caso, el test pasa con la cuenta vieja: el otro
+    // mira un ROLE_ADM, que las dos versiones dejan entrar.
+    await montar(
+      'rrhh',
+      equipo: const MiEquipoEntity(codUsuario: 15, codEmpleado: 65, esRrhh: 1),
+    );
+    expect(find.byIcon(Icons.more_vert), findsWidgets);
+
+    // Y Sistemas sobre el mismo rol.
+    await montar('admin', admin: true);
     expect(find.byIcon(Icons.more_vert), findsWidgets);
 
     // Sacar a alguien: el diálogo dice qué pasa con lo que ya trabajó ANTES de

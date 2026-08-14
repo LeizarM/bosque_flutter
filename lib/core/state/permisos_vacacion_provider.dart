@@ -18,13 +18,17 @@ final permisosVacacionRepositoryProvider = Provider<PermisosVacacionRepository>(
 
 typedef TiposPermisoParams = ({int codEmpleado, int codUsuarioLogueado});
 
-final tiposPermisoProvider = FutureProvider.family<List<TipoPermisoVacacionEntity>, TiposPermisoParams>((
-  ref,
-  params,
-) async {
-  final repo = ref.watch(permisosVacacionRepositoryProvider);
-  return await repo.getTiposPermisosVacaciones(params.codEmpleado, params.codUsuarioLogueado);
-});
+final tiposPermisoProvider =
+    FutureProvider.family<List<TipoPermisoVacacionEntity>, TiposPermisoParams>((
+      ref,
+      params,
+    ) async {
+      final repo = ref.watch(permisosVacacionRepositoryProvider);
+      return await repo.getTiposPermisosVacaciones(
+        params.codEmpleado,
+        params.codUsuarioLogueado,
+      );
+    });
 
 /// Provider que obtiene el resumen de vacaciones (días disponibles, asignados, abonados)
 /// para un empleado específico utilizando la Acción 'H1'
@@ -151,12 +155,29 @@ class AccionSolicitudNotifier extends StateNotifier<AsyncValue<void>> {
   }
 }
 
-final misSolicitudesProvider = FutureProvider.family
-    .autoDispose<List<SolicitudPermisoEntity>, int>((ref, codEmpleado) async {
-      return ref
-          .watch(permisosVacacionRepositoryProvider)
-          .listarMisSolicitudes(codEmpleado);
-    });
+/// De quién y de cuándo. [anio] o [mes] en `null` = ese eje sin filtrar.
+typedef FiltroMisSolicitudes = ({int codEmpleado, int? anio, int? mes});
+
+final misSolicitudesProvider = FutureProvider.family.autoDispose<
+  List<SolicitudPermisoEntity>,
+  FiltroMisSolicitudes
+>((ref, filtro) async {
+  final lista = await ref
+      .watch(permisosVacacionRepositoryProvider)
+      .listarMisSolicitudes(
+        filtro.codEmpleado,
+        anio: filtro.anio,
+        mes: filtro.mes,
+      );
+
+  // **El orden se arregla acá y no en el SP.** El SP ordena por `audFechaI`
+  // —cuándo se pidió—, que no es el orden en que la lista se lee: alguien
+  // pide en agosto la vacación de noviembre y en enero la de mayo. La
+  // pantalla agrupa por año de `desde`, y con el orden de pedido el mismo
+  // año sale partido en varios tramos. Ordenar en el SP tocaría una consulta
+  // en producción para cambiar cómo se ve una pantalla.
+  return [...lista]..sort((a, b) => b.desde.compareTo(a.desde));
+});
 
 final rptPermisoVacacionProvider = FutureProvider.family<Uint8List, int>((
   ref,

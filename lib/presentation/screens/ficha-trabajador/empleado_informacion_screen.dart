@@ -19,7 +19,6 @@ import 'package:bosque_flutter/presentation/widgets/dependientes/relacion_labora
 import 'package:bosque_flutter/presentation/widgets/dependientes/seccion_foto.dart';
 import 'package:bosque_flutter/presentation/widgets/dependientes/telefono_secccion.dart';
 import 'package:bosque_flutter/core/state/permisos_vacacion_provider.dart';
-import 'package:bosque_flutter/presentation/widgets/permisos-vacaciones/solicitud_permiso_vacacion.dart';
 import 'package:bosque_flutter/presentation/widgets/permisos-vacaciones/vacacion_resumen_widget.dart';
 import 'package:bosque_flutter/presentation/widgets/permisos-vacaciones/ver_solicitud_individual.dart';
 import 'package:flutter/material.dart';
@@ -563,14 +562,18 @@ class _InfoEmpleadoScreenState extends ConsumerState<InfoEmpleadoScreen> {
         break;
       case 3: // Experiencia o Permisos (Desktop)
         ref.invalidate(experienciaLaboralProvider(widget.codEmpleado));
-        ref.invalidate(misSolicitudesProvider(widget.codEmpleado));
+        ref.invalidate(
+          misSolicitudesProvider,
+        ); // toda la familia: la clave lleva ano y mes
         break;
       case 4: // Referencias o Laboral
         ref.invalidate(obtenerGaranteReferenciaProvider(widget.codEmpleado));
         ref.invalidate(relacionLaboralProvider(widget.codEmpleado));
         break;
       case 5: // Permisos (Mobile)
-        ref.invalidate(misSolicitudesProvider(widget.codEmpleado));
+        ref.invalidate(
+          misSolicitudesProvider,
+        ); // toda la familia: la clave lleva ano y mes
         break;
     }
   }

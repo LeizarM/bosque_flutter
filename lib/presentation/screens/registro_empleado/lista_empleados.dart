@@ -1,7 +1,9 @@
 import 'dart:typed_data';
 
+import 'package:bosque_flutter/core/state/button_permissions_provider.dart';
 import 'package:bosque_flutter/core/state/registro_empleado_provider.dart';
 import 'package:bosque_flutter/core/state/rrhh_provider.dart';
+import 'package:bosque_flutter/core/state/user_provider.dart';
 import 'package:bosque_flutter/core/utils/descargar_reportes_jasper.dart';
 import 'package:bosque_flutter/presentation/screens/registro_empleado/detalle_empleado.dart';
 import 'package:bosque_flutter/presentation/screens/registro_empleado/registro_empleado.dart';
@@ -139,8 +141,40 @@ class _ListaEmpleadosState extends ConsumerState<ListaEmpleados> {
     );
   }
 
+  /// Botón del ACL que gobierna los reportes de saldos de permisos y vacaciones.
+  ///
+  /// El literal es el `nombreBtn` de `tb_vistaBtn` (vista 24) y tiene que coincidir
+  /// carácter por carácter con la base: `tienePermiso` compara por nombre, no por
+  /// código, así que un typo no falla, simplemente esconde el botón para todos.
+  ///
+  /// SUPUESTO D4 — pendiente de confirmación de RR.HH. (ver plan §5).
+  /// `/rrhh/pdfRptPermVacTotal` y `/rrhh/excelRptPermVacTotal` no exigían nada y
+  /// ahora exigen este botón. Sin esconder las opciones acá, quien no lo tenga
+  /// las ve, las toca y recibe un 403.
+  static const String _btnReportesPyv = 'btnReportesPYV';
+
+  /// Mismo criterio que `PermissionWidget`: `ROLE_ADM` pasa siempre, incluso
+  /// mientras los permisos cargan o si la carga falla. Se replica en vez de usar
+  /// el widget porque los `PopupMenuItem` no viven en el árbol hasta que el menú
+  /// se abre, así que envolverlos no los filtraría.
+  bool get _puedeReportesPyv {
+    final user = ref.watch(userProvider);
+    if (user == null) return false;
+    if (user.tipoUsuario == 'ROLE_ADM') return true;
+    return ref
+        .watch(buttonPermissionsProvider)
+        .maybeWhen(
+          data:
+              (_) => ref
+                  .read(buttonPermissionsProvider.notifier)
+                  .tienePermiso(_btnReportesPyv),
+          orElse: () => false,
+        );
+  }
+
   Widget _buildReportDropdown(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    final puedeReportesPyv = _puedeReportesPyv;
     return PopupMenuButton<int>(
       tooltip: 'Descargar Reportes',
       offset: const Offset(0, 45),
@@ -187,12 +221,16 @@ class _ListaEmpleadosState extends ConsumerState<ListaEmpleados> {
             filename: 'RptNominaEmpleados.pdf',
           );
         } else if (value == 2) {
+          // Esconder no es autorizar: el gate real está en el servidor. Esta
+          // guarda evita el 403 si el ítem llegara a dispararse igual.
+          if (!puedeReportesPyv) return;
           await mostrarReportePdf(
             context: context,
             downloadFunction: downloadPermVacPdf,
             filename: 'RptPermVacTotal.pdf',
           );
         } else if (value == 3) {
+          if (!puedeReportesPyv) return;
           await descargarArchivo(
             context: context,
             downloadFunction: downloadPermVacExcel,
@@ -214,26 +252,28 @@ class _ListaEmpleadosState extends ConsumerState<ListaEmpleados> {
                 ],
               ),
             ),
-            const PopupMenuItem(
-              value: 2,
-              child: Row(
-                children: [
-                  Icon(Icons.picture_as_pdf, color: Colors.red),
-                  SizedBox(width: 8),
-                  Text('Permisos y Vacaciones (PDF)'),
-                ],
+            if (puedeReportesPyv)
+              const PopupMenuItem(
+                value: 2,
+                child: Row(
+                  children: [
+                    Icon(Icons.picture_as_pdf, color: Colors.red),
+                    SizedBox(width: 8),
+                    Text('Permisos y Vacaciones (PDF)'),
+                  ],
+                ),
               ),
-            ),
-            const PopupMenuItem(
-              value: 3,
-              child: Row(
-                children: [
-                  Icon(Icons.table_chart, color: Colors.green),
-                  SizedBox(width: 8),
-                  Text('Permisos y Vacaciones (Excel)'),
-                ],
+            if (puedeReportesPyv)
+              const PopupMenuItem(
+                value: 3,
+                child: Row(
+                  children: [
+                    Icon(Icons.table_chart, color: Colors.green),
+                    SizedBox(width: 8),
+                    Text('Permisos y Vacaciones (Excel)'),
+                  ],
+                ),
               ),
-            ),
           ],
     );
   }
