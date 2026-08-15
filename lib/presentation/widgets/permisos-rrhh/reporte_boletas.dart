@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:bosque_flutter/core/state/permisos_rrhh_provider.dart';
 import 'package:bosque_flutter/core/state/permisos_vacacion_provider.dart'
     show rptPermisoVacacionProvider;
@@ -92,6 +94,48 @@ class _Relleno extends StatelessWidget {
       SliverFillRemaining(hasScrollBody: false, child: child);
 }
 
+/// Un mes del cronograma, ya resuelto: cuántos días tiene y quiénes aparecen.
+class _Mes {
+  const _Mes({
+    required this.primerDia,
+    required this.dias,
+    required this.filas,
+    required this.boletas,
+  });
+
+  /// El día 1 del mes. Sólo se usan año y mes.
+  final DateTime primerDia;
+
+  /// 28, 29, 30 o 31. Se calcula una vez y no en cada celda.
+  final int dias;
+
+  final List<_FilaEmpleado> filas;
+
+  /// Cuántas boletas caen en este mes, contando las que lo cruzan.
+  final int boletas;
+}
+
+/// Una persona en un mes, con sus permisos ya repartidos en carriles.
+class _FilaEmpleado {
+  const _FilaEmpleado(this.nombre, this.carriles);
+
+  final String nombre;
+
+  /// Un carril por cada grupo de permisos que no se pisan entre sí. Casi
+  /// siempre es uno solo; hay más cuando la persona tiene permisos solapados.
+  final List<List<NominaPermisoEntity>> carriles;
+}
+
+/// Las dos formas de mirar las mismas boletas.
+enum _Vista {
+  lista('Lista', Icons.format_list_bulleted),
+  cronograma('Cronograma', Icons.calendar_view_month_outlined);
+
+  const _Vista(this.rotulo, this.icono);
+  final String rotulo;
+  final IconData icono;
+}
+
 class _ReporteBoletas extends ConsumerStatefulWidget {
   const _ReporteBoletas();
 
@@ -117,6 +161,13 @@ class _ReporteBoletasState extends ConsumerState<_ReporteBoletas> {
   /// no cientos de miles.
   String _buscado = '';
   final _buscador = TextEditingController();
+
+  /// Qué se está mirando. **Las dos vistas contestan preguntas distintas y por
+  /// eso conviven en vez de reemplazarse:** la lista contesta «¿dónde está la
+  /// boleta de fulano?» —tiene el motivo completo, el número y el Excel—; el
+  /// cronograma contesta «¿quién falta cuándo, y se pisan?», que en una lista
+  /// ordenada por fecha no se ve por más que se mire.
+  _Vista _vista = _Vista.lista;
 
   int? _bajando;
   bool _exportando = false;
@@ -453,6 +504,16 @@ class _ReporteBoletasState extends ConsumerState<_ReporteBoletas> {
     }
 
     final comoTabla = cajon >= _cajonMinimoTabla;
+    final esCronograma = _vista == _Vista.cronograma;
+
+    // **El catálogo manda el color, no una lista escrita acá.** Los tipos son
+    // los de `v_tipos` grupo 13, que llegan por el mismo provider que llena el
+    // combo; el color de cada barra sale de la posición que ocupa el tipo en
+    // esa lista. Agregar un tipo en la base le da color solo.
+    final catalogo = _ordenDelCatalogo();
+    // Se arman una sola vez y no dentro del `itemBuilder`: agrupar 358 boletas
+    // por mes y por empleado en cada scroll sería rehacer el trabajo por cuadro.
+    final meses = esCronograma ? _porMes(lista) : const <_Mes>[];
 
     return [
       SliverPadding(
@@ -464,7 +525,8 @@ class _ReporteBoletasState extends ConsumerState<_ReporteBoletas> {
             children: [
               _resumen(lista, aire),
               const Divider(height: Esp.xl),
-              if (comoTabla) ...[
+              if (esCronograma) _leyenda(lista, catalogo),
+              if (!esCronograma && comoTabla) ...[
                 _cabeceraTabla(),
                 const Divider(height: Esp.s),
               ],
@@ -472,14 +534,23 @@ class _ReporteBoletasState extends ConsumerState<_ReporteBoletas> {
           ),
         ),
       ),
-      SliverPadding(
-        padding: margen.copyWith(bottom: Esp.l),
-        sliver: SliverList.builder(
-          itemCount: lista.length,
-          itemBuilder:
-              (_, i) => comoTabla ? _renglon(lista[i]) : _tarjeta(lista[i]),
+      if (esCronograma)
+        SliverPadding(
+          padding: margen.copyWith(bottom: Esp.l),
+          sliver: SliverList.builder(
+            itemCount: meses.length,
+            itemBuilder: (_, i) => _bloqueDelMes(meses[i], aire, catalogo),
+          ),
+        )
+      else
+        SliverPadding(
+          padding: margen.copyWith(bottom: Esp.l),
+          sliver: SliverList.builder(
+            itemCount: lista.length,
+            itemBuilder:
+                (_, i) => comoTabla ? _renglon(lista[i]) : _tarjeta(lista[i]),
+          ),
         ),
-      ),
     ];
   }
 
@@ -494,32 +565,45 @@ class _ReporteBoletasState extends ConsumerState<_ReporteBoletas> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.end,
+        // **Un `Wrap` y no un `Row` con `Expanded`.** Las métricas se encogen,
+        // pero el conmutador y el botón de Excel tienen ancho propio: con el
+        // texto al 200 %, o en una ventana de 760 px, los dos juntos no entran
+        // y el `Row` desbordaba 9,6 px. Acá el grupo de acciones se baja solo a
+        // la línea de abajo en vez de reventar.
+        Wrap(
+          spacing: Esp.xl,
+          runSpacing: Esp.m,
+          alignment: WrapAlignment.spaceBetween,
+          crossAxisAlignment: WrapCrossAlignment.end,
           children: [
-            Expanded(
-              child: Wrap(
-                spacing: Esp.xl,
-                runSpacing: Esp.s,
-                children: [
-                  Metrica(
-                    // Con el buscador puesto se dice «de cuántas», porque si no
-                    // el número se lee como el total del mes y no lo es.
-                    rotulo:
-                        _buscado.isEmpty ? 'Boletas' : 'Boletas (filtradas)',
-                    texto: '${lista.length}',
-                    destacada: true,
-                  ),
-                  Metrica(
-                    rotulo: 'Días',
-                    texto: numeroDeDias(dias),
-                    destacada: true,
-                  ),
-                  Metrica(rotulo: 'Horas', texto: numeroDeDias(horas)),
-                ],
-              ),
+            Wrap(
+              spacing: Esp.xl,
+              runSpacing: Esp.s,
+              children: [
+                Metrica(
+                  // Con el buscador puesto se dice «de cuántas», porque si no
+                  // el número se lee como el total del mes y no lo es.
+                  rotulo: _buscado.isEmpty ? 'Boletas' : 'Boletas (filtradas)',
+                  texto: '${lista.length}',
+                  destacada: true,
+                ),
+                Metrica(
+                  rotulo: 'Días',
+                  texto: numeroDeDias(dias),
+                  destacada: true,
+                ),
+                Metrica(rotulo: 'Horas', texto: numeroDeDias(horas)),
+              ],
             ),
-            _botonExcel(lista, aire),
+            // También `Wrap`, no `Row`: con el texto al 200 % el conmutador
+            // rotulado y el botón de Excel piden 1122 px y el diálogo da 1068.
+            // Así el Excel se baja solo en vez de desbordar 54 px.
+            Wrap(
+              spacing: Esp.s,
+              runSpacing: Esp.s,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              children: [_conmutador(aire), _botonExcel(lista, aire)],
+            ),
           ],
         ),
         if (_tipo.isEmpty && _porTipo(lista).length > 1) ...[
@@ -593,6 +677,32 @@ class _ReporteBoletasState extends ConsumerState<_ReporteBoletas> {
         acumulado.entries.toList()..sort((a, b) => b.value.compareTo(a.value));
     return {for (final e in ordenado) e.key: e.value};
   }
+
+  /// Lista o cronograma.
+  ///
+  /// **Los rótulos salen sólo con `amplio`**, no con todo lo que no sea un
+  /// teléfono. Entre 600 y 1000 px los dos segmentos rotulados más el botón de
+  /// Excel empujaban las métricas —que son la respuesta principal de la
+  /// pantalla— hasta desbordar. El ícono con su tooltip dice lo mismo y no
+  /// compite por el ancho.
+  Widget _conmutador(Aire aire) => SegmentedButton<_Vista>(
+    segments: [
+      for (final v in _Vista.values)
+        ButtonSegment(
+          value: v,
+          icon: Icon(v.icono, size: 18),
+          label: aire == Aire.amplio ? Text(v.rotulo) : null,
+          tooltip: v.rotulo,
+        ),
+    ],
+    selected: {_vista},
+    showSelectedIcon: false,
+    style: const ButtonStyle(
+      visualDensity: VisualDensity.compact,
+      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+    ),
+    onSelectionChanged: (s) => setState(() => _vista = s.first),
+  );
 
   Widget _botonExcel(List<NominaPermisoEntity> lista, Aire aire) {
     final icono = const Icon(Icons.table_view_outlined, size: 18);
@@ -981,6 +1091,562 @@ class _ReporteBoletasState extends ConsumerState<_ReporteBoletas> {
       if (mounted) setState(() => _exportando = false);
     }
   }
+
+  // ── EL CRONOGRAMA ─────────────────────────────────────────────────────────
+
+  /// Alto de una barra, y de la fila cuando el empleado tiene un solo carril.
+  static const double _altoBarra = 18;
+
+  /// Alto de la banda con los números del día.
+  static const double _altoEje = 22;
+
+  /// **Lo que hace que un permiso de cuatro horas se vea.** El 39 % de las
+  /// boletas medidas dura menos de un día; con la grilla estirada a la pantalla
+  /// esa barra mediría dos píxeles y la vista mentiría por omisión. Por debajo
+  /// de esto la grilla deja de encogerse y aparece el scroll horizontal.
+  static const double _diaMinimo = 11;
+
+  /// Debajo de este ancho de día, los números no entran y el eje muestra sólo
+  /// las bandas de fin de semana y una marca por semana.
+  static const double _diaConNumero = 17;
+
+  /// Las boletas por mes y, adentro, por empleado.
+  ///
+  /// **Por mes y no en un eje continuo del rango entero.** Con «Este año» un
+  /// eje corrido son 365 columnas: o se scrollea un kilómetro, o cada día mide
+  /// tres píxeles. Y el encabezado con las fechas queda arriba de todo, así que
+  /// a la fila 40 ya no se sabe qué columna es qué. Partido por mes, el eje
+  /// entra siempre en el ancho disponible y se repite en cada bloque.
+  ///
+  /// Lo permite la forma de los datos: el permiso promedio dura 1,84 días y el
+  /// más largo 15, así que casi ninguno cruza de mes. El que cruza aparece en
+  /// los dos, recortado, con el borde recto del lado por el que sigue.
+  ///
+  /// Meses **de más antiguo a más reciente**, o sea el tiempo corriendo hacia
+  /// abajo igual que corre hacia la derecha adentro de cada mes. Es al revés
+  /// que la lista, y a propósito: un cronograma se lee como una línea de
+  /// tiempo, y una línea de tiempo que va para atrás obliga a releerla.
+  List<_Mes> _porMes(List<NominaPermisoEntity> lista) {
+    // **Por `codEmpleado` y no por el nombre.** Con el nombre como clave, dos
+    // homónimos —que en un padrón de 76 personas pasa— se funden en una sola
+    // fila, y de paso sus permisos se ven como si se solaparan entre sí: el
+    // reparto en carriles los separaría inventando un cruce que no existe.
+    final porMes = <DateTime, Map<int, List<NominaPermisoEntity>>>{};
+
+    for (final p in lista) {
+      final d = p.desde;
+      final h = p.hasta ?? d;
+      // Sin fechas no hay barra que dibujar. La fila igual existe en la lista.
+      if (d == null || h == null) continue;
+
+      var cursor = DateTime(d.year, d.month);
+      // **El mes final nunca puede quedar antes del inicial.** Con `hasta`
+      // anterior a `desde` y en otro mes —las hay en el histórico— el `while`
+      // no daba ni una vuelta y la boleta no entraba en NINGÚN bloque: ni
+      // dibujada, ni contada, ni avisada. El resumen decía una cosa y el
+      // cronograma otra, en silencio. Acotado acá, la fila cae en el mes del
+      // `desde` y `_tramo` le da su día de ancho.
+      final mesDeHasta = DateTime(h.year, h.month);
+      final ultimo = mesDeHasta.isBefore(cursor) ? cursor : mesDeHasta;
+      // Tope de vueltas: una fila con las fechas al revés o con un año absurdo
+      // —los hay en el histórico— no puede colgar la pantalla.
+      var vueltas = 0;
+      while (!cursor.isAfter(ultimo) && vueltas < 24) {
+        porMes
+            .putIfAbsent(cursor, () => {})
+            .putIfAbsent(p.codEmpleado, () => [])
+            .add(p);
+        cursor = DateTime(cursor.year, cursor.month + 1);
+        vueltas++;
+      }
+    }
+
+    final claves = porMes.keys.toList()..sort();
+
+    return [
+      for (final mes in claves)
+        () {
+          final porEmpleado = porMes[mes]!;
+          final dias = DateTime(mes.year, mes.month + 1, 0).day;
+          // Alfabético por el nombre que se muestra: a un cronograma se viene
+          // con un nombre en la cabeza, no con un código.
+          final codigos =
+              porEmpleado.keys.toList()..sort(
+                (a, b) => _nombreDelEmpleado(porEmpleado[a]!.first).compareTo(
+                  _nombreDelEmpleado(porEmpleado[b]!.first),
+                ),
+              );
+          final filas = [
+            for (final cod in codigos)
+              _FilaEmpleado(
+                _nombreDelEmpleado(porEmpleado[cod]!.first),
+                _carriles(porEmpleado[cod]!, mes, dias),
+              ),
+          ];
+          return _Mes(
+            primerDia: mes,
+            dias: dias,
+            filas: filas,
+            boletas: porEmpleado.values.fold(0, (a, b) => a + b.length),
+          );
+        }(),
+    ];
+  }
+
+  /// Reparte los permisos de una persona en carriles que no se pisen.
+  ///
+  /// **No es un lujo.** Dos permisos solapados de la misma persona no deberían
+  /// existir, pero en `trh_permiso` hay 291 pares así —el alta vieja no
+  /// validaba cruces—. Dibujados en un solo carril, el segundo tapa al primero
+  /// y el cronograma esconde justo el dato que haría notar el problema.
+  List<List<NominaPermisoEntity>> _carriles(
+    List<NominaPermisoEntity> permisos,
+    DateTime mes,
+    int diasDelMes,
+  ) {
+    final ordenados = [...permisos]..sort((a, b) {
+      final ka = _tramo(a, mes, diasDelMes);
+      final kb = _tramo(b, mes, diasDelMes);
+      final porInicio = ka.$1.compareTo(kb.$1);
+      return porInicio != 0 ? porInicio : ka.$2.compareTo(kb.$2);
+    });
+
+    final carriles = <List<NominaPermisoEntity>>[];
+    final finDeCarril = <int>[];
+
+    for (final p in ordenados) {
+      final (inicio, fin) = _tramo(p, mes, diasDelMes);
+      var puesto = false;
+      for (var c = 0; c < carriles.length; c++) {
+        if (finDeCarril[c] <= inicio) {
+          carriles[c].add(p);
+          finDeCarril[c] = fin;
+          puesto = true;
+          break;
+        }
+      }
+      if (!puesto) {
+        carriles.add([p]);
+        finDeCarril.add(fin);
+      }
+    }
+    return carriles;
+  }
+
+  /// El tramo `[inicio, fin)` que ocupa el permiso DENTRO de ese mes, en días
+  /// de base cero. Lo que sobresale por cualquiera de los dos lados se recorta:
+  /// esa parte se dibuja en el bloque del mes que le toca.
+  (int, int) _tramo(NominaPermisoEntity p, DateTime mes, int diasDelMes) {
+    final d = p.desde;
+    final h = p.hasta ?? d;
+    if (d == null || h == null) return (0, 1);
+
+    final empiezaAntes = d.year < mes.year || (d.year == mes.year && d.month < mes.month);
+    final terminaDespues = h.year > mes.year || (h.year == mes.year && h.month > mes.month);
+
+    final inicio = empiezaAntes ? 0 : (d.day - 1).clamp(0, diasDelMes - 1);
+    final fin = terminaDespues ? diasDelMes : h.day.clamp(1, diasDelMes);
+    // Un `hasta` anterior al `desde` —lo hay en el histórico— daría ancho cero
+    // o negativo. Se le da un día para que la fila exista y se pueda ver.
+    return (inicio, fin > inicio ? fin : inicio + 1);
+  }
+
+  /// Qué significa cada color. Sólo los tipos que están en pantalla: una
+  /// leyenda con los nueve del catálogo obliga a descartar siete a ojo.
+  Widget _leyenda(List<NominaPermisoEntity> lista, Map<String, int> catalogo) {
+    final vistos = <String, String>{};
+    for (final p in lista) {
+      vistos.putIfAbsent(p.tipoPermiso.trim().toLowerCase(), () => _nombreDelTipo(p));
+    }
+    // **Las que no se pueden dibujar se dicen, no se descartan en silencio.**
+    // Una boleta sin fecha no tiene dónde ir en la grilla, pero la lista sí la
+    // muestra: si el cronograma la omitiera callado, las dos vistas contarían
+    // distinto y la gráfica sería la que miente.
+    final sinFecha = lista.where((p) => p.desde == null).length;
+
+    if (vistos.length < 2 && sinFecha == 0) return const SizedBox.shrink();
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: Esp.m),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (vistos.length > 1)
+            Wrap(
+              spacing: Esp.m,
+              runSpacing: Esp.xs,
+              children: [
+                for (final e in vistos.entries)
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        width: 12,
+                        height: 12,
+                        decoration: BoxDecoration(
+                          color:
+                            colorDeTipoPermiso(
+                              context.cs,
+                              catalogo[e.key] ?? -1,
+                            ).fondo,
+                          borderRadius: BorderRadius.circular(3),
+                          border: Border.all(color: context.cs.outline),
+                        ),
+                      ),
+                      const SizedBox(width: Esp.xs),
+                      Text(e.value, style: context.apagado()),
+                    ],
+                  ),
+              ],
+            ),
+          if (sinFecha > 0)
+            Padding(
+              padding: const EdgeInsets.only(top: Esp.xs),
+              child: Text(
+                '$sinFecha boleta(s) sin fecha no se pueden ubicar en el '
+                'cronograma. Están en la lista.',
+                style: context.apagado()?.copyWith(color: context.cs.error),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _bloqueDelMes(_Mes mes, Aire aire, Map<String, int> catalogo) {
+    final cs = context.cs;
+    // El nombre necesita lo suyo o la columna es una tira de puntos suspensivos.
+    final anchoNombre = aire.esChico ? 108.0 : 176.0;
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: Esp.xl),
+      child: LayoutBuilder(
+        builder: (context, cajon) {
+          final disponible = (cajon.maxWidth - anchoNombre).clamp(
+            _diaMinimo * 7,
+            double.infinity,
+          );
+          final anchoDia = math.max(_diaMinimo, disponible / mes.dias);
+          final anchoGrilla = anchoDia * mes.dias;
+          // Medio píxel de margen: comparar dobles exactos hace aparecer un
+          // scroll de una fracción de píxel que igual muestra la barra.
+          final conScroll = anchoGrilla > disponible + 0.5;
+
+          final grilla = SizedBox(
+            width: anchoGrilla,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                _eje(mes, anchoDia),
+                for (final f in mes.filas)
+                  _barras(mes, f, anchoDia, catalogo),
+              ],
+            ),
+          );
+
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              _tituloDelMes(mes),
+              const SizedBox(height: Esp.xs),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  SizedBox(
+                    width: anchoNombre,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        const SizedBox(height: _altoEje),
+                        for (final f in mes.filas)
+                          SizedBox(
+                            height: _altoDeFila(f),
+                            child: Align(
+                              alignment: Alignment.centerLeft,
+                              child: Padding(
+                                padding: const EdgeInsets.only(right: Esp.s),
+                                child: Text(
+                                  f.nombre,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: Theme.of(context).textTheme.bodySmall,
+                                ),
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                  Expanded(
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        border: Border(
+                          left: BorderSide(color: cs.outlineVariant),
+                        ),
+                      ),
+                      child:
+                          conScroll
+                              ? SingleChildScrollView(
+                                scrollDirection: Axis.horizontal,
+                                child: grilla,
+                              )
+                              : grilla,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  double _altoDeFila(_FilaEmpleado f) => _altoBarra * f.carriles.length + Esp.xs;
+
+  Widget _tituloDelMes(_Mes mes) {
+    // **Sólo los que EMPIEZAN en este mes.** Un permiso que cruza aparece en
+    // los dos bloques, y sumando sus días completos en cada uno el total de
+    // los meses daba más que el resumen de arriba. Repartirlo en proporción
+    // sería inventar un número: `cantidadDias` son días hábiles que calcula el
+    // SP, no días de calendario. Contarlo donde arranca es exacto y la suma de
+    // los meses vuelve a dar el total.
+    final dias = mes.filas
+        .expand((f) => f.carriles)
+        .expand((c) => c)
+        .toSet()
+        .where(
+          (p) =>
+              p.desde != null &&
+              p.desde!.year == mes.primerDia.year &&
+              p.desde!.month == mes.primerDia.month,
+        )
+        .fold<double>(0, (a, b) => a + b.dias);
+
+    // `Wrap` y no `Row`: con la letra al 200 % «Septiembre 2026» más el
+    // renglón de cifras no entran en una línea y el `Row` desbordaba.
+    return Wrap(
+      spacing: Esp.s,
+      runSpacing: Esp.xs,
+      crossAxisAlignment: WrapCrossAlignment.end,
+      children: [
+        Text(
+          '${mesesLargos[mes.primerDia.month - 1]} ${mes.primerDia.year}',
+          style: context.tituloSeccion(),
+        ),
+        Text(
+          '${mes.boletas} boleta(s) · ${numeroDeDias(dias)} d · '
+          '${mes.filas.length} persona(s)',
+          style: context.apagado(),
+        ),
+      ],
+    );
+  }
+
+  /// La banda de los días. Fin de semana y hoy se tiñen; el número aparece sólo
+  /// si entra.
+  Widget _eje(_Mes mes, double anchoDia) {
+    final conNumero = anchoDia >= _diaConNumero;
+    return SizedBox(
+      height: _altoEje,
+      child: Row(
+        children: [
+          for (var d = 1; d <= mes.dias; d++)
+            _celda(
+              mes,
+              d,
+              anchoDia,
+              hijo:
+                  conNumero
+                      ? Center(
+                        child: Text(
+                          '$d',
+                          maxLines: 1,
+                          style: context.numero(
+                            fuerte: _esHoy(mes, d),
+                            color:
+                                _esHoy(mes, d)
+                                    ? context.cs.primary
+                                    : Theme.of(context).hintColor,
+                          ),
+                        ),
+                      )
+                      // Sin lugar para el número: una marca cada lunes alcanza
+                      // para no perderse, y no puede desbordar.
+                      : (_diaDeSemana(mes, d) == DateTime.monday
+                          ? Center(
+                            child: Container(
+                              width: 2,
+                              height: 6,
+                              color: context.cs.outlineVariant,
+                            ),
+                          )
+                          : null),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _barras(
+    _Mes mes,
+    _FilaEmpleado fila,
+    double anchoDia,
+    Map<String, int> catalogo,
+  ) {
+    final alto = _altoDeFila(fila);
+    return SizedBox(
+      height: alto,
+      child: Stack(
+        children: [
+          // El fondo: las mismas bandas del eje, para que la vista tenga
+          // referencia de dónde cae cada día sin dibujar 31 líneas.
+          //
+          // **`Positioned.fill` y no un `Row` suelto.** Las celdas son
+          // `SizedBox` con ancho y sin alto; como hijo no posicionado de un
+          // `Stack` el `Row` se medía en 0 px de alto y no se dibujaba NADA:
+          // ni las bandas de fin de semana, ni el tinte de hoy, ni los
+          // separadores de día. La franja del eje sí se veía —tiene su propio
+          // `SizedBox(height: _altoEje)`— así que parecía que estaba puesto.
+          Positioned.fill(
+            child: Row(
+              children: [
+                for (var d = 1; d <= mes.dias; d++) _celda(mes, d, anchoDia),
+              ],
+            ),
+          ),
+          for (var c = 0; c < fila.carriles.length; c++)
+            for (final p in fila.carriles[c])
+              _barra(mes, p, anchoDia, c, catalogo),
+        ],
+      ),
+    );
+  }
+
+  Widget _barra(
+    _Mes mes,
+    NominaPermisoEntity p,
+    double anchoDia,
+    int carril,
+    Map<String, int> catalogo,
+  ) {
+    final (inicio, fin) = _tramo(p, mes.primerDia, mes.dias);
+    final color = colorDeTipoPermiso(context.cs, _indice(p, catalogo));
+
+    final sigueAntes = inicio == 0 && (p.desde?.day ?? 1) > 1;
+    final sigueDespues =
+        fin == mes.dias &&
+        (p.hasta != null && p.hasta!.month != mes.primerDia.month);
+
+    // Menos de un día: la barra ocupa la celda igual —si no, no se ve— pero más
+    // finita. La diferencia de grosor dice «esto no fue una jornada entera»
+    // sin depender del color, que ya está usado para el tipo.
+    final parcial = p.dias > 0 && p.dias < 1;
+    final grosor = parcial ? _altoBarra - 9 : _altoBarra - 5;
+    const radio = Radius.circular(3);
+
+    return Positioned(
+      left: inicio * anchoDia,
+      width: (fin - inicio) * anchoDia,
+      top: carril * _altoBarra + (_altoBarra - grosor) / 2,
+      height: grosor,
+      child: Tooltip(
+        message: _tooltip(p),
+        waitDuration: const Duration(milliseconds: 300),
+        child: Material(
+          type: MaterialType.transparency,
+          child: InkWell(
+            onTap: _bajando == p.codPermiso ? null : () => _bajar(p),
+            child: Container(
+              margin: const EdgeInsets.symmetric(horizontal: 0.5),
+              decoration: BoxDecoration(
+                color: color.fondo,
+                // Borde recto del lado por el que el permiso sigue en otro mes:
+                // dice «esto continúa» sin agregar una flecha que a 11 px no se
+                // vería.
+                borderRadius: BorderRadius.horizontal(
+                  left: sigueAntes ? Radius.zero : radio,
+                  right: sigueDespues ? Radius.zero : radio,
+                ),
+                // **El borde es lo que garantiza que la barra se vea**, no el
+                // relleno. Nueve rellenos que sean a la vez distintos entre sí
+                // y visibles contra el fondo no entran en las 18 combinaciones
+                // de tema: el escalón más pálido queda a 1,12 del fondo, o sea
+                // invisible. Con un borde firme el relleno sólo tiene que
+                // DIFERENCIAR, que sí se puede.
+                border: Border.all(color: context.cs.outline, width: 1),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Una celda de día: el fondo teñido de sábado, domingo y hoy.
+  Widget _celda(_Mes mes, int dia, double anchoDia, {Widget? hijo}) {
+    final finde = _diaDeSemana(mes, dia) >= DateTime.saturday;
+    final hoy = _esHoy(mes, dia);
+    final cs = context.cs;
+
+    return SizedBox(
+      width: anchoDia,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color:
+              hoy
+                  ? cs.primary.withValues(alpha: 0.10)
+                  : (finde ? cs.surfaceContainerHighest : null),
+          border: Border(right: BorderSide(color: cs.outlineVariant, width: 0.5)),
+        ),
+        child: hijo,
+      ),
+    );
+  }
+
+  int _diaDeSemana(_Mes mes, int dia) =>
+      DateTime(mes.primerDia.year, mes.primerDia.month, dia).weekday;
+
+  bool _esHoy(_Mes mes, int dia) {
+    final hoy = DateTime.now();
+    return hoy.year == mes.primerDia.year &&
+        hoy.month == mes.primerDia.month &&
+        hoy.day == dia;
+  }
+
+  String _tooltip(NominaPermisoEntity p) {
+    final motivo = p.motivo.trim();
+    return [
+      'N.º ${p.codPermiso} · ${_nombreDelTipo(p)}',
+      '${cuandoLargo(p.desde, p.hasta)}  ${_horarioDe(p)}',
+      '${numeroDeDias(p.dias)} d · ${numeroDeDias(p.horas)} h',
+      if (motivo.isNotEmpty) enOracion(motivo),
+      'Tocar para bajar la boleta',
+    ].join('\n');
+  }
+
+  /// Los tipos de permiso como los devuelve la base, en un mapa
+  /// `código → posición`.
+  ///
+  /// La lista sale de `v_tipos` grupo 13 por `p_list_Permiso @ACCION='T1'`, que
+  /// es la misma que llena el combo de arriba. Mientras viaja, el mapa está
+  /// vacío y todas las barras salen del color neutro: la vista no inventa un
+  /// catálogo propio para tapar el hueco.
+  Map<String, int> _ordenDelCatalogo() {
+    final tipos =
+        ref.watch(tiposPermisoRrhhProvider(true)).valueOrNull ?? const [];
+    return {
+      for (var i = 0; i < tipos.length; i++)
+        tipos[i].codTipos.trim().toLowerCase(): i,
+    };
+  }
+
+  /// Dónde cae este permiso en el catálogo, o `-1` si su código no está.
+  ///
+  /// Pasa con los 28 registros históricos que tienen el tipo vacío, y pasaría
+  /// con un código que alguien saque de `v_tipos` dejando las filas viejas.
+  int _indice(NominaPermisoEntity p, Map<String, int> catalogo) =>
+      catalogo[p.tipoPermiso.trim().toLowerCase()] ?? -1;
 
   // ── TEXTOS ────────────────────────────────────────────────────────────────
 

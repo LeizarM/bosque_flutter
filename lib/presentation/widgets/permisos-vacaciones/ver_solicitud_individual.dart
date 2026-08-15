@@ -130,7 +130,7 @@ class _MisSolicitudesWidgetState extends ConsumerState<MisSolicitudesWidget> {
   String _periodo() =>
       _mes == null
           ? '${_anio ?? 'todo el historial'}'
-          : '${_mesesLargos[_mes! - 1]}${_anio == null ? '' : ' de $_anio'}';
+          : '${mesesLargos[_mes! - 1]}${_anio == null ? '' : ' de $_anio'}';
 
   // ── EL ALTA ───────────────────────────────────────────────────────────────
 
@@ -167,21 +167,6 @@ class _MisSolicitudesWidgetState extends ConsumerState<MisSolicitudesWidget> {
 
   // ── EL FILTRO ─────────────────────────────────────────────────────────────
 
-  static const _mesesLargos = [
-    'Enero',
-    'Febrero',
-    'Marzo',
-    'Abril',
-    'Mayo',
-    'Junio',
-    'Julio',
-    'Agosto',
-    'Septiembre',
-    'Octubre',
-    'Noviembre',
-    'Diciembre',
-  ];
-
   /// Cinco años atrás y uno adelante. Atrás porque el kardex viejo llega hasta
   /// ahí en la práctica, adelante porque en diciembre se piden las vacaciones de
   /// enero. Lo que quede fuera de la ventana se ve con «Todos», que es la única
@@ -216,7 +201,7 @@ class _MisSolicitudesWidgetState extends ConsumerState<MisSolicitudesWidget> {
         items: [
           const DropdownMenuItem(value: null, child: Text('Todos')),
           for (var m = 1; m <= 12; m++)
-            DropdownMenuItem(value: m, child: Text(_mesesLargos[m - 1])),
+            DropdownMenuItem(value: m, child: Text(mesesLargos[m - 1])),
         ],
         onChanged: (v) => setState(() => _mes = v),
       ),

@@ -149,6 +149,97 @@ ColorDeEstado colorDeEstado(ColorScheme cs, String codigoExcel) {
   return ColorDeEstado(fondo, _letraSobre(fondo));
 }
 
+/// El color de una barra del cronograma, por la **posición del tipo de permiso
+/// en el catálogo**.
+///
+/// ## Por qué un índice y no el código
+///
+/// Los tipos viven en la vista `v_tipos`, grupo 13: hoy son nueve y mañana
+/// pueden ser diez. La primera versión de esta función era un `switch` sobre
+/// los códigos escritos a mano —y le faltaban dos, `libre` y `def`, que se
+/// dibujaban con el color de «tipo desconocido» sin que nada avisara—. Un
+/// catálogo que vive en la base no se copia al frontend: se lee.
+///
+/// Así que acá entra la **posición** que el tipo ocupa en la lista que devuelve
+/// `p_list_Permiso @ACCION='T1'`, y agregar un tipo en la base le da color solo,
+/// sin tocar Dart.
+///
+/// El precio es que qué color le toca a cada tipo ya no lo decide nadie: sale
+/// del orden del catálogo. Es estable —el orden no cambia entre consultas— pero
+/// arbitrario. Si algún día hace falta que la vacación sea siempre de un color
+/// concreto, **el lugar es una columna en la base**, no un `switch` acá.
+///
+/// ## Por qué estas familias y no nueve roles del tema
+///
+/// Misma doctrina que [colorDeEstado] y por el mismo motivo: familia + tono, y
+/// sólo las familias que se separan con las nueve semillas —principal,
+/// terciaria y los neutros—. Un `switch` sobre nueve roles distintos se ve
+/// perfecto con la semilla azul y se derrumba con la roja.
+///
+/// ## El límite, dicho de frente
+///
+/// **Nueve categorías no entran del todo en el canal color.** Se midieron las
+/// 18 combinaciones reales (nueve semillas × claro y oscuro): no hay dos
+/// colores idénticos en ninguna, pero la pareja más cercana queda a 17 unidades
+/// de RGB, que a simple vista es poco. Con algunas semillas dos tipos van a
+/// parecerse.
+///
+/// No es un defecto que se arregle eligiendo mejor los tonos: es lo que hay
+/// cuando el tema lo elige el usuario entre nueve semillas y la marca más chica
+/// del gráfico mide 11 px. Por eso el color **no es el único canal**: la
+/// leyenda está pegada arriba, el tooltip dice el tipo, y el combo de arriba
+/// filtra por tipo, que es la forma confiable de aislar uno.
+///
+/// El tono además separa para quien no distingue bien los colores: dos barras
+/// de distinto nivel se diferencian por claridad, no sólo por matiz.
+ColorDeEstado colorDeTipoPermiso(ColorScheme cs, int indiceEnCatalogo) {
+  // Fuera del catálogo: los 28 registros históricos con el tipo vacío, un
+  // código que ya no está en la vista, o el catálogo todavía viajando. Va a un
+  // color que NO está en la rampa, para que «no sé qué es» no se confunda con
+  // un tipo de verdad.
+  if (indiceEnCatalogo < 0) {
+    final fondo = Color.alphaBlend(
+      cs.outlineVariant.withValues(alpha: 0.55),
+      cs.surface,
+    );
+    return ColorDeEstado(fondo, _letraSobre(fondo));
+  }
+
+  // Nueve escalones: tres familias por tres niveles de presencia. Los primeros
+  // usan los roles PLENOS (`primary`, `tertiary`) y no sólo los contenedores,
+  // que en Material 3 son pálidos por diseño: con puros contenedores el
+  // cronograma salía todo lavado y el rango de claridad era 4,7; con los plenos
+  // es 5,5 y la distancia mínima entre dos colores pasa de 8 a 17 unidades RGB.
+  // Medido sobre las 18 combinaciones reales (nueve semillas × claro/oscuro).
+  final pasos = <(Color, double)>[
+    (cs.primary, 0.0),
+    (cs.tertiary, 0.0),
+    (cs.onSurface, 0.30),
+    (cs.primaryContainer, 0.0),
+    (cs.tertiaryContainer, 0.0),
+    (cs.onSurface, 0.55),
+    (cs.primaryContainer, 0.45),
+    (cs.tertiaryContainer, 0.45),
+    // **NO `surfaceContainerHighest`.** Con tono 0 el escalón queda siendo ese
+    // rol tal cual, que es EXACTAMENTE el token con el que el cronograma tiñe
+    // sábados y domingos: medido, el mismo color en las 18 combinaciones. Una
+    // barra de ese tipo caída en fin de semana desaparecía dentro de la
+    // columna. Este gris queda a 73 unidades RGB del tinte de finde, a 173 del
+    // fondo normal y a 34 del escalón más cercano de la rampa.
+    (cs.onSurface, 0.72),
+  ];
+
+  // Si mañana agregan el décimo tipo a `v_tipos`, vuelve a empezar: repetir un
+  // color es feo, quedarse sin ninguno es peor.
+  final (familia, tono) = pasos[indiceEnCatalogo % pasos.length];
+
+  final fondo = Color.alphaBlend(
+    familia.withValues(alpha: 1 - tono),
+    cs.surface,
+  );
+  return ColorDeEstado(fondo, _letraSobre(fondo));
+}
+
 /// Negro o blanco sobre [fondo]: el que dé más contraste.
 ///
 /// No se usan los pares `on*` del tema porque acá el fondo ya no es un rol puro,

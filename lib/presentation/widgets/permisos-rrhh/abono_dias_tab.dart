@@ -255,9 +255,20 @@ class _Fila extends ConsumerWidget {
   }
 }
 
-/// El acumulado que manda el backend, repetido en cada fila: se lee de la
-/// primera y no se vuelve a sumar acá — el número que RR.HH. compara es el del
-/// servidor.
+/// El total de lo que se está mostrando.
+///
+/// **Se suma acá porque el servidor no lo manda.** La versión anterior leía
+/// `totalDias` de la primera fila, dando por hecho que el backend repetía el
+/// acumulado en cada una. No lo hace: `p_list_AbonoDias 'L'` devuelve ocho
+/// columnas y ninguna es un total, y `AbonoDiasDao.decorar` sólo agrega
+/// `diasAbonadosTxt`. Así que el campo llegaba siempre vacío y el recuadro
+/// decía **«0 días»** aunque abajo hubiera filas con días — para todos los
+/// empleados, no para uno.
+///
+/// Se prefiere sumar sobre pedirle la columna al SP: lo que hay que mostrar es
+/// el total de las filas que se están viendo, y ésas ya están acá. Un total que
+/// venga por otro camino puede discrepar de la lista que tiene encima, que es
+/// exactamente el problema que se acaba de arreglar.
 class _Total extends StatelessWidget {
   const _Total({required this.abonos});
 
@@ -265,11 +276,8 @@ class _Total extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final primera = abonos.first;
-    final texto =
-        primera.totalDiasTxt.isEmpty
-            ? '${numeroDeDias(primera.totalDias)} días'
-            : primera.totalDiasTxt;
+    final total = abonos.fold<double>(0, (a, b) => a + b.diasAbonados);
+    final texto = '${numeroDeDias(total)} días';
 
     return Container(
       padding: const EdgeInsets.all(Esp.m),

@@ -522,6 +522,29 @@ void main() {
     });
   }
 
+  // ── El total de abonos ────────────────────────────────────────────────────
+  //
+  // **Este número estuvo mal en producción y ninguna prueba lo vio**, porque el
+  // repositorio falso rellenaba `totalDias` a mano. El servidor NO lo manda:
+  // `p_list_AbonoDias 'L'` devuelve ocho columnas y ninguna es un total, y
+  // `AbonoDiasDao.decorar` sólo agrega `diasAbonadosTxt`. El recuadro leía ese
+  // campo vacío y mostraba «0 días» con filas cargadas abajo.
+  //
+  // Por eso el fixture ya no lo trae: si vuelve a inventarse, la prueba deja de
+  // proteger justo lo que se rompió.
+  testWidgets('el total suma las filas que se están viendo', (tester) async {
+    await _dibujar(
+      tester,
+      hijo: const AbonoDiasTab(codEmpleado: 130),
+      repo: _RepoEspia(ficha: _ficha, abonos: _abonos),
+    );
+
+    expect(find.text('Total abonado (2 registros)'), findsOneWidget);
+    // 20,5 + 1
+    expect(find.text('21,5 días'), findsOneWidget);
+    expect(find.text('0 días'), findsNothing);
+  });
+
   testWidgets(
     'la hoja de la colectiva entra en tablet, con el teclado abierto',
     (tester) async {
@@ -859,8 +882,6 @@ final _abonos = [
     fecha: DateTime(2021, 10, 25),
     motivo: 'REGULARIZACION DE DIAS DE VACACION PENDIENTES',
     fila: 1,
-    totalDias: 21.5,
-    totalDiasTxt: '21,5 días',
   ),
   AbonoDiasEntity(
     codAbonoDias: 56,
@@ -871,8 +892,6 @@ final _abonos = [
     fecha: DateTime(2021, 10, 25),
     motivo: 'compensacion 23 de octubre',
     fila: 2,
-    totalDias: 21.5,
-    totalDiasTxt: '21,5 días',
   ),
 ];
 

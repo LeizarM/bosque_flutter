@@ -20,7 +20,14 @@ import 'package:flutter/material.dart';
 export 'package:bosque_flutter/core/ui/aviso.dart';
 export 'package:bosque_flutter/core/ui/piezas_bosque.dart';
 export 'package:bosque_flutter/core/ui/tokens_bosque.dart'
-    show Aire, Esp, EstiloModulo, Peso, cifrasTabulares;
+    show
+        Aire,
+        ColorDeEstado,
+        Esp,
+        EstiloModulo,
+        Peso,
+        cifrasTabulares,
+        colorDeTipoPermiso;
 
 // Las dos constantes del ACL (`btnConsultaSaldo` y `btnCalculadora`) viven en
 // `core/state/permisos_rrhh_provider.dart`: en el Rol de Sábados la decisión de
@@ -151,6 +158,26 @@ const List<String> mesesCortos = [
   'dic',
 ];
 
+/// Los meses escritos, para un encabezado que se lee en vez de escanearse.
+///
+/// Vive acá y no en cada pantalla porque ya había dos copias: el filtro de la
+/// nómina individual y el título del cronograma de boletas. Dos listas de doce
+/// literales cada una es dos lugares donde arreglar el mismo error de tipeo.
+const List<String> mesesLargos = [
+  'Enero',
+  'Febrero',
+  'Marzo',
+  'Abril',
+  'Mayo',
+  'Junio',
+  'Julio',
+  'Agosto',
+  'Septiembre',
+  'Octubre',
+  'Noviembre',
+  'Diciembre',
+];
+
 bool mismoDia(DateTime? a, DateTime? b) =>
     a != null &&
     b != null &&
@@ -165,7 +192,12 @@ String diaMes(DateTime f) =>
 String cuandoCompacto(DateTime? desde, DateTime? hasta) {
   if (desde == null) return 'Sin fecha';
   final d = diaMes(desde);
-  return mismoDia(desde, hasta) ? d : '$d → ${diaMes(hasta!)}';
+  // **`hasta` nulo se trata como el mismo día, no como un tramo.** Antes
+  // `mismoDia(desde, null)` daba false y se caía en `diaMes(hasta!)`: un
+  // «Null check operator used on a null value» que rompía la fila entera con
+  // el recuadro rojo de error. `trh_permiso.hasta` admite null.
+  if (hasta == null || mismoDia(desde, hasta)) return d;
+  return '$d → ${diaMes(hasta)}';
 }
 
 /// Una sola expresión de fecha, con el año. El permiso de un día muestra la
@@ -174,7 +206,9 @@ String cuandoCompacto(DateTime? desde, DateTime? hasta) {
 /// tarde.
 String cuandoLargo(DateTime? desde, DateTime? hasta) {
   if (desde == null) return 'Sin fecha';
-  if (mismoDia(desde, hasta)) return fechaCorta(desde);
+  // Mismo motivo que en [cuandoCompacto]: las dos se arreglan igual, no una
+  // sí y la otra no.
+  if (hasta == null || mismoDia(desde, hasta)) return fechaCorta(desde);
   return '${fechaCorta(desde)} → ${fechaCorta(hasta)}';
 }
 

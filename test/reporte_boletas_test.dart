@@ -14,6 +14,8 @@
 library;
 
 import 'package:bosque_flutter/core/state/permisos_rrhh_provider.dart';
+import 'package:bosque_flutter/core/theme/app_theme.dart' show colorList;
+import 'package:bosque_flutter/core/ui/tokens_bosque.dart';
 import 'package:bosque_flutter/domain/entities/nomina_permiso_entity.dart';
 import 'package:bosque_flutter/domain/entities/tipo_permiso_vacacion_entity.dart';
 import 'package:bosque_flutter/domain/repositories/permisos_rrhh_repository.dart';
@@ -244,6 +246,435 @@ void main() {
     expect(find.byType(Dialog), findsOneWidget);
     expect(find.byType(BottomSheet), findsNothing);
   });
+
+  // ── EL CRONOGRAMA ──────────────────────────────────────────────────────────
+  //
+  // La otra vista de las mismas boletas: una barra por permiso sobre una grilla
+  // de días, un bloque por mes. Tiene tres cosas que `analyze` no puede ver y
+  // que, si fallan, hacen que la vista MIENTA en vez de romperse:
+  //
+  //   · que entre, igual que la tabla — es una grilla de hasta 31 columnas;
+  //   · que un permiso que cruza de mes aparezca en los dos bloques;
+  //   · que dos permisos solapados de la misma persona se vean los dos.
+  //
+  // El tercero no es hipotético: en `trh_permiso` hay 291 pares solapados que
+  // el alta vieja dejó pasar, y dibujados en un solo carril el segundo tapa al
+  // primero — la vista escondería justo el dato que delata el problema.
+
+  for (final entrada in {...anchos, ...bajos}.entries) {
+    testWidgets('el cronograma entra en ${entrada.key}', (tester) async {
+      await _abrir(tester, tamano: entrada.value, boletas: _cronograma);
+      await _verCronograma(tester);
+      expect(
+        tester.takeException(),
+        isNull,
+        reason: 'Desborde del cronograma en ${entrada.key}',
+      );
+    });
+  }
+
+  testWidgets('el cronograma no desborda con el texto al 200%', (tester) async {
+    await _abrir(
+      tester,
+      tamano: const Size(1280, 800),
+      boletas: _cronograma,
+      escala: 2.0,
+    );
+    await _verCronograma(tester);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('un permiso que cruza de mes sale en los dos bloques', (
+    tester,
+  ) async {
+    await _abrir(tester, tamano: const Size(1280, 800), boletas: _cronograma);
+    await _verCronograma(tester);
+
+    expect(find.text('Enero 2026'), findsOneWidget);
+    expect(find.text('Febrero 2026'), findsOneWidget);
+    // La 9001 va del 28/01 al 03/02: tiene que estar dibujada dos veces, una en
+    // cada bloque, y no una sola en el mes en que arranca.
+    expect(_barraDe(9001), findsNWidgets(2));
+  });
+
+  testWidgets('dos permisos solapados de la misma persona no se tapan', (
+    tester,
+  ) async {
+    await _abrir(tester, tamano: const Size(1280, 800), boletas: _cronograma);
+    await _verCronograma(tester);
+
+    // 9002 y 9003 son de la misma persona y comparten días.
+    final a = tester.getRect(_barraDe(9002));
+    final b = tester.getRect(_barraDe(9003));
+
+    expect(
+      a.overlaps(b),
+      isFalse,
+      reason:
+          'Las dos barras se pisan en pantalla: el reparto en carriles no '
+          'funcionó y una esconde a la otra.',
+    );
+    // Y se pisan en el eje del tiempo, que es lo que las obliga a ir en
+    // carriles distintos: si no se solaparan, el test no probaría nada.
+    expect(a.left < b.right && b.left < a.right, isTrue);
+  });
+
+  testWidgets('un permiso de medio día se ve igual', (tester) async {
+    await _abrir(tester, tamano: const Size(1280, 800), boletas: _cronograma);
+    await _verCronograma(tester);
+
+    // El 39 % de las boletas dura menos de un día. Estirada a la pantalla, esa
+    // barra mediría dos píxeles: la grilla tiene un ancho de día mínimo para
+    // que se vea, y esto lo comprueba.
+    final media = tester.getRect(_barraDe(9004));
+    expect(media.width, greaterThanOrEqualTo(10));
+    expect(media.height, greaterThan(4));
+  });
+
+  // ── LOS QUE ENCONTRÓ LA REVISIÓN ──────────────────────────────────────────
+  //
+  // Seis defectos reales del cronograma, ninguno de los cuales rompía nada a la
+  // vista: todos hacían que la pantalla MINTIERA. Un test por cada uno.
+
+  testWidgets('una boleta sin «hasta» no rompe la fila', (tester) async {
+    // Reventaba con «Null check operator used on a null value» y la fila salía
+    // como recuadro rojo de error. El fallo estaba en `cuandoCompacto`, que es
+    // código COMPARTIDO con la ficha del trabajador.
+    await _abrir(
+      tester,
+      tamano: const Size(1280, 800),
+      boletas: [
+        NominaPermisoEntity(
+          codPermiso: 7000,
+          codEmpleado: 1,
+          datoEmpleado: 'SIN HASTA JUAN',
+          tipoPermiso: 'vac',
+          datoTipoPermiso: 'Vacación',
+          desde: DateTime(2026, 1, 10, 8),
+          hasta: null,
+          dias: 1,
+          horas: 8,
+          motivo: 'SIN FECHA DE FIN',
+        ),
+      ],
+    );
+    expect(tester.takeException(), isNull);
+    expect(find.textContaining('SIN HASTA'), findsWidgets);
+  });
+
+  testWidgets('una boleta con las fechas al revés no desaparece', (
+    tester,
+  ) async {
+    // `hasta` anterior a `desde` y en otro mes: el bucle de meses no daba una
+    // vuelta y la boleta no entraba en NINGÚN bloque. Ni dibujada, ni contada,
+    // ni avisada — el resumen de arriba y el cronograma contaban distinto.
+    await _abrir(
+      tester,
+      tamano: const Size(1280, 800),
+      boletas: [
+        NominaPermisoEntity(
+          codPermiso: 7001,
+          codEmpleado: 1,
+          datoEmpleado: 'INVERTIDA ANA',
+          tipoPermiso: 'vac',
+          datoTipoPermiso: 'Vacación',
+          desde: DateTime(2026, 3, 2, 8),
+          hasta: DateTime(2026, 2, 27, 17),
+          dias: 1,
+          horas: 8,
+          motivo: 'FECHAS AL REVES',
+        ),
+      ],
+    );
+    await tester.tap(find.text('Este año'));
+    await tester.pumpAndSettle();
+    await _verCronograma(tester);
+
+    expect(
+      _barraDe(7001),
+      findsWidgets,
+      reason: 'La boleta con las fechas invertidas se perdió del cronograma.',
+    );
+    expect(find.textContaining('INVERTIDA'), findsWidgets);
+  });
+
+  testWidgets('el fondo de la grilla se dibuja detrás de las barras', (
+    tester,
+  ) async {
+    // El `Row` de celdas era hijo no posicionado de un `Stack`: se medía en
+    // 0 px de alto y no se dibujaba ni una banda de fin de semana, ni el tinte
+    // de hoy, ni un separador de día. Como la franja del eje sí se veía
+    // —tiene su propio alto— parecía que estaba puesto.
+    await _abrir(tester, tamano: const Size(1280, 800), boletas: _cronograma);
+    await _verCronograma(tester);
+
+    final filas = find.byWidgetPredicate(
+      (w) => w is Stack && w.children.isNotEmpty && w.children.first is Positioned,
+    );
+    expect(filas, findsWidgets);
+    for (final e in filas.evaluate()) {
+      final fondo = find.descendant(
+        of: find.byWidget(e.widget),
+        matching: find.byType(Row),
+      );
+      if (fondo.evaluate().isEmpty) continue;
+      expect(
+        tester.getSize(fondo.first).height,
+        greaterThan(0),
+        reason: 'El fondo de la grilla volvió a medir 0 px de alto.',
+      );
+    }
+  });
+
+  testWidgets('dos homónimos no se funden en una sola fila', (tester) async {
+    // Se agrupaba por el nombre mostrado. Dos personas con el mismo nombre
+    // quedaban en una fila y, peor, sus permisos se veían como si se
+    // solaparan: el reparto en carriles inventaba un cruce que no existe.
+    await _abrir(
+      tester,
+      tamano: const Size(1280, 800),
+      boletas: [
+        for (final cod in [101, 102])
+          NominaPermisoEntity(
+            codPermiso: 7100 + cod,
+            codEmpleado: cod,
+            datoEmpleado: 'MAMANI QUISPE JUAN',
+            tipoPermiso: 'vac',
+            datoTipoPermiso: 'Vacación',
+            desde: DateTime(2026, 1, 12, 8),
+            hasta: DateTime(2026, 1, 14, 17),
+            dias: 3,
+            horas: 24,
+            motivo: 'VACACION',
+          ),
+      ],
+    );
+    await _verCronograma(tester);
+
+    expect(
+      find.text('MAMANI QUISPE JUAN'),
+      findsNWidgets(2),
+      reason: 'Los dos homónimos quedaron en una sola fila.',
+    );
+    // Y en un carril cada uno: no se dibujan como si se pisaran.
+    final a = tester.getRect(_barraDe(7201));
+    final b = tester.getRect(_barraDe(7202));
+    expect(a.overlaps(b), isFalse);
+  });
+
+  testWidgets('el total de días del mes no cuenta dos veces al que cruza', (
+    tester,
+  ) async {
+    // Un permiso que cruza aparece en los dos bloques. Sumando sus días
+    // completos en cada uno, los meses daban más que el resumen de arriba.
+    await _abrir(
+      tester,
+      tamano: const Size(1280, 800),
+      boletas: [
+        NominaPermisoEntity(
+          codPermiso: 7300,
+          codEmpleado: 1,
+          datoEmpleado: 'CRUZA DE MES ROSARIO',
+          tipoPermiso: 'vac',
+          datoTipoPermiso: 'Vacación',
+          desde: DateTime(2026, 1, 28, 8),
+          hasta: DateTime(2026, 2, 3, 17),
+          dias: 5,
+          horas: 40,
+          motivo: 'VACACION',
+        ),
+      ],
+    );
+    await tester.tap(find.text('Este año'));
+    await tester.pumpAndSettle();
+    await _verCronograma(tester);
+
+    // Enero, donde arranca, se lleva los 5 días. Febrero dibuja la barra pero
+    // suma 0: si no, entre los dos dirían 10 y el resumen dice 5.
+    expect(find.textContaining('1 boleta(s) · 5 d'), findsOneWidget);
+    expect(find.textContaining('1 boleta(s) · 0 d'), findsOneWidget);
+  });
+
+  testWidgets('los meses van del más antiguo al más reciente', (tester) async {
+    // Al revés que la lista, y a propósito: adentro de cada mes el tiempo
+    // corre hacia la derecha, así que entre meses tiene que correr hacia
+    // abajo. Un cronograma que va para atrás se relee dos veces.
+    await _abrir(tester, tamano: const Size(1280, 800), boletas: _cronograma);
+    await tester.tap(find.text('Este año'));
+    await tester.pumpAndSettle();
+    await _verCronograma(tester);
+
+    expect(
+      tester.getTopLeft(find.text('Enero 2026')).dy,
+      lessThan(tester.getTopLeft(find.text('Febrero 2026')).dy),
+      reason: 'Febrero quedó arriba de Enero.',
+    );
+  });
+
+  _pruebasDeColor();
+
+  testWidgets('la leyenda nombra sólo los tipos que están en pantalla', (
+    tester,
+  ) async {
+    await _abrir(tester, tamano: const Size(1280, 800), boletas: _cronograma);
+    await _verCronograma(tester);
+
+    expect(find.text('Vacación'), findsWidgets);
+    // «Sin Sueldo» no está en el fixture: una leyenda con los nueve tipos del
+    // catálogo obliga a descartar siete a ojo.
+    expect(find.text('Sin Sueldo'), findsNothing);
+  });
+}
+
+/// Pasa a la vista de cronograma.
+///
+/// Por el ícono y no por el rótulo: con menos de 1000 px el conmutador es sólo
+/// ícono, porque los dos rótulos más el botón de Excel desbordaban.
+/// Con poco alto —360 px— el conmutador arranca fuera de pantalla y el
+/// `CustomScrollView` ni siquiera lo construye, así que hay que bajar hasta él
+/// antes de tocarlo. No es un defecto: la pantalla entera vive en un solo
+/// scroll justamente para que ningún alto sea «insuficiente».
+Future<void> _verCronograma(WidgetTester tester) async {
+  final boton = find.byIcon(Icons.calendar_view_month_outlined);
+  if (boton.evaluate().isEmpty) {
+    await tester.scrollUntilVisible(
+      boton,
+      120,
+      scrollable: find.byType(Scrollable).first,
+    );
+  }
+  await tester.tap(boton.last);
+  await tester.pumpAndSettle();
+}
+
+/// La barra de una boleta, buscada por el número que abre su tooltip.
+Finder _barraDe(int codPermiso) => find.byWidgetPredicate(
+  (w) => w is Tooltip && (w.message ?? '').startsWith('N.º $codPermiso '),
+);
+
+// ═══════════════════════════════════════════════════════════════════════════
+// EL COLOR SALE DEL CATÁLOGO, NO DE UNA LISTA ESCRITA A MANO
+// ═══════════════════════════════════════════════════════════════════════════
+//
+// La primera versión era un `switch` sobre los códigos y le faltaban DOS de los
+// nueve —`libre` y `def`—, que salían con el color de «tipo desconocido» sin
+// que nada avisara. Ese es exactamente el fallo que un catálogo copiado al
+// frontend produce y que nadie nota: no rompe, sólo miente.
+//
+// Ahora el color sale de la POSICIÓN del tipo en `v_tipos`, así que agregar un
+// tipo en la base le da color solo. Estas pruebas fijan esa propiedad.
+
+void _pruebasDeColor() {
+  // **Las 18 combinaciones reales, no `ColorScheme.light()`.** La primera
+  // versión de estas pruebas medía contra `ColorScheme.light()`, que es el
+  // esquema legacy donde `primary` y `primaryContainer` colapsan al MISMO
+  // color: daba todo verde y no probaba nada de lo que ve el usuario. El tema
+  // de esta app se arma con `colorSchemeSeed` sobre nueve semillas, más claro
+  // y oscuro.
+  final esquemas = <String, ColorScheme>{
+    for (final semilla in colorList)
+      for (final brillo in Brightness.values)
+        '$semilla/${brillo.name}': ColorScheme.fromSeed(
+          seedColor: semilla,
+          brightness: brillo,
+        ),
+  };
+
+  test('ningún esquema pinta dos tipos del mismo color', () {
+    esquemas.forEach((nombre, cs) {
+      final colores = [
+        for (var i = 0; i < 9; i++) colorDeTipoPermiso(cs, i).fondo.toARGB32(),
+      ];
+      expect(
+        colores.toSet().length,
+        9,
+        reason: 'En $nombre dos tipos salen exactamente del mismo color.',
+      );
+    });
+  });
+
+  test('los nueve colores se separan lo que se midió, en los 18 esquemas', () {
+    // 17 unidades de RGB es lo que da la peor pareja, medido. No es mucho: el
+    // comentario de `colorDeTipoPermiso` explica que nueve categorías no entran
+    // del todo en el canal color y por qué la leyenda y el tooltip no son
+    // opcionales. Este número está acá para que no EMPEORE sin que nadie note.
+    esquemas.forEach((nombre, cs) {
+      final c = [for (var i = 0; i < 9; i++) colorDeTipoPermiso(cs, i).fondo];
+      for (var i = 0; i < 9; i++) {
+        for (var j = i + 1; j < 9; j++) {
+          final d =
+              ((c[i].r - c[j].r) * 255).abs() +
+              ((c[i].g - c[j].g) * 255).abs() +
+              ((c[i].b - c[j].b) * 255).abs();
+          expect(
+            d,
+            greaterThanOrEqualTo(15),
+            reason: 'En $nombre los tipos $i y $j quedaron casi del mismo color.',
+          );
+        }
+      }
+    });
+  });
+
+  test('el rango de claridad no se achica', () {
+    // Con puros contenedores el cronograma salía lavado: rango 4,7. Con los
+    // roles plenos en los primeros escalones es 5,5. Si alguien vuelve a los
+    // contenedores «porque quedan más suaves», esto lo frena.
+    esquemas.forEach((nombre, cs) {
+      final lum = [
+        for (var i = 0; i < 9; i++)
+          colorDeTipoPermiso(cs, i).fondo.computeLuminance(),
+      ]..sort();
+      expect(
+        (lum.last + 0.05) / (lum.first + 0.05),
+        greaterThan(4.5),
+        reason: 'En $nombre la paleta quedó toda del mismo tono de claro.',
+      );
+    });
+  });
+
+  test('un tipo fuera del catálogo no se confunde con ninguno', () {
+    esquemas.forEach((nombre, cs) {
+      final desconocido = colorDeTipoPermiso(cs, -1).fondo;
+      for (var i = 0; i < 9; i++) {
+        expect(
+          colorDeTipoPermiso(cs, i).fondo,
+          isNot(desconocido),
+          reason:
+              'En $nombre el tipo $i se ve igual que «desconocido»: los 28 '
+              'registros históricos sin tipo parecerían de ese tipo.',
+        );
+      }
+    });
+  });
+
+  test('el décimo tipo repite color en vez de quedarse sin ninguno', () {
+    // Si mañana agregan uno a `v_tipos`, la rampa vuelve a empezar.
+    final cs = esquemas.values.first;
+    expect(colorDeTipoPermiso(cs, 9).fondo, colorDeTipoPermiso(cs, 0).fondo);
+    expect(colorDeTipoPermiso(cs, 40).fondo, isA<Color>());
+  });
+
+  test('la letra elegida se separa de su fondo', () {
+    // 3:1 y no 4,5:1 a propósito: 4,5 es el mínimo AA para TEXTO, y las barras
+    // no llevan texto encima —son rellenos con borde—. Para un objeto gráfico
+    // el mínimo es 3:1 (WCAG 1.4.11). El par existe para que, si algún día se
+    // pone una etiqueta ENCIMA de una barra, arranque de algo que se lee.
+    esquemas.forEach((nombre, cs) {
+      for (var i = -1; i < 10; i++) {
+        final c = colorDeTipoPermiso(cs, i);
+        final a = c.fondo.computeLuminance();
+        final b = c.texto.computeLuminance();
+        final alto = a > b ? a : b;
+        final bajo = a > b ? b : a;
+        expect(
+          (alto + 0.05) / (bajo + 0.05),
+          greaterThanOrEqualTo(3.0),
+          reason: 'En $nombre el color $i no se separa de su letra.',
+        );
+      }
+    });
+  });
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -314,18 +745,27 @@ class _RepoFalso implements PermisosRrhhRepository {
   Future<List<TipoPermisoVacacionEntity>> getTiposPermiso({
     bool incluirVacacionYPago = false,
   }) async => [
-    TipoPermisoVacacionEntity(
-      codTipos: 'vac',
-      nombre: 'Vacación',
-      codGrupo: 13,
-      listTipos: null,
-    ),
-    TipoPermisoVacacionEntity(
-      codTipos: 'pva',
-      nombre: 'Vacación pagada',
-      codGrupo: 13,
-      listTipos: null,
-    ),
+    // Los NUEVE de `v_tipos` grupo 13, tal cual están en la base y en el orden
+    // que devuelve la ACCION 'T1' (por descripción). El catálogo importa: de la
+    // posición de cada tipo en esta lista sale el color de su barra en el
+    // cronograma, así que dos tipos de mentira no probarían nada.
+    for (final t in const [
+      ('baja', 'Baja por Enfermedad'),
+      ('clb', 'Comision Laboral'),
+      ('libre', 'Día Libre'),
+      ('otro', 'Otros'),
+      ('pva', 'Pago Vacación'),
+      ('pcr', 'Permisos con reposicion'),
+      ('def', 'Por Defunción'),
+      ('sinsuel', 'Sin Sueldo'),
+      ('vac', 'Vacación'),
+    ])
+      TipoPermisoVacacionEntity(
+        codTipos: t.$1,
+        nombre: t.$2,
+        codGrupo: 13,
+        listTipos: null,
+      ),
   ];
 
   /// Lo que estas pruebas no usan. Igual que en
@@ -423,5 +863,58 @@ final _conTilde = <NominaPermisoEntity>[
     dias: 1,
     horas: 8,
     motivo: 'Vacacion',
+  ),
+];
+
+/// Boletas armadas para el cronograma: una que cruza de mes, dos solapadas de
+/// la misma persona, y una de medio día.
+final _cronograma = <NominaPermisoEntity>[
+  NominaPermisoEntity(
+    codPermiso: 9001,
+    codEmpleado: 10,
+    datoEmpleado: 'CRUZA DE MES ROSARIO',
+    tipoPermiso: 'vac',
+    datoTipoPermiso: 'Vacación',
+    desde: DateTime(2026, 1, 28, 8),
+    hasta: DateTime(2026, 2, 3, 17, 30),
+    dias: 5,
+    horas: 40,
+    motivo: 'VACACION QUE CRUZA DE MES',
+  ),
+  NominaPermisoEntity(
+    codPermiso: 9002,
+    codEmpleado: 20,
+    datoEmpleado: 'SOLAPADO PEREZ JUAN',
+    tipoPermiso: 'vac',
+    datoTipoPermiso: 'Vacación',
+    desde: DateTime(2026, 1, 12, 8),
+    hasta: DateTime(2026, 1, 16, 17, 30),
+    dias: 5,
+    horas: 40,
+    motivo: 'VACACION',
+  ),
+  NominaPermisoEntity(
+    codPermiso: 9003,
+    codEmpleado: 20,
+    datoEmpleado: 'SOLAPADO PEREZ JUAN',
+    tipoPermiso: 'baja',
+    datoTipoPermiso: 'Baja por Enfermedad',
+    desde: DateTime(2026, 1, 14, 8),
+    hasta: DateTime(2026, 1, 19, 17, 30),
+    dias: 4,
+    horas: 32,
+    motivo: 'BAJA MEDICA QUE SE PISA CON LA VACACION',
+  ),
+  NominaPermisoEntity(
+    codPermiso: 9004,
+    codEmpleado: 30,
+    datoEmpleado: 'MEDIA JORNADA QUISPE ANA',
+    tipoPermiso: 'otro',
+    datoTipoPermiso: 'Otros',
+    desde: DateTime(2026, 1, 20, 14),
+    hasta: DateTime(2026, 1, 20, 18),
+    dias: 0.5,
+    horas: 4,
+    motivo: 'MEDIA JORNADA',
   ),
 ];
