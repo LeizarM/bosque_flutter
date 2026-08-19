@@ -2,12 +2,14 @@ import 'dart:math' as math;
 
 import 'package:bosque_flutter/core/state/button_permissions_provider.dart';
 import 'package:bosque_flutter/core/state/empleados_dependientes_provider.dart';
+import 'package:bosque_flutter/core/state/permisos_vacacion_provider.dart';
 import 'package:bosque_flutter/core/state/rrhh_provider.dart';
 import 'package:bosque_flutter/core/state/user_provider.dart';
 import 'package:bosque_flutter/presentation/widgets/permisos-vacaciones/ver_solicitudes_permiso_vacacion.dart';
 import 'package:bosque_flutter/presentation/widgets/shared/confetti_widget.dart';
 import 'package:bosque_flutter/presentation/widgets/shared/docs_vencidos.dart';
 import 'package:bosque_flutter/presentation/widgets/shared/permission_widget.dart';
+import 'package:bosque_flutter/presentation/widgets/permisos-vacaciones/permisos_dashboard_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -175,13 +177,9 @@ class _DashboardHomeContentState extends ConsumerState<DashboardHomeContent>
               _buildHeroCard(context, user, primary, isDark, isWide),
 
               const SizedBox(height: 10),
-              
-              // ─── Solicitudes pendientes de aprobar ──────────────────────
-              // Este widget ahora decide por sí mismo si debe mostrarse
-              // basándose en la respuesta del backend (jerarquía).
-              const SolicitudesPendientesWidget(),
-              
-              const SizedBox(height: 16),
+
+              // ─── Solicitudes y Ausencias Dinámicas ───
+              PermisosYAusenciasSeccion(isWide: isWide),
 
               // ─── Cumpleaños celebración ───
               if (isWide && cumpleMensajes.isNotEmpty && mostrarDocs)
@@ -767,4 +765,68 @@ class _BackgroundPatternPainter extends CustomPainter {
   @override
   bool shouldRepaint(covariant _BackgroundPatternPainter old) =>
       old.color != color;
+}
+
+class PermisosYAusenciasSeccion extends ConsumerWidget {
+  final bool isWide;
+  const PermisosYAusenciasSeccion({super.key, required this.isWide});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final user = ref.watch(userProvider);
+    if (user == null) return const SizedBox.shrink();
+
+    final pendientesAsync = ref.watch(
+      solicitudesPendientesProvider(user.codUsuario),
+    );
+    final proximosAsync = ref.watch(
+      proximosPermisosDashboardProvider(user.codUsuario),
+    );
+
+    final hasPendientes = pendientesAsync.when(
+      data:
+          (lista) =>
+              lista.isNotEmpty && lista.first.nombreEmpleado != 'SIN_PERMISOS',
+      loading: () => true, // Mostrar mientras carga
+      error: (_, __) => false,
+    );
+
+    final hasProximos = proximosAsync.when(
+      data: (lista) => lista.isNotEmpty,
+      loading: () => true, // Mostrar mientras carga
+      error: (_, __) => false,
+    );
+
+    if (!hasPendientes && !hasProximos) {
+      return const SizedBox.shrink();
+    }
+
+    if (isWide && hasPendientes && hasProximos) {
+      return Padding(
+        padding: const EdgeInsets.only(bottom: 16),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: const [
+            Expanded(child: SolicitudesPendientesWidget()),
+            SizedBox(width: 16),
+            Expanded(child: PermisosDashboardWidget()),
+          ],
+        ),
+      );
+    }
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (hasPendientes) ...[
+            const SolicitudesPendientesWidget(),
+            if (hasProximos) const SizedBox(height: 16),
+          ],
+          if (hasProximos) const PermisosDashboardWidget(),
+        ],
+      ),
+    );
+  }
 }

@@ -284,6 +284,16 @@ final routerProvider = Provider<GoRouter>((ref) {
               name: 'trhPermisoPermiso',
               builder: (context, state) => const PermisosRrhhScreen(),
             ),
+
+            // Cartas CITE — la correspondencia numerada.
+            // Misma regla que las dos de arriba: la ruta es EXACTAMENTE
+            // tb_vista.direccion (codVista 70 = 'tcrDocumento/Documento'),
+            // porque el sidebar arma el destino con '/'+direccion.
+            GoRoute(
+              path: '/dashboard/tcrDocumento/Documento',
+              name: 'tcrDocumento',
+              builder: (context, state) => const CartasCiteScreen(),
+            ),
           ],
         ),
 
@@ -469,6 +479,11 @@ final routerProvider = Provider<GoRouter>((ref) {
         GoRoute(
           path: '/trhPermiso/permiso',
           redirect: (context, state) => '/dashboard/trhPermiso/permiso',
+        ),
+        // CARTAS CITE
+        GoRoute(
+          path: '/tcrDocumento/Documento',
+          redirect: (context, state) => '/dashboard/tcrDocumento/Documento',
         ),
 
         GoRoute(

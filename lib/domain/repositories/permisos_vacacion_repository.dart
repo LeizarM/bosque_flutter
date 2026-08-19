@@ -37,4 +37,5 @@ abstract class PermisosVacacionRepository {
   Future<SolicitudPermisoEntity?> previsualizarSaldo(
     SolicitudPermisoEntity filtro,
   );
+  Future<List<SolicitudPermisoEntity>> obtenerPermisosProximosDashboard(int audUsuarioI);
 }

@@ -4,6 +4,7 @@ export 'package:bosque_flutter/presentation/screens/control-combustible-maquina-
 export 'package:bosque_flutter/presentation/screens/control-combustible-maquina-montacarga/control_combustible_reportes_screen.dart';
 export 'package:bosque_flutter/presentation/screens/control-combustible-maquina-montacarga/control_contenedores_combustible_screen.dart';
 export 'package:bosque_flutter/presentation/screens/control-combustible-maquina-montacarga/control_garrafas_registro_screen.dart';
+export 'package:bosque_flutter/presentation/screens/cartas-cite/cartas_cite_screen.dart';
 export 'package:bosque_flutter/presentation/screens/control-combustible/control_combustible_screen.dart';
 export 'package:bosque_flutter/presentation/screens/control-combustible/control_combustible_view_screen.dart';
 export 'package:bosque_flutter/presentation/screens/dashboard/dasboard_screen.dart';

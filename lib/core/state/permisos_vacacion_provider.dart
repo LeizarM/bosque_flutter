@@ -203,3 +203,11 @@ final previsualizarSaldoProvider =
       final repo = ref.watch(permisosVacacionRepositoryProvider);
       return await repo.previsualizarSaldo(solicitudFiltro);
     });
+
+final proximosPermisosDashboardProvider = FutureProvider.family<List<SolicitudPermisoEntity>, int>((
+  ref,
+  audUsuarioI,
+) async {
+  final repo = ref.watch(permisosVacacionRepositoryProvider);
+  return await repo.obtenerPermisosProximosDashboard(audUsuarioI);
+});

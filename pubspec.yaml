@@ -66,7 +66,22 @@ flutter:
     - assets/icon/
     - assets/icon/whatsapp.png
 
+  # Declarar la familia 'Roboto' aca tapa la Roboto que trae el motor, asi que
+  # hay que registrar TODOS los pesos que la app pide. Con solo el Regular,
+  # Skia no sintetiza: pedir w700 devuelve el mismo trazo que w400 y las
+  # negritas y cursivas del tema quedan invisibles en toda la app.
   fonts:
     - family: Roboto
       fonts:
         - asset: assets/fonts/Roboto-Regular.ttf
+          weight: 400
+        - asset: assets/fonts/Roboto-Italic.ttf
+          weight: 400
+          style: italic
+        - asset: assets/fonts/Roboto-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/Roboto-Bold.ttf
+          weight: 700
+        - asset: assets/fonts/Roboto-BoldItalic.ttf
+          weight: 700
+          style: italic

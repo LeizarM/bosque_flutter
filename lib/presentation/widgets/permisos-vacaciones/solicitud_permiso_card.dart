@@ -27,7 +27,15 @@ class SolicitudPermisoCard extends ConsumerWidget {
   String get _cargo => item.cargoEmpleado ?? '—';
   String get _paso => item.pasoActual ?? '';
   bool get _esRRHH => _paso.contains('RRHH');
-  Color get _color => _esRRHH ? Colors.purple : Colors.blue;
+
+  Color _getColor(BuildContext context) {
+    final theme = Theme.of(context);
+    if (!_esRRHH) return theme.colorScheme.primary;
+    // Para RRHH, forzamos un tono morado que se adapte al brillo (no chillón)
+    return theme.brightness == Brightness.dark
+        ? Colors.purple.shade300
+        : Colors.purple.shade700;
+  }
 
   IconData get _tipoIcon {
     switch (item.tipoPermiso.toUpperCase()) {
@@ -40,7 +48,7 @@ class SolicitudPermisoCard extends ConsumerWidget {
     }
   }
 
-  Widget get _tipoLabelWidget {
+  Widget _buildTipoLabelWidget(BuildContext context) {
     return DisplayValue<TipoPermisoVacacionEntity>(
       code: item.tipoPermiso,
       provider: tiposPermisoProvider((
@@ -53,7 +61,7 @@ class SolicitudPermisoCard extends ConsumerWidget {
       style: TextStyle(
         fontSize: 12,
         fontWeight: FontWeight.bold,
-        color: _color,
+        color: _getColor(context),
       ),
     );
   }
@@ -76,7 +84,7 @@ class SolicitudPermisoCard extends ConsumerWidget {
                   ? theme.colorScheme.surfaceContainerHighest
                   : Colors.grey[50],
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: _color.withValues(alpha: 0.25)),
+          border: Border.all(color: _getColor(context).withValues(alpha: 0.25)),
         ),
         child: Padding(
           padding: const EdgeInsets.all(14),
@@ -89,10 +97,10 @@ class SolicitudPermisoCard extends ConsumerWidget {
                   Container(
                     padding: const EdgeInsets.all(10),
                     decoration: BoxDecoration(
-                      color: _color.withValues(alpha: 0.1),
+                      color: _getColor(context).withValues(alpha: 0.1),
                       shape: BoxShape.circle,
                     ),
-                    child: Icon(_tipoIcon, color: _color, size: 22),
+                    child: Icon(_tipoIcon, color: _getColor(context), size: 22),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
@@ -122,7 +130,7 @@ class SolicitudPermisoCard extends ConsumerWidget {
                             runSpacing: 4,
                             crossAxisAlignment: WrapCrossAlignment.center,
                             children: [
-                              _tipoLabelWidget,
+                              _buildTipoLabelWidget(context),
                               Container(
                                 padding: const EdgeInsets.symmetric(
                                   horizontal: 6,
@@ -222,7 +230,10 @@ class SolicitudPermisoCard extends ConsumerWidget {
                   if (topTrailingWidget != null)
                     topTrailingWidget!
                   else if (showEmployeeInfo)
-                    ChipPaso(color: _color, child: _tipoLabelWidget),
+                    ChipPaso(
+                      color: _getColor(context),
+                      child: _buildTipoLabelWidget(context),
+                    ),
                 ],
               ),
               const SizedBox(height: 12),

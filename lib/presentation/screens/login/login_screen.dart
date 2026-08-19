@@ -1,9 +1,49 @@
-import 'dart:math' as math;
+/// La pantalla de entrada a Bosque.
+///
+/// ## De dónde sale el color
+///
+/// De la semilla del tema y de ningún otro lado. La versión anterior tenía
+/// trece colores escritos a mano —`0xFF111111`, `0xFFF4F4F5`, `0xFFDC2626` y
+/// diez más— que son la escala zinc de Tailwind pegada adentro de una app
+/// Material 3. Funcionaban con la semilla azul y se rompían con el resto: con
+/// la semilla **roja**, el rojo fijo del recuadro de error quedaba igual que el
+/// acento, así que un error se veía exactamente como todo lo demás.
+///
+/// Acá cada color sale de un rol del `ColorScheme`, así que las nueve semillas
+/// por dos modos —dieciocho combinaciones— quedan resueltas por Material, que
+/// además garantiza el contraste de cada par `X` / `onX`.
+///
+/// ## El acento tiene un lugar grande y uno solo
+///
+/// Antes el acento estaba repartido en tres orbes flotantes al 6% de opacidad,
+/// un gradiente de fondo al 8% y la sombra del logo. Mucho lugar, ninguno
+/// visible. Acá ocupa **una superficie entera** —el panel de marca en
+/// escritorio, la banda de arriba en teléfono— y el resto de la pantalla es
+/// superficie limpia. El color se ve porque tiene dónde verse.
+///
+/// ## Qué se mueve y por qué
+///
+/// La versión anterior tenía dos animaciones infinitas: tres orbes recorriendo
+/// toda la pantalla cada 6 segundos y el logo latiendo cada 2,5. Las dos
+/// repintaban para siempre en una pantalla que suele quedar abierta, y ninguna
+/// comunicaba nada.
+///
+/// Acá el movimiento entra donde tiene un motivo:
+/// * **La entrada** presenta la pantalla en orden —marca, encabezado, campos,
+///   botón— para que el ojo sepa por dónde empezar. Dura 900 ms y termina.
+/// * **El halo del logo** respira: es lo único perpetuo que queda, encerrado en
+///   un `RepaintBoundary` de ~200 px en vez de repintar el viewport completo.
+/// * **El foco, el aviso y el botón cargando** son respuesta a algo que hizo
+///   quien está usando la pantalla.
+///
+/// Todo eso se apaga si el sistema pide menos animación.
+library;
 
 import 'package:bosque_flutter/core/constants/app_constants.dart';
 import 'package:bosque_flutter/core/state/theme_mode_provider.dart';
 import 'package:bosque_flutter/core/state/user_provider.dart';
 import 'package:bosque_flutter/core/theme/app_theme.dart';
+import 'package:bosque_flutter/core/ui/tokens_bosque.dart';
 import 'package:bosque_flutter/data/repositories/auth_repository_impl.dart';
 import 'package:bosque_flutter/domain/repositories/auth_repository.dart';
 import 'package:flutter/material.dart';
@@ -16,6 +56,62 @@ import 'package:go_router/go_router.dart';
 const String _msgErrorPersistencia =
     'No se pudo guardar tu sesión en este dispositivo. '
     'Cierra otras apps o reinicia el teléfono e inténtalo de nuevo.';
+
+/// Qué tipo de cosa es lo que se está avisando.
+///
+/// No todos los mensajes son un error. «Tu versión está desactualizada» no lo
+/// es: nadie se equivocó, y la solución está afuera de la app. Pintarlo del
+/// mismo rojo que «usuario o contraseña incorrectos» le decía a la persona que
+/// hizo algo mal cuando lo único que tiene que hacer es actualizar.
+enum _Tono { error, aviso }
+
+/// La única esquina redondeada de la pantalla.
+///
+/// Había seis radios sueltos —10, 12, 14, 16, 24 y 24 otra vez— sin ninguna
+/// regla detrás: un recuadro de error de 12 al lado de un campo de 14 adentro
+/// de una tarjeta de 24. Se lee inquieto y no se sabe por qué.
+///
+/// Quedó uno solo, y no por austeridad: al sacar las cajas de color se fueron
+/// con ellas las superficies que pedían un radio propio. Lo que queda que tenga
+/// esquinas son los campos, el botón, el aviso y las muestras de la paleta, y
+/// las cuatro cosas son del mismo tamaño de gesto.
+///
+/// Las dos excepciones no son radios sueltos, son proporciones: el cuadrado del
+/// logo usa `lado * 0.28` —la de un ícono de app, que tiene que aguantar que el
+/// logo cambie de tamaño con la ventana— y el anillo de la muestra de color
+/// deriva el suyo del de la muestra para quedar concéntrico.
+const BorderRadius _esquina = BorderRadius.all(Radius.circular(14));
+
+/// Nombres de las semillas de [colorList], en orden.
+///
+/// El color solo no alcanza para elegir: quien no distingue bien el violeta del
+/// púrpura necesita leerlo. Si mañana agregan una semilla a `colorList`, la que
+/// no tenga nombre acá se muestra por su posición en vez de romper.
+const List<String> _nombresDeSemilla = [
+  'Azul',
+  'Turquesa',
+  'Verde',
+  'Rojo',
+  'Violeta',
+  'Amarillo',
+  'Naranja',
+  'Púrpura',
+  'Rosa',
+];
+
+/// El ancho a partir del cual entran las dos columnas.
+///
+/// No es «es una tablet»: es cuánto necesita el formulario. Partido 6/5, a
+/// 960 px la columna del formulario queda en 436 y, descontados los 40 de
+/// respiro de cada lado, le sobran 356 para un campo que pide 400 y se
+/// conforma con menos. Por debajo de eso el partido sí aprieta, así que la
+/// marca pasa arriba y el formulario se queda con todo el ancho.
+///
+/// Se probó en 1040 y era demasiado alto: a 1000 px de ventana —un portátil
+/// con la ventana a medias— la banda ocupaba el ancho completo con un logo en
+/// el medio y el formulario quedaba flotando abajo. A ese ancho el partido usa
+/// mejor el lugar.
+const double _anchoParaPartir = 960;
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
@@ -32,48 +128,51 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
   final FocusNode _userFocus = FocusNode();
   final FocusNode _passwordFocus = FocusNode();
 
-  late AnimationController _entryController;
-  late AnimationController _orbController;
-  late Animation<double> _fadeIn;
-  late Animation<Offset> _slideUp;
+  /// La entrada. Corre una vez y se apaga.
+  late final AnimationController _entrada;
+
+  /// El halo detrás del logo. Lo único perpetuo de la pantalla.
+  late final AnimationController _halo;
 
   bool _isLoading = false;
   String? _message;
+  _Tono _tono = _Tono.error;
   bool _obscurePassword = true;
 
   @override
   void initState() {
     super.initState();
 
-    _entryController = AnimationController(
+    // Ninguno de los dos arranca acá: si el sistema pide menos animación hay
+    // que saltearlos, y eso recién se puede leer en didChangeDependencies.
+    _entrada = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 900),
     );
-    _fadeIn = CurvedAnimation(
-      parent: _entryController,
-      curve: const Interval(0.0, 0.6, curve: Curves.easeOut),
-    );
-    _slideUp = Tween<Offset>(
-      begin: const Offset(0, 0.08),
-      end: Offset.zero,
-    ).animate(
-      CurvedAnimation(
-        parent: _entryController,
-        curve: const Interval(0.1, 0.8, curve: Curves.easeOutCubic),
-      ),
-    );
-    _entryController.forward();
-
-    _orbController = AnimationController(
+    _halo = AnimationController(
       vsync: this,
-      duration: const Duration(seconds: 6),
-    )..repeat();
+      duration: const Duration(seconds: 5),
+    );
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+
+    if (MediaQuery.disableAnimationsOf(context)) {
+      _entrada.value = 1;
+      _halo.stop();
+      _halo.value = 0.5;
+      return;
+    }
+    if (_entrada.status == AnimationStatus.dismissed) _entrada.forward();
+    if (!_halo.isAnimating) _halo.repeat(reverse: true);
   }
 
   @override
   void dispose() {
-    _entryController.dispose();
-    _orbController.dispose();
+    _entrada.dispose();
+    _halo.dispose();
     _userController.dispose();
     _passwordController.dispose();
     _userFocus.dispose();
@@ -83,9 +182,18 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
 
   // ── Login logic ──────────────────────────────────────────────────────────
 
+  /// Pone el mensaje y con qué cara se muestra. Lo único que agrega sobre el
+  /// `setState` de antes es el tono.
+  void _mostrar(String texto, {_Tono tono = _Tono.error}) {
+    setState(() {
+      _message = texto;
+      _tono = tono;
+    });
+  }
+
   void _login() async {
     if (_userController.text.isEmpty || _passwordController.text.isEmpty) {
-      setState(() => _message = 'Completa todos los campos');
+      _mostrar('Completa todos los campos');
       return;
     }
 
@@ -104,11 +212,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
 
       if (loginEntity != null) {
         if (loginEntity.versionApp != AppConstants.APP_VERSION) {
-          setState(
-            () =>
-                _message =
-                    'Tu versión de la app (${AppConstants.APP_VERSION}) está desactualizada. '
-                    'Por favor actualiza a la versión ${loginEntity.versionApp} para continuar.',
+          // Aviso, no error: no hay nada mal escrito, hay que actualizar.
+          _mostrar(
+            'Tu versión de la app (${AppConstants.APP_VERSION}) está desactualizada. '
+            'Por favor actualiza a la versión ${loginEntity.versionApp} para continuar.',
+            tono: _Tono.aviso,
           );
           return;
         } else if (_passwordController.text == '123456789') {
@@ -116,7 +224,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
           final ok = await ref.read(userProvider.notifier).setUser(loginEntity);
           if (!mounted) return;
           if (!ok) {
-            setState(() => _message = _msgErrorPersistencia);
+            _mostrar(_msgErrorPersistencia);
             return;
           }
           ref.invalidate(asyncUserProvider);
@@ -129,7 +237,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
           if (!ok) {
             // El dispositivo no pudo guardar la sesión (Keystore). Evita el
             // bucle de login silencioso mostrando un mensaje claro.
-            setState(() => _message = _msgErrorPersistencia);
+            _mostrar(_msgErrorPersistencia);
             return;
           }
 
@@ -146,10 +254,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
           context.go('/dashboard');
         }
       } else {
-        setState(() => _message = message);
+        _mostrar(message);
       }
     } catch (e) {
-      if (mounted) setState(() => _message = 'Error de conexión');
+      if (mounted) _mostrar('Error de conexión');
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -159,753 +267,22 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    final appTheme = ref.watch(themeNotifierProvider);
-    final isDark = appTheme.isDarkMode;
-    final accent = cs.primary;
-    final onAccent = cs.onPrimary;
-    final screenWidth = MediaQuery.of(context).size.width;
-    final isWide = screenWidth > 900;
+    final tema = ref.watch(themeNotifierProvider);
 
-    final textPrimary = isDark ? Colors.white : const Color(0xFF111111);
-    final textMuted =
-        isDark ? Colors.white.withValues(alpha: 0.5) : const Color(0xFF888888);
-    final inputBg =
-        isDark ? Colors.white.withValues(alpha: 0.06) : const Color(0xFFF4F4F5);
-    final inputBorder =
-        isDark ? Colors.white.withValues(alpha: 0.1) : const Color(0xFFE4E4E7);
-    final borderCol =
-        isDark
-            ? Colors.white.withValues(alpha: 0.08)
-            : Colors.black.withValues(alpha: 0.06);
-
+    // El ancho del cajón y no el de la ventana: si algún día esto se monta
+    // adentro de algo con márgenes, `MediaQuery` mentiría.
     return Scaffold(
-      body: Stack(
-        fit: StackFit.expand,
-        children: [
-          _Background(isDark: isDark, accent: accent),
-          _FloatingOrbs(
-            controller: _orbController,
-            accent: accent,
-            isDark: isDark,
-          ),
-          SafeArea(
-            child:
-                isWide
-                    ? Row(
-                      children: [
-                        // ── Panel izquierdo: Branding ──
-                        Expanded(
-                          flex: 5,
-                          child: _buildBrandingPanel(
-                            isDark,
-                            accent,
-                            textPrimary,
-                            textMuted,
-                          ),
-                        ),
-                        // Divider sutil
-                        Container(width: 1, color: borderCol),
-                        // ── Panel derecho: Form ──
-                        Expanded(
-                          flex: 4,
-                          child: FadeTransition(
-                            opacity: _fadeIn,
-                            child: SlideTransition(
-                              position: _slideUp,
-                              child: _buildFormPanel(
-                                isDark,
-                                accent,
-                                onAccent,
-                                appTheme,
-                                textPrimary,
-                                textMuted,
-                                inputBg,
-                                inputBorder,
-                                borderCol,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    )
-                    : FadeTransition(
-                      opacity: _fadeIn,
-                      child: SlideTransition(
-                        position: _slideUp,
-                        child: _buildMobileLayout(
-                          isDark,
-                          accent,
-                          onAccent,
-                          appTheme,
-                          textPrimary,
-                          textMuted,
-                          inputBg,
-                          inputBorder,
-                          borderCol,
-                        ),
-                      ),
-                    ),
-          ),
-        ],
-      ),
-    );
-  }
+      body: LayoutBuilder(
+        builder: (context, restricciones) {
+          final amplio = restricciones.maxWidth >= _anchoParaPartir;
 
-  // ── Panel de branding (izquierdo en desktop) ─────────────────────────────
-
-  Widget _buildBrandingPanel(
-    bool isDark,
-    Color accent,
-    Color textPrimary,
-    Color textMuted,
-  ) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(48),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // Logo grande con entrada elástica
-            TweenAnimationBuilder<double>(
-              tween: Tween(begin: 0, end: 1),
-              duration: const Duration(milliseconds: 1200),
-              curve: Curves.elasticOut,
-              builder: (context, value, child) {
-                return Transform.scale(scale: value, child: child);
-              },
-              child: _AnimatedLogo(
-                accent: accent,
-                isDark: isDark,
-                size: 110,
-                iconSize: 60,
-              ),
-            ),
-
-            const SizedBox(height: 36),
-
-            Text(
-              'Bosque',
-              style: TextStyle(
-                color: textPrimary,
-                fontSize: 44,
-                fontWeight: FontWeight.w800,
-                letterSpacing: -1.5,
-              ),
-            ),
-
-            const SizedBox(height: 10),
-
-            Text(
-              'powered by Esppapel',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                color: textMuted,
-                fontSize: 15,
-                fontStyle: FontStyle.italic,
-                letterSpacing: 0.3,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  // ── Panel de formulario (derecho en desktop) ─────────────────────────────
-
-  Widget _buildFormPanel(
-    bool isDark,
-    Color accent,
-    Color onAccent,
-    AppTheme appTheme,
-    Color textPrimary,
-    Color textMuted,
-    Color inputBg,
-    Color inputBorder,
-    Color borderCol,
-  ) {
-    return Center(
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.all(48),
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 400),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Header + theme controls
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Bienvenido',
-                        style: TextStyle(
-                          color: textPrimary,
-                          fontSize: 28,
-                          fontWeight: FontWeight.w700,
-                          letterSpacing: -0.5,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'Inicia sesión para continuar',
-                        style: TextStyle(color: textMuted, fontSize: 14),
-                      ),
-                    ],
-                  ),
-                  Row(
-                    children: [
-                      _ThemeChip(
-                        onTap:
-                            () => _showColorPicker(
-                              context,
-                              ref,
-                              appTheme.selectedColor,
-                            ),
-                        isDark: isDark,
-                        child: Container(
-                          width: 16,
-                          height: 16,
-                          decoration: BoxDecoration(
-                            color: accent,
-                            shape: BoxShape.circle,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      _ThemeChip(
-                        onTap:
-                            () =>
-                                ref
-                                    .read(themeNotifierProvider.notifier)
-                                    .toggleDarkMode(),
-                        isDark: isDark,
-                        child: Icon(
-                          isDark
-                              ? Icons.light_mode_rounded
-                              : Icons.dark_mode_rounded,
-                          size: 16,
-                          color: textMuted,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-
-              const SizedBox(height: 36),
-
-              _buildFormFields(
-                isDark,
-                accent,
-                onAccent,
-                textPrimary,
-                textMuted,
-                inputBg,
-                inputBorder,
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  // ── Layout mobile (card centrado) ────────────────────────────────────────
-
-  Widget _buildMobileLayout(
-    bool isDark,
-    Color accent,
-    Color onAccent,
-    AppTheme appTheme,
-    Color textPrimary,
-    Color textMuted,
-    Color inputBg,
-    Color inputBorder,
-    Color borderCol,
-  ) {
-    final cardBg =
-        isDark
-            ? Colors.white.withValues(alpha: 0.06)
-            : Colors.white.withValues(alpha: 0.85);
-
-    return SingleChildScrollView(
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
-      child: Column(
-        children: [
-          const SizedBox(height: 24),
-
-          // Logo compacto
-          _AnimatedLogo(accent: accent, isDark: isDark),
-
-          const SizedBox(height: 20),
-
-          Text(
-            'Bosque',
-            style: TextStyle(
-              color: textPrimary,
-              fontSize: 30,
-              fontWeight: FontWeight.w800,
-              letterSpacing: -1,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            'powered by Esppapel',
-            style: TextStyle(
-              color: textMuted,
-              fontSize: 13,
-              fontStyle: FontStyle.italic,
-            ),
-          ),
-
-          const SizedBox(height: 32),
-
-          // Form card
-          Container(
-            padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(
-              color: cardBg,
-              borderRadius: BorderRadius.circular(24),
-              border: Border.all(color: borderCol),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: isDark ? 0.4 : 0.08),
-                  blurRadius: 40,
-                  offset: const Offset(0, 12),
-                ),
-              ],
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Header con controles
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      'Iniciar sesión',
-                      style: TextStyle(
-                        color: textPrimary,
-                        fontSize: 18,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    Row(
-                      children: [
-                        _ThemeChip(
-                          onTap:
-                              () => _showColorPicker(
-                                context,
-                                ref,
-                                appTheme.selectedColor,
-                              ),
-                          isDark: isDark,
-                          child: Container(
-                            width: 14,
-                            height: 14,
-                            decoration: BoxDecoration(
-                              color: accent,
-                              shape: BoxShape.circle,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        _ThemeChip(
-                          onTap:
-                              () =>
-                                  ref
-                                      .read(themeNotifierProvider.notifier)
-                                      .toggleDarkMode(),
-                          isDark: isDark,
-                          child: Icon(
-                            isDark
-                                ? Icons.light_mode_rounded
-                                : Icons.dark_mode_rounded,
-                            size: 15,
-                            color: textMuted,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-
-                const SizedBox(height: 24),
-
-                _buildFormFields(
-                  isDark,
-                  accent,
-                  onAccent,
-                  textPrimary,
-                  textMuted,
-                  inputBg,
-                  inputBorder,
-                ),
-              ],
-            ),
-          ),
-
-          const SizedBox(height: 20),
-
-          Text(
-            'v${AppConstants.APP_VERSION}',
-            style: TextStyle(color: textMuted, fontSize: 11),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // ── Campos de formulario (compartidos) ───────────────────────────────────
-
-  Widget _buildFormFields(
-    bool isDark,
-    Color accent,
-    Color onAccent,
-    Color textPrimary,
-    Color textMuted,
-    Color inputBg,
-    Color inputBorder,
-  ) {
-    return Column(
-      children: [
-        _InputField(
-          controller: _userController,
-          focusNode: _userFocus,
-          hint: 'Usuario',
-          icon: Icons.person_outline_rounded,
-          onSubmit: () => _passwordFocus.requestFocus(),
-          isDark: isDark,
-          accent: accent,
-          bgColor: inputBg,
-          borderColor: inputBorder,
-          textColor: textPrimary,
-          hintColor: textMuted,
-        ),
-        const SizedBox(height: 14),
-
-        _InputField(
-          controller: _passwordController,
-          focusNode: _passwordFocus,
-          hint: 'Contraseña',
-          icon: Icons.lock_outline_rounded,
-          isPassword: true,
-          obscure: _obscurePassword,
-          onToggleObscure:
-              () => setState(() => _obscurePassword = !_obscurePassword),
-          onSubmit: _login,
-          isDark: isDark,
-          accent: accent,
-          bgColor: inputBg,
-          borderColor: inputBorder,
-          textColor: textPrimary,
-          hintColor: textMuted,
-        ),
-
-        // Error
-        if (_message != null) ...[
-          const SizedBox(height: 16),
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-            decoration: BoxDecoration(
-              color:
-                  isDark
-                      ? const Color(0xFFDC2626).withValues(alpha: 0.25)
-                      : const Color(0xFFDC2626).withValues(alpha: 0.08),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color:
-                    isDark
-                        ? const Color(0xFFFF6B6B).withValues(alpha: 0.5)
-                        : const Color(0xFFDC2626).withValues(alpha: 0.2),
-                width: 1.5,
-              ),
-            ),
-            child: Row(
-              children: [
-                Icon(
-                  Icons.error_outline_rounded,
-                  color:
-                      isDark
-                          ? const Color(0xFFFFAAAA)
-                          : const Color(0xFFDC2626),
-                  size: 18,
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Text(
-                    _message!,
-                    style: TextStyle(
-                      color:
-                          isDark
-                              ? const Color(0xFFFFCCCC)
-                              : const Color(0xFFDC2626),
-                      fontSize: 13,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-
-        const SizedBox(height: 24),
-
-        // Botón
-        SizedBox(
-          width: double.infinity,
-          height: 50,
-          child: ElevatedButton(
-            onPressed: _isLoading ? null : _login,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: accent,
-              foregroundColor: onAccent,
-              disabledBackgroundColor: accent.withValues(alpha: 0.5),
-              elevation: 0,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(14),
-              ),
-            ),
-            child:
-                _isLoading
-                    ? SizedBox(
-                      width: 22,
-                      height: 22,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2.5,
-                        color: onAccent,
-                      ),
-                    )
-                    : const Text(
-                      'Iniciar sesión',
-                      style: TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w600,
-                        letterSpacing: 0.2,
-                      ),
-                    ),
-          ),
-        ),
-
-        const SizedBox(height: 24),
-
-        // Footer
-        Center(
-          child: Text(
-            'ESPPAPEL  •  v${AppConstants.APP_VERSION}',
-            style: TextStyle(
-              color: textMuted.withValues(alpha: 0.6),
-              fontSize: 11,
-              fontWeight: FontWeight.w500,
-              letterSpacing: 1.2,
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  // ── Color Picker ─────────────────────────────────────────────────────────
-
-  void _showColorPicker(BuildContext context, WidgetRef ref, int currentIndex) {
-    final isDark = ref.read(themeNotifierProvider).isDarkMode;
-    final accent = colorList[currentIndex];
-
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: isDark ? const Color(0xFF151515) : Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      builder: (context) {
-        return Padding(
-          padding: const EdgeInsets.all(28),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Container(
-                    width: 40,
-                    height: 40,
-                    decoration: BoxDecoration(
-                      color: accent.withValues(alpha: 0.15),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Icon(Icons.palette_rounded, color: accent, size: 22),
-                  ),
-                  const SizedBox(width: 14),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Color del tema',
-                        style: TextStyle(
-                          color: isDark ? Colors.white : Colors.black,
-                          fontSize: 18,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                      Text(
-                        'Elige tu color favorito',
-                        style: TextStyle(
-                          color:
-                              isDark
-                                  ? const Color(0xFF888888)
-                                  : const Color(0xFF666666),
-                          fontSize: 13,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-              const SizedBox(height: 24),
-              Wrap(
-                spacing: 14,
-                runSpacing: 14,
-                children: List.generate(
-                  colorList.length,
-                  (index) => GestureDetector(
-                    onTap: () {
-                      ref
-                          .read(themeNotifierProvider.notifier)
-                          .changeColorIndex(index);
-                      Navigator.pop(context);
-                    },
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 200),
-                      width: 52,
-                      height: 52,
-                      decoration: BoxDecoration(
-                        color: colorList[index],
-                        borderRadius: BorderRadius.circular(16),
-                        border:
-                            currentIndex == index
-                                ? Border.all(
-                                  color: isDark ? Colors.white : Colors.black,
-                                  width: 3,
-                                )
-                                : null,
-                        boxShadow: [
-                          BoxShadow(
-                            color: colorList[index].withValues(alpha: 0.35),
-                            blurRadius: 12,
-                            offset: const Offset(0, 6),
-                          ),
-                        ],
-                      ),
-                      child:
-                          currentIndex == index
-                              ? Icon(
-                                Icons.check_rounded,
-                                color:
-                                    ThemeData.estimateBrightnessForColor(
-                                              colorList[index],
-                                            ) ==
-                                            Brightness.light
-                                        ? Colors.black
-                                        : Colors.white,
-                                size: 26,
-                              )
-                              : null,
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 20),
-            ],
-          ),
-        );
-      },
-    );
-  }
-}
-
-// ═══════════════════════════════════════════════════════════════════════════════
-// WIDGETS PRIVADOS
-// ═══════════════════════════════════════════════════════════════════════════════
-
-/// Fondo con gradiente adaptativo
-class _Background extends StatelessWidget {
-  final bool isDark;
-  final Color accent;
-
-  const _Background({required this.isDark, required this.accent});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors:
-              isDark
-                  ? [
-                    const Color(0xFF0A0A0A),
-                    const Color(0xFF111118),
-                    accent.withValues(alpha: 0.08),
-                  ]
-                  : [
-                    const Color(0xFFF8F9FC),
-                    const Color(0xFFEEF0F7),
-                    accent.withValues(alpha: 0.06),
-                  ],
-          stops: const [0.0, 0.5, 1.0],
-        ),
-      ),
-    );
-  }
-}
-
-/// Orbes flotantes animados (decoración sutil)
-class _FloatingOrbs extends StatelessWidget {
-  final AnimationController controller;
-  final Color accent;
-  final bool isDark;
-
-  const _FloatingOrbs({
-    required this.controller,
-    required this.accent,
-    required this.isDark,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final size = MediaQuery.of(context).size;
-    return RepaintBoundary(
-      child: AnimatedBuilder(
-        animation: controller,
-        builder: (context, _) {
-          final t = controller.value * 2 * math.pi;
           return Stack(
+            fit: StackFit.expand,
             children: [
-              Positioned(
-                top: 80 + 30 * math.sin(t),
-                right: 40 + 20 * math.cos(t),
-                child: _orb(
-                  120,
-                  accent.withValues(alpha: isDark ? 0.06 : 0.08),
-                ),
-              ),
-              Positioned(
-                bottom: 100 + 20 * math.cos(t + 1),
-                left: 30 + 25 * math.sin(t + 2),
-                child: _orb(90, accent.withValues(alpha: isDark ? 0.04 : 0.06)),
-              ),
-              Positioned(
-                top: size.height * 0.4 + 15 * math.sin(t + 3),
-                left: size.width * 0.7 + 18 * math.cos(t + 1),
-                child: _orb(60, accent.withValues(alpha: isDark ? 0.05 : 0.07)),
-              ),
+              _CampoDeAcento(amplio: amplio),
+              amplio
+                  ? _partido(tema)
+                  : _apilado(tema, restricciones.maxHeight),
             ],
           );
         },
@@ -913,89 +290,556 @@ class _FloatingOrbs extends StatelessWidget {
     );
   }
 
-  Widget _orb(double size, Color color) {
-    return Container(
-      width: size,
-      height: size,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        gradient: RadialGradient(colors: [color, color.withValues(alpha: 0)]),
+  // ── Escritorio: dos columnas ─────────────────────────────────────────────
+
+  /// La marca a la izquierda, el formulario a la derecha.
+  ///
+  /// Entre las dos mitades no hay ningún borde ni ninguna caja: lo único que
+  /// las separa es dónde está el resplandor de [_CampoDeAcento], que se apaga
+  /// antes de llegar al formulario.
+  Widget _partido(AppTheme tema) {
+    return SafeArea(
+      child: Row(
+        children: [
+          Expanded(
+            flex: 6,
+            child: LayoutBuilder(
+              builder: (context, mitad) {
+                // La marca crece con el lugar que tiene. Fija en 104 px se veia
+                // como una estampilla pegada en una pared: en una ventana de
+                // 1900 esta mitad pasa los 1000 px de ancho.
+                final lado = (mitad.maxWidth / 8.2).clamp(96.0, 152.0);
+
+                return Padding(
+                  padding: const EdgeInsets.all(48),
+                  child: Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      Center(
+                        child: _bloqueDeMarca(amplio: true, ladoForzado: lado),
+                      ),
+                      Align(
+                        alignment: Alignment.bottomCenter,
+                        child: _Entra(
+                          control: _entrada,
+                          desde: 0.45,
+                          hasta: 1,
+                          child: _pie(),
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
+          ),
+          Expanded(
+            flex: 5,
+            child: Stack(
+              children: [
+                _columnaDeFormulario(amplio: true),
+                // Van a la esquina y no arriba de la columna: la columna esta
+                // centrada verticalmente, asi que ahi quedaban flotando a 300 px
+                // de todo, sin pertenecer a nada.
+                Positioned(
+                  top: Esp.s,
+                  right: Esp.l,
+                  child: _Entra(
+                    control: _entrada,
+                    desde: 0.20,
+                    hasta: 0.75,
+                    child: _controles(tema),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
+    );
+  }
+
+  // ── Teléfono y tablet: banda arriba, formulario abajo ────────────────────
+
+  /// Todo en una columna: marca, formulario y pie.
+  ///
+  /// Acá hubo una tarjeta, y después una banda de acento con las esquinas de
+  /// abajo redondeadas. Las dos eran lo mismo: un bloque de color con un borde
+  /// neto contra la hoja. El resplandor de [_CampoDeAcento] hace el trabajo que
+  /// hacían —decir dónde está la marca— sin dibujar ese borde.
+  Widget _apilado(AppTheme tema, double alto) {
+    final bordes = MediaQuery.paddingOf(context);
+
+    return Stack(
+      children: [
+        SingleChildScrollView(
+          child: ConstrainedBox(
+            // El piso hace que la columna se centre en la pantalla en vez de
+            // apoyarse arriba y dejar el resto vacio.
+            constraints: BoxConstraints(minHeight: alto),
+            // Apenas arriba del centro real: un bloque exactamente centrado se
+            // percibe caido.
+            child: Align(
+              alignment: const Alignment(0, -0.12),
+              child: Padding(
+                padding: EdgeInsets.fromLTRB(
+                  Esp.xl,
+                  bordes.top + Esp.xxl,
+                  Esp.xl,
+                  bordes.bottom + Esp.xxl,
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    _bloqueDeMarca(amplio: false),
+                    const SizedBox(height: Esp.xxl),
+                    _columnaDeFormulario(amplio: false),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+        // Clavados arriba a la derecha: no scrollean con el formulario.
+        Positioned(
+          top: bordes.top + Esp.xs,
+          right: Esp.s,
+          child: _Entra(
+            control: _entrada,
+            desde: 0.20,
+            hasta: 0.75,
+            child: _controles(tema),
+          ),
+        ),
+      ],
+    );
+  }
+
+  // ── Piezas compartidas por los dos armados ───────────────────────────────
+
+  /// Logo, nombre y bajada. Es el mismo bloque en los dos armados: cambia el
+  /// tamaño y de qué lado se alinea, no la estructura.
+  Widget _bloqueDeMarca({required bool amplio, double? ladoForzado}) {
+    final cs = context.cs;
+    final lado = ladoForzado ?? (amplio ? 104.0 : 86.0);
+    final tamNombre = amplio ? (lado * 0.52).clamp(46.0, 74.0) : 36.0;
+
+    // Cuánto se abre el halo más allá del logo. Se abre bastante porque es lo
+    // que le da cuerpo a la marca ahora que no hay ninguna caja atrás: es
+    // superficie pintada, no un objeto que haya que inventar para llenar.
+    final apertura = amplio ? 0.9 : 0.75;
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        _Entra(
+          control: _entrada,
+          desde: 0,
+          hasta: 0.55,
+          escalaDesde: 0.84,
+          child: Stack(
+            clipBehavior: Clip.none,
+            alignment: Alignment.center,
+            children: [
+              // Desborda el cuadrado del logo por los cuatro lados. Va en
+              // `Positioned` para que el Stack lo siga midiendo por el logo: si
+              // midiera el halo, la columna entera se ensancharía a su tamaño y
+              // el bloque dejaría de centrarse sobre el logo.
+              Positioned(
+                left: -lado * apertura,
+                right: -lado * apertura,
+                top: -lado * apertura,
+                bottom: -lado * apertura,
+                child: _Halo(latido: _halo, color: cs.primary),
+              ),
+              _Marca(lado: lado),
+            ],
+          ),
+        ),
+        SizedBox(height: amplio ? Esp.xxl : Esp.xl),
+        _Entra(
+          control: _entrada,
+          desde: 0.12,
+          hasta: 0.70,
+          desplazamiento: 14,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Text(
+                'Bosque',
+                style: TextStyle(
+                  // `onSurface` y ya no `onPrimaryContainer`: abajo no hay
+                  // contenedor, hay hoja con un tinte encima.
+                  color: cs.onSurface,
+                  fontSize: tamNombre,
+                  fontWeight: FontWeight.w800,
+                  // Proporcional al cuerpo: un tracking fijo de -1,5 que se ve
+                  // bien a 52 px queda demasiado apretado a 34.
+                  letterSpacing: tamNombre * -0.035,
+                  height: 1,
+                ),
+              ),
+              const SizedBox(height: Esp.s),
+              Text(
+                'powered by Esppapel',
+                style: TextStyle(
+                  color: cs.onSurfaceVariant,
+                  fontSize: amplio ? 15 : 13,
+                  fontStyle: FontStyle.italic,
+                  letterSpacing: 0.2,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// Controles de tema, encabezado y formulario, en una columna que no pasa de
+  /// 400 px. Un campo de texto más ancho que eso se vuelve incómodo de leer y
+  /// de apuntar, por ancha que esté la ventana.
+  Widget _columnaDeFormulario({required bool amplio}) {
+    final cs = context.cs;
+    final t = Theme.of(context).textTheme;
+
+    final columna = ConstrainedBox(
+      constraints: const BoxConstraints(maxWidth: 400),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _Entra(
+            control: _entrada,
+            desde: 0.26,
+            hasta: 0.82,
+            desplazamiento: 12,
+            child: Column(
+              // En escritorio el encabezado arranca contra el borde de los
+              // campos. En telefono la marca esta justo arriba y centrada: un
+              // titulo pegado a la izquierda debajo de un logo centrado se lee
+              // como dos composiciones apiladas en vez de una columna.
+              crossAxisAlignment: amplio
+                  ? CrossAxisAlignment.start
+                  : CrossAxisAlignment.center,
+              children: [
+                Text(
+                  'Bienvenido',
+                  style: t.headlineMedium?.copyWith(
+                    color: cs.onSurface,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: -0.6,
+                  ),
+                ),
+                const SizedBox(height: Esp.xs),
+                Text(
+                  'Inicia sesión para continuar',
+                  style: t.bodyMedium?.copyWith(color: cs.onSurfaceVariant),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: Esp.xl),
+          _Entra(
+            control: _entrada,
+            desde: 0.34,
+            hasta: 0.92,
+            desplazamiento: 16,
+            child: _formulario(),
+          ),
+          if (!amplio) ...[
+            const SizedBox(height: Esp.xl),
+            _Entra(
+              control: _entrada,
+              desde: 0.45,
+              hasta: 1,
+              child: Center(child: _pie()),
+            ),
+          ],
+        ],
+      ),
+    );
+
+    // En escritorio la columna se centra en su mitad y hace scroll si la
+    // ventana es baja. En teléfono ya viene adentro del scroll de la pantalla.
+    if (!amplio) return Center(child: columna);
+    return Center(
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 40),
+        // El `Align` no es de adorno: `SingleChildScrollView` le pasa a su hijo
+        // un ancho APRETADO, y contra un ancho apretado el `maxWidth: 400` del
+        // `ConstrainedBox` se pierde —`enforce` lo recorta al ancho de
+        // afuera— así que los campos se estiraban a los 540 px del panel.
+        // `Align` afloja la restricción y recién ahí el tope de 400 manda.
+        child: Align(
+          alignment: Alignment.topCenter,
+          heightFactor: 1,
+          child: columna,
+        ),
+      ),
+    );
+  }
+
+  Widget _formulario() {
+    final habilitado = !_isLoading;
+
+    return AutofillGroup(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _Campo(
+            controlador: _userController,
+            foco: _userFocus,
+            etiqueta: 'Usuario',
+            icono: Icons.person_outline_rounded,
+            pistas: const [AutofillHints.username],
+            accion: TextInputAction.next,
+            habilitado: habilitado,
+            onEnviar: () => _passwordFocus.requestFocus(),
+          ),
+          const SizedBox(height: Esp.m),
+          _Campo(
+            controlador: _passwordController,
+            foco: _passwordFocus,
+            etiqueta: 'Contraseña',
+            icono: Icons.lock_outline_rounded,
+            pistas: const [AutofillHints.password],
+            accion: TextInputAction.done,
+            habilitado: habilitado,
+            esClave: true,
+            oculto: _obscurePassword,
+            onAlternarOculto: () =>
+                setState(() => _obscurePassword = !_obscurePassword),
+            onEnviar: _login,
+          ),
+
+          // El aviso crece en lugar de aparecer de golpe: apareciendo empujaba
+          // el botón hacia abajo justo cuando la persona iba a volver a
+          // apretarlo.
+          AnimatedSize(
+            duration: MediaQuery.disableAnimationsOf(context)
+                ? Duration.zero
+                : const Duration(milliseconds: 220),
+            curve: Curves.easeOutCubic,
+            alignment: Alignment.topCenter,
+            child: _message == null
+                ? const SizedBox(width: double.infinity)
+                : Padding(
+                    padding: const EdgeInsets.only(top: Esp.l),
+                    child: _Aviso(texto: _message!, tono: _tono),
+                  ),
+          ),
+
+          const SizedBox(height: Esp.xl),
+          _BotonEntrar(cargando: _isLoading, onPresionar: _login),
+        ],
+      ),
+    );
+  }
+
+  /// Los controles de tema. Caen siempre sobre la hoja —ya no hay banda de
+  /// color debajo— así que la tinta es una sola.
+  Widget _controles(AppTheme tema) {
+    return _ControlesDeTema(
+      acento: context.cs.primary,
+      oscuro: tema.isDarkMode,
+      onPaleta: () => _mostrarPaleta(context, tema.selectedColor),
+      onModo: () => ref.read(themeNotifierProvider.notifier).toggleDarkMode(),
+    );
+  }
+
+  Widget _pie() {
+    return Text(
+      'Esppapel  ·  v${AppConstants.APP_VERSION}',
+      style: TextStyle(
+        color: context.cs.onSurfaceVariant.withValues(alpha: 0.85),
+        fontSize: 11.5,
+        fontWeight: Peso.titulo,
+        letterSpacing: 1,
+      ),
+    );
+  }
+
+  // ── La paleta ────────────────────────────────────────────────────────────
+
+  /// Las nueve semillas, cada una con su nombre.
+  ///
+  /// Antes eran nueve cuadrados sin rótulo y con una sombra del propio color
+  /// abajo: un resplandor de color sobre color, que es la decoración que se
+  /// pone cuando no hay nada que mostrar. Acá el rótulo hace el trabajo y la
+  /// elegida se marca con un anillo de `onSurface`, que contrasta con la hoja
+  /// pase lo que pase con la semilla.
+  void _mostrarPaleta(BuildContext context, int elegida) {
+    showModalBottomSheet(
+      context: context,
+      showDragHandle: true,
+      builder: (context) {
+        final cs = context.cs;
+        final t = Theme.of(context).textTheme;
+
+        return SafeArea(
+          top: false,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(Esp.xl, 0, Esp.xl, Esp.xl),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      width: 42,
+                      height: 42,
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        color: cs.primaryContainer,
+                        borderRadius: _esquina,
+                      ),
+                      child: Icon(
+                        Icons.palette_outlined,
+                        color: cs.onPrimaryContainer,
+                        size: 22,
+                      ),
+                    ),
+                    const SizedBox(width: Esp.m),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Color del tema',
+                            style: t.titleMedium?.copyWith(
+                              fontWeight: Peso.titulo,
+                            ),
+                          ),
+                          Text(
+                            'Elige tu color favorito',
+                            style: t.bodySmall?.copyWith(
+                              color: cs.onSurfaceVariant,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: Esp.xl),
+                Wrap(
+                  spacing: Esp.m,
+                  runSpacing: Esp.l,
+                  children: [
+                    for (var i = 0; i < colorList.length; i++)
+                      _MuestraDeColor(
+                        color: colorList[i],
+                        nombre: i < _nombresDeSemilla.length
+                            ? _nombresDeSemilla[i]
+                            : 'Color ${i + 1}',
+                        elegida: elegida == i,
+                        onTap: () {
+                          ref
+                              .read(themeNotifierProvider.notifier)
+                              .changeColorIndex(i);
+                          Navigator.pop(context);
+                        },
+                      ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 }
 
-/// Logo SVG animado con pulso sutil
-class _AnimatedLogo extends StatefulWidget {
-  final Color accent;
-  final bool isDark;
-  final double size;
-  final double iconSize;
+// ═══════════════════════════════════════════════════════════════════════════
+// LA SUPERFICIE DE ACENTO
+// ═══════════════════════════════════════════════════════════════════════════
 
-  const _AnimatedLogo({
-    required this.accent,
-    required this.isDark,
-    this.size = 80,
-    this.iconSize = 44,
-  });
+/// El resplandor de la marca. No tiene forma: se disuelve en la hoja.
+///
+/// ## Por qué dejó de ser un rectángulo
+///
+/// Era una superficie rellena de `primaryContainer` con las esquinas
+/// redondeadas: una tarjeta gigante apoyada sobre el fondo. Ese borde se veía,
+/// y partia la pantalla en **dos objetos** en vez de en dos zonas —«la caja de
+/// color» y «lo de al lado»—, pegados con cinta.
+///
+/// Acá el acento no tiene contorno. Son tres degradados radiales que arrancan
+/// teñidos y terminan **en transparente**, pintados encima de `surface`. Donde
+/// el resplandor se apaga no hay un límite: hay hoja. Por eso se mezcla con el
+/// blanco y con el negro sin decidir nada: lo que queda cuando el color se
+/// termina es el fondo del tema, sea cual sea.
+///
+/// ## De dónde salen los centros
+///
+/// `RadialGradient` toma `center` en coordenadas de alineación y `radius` como
+/// fracción del lado más corto, así que el dibujo escala solo con la ventana.
+/// No hay un solo píxel escrito a mano, y de paso se fue el parámetro `medida`
+/// que hacía falta cuando las manchas estaban en píxeles.
+///
+/// ## Y por qué el texto ya no se apoya en él
+///
+/// Encima de este campo el texto usa `onSurface`, no `onPrimaryContainer`: el
+/// fondo real sigue siendo `surface` con un tinte, y `onSurface` es el par que
+/// Material garantiza contra ella. El tinte mas cargado llega a 0,42, que sobre
+/// blanco deja la hoja cerca de un gris claro: `onSurface` encima sigue por
+/// arriba de 9:1, asi que no hay que correr la cuenta con cada semilla.
+class _CampoDeAcento extends StatelessWidget {
+  final bool amplio;
 
-  @override
-  State<_AnimatedLogo> createState() => _AnimatedLogoState();
-}
-
-class _AnimatedLogoState extends State<_AnimatedLogo>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _ctrl;
-
-  @override
-  void initState() {
-    super.initState();
-    _ctrl = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 2500),
-    )..repeat(reverse: true);
-  }
-
-  @override
-  void dispose() {
-    _ctrl.dispose();
-    super.dispose();
-  }
+  const _CampoDeAcento({required this.amplio});
 
   @override
   Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: _ctrl,
-      builder: (context, child) {
-        final scale = 1.0 + 0.04 * math.sin(_ctrl.value * math.pi);
-        return Transform.scale(scale: scale, child: child);
-      },
-      child: Container(
-        width: widget.size,
-        height: widget.size,
+    final cs = context.cs;
+
+    // En escritorio el resplandor se junta en la mitad izquierda, que es donde
+    // está la marca, y se apaga antes de llegar al formulario. En teléfono se
+    // junta arriba, por el mismo motivo.
+    return IgnorePointer(
+      child: Stack(
+        children: amplio
+            ? [
+                // La primera va DETRAS de la marca, no en la esquina. Estuvo
+                // arriba a la izquierda y el resultado era que justo abajo del
+                // logo la hoja quedaba mas limpia que alrededor: la marca se
+                // apoyaba en el hueco del resplandor en vez de en su centro.
+                _mancha(cs.primary, const Alignment(-0.55, -0.30), 0.85, 0.42),
+                _mancha(cs.tertiary, const Alignment(-0.12, 0.78), 0.75, 0.30),
+                _mancha(cs.primary, const Alignment(-0.95, 0.60), 0.55, 0.24),
+              ]
+            : [
+                _mancha(cs.primary, const Alignment(0, -0.62), 1.00, 0.38),
+                _mancha(cs.tertiary, const Alignment(0.82, -0.28), 0.70, 0.24),
+                _mancha(cs.primary, const Alignment(-0.78, -0.05), 0.60, 0.18),
+              ],
+      ),
+    );
+  }
+
+  Widget _mancha(Color color, Alignment centro, double radio, double fuerza) {
+    return Positioned.fill(
+      child: DecoratedBox(
         decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [widget.accent, widget.accent.withValues(alpha: 0.75)],
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: widget.accent.withValues(alpha: 0.35),
-              blurRadius: 30,
-              offset: const Offset(0, 12),
-            ),
-          ],
-        ),
-        child: Center(
-          child: Padding(
-            padding: EdgeInsets.all(widget.size * 0.25),
-            child: SvgPicture.asset(
-              'assets/icon/bosque_logo.svg',
-              fit: BoxFit.contain,
-              color: Colors.white,
-            ),
+          gradient: RadialGradient(
+            center: centro,
+            radius: radio,
+            // Tres paradas y no dos: con dos, el alfa cae en linea recta desde
+            // el centro y la mancha queda chata. La del medio le deja un nucleo
+            // y recien despues la abre.
+            //
+            // Y el final es el MISMO color en alfa 0, no `Colors.transparent`:
+            // ese es negro transparente, y al interpolar hacia el se ensucia el
+            // matiz en el camino.
+            colors: [
+              color.withValues(alpha: fuerza),
+              color.withValues(alpha: fuerza * 0.38),
+              color.withValues(alpha: 0),
+            ],
+            stops: const [0, 0.42, 1],
           ),
         ),
       ),
@@ -1003,116 +847,539 @@ class _AnimatedLogoState extends State<_AnimatedLogo>
   }
 }
 
-/// Chip de control de tema
-class _ThemeChip extends StatelessWidget {
-  final VoidCallback onTap;
-  final bool isDark;
+/// El logo, en un cuadrado de esquinas redondeadas.
+///
+/// Era un círculo con una sombra del propio acento debajo. La sombra de color
+/// se fue —es el resplandor que la pantalla no necesitaba— y el círculo pasó a
+/// cuadrado redondeado con la proporción de un ícono de app: es la forma que
+/// tiene el resto de la pantalla y la que el ojo ya asocia con «esta es la
+/// aplicación».
+class _Marca extends StatelessWidget {
+  final double lado;
+
+  const _Marca({required this.lado});
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = context.cs;
+
+    return Container(
+      width: lado,
+      height: lado,
+      padding: EdgeInsets.all(lado * 0.24),
+      decoration: BoxDecoration(
+        color: cs.primary,
+        borderRadius: BorderRadius.circular(lado * 0.28),
+      ),
+      child: SvgPicture.asset(
+        'assets/icon/bosque_logo.svg',
+        fit: BoxFit.contain,
+        // El par que Material garantiza legible sobre `primary`, con cualquier
+        // semilla y en los dos modos. Un blanco fijo se perdía sobre el
+        // amarillo claro del modo oscuro.
+        color: cs.onPrimary,
+      ),
+    );
+  }
+}
+
+/// El resplandor que respira detrás del logo.
+///
+/// Es lo único perpetuo que quedó de las tres animaciones infinitas que había.
+/// Sobrevivió porque es el más barato —repinta un cuadrado de ~200 px adentro
+/// de un `RepaintBoundary`, no la pantalla entera— y porque está en el único
+/// lugar donde un movimiento ambiental se justifica: la marca.
+///
+/// No escala nada: mueve la opacidad y el centro del degradado, que no obliga a
+/// rehacer el layout.
+class _Halo extends StatelessWidget {
+  final Animation<double> latido;
+  final Color color;
+
+  const _Halo({required this.latido, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return IgnorePointer(
+      child: RepaintBoundary(
+        child: AnimatedBuilder(
+          animation: latido,
+          builder: (context, _) {
+            final v = Curves.easeInOut.transform(latido.value);
+            return DecoratedBox(
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: RadialGradient(
+                  colors: [
+                    color.withValues(alpha: 0.30 + 0.13 * v),
+                    color.withValues(alpha: 0),
+                  ],
+                  stops: [0.16 + 0.10 * v, 1],
+                ),
+              ),
+            );
+          },
+        ),
+      ),
+    );
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// LA ENTRADA
+// ═══════════════════════════════════════════════════════════════════════════
+
+/// Aparece un pedazo de la pantalla dentro de un tramo de la entrada.
+///
+/// Presentar la pantalla en orden —marca, encabezado, campos, botón— le dice al
+/// ojo por dónde empezar. Todo junto de golpe no dice nada.
+///
+/// No usa `CurvedAnimation`: cada instancia crearía por build un objeto que hay
+/// que dar de baja. La cuenta del intervalo es una resta y una división.
+class _Entra extends StatelessWidget {
+  final Animation<double> control;
+
+  /// Tramo de [control] en el que ocurre, de 0 a 1.
+  final double desde;
+  final double hasta;
+
+  /// Cuántos píxeles sube mientras aparece.
+  final double desplazamiento;
+
+  /// De qué escala parte. 1 = no escala.
+  final double escalaDesde;
+
   final Widget child;
 
-  const _ThemeChip({
-    required this.onTap,
-    required this.isDark,
+  const _Entra({
+    required this.control,
+    required this.desde,
+    required this.hasta,
+    this.desplazamiento = 0,
+    this.escalaDesde = 1,
     required this.child,
   });
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: 36,
-        height: 36,
-        decoration: BoxDecoration(
-          color:
-              isDark
-                  ? Colors.white.withValues(alpha: 0.06)
-                  : Colors.black.withValues(alpha: 0.04),
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(
-            color:
-                isDark
-                    ? Colors.white.withValues(alpha: 0.08)
-                    : Colors.black.withValues(alpha: 0.06),
+    return AnimatedBuilder(
+      animation: control,
+      builder: (context, hijo) {
+        final crudo = ((control.value - desde) / (hasta - desde)).clamp(
+          0.0,
+          1.0,
+        );
+        final v = Curves.easeOutCubic.transform(crudo);
+
+        Widget resultado = Opacity(opacity: v, child: hijo);
+        if (desplazamiento != 0) {
+          resultado = Transform.translate(
+            offset: Offset(0, desplazamiento * (1 - v)),
+            child: resultado,
+          );
+        }
+        if (escalaDesde != 1) {
+          resultado = Transform.scale(
+            scale: escalaDesde + (1 - escalaDesde) * v,
+            child: resultado,
+          );
+        }
+        return resultado;
+      },
+      child: child,
+    );
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// CONTROLES
+// ═══════════════════════════════════════════════════════════════════════════
+
+/// Los dos controles de tema.
+///
+/// Eran dos `GestureDetector` de 36 px sin tinta, sin foco y sin rótulo: dos
+/// íconos que había que adivinar y apuntar. Ahora son `IconButton`, que trae el
+/// área de 48 px, el efecto de tinta, el estado de hover y el tooltip que dice
+/// qué hace cada uno.
+class _ControlesDeTema extends StatelessWidget {
+  final Color acento;
+  final bool oscuro;
+  final VoidCallback onPaleta;
+  final VoidCallback onModo;
+
+  const _ControlesDeTema({
+    required this.acento,
+    required this.oscuro,
+    required this.onPaleta,
+    required this.onModo,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = context.cs;
+
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        IconButton(
+          tooltip: 'Color del tema',
+          onPressed: onPaleta,
+          // El punto no es decoración: es el color que está puesto ahora. El
+          // borde lo hace visible cuando el acento se parece a la hoja, que es
+          // lo que pasa con la semilla amarilla en modo claro.
+          icon: Container(
+            width: 18,
+            height: 18,
+            decoration: BoxDecoration(
+              color: acento,
+              shape: BoxShape.circle,
+              border: Border.all(color: cs.outlineVariant),
+            ),
           ),
         ),
-        child: Center(child: child),
+        IconButton(
+          tooltip: oscuro ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro',
+          onPressed: onModo,
+          color: cs.onSurfaceVariant,
+          // El ícono gira al cambiar: confirma que el toque llegó, en el mismo
+          // gesto en que la pantalla entera cambia de modo.
+          icon: AnimatedSwitcher(
+            duration: const Duration(milliseconds: 240),
+            transitionBuilder: (hijo, anim) => RotationTransition(
+              turns: Tween<double>(begin: 0.65, end: 1).animate(anim),
+              child: FadeTransition(opacity: anim, child: hijo),
+            ),
+            child: Icon(
+              oscuro ? Icons.light_mode_rounded : Icons.dark_mode_rounded,
+              key: ValueKey<bool>(oscuro),
+              size: 20,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// Un campo del formulario.
+///
+/// ## El rótulo no es el placeholder
+///
+/// Antes el nombre del campo vivía en `hintText`, así que se borraba en cuanto
+/// alguien escribía la primera letra. Con dos campos apilados y el navegador
+/// autocompletando los dos de una, no quedaba nada diciendo cuál era cuál.
+/// `labelText` sube al borde en vez de irse.
+///
+/// ## Y el foco se ve
+///
+/// El borde pasa a 2 px del color principal y el ícono de la izquierda se pinta
+/// del mismo color. Antes el borde era el mismo siempre: quien navega con
+/// teclado no tenía forma de saber dónde estaba parado.
+class _Campo extends StatelessWidget {
+  final TextEditingController controlador;
+  final FocusNode foco;
+  final String etiqueta;
+  final IconData icono;
+  final List<String> pistas;
+  final TextInputAction accion;
+  final bool habilitado;
+  final bool esClave;
+  final bool oculto;
+  final VoidCallback? onAlternarOculto;
+  final VoidCallback onEnviar;
+
+  const _Campo({
+    required this.controlador,
+    required this.foco,
+    required this.etiqueta,
+    required this.icono,
+    required this.pistas,
+    required this.accion,
+    required this.habilitado,
+    required this.onEnviar,
+    this.esClave = false,
+    this.oculto = true,
+    this.onAlternarOculto,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = context.cs;
+
+    OutlineInputBorder borde(Color color, double grosor) => OutlineInputBorder(
+      borderRadius: _esquina,
+      borderSide: BorderSide(color: color, width: grosor),
+    );
+
+    return TextField(
+      controller: controlador,
+      focusNode: foco,
+      // `readOnly` y no `enabled: false`: bloquea escribir mientras viaja la
+      // consulta sin apagar el campo. Apagarlo lo pintaba de gris por medio
+      // segundo, y quién está trabajando ya lo dice el botón.
+      readOnly: !habilitado,
+      obscureText: esClave && oculto,
+      autofillHints: pistas,
+      textInputAction: accion,
+      onSubmitted: (_) => onEnviar(),
+      style: TextStyle(color: cs.onSurface),
+      cursorColor: cs.primary,
+      decoration: InputDecoration(
+        labelText: etiqueta,
+        filled: true,
+        fillColor: cs.surfaceContainerHigh,
+        prefixIcon: Icon(icono, size: 20),
+        prefixIconColor: WidgetStateColor.resolveWith(
+          (estados) => estados.contains(WidgetState.focused)
+              ? cs.primary
+              : cs.onSurfaceVariant,
+        ),
+        suffixIcon: esClave
+            // `ExcludeFocus`: sin esto, tocar el ojo le saca el foco al campo y
+            // en el teléfono se cierra el teclado en medio de escribir la
+            // contraseña.
+            ? ExcludeFocus(
+                child: IconButton(
+                  tooltip: oculto ? 'Mostrar contraseña' : 'Ocultar contraseña',
+                  onPressed: onAlternarOculto,
+                  color: cs.onSurfaceVariant,
+                  icon: Icon(
+                    oculto
+                        ? Icons.visibility_outlined
+                        : Icons.visibility_off_outlined,
+                    size: 20,
+                  ),
+                ),
+              )
+            : null,
+        border: borde(cs.outlineVariant, 1),
+        enabledBorder: borde(cs.outlineVariant, 1),
+        focusedBorder: borde(cs.primary, 2),
       ),
     );
   }
 }
 
-/// Campo de input limpio
-class _InputField extends StatelessWidget {
-  final TextEditingController controller;
-  final FocusNode focusNode;
-  final String hint;
-  final IconData icon;
-  final bool isPassword;
-  final bool obscure;
-  final VoidCallback? onToggleObscure;
-  final VoidCallback onSubmit;
-  final bool isDark;
-  final Color accent;
-  final Color bgColor;
-  final Color borderColor;
-  final Color textColor;
-  final Color hintColor;
+/// El botón de entrar.
+///
+/// Mientras la consulta viaja **no se apaga**: se queda encendido, un poco más
+/// tenue, con el indicador y la palabra que dice qué está pasando. Apagado con
+/// los colores de deshabilitado parecía que se había roto justo al apretarlo.
+class _BotonEntrar extends StatefulWidget {
+  final bool cargando;
+  final VoidCallback onPresionar;
 
-  const _InputField({
-    required this.controller,
-    required this.focusNode,
-    required this.hint,
-    required this.icon,
-    this.isPassword = false,
-    this.obscure = true,
-    this.onToggleObscure,
-    required this.onSubmit,
-    required this.isDark,
-    required this.accent,
-    required this.bgColor,
-    required this.borderColor,
-    required this.textColor,
-    required this.hintColor,
+  const _BotonEntrar({required this.cargando, required this.onPresionar});
+
+  @override
+  State<_BotonEntrar> createState() => _BotonEntrarState();
+}
+
+class _BotonEntrarState extends State<_BotonEntrar> {
+  final WidgetStatesController _estados = WidgetStatesController();
+
+  @override
+  void dispose() {
+    _estados.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = context.cs;
+
+    return ListenableBuilder(
+      listenable: _estados,
+      // El hundido de 1,5% al apretar. La tinta de Material dice «te escuché»;
+      // el hundido dice «esto es un botón físico». Cuesta un `Transform`.
+      builder: (context, hijo) => AnimatedScale(
+        scale: _estados.value.contains(WidgetState.pressed) ? 0.985 : 1,
+        duration: const Duration(milliseconds: 110),
+        curve: Curves.easeOut,
+        child: hijo,
+      ),
+      child: FilledButton(
+        statesController: _estados,
+        onPressed: widget.cargando ? null : widget.onPresionar,
+        style: FilledButton.styleFrom(
+          minimumSize: const Size.fromHeight(52),
+          shape: const RoundedRectangleBorder(borderRadius: _esquina),
+          disabledBackgroundColor: cs.primary.withValues(alpha: 0.72),
+          disabledForegroundColor: cs.onPrimary,
+          textStyle: const TextStyle(
+            fontSize: 15,
+            fontWeight: Peso.titulo,
+            letterSpacing: 0.2,
+          ),
+        ),
+        child: AnimatedSwitcher(
+          duration: const Duration(milliseconds: 180),
+          child: widget.cargando
+              ? Row(
+                  key: const ValueKey('cargando'),
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2.2,
+                        color: cs.onPrimary,
+                      ),
+                    ),
+                    const SizedBox(width: Esp.m),
+                    const Text('Verificando'),
+                  ],
+                )
+              : const Row(
+                  key: ValueKey('listo'),
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text('Iniciar sesión'),
+                    SizedBox(width: Esp.s),
+                    Icon(Icons.arrow_forward_rounded, size: 18),
+                  ],
+                ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Lo que salió mal, o lo que hay que saber.
+///
+/// Los colores salen de `errorContainer` / `onErrorContainer`, el par que
+/// Material garantiza legible. El rojo fijo de antes (`0xFFDC2626`) quedaba
+/// idéntico al acento con la semilla roja: el error se veía como cualquier otra
+/// cosa de la pantalla.
+///
+/// `liveRegion` hace que un lector de pantalla lo anuncie cuando aparece. Sin
+/// eso, quien no ve la pantalla apretaba Entrar y no pasaba nada.
+class _Aviso extends StatelessWidget {
+  final String texto;
+  final _Tono tono;
+
+  const _Aviso({required this.texto, required this.tono});
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = context.cs;
+    final esError = tono == _Tono.error;
+
+    final fondo = esError ? cs.errorContainer : cs.primaryContainer;
+    final tinta = esError ? cs.onErrorContainer : cs.onPrimaryContainer;
+    final borde = (esError ? cs.error : cs.primary).withValues(alpha: 0.35);
+
+    return Semantics(
+      liveRegion: true,
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(Esp.m),
+        decoration: BoxDecoration(
+          color: fondo,
+          borderRadius: _esquina,
+          border: Border.all(color: borde),
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(
+              esError ? Icons.error_outline_rounded : Icons.info_outline_rounded,
+              color: tinta,
+              size: 19,
+            ),
+            const SizedBox(width: Esp.s),
+            Expanded(
+              child: Text(
+                texto,
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: tinta,
+                  fontWeight: FontWeight.w500,
+                  height: 1.35,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Una semilla de la paleta, con su nombre debajo.
+class _MuestraDeColor extends StatelessWidget {
+  final Color color;
+  final String nombre;
+  final bool elegida;
+  final VoidCallback onTap;
+
+  const _MuestraDeColor({
+    required this.color,
+    required this.nombre,
+    required this.elegida,
+    required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: bgColor,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: borderColor),
-      ),
-      child: TextField(
-        controller: controller,
-        focusNode: focusNode,
-        obscureText: isPassword ? obscure : false,
-        onSubmitted: (_) => onSubmit(),
-        style: TextStyle(color: textColor, fontSize: 14),
-        cursorColor: accent,
-        decoration: InputDecoration(
-          hintText: hint,
-          hintStyle: TextStyle(color: hintColor, fontSize: 14),
-          prefixIcon: Icon(icon, color: hintColor, size: 20),
-          suffixIcon:
-              isPassword
-                  ? GestureDetector(
-                    onTap: onToggleObscure,
-                    child: Icon(
-                      obscure
-                          ? Icons.visibility_off_outlined
-                          : Icons.visibility_outlined,
-                      color: hintColor,
-                      size: 20,
+    final cs = context.cs;
+
+    // Negro o blanco encima del color, el que contraste más. Es la misma cuenta
+    // que hacía la versión anterior y es honesta: no hay forma de saber de
+    // antemano qué letra se lee sobre un amarillo y sobre un violeta.
+    final tinta =
+        ThemeData.estimateBrightnessForColor(color) == Brightness.light
+        ? Colors.black87
+        : Colors.white;
+
+    return SizedBox(
+      width: 78,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // El anillo se dibuja siempre, transparente cuando no está elegida,
+          // para que las nueve muestras midan lo mismo y la grilla no salte al
+          // cambiar de color.
+          Container(
+            padding: const EdgeInsets.all(3),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(19),
+              border: Border.all(
+                color: elegida ? cs.onSurface : Colors.transparent,
+                width: 2,
+              ),
+            ),
+            child: Material(
+              color: color,
+              borderRadius: _esquina,
+              child: InkWell(
+                onTap: onTap,
+                borderRadius: _esquina,
+                child: SizedBox(
+                  height: 58,
+                  child: Center(
+                    child: AnimatedScale(
+                      scale: elegida ? 1 : 0,
+                      duration: const Duration(milliseconds: 160),
+                      curve: Curves.easeOutBack,
+                      child: Icon(Icons.check_rounded, color: tinta, size: 24),
                     ),
-                  )
-                  : null,
-          border: InputBorder.none,
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: 16,
-            vertical: 15,
+                  ),
+                ),
+              ),
+            ),
           ),
-        ),
+          const SizedBox(height: Esp.xs),
+          Text(
+            nombre,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: Theme.of(context).textTheme.labelSmall?.copyWith(
+              color: elegida ? cs.onSurface : cs.onSurfaceVariant,
+              fontWeight: elegida ? Peso.dato : Peso.normal,
+            ),
+          ),
+        ],
       ),
     );
   }

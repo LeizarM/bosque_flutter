@@ -492,6 +492,7 @@ class AppConstants {
   static const String rptPermisoVacacion = '/vacacion/RptPermisoVacacion';
   static const String feriados = '/vacacion/feriados';
   static const String previsualizarSaldo = '/vacacion/previsualizarSaldo';
+  static const String proximosDashboard = '/vacacion/proximosPermisos';
 
   //====================
   // ═══════════════════════════════════════════════════════════════════════════════
@@ -673,12 +674,15 @@ class AppConstants {
   /// el detalle no puede discrepar del total.
   static const String permRrhhSaldoDetalleTramo =
       '$_permRrhh/saldo/detalle-tramo';
+
   /// El «DETALLE COMPLETO» del sistema anterior: el estado de cuenta del
   /// empleado en PDF. La variante fiscal oculta los días abonados, y ese flag
   /// vive dentro del `.jrxml`, no acá: son dos rutas y no un parámetro.
-  static const String permRrhhEstadoCuenta = '$_permRrhh/reportes/estado-cuenta';
+  static const String permRrhhEstadoCuenta =
+      '$_permRrhh/reportes/estado-cuenta';
   static const String permRrhhEstadoCuentaFiscal =
       '$_permRrhh/reportes/estado-cuenta-fiscal';
+
   /// Los días del rango que NO descuentan: feriados de la sucursal del
   /// empleado y sábados que el rol dice que no le tocan. Los domingos no
   /// vienen — la UI los deduce de la fecha.
@@ -782,7 +786,8 @@ class AppConstants {
   // conjunto de partida y otra respuesta para el mismo botón.
   static const String permRrhhPermisoHistorial = '$_permRrhh/permisos/kardex';
   static const String permRrhhPermisoSimular = '$_permRrhh/permisos/calcular';
-  static const String permRrhhPermisoRegistrar = '$_permRrhh/permisos/registrar';
+  static const String permRrhhPermisoRegistrar =
+      '$_permRrhh/permisos/registrar';
   static const String permRrhhVacacionRegistrar =
       '$_permRrhh/vacacion/registrar';
   static const String permRrhhPermisoVacacionPagada =
@@ -798,6 +803,24 @@ class AppConstants {
   // `codEmpleado` + `codUsuarioLogueado` (los tipos que ESA persona puede
   // pedirse) y esto es la consola de RR.HH., que carga a nombre de otro.
   static const String permRrhhPermisoTipos = '$_permRrhh/permisos/tipos';
+
+  // ═══════════════════════════════════════════════════════════════════════════════
+  // RUTAS MODULO: CARTAS CITE  (tcrDocumento)
+  // ═══════════════════════════════════════════════════════════════════════════════
+  static const String citeListar = '/cartas-cite/listar';
+  static const String citeObtener = '/cartas-cite/obtener';
+  static const String citeSiguienteCite = '/cartas-cite/siguiente-cite';
+  static const String citeTiposDocumento = '/cartas-cite/tipos-documento';
+  static const String citeAreas = '/cartas-cite/areas';
+  static const String citeEmpleados = '/cartas-cite/empleados';
+  static const String citeEmpleado = '/cartas-cite/empleado';
+  static const String citeFirmaUsuario = '/cartas-cite/firma-usuario';
+  static const String citeGestiones = '/cartas-cite/gestiones';
+  static const String citePrepararGestion = '/cartas-cite/preparar-gestion';
+  static const String citeGuardar = '/cartas-cite/guardar';
+  static const String citeAnular = '/cartas-cite/anular';
+  static const String citeGenerarPdf = '/cartas-cite/generar-pdf';
+  static const String citeReporteMensual = '/cartas-cite/reporte-mensual';
 
   //Para cargar permisos de botones por usuario
   static const String ubtnPermisosBotones = '/view/vistaBtn';

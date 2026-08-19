@@ -5,31 +5,42 @@ import 'package:bosque_flutter/presentation/widgets/shared/permission_widget.dar
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-Widget? _buildStatusBadge(String estado) {
+Widget? _buildStatusBadge(BuildContext context, String estado) {
+  final isDark = Theme.of(context).brightness == Brightness.dark;
   // Color: cualquier valor con 'VENCIDO' → rojo | 'POR VENCER' → naranja
   final isRed = estado.contains('VENCIDO') || estado.contains('VENCIDA');
   final isOrange = estado.contains('POR VENCER');
   if (!isRed && !isOrange) return null;
 
-  final bg = isRed ? Colors.red.shade100 : Colors.orange.shade100;
-  final fg = isRed ? Colors.red.shade800 : Colors.orange.shade800;
+  final bg =
+      isRed
+          ? (isDark ? Colors.red.withValues(alpha: 0.15) : Colors.red.shade100)
+          : (isDark
+              ? Colors.orange.withValues(alpha: 0.15)
+              : Colors.orange.shade100);
 
-  return Container(
-    padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
-    margin: const EdgeInsets.only(
-      right: 8,
-    ), // Fix #3: espacio al campo siguiente
-    decoration: BoxDecoration(
-      color: bg,
-      borderRadius: BorderRadius.circular(4),
-    ),
-    child: Text(
-      estado,
-      style: TextStyle(
-        fontSize: 9,
-        fontWeight: FontWeight.w800,
-        color: fg,
-        letterSpacing: 0.2,
+  final fg =
+      isRed
+          ? (isDark ? Colors.red.shade300 : Colors.red.shade800)
+          : (isDark ? Colors.orange.shade300 : Colors.orange.shade800);
+
+  return Align(
+    alignment: Alignment.centerLeft,
+    child: Container(
+      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+      margin: const EdgeInsets.only(right: 8),
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(4),
+      ),
+      child: Text(
+        estado,
+        style: TextStyle(
+          fontSize: 9,
+          fontWeight: FontWeight.w800,
+          color: fg,
+          letterSpacing: 0.2,
+        ),
       ),
     ),
   );
@@ -60,6 +71,7 @@ class _DocsVencidosCard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(docsVencidosProvider);
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final colorScheme = Theme.of(context).colorScheme;
 
     final vencidos =
         state.items.where((e) => e.estadoDocumentos == 'VENCIDO').length;
@@ -68,12 +80,9 @@ class _DocsVencidosCard extends ConsumerWidget {
     return Container(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(14),
-        color: isDark ? const Color(0xFF1E2430) : Colors.white,
+        color: colorScheme.surfaceContainer,
         border: Border.all(
-          color:
-              isDark
-                  ? Colors.white.withValues(alpha: 0.07)
-                  : Colors.grey.shade200,
+          color: colorScheme.outlineVariant.withValues(alpha: 0.5),
         ),
         boxShadow: [
           BoxShadow(
@@ -113,33 +122,26 @@ class _DocsVencidosCard extends ConsumerWidget {
                   _Pill(label: '$proximos', color: Colors.orange),
                 ],
                 const Spacer(),
-                // Botón refresh
-                state.cargando
-                    ? const Padding(
-                      padding: EdgeInsets.all(10),
-                      child: SizedBox(
-                        width: 12,
-                        height: 12,
-                        child: CircularProgressIndicator(strokeWidth: 1.5),
-                      ),
-                    )
-                    : IconButton(
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(
-                        minWidth: 32,
-                        minHeight: 32,
-                      ),
-                      icon: Icon(
-                        Icons.refresh_rounded,
-                        size: 16,
-                        color: isDark ? Colors.white38 : Colors.grey.shade400,
-                      ),
-                      onPressed:
-                          () =>
-                              ref
-                                  .read(docsVencidosProvider.notifier)
-                                  .recargar(),
+                IconButton(
+                  icon: Icon(
+                    Icons.sync_rounded,
+                    size: 18,
+                    color: isDark ? Colors.white70 : Colors.grey.shade600,
+                  ),
+                  tooltip: 'Refrescar',
+                  onPressed: () {
+                    ref.invalidate(docsVencidosProvider);
+                  },
+                ),
+                if (state.cargando)
+                  const Padding(
+                    padding: EdgeInsets.all(10),
+                    child: SizedBox(
+                      width: 12,
+                      height: 12,
+                      child: CircularProgressIndicator(strokeWidth: 1.5),
                     ),
+                  ),
               ],
             ),
           ),
@@ -186,7 +188,7 @@ class _DocsVencidosCard extends ConsumerWidget {
           else
             (ResponsiveUtilsBosque.isDesktop(context) ||
                     ResponsiveUtilsBosque.isTablet(context))
-                ? _buildDesktopTable(state.items, isDark)
+                ? _buildDesktopTable(context, state.items, isDark)
                 : ConstrainedBox(
                   // Límite de altura para que no invada la pantalla
                   constraints: const BoxConstraints(maxHeight: 350),
@@ -247,7 +249,11 @@ class _DocsVencidosCard extends ConsumerWidget {
     );
   }
 
-  Widget _buildDesktopTable(List<DocsVencidosEntity> items, bool isDark) {
+  Widget _buildDesktopTable(
+    BuildContext context,
+    List<DocsVencidosEntity> items,
+    bool isDark,
+  ) {
     final headerStyle = TextStyle(
       fontSize: 11,
       fontWeight: FontWeight.w700,
@@ -346,7 +352,10 @@ class _DocsVencidosCard extends ConsumerWidget {
                           Expanded(
                             flex: 2,
                             child:
-                                _buildStatusBadge(item.estadoDocumentos) ??
+                                _buildStatusBadge(
+                                  context,
+                                  item.estadoDocumentos,
+                                ) ??
                                 Text(
                                   '—',
                                   style: textStyle.copyWith(
@@ -448,7 +457,7 @@ class _ItemRow extends StatelessWidget {
                   ),
                   const SizedBox(width: 8),
                   // Badge único al final
-                  _buildStatusBadge(item.estadoDocumentos) ??
+                  _buildStatusBadge(context, item.estadoDocumentos) ??
                       const SizedBox.shrink(),
                 ],
               ),
@@ -506,18 +515,34 @@ class _Pill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
-      decoration: BoxDecoration(
-        color: color.shade100,
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Text(
-        label,
-        style: TextStyle(
-          fontSize: 9,
-          fontWeight: FontWeight.w800,
-          color: color.shade700,
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isRed = color == Colors.red;
+
+    final bg =
+        isRed
+            ? (isDark
+                ? Colors.red.withValues(alpha: 0.15)
+                : Colors.red.shade100)
+            : (isDark
+                ? Colors.orange.withValues(alpha: 0.15)
+                : Colors.orange.shade100);
+
+    final fg =
+        isRed
+            ? (isDark ? Colors.red.shade300 : Colors.red.shade800)
+            : (isDark ? Colors.orange.shade300 : Colors.orange.shade800);
+
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+        decoration: BoxDecoration(
+          color: bg,
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(fontSize: 9, fontWeight: FontWeight.w800, color: fg),
         ),
       ),
     );

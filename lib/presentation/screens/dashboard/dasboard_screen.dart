@@ -2,7 +2,9 @@ import 'package:bosque_flutter/core/state/empleados_dependientes_provider.dart';
 import 'package:bosque_flutter/core/state/sidebar_state_provider.dart';
 import 'package:bosque_flutter/core/state/theme_mode_provider.dart';
 
+import 'package:bosque_flutter/core/state/rrhh_provider.dart';
 import 'package:bosque_flutter/core/state/user_provider.dart';
+import 'package:bosque_flutter/core/state/permisos_vacacion_provider.dart';
 import 'package:bosque_flutter/presentation/widgets/shared/auth_gate.dart';
 import 'package:bosque_flutter/presentation/widgets/shared/sidebar.dart';
 import 'package:flutter/material.dart';

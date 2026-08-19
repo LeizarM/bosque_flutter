@@ -58,12 +58,14 @@ class SolicitudesPendientesWidget extends ConsumerWidget {
                     Container(
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
-                        color: Colors.orange.withValues(alpha: 0.12),
+                        color: theme.colorScheme.primary.withValues(
+                          alpha: 0.12,
+                        ),
                         borderRadius: BorderRadius.circular(10),
                       ),
-                      child: const Icon(
+                      child: Icon(
                         Icons.pending_actions_rounded,
-                        color: Colors.orange,
+                        color: theme.colorScheme.primary,
                         size: 20,
                       ),
                     ),
@@ -87,19 +89,24 @@ class SolicitudesPendientesWidget extends ConsumerWidget {
                               color:
                                   lista.isEmpty
                                       ? Colors.green[400]
-                                      : Colors.orange[700],
+                                      : theme.colorScheme.primary,
                             ),
                           ),
                         ],
                       ),
                     ),
                     IconButton(
-                      icon: const Icon(Icons.refresh_rounded, size: 20),
-                      tooltip: 'Refrescar',
-                      onPressed:
-                          () => ref.invalidate(
-                            solicitudesPendientesProvider(codUsuario),
-                          ),
+                      icon: Icon(
+                        Icons.sync_rounded,
+                        size: 20,
+                        color: theme.colorScheme.primary,
+                      ),
+                      tooltip: 'Refrescar Solicitudes',
+                      onPressed: () {
+                        ref.invalidate(
+                          solicitudesPendientesProvider(codUsuario),
+                        );
+                      },
                     ),
                   ],
                 ),
@@ -127,22 +134,25 @@ class SolicitudesPendientesWidget extends ConsumerWidget {
                   ),
                 )
               else
-                ListView.separated(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  padding: const EdgeInsets.fromLTRB(12, 4, 12, 16),
-                  itemCount: lista.length,
-                  separatorBuilder: (_, __) => const SizedBox(height: 8),
-                  itemBuilder:
-                      (ctx, i) => _SolicitudCard(
-                        item: lista[i],
-                        codUsuario: codUsuario,
-                        actorCodEmpleado: user.codEmpleado,
-                        onAccionCompletada:
-                            () => ref.invalidate(
-                              solicitudesPendientesProvider(codUsuario),
-                            ),
-                      ),
+                ConstrainedBox(
+                  constraints: const BoxConstraints(maxHeight: 350),
+                  child: ListView.separated(
+                    shrinkWrap: true,
+                    physics: const BouncingScrollPhysics(),
+                    padding: const EdgeInsets.fromLTRB(12, 4, 12, 16),
+                    itemCount: lista.length,
+                    separatorBuilder: (_, __) => const SizedBox(height: 8),
+                    itemBuilder:
+                        (ctx, i) => _SolicitudCard(
+                          item: lista[i],
+                          codUsuario: codUsuario,
+                          actorCodEmpleado: user.codEmpleado,
+                          onAccionCompletada:
+                              () => ref.invalidate(
+                                solicitudesPendientesProvider(codUsuario),
+                              ),
+                        ),
+                  ),
                 ),
             ],
           ),
@@ -205,13 +215,8 @@ class _SolicitudCardState extends ConsumerState<_SolicitudCard> {
                 style: TextStyle(color: Colors.orange, fontSize: 13),
               ),
               style: OutlinedButton.styleFrom(
-                side: BorderSide(
-                  color: Colors.orange.withValues(alpha: 0.5),
-                ),
-                padding: const EdgeInsets.symmetric(
-                  vertical: 9,
-                  horizontal: 2,
-                ),
+                side: BorderSide(color: Colors.orange.withValues(alpha: 0.5)),
+                padding: const EdgeInsets.symmetric(vertical: 9, horizontal: 2),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(10),
                 ),
@@ -232,13 +237,8 @@ class _SolicitudCardState extends ConsumerState<_SolicitudCard> {
                 style: TextStyle(color: Colors.red, fontSize: 13),
               ),
               style: OutlinedButton.styleFrom(
-                side: BorderSide(
-                  color: Colors.red.withValues(alpha: 0.5),
-                ),
-                padding: const EdgeInsets.symmetric(
-                  vertical: 9,
-                  horizontal: 2,
-                ),
+                side: BorderSide(color: Colors.red.withValues(alpha: 0.5)),
+                padding: const EdgeInsets.symmetric(vertical: 9, horizontal: 2),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(10),
                 ),
@@ -261,10 +261,7 @@ class _SolicitudCardState extends ConsumerState<_SolicitudCard> {
               ),
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.green[600],
-                padding: const EdgeInsets.symmetric(
-                  vertical: 9,
-                  horizontal: 2,
-                ),
+                padding: const EdgeInsets.symmetric(vertical: 9, horizontal: 2),
                 elevation: 0,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(10),

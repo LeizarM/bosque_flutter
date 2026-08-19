@@ -166,4 +166,16 @@ class PermisosVacacionImpl extends BaseApiRepository
       fromJson: (json) => FeriadoModel.fromJson(json),
     );
   }
+
+  @override
+  Future<List<SolicitudPermisoEntity>> obtenerPermisosProximosDashboard(
+    int audUsuarioI,
+  ) async {
+    final modelos = await postAndReturnList<SolicitudPermisoModel>(
+      endpoint: AppConstants.proximosDashboard,
+      data: {'audUsuarioI': audUsuarioI},
+      fromJson: (json) => SolicitudPermisoModel.fromJson(json),
+    );
+    return modelos.map((m) => m.toEntity()).toList();
+  }
 }

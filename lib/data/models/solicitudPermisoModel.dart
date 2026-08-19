@@ -63,6 +63,7 @@ class SolicitudPermisoModel {
   // ── Auxiliares del listado de pendientes ──
   final String? nombreEmpleado;
   final String? cargoEmpleado;
+  final String? sucursalEmpleado;
   final DateTime? fechaSolicitud;
   final String? pasoActual;
   final int? codPermiso;
@@ -93,6 +94,7 @@ class SolicitudPermisoModel {
     required this.audUsuarioI,
     this.nombreEmpleado,
     this.cargoEmpleado,
+    this.sucursalEmpleado,
     this.fechaSolicitud,
     this.pasoActual,
     this.codPermiso,
@@ -138,6 +140,7 @@ class SolicitudPermisoModel {
         // auxiliares — null si no vienen en el JSON
         nombreEmpleado: json['nombreEmpleado'],
         cargoEmpleado: json['cargoEmpleado'],
+        sucursalEmpleado: json['sucursalEmpleado'],
         fechaSolicitud:
             json['fechaSolicitud'] != null
                 ? DateTime.parse(json['fechaSolicitud'])
@@ -168,6 +171,9 @@ class SolicitudPermisoModel {
     "cantidadDias": cantidadDias,
     "estado": estado,
     "audUsuarioI": audUsuarioI,
+    "nombreEmpleado": nombreEmpleado,
+    "cargoEmpleado": cargoEmpleado,
+    "sucursalEmpleado": sucursalEmpleado,
     "codPermiso": codPermiso,
     "autorizador": autorizador,
     "diasDisponibles": diasDisponibles,
@@ -194,6 +200,7 @@ class SolicitudPermisoModel {
     audUsuarioI: audUsuarioI,
     nombreEmpleado: nombreEmpleado,
     cargoEmpleado: cargoEmpleado,
+    sucursalEmpleado: sucursalEmpleado,
     fechaSolicitud: fechaSolicitud,
     pasoActual: pasoActual,
     codPermiso: codPermiso,
@@ -223,6 +230,7 @@ class SolicitudPermisoModel {
         audUsuarioI: entity.audUsuarioI,
         nombreEmpleado: entity.nombreEmpleado,
         cargoEmpleado: entity.cargoEmpleado,
+        sucursalEmpleado: entity.sucursalEmpleado,
         fechaSolicitud: entity.fechaSolicitud,
         pasoActual: entity.pasoActual,
         codPermiso: entity.codPermiso,

@@ -12,6 +12,7 @@ class SolicitudPermisoEntity {
   // ── Auxiliares (vienen del listado de pendientes) ──
   final String? nombreEmpleado;
   final String? cargoEmpleado;
+  final String? sucursalEmpleado;
   final DateTime? fechaSolicitud;
   final String? pasoActual;
   final int? codPermiso;
@@ -42,6 +43,7 @@ class SolicitudPermisoEntity {
     this.codSolicitud,
     this.nombreEmpleado,
     this.cargoEmpleado,
+    this.sucursalEmpleado,
     this.fechaSolicitud,
     this.pasoActual,
     this.codPermiso,
