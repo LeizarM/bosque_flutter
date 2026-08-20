@@ -31,7 +31,9 @@ class DetalleResmadoModel {
         idRes: json["idRes"] ?? 0,
         codArticulo: json["codArticulo"] ?? '',
         descripcion: json["descripcion"] ?? '',
-        cantResma: json["cantResma"] ?? 0,
+        // La columna es float en la base, asi que el backend manda 3.0 y no 3.
+        // Sin el toInt() esto revienta al leer el detalle de un resmado.
+        cantResma: (json["cantResma"] ?? 0).toInt(),
         audUsuario: json["audUsuario"] ?? 0,
       );
 

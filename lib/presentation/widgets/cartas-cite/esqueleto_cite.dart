@@ -1,5 +1,4 @@
 import 'package:bosque_flutter/core/ui/tokens_bosque.dart';
-import 'package:bosque_flutter/presentation/widgets/cartas-cite/identidad_cite.dart';
 import 'package:flutter/material.dart';
 
 /// El listado mientras la consulta viaja.

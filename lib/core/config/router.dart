@@ -240,6 +240,29 @@ final routerProvider = Provider<GoRouter>((ref) {
               name: 'tprod_loteProduccionResmado',
               builder: (context, state) => const ResmadoRegistroScreen(),
             ),
+
+            // Ver lote de producción
+            GoRoute(
+              path: '/dashboard/tprod_loteProduccion/ViewLoteProduccion',
+              name: 'tprod_loteProduccionView',
+              builder: (context, state) => const VerLoteProduccionScreen(),
+            ),
+
+            // Ver resmado
+            GoRoute(
+              path: '/dashboard/tprod_loteProduccion/ViewResmado',
+              name: 'tprod_loteProduccionViewResmado',
+              builder: (context, state) => const VerResmadoScreen(),
+            ),
+
+            // Solicitud de corte
+            // La ruta es EXACTAMENTE tb_vista.direccion (codVista 100 =
+            // 'tccrControlCorteResmado/solicitudCorte').
+            GoRoute(
+              path: '/dashboard/tccrControlCorteResmado/solicitudCorte',
+              name: 'tccrSolicitudCorte',
+              builder: (context, state) => const SolicitudCorteScreen(),
+            ),
             //Anticipos Empleados
             GoRoute(
               path: '/dashboard/tplAnticipo/anticipo',
@@ -447,6 +470,27 @@ final routerProvider = Provider<GoRouter>((ref) {
           path: '/tprod_loteProduccion/Resmado',
           redirect:
               (context, state) => '/dashboard/tprod_loteProduccion/Resmado',
+        ),
+        // Ver lote de producción
+        GoRoute(
+          path: '/tprod_loteProduccion/ViewLoteProduccion',
+          redirect:
+              (context, state) =>
+                  '/dashboard/tprod_loteProduccion/ViewLoteProduccion',
+        ),
+        // Ver resmado
+        GoRoute(
+          path: '/tprod_loteProduccion/ViewResmado',
+          redirect:
+              (context, state) =>
+                  '/dashboard/tprod_loteProduccion/ViewResmado',
+        ),
+        // Solicitud de corte
+        GoRoute(
+          path: '/tccrControlCorteResmado/solicitudCorte',
+          redirect:
+              (context, state) =>
+                  '/dashboard/tccrControlCorteResmado/solicitudCorte',
         ),
         // ANTICIPOS EMPLEADOS
         GoRoute(

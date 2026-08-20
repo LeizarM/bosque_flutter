@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:bosque_flutter/domain/entities/empresa_entity.dart';
 import 'package:bosque_flutter/domain/entities/lote_produccion_entity.dart';
 import 'package:bosque_flutter/domain/entities/maquina_produccion_entity.dart';
@@ -32,4 +34,35 @@ abstract class LoteProduccionRepository {
 
   /// Registra la merma.
   Future<bool> registrarMerma(List<MermaEntity> lista);
+
+  // ── Ver lote de produccion ─────────────────────────────────────────────────
+
+  /// Lotes registrados entre dos fechas, para la pantalla de consulta.
+  Future<List<LoteProduccionEntity>> obtenerLotesRegistrados(
+    DateTime desde,
+    DateTime hasta,
+  );
+
+  /// Material de ingreso de un lote.
+  Future<List<MaterialIngresoEntity>> obtenerMaterialIngresoXLote(int idLp);
+
+  /// Material de salida de un lote.
+  Future<List<MaterialSalidaEntity>> obtenerMaterialSalidaXLote(int idLp);
+
+  /// Mermas de un lote.
+  Future<List<MermaEntity>> obtenerMermaXLote(int idLp);
+
+  // ── Reportes ───────────────────────────────────────────────────────────────
+
+  /// Detalle de un lote en PDF.
+  Future<Uint8List> reporteLotePdf(int idLp);
+
+  /// Cuadro resumen de produccion entre fechas.
+  Future<Uint8List> reporteResumenProduccionPdf(DateTime desde, DateTime hasta);
+
+  /// Cuadro de resmado entre fechas.
+  Future<Uint8List> reporteResmadoPdf(DateTime desde, DateTime hasta);
+
+  /// Consolidado de corte por maquina entre fechas.
+  Future<Uint8List> reporteConsolidadoCortePdf(DateTime desde, DateTime hasta);
 }

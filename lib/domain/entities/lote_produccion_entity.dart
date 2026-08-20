@@ -70,4 +70,46 @@ class LoteProduccionEntity {
     required this.codArtSalida,
     required this.db,
   });
+
+  /// Una copia independiente.
+  ///
+  /// Los campos son mutables, asi que editar un lote en el detalle tocaria el
+  /// mismo objeto que dibuja la lista: al cancelar quedaban a la vista cambios
+  /// que nunca se guardaron.
+  LoteProduccionEntity clonar() => LoteProduccionEntity(
+    idMa: idMa,
+    idLp: idLp,
+    numLote: numLote,
+    anio: anio,
+    fecha: fecha,
+    hraInicioCorte: hraInicioCorte,
+    hraInicio: hraInicio,
+    hraFin: hraFin,
+    cantBobinasIngresoTotal: cantBobinasIngresoTotal,
+    pesoKilosTotalIngreso: pesoKilosTotalIngreso,
+    pesoTotalSalida: pesoTotalSalida,
+    pesoPaletaSalida: pesoPaletaSalida,
+    pesoMaterialSalida: pesoMaterialSalida,
+    cantResmaSalida: cantResmaSalida,
+    cantHojasSalida: cantHojasSalida,
+    mermaTotal: mermaTotal,
+    diferenciaProduccion: diferenciaProduccion,
+    diferenciaProdResma: diferenciaProdResma,
+    cantEstimadaResma: cantEstimadaResma,
+    pesoBalanzaTotal: pesoBalanzaTotal,
+    estado: estado,
+    obs: obs,
+    numCorte: numCorte,
+    anioCorte: anioCorte,
+    docNumOrdFab: docNumOrdFab,
+    codEmpresa: codEmpresa,
+    audUsuario: audUsuario,
+    codArticulo: codArticulo,
+    datoArt: datoArt,
+    articulo: articulo,
+    utm: utm,
+    codArtEntrada: codArtEntrada,
+    codArtSalida: codArtSalida,
+    db: db,
+  );
 }

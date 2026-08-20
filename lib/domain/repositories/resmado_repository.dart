@@ -22,4 +22,15 @@ abstract class ResmadoRepository {
 
   /// Registra el detalle del resmado.
   Future<bool> registrarDetalleResmado(List<DetalleResmadoEntity> detalles);
+
+  // ── Ver resmado ────────────────────────────────────────────────────────────
+
+  /// Resmados de un rango de fechas, con grupo, empleado y empresa resueltos.
+  Future<List<ResmadoEntity>> obtenerResmados(DateTime desde, DateTime hasta);
+
+  /// Articulos resmados de un resmado.
+  Future<List<DetalleResmadoEntity>> obtenerDetalleResmado(int idRes);
+
+  /// Actualiza solo la orden de fabricacion y la empresa de un resmado.
+  Future<bool> actualizarOrdenFabricacion(ResmadoEntity resmado);
 }

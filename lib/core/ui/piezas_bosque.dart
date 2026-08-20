@@ -12,7 +12,28 @@
 /// (ver `tokens_bosque.dart` y `aviso.dart`).
 library;
 
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+
+/// Deja arrastrar con el mouse un scroll horizontal.
+///
+/// En web y escritorio Flutter saca el mouse de `dragDevices` a proposito: en
+/// una pagina vertical, arrastrar con el boton izquierdo selecciona texto. El
+/// efecto colateral es que una tabla ancha queda inalcanzable, porque la rueda
+/// del mouse va al eje vertical y el arrastre no hace nada.
+///
+/// Se aplica solo a los scrolls horizontales, nunca al cuerpo de la pagina.
+class ArrastreLateral extends MaterialScrollBehavior {
+  const ArrastreLateral();
+
+  @override
+  Set<PointerDeviceKind> get dragDevices => const {
+    PointerDeviceKind.touch,
+    PointerDeviceKind.mouse,
+    PointerDeviceKind.trackpad,
+    PointerDeviceKind.stylus,
+  };
+}
 
 /// `dd/MM/yyyy`, o `--` si no hay fecha. Sin `intl` para no arrastrar locale
 /// por tres usos.

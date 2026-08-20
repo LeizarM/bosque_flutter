@@ -47,6 +47,19 @@ abstract final class Peso {
   static const FontWeight normal = FontWeight.w400;
 }
 
+/// Un unico radio de esquina para toda la app.
+///
+/// Tres escalones y una regla: la superficie que contiene usa [media], lo que
+/// vive adentro usa [chica], y lo que es una pastilla usa [pastilla].
+///
+/// Nacio en `cartas-cite` y se movio aqui cuando el modulo de produccion iba a
+/// ser la segunda copia. `identidad_cite.dart` lo re-exporta.
+abstract final class Esquina {
+  static const double chica = 8;
+  static const double media = 12;
+  static const double pastilla = 999;
+}
+
 /// Cifras de ancho fijo.
 ///
 /// Sin esto, `43` y `11` ocupan distinto y una columna de números queda con los
@@ -192,7 +205,17 @@ ColorDeEstado colorDeEstado(ColorScheme cs, String codigoExcel) {
 ///
 /// El tono además separa para quien no distingue bien los colores: dos barras
 /// de distinto nivel se diferencian por claridad, no sólo por matiz.
-ColorDeEstado colorDeTipoPermiso(ColorScheme cs, int indiceEnCatalogo) {
+ColorDeEstado colorDeTipoPermiso(ColorScheme cs, int indiceEnCatalogo) =>
+    colorDeCatalogo(cs, indiceEnCatalogo);
+
+/// El color de una categoria por su **posicion en un catalogo**.
+///
+/// Es la implementacion que estaba dentro de [colorDeTipoPermiso], sin cambiar
+/// una constante: toda la doctrina y las mediciones de ese comentario valen
+/// igual aqui. Se le puso un nombre generico cuando el modulo de produccion
+/// necesito colorear grupos de resmado — el segundo catalogo que pedia lo
+/// mismo—, para que el tercero no vuelva a copiar la rampa.
+ColorDeEstado colorDeCatalogo(ColorScheme cs, int indiceEnCatalogo) {
   // Fuera del catálogo: los 28 registros históricos con el tipo vacío, un
   // código que ya no está en la vista, o el catálogo todavía viajando. Va a un
   // color que NO está en la rampa, para que «no sé qué es» no se confunda con

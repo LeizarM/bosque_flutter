@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:bosque_flutter/core/constants/app_constants.dart';
 import 'package:bosque_flutter/core/network/dio_client.dart';
 import 'package:bosque_flutter/data/models/empresa_model.dart';
@@ -14,6 +16,7 @@ import 'package:bosque_flutter/domain/entities/material_salida_entity.dart';
 import 'package:bosque_flutter/domain/entities/merma_entity.dart';
 import 'package:bosque_flutter/domain/repositories/lote_produccion_repository.dart';
 import 'package:dio/dio.dart';
+import 'package:intl/intl.dart';
 
 class LoteProduccionImpl implements LoteProduccionRepository {
   final Dio _dio = DioClient.getInstance();
@@ -165,5 +168,128 @@ class LoteProduccionImpl implements LoteProduccionRepository {
     } catch (_) {
       return false;
     }
+  }
+
+  // ── Ver lote de produccion ───────────────────────────────────────────────
+
+  @override
+  Future<List<LoteProduccionEntity>> obtenerLotesRegistrados(
+    DateTime desde,
+    DateTime hasta,
+  ) async {
+    try {
+      final response = await _dio.post(
+        AppConstants.listaLotesProduccion,
+        data: _rango(desde, hasta),
+      );
+      final list = (response.data as List<dynamic>?) ?? const [];
+      return list
+          .map((json) => LoteProduccionModel.fromJson(json).toEntity())
+          .toList();
+    } on DioException {
+      return [];
+    } catch (_) {
+      return [];
+    }
+  }
+
+  @override
+  Future<List<MaterialIngresoEntity>> obtenerMaterialIngresoXLote(
+    int idLp,
+  ) async {
+    try {
+      final response = await _dio.post(
+        AppConstants.obtenerMaterialIngresoXLote,
+        data: {'idLp': idLp},
+      );
+      final list = (response.data as List<dynamic>?) ?? const [];
+      return list
+          .map((json) => MaterialIngresoModel.fromJson(json).toEntity())
+          .toList();
+    } on DioException {
+      return [];
+    } catch (_) {
+      return [];
+    }
+  }
+
+  @override
+  Future<List<MaterialSalidaEntity>> obtenerMaterialSalidaXLote(
+    int idLp,
+  ) async {
+    try {
+      final response = await _dio.post(
+        AppConstants.obtenerMaterialSalidaXLote,
+        data: {'idLp': idLp},
+      );
+      final list = (response.data as List<dynamic>?) ?? const [];
+      return list
+          .map((json) => MaterialSalidaModel.fromJson(json).toEntity())
+          .toList();
+    } on DioException {
+      return [];
+    } catch (_) {
+      return [];
+    }
+  }
+
+  @override
+  Future<List<MermaEntity>> obtenerMermaXLote(int idLp) async {
+    try {
+      final response = await _dio.post(
+        AppConstants.obtenerMermaXLote,
+        data: {'idLp': idLp},
+      );
+      final list = (response.data as List<dynamic>?) ?? const [];
+      return list
+          .map((json) => MermaModel.fromJson(json).toEntity())
+          .toList();
+    } on DioException {
+      return [];
+    } catch (_) {
+      return [];
+    }
+  }
+
+  // ── Reportes ─────────────────────────────────────────────────────────────
+  //
+  // El backend devuelve el PDF crudo, no el envoltorio {message, data, status}.
+
+  @override
+  Future<Uint8List> reporteLotePdf(int idLp) => DioClient.descargarReportePdf(
+    endpoint: AppConstants.reporteLotePdf,
+    data: {'idLp': idLp},
+  );
+
+  @override
+  Future<Uint8List> reporteResumenProduccionPdf(
+    DateTime desde,
+    DateTime hasta,
+  ) => DioClient.descargarReportePdf(
+    endpoint: AppConstants.reporteResumenProduccionPdf,
+    data: _rango(desde, hasta),
+  );
+
+  @override
+  Future<Uint8List> reporteResmadoPdf(DateTime desde, DateTime hasta) =>
+      DioClient.descargarReportePdf(
+        endpoint: AppConstants.reporteResmadoPdf,
+        data: _rango(desde, hasta),
+      );
+
+  @override
+  Future<Uint8List> reporteConsolidadoCortePdf(
+    DateTime desde,
+    DateTime hasta,
+  ) => DioClient.descargarReportePdf(
+    endpoint: AppConstants.reporteConsolidadoCortePdf,
+    data: _rango(desde, hasta),
+  );
+
+  /// Rango de fechas a medianoche: el SP compara contra columnas `date`, asi
+  /// que la hora solo puede correr el limite de un dia.
+  Map<String, dynamic> _rango(DateTime desde, DateTime hasta) {
+    final fmt = DateFormat("yyyy-MM-dd'T'00:00:00.000");
+    return {'fechaIni': fmt.format(desde), 'fechaFin': fmt.format(hasta)};
   }
 }

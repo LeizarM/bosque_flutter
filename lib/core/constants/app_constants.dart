@@ -465,6 +465,21 @@ class AppConstants {
   static const String obtenerDocNumOrdFabXEmpresa =
       '/loteProduccion/lstDocNumOrdFabXEmpresa';
 
+  // ── Ver lote de produccion ─────────────────────────────────────────────────
+  static const String listaLotesProduccion = '/loteProduccion/listaLotes';
+  static const String obtenerMaterialIngresoXLote =
+      '/loteProduccion/materialIngreso';
+  static const String obtenerMaterialSalidaXLote =
+      '/loteProduccion/materialSalida';
+  static const String obtenerMermaXLote = '/loteProduccion/merma';
+
+  // ── Reportes de produccion ─────────────────────────────────────────────────
+  static const String reporteLotePdf = '/loteProduccion/reporte-lote-pdf';
+  static const String reporteResumenProduccionPdf =
+      '/loteProduccion/reporte-resumen-pdf';
+  static const String reporteResmadoPdf =
+      '/loteProduccion/reporte-resmado-pdf';
+
   // ═══════════════════════════════════════════════════════════════════════════════
   // RUTAS MODULO: REGISTRO DE RESMADO
   // ═══════════════════════════════════════════════════════════════════════════════
@@ -473,6 +488,31 @@ class AppConstants {
   static const String obtenerGrupoProduccion = '/resmado/grupoProduccion';
   static const String registrarResmado = '/resmado/registroResmado';
   static const String registrarDetalleResmado = '/resmado/registroDetResmado';
+
+  // ── Ver resmado ────────────────────────────────────────────────────────────
+  static const String listaResmados = '/resmado/listaResmados';
+  static const String obtenerDetalleResmado = '/resmado/detalleResmado';
+  static const String actualizarOrdenFabricacionResmado =
+      '/resmado/actualizarOrdenFabricacion';
+
+  // ═══════════════════════════════════════════════════════════════════════════════
+  // RUTAS MODULO: SOLICITUD DE CORTE
+  // ═══════════════════════════════════════════════════════════════════════════════
+
+  static const String listadoSolicitudesCorte = '/solicitud-corte/listado';
+  static const String detalleSolicitudCorte = '/solicitud-corte/detalle';
+  static const String itemsSapCorte = '/solicitud-corte/items-sap';
+  static const String itemsSapCorteTotal = '/solicitud-corte/items-sap-total';
+  static const String registrarSolicitudCorte = '/solicitud-corte/registrar';
+  static const String cancelarSolicitudCorte = '/solicitud-corte/cancelar';
+  static const String reporteSolicitudCortePdf =
+      '/solicitud-corte/reporte-solicitud-pdf';
+  static const String reporteResumenCortePdf =
+      '/solicitud-corte/reporte-resumen-pdf';
+
+  /// Consolidado de corte por maquina, que vive en la pantalla de lotes.
+  static const String reporteConsolidadoCortePdf =
+      '/loteProduccion/reporte-corte-pdf';
 
   // ═══════════════════════════════════════════════════════════════════════════════
   // RUTAS MODULO: PERMISOS / VACACION

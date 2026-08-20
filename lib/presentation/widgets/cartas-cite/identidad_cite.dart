@@ -1,7 +1,9 @@
 import 'package:bosque_flutter/core/ui/tokens_bosque.dart';
 import 'package:bosque_flutter/domain/entities/carta_cite_entity.dart';
-import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+
+export 'package:bosque_flutter/core/ui/piezas_bosque.dart' show ArrastreLateral;
+export 'package:bosque_flutter/core/ui/tokens_bosque.dart' show Esquina;
 
 /// La identidad visual de un tipo de documento: su ícono, su color y una línea
 /// que dice para qué sirve.
@@ -255,40 +257,6 @@ class DatoCite extends StatelessWidget {
   }
 }
 
-/// Un único radio de esquina para todo el módulo.
-///
-/// Estaba escrito a mano en once lugares —10 acá, 8 allá, 6 en las etiquetas—
-/// y la pantalla se leía inquieta sin que se supiera por qué. Tres escalones y
-/// una regla: la superficie que contiene usa [media], lo que vive adentro usa
-/// [chica], y lo que es una pastilla usa [pastilla].
-abstract final class Esquina {
-  static const double chica = 8;
-  static const double media = 12;
-  static const double pastilla = 999;
-}
-
-/// Deja arrastrar con el mouse un scroll horizontal.
-///
-/// ## El bug que arregla
-///
-/// En web y escritorio, Flutter **saca el mouse de `dragDevices`** a propósito:
-/// en una página vertical, arrastrar con el botón izquierdo selecciona texto,
-/// no scrollea. El efecto colateral es que un carrusel horizontal queda
-/// inalcanzable: la rueda del mouse scrollea el eje vertical, no el de al lado,
-/// y arrastrar no hace nada. Lo que se sale del borde derecho no existe.
-///
-/// En un teléfono nunca se notó porque el swipe sí está habilitado.
-///
-/// Se aplica **sólo a los scrolls horizontales del módulo**, nunca al `body`:
-/// ahí el arrastre con mouse sí rompería la selección de texto.
-class ArrastreLateral extends MaterialScrollBehavior {
-  const ArrastreLateral();
-
-  @override
-  Set<PointerDeviceKind> get dragDevices => const {
-        PointerDeviceKind.touch,
-        PointerDeviceKind.mouse,
-        PointerDeviceKind.trackpad,
-        PointerDeviceKind.stylus,
-      };
-}
+// `Esquina` y `ArrastreLateral` se mudaron a `core/ui/`: los necesitaba tambien
+// el modulo de produccion y con eso iban a ser dos copias. El codigo no cambio;
+// se re-exportan desde aqui para no tocar los importadores de este archivo.

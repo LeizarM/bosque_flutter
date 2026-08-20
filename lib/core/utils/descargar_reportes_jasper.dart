@@ -1,3 +1,4 @@
+import 'package:bosque_flutter/core/ui/aviso.dart';
 import 'package:bosque_flutter/core/utils/console_log.dart';
 import 'package:flutter/material.dart';
 import 'dart:typed_data';
@@ -19,9 +20,17 @@ Future<void> mostrarReportePdf({
 
     await Printing.sharePdf(bytes: pdfBytes, filename: filename);
   } catch (e) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Error al descargar el reporte $filename.')),
-    );
+    // Con `avisar` y no con un SnackBar: varios reportes se piden desde un
+    // diálogo, y el SnackBar lo dibuja el Scaffold de la ruta de abajo, así que
+    // el mensaje salía tapado por el propio diálogo que lo provocó.
+    if (context.mounted) {
+      avisar(
+        context,
+        'No se pudo generar el reporte. Reintente; si sigue fallando, avise a '
+        'sistemas.',
+        esError: true,
+      );
+    }
     console('Error de descarga detallado: $e');
   }
 }

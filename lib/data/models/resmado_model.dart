@@ -19,6 +19,11 @@ class ResmadoModel {
   final int docNumOrdFab;
   final int audUsuario;
 
+  // Solo lectura: los resuelve el listado del backend.
+  final String descripcion;
+  final String nombreCompleto;
+  final String empresa;
+
   ResmadoModel({
     required this.idRes,
     required this.idGrupo,
@@ -30,6 +35,9 @@ class ResmadoModel {
     required this.codEmpresa,
     required this.docNumOrdFab,
     required this.audUsuario,
+    this.descripcion = '',
+    this.nombreCompleto = '',
+    this.empresa = '',
   });
 
   factory ResmadoModel.fromJson(Map<String, dynamic> json) => ResmadoModel(
@@ -46,6 +54,9 @@ class ResmadoModel {
     codEmpresa: json["codEmpresa"] ?? 0,
     docNumOrdFab: json["docNumOrdFab"] ?? 0,
     audUsuario: json["audUsuario"] ?? 0,
+    descripcion: json["descripcion"] ?? '',
+    nombreCompleto: json["nombreCompleto"] ?? '',
+    empresa: json["empresa"] ?? '',
   );
 
   Map<String, dynamic> toJson() => {
@@ -72,6 +83,9 @@ class ResmadoModel {
     codEmpresa: codEmpresa,
     docNumOrdFab: docNumOrdFab,
     audUsuario: audUsuario,
+    descripcion: descripcion,
+    nombreCompleto: nombreCompleto,
+    empresa: empresa,
   );
 
   factory ResmadoModel.fromEntity(ResmadoEntity entity) => ResmadoModel(
@@ -85,5 +99,8 @@ class ResmadoModel {
     codEmpresa: entity.codEmpresa,
     docNumOrdFab: entity.docNumOrdFab,
     audUsuario: entity.audUsuario,
+    descripcion: entity.descripcion,
+    nombreCompleto: entity.nombreCompleto,
+    empresa: entity.empresa,
   );
 }
