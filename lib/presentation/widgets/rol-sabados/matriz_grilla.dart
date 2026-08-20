@@ -146,7 +146,7 @@ class Matriz extends ConsumerWidget {
 
   /// Ya filtrados por mes y por búsqueda. La grilla completa sigue en [grilla]
   /// porque los contadores —cobertura del día, turnos del año— se calculan sobre
-  /// TODO el rol: filtrar la vista no cambia cuántos sábados le tocan a alguien.
+  /// el rol: filtrar la vista no cambia cuántos sábados le tocan a alguien.
   final List<SabadoEntity> sabados;
   final List<ParticipanteTurnoEntity> participantes;
 
@@ -489,7 +489,9 @@ class _CabeceraSabadoState extends ConsumerState<CabeceraSabado> {
                   : s.tieneEvento
                   ? cs.tertiaryContainer.withValues(alpha: 0.45)
                   : null,
-          border: Border(right: BorderSide(color: cs.outlineVariant, width: .5)),
+          border: Border(
+            right: BorderSide(color: cs.outlineVariant, width: .5),
+          ),
         ),
         // Tres renglones en 48 px: con el interlineado por defecto (~1.45) se
         // pasan por 4 px. Se compacta a 1.1, que es lo que corresponde a un

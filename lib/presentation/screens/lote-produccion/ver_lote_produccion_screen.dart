@@ -3,12 +3,16 @@
 /// Reemplaza a `tprod_loteProduccion/ViewLoteProduccion.xhtml`. Lo que cambia
 /// respecto de la grilla anterior:
 ///
-/// - **Cada lote dice si cuadra.** Antes eran diecisiete columnas de numeros
-///   sin jerarquia; ahora la diferencia sin explicar viaja como estado.
+/// - **Cada lote dice si cuadra.** La diferencia sin explicar viaja como
+///   estado y no como una columna mas de numeros.
 /// - **Se puede buscar y filtrar por maquina.** Antes habia que recorrer los
 ///   125 registros a ojo.
 /// - **El boton de abrir dice por que no esta.** Un lote cerrado solo lo reabre
 ///   quien tenga el permiso `btnVer`; antes el boton simplemente desaparecia.
+///
+/// La planilla completa —las diecisiete columnas del sistema anterior mas los
+/// totales del periodo— esta en [TablaLotes], y es la vista por defecto: la
+/// produccion del dia se revisa comparando lotes, no abriendolos de a uno.
 library;
 
 import 'package:bosque_flutter/core/state/button_permissions_provider.dart';
@@ -22,6 +26,7 @@ import 'package:bosque_flutter/domain/entities/lote_produccion_entity.dart';
 import 'package:bosque_flutter/presentation/widgets/lote-produccion/balance_lote.dart';
 import 'package:bosque_flutter/presentation/widgets/lote-produccion/detalle_lote_dialog.dart';
 import 'package:bosque_flutter/presentation/widgets/lote-produccion/rango_fechas_dialog.dart';
+import 'package:bosque_flutter/presentation/widgets/lote-produccion/tabla_lotes.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -40,6 +45,10 @@ class VerLoteProduccionScreen extends ConsumerStatefulWidget {
 class _VerLoteProduccionScreenState
     extends ConsumerState<VerLoteProduccionScreen> {
   final _buscarCtrl = TextEditingController();
+
+  /// Arranca completa: es lo que se pidio ver sin entrar lote por lote. La
+  /// vista corta queda a un clic para el dia a dia.
+  VistaLotes _vista = VistaLotes.completa;
 
   @override
   void dispose() {
@@ -187,10 +196,12 @@ class _VerLoteProduccionScreenState
               _BarraFiltros(
                 aire: aire,
                 estado: estado,
+                vista: _vista,
                 buscarCtrl: _buscarCtrl,
                 onBuscar: notifier.setBusqueda,
                 onMaquina: notifier.setMaquina,
                 onRango: _cambiarRango,
+                onVista: (v) => setState(() => _vista = v),
               ),
               SizedBox(
                 height: 2,
@@ -202,6 +213,7 @@ class _VerLoteProduccionScreenState
                 child: _Listado(
                   aire: aire,
                   estado: estado,
+                  vista: _vista,
                   puedeReabrir: puedeReabrir,
                   onAbrir: (lote) => _abrir(lote, puedeReabrir),
                   onReporte: _reporteDelLote,
@@ -338,18 +350,22 @@ class _BarraFiltros extends StatelessWidget {
   const _BarraFiltros({
     required this.aire,
     required this.estado,
+    required this.vista,
     required this.buscarCtrl,
     required this.onBuscar,
     required this.onMaquina,
     required this.onRango,
+    required this.onVista,
   });
 
   final Aire aire;
   final VerLotesState estado;
+  final VistaLotes vista;
   final TextEditingController buscarCtrl;
   final ValueChanged<String> onBuscar;
   final ValueChanged<int?> onMaquina;
   final VoidCallback onRango;
+  final ValueChanged<VistaLotes> onVista;
 
   @override
   Widget build(BuildContext context) {
@@ -403,6 +419,30 @@ class _BarraFiltros extends StatelessWidget {
       ),
     );
 
+    // Los rotulos salen solo con `amplio`: entre 600 y 1000 px los dos
+    // segmentos rotulados empujan el buscador hasta dejarlo inservible, y el
+    // icono con su tooltip dice lo mismo.
+    final conmutador = SegmentedButton<VistaLotes>(
+      segments: [
+        for (final v in VistaLotes.values)
+          ButtonSegment(
+            value: v,
+            icon: Icon(v.icono, size: 18),
+            label: aire == Aire.amplio ? Text(v.rotulo) : null,
+            tooltip: v == VistaLotes.completa
+                ? 'Todas las columnas del sistema anterior'
+                : 'Solo lo esencial de cada lote',
+          ),
+      ],
+      selected: {vista},
+      showSelectedIcon: false,
+      style: const ButtonStyle(
+        visualDensity: VisualDensity.compact,
+        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+      ),
+      onSelectionChanged: (s) => onVista(s.first),
+    );
+
     return Padding(
       padding: EdgeInsets.fromLTRB(
         aire.esChico ? Esp.m : Esp.xl,
@@ -419,15 +459,33 @@ class _BarraFiltros extends StatelessWidget {
                 buscador,
                 SizedBox(height: Esp.s),
                 maquinas,
+                SizedBox(height: Esp.s),
+                Align(alignment: Alignment.centerLeft, child: conmutador),
               ],
             )
-          : Row(
+          : Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                periodo,
-                SizedBox(width: Esp.m),
-                Expanded(flex: 3, child: buscador),
-                SizedBox(width: Esp.m),
-                Expanded(child: maquinas),
+                Row(
+                  children: [
+                    periodo,
+                    SizedBox(width: Esp.m),
+                    Expanded(flex: 3, child: buscador),
+                    SizedBox(width: Esp.m),
+                    Expanded(child: maquinas),
+                    // Debajo de los 1000 px el conmutador va en su propio
+                    // renglon: sumado al periodo dejaba el combo de maquina en
+                    // sesenta pixeles.
+                    if (aire == Aire.amplio) ...[
+                      SizedBox(width: Esp.m),
+                      conmutador,
+                    ],
+                  ],
+                ),
+                if (aire != Aire.amplio) ...[
+                  SizedBox(height: Esp.s),
+                  conmutador,
+                ],
               ],
             ),
     );
@@ -442,6 +500,7 @@ class _Listado extends StatelessWidget {
   const _Listado({
     required this.aire,
     required this.estado,
+    required this.vista,
     required this.puedeReabrir,
     required this.onAbrir,
     required this.onReporte,
@@ -451,6 +510,7 @@ class _Listado extends StatelessWidget {
 
   final Aire aire;
   final VerLotesState estado;
+  final VistaLotes vista;
   final bool puedeReabrir;
   final void Function(LoteProduccionEntity) onAbrir;
   final void Function(LoteProduccionEntity) onReporte;
@@ -511,9 +571,10 @@ class _Listado extends StatelessWidget {
     );
 
     if (aire == Aire.amplio) {
-      return _Tabla(
+      return TablaLotes(
         padding: padding,
         lotes: lotes,
+        vista: vista,
         puedeReabrir: puedeReabrir,
         onAbrir: onAbrir,
         onReporte: onReporte,
@@ -526,6 +587,7 @@ class _Listado extends StatelessWidget {
       separatorBuilder: (_, _) => SizedBox(height: Esp.s),
       itemBuilder: (context, i) => _Tarjeta(
         lote: lotes[i],
+        vista: vista,
         puedeReabrir: puedeReabrir,
         onAbrir: () => onAbrir(lotes[i]),
         onReporte: () => onReporte(lotes[i]),
@@ -534,166 +596,22 @@ class _Listado extends StatelessWidget {
   }
 }
 
-class _Tabla extends StatelessWidget {
-  const _Tabla({
-    required this.padding,
-    required this.lotes,
-    required this.puedeReabrir,
-    required this.onAbrir,
-    required this.onReporte,
-  });
-
-  final EdgeInsets padding;
-  final List<LoteProduccionEntity> lotes;
-  final bool puedeReabrir;
-  final void Function(LoteProduccionEntity) onAbrir;
-  final void Function(LoteProduccionEntity) onReporte;
-
-  @override
-  Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-
-    return SingleChildScrollView(
-      padding: padding.copyWith(bottom: Esp.xl),
-      child: Container(
-        decoration: BoxDecoration(
-          color: cs.surfaceContainerLowest,
-          border: Border.all(color: cs.outlineVariant),
-          borderRadius: BorderRadius.circular(Esquina.media),
-        ),
-        clipBehavior: Clip.antiAlias,
-        // La tabla scrollea sola de costado; el cuerpo de la pagina nunca.
-        child: ScrollConfiguration(
-          behavior: const ArrastreLateral(),
-          child: SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(minWidth: 1080),
-              child: DataTable(
-                headingRowColor: WidgetStatePropertyAll(
-                  cs.surfaceContainerHigh,
-                ),
-                showCheckboxColumn: false,
-                columnSpacing: Esp.xl,
-                horizontalMargin: Esp.l,
-                dataRowMinHeight: 56,
-                dataRowMaxHeight: 64,
-                columns: const [
-                  DataColumn(label: Text('LOTE')),
-                  DataColumn(label: Text('FECHA')),
-                  DataColumn(label: Text('BOBINAS'), numeric: true),
-                  DataColumn(label: Text('KG INGRESO'), numeric: true),
-                  DataColumn(label: Text('RESMAS'), numeric: true),
-                  DataColumn(label: Text('MERMA KG'), numeric: true),
-                  DataColumn(label: Text('CUADRE')),
-                  DataColumn(label: Text('ORDEN')),
-                  DataColumn(label: Text('')),
-                ],
-                rows: [
-                  for (final lote in lotes)
-                    DataRow(
-                      onSelectChanged: (_) => onAbrir(lote),
-                      cells: [
-                        DataCell(_CeldaLote(lote: lote)),
-                        DataCell(
-                          Text(
-                            fechaCorta(lote.fecha),
-                            style: context.numero(),
-                          ),
-                        ),
-                        DataCell(
-                          Text(
-                            fmtEntero.format(lote.cantBobinasIngresoTotal),
-                            style: context.numero(),
-                          ),
-                        ),
-                        DataCell(
-                          Text(
-                            fmtNumero.format(lote.pesoKilosTotalIngreso),
-                            style: context.numero(fuerte: true),
-                          ),
-                        ),
-                        DataCell(
-                          Text(
-                            fmtEntero.format(lote.cantResmaSalida),
-                            style: context.numero(fuerte: true),
-                          ),
-                        ),
-                        DataCell(
-                          Text(
-                            fmtNumero.format(lote.mermaTotal),
-                            style: context.numero(),
-                          ),
-                        ),
-                        DataCell(
-                          EtiquetaCuadre(
-                            diferenciaKilos: lote.diferenciaProduccion,
-                            kilosIngreso: lote.pesoKilosTotalIngreso,
-                          ),
-                        ),
-                        DataCell(
-                          Text(
-                            lote.docNumOrdFab == 0
-                                ? '--'
-                                : lote.docNumOrdFab.toString(),
-                            style: context.numero(),
-                          ),
-                        ),
-                        DataCell(
-                          _Acciones(
-                            lote: lote,
-                            puedeReabrir: puedeReabrir,
-                            onAbrir: () => onAbrir(lote),
-                            onReporte: () => onReporte(lote),
-                          ),
-                        ),
-                      ],
-                    ),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// La primera celda: numero de lote y estado juntos, que es como se busca.
-class _CeldaLote extends StatelessWidget {
-  const _CeldaLote({required this.lote});
-
-  final LoteProduccionEntity lote;
-
-  @override
-  Widget build(BuildContext context) => Column(
-    mainAxisSize: MainAxisSize.min,
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      Text(
-        '${lote.numLote}/${lote.anio}',
-        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-          fontWeight: Peso.dato,
-          fontFeatures: cifrasTabulares,
-        ),
-      ),
-      Text(
-        lote.estado == 1 ? 'Abierto' : 'Cerrado',
-        style: context.apagado(),
-      ),
-    ],
-  );
-}
-
+/// El mismo lote cuando no entra una tabla.
+///
+/// En vista completa la tarjeta trae los mismos numeros que la planilla: en un
+/// telefono no hay forma de mostrar veintidos columnas, pero si de mostrar los
+/// veintidos datos.
 class _Tarjeta extends StatelessWidget {
   const _Tarjeta({
     required this.lote,
+    required this.vista,
     required this.puedeReabrir,
     required this.onAbrir,
     required this.onReporte,
   });
 
   final LoteProduccionEntity lote;
+  final VistaLotes vista;
   final bool puedeReabrir;
   final VoidCallback onAbrir;
   final VoidCallback onReporte;
@@ -701,6 +619,7 @@ class _Tarjeta extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
+    final completa = vista == VistaLotes.completa;
 
     return Material(
       color: cs.surfaceContainerLowest,
@@ -746,23 +665,50 @@ class _Tarjeta extends StatelessWidget {
                   ),
                 ],
               ),
+              if (completa) ...[
+                SizedBox(height: Esp.s),
+                _Horario(lote: lote),
+              ],
               SizedBox(height: Esp.m),
-              Row(
-                children: [
-                  _Dato(
-                    etiqueta: 'Kg ingreso',
-                    valor: fmtNumero.format(lote.pesoKilosTotalIngreso),
-                  ),
-                  _Dato(
-                    etiqueta: 'Resmas',
-                    valor: fmtEntero.format(lote.cantResmaSalida),
-                  ),
-                  _Dato(
-                    etiqueta: 'Merma kg',
-                    valor: fmtNumero.format(lote.mermaTotal),
-                  ),
-                ],
-              ),
+              if (completa)
+                Wrap(
+                  spacing: Esp.l,
+                  runSpacing: Esp.m,
+                  children: [
+                    for (final (etiqueta, valor) in _datosDelLote(lote))
+                      SizedBox(
+                        width: 96,
+                        child: _Dato(etiqueta: etiqueta, valor: valor),
+                      ),
+                  ],
+                )
+              else
+                Row(
+                  children: [
+                    Expanded(
+                      child: _Dato(
+                        etiqueta: 'Kg ingreso',
+                        valor: fmtNumero.format(lote.pesoKilosTotalIngreso),
+                      ),
+                    ),
+                    Expanded(
+                      child: _Dato(
+                        etiqueta: 'Resmas',
+                        valor: fmtEntero.format(lote.cantResmaSalida),
+                      ),
+                    ),
+                    Expanded(
+                      child: _Dato(
+                        etiqueta: 'Merma kg',
+                        valor: fmtNumero.format(lote.mermaTotal),
+                      ),
+                    ),
+                  ],
+                ),
+              if (completa && lote.obs.trim().isNotEmpty) ...[
+                SizedBox(height: Esp.m),
+                Text(lote.obs.trim(), style: context.apagado()),
+              ],
               SizedBox(height: Esp.xs),
               Align(
                 alignment: Alignment.centerRight,
@@ -781,6 +727,61 @@ class _Tarjeta extends StatelessWidget {
   }
 }
 
+/// Los mismos numeros que las columnas de la planilla, en el orden en que se
+/// leen: primero lo que entro, despues lo que salio y al final el cuadre.
+List<(String, String)> _datosDelLote(LoteProduccionEntity lote) => [
+  ('Bobinas', fmtEntero.format(lote.cantBobinasIngresoTotal)),
+  ('Kg ingreso', fmtNumero.format(lote.pesoKilosTotalIngreso)),
+  ('Kg salida', fmtNumero.format(lote.pesoTotalSalida)),
+  ('Kg paleta', fmtNumero.format(lote.pesoPaletaSalida)),
+  ('Kg material', fmtNumero.format(lote.pesoMaterialSalida)),
+  ('Resmas', fmtEntero.format(lote.cantResmaSalida)),
+  ('Hojas', fmtEntero.format(lote.cantHojasSalida)),
+  ('Merma kg', fmtNumero.format(lote.mermaTotal)),
+  ('Dif. kg', fmtNumero.format(lote.diferenciaProduccion)),
+  ('Dif. resmas', fmtNumero.format(lote.diferenciaProdResma)),
+  (
+    'Resmas est.',
+    lote.cantEstimadaResma <= 0 ? '--' : fmtNumero.format(lote.cantEstimadaResma),
+  ),
+  ('Kg balanza', fmtNumero.format(lote.pesoBalanzaTotal)),
+  ('Orden', lote.docNumOrdFab == 0 ? '--' : lote.docNumOrdFab.toString()),
+];
+
+/// Las tres horas del lote y cuanto duro, en un renglon.
+class _Horario extends StatelessWidget {
+  const _Horario({required this.lote});
+
+  final LoteProduccionEntity lote;
+
+  @override
+  Widget build(BuildContext context) {
+    final inicioCorte = lote.hraInicioCorte.isEmpty
+        ? '--'
+        : lote.hraInicioCorte;
+    final inicio = lote.hraInicio.isEmpty ? '--' : lote.hraInicio;
+    final fin = lote.hraFin.isEmpty ? '--' : lote.hraFin;
+
+    return Row(
+      children: [
+        Icon(
+          Icons.schedule_outlined,
+          size: 14,
+          color: Theme.of(context).hintColor,
+        ),
+        SizedBox(width: Esp.xs),
+        Expanded(
+          child: Text(
+            'Corte $inicioCorte  ·  $inicio a $fin  ·  '
+            '${duracionCorte(lote.hraInicio, lote.hraFin)}',
+            style: context.apagado(),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
 class _Dato extends StatelessWidget {
   const _Dato({required this.etiqueta, required this.valor});
 
@@ -788,14 +789,17 @@ class _Dato extends StatelessWidget {
   final String valor;
 
   @override
-  Widget build(BuildContext context) => Expanded(
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(etiqueta, style: context.apagado()),
-        Text(valor, style: context.numero(fuerte: true)),
-      ],
-    ),
+  Widget build(BuildContext context) => Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Text(
+        etiqueta,
+        style: context.apagado(),
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+      ),
+      Text(valor, style: context.numero(fuerte: true)),
+    ],
   );
 }
 

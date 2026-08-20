@@ -259,7 +259,7 @@ String mesLargo(int mes) {
 ///
 /// **Existe para que las pantallas que muestran este dato lo digan igual.** En
 /// la grilla aparece como «25/26» pegado al nombre y en «Grupos» como una línea
-/// de texto, pero es el MISMO número: los sábados que le tocan en TODO el rol,
+/// de texto, pero es el MISMO número: los sábados que le tocan en Todo el rol,
 /// que es de un año. Con dos textos sueltos ya se estaba escribiendo de dos
 /// formas, y es la clase de diferencia que nadie reporta y todos notan — el
 /// mismo motivo por el que [mesCorto] vive acá.

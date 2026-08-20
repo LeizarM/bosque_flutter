@@ -46,6 +46,7 @@ import 'package:bosque_flutter/core/theme/app_theme.dart';
 import 'package:bosque_flutter/core/ui/tokens_bosque.dart';
 import 'package:bosque_flutter/data/repositories/auth_repository_impl.dart';
 import 'package:bosque_flutter/domain/repositories/auth_repository.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -584,7 +585,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
   Widget _formulario() {
     final habilitado = !_isLoading;
 
-    return AutofillGroup(
+    return _GrupoDeAutocompletado(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -1059,6 +1060,35 @@ class _ControlesDeTema extends StatelessWidget {
       ],
     );
   }
+}
+
+/// El `AutofillGroup` del formulario, salvo en la web.
+///
+/// En la web el grupo **rompe el foco**, y no de a poco: adentro de un grupo,
+/// cuando un campo suelta su conexión de texto el motor de Flutter enfoca su
+/// `<input>` del DOM y acto seguido le hace `blur`. Si el foco lo acababa de
+/// tomar el otro campo del mismo grupo, ese `blur` se lo lleva puesto y la
+/// pantalla queda sin nada enfocado.
+///
+/// Medido en Chrome: tanto Tab como Enter —que llama a
+/// `_passwordFocus.requestFocus()`— dejaban los dos campos apagados, y lo que
+/// se escribía después no aparecía en ninguno. Sin el grupo, la travesía de
+/// foco de Flutter hace lo suyo y Tab, Mayús+Tab y Enter caminan los dos campos
+/// y el botón como corresponde.
+///
+/// Lo que se pierde es el `<form>` que envolvía a los dos `<input>`. Las pistas
+/// siguen puestas —el motor igual escribe `autocomplete="username"` y
+/// `autocomplete="current-password"`—, así que el navegador sigue reconociendo
+/// el par. En Android y iOS el grupo no molesta y queda como estaba, que es
+/// donde el autocompletado del sistema realmente se usa.
+class _GrupoDeAutocompletado extends StatelessWidget {
+  final Widget child;
+
+  const _GrupoDeAutocompletado({required this.child});
+
+  @override
+  Widget build(BuildContext context) =>
+      kIsWeb ? child : AutofillGroup(child: child);
 }
 
 /// Un campo del formulario.
