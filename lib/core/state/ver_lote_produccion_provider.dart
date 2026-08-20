@@ -428,6 +428,47 @@ class DetalleLoteNotifier extends StateNotifier<DetalleLoteState> {
     state = state.copyWith(ingresos: lista);
   }
 
+  /// Agrega una bobina en blanco al final del material de ingreso.
+  ///
+  /// Va con `idMi: 0` a proposito: el backend decide entre insertar y
+  /// actualizar mirando ese campo —`acc = idMi == 0 ? "I" : "U"`—, asi que una
+  /// fila nueva y una que ya esta en la base viajan en la misma lista sin que
+  /// haya que distinguirlas aqui.
+  ///
+  /// No toca ningun total. `totalPesoIngreso`, `totalBalanza`, `difProduccion`
+  /// y `cantEstimadaResma` se derivan de la lista, y `guardar` rearma la
+  /// cabecera con ellos: agregar la fila alcanza para que todo se recalcule.
+  void agregarIngreso() {
+    final articulo = _articulo(state.codArticuloIngreso);
+    state = state.copyWith(
+      ingresos: [
+        ...state.ingresos,
+        MaterialIngresoEntity(
+          idMi: 0,
+          idLp: _params.idLp,
+          codArticulo: state.codArticuloIngreso,
+          descripcion: articulo?.datoArt ?? '',
+          pesoKilos: 0,
+          balanza: 0,
+          numImportacion: '',
+          audUsuario: _params.audUsuario,
+        ),
+      ],
+    );
+  }
+
+  /// Quita una bobina que todavia no se guardo.
+  ///
+  /// Solo las nuevas: el controlador del backend elige entre 'I' y 'U' y no
+  /// tiene accion de baja para el material de ingreso, asi que una fila que ya
+  /// esta en la base no se puede borrar desde la app. Esto existe para
+  /// deshacer un "Agregar bobina" de mas, no para corregir el pasado.
+  void quitarIngreso(int indice) {
+    if (indice < 0 || indice >= state.ingresos.length) return;
+    if (state.ingresos[indice].idMi != 0) return;
+    state = state.copyWith(ingresos: [...state.ingresos]..removeAt(indice));
+  }
+
   void editarSalida(
     int indice, {
     int? nroPaleta,

@@ -10,6 +10,7 @@ import 'package:bosque_flutter/core/ui/aviso.dart';
 import 'package:bosque_flutter/core/ui/piezas_bosque.dart';
 import 'package:bosque_flutter/core/ui/tokens_bosque.dart';
 import 'package:bosque_flutter/domain/entities/lote_produccion_entity.dart';
+import 'package:bosque_flutter/domain/entities/material_ingreso_entity.dart';
 import 'package:bosque_flutter/presentation/widgets/lote-produccion/balance_lote.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -406,6 +407,16 @@ class _SeccionIngreso extends StatelessWidget {
         '${estado.ingresos.length} bobinas  ·  '
         '${fmtNumero.format(estado.totalPesoIngreso)} kg  ·  '
         'balanza ${fmtNumero.format(estado.totalBalanza)} kg',
+    // Esa linea de arriba es la que contesta: agregar una bobina la mueve en el
+    // acto —igual que a la barra de balance— porque los tres numeros salen de
+    // la lista de filas y no de la cabecera guardada.
+    accion: soloLectura
+        ? null
+        : OutlinedButton.icon(
+            onPressed: notifier.agregarIngreso,
+            icon: const Icon(Icons.add, size: 18),
+            label: const Text('Agregar bobina'),
+          ),
     encabezado: _SelectorArticulo(
       etiqueta: 'Articulo de ingreso',
       valor: estado.codArticuloIngreso,
@@ -414,20 +425,40 @@ class _SeccionIngreso extends StatelessWidget {
       onCambio: notifier.setArticuloIngreso,
     ),
     hijo: estado.ingresos.isEmpty
-        ? const _SinFilas(texto: 'Este lote no tiene bobinas registradas.')
+        ? _SinFilas(
+            texto: soloLectura
+                ? 'Este lote no tiene bobinas registradas.'
+                : 'Este lote no tiene bobinas registradas. '
+                      'Agrega la primera con el boton de arriba.',
+          )
         : _Filas(
             aire: aire,
             columnas: const ['Peso (kg)', 'Balanza (kg)', 'Nro. importacion'],
             anchos: const [1, 1, 1],
             cantidad: estado.ingresos.length,
             titulo: (i) => 'Bobina ${i + 1}',
+            // Solo se puede quitar lo que todavia no viajo: el backend no tiene
+            // baja para el material de ingreso —elige entre insertar y
+            // actualizar segun el idMi—, asi que una bobina que ya esta en la
+            // base no se borra desde aqui. Esto deshace un boton de mas.
+            accionFila: soloLectura
+                ? null
+                : (i) => estado.ingresos[i].idMi != 0
+                      ? null
+                      : IconButton(
+                          tooltip: 'Quitar esta bobina',
+                          onPressed: () => notifier.quitarIngreso(i),
+                          icon: const Icon(Icons.delete_outline, size: 18),
+                        ),
             celda: (i, columna) {
               final fila = estado.ingresos[i];
+              final clave = _claveDeIngreso(estado.ingresos, i);
+              final nueva = fila.idMi == 0;
               return switch (columna) {
                 0 => _CampoTexto(
-                  key: ValueKey('mi-peso-${fila.idMi}'),
+                  key: ValueKey('mi-peso-$clave'),
                   etiqueta: aire.esChico ? 'Peso (kg)' : null,
-                  valor: fila.pesoKilos.toString(),
+                  valor: _valorInicial(fila.pesoKilos, nueva),
                   habilitado: !soloLectura,
                   onCambio: (v) => notifier.editarIngreso(
                     i,
@@ -435,15 +466,15 @@ class _SeccionIngreso extends StatelessWidget {
                   ),
                 ),
                 1 => _CampoTexto(
-                  key: ValueKey('mi-balanza-${fila.idMi}'),
+                  key: ValueKey('mi-balanza-$clave'),
                   etiqueta: aire.esChico ? 'Balanza (kg)' : null,
-                  valor: fila.balanza.toString(),
+                  valor: _valorInicial(fila.balanza, nueva),
                   habilitado: !soloLectura,
                   onCambio: (v) =>
                       notifier.editarIngreso(i, balanza: double.tryParse(v) ?? 0),
                 ),
                 _ => _CampoTexto(
-                  key: ValueKey('mi-imp-${fila.idMi}'),
+                  key: ValueKey('mi-imp-$clave'),
                   etiqueta: aire.esChico ? 'Nro. importacion' : null,
                   valor: fila.numImportacion,
                   habilitado: !soloLectura,
@@ -455,6 +486,31 @@ class _SeccionIngreso extends StatelessWidget {
           ),
   );
 }
+
+/// Con que se identifica una fila de ingreso entre dibujos.
+///
+/// `idMi` solo no alcanza desde que se pueden agregar bobinas: las filas nuevas
+/// valen todas 0 hasta que se guardan, y `_CampoTexto` se queda con el texto
+/// que le toco la primera vez, asi que dos campos con la misma clave terminan
+/// mostrando lo mismo. Las nuevas se numeran por su orden entre las nuevas, que
+/// no cambia mientras la fila exista: se agregan al final y solo se quitan las
+/// que todavia no viajaron.
+String _claveDeIngreso(List<MaterialIngresoEntity> filas, int indice) {
+  if (filas[indice].idMi != 0) return '${filas[indice].idMi}';
+  var nuevas = 0;
+  for (var i = 0; i <= indice; i++) {
+    if (filas[i].idMi == 0) nuevas++;
+  }
+  return 'nueva-$nuevas';
+}
+
+/// El texto con el que arranca un campo numerico del ingreso.
+///
+/// Una bobina recien agregada no pesa cero: todavia no pesa nada. Arrancar en
+/// «0.0» obliga a borrarlo antes de escribir, y a quien se olvida le queda
+/// «0614» cargado.
+String _valorInicial(double valor, bool filaNueva) =>
+    filaNueva && valor == 0 ? '' : valor.toString();
 
 class _SeccionSalida extends StatelessWidget {
   const _SeccionSalida({
@@ -628,10 +684,16 @@ class _Seccion extends StatelessWidget {
     required this.hijo,
     this.ayuda,
     this.encabezado,
+    this.accion,
   });
 
   final String titulo;
   final String? ayuda;
+
+  /// Lo que se puede hacerle a la seccion entera. Va arriba a la derecha,
+  /// enfrentado al titulo: es una accion sobre la tabla, no sobre una fila.
+  final Widget? accion;
+
   final Widget? encabezado;
   final Widget hijo;
 
@@ -649,11 +711,24 @@ class _Seccion extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(titulo, style: context.tituloSeccion()),
-          if (ayuda != null) ...[
-            SizedBox(height: Esp.xs),
-            Text(ayuda!, style: context.apagado()),
-          ],
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(titulo, style: context.tituloSeccion()),
+                    if (ayuda != null) ...[
+                      SizedBox(height: Esp.xs),
+                      Text(ayuda!, style: context.apagado()),
+                    ],
+                  ],
+                ),
+              ),
+              if (accion != null) accion!,
+            ],
+          ),
           if (encabezado != null) ...[
             SizedBox(height: Esp.m),
             encabezado!,
@@ -703,6 +778,7 @@ class _Filas extends StatelessWidget {
     required this.cantidad,
     required this.titulo,
     required this.celda,
+    this.accionFila,
   });
 
   final Aire aire;
@@ -711,6 +787,11 @@ class _Filas extends StatelessWidget {
   final int cantidad;
   final String Function(int fila) titulo;
   final Widget Function(int fila, int columna) celda;
+
+  /// Lo que se puede hacerle a una fila. Devolver null deja el hueco sin
+  /// dibujar; devolverlo solo para algunas filas es lo normal, porque no todas
+  /// admiten lo mismo.
+  final Widget? Function(int fila)? accionFila;
 
   @override
   Widget build(BuildContext context) {
@@ -730,10 +811,17 @@ class _Filas extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    titulo(i),
-                    style: Theme.of(context).textTheme.labelLarge
-                        ?.copyWith(fontWeight: Peso.titulo),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          titulo(i),
+                          style: Theme.of(context).textTheme.labelLarge
+                              ?.copyWith(fontWeight: Peso.titulo),
+                        ),
+                      ),
+                      if (accionFila?.call(i) case final accion?) accion,
+                    ],
                   ),
                   SizedBox(height: Esp.s),
                   for (var c = 0; c < columnas.length; c++)
@@ -753,7 +841,11 @@ class _Filas extends StatelessWidget {
     // con ancho infinito no es un desborde feo, es una excepcion en tiempo de
     // ejecucion. Con el ancho resuelto aqui, la tabla llena el hueco cuando
     // entra y scrollea cuando no.
-    final anchoMinimo = 140.0 * columnas.length + 90;
+    // El hueco de la accion se reserva de entrada, mire o no alguna fila: si
+    // apareciera y desapareciera con las filas, la tabla se correria de lugar
+    // cada vez que se agrega una bobina.
+    final anchoAccion = accionFila == null ? 0.0 : 48.0;
+    final anchoMinimo = 140.0 * columnas.length + 90 + anchoAccion;
 
     return LayoutBuilder(
       builder: (context, restricciones) {
@@ -785,6 +877,7 @@ class _Filas extends StatelessWidget {
                               ),
                             ),
                           ),
+                        if (accionFila != null) SizedBox(width: anchoAccion),
                       ],
                     ),
                   ),
@@ -810,6 +903,11 @@ class _Filas extends StatelessWidget {
                                 padding: EdgeInsets.only(right: Esp.m),
                                 child: celda(i, c),
                               ),
+                            ),
+                          if (accionFila != null)
+                            SizedBox(
+                              width: anchoAccion,
+                              child: accionFila!(i),
                             ),
                         ],
                       ),
