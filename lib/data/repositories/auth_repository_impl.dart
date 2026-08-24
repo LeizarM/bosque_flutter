@@ -164,10 +164,17 @@ class AuthRepositoryImpl implements AuthRepository {
       return true;
     }
 
-    // Si los permisos están cargados, verificar desde caché
+    // Si los permisos están cargados, verificar desde caché.
+    //
+    // `!= 0` y no `== 1`: es la condición literal de `Loggin.autorizarBtn()`
+    // del ERP viejo, y también la de `p_list_UsuarioBtn @ACCION='A'`, que ya
+    // filtra `nivelAcceso != 0` antes de devolver la fila. Hoy `nivelAcceso`
+    // solo toma 0 o 1 —34.369 filas en 0 y 1.007 en 1— así que las dos
+    // escrituras dan lo mismo; con un 2 dejarían de darlo, y esta app sería la
+    // única de las dos que le cierra la puerta.
     if (_botonesCargados) {
       return _botonesAutorizados.any(
-        (btn) => btn.boton == nombreBtn && btn.permiso == 1,
+        (btn) => btn.boton == nombreBtn && btn.permiso != 0,
       );
     }
 

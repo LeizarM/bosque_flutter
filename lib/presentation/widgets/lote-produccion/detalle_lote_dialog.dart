@@ -26,11 +26,12 @@ Future<bool> abrirDetalleLote(
   final guardado = await showDialog<bool>(
     context: context,
     barrierDismissible: false,
-    builder: (_) => DetalleLoteDialog(
-      lote: lote,
-      audUsuario: audUsuario,
-      soloLectura: soloLectura,
-    ),
+    builder:
+        (_) => DetalleLoteDialog(
+          lote: lote,
+          audUsuario: audUsuario,
+          soloLectura: soloLectura,
+        ),
   );
   return guardado ?? false;
 }
@@ -54,8 +55,10 @@ class DetalleLoteDialog extends ConsumerStatefulWidget {
 }
 
 class _DetalleLoteDialogState extends ConsumerState<DetalleLoteDialog> {
-  DetalleLoteParams get _params =>
-      (idLp: widget.lote.idLp, audUsuario: widget.audUsuario);
+  DetalleLoteParams get _params => (
+    idLp: widget.lote.idLp,
+    audUsuario: widget.audUsuario,
+  );
 
   @override
   void initState() {
@@ -73,28 +76,30 @@ class _DetalleLoteDialogState extends ConsumerState<DetalleLoteDialog> {
   Future<void> _guardar() async {
     final confirmado = await showDialog<bool>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        icon: const Icon(Icons.lock_outline, size: 36),
-        title: const Text('Guardar y cerrar el lote'),
-        content: const Text(
-          'Al guardar, el lote queda cerrado y deja de estar disponible para '
-          'edicion. Solo podra reabrirlo quien tenga permiso.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Volver'),
+      builder:
+          (ctx) => AlertDialog(
+            icon: const Icon(Icons.lock_outline, size: 36),
+            title: const Text('Guardar y cerrar el lote'),
+            content: const Text(
+              'Al guardar, el lote queda cerrado y deja de estar disponible para '
+              'edicion. Solo podra reabrirlo quien tenga permiso.',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx, false),
+                child: const Text('Volver'),
+              ),
+              FilledButton(
+                onPressed: () => Navigator.pop(ctx, true),
+                child: const Text('Guardar y cerrar'),
+              ),
+            ],
           ),
-          FilledButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Guardar y cerrar'),
-          ),
-        ],
-      ),
     );
     if (confirmado != true || !mounted) return;
 
-    final error = await ref.read(detalleLoteProvider(_params).notifier).guardar();
+    final error =
+        await ref.read(detalleLoteProvider(_params).notifier).guardar();
     if (!mounted) return;
 
     if (error != null) {
@@ -240,18 +245,17 @@ class _Cabecera extends StatelessWidget {
                   children: [
                     Text(
                       '${lote.numLote}/${lote.anio}',
-                      style: Theme.of(context).textTheme.headlineSmall
-                          ?.copyWith(
-                            fontWeight: Peso.dato,
-                            fontFeatures: cifrasTabulares,
-                          ),
+                      style: Theme.of(
+                        context,
+                      ).textTheme.headlineSmall?.copyWith(
+                        fontWeight: Peso.dato,
+                        fontFeatures: cifrasTabulares,
+                      ),
                     ),
                     SizedBox(width: Esp.m),
                     Etiqueta(
                       texto: abierto ? 'Abierto' : 'Cerrado',
-                      tono: abierto
-                          ? TonoEtiqueta.exito
-                          : TonoEtiqueta.neutro,
+                      tono: abierto ? TonoEtiqueta.exito : TonoEtiqueta.neutro,
                     ),
                     if (soloLectura) ...[
                       SizedBox(width: Esp.s),
@@ -301,9 +305,8 @@ class _Identificacion extends StatelessWidget {
 
     final campos = <Widget>[
       DropdownButtonFormField<int>(
-        value: estado.maquinas.any((m) => m.idMa == lote.idMa)
-            ? lote.idMa
-            : null,
+        value:
+            estado.maquinas.any((m) => m.idMa == lote.idMa) ? lote.idMa : null,
         decoration: const InputDecoration(
           labelText: 'Maquina',
           border: OutlineInputBorder(),
@@ -346,9 +349,10 @@ class _Identificacion extends StatelessWidget {
         onCambio: (v) => notifier.setOrdenFabricacion(int.tryParse(v) ?? 0),
       ),
       DropdownButtonFormField<int>(
-        value: estado.empresas.any((e) => e.codEmpresa == lote.codEmpresa)
-            ? lote.codEmpresa
-            : null,
+        value:
+            estado.empresas.any((e) => e.codEmpresa == lote.codEmpresa)
+                ? lote.codEmpresa
+                : null,
         decoration: const InputDecoration(
           labelText: 'Empresa',
           border: OutlineInputBorder(),
@@ -374,7 +378,9 @@ class _Identificacion extends StatelessWidget {
             etiqueta: 'Observaciones',
             valor: lote.obs,
             habilitado: !soloLectura,
+            soloNumeros: false,
             lineas: 2,
+
             onCambio: notifier.setObservacion,
           ),
         ],
@@ -410,13 +416,14 @@ class _SeccionIngreso extends StatelessWidget {
     // Esa linea de arriba es la que contesta: agregar una bobina la mueve en el
     // acto —igual que a la barra de balance— porque los tres numeros salen de
     // la lista de filas y no de la cabecera guardada.
-    accion: soloLectura
-        ? null
-        : OutlinedButton.icon(
-            onPressed: notifier.agregarIngreso,
-            icon: const Icon(Icons.add, size: 18),
-            label: const Text('Agregar bobina'),
-          ),
+    accion:
+        soloLectura
+            ? null
+            : OutlinedButton.icon(
+              onPressed: notifier.agregarIngreso,
+              icon: const Icon(Icons.add, size: 18),
+              label: const Text('Agregar bobina'),
+            ),
     encabezado: _SelectorArticulo(
       etiqueta: 'Articulo de ingreso',
       valor: estado.codArticuloIngreso,
@@ -424,66 +431,78 @@ class _SeccionIngreso extends StatelessWidget {
       habilitado: !soloLectura,
       onCambio: notifier.setArticuloIngreso,
     ),
-    hijo: estado.ingresos.isEmpty
-        ? _SinFilas(
-            texto: soloLectura
-                ? 'Este lote no tiene bobinas registradas.'
-                : 'Este lote no tiene bobinas registradas. '
-                      'Agrega la primera con el boton de arriba.',
-          )
-        : _Filas(
-            aire: aire,
-            columnas: const ['Peso (kg)', 'Balanza (kg)', 'Nro. importacion'],
-            anchos: const [1, 1, 1],
-            cantidad: estado.ingresos.length,
-            titulo: (i) => 'Bobina ${i + 1}',
-            // Solo se puede quitar lo que todavia no viajo: el backend no tiene
-            // baja para el material de ingreso —elige entre insertar y
-            // actualizar segun el idMi—, asi que una bobina que ya esta en la
-            // base no se borra desde aqui. Esto deshace un boton de mas.
-            accionFila: soloLectura
-                ? null
-                : (i) => estado.ingresos[i].idMi != 0
+    hijo:
+        estado.ingresos.isEmpty
+            ? _SinFilas(
+              texto:
+                  soloLectura
+                      ? 'Este lote no tiene bobinas registradas.'
+                      : 'Este lote no tiene bobinas registradas. '
+                          'Agrega la primera con el boton de arriba.',
+            )
+            : _Filas(
+              aire: aire,
+              columnas: const ['Peso (kg)', 'Balanza (kg)', 'Nro. importacion'],
+              anchos: const [1, 1, 1],
+              cantidad: estado.ingresos.length,
+              titulo: (i) => 'Bobina ${i + 1}',
+              // Solo se puede quitar lo que todavia no viajo: el backend no tiene
+              // baja para el material de ingreso —elige entre insertar y
+              // actualizar segun el idMi—, asi que una bobina que ya esta en la
+              // base no se borra desde aqui. Esto deshace un boton de mas.
+              accionFila:
+                  soloLectura
                       ? null
-                      : IconButton(
-                          tooltip: 'Quitar esta bobina',
-                          onPressed: () => notifier.quitarIngreso(i),
-                          icon: const Icon(Icons.delete_outline, size: 18),
+                      : (i) =>
+                          estado.ingresos[i].idMi != 0
+                              ? null
+                              : IconButton(
+                                tooltip: 'Quitar esta bobina',
+                                onPressed: () => notifier.quitarIngreso(i),
+                                icon: const Icon(
+                                  Icons.delete_outline,
+                                  size: 18,
+                                ),
+                              ),
+              celda: (i, columna) {
+                final fila = estado.ingresos[i];
+                final clave = _claveDeIngreso(estado.ingresos, i);
+                final nueva = fila.idMi == 0;
+                return switch (columna) {
+                  0 => _CampoTexto(
+                    key: ValueKey('mi-peso-$clave'),
+                    etiqueta: aire.esChico ? 'Peso (kg)' : null,
+                    valor: _valorInicial(fila.pesoKilos, nueva),
+                    habilitado: !soloLectura,
+                    onCambio:
+                        (v) => notifier.editarIngreso(
+                          i,
+                          pesoKilos: double.tryParse(v) ?? 0,
                         ),
-            celda: (i, columna) {
-              final fila = estado.ingresos[i];
-              final clave = _claveDeIngreso(estado.ingresos, i);
-              final nueva = fila.idMi == 0;
-              return switch (columna) {
-                0 => _CampoTexto(
-                  key: ValueKey('mi-peso-$clave'),
-                  etiqueta: aire.esChico ? 'Peso (kg)' : null,
-                  valor: _valorInicial(fila.pesoKilos, nueva),
-                  habilitado: !soloLectura,
-                  onCambio: (v) => notifier.editarIngreso(
-                    i,
-                    pesoKilos: double.tryParse(v) ?? 0,
                   ),
-                ),
-                1 => _CampoTexto(
-                  key: ValueKey('mi-balanza-$clave'),
-                  etiqueta: aire.esChico ? 'Balanza (kg)' : null,
-                  valor: _valorInicial(fila.balanza, nueva),
-                  habilitado: !soloLectura,
-                  onCambio: (v) =>
-                      notifier.editarIngreso(i, balanza: double.tryParse(v) ?? 0),
-                ),
-                _ => _CampoTexto(
-                  key: ValueKey('mi-imp-$clave'),
-                  etiqueta: aire.esChico ? 'Nro. importacion' : null,
-                  valor: fila.numImportacion,
-                  habilitado: !soloLectura,
-                  soloNumeros: false,
-                  onCambio: (v) => notifier.editarIngreso(i, numImportacion: v),
-                ),
-              };
-            },
-          ),
+                  1 => _CampoTexto(
+                    key: ValueKey('mi-balanza-$clave'),
+                    etiqueta: aire.esChico ? 'Balanza (kg)' : null,
+                    valor: _valorInicial(fila.balanza, nueva),
+                    habilitado: !soloLectura,
+                    onCambio:
+                        (v) => notifier.editarIngreso(
+                          i,
+                          balanza: double.tryParse(v) ?? 0,
+                        ),
+                  ),
+                  _ => _CampoTexto(
+                    key: ValueKey('mi-imp-$clave'),
+                    etiqueta: aire.esChico ? 'Nro. importacion' : null,
+                    valor: fila.numImportacion,
+                    habilitado: !soloLectura,
+                    soloNumeros: false,
+                    onCambio:
+                        (v) => notifier.editarIngreso(i, numImportacion: v),
+                  ),
+                };
+              },
+            ),
   );
 }
 
@@ -539,89 +558,98 @@ class _SeccionSalida extends StatelessWidget {
       habilitado: !soloLectura,
       onCambio: notifier.setArticuloSalida,
     ),
-    hijo: estado.salidas.isEmpty
-        ? const _SinFilas(texto: 'Este lote no tiene paletas registradas.')
-        : _Filas(
-            aire: aire,
-            columnas: const [
-              'Nro. paleta',
-              'Peso resma',
-              'Peso paleta',
-              'Peso material',
-              'Resmas',
-              'Hojas',
-            ],
-            anchos: const [1, 1, 1, 1, 1, 1],
-            cantidad: estado.salidas.length,
-            titulo: (i) => 'Paleta ${estado.salidas[i].nroPaleta}',
-            celda: (i, columna) {
-              final fila = estado.salidas[i];
-              final k = fila.idMs;
-              return switch (columna) {
-                0 => _CampoTexto(
-                  key: ValueKey('ms-paleta-$k'),
-                  etiqueta: aire.esChico ? 'Nro. paleta' : null,
-                  valor: fila.nroPaleta.toString(),
-                  habilitado: !soloLectura,
-                  soloEnteros: true,
-                  onCambio: (v) =>
-                      notifier.editarSalida(i, nroPaleta: int.tryParse(v) ?? 0),
-                ),
-                1 => _CampoTexto(
-                  key: ValueKey('ms-presma-$k'),
-                  etiqueta: aire.esChico ? 'Peso resma' : null,
-                  valor: fila.pesoResma.toString(),
-                  habilitado: !soloLectura,
-                  onCambio: (v) => notifier.editarSalida(
-                    i,
-                    pesoResma: double.tryParse(v) ?? 0,
+    hijo:
+        estado.salidas.isEmpty
+            ? const _SinFilas(texto: 'Este lote no tiene paletas registradas.')
+            : _Filas(
+              aire: aire,
+              columnas: const [
+                'Nro. paleta',
+                'Peso resma',
+                'Peso paleta',
+                'Peso material',
+                'Resmas',
+                'Hojas',
+              ],
+              anchos: const [1, 1, 1, 1, 1, 1],
+              cantidad: estado.salidas.length,
+              titulo: (i) => 'Paleta ${estado.salidas[i].nroPaleta}',
+              celda: (i, columna) {
+                final fila = estado.salidas[i];
+                final k = fila.idMs;
+                return switch (columna) {
+                  0 => _CampoTexto(
+                    key: ValueKey('ms-paleta-$k'),
+                    etiqueta: aire.esChico ? 'Nro. paleta' : null,
+                    valor: fila.nroPaleta.toString(),
+                    habilitado: !soloLectura,
+                    soloEnteros: true,
+                    onCambio:
+                        (v) => notifier.editarSalida(
+                          i,
+                          nroPaleta: int.tryParse(v) ?? 0,
+                        ),
                   ),
-                ),
-                2 => _CampoTexto(
-                  key: ValueKey('ms-ppaleta-$k'),
-                  etiqueta: aire.esChico ? 'Peso paleta' : null,
-                  valor: fila.pesoPaleta.toString(),
-                  habilitado: !soloLectura,
-                  onCambio: (v) => notifier.editarSalida(
-                    i,
-                    pesoPaleta: double.tryParse(v) ?? 0,
+                  1 => _CampoTexto(
+                    key: ValueKey('ms-presma-$k'),
+                    etiqueta: aire.esChico ? 'Peso resma' : null,
+                    valor: fila.pesoResma.toString(),
+                    habilitado: !soloLectura,
+                    onCambio:
+                        (v) => notifier.editarSalida(
+                          i,
+                          pesoResma: double.tryParse(v) ?? 0,
+                        ),
                   ),
-                ),
-                3 => _CampoTexto(
-                  key: ValueKey('ms-pmat-$k'),
-                  etiqueta: aire.esChico ? 'Peso material' : null,
-                  valor: fila.pesoMaterial.toString(),
-                  habilitado: !soloLectura,
-                  onCambio: (v) => notifier.editarSalida(
-                    i,
-                    pesoMaterial: double.tryParse(v) ?? 0,
+                  2 => _CampoTexto(
+                    key: ValueKey('ms-ppaleta-$k'),
+                    etiqueta: aire.esChico ? 'Peso paleta' : null,
+                    valor: fila.pesoPaleta.toString(),
+                    habilitado: !soloLectura,
+                    onCambio:
+                        (v) => notifier.editarSalida(
+                          i,
+                          pesoPaleta: double.tryParse(v) ?? 0,
+                        ),
                   ),
-                ),
-                4 => _CampoTexto(
-                  key: ValueKey('ms-resmas-$k'),
-                  etiqueta: aire.esChico ? 'Resmas' : null,
-                  valor: fila.cantidadResma.toString(),
-                  habilitado: !soloLectura,
-                  soloEnteros: true,
-                  onCambio: (v) => notifier.editarSalida(
-                    i,
-                    cantidadResma: int.tryParse(v) ?? 0,
+                  3 => _CampoTexto(
+                    key: ValueKey('ms-pmat-$k'),
+                    etiqueta: aire.esChico ? 'Peso material' : null,
+                    valor: fila.pesoMaterial.toString(),
+                    habilitado: !soloLectura,
+                    onCambio:
+                        (v) => notifier.editarSalida(
+                          i,
+                          pesoMaterial: double.tryParse(v) ?? 0,
+                        ),
                   ),
-                ),
-                _ => _CampoTexto(
-                  key: ValueKey('ms-hojas-$k'),
-                  etiqueta: aire.esChico ? 'Hojas' : null,
-                  valor: fila.cantidadHojas.toString(),
-                  habilitado: !soloLectura,
-                  soloEnteros: true,
-                  onCambio: (v) => notifier.editarSalida(
-                    i,
-                    cantidadHojas: int.tryParse(v) ?? 0,
+                  4 => _CampoTexto(
+                    key: ValueKey('ms-resmas-$k'),
+                    etiqueta: aire.esChico ? 'Resmas' : null,
+                    valor: fila.cantidadResma.toString(),
+                    habilitado: !soloLectura,
+                    soloEnteros: true,
+                    onCambio:
+                        (v) => notifier.editarSalida(
+                          i,
+                          cantidadResma: int.tryParse(v) ?? 0,
+                        ),
                   ),
-                ),
-              };
-            },
-          ),
+                  _ => _CampoTexto(
+                    key: ValueKey('ms-hojas-$k'),
+                    etiqueta: aire.esChico ? 'Hojas' : null,
+                    valor: fila.cantidadHojas.toString(),
+                    habilitado: !soloLectura,
+                    soloEnteros: true,
+                    onCambio:
+                        (v) => notifier.editarSalida(
+                          i,
+                          cantidadHojas: int.tryParse(v) ?? 0,
+                        ),
+                  ),
+                };
+              },
+            ),
   );
 }
 
@@ -642,34 +670,35 @@ class _SeccionMerma extends StatelessWidget {
   Widget build(BuildContext context) => _Seccion(
     titulo: 'Merma',
     ayuda: '${fmtNumero.format(estado.totalMerma)} kg en total',
-    hijo: estado.mermas.isEmpty
-        ? const _SinFilas(texto: 'Este lote no tiene merma registrada.')
-        : _Filas(
-            aire: aire,
-            columnas: const ['Codigo', 'Descripcion', 'Peso (kg)'],
-            anchos: const [1, 3, 1],
-            cantidad: estado.mermas.length,
-            titulo: (i) => estado.mermas[i].codArticulo,
-            celda: (i, columna) {
-              final fila = estado.mermas[i];
-              return switch (columna) {
-                0 => Text(fila.codArticulo, style: context.numero()),
-                1 => Text(
-                  fila.descripcion,
-                  overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.bodySmall,
-                ),
-                _ => _CampoTexto(
-                  key: ValueKey('me-peso-${fila.idMe}'),
-                  etiqueta: aire.esChico ? 'Peso (kg)' : null,
-                  valor: fila.peso.toString(),
-                  habilitado: !soloLectura,
-                  onCambio: (v) =>
-                      notifier.editarMerma(i, double.tryParse(v) ?? 0),
-                ),
-              };
-            },
-          ),
+    hijo:
+        estado.mermas.isEmpty
+            ? const _SinFilas(texto: 'Este lote no tiene merma registrada.')
+            : _Filas(
+              aire: aire,
+              columnas: const ['Codigo', 'Descripcion', 'Peso (kg)'],
+              anchos: const [1, 3, 1],
+              cantidad: estado.mermas.length,
+              titulo: (i) => estado.mermas[i].codArticulo,
+              celda: (i, columna) {
+                final fila = estado.mermas[i];
+                return switch (columna) {
+                  0 => Text(fila.codArticulo, style: context.numero()),
+                  1 => Text(
+                    fila.descripcion,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                  _ => _CampoTexto(
+                    key: ValueKey('me-peso-${fila.idMe}'),
+                    etiqueta: aire.esChico ? 'Peso (kg)' : null,
+                    valor: fila.peso.toString(),
+                    habilitado: !soloLectura,
+                    onCambio:
+                        (v) => notifier.editarMerma(i, double.tryParse(v) ?? 0),
+                  ),
+                };
+              },
+            ),
   );
 }
 
@@ -729,10 +758,7 @@ class _Seccion extends StatelessWidget {
               if (accion != null) accion!,
             ],
           ),
-          if (encabezado != null) ...[
-            SizedBox(height: Esp.m),
-            encabezado!,
-          ],
+          if (encabezado != null) ...[SizedBox(height: Esp.m), encabezado!],
           SizedBox(height: Esp.m),
           hijo,
         ],
@@ -757,9 +783,7 @@ class _Rejilla extends StatelessWidget {
       return Wrap(
         spacing: separacion,
         runSpacing: separacion,
-        children: [
-          for (final h in hijos) SizedBox(width: ancho, child: h),
-        ],
+        children: [for (final h in hijos) SizedBox(width: ancho, child: h)],
       );
     },
   );
@@ -849,9 +873,10 @@ class _Filas extends StatelessWidget {
 
     return LayoutBuilder(
       builder: (context, restricciones) {
-        final ancho = restricciones.maxWidth > anchoMinimo
-            ? restricciones.maxWidth
-            : anchoMinimo;
+        final ancho =
+            restricciones.maxWidth > anchoMinimo
+                ? restricciones.maxWidth
+                : anchoMinimo;
 
         return ScrollConfiguration(
           behavior: const ArrastreLateral(),
@@ -905,10 +930,7 @@ class _Filas extends StatelessWidget {
                               ),
                             ),
                           if (accionFila != null)
-                            SizedBox(
-                              width: anchoAccion,
-                              child: accionFila!(i),
-                            ),
+                            SizedBox(width: anchoAccion, child: accionFila!(i)),
                         ],
                       ),
                     ),
@@ -1000,16 +1022,17 @@ class _SelectorArticulo extends StatelessWidget {
             .toList();
       },
       onSelected: (a) => onCambio(a.codArticulo),
-      fieldViewBuilder: (ctx, control, foco, _) => TextField(
-        controller: control,
-        focusNode: foco,
-        decoration: InputDecoration(
-          labelText: etiqueta,
-          border: const OutlineInputBorder(),
-          isDense: true,
-          prefixIcon: const Icon(Icons.search, size: 18),
-        ),
-      ),
+      fieldViewBuilder:
+          (ctx, control, foco, _) => TextField(
+            controller: control,
+            focusNode: foco,
+            decoration: InputDecoration(
+              labelText: etiqueta,
+              border: const OutlineInputBorder(),
+              isDense: true,
+              prefixIcon: const Icon(Icons.search, size: 18),
+            ),
+          ),
     );
   }
 }
@@ -1058,19 +1081,22 @@ class _CampoTextoState extends State<_CampoTexto> {
     controller: _control,
     enabled: widget.habilitado,
     maxLines: widget.lineas,
-    style: widget.soloNumeros
-        ? context.numero(fuerte: true)
-        : Theme.of(context).textTheme.bodyMedium,
-    keyboardType: widget.soloNumeros
-        ? TextInputType.numberWithOptions(decimal: !widget.soloEnteros)
-        : TextInputType.text,
-    inputFormatters: widget.soloNumeros
-        ? [
-            FilteringTextInputFormatter.allow(
-              widget.soloEnteros ? RegExp(r'[0-9]') : RegExp(r'[0-9.]'),
-            ),
-          ]
-        : null,
+    style:
+        widget.soloNumeros
+            ? context.numero(fuerte: true)
+            : Theme.of(context).textTheme.bodyMedium,
+    keyboardType:
+        widget.soloNumeros
+            ? TextInputType.numberWithOptions(decimal: !widget.soloEnteros)
+            : TextInputType.text,
+    inputFormatters:
+        widget.soloNumeros
+            ? [
+              FilteringTextInputFormatter.allow(
+                widget.soloEnteros ? RegExp(r'[0-9]') : RegExp(r'[0-9.]'),
+              ),
+            ]
+            : null,
     decoration: InputDecoration(
       labelText: widget.etiqueta,
       border: const OutlineInputBorder(),
@@ -1118,18 +1144,19 @@ class _CampoFechaLote extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => InkWell(
-    onTap: habilitado
-        ? () async {
-            final hoy = DateTime.now();
-            final elegida = await showDatePicker(
-              context: context,
-              initialDate: fecha,
-              firstDate: DateTime(hoy.year - 5),
-              lastDate: DateTime(hoy.year + 1, 12, 31),
-            );
-            if (elegida != null) onCambio(elegida);
-          }
-        : null,
+    onTap:
+        habilitado
+            ? () async {
+              final hoy = DateTime.now();
+              final elegida = await showDatePicker(
+                context: context,
+                initialDate: fecha,
+                firstDate: DateTime(hoy.year - 5),
+                lastDate: DateTime(hoy.year + 1, 12, 31),
+              );
+              if (elegida != null) onCambio(elegida);
+            }
+            : null,
     borderRadius: BorderRadius.circular(Esquina.chica),
     child: InputDecorator(
       decoration: InputDecoration(
@@ -1176,13 +1203,14 @@ class _BarraAcciones extends StatelessWidget {
           SizedBox(width: Esp.s),
           FilledButton.icon(
             onPressed: guardando ? null : onGuardar,
-            icon: guardando
-                ? const SizedBox(
-                    width: 16,
-                    height: 16,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : const Icon(Icons.save_outlined, size: 18),
+            icon:
+                guardando
+                    ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                    : const Icon(Icons.save_outlined, size: 18),
             label: Text(guardando ? 'Guardando…' : 'Guardar y cerrar'),
           ),
         ],

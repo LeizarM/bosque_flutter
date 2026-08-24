@@ -462,6 +462,13 @@ final sidebarMenuProvider = Provider<List<SidebarMenuItem>>((ref) {
       return '/dashboard/ventas';
     }
 
+    // Comisiones: tb_vista guarda la dirección del JSF viejo, sin el prefijo
+    // dashboard. Se mapea acá y no en la base porque esa fila la sigue usando
+    // Bosque v2 para armar su propio menú.
+    if (originalRoute.startsWith('/tcomComisiones/Comisiones')) {
+      return '/dashboard/tcomComisiones/Comisiones';
+    }
+
     // Otras transformaciones de rutas específicas pueden agregarse aquí
     // Por ejemplo:
     // if (originalRoute.startsWith('/algunos_modulos/OtraVista')) {

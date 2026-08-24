@@ -85,3 +85,32 @@ flutter:
         - asset: assets/fonts/Roboto-BoldItalic.ttf
           weight: 700
           style: italic
+
+    # Tipografia del modulo de Comisiones. No se cambia la de la app: el modulo
+    # se envuelve en su propio Theme, asi el resto del sistema queda intacto.
+    #
+    # Plus Jakarta Sans en la interfaz. Roboto es la tipografia por defecto de
+    # Android y se lee como "pantalla sin disenar"; esta tiene la misma
+    # legibilidad en 11px pero con caracter propio.
+    - family: PlusJakartaSans
+      fonts:
+        - asset: assets/fonts/PlusJakartaSans-400.ttf
+          weight: 400
+        - asset: assets/fonts/PlusJakartaSans-500.ttf
+          weight: 500
+        - asset: assets/fonts/PlusJakartaSans-600.ttf
+          weight: 600
+        - asset: assets/fonts/PlusJakartaSans-700.ttf
+          weight: 700
+
+    # JetBrains Mono SOLO para importes. Ancho fijo de verdad: las columnas de
+    # plata alinean por construccion y el 0 va con barra, asi que no se
+    # confunde con la O al revisar un numero de nota.
+    - family: JetBrainsMono
+      fonts:
+        - asset: assets/fonts/JetBrainsMono-400.ttf
+          weight: 400
+        - asset: assets/fonts/JetBrainsMono-500.ttf
+          weight: 500
+        - asset: assets/fonts/JetBrainsMono-700.ttf
+          weight: 700

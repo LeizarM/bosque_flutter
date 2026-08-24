@@ -226,6 +226,14 @@ final routerProvider = Provider<GoRouter>((ref) {
               name: 'tdesc_EmpleadosDescuentoView',
               builder: (context, state) => const InformeEmpDescuentosScreen(),
             ),
+            // Comisiones de vendedores.
+            // La ruta replica tb_vista.direccion (codVista 82), que es
+            // 'tcomComisiones/Comisiones': el menú la construye desde ahí.
+            GoRoute(
+              path: '/dashboard/tcomComisiones/Comisiones',
+              name: 'tcomComisiones',
+              builder: (context, state) => const ComisionesScreen(),
+            ),
 
             // Lote de producción
             GoRoute(

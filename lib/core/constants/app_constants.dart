@@ -477,8 +477,7 @@ class AppConstants {
   static const String reporteLotePdf = '/loteProduccion/reporte-lote-pdf';
   static const String reporteResumenProduccionPdf =
       '/loteProduccion/reporte-resumen-pdf';
-  static const String reporteResmadoPdf =
-      '/loteProduccion/reporte-resmado-pdf';
+  static const String reporteResmadoPdf = '/loteProduccion/reporte-resmado-pdf';
 
   // ═══════════════════════════════════════════════════════════════════════════════
   // RUTAS MODULO: REGISTRO DE RESMADO
@@ -881,4 +880,131 @@ class AppConstants {
   static const String getDocImageUrl = '/fichaTrabajador/uploads/documentos/';
   static const String getDocPendienteImageUrl =
       '/fichaTrabajador/uploads/pendientes/';
+
+  // ==================== COMISIONES (tcom) ====================
+  // Migración de la pantalla Comisiones.xhtml de Bosque v2.
+
+  // Grupos
+  static const String comRegistrarGrupo = '/comisiones/registrar-grupo';
+  static const String comEliminarGrupo = '/comisiones/eliminar-grupo';
+  static const String comObtenerGrupos = '/comisiones/obtener-grupos';
+  static const String comObtenerGruposAsignables =
+      '/comisiones/obtener-grupos-asignables';
+  static const String comObtenerGruposTodos =
+      '/comisiones/obtener-grupos-todos';
+
+  // Vendedores
+  static const String comRegistrarVendedor = '/comisiones/registrar-vendedor';
+  static const String comEliminarVendedor = '/comisiones/eliminar-vendedor';
+  static const String comObtenerVendedores = '/comisiones/obtener-vendedores';
+  static const String comObtenerVendedoresEmpresa =
+      '/comisiones/obtener-vendedores-empresa';
+  static const String comObtenerVendedoresTodos =
+      '/comisiones/obtener-vendedores-todos';
+
+  // Asignación grupo / vendedor
+  static const String comRegistrarGrupoVendedor =
+      '/comisiones/registrar-grupo-vendedor';
+  static const String comEliminarGrupoVendedor =
+      '/comisiones/eliminar-grupo-vendedor';
+  static const String comObtenerGruposVendedor =
+      '/comisiones/obtener-grupos-vendedor';
+  static const String comObtenerAsignacionesVigentes =
+      '/comisiones/obtener-asignaciones-vigentes';
+
+  // Vistas preliminares. Llaman al SP heredado p_list_paraPagar (ramas F, I,
+  // J, K, E, H): mismos números que Bosque v2.
+  static const String comPreliminarInterno = '/comisiones/preliminar-interno';
+  static const String comPreliminarExterno = '/comisiones/preliminar-externo';
+  static const String comPreliminarDinamicaAnterior =
+      '/comisiones/preliminar-dinamica-anterior';
+  static const String comPreliminarDinamicaVigente =
+      '/comisiones/preliminar-dinamica-vigente';
+  // Carga y ejecución del período
+  static const String comEstadoPeriodo = '/comisiones/estado-periodo';
+  static const String comSincronizarNotas = '/comisiones/sincronizar-notas';
+  static const String comCargarNotas = '/comisiones/cargar-notas';
+  static const String comEjecutarPago = '/comisiones/ejecutar-pago';
+
+  // Comisión por rango de días. La escritura exige ROLE_ADM en el backend.
+  static const String comObtenerRangosComision =
+      '/comisiones/obtener-rangos-comision';
+  static const String comRegistrarRangoComision =
+      '/comisiones/registrar-rango-comision';
+  static const String comEliminarRangoComision =
+      '/comisiones/eliminar-rango-comision';
+
+  // Detalle de una fila del preliminar: las notas que la componen.
+  // Rama G1 del mismo SP, la que abria «Ver Notas a Pagar» en Bosque v2.
+  static const String comNotasPreliminar = '/comisiones/notas-preliminar';
+
+  // Ítems congelados al ejecutar el pago: p_list_tcom_PagadoItem.
+  //
+  // Es el otro lado del preliminar —lo que YA se pagó—, y por eso no vive en
+  // el bloque de preliminares: el preliminar lista notas cerradas y SIN pagar,
+  // y al ejecutar el período esas notas pasan a tcom_pagado.
+  /// La acción va en la ruta, igual que en comDescuentoDetalle: L listado por
+  /// ítem, R resumen por motivo de exclusión.
+  static const String comItemsPagados = '/comisiones/items-pagados';
+
+  /// El sello del período congelado: p_list_tcom_PagadoItemCorte. Es lo único
+  /// que distingue «no había nada que congelar» de «el congelado no corrió»,
+  /// así que sin esto un cero no se puede mostrar.
+  static const String comItemsPagadosCorte = '/comisiones/items-pagados-corte';
+
+  // Política del descuento por familia. Todo el bloque exige btnComPolitica:
+  // define cuánto se le paga a la fuerza de ventas.
+  /// Detalle de lo descontado. La acción va en la ruta: P período abierto,
+  /// H histórico ya pagado, R resumen por vendedor y familia.
+  static const String comDescuentoDetalle = '/comisiones/descuento-detalle';
+
+  static const String comPoliticaFamiliasSap =
+      '/comisiones/politica-familias-sap';
+  static const String comPoliticaFamiliasDisponibles =
+      '/comisiones/politica-familias-disponibles';
+  static const String comPoliticaFamilias = '/comisiones/politica-familias';
+  static const String comPoliticaFamiliasVigentes =
+      '/comisiones/politica-familias-vigentes';
+  static const String comRegistrarPoliticaFamilia =
+      '/comisiones/registrar-politica-familia';
+  static const String comEliminarPoliticaFamilia =
+      '/comisiones/eliminar-politica-familia';
+  static const String comPoliticaExentos = '/comisiones/politica-exentos';
+  static const String comRegistrarPoliticaExento =
+      '/comisiones/registrar-politica-exento';
+  static const String comEliminarPoliticaExento =
+      '/comisiones/eliminar-politica-exento';
+  static const String comPoliticaClientesExcluidos =
+      '/comisiones/politica-clientes-excluidos';
+  static const String comRegistrarPoliticaCliente =
+      '/comisiones/registrar-politica-cliente';
+  static const String comEliminarPoliticaCliente =
+      '/comisiones/eliminar-politica-cliente';
+
+  // Notas pendientes
+  static const String comNotasPendientes =
+      '/comisiones/obtener-notas-pendientes';
+
+  static const String comObtenerTipoCambio = '/comisiones/obtener-tipo-cambio';
+
+  // Reportes PDF
+  static const String comRptPagadasInternas =
+      '/comisiones/reporte-pagadas-internas';
+  static const String comRptPagadasExternas =
+      '/comisiones/reporte-pagadas-externas';
+  static const String comRptImportaciones = '/comisiones/reporte-importaciones';
+  static const String comRptPagadasEpp = '/comisiones/reporte-pagadas-epp';
+  static const String comRptNotasPendientes =
+      '/comisiones/reporte-notas-pendientes';
+  static const String comRptPorVendedor = '/comisiones/reporte-por-vendedor';
+
+  // Comisión dinámica
+  static const String comRegistrarComisionDinamica =
+      '/comisiones/registrar-comision-dinamica';
+  static const String comEliminarComisionDinamica =
+      '/comisiones/eliminar-comision-dinamica';
+  static const String comObtenerComisionesDinamicas =
+      '/comisiones/obtener-comisiones-dinamicas';
+  static const String comObtenerComisionesDinamicasVigentes =
+      '/comisiones/obtener-comisiones-dinamicas-vigentes';
 }

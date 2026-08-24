@@ -52,3 +52,7 @@ CLAUDE.md
 graft/
 .mcp.json
 .ignore
+.agents/skills/flutter-build-responsive-layout/SKILL.md
+.junie/skills/flutter-build-responsive-layout/SKILL.md
+skills-lock.json
+.gitignore

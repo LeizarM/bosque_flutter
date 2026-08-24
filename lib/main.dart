@@ -16,11 +16,17 @@ import 'package:bosque_flutter/presentation/widgets/shared/connectivity_wrapper.
 /// navegador sirve un bundle viejo, los logs nuevos simplemente no aparecen y uno
 /// termina buscando el problema en código que no se está ejecutando. Con esta
 /// línea en la consola se descarta esa posibilidad en dos segundos.
-const String kBuildMarker = 'sesion-fix-4 · AuthGate ya no destruye la sesión';
+const String kBuildMarker =
+    'sesion-fix-17 · rediseno: tipografia propia, cifras mono, pestanas y siluetas';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  console('🏷️  BUILD: $kBuildMarker');
+  // debugPrint y no console(): console() se anula en release, asi que el
+  // compilador borraba la llamada y con ella la constante. El marcador
+  // aparecia solo en debug, o sea nunca en el build que se despliega, que es
+  // justo donde hace falta para descartar que el navegador este sirviendo un
+  // bundle viejo. debugPrint sigue imprimiendo en release.
+  debugPrint('🏷️  BUILD: $kBuildMarker');
 
   // Solo cargar .env en plataformas móviles y desktop (no web)
   if (!kIsWeb) {
