@@ -551,6 +551,35 @@ class AppConstants {
   static const String antEditarAsignacion = '/anticipo/editarAsignacion';
   static const String antEstadoAnticipo = '/anticipo/estadoAnticipo';
   // ═══════════════════════════════════════════════════════════════════════════════
+  // RUTAS MODULO: PRESTAMOS (PERSONAL)
+  // ═══════════════════════════════════════════════════════════════════════════════
+  static const String prestamoListarSAP = '/prestamos/listarPrestamosSAP';
+  static const String prestamoAsignarMasivo =
+      '/prestamos/asignarPrestamosMasivo';
+  static const String prestamoEditarMasivo = '/prestamos/editarPrestamoMasivo';
+  static const String prestamoActualizarDetalle =
+      '/prestamos/actualizarDetalle';
+  static const String prestamoAdelantarCuota = '/prestamos/adelantarCuota';
+  static const String prestamoAnular = '/prestamos/anularPrestamo';
+  static const String prestamoListarDetalles = '/prestamos/listarDetalles';
+  static const String prestamoListarEmpleadosAsignados =
+      '/prestamos/listarEmpleadosAsignados';
+  static const String prestamoEstados = '/prestamos/estados';
+  static const String prestamoTiposPago = '/prestamos/tiposPago';
+  static const String prestamoPrevisualizarCuotas =
+      '/prestamos/previsualizarCuotas';
+  static const String prestamoReporteCuotas = '/prestamos/reporteCuotas';
+  static const String prestamoReportePersonal = '/prestamos/reportePersonal';
+  static const String prestamoReporteMayorGlobalResumido =
+      '/prestamos/reporteMayorGlobalResumido';
+  static const String prestamoReporteGlobalDetallado =
+      '/prestamos/reporteGlobalDetallado';
+  static const String prestamoReporteCortoLargoPlazo =
+      '/prestamos/reporteCortoLargoPlazo';
+  static const String prestamoReporteMayorGeneral =
+      '/prestamos/reporteMayorGeneral';
+
+  // ═══════════════════════════════════════════════════════════════════════════════
   // RUTAS MODULO: MULTAS
   // ═══════════════════════════════════════════════════════════════════════════════
   static const String mulListasMultas = '/multas/listarMultas';

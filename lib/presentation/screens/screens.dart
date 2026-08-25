@@ -46,3 +46,4 @@ export 'package:bosque_flutter/presentation/screens/planillas/planillas_screen.d
 export 'package:bosque_flutter/presentation/screens/rol-sabados/rol_sabados_screen.dart';
 export 'package:bosque_flutter/presentation/screens/permisos-rrhh/permisos_rrhh_screen.dart';
 export 'package:bosque_flutter/presentation/screens/comisiones/comisiones_screen.dart';
+export 'package:bosque_flutter/presentation/screens/prestamos/prestamos_screen.dart';

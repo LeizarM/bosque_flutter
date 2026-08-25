@@ -277,7 +277,6 @@ final routerProvider = Provider<GoRouter>((ref) {
               name: 'tplAnticipo',
               builder: (context, state) => const AnticiposScreen(),
             ),
-
             //Multas
             GoRoute(
               path: '/dashboard/tplMulta/multas',
@@ -296,24 +295,23 @@ final routerProvider = Provider<GoRouter>((ref) {
               name: 'tplPlanilla',
               builder: (context, state) => const PlanillasScreen(),
             ),
-
-            // Rol de Turnos de Sábado
-            // La ruta tiene que ser EXACTAMENTE tb_vista.direccion (codVista 154
-            // = 'trs_Sabados/Main'): el sidebar arma el destino con '/'+direccion.
+            //Prestamos
+            GoRoute(
+              path: '/dashboard/tplPrestamo/prestamo',
+              name: 'tplPrestamo',
+              builder: (context, state) => const PrestamosScreen(),
+            ),
+            // Permisos y Vacaciones
+            GoRoute(
+              path: '/dashboard/trhPermiso/permiso',
+              name: 'trhPermiso',
+              builder: (context, state) => const PermisosRrhhScreen(),
+            ),
+            // Turno Sabados
             GoRoute(
               path: '/dashboard/trs_Sabados/Main',
               name: 'trsSabados',
               builder: (context, state) => const RolSabadosScreen(),
-            ),
-
-            // Permisos y Vacaciones de RR.HH. (consola de consulta)
-            // Misma regla que arriba: la ruta es EXACTAMENTE tb_vista.direccion
-            // (codVista 24 = 'trhPermiso/permiso'), porque el sidebar arma el
-            // destino con '/'+direccion (menu_provider.dart:481).
-            GoRoute(
-              path: '/dashboard/trhPermiso/permiso',
-              name: 'trhPermisoPermiso',
-              builder: (context, state) => const PermisosRrhhScreen(),
             ),
 
             // Cartas CITE — la correspondencia numerada.
@@ -466,6 +464,16 @@ final routerProvider = Provider<GoRouter>((ref) {
           redirect:
               (context, state) => '/dashboard/tdesc_EmpleadosDescuento/View',
         ),
+        // Permisos y Vacaciones
+        GoRoute(
+          path: '/trhPermiso/permiso',
+          redirect: (context, state) => '/dashboard/trhPermiso/permiso',
+        ),
+        // Modulo Turno Sabados
+        GoRoute(
+          path: '/trs_Sabados/Main',
+          redirect: (context, state) => '/dashboard/trs_Sabados/Main',
+        ),
         // Lote de producción
         GoRoute(
           path: '/tprod_loteProduccion/loteProduccion',
@@ -490,8 +498,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         GoRoute(
           path: '/tprod_loteProduccion/ViewResmado',
           redirect:
-              (context, state) =>
-                  '/dashboard/tprod_loteProduccion/ViewResmado',
+              (context, state) => '/dashboard/tprod_loteProduccion/ViewResmado',
         ),
         // Solicitud de corte
         GoRoute(
@@ -520,17 +527,10 @@ final routerProvider = Provider<GoRouter>((ref) {
           path: '/tplPlanilla/planilla',
           redirect: (context, state) => '/dashboard/tplPlanilla/planilla',
         ),
-        // ROL DE TURNOS DE SABADO
+        // PRESTAMOS
         GoRoute(
-          path: '/trs_Sabados/Main',
-          redirect: (context, state) => '/dashboard/trs_Sabados/Main',
-        ),
-        // PERMISOS Y VACACIONES DE RR.HH.
-        // Sin esta entrada el item del menu cae en el errorBuilder: el sidebar
-        // navega a '/trhPermiso/permiso' (sin '/dashboard'), que no existe.
-        GoRoute(
-          path: '/trhPermiso/permiso',
-          redirect: (context, state) => '/dashboard/trhPermiso/permiso',
+          path: '/tplPrestamo/prestamo',
+          redirect: (context, state) => '/dashboard/tplPrestamo/prestamo',
         ),
         // CARTAS CITE
         GoRoute(
