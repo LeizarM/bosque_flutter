@@ -357,13 +357,16 @@ final excelPlanillaTributariaProvider = FutureProvider.family<Uint8List, Map<Str
   );
 });
 
-final pdfPlanillaCompactaProvider = FutureProvider.family<Uint8List, int>((
-  ref,
-  codPlanilla,
-) async {
-  final repo = PlanillaImpl();
-  return await repo.descargarPlanillaCompacta(codPlanilla);
-});
+/// El record da igualdad por valor, así que el cache de la family sigue
+/// funcionando igual que cuando la clave era un `int` suelto.
+final pdfPlanillaCompactaProvider =
+    FutureProvider.family<Uint8List, (int codPlanilla, int codEmpresa)>((
+      ref,
+      clave,
+    ) async {
+      final repo = PlanillaImpl();
+      return await repo.descargarPlanillaCompacta(clave.$1, clave.$2);
+    });
 
 final excelPlanillaCompactaProvider = FutureProvider.family<Uint8List, int>((
   ref,

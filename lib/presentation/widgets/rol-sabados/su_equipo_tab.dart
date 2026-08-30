@@ -59,8 +59,7 @@ class SuEquipoTab extends ConsumerWidget {
                   titulo: 'No se pudo cargar la grilla',
                   detalle: textoParaUsuario(e),
                 ),
-            data:
-                (g) => _Vista(idRol: idRol, equipo: equipo, grilla: g),
+            data: (g) => _Vista(idRol: idRol, equipo: equipo, grilla: g),
           ),
     );
   }
@@ -119,7 +118,8 @@ class _VistaState extends ConsumerState<_Vista> {
       return const MensajeVacio(
         icono: Icons.event_busy,
         titulo: 'El rol no tiene sábados',
-        detalle: 'Este rol se creó sin fechas. Avisa a RR.HH. para que lo '
+        detalle:
+            'Este rol se creó sin fechas. Avisa a RR.HH. para que lo '
             'regenere.',
       );
     }
@@ -491,11 +491,7 @@ class _Cuenta {
     required this.objetivo,
   });
 
-  factory _Cuenta.de(
-    GrillaRol grilla,
-    SabadoEntity sabado,
-    List<_Fila> filas,
-  ) {
+  factory _Cuenta.de(GrillaRol grilla, SabadoEntity sabado, List<_Fila> filas) {
     var vienen = 0;
     var libres = 0;
     var vacaciones = 0;
@@ -575,7 +571,7 @@ bool _yaPaso(SabadoEntity s, DateTime hoy) =>
 /// **Cada cifra dice de qué universo habla, y por eso ninguna vive adentro del
 /// botón.** Acá conviven dos números de dos poblaciones distintas —las 14
 /// personas que programás y las 87 del rol entero— y antes se leían de corrido:
-/// «vienen 7 de 14 · falta 1». Ese «falta 1» es el faltante de cobertura de TODO
+/// «vienen 7 de 14 · falta 1». Ese «falta 1» es el faltante de cobertura de todo
 /// el rol, pero pegado al renglón anterior se lee «falta 1 de los tuyos», que es
 /// falso y termina con un jefe mandando a trabajar a alguien que no hacía falta.
 /// Ahora cada una arranca con su población escrita —`tu equipo:` / `todo el
@@ -1386,7 +1382,11 @@ class _Panorama extends StatelessWidget {
   final DateTime hoy;
 
   final int seleccionado;
-  final void Function(SabadoEntity, ProgramadorDependienteEntity, CeldaTurnoEntity?)
+  final void Function(
+    SabadoEntity,
+    ProgramadorDependienteEntity,
+    CeldaTurnoEntity?,
+  )
   onElegir;
 
   static const double _lado = 34;
@@ -1398,8 +1398,7 @@ class _Panorama extends StatelessWidget {
         // Lo que sobra después de las columnas del mes es la columna de
         // nombres: con cinco sábados en 380 px quedan ~194, que alcanzan para
         // el nombre entero en uno o dos renglones.
-        final sobrante =
-            cajon.maxWidth - Esp.s * 2 - columnas.length * _lado;
+        final sobrante = cajon.maxWidth - Esp.s * 2 - columnas.length * _lado;
         final anchoNombre = sobrante < 72 ? 72.0 : sobrante;
 
         return Column(
@@ -1466,7 +1465,8 @@ class _Panorama extends StatelessWidget {
                             child: Tooltip(
                               message: [
                                 f.dependiente.nombreDependiente,
-                                if (f.participante?.sucursal.isNotEmpty ?? false)
+                                if (f.participante?.sucursal.isNotEmpty ??
+                                    false)
                                   f.participante!.sucursal,
                               ].join('\n'),
                               child: Text(
@@ -1474,8 +1474,9 @@ class _Panorama extends StatelessWidget {
                                 maxLines: 2,
                                 softWrap: true,
                                 overflow: TextOverflow.ellipsis,
-                                style: Theme.of(context).textTheme.bodySmall
-                                    ?.copyWith(height: 1.05),
+                                style: Theme.of(
+                                  context,
+                                ).textTheme.bodySmall?.copyWith(height: 1.05),
                               ),
                             ),
                           ),

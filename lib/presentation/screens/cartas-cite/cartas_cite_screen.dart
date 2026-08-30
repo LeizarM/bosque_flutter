@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:bosque_flutter/core/state/cartas_cite_provider.dart';
 import 'package:bosque_flutter/core/state/rrhh_provider.dart';
 import 'package:bosque_flutter/core/state/user_provider.dart';
+import 'package:bosque_flutter/core/ui/rango_fechas.dart';
 import 'package:bosque_flutter/core/ui/tokens_bosque.dart';
 import 'package:bosque_flutter/domain/entities/carta_cite_entity.dart';
 import 'package:bosque_flutter/domain/entities/empresa_entity.dart';
@@ -690,9 +691,10 @@ class _ChipEmpresa extends StatelessWidget {
 
 /// El calendario, cuando ninguno de los tres períodos sirve.
 ///
-/// Un solo selector de rango en lugar de dos de fecha: elegir «desde» sin ver
-/// el «hasta» era la forma más común de terminar con un rango invertido y la
-/// grilla vacía.
+/// Los dos extremos se eligen juntos y a la vista: poner el «desde» sin ver el
+/// «hasta» era la forma más común de terminar con un rango invertido y la
+/// grilla vacía. El diálogo además corre el otro extremo solo si quedan dados
+/// vuelta, así que ya no se puede pedir un rango imposible.
 class _ChipRangoPropio extends StatelessWidget {
   final CartasCiteState estado;
   final void Function(DateTime, DateTime) onElegir;
@@ -715,18 +717,22 @@ class _ChipRangoPropio extends StatelessWidget {
         selected: esPropio,
         visualDensity: VisualDensity.compact,
         onSelected: (_) async {
-          final rango = await showDateRangePicker(
-            context: context,
-            firstDate: DateTime(2018),
-            lastDate: DateTime.now().add(const Duration(days: 365)),
-            initialDateRange: DateTimeRange(
-              start: estado.fechaDesde,
-              end: estado.fechaHasta,
-            ),
-            helpText: 'Período a consultar',
-            saveText: 'Aplicar',
+          // El de Material se abre a pantalla completa y apila los meses uno
+          // abajo del otro: en un monitor ancho son 1900 px para elegir dos
+          // fechas. Este es un diálogo de 380 px y además se puede tipear.
+          final rango = await pedirRangoDeFechas(
+            context,
+            titulo: 'Período a consultar',
+            explicacion: 'Se listan los documentos emitidos entre estas fechas.',
+            desde: estado.fechaDesde,
+            hasta: estado.fechaHasta,
+            minima: DateTime(2018),
+            // Un año adelante: las cartas se fechan a futuro más de una vez.
+            maxima: DateTime.now().add(const Duration(days: 365)),
+            textoAceptar: 'Aplicar',
+            iconoAceptar: Icons.filter_alt_outlined,
           );
-          if (rango != null) onElegir(rango.start, rango.end);
+          if (rango != null) onElegir(rango.desde, rango.hasta);
         },
       ),
     );

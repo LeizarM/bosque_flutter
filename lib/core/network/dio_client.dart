@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:typed_data';
 import 'package:bosque_flutter/core/constants/app_constants.dart';
 import 'package:bosque_flutter/core/utils/console_log.dart';
@@ -174,20 +175,34 @@ class DioClient {
     }
   }
 
+  /// Baja un PDF ya armado por Jasper en el backend.
+  ///
+  /// [receiveTimeout] sube el tope de espera solo para este pedido. El de
+  /// `BaseOptions` son 30 s, que alcanzan para un voucher pero no siempre para
+  /// un reporte que recorre miles de filas: pasado ese tiempo Dio corta y el
+  /// usuario ve un error de red cuando en realidad el reporte se estaba
+  /// generando bien. Omitirlo deja el comportamiento de siempre.
   static Future<Uint8List> descargarReportePdf({
     required String endpoint,
     Map<String, dynamic>? data,
+    Duration? receiveTimeout,
   }) async {
     final dio = getInstance(); // Ahora reutiliza la instancia
 
-    final response = await dio.post(
-      endpoint,
-      data: data,
-      options: Options(
-        headers: {'Content-Type': 'application/json'},
-        responseType: ResponseType.bytes,
-      ),
-    );
+    final Response<dynamic> response;
+    try {
+      response = await dio.post(
+        endpoint,
+        data: data,
+        options: Options(
+          headers: {'Content-Type': 'application/json'},
+          responseType: ResponseType.bytes,
+          receiveTimeout: receiveTimeout,
+        ),
+      );
+    } on DioException catch (e) {
+      throw Exception(mensajeDeReporteFallido(e));
+    }
 
     if (response.statusCode == 200) {
       return response.data as Uint8List;
@@ -196,5 +211,37 @@ class DioClient {
         'No se pudo descargar el PDF desde $endpoint. Código: ${response.statusCode}',
       );
     }
+  }
+
+  /// El mensaje que corresponde mostrar cuando un reporte falla.
+  ///
+  /// **Por qué no alcanza con `handleDioError`.** Ese lee el mensaje del
+  /// backend de `e.response.data['message']`, pero un reporte se pide con
+  /// `responseType.bytes`: Dio no interpreta el cuerpo y el JSON de error
+  /// llega como `Uint8List`, así que la comprobación `is Map` nunca da y el
+  /// mensaje que el backend se tomó el trabajo de escribir —el del stored
+  /// procedure, por ejemplo— se perdía. Acá se desenvuelve primero.
+  static String mensajeDeReporteFallido(DioException e) {
+    final datos = e.response?.data;
+    if (datos is List<int>) {
+      try {
+        final cuerpo = jsonDecode(utf8.decode(datos));
+        if (cuerpo is Map && cuerpo['message'] != null) {
+          final msg = cuerpo['message'].toString();
+          if (msg.isNotEmpty) return msg;
+        }
+      } catch (_) {
+        // No era JSON: se sigue con el mensaje por tipo de error.
+      }
+    }
+
+    // El de red habla de «revisa tu internet», que acá desorienta: el pedido
+    // llegó bien y el servidor sigue trabajando; lo que se acabó es la espera.
+    if (e.type == DioExceptionType.receiveTimeout) {
+      return 'El reporte tardó más de lo permitido y se canceló. '
+          'Probá acotarlo con más filtros.';
+    }
+
+    return handleDioError(e, 'No se pudo generar el reporte.');
   }
 }

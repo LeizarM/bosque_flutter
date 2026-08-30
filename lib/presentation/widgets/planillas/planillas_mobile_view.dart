@@ -175,9 +175,10 @@ class PlanillasMobileView extends StatelessWidget {
                                       context: context,
                                       downloadFunction:
                                           () async => await ref.read(
-                                            pdfPlanillaCompactaProvider(
+                                            pdfPlanillaCompactaProvider((
                                               item.codPlanilla,
-                                            ).future,
+                                              item.codEmpresa,
+                                            )).future,
                                           ),
                                       filename:
                                           'PlanillaCompacta_${item.empresa.replaceAll(" ", "_")}_${item.caja.replaceAll(" ", "_")}.pdf',

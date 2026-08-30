@@ -1036,4 +1036,56 @@ class AppConstants {
       '/comisiones/obtener-comisiones-dinamicas';
   static const String comObtenerComisionesDinamicasVigentes =
       '/comisiones/obtener-comisiones-dinamicas-vigentes';
+
+  // ==================== TALONARIOS (tmto_*) ====================
+  // Cinco tablas, un par ABM/LIST por tabla. Ver ClaudeTalonarios/sql/00-LEEME.md
+
+  // Tipos de recibo (catálogo)
+  static const String talRegistrarTipo = '/talonarios/registrar-tipo';
+  static const String talEliminarTipo = '/talonarios/eliminar-tipo';
+  static const String talObtenerTipo = '/talonarios/obtener-tipo';
+  static const String talListarTipos = '/talonarios/listar-tipos';
+
+  // Grupos
+  static const String talRegistrarGrupo = '/talonarios/registrar-grupo';
+  static const String talEliminarGrupo = '/talonarios/eliminar-grupo';
+  static const String talObtenerGrupo = '/talonarios/obtener-grupo';
+  static const String talListarGrupos = '/talonarios/listar-grupos';
+
+  // Tipos por grupo (tabla de unión, solo alta y baja)
+  static const String talAsignarTipoGrupo = '/talonarios/asignar-tipo-grupo';
+  static const String talQuitarTipoGrupo = '/talonarios/quitar-tipo-grupo';
+  static const String talListarTiposPorGrupo =
+      '/talonarios/listar-tipos-por-grupo';
+  static const String talListarTiposDisponibles =
+      '/talonarios/listar-tipos-disponibles';
+
+  // Talonarios
+  static const String talRegistrarTalonario =
+      '/talonarios/registrar-talonario';
+  static const String talEliminarTalonario = '/talonarios/eliminar-talonario';
+  static const String talObtenerTalonario = '/talonarios/obtener-talonario';
+  static const String talListarTalonarios = '/talonarios/listar-talonarios';
+  static const String talListarDisponibles = '/talonarios/listar-disponibles';
+
+  // Alta masiva: simular no escribe nada, aplicar es todo o nada
+  static const String talSimularLote = '/talonarios/simular-lote';
+  static const String talAplicarLote = '/talonarios/aplicar-lote';
+
+  // Eventos (log de estados)
+  static const String talRegistrarEvento = '/talonarios/registrar-evento';
+  static const String talEliminarEvento = '/talonarios/eliminar-evento';
+  static const String talListarEventos = '/talonarios/listar-eventos';
+
+  // Entrega masiva: todo o nada
+  static const String talEntregarLote = '/talonarios/entregar-lote';
+
+  // Reportes del módulo. Devuelven bytes de PDF, no ApiResponse: se piden con
+  // DioClient.descargarReportePdf y no con postAndReturn*.
+  static const String talRptInventario = '/talonarios/reporte-inventario';
+  static const String talRptTrazabilidad = '/talonarios/reporte-trazabilidad';
+  static const String talRptFicha = '/talonarios/reporte-ficha';
+  static const String talRptCustodia = '/talonarios/reporte-custodia';
+  static const String talRptConciliacionSap =
+      '/talonarios/reporte-conciliacion-sap';
 }

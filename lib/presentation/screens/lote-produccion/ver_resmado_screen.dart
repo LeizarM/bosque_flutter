@@ -17,7 +17,7 @@ import 'package:bosque_flutter/core/ui/tokens_bosque.dart';
 import 'package:bosque_flutter/domain/entities/resmado_entity.dart';
 import 'package:bosque_flutter/presentation/widgets/lote-produccion/balance_lote.dart';
 import 'package:bosque_flutter/presentation/widgets/lote-produccion/detalle_resmado_dialog.dart';
-import 'package:bosque_flutter/presentation/widgets/lote-produccion/rango_fechas_dialog.dart';
+import 'package:bosque_flutter/core/ui/rango_fechas.dart';
 import 'package:bosque_flutter/presentation/widgets/lote-produccion/resumen_resmado.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';

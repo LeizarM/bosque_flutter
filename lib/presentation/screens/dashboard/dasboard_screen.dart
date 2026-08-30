@@ -1,17 +1,15 @@
-import 'package:bosque_flutter/core/state/empleados_dependientes_provider.dart';
-import 'package:bosque_flutter/core/state/sidebar_state_provider.dart';
-import 'package:bosque_flutter/core/state/theme_mode_provider.dart';
-
-import 'package:bosque_flutter/core/state/rrhh_provider.dart';
-import 'package:bosque_flutter/core/state/user_provider.dart';
-import 'package:bosque_flutter/core/state/permisos_vacacion_provider.dart';
-import 'package:bosque_flutter/presentation/widgets/shared/auth_gate.dart';
-import 'package:bosque_flutter/presentation/widgets/shared/sidebar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import 'package:responsive_framework/responsive_framework.dart';
+
+import 'package:bosque_flutter/core/state/empleados_dependientes_provider.dart';
+import 'package:bosque_flutter/core/state/sidebar_state_provider.dart';
+import 'package:bosque_flutter/core/state/theme_mode_provider.dart';
+import 'package:bosque_flutter/core/state/user_provider.dart';
+import 'package:bosque_flutter/presentation/widgets/shared/auth_gate.dart';
+import 'package:bosque_flutter/presentation/widgets/shared/sidebar.dart';
 
 class DashboardScreen extends ConsumerWidget {
   /// El contenido hijo que se mostrará en el área principal

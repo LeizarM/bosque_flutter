@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:responsive_framework/responsive_framework.dart';
@@ -67,6 +68,18 @@ class MyApp extends ConsumerWidget {
       title: 'Bosque',
       theme: appTheme.getTheme(),
       routerConfig: router,
+      // Sin esto, todo widget de Material que trae texto propio sale en inglés:
+      // los calendarios decían «Jan 1, 2019» y «S M T W T F S», y al escribir
+      // una fecha a mano el campo pedía mm/dd/yyyy, que en Bolivia se lee al
+      // revés y hace ingresar el día equivocado sin que nadie se dé cuenta.
+      // Con la locale en español el mismo campo pide dd/mm/aaaa.
+      locale: const Locale('es'),
+      supportedLocales: const [Locale('es'), Locale('en')],
+      localizationsDelegates: const [
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
       builder: (context, child) {
         Widget responsiveChild = ResponsiveBreakpoints.builder(
           child: child!,

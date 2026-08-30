@@ -469,6 +469,18 @@ final sidebarMenuProvider = Provider<List<SidebarMenuItem>>((ref) {
       return '/dashboard/tcomComisiones/Comisiones';
     }
 
+    // Talonarios (vista 91, "Talonario(s) Mantenimiento"). Mismo motivo que
+    // Comisiones: la fila de tb_vista la sigue usando Bosque v2.
+    //
+    // OJO con la otra entrada del mismo menú, "Talonarios" (vista 62,
+    // /tfmFacturasManuales/talonario): NO es lo mismo. Esa opera sobre
+    // tfm_facturaManual vía p_abm_FacturaManual — son talonarios de FACTURAS,
+    // con NIT y nro de autorización. El bean legacy lo dice: `codTalonario`
+    // "es el codFacturaManual". No mapearla acá.
+    if (originalRoute.startsWith('/tmtoTalonario/talonario')) {
+      return '/dashboard/tmtoTalonario/talonario';
+    }
+
     // Otras transformaciones de rutas específicas pueden agregarse aquí
     // Por ejemplo:
     // if (originalRoute.startsWith('/algunos_modulos/OtraVista')) {

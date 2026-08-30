@@ -167,6 +167,13 @@ bool _esFalloTecnico(String t) {
   // dejar rastro en el log.
   b.contains('error interno del servidor') ||
       b.contains('error en el servidor') ||
+      // Dio crudo. Su `toString()` es «DioException [bad response]: This
+      // exception was thrown because the response has a status code of 500…»
+      // y sigue con tres párrafos en inglés explicando qué es un código HTTP,
+      // con un link a MDN. El prefijo que se pela más arriba es
+      // `DioException: ` a secas y no matchea el `[bad response]`, así que sin
+      // esta línea el párrafo entero llegaba a la pantalla tal cual.
+      b.contains('dioexception') ||
       b.contains('es obligatorio') ||
       b.contains('accion no reconocida') ||
       b.contains('no existe el rol con') ||

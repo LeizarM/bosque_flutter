@@ -136,10 +136,15 @@ class PlanillaImpl extends BaseApiRepository implements PlanillaRepository {
     }
   }
 
-  Future<Uint8List> descargarPlanillaCompacta(int codPlanilla) async {
+  /// [codEmpresa] es sólo para el logo del pie: el backend lo usa para elegir
+  /// `logos/<codEmpresa>.png`. La ACCION R2 del SP no lo devuelve, por eso viaja acá.
+  Future<Uint8List> descargarPlanillaCompacta(
+    int codPlanilla,
+    int codEmpresa,
+  ) async {
     final response = await _dio.post(
       AppConstants.planillaPdfCompacta,
-      data: {'codPlanilla': codPlanilla},
+      data: {'codPlanilla': codPlanilla, 'codEmpresa': codEmpresa},
       options: Options(
         headers: {'Content-Type': 'application/json'},
         responseType: ResponseType.bytes,

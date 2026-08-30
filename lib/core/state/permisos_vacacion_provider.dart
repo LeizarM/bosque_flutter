@@ -1,6 +1,4 @@
 import 'dart:typed_data';
-import 'dart:ui';
-
 import 'package:bosque_flutter/domain/entities/solicitud_permiso_entity.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:bosque_flutter/data/repositories/permisos_vacacion_impl.dart';
@@ -204,10 +202,11 @@ final previsualizarSaldoProvider =
       return await repo.previsualizarSaldo(solicitudFiltro);
     });
 
-final proximosPermisosDashboardProvider = FutureProvider.family<List<SolicitudPermisoEntity>, int>((
-  ref,
-  audUsuarioI,
-) async {
-  final repo = ref.watch(permisosVacacionRepositoryProvider);
-  return await repo.obtenerPermisosProximosDashboard(audUsuarioI);
-});
+final proximosPermisosDashboardProvider =
+    FutureProvider.family<List<SolicitudPermisoEntity>, int>((
+      ref,
+      audUsuarioI,
+    ) async {
+      final repo = ref.watch(permisosVacacionRepositoryProvider);
+      return await repo.obtenerPermisosProximosDashboard(audUsuarioI);
+    });

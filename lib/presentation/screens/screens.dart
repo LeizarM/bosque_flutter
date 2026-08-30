@@ -47,3 +47,7 @@ export 'package:bosque_flutter/presentation/screens/rol-sabados/rol_sabados_scre
 export 'package:bosque_flutter/presentation/screens/permisos-rrhh/permisos_rrhh_screen.dart';
 export 'package:bosque_flutter/presentation/screens/comisiones/comisiones_screen.dart';
 export 'package:bosque_flutter/presentation/screens/prestamos/prestamos_screen.dart';
+export 'package:bosque_flutter/presentation/screens/talonarios/talonarios_screen.dart';
+export 'package:bosque_flutter/presentation/screens/talonarios/talonarios_alta_lote_screen.dart';
+export 'package:bosque_flutter/presentation/screens/talonarios/talonarios_entrega_lote_screen.dart';
+export 'package:bosque_flutter/presentation/screens/talonarios/talonarios_catalogos_screen.dart';

@@ -24,7 +24,7 @@ import 'package:bosque_flutter/domain/entities/ccr_solicitud_entity.dart';
 import 'package:bosque_flutter/presentation/screens/lote-produccion/ver_lote_produccion_screen.dart'
     show fechaArchivo;
 import 'package:bosque_flutter/presentation/widgets/lote-produccion/balance_lote.dart';
-import 'package:bosque_flutter/presentation/widgets/lote-produccion/rango_fechas_dialog.dart';
+import 'package:bosque_flutter/core/ui/rango_fechas.dart';
 import 'package:bosque_flutter/presentation/widgets/solicitud-corte/detalle_solicitud_dialog.dart';
 import 'package:bosque_flutter/presentation/widgets/solicitud-corte/nueva_solicitud_dialog.dart';
 import 'package:bosque_flutter/presentation/widgets/solicitud-corte/resumen_periodo_corte.dart';

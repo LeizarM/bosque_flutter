@@ -197,6 +197,16 @@ final routerProvider = Provider<GoRouter>((ref) {
               builder: (context, state) => const ListaEmpleados(),
             ),
             // Pagos al extranjero Registro
+            // Talonarios — vista 91 de tb_vista.
+            // La ruta es '/dashboard/' + tb_vista.direccion LITERAL: el menú se
+            // arma desde la BD y navega con ese valor, así que no se puede
+            // inventar. El JSF viejo usa la misma columna para su navegación,
+            // por eso no se toca en la BD y se adapta la ruta acá.
+            GoRoute(
+              path: '/dashboard/tmtoTalonario/talonario',
+              name: 'tmtoTalonario',
+              builder: (context, state) => const TalonariosScreen(),
+            ),
             GoRoute(
               path: '/dashboard/tpex_RegistroSolicitud/Registro',
               name: 'tpex_RegistroSolicitud',

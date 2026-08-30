@@ -1,4 +1,8 @@
 import 'dart:math' as math;
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_svg/flutter_svg.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:bosque_flutter/core/state/button_permissions_provider.dart';
 import 'package:bosque_flutter/core/state/empleados_dependientes_provider.dart';
@@ -8,12 +12,7 @@ import 'package:bosque_flutter/core/state/user_provider.dart';
 import 'package:bosque_flutter/presentation/widgets/permisos-vacaciones/ver_solicitudes_permiso_vacacion.dart';
 import 'package:bosque_flutter/presentation/widgets/shared/confetti_widget.dart';
 import 'package:bosque_flutter/presentation/widgets/shared/docs_vencidos.dart';
-import 'package:bosque_flutter/presentation/widgets/shared/permission_widget.dart';
 import 'package:bosque_flutter/presentation/widgets/permisos-vacaciones/permisos_dashboard_widget.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_svg/flutter_svg.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 /// Dashboard home con diseño moderno y confeti en cumpleaños
 class DashboardHomeContent extends ConsumerStatefulWidget {

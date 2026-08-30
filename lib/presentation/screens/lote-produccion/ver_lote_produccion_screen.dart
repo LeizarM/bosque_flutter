@@ -25,7 +25,7 @@ import 'package:bosque_flutter/core/utils/descargar_reportes_jasper.dart';
 import 'package:bosque_flutter/domain/entities/lote_produccion_entity.dart';
 import 'package:bosque_flutter/presentation/widgets/lote-produccion/balance_lote.dart';
 import 'package:bosque_flutter/presentation/widgets/lote-produccion/detalle_lote_dialog.dart';
-import 'package:bosque_flutter/presentation/widgets/lote-produccion/rango_fechas_dialog.dart';
+import 'package:bosque_flutter/core/ui/rango_fechas.dart';
 import 'package:bosque_flutter/presentation/widgets/lote-produccion/tabla_lotes.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
