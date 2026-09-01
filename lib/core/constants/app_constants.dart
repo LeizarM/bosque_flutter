@@ -1088,4 +1088,50 @@ class AppConstants {
   static const String talRptCustodia = '/talonarios/reporte-custodia';
   static const String talRptConciliacionSap =
       '/talonarios/reporte-conciliacion-sap';
+
+  // ── Biométrico (tbio_) ──────────────────────────────────────────────────
+  // Todos POST. Los "registrar*" van con acc ('I'/'U'/'D') como query param
+  // en el propio endpoint (ver BiometricoImpl) porque el backend lo recibe
+  // por @RequestParam, no en el body.
+  static const String biometricoListarMarcaciones = '/biometrico/marcaciones/listar';
+  static const String biometricoImportarMarcacionesMensual =
+      '/biometrico/marcaciones/importar-mensual';
+  static const String biometricoListarMarcacionesAdicionales =
+      '/biometrico/marcaciones-adicionales/listar';
+  static const String biometricoRegistrarMarcacionAdicional =
+      '/biometrico/marcaciones-adicionales/registrar';
+  static const String biometricoListarEmpleados = '/biometrico/empleados/listar';
+  static const String biometricoRegistrarEmpleado = '/biometrico/empleados/registrar';
+  static const String biometricoListarHorarios = '/biometrico/horarios/listar';
+  static const String biometricoRegistrarHorario = '/biometrico/horarios/registrar';
+  static const String biometricoListarHorariosSemanales =
+      '/biometrico/horarios-semanales/listar';
+  static const String biometricoRegistrarHorarioSemanal =
+      '/biometrico/horarios-semanales/registrar';
+  static const String biometricoListarHorariosSemanalesDetalle =
+      '/biometrico/horarios-semanales-detalle/listar';
+  static const String biometricoRegistrarHorarioSemanalDetalle =
+      '/biometrico/horarios-semanales-detalle/registrar';
+  static const String biometricoListarHorarioEmpleado =
+      '/biometrico/horario-empleado/listar';
+  static const String biometricoRegistrarHorarioEmpleado =
+      '/biometrico/horario-empleado/registrar';
+  static const String biometricoListarCalendarioExpandido =
+      '/biometrico/calendario-expandido/listar';
+  static const String biometricoRegistrarCalendarioExpandido =
+      '/biometrico/calendario-expandido/registrar';
+  static const String biometricoRegenerarCalendarioExpandido =
+      '/biometrico/calendario-expandido/regenerar';
+  static const String biometricoListarBitacora = '/biometrico/bitacora/listar';
+  static const String biometricoReporteMensual = '/biometrico/reporte-mensual';
+  static const String biometricoReporteMensualPdf =
+      '/biometrico/reporte-mensual-pdf';
+  static const String biometricoReporteMensualResumen =
+      '/biometrico/reporte-mensual-resumen';
+  static const String biometricoReporteMensualResumenPdf =
+      '/biometrico/reporte-mensual-resumen-pdf';
+  static const String biometricoReporteMensualDetalladoTodosPdf =
+      '/biometrico/reporte-mensual-detallado-todos-pdf';
+  static const String biometricoHorarioVigentePorEmpleadoPdf =
+      '/biometrico/horario-vigente-por-empleado-pdf';
 }

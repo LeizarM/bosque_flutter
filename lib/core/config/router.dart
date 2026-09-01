@@ -323,6 +323,13 @@ final routerProvider = Provider<GoRouter>((ref) {
               name: 'trsSabados',
               builder: (context, state) => const RolSabadosScreen(),
             ),
+            // Biométrico — la ruta es tb_vista.direccion (codVista 106 =
+            // 'tbioBiometrico/biometrico'), misma regla que Cartas CITE.
+            GoRoute(
+              path: '/dashboard/tbioBiometrico/biometrico',
+              name: 'tbioBiometrico',
+              builder: (context, state) => const BiometricoScreen(),
+            ),
 
             // Cartas CITE — la correspondencia numerada.
             // Misma regla que las dos de arriba: la ruta es EXACTAMENTE
@@ -546,6 +553,12 @@ final routerProvider = Provider<GoRouter>((ref) {
         GoRoute(
           path: '/tcrDocumento/Documento',
           redirect: (context, state) => '/dashboard/tcrDocumento/Documento',
+        ),
+        // BIOMÉTRICO — el sidebar arma el destino como '/'+direccion (sin
+        // /dashboard), igual que los demás módulos de esta lista.
+        GoRoute(
+          path: '/tbioBiometrico/biometrico',
+          redirect: (context, state) => '/dashboard/tbioBiometrico/biometrico',
         ),
 
         GoRoute(

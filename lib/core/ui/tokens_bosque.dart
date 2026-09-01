@@ -285,6 +285,54 @@ double _contraste(Color a, Color b) {
   return (alto + 0.05) / (bajo + 0.05);
 }
 
+/// El color de un día del reporte de asistencia biométrica, por su
+/// `AsistenciaDiaEntity.estado` (TRABAJADO | FALTA | FERIADO | SABADO_LIBRE |
+/// PERMISO | VACACION | SIN_HORARIO).
+///
+/// Misma doctrina que [colorDeEstado]: familia + tono, y sólo con `primary`,
+/// `tertiary` y la rampa neutra — las tres familias que se separan con las
+/// nueve semillas.
+///
+/// **FALTA es la única excepción a "no usar `error`" de este archivo.** A
+/// diferencia de un feriado, una falta sin justificar SÍ es lo que el rol de
+/// error de Material existe para señalar — es el estado que este reporte se
+/// reescribió para poder afirmar con confianza (antes un feriado o un sábado
+/// libre también salían acá). Límite conocido, igual al que ya acepta
+/// [colorDeEstado]: con semilla roja, `error` se acerca a `primary`; por eso
+/// TRABAJADO usa el contenedor pálido y no el rol pleno, para dejar más
+/// distancia entre los dos estados que más importa distinguir.
+ColorDeEstado colorDeAsistencia(ColorScheme cs, String estado) {
+  final (Color familia, double tono) = switch (estado) {
+    // Lo esperado: tenía horario y marcó.
+    'TRABAJADO' => (cs.primaryContainer, 0.0),
+
+    // El único problema real: tenía horario, no hay marcación ni excusa.
+    'FALTA' => (cs.error, 0.0),
+
+    // Ausencias legítimas e institucionales — familia terciaria, por tono
+    // según qué tan "de la empresa" contra "de la persona" es el motivo.
+    'FERIADO' => (cs.tertiaryContainer, 0.0),
+    'VACACION' => (cs.tertiaryContainer, 0.35),
+    'PERMISO' => (cs.tertiaryContainer, 0.65),
+
+    // No le tocaba — ni feriado ni permiso, simplemente el rol de sábados
+    // dice que ese día no era suyo. No es ni bueno ni malo: neutro.
+    'SABADO_LIBRE' => (cs.surfaceContainerHighest, 0.0),
+
+    // No había horario cargado ese día (domingo, o antes de su primera
+    // asignación): no hay nada que contar. El más apagado de todos.
+    'SIN_HORARIO' => (cs.onSurface, 0.88),
+
+    _ => (cs.surfaceContainerHigh, 0.0),
+  };
+
+  final fondo = Color.alphaBlend(
+    familia.withValues(alpha: 1 - tono),
+    cs.surface,
+  );
+  return ColorDeEstado(fondo, _letraSobre(fondo));
+}
+
 // ═══════════════════════════════════════════════════════════════════════════
 // CUÁNTO ESPACIO HAY
 // ═══════════════════════════════════════════════════════════════════════════
