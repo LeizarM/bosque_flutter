@@ -9,6 +9,7 @@ class AsistenciaDiaModel {
   final DateTime? horaSalidaEsperada;
   final DateTime? horaEntradaReal;
   final DateTime? horaSalidaReal;
+  final int minutosAtraso;
 
   const AsistenciaDiaModel({
     required this.fecha,
@@ -18,6 +19,7 @@ class AsistenciaDiaModel {
     this.horaSalidaEsperada,
     this.horaEntradaReal,
     this.horaSalidaReal,
+    this.minutosAtraso = 0,
   });
 
   factory AsistenciaDiaModel.fromJson(Map<String, dynamic> json) =>
@@ -41,6 +43,7 @@ class AsistenciaDiaModel {
             json['horaSalidaReal'] != null
                 ? DateTime.tryParse(json['horaSalidaReal'])
                 : null,
+        minutosAtraso: json['minutosAtraso'] ?? 0,
       );
 
   AsistenciaDiaEntity toEntity() => AsistenciaDiaEntity(
@@ -51,5 +54,6 @@ class AsistenciaDiaModel {
     horaSalidaEsperada: horaSalidaEsperada,
     horaEntradaReal: horaEntradaReal,
     horaSalidaReal: horaSalidaReal,
+    minutosAtraso: minutosAtraso,
   );
 }

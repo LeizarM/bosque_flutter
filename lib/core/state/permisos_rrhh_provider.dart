@@ -386,6 +386,27 @@ final quienSaleProntoProvider =
           );
     });
 
+/// El mes elegido en la sección "Vacaciones y permisos del mes" del sheet de
+/// Quién está fuera. `autoDispose` a propósito: el sheet se reconstruye
+/// entero cada vez que se abre (`showModalBottomSheet`), así que no hace
+/// falta recordar el mes de la vez anterior — arranca siempre en el actual.
+final mesQuienEstaFueraProvider = StateProvider.autoDispose<DateTime>(
+  (ref) => DateTime(DateTime.now().year, DateTime.now().month, 1),
+);
+
+/// Todos los permisos/vacaciones de la empresa que caen en un mes dado —
+/// mismo `getQuienEstaFuera` de arriba ("Hoy"/"próximos 30 días"), pero
+/// acotado a los bordes del mes en vez de una ventana relativa a hoy. Sin
+/// límite superior: un mes futuro es válido (vacaciones ya programadas).
+final quienEstaFueraMesProvider = FutureProvider.autoDispose
+    .family<List<NominaPermisoEntity>, DateTime>((ref, mes) {
+      final desde = DateTime(mes.year, mes.month, 1);
+      final hasta = DateTime(mes.year, mes.month + 1, 0); // último día del mes
+      return ref
+          .watch(permisosRrhhRepositoryProvider)
+          .getQuienEstaFuera(desde: desde, hasta: hasta);
+    });
+
 /// La clave del desglose de días no hábiles: persona y rango.
 typedef RangoDelPermiso = ({int codEmpleado, DateTime desde, DateTime hasta});
 

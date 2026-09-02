@@ -30,6 +30,8 @@ class _QuienEstaFueraSheet extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final hoy = ref.watch(quienEstaFueraHoyProvider);
     final pronto = ref.watch(quienSaleProntoProvider);
+    final mes = ref.watch(mesQuienEstaFueraProvider);
+    final delMes = ref.watch(quienEstaFueraMesProvider(mes));
 
     return SafeArea(
       child: ConstrainedBox(
@@ -68,6 +70,16 @@ class _QuienEstaFueraSheet extends ConsumerWidget {
                 datos: pronto,
                 provider: quienSaleProntoProvider,
               ),
+              const SizedBox(height: Esp.xl),
+              _seccion(
+                context,
+                ref,
+                titulo: 'Vacaciones y permisos del mes',
+                vacio: 'No hay permisos ni vacaciones cargados para este mes.',
+                datos: delMes,
+                provider: quienEstaFueraMesProvider(mes),
+                trailing: _SelectorDeMes(mes: mes),
+              ),
             ],
           ),
         ),
@@ -82,6 +94,7 @@ class _QuienEstaFueraSheet extends ConsumerWidget {
     required String vacio,
     required AsyncValue<List<NominaPermisoEntity>> datos,
     required ProviderBase<Object?> provider,
+    Widget? trailing,
   }) => Column(
     crossAxisAlignment: CrossAxisAlignment.stretch,
     children: [
@@ -102,6 +115,7 @@ class _QuienEstaFueraSheet extends ConsumerWidget {
                         : Etiqueta(texto: '${l.length}'),
             orElse: () => const SizedBox.shrink(),
           ),
+          if (trailing != null) ...[const Spacer(), trailing],
         ],
       ),
       const SizedBox(height: Esp.s),
@@ -158,4 +172,49 @@ class _QuienEstaFueraSheet extends ConsumerWidget {
       ],
     ),
   );
+}
+
+const _nombresMeses = [
+  'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+  'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre',
+]; // solo se usa acá, para el título de esta sección — no vale un helper compartido.
+
+/// Flechas mes anterior/siguiente para "Vacaciones y permisos del mes". Sin
+/// tope hacia adelante: a diferencia de asistencia, un mes futuro es
+/// información real (vacaciones ya programadas).
+class _SelectorDeMes extends ConsumerWidget {
+  const _SelectorDeMes({required this.mes});
+  final DateTime mes;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final notifier = ref.read(mesQuienEstaFueraProvider.notifier);
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        IconButton(
+          tooltip: 'Mes anterior',
+          icon: const Icon(Icons.chevron_left, size: 20),
+          visualDensity: VisualDensity.compact,
+          onPressed:
+              () => notifier.state = DateTime(mes.year, mes.month - 1, 1),
+        ),
+        SizedBox(
+          width: 96,
+          child: Text(
+            '${_nombresMeses[mes.month - 1]} ${mes.year}',
+            textAlign: TextAlign.center,
+            style: context.apagado(),
+          ),
+        ),
+        IconButton(
+          tooltip: 'Mes siguiente',
+          icon: const Icon(Icons.chevron_right, size: 20),
+          visualDensity: VisualDensity.compact,
+          onPressed:
+              () => notifier.state = DateTime(mes.year, mes.month + 1, 1),
+        ),
+      ],
+    );
+  }
 }

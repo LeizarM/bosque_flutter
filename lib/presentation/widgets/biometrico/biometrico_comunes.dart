@@ -20,6 +20,33 @@ const nombresMeses = [
   'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre',
 ];
 
+/// Estilo para los `IconButton` de acción (actualizar, descargar PDF,
+/// chevrons de mes) — reemplaza `IconButton.filled`/`.filledTonal`.
+///
+/// **Por qué no las variantes de Material 3 directas.** `.filledTonal` usa
+/// `secondaryContainer` — una de las dos familias que `colorDeAsistencia`
+/// (acá mismo, en `tokens_bosque.dart`) evita a propósito, porque no
+/// sobrevive bien a las nueve semillas de `colorList` (`app_theme.dart`) ni
+/// a los dos modos: con la semilla verde en oscuro sale un verde oliva
+/// apagado, casi sin contraste contra un fondo ya casi negro — "se ve
+/// horrible". `.filled` (`cs.primary` a pleno) es la otra punta del mismo
+/// problema: un punto verde brillante y suelto, gaudy contra tanto negro
+/// alrededor.
+///
+/// Este estilo usa el mismo truco que ya usa el calendario para las celdas
+/// (`_CeldaDia`, `colorDeAsistencia`): `primary` — la única familia
+/// garantizada en las nueve semillas — atenuado sobre `cs.surface`, nunca a
+/// pleno. Se adapta solo a claro/oscuro porque `cs.surface` ya lo hace.
+ButtonStyle estiloBotonAccion(BuildContext context) {
+  final cs = Theme.of(context).colorScheme;
+  final fondo = Color.alphaBlend(cs.primary.withValues(alpha: 0.14), cs.surface);
+  return IconButton.styleFrom(
+    backgroundColor: fondo,
+    foregroundColor: cs.primary,
+    disabledForegroundColor: cs.onSurface.withValues(alpha: 0.38),
+  );
+}
+
 /// Cuenta un error, ya traducido al idioma de quien usa la app. Va por el
 /// Overlay raíz — nunca `ScaffoldMessenger` — para no quedar tapado por un
 /// diálogo o una hoja modal.

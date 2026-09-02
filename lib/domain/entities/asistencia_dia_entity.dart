@@ -15,6 +15,10 @@ class AsistenciaDiaEntity {
   final DateTime? horaEntradaReal;
   final DateTime? horaSalidaReal;
 
+  /// Minutos de atraso ya calculados en el backend (0 en cualquier día que
+  /// no sea TRABAJADO/FALTA — ver `BiometricoController.calcularMinutosAtraso`).
+  final int minutosAtraso;
+
   const AsistenciaDiaEntity({
     required this.fecha,
     required this.estado,
@@ -23,6 +27,7 @@ class AsistenciaDiaEntity {
     this.horaSalidaEsperada,
     this.horaEntradaReal,
     this.horaSalidaReal,
+    this.minutosAtraso = 0,
   });
 
   bool get esFalta => estado == 'FALTA';
@@ -32,4 +37,9 @@ class AsistenciaDiaEntity {
       estado == 'PERMISO' ||
       estado == 'VACACION' ||
       estado == 'SIN_HORARIO';
+
+  /// Falta, o trabajó pero con atraso — la marca que se ve en el calendario
+  /// (pedido explícito del usuario 2026-09-01: "poné una marca a las celdas
+  /// que hay atraso/falta o que tengan problemas").
+  bool get tieneProblema => esFalta || minutosAtraso > 0;
 }

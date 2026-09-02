@@ -5,6 +5,7 @@ import 'package:bosque_flutter/presentation/widgets/biometrico/tab_horarios.dart
 import 'package:bosque_flutter/presentation/widgets/biometrico/tab_marcaciones_olvidadas.dart';
 import 'package:bosque_flutter/presentation/widgets/biometrico/tab_reporte.dart';
 import 'package:bosque_flutter/presentation/widgets/biometrico/tab_resumen_mensual.dart';
+import 'package:bosque_flutter/presentation/widgets/permisos-rrhh/quien_esta_fuera_sheet.dart';
 import 'package:bosque_flutter/presentation/widgets/shared/permission_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -12,7 +13,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 /// Asistencia Biométrica: las cinco funciones del módulo legacy
 /// (`tbioBiometrico/biometrico.xhtml`) que quedan vigentes en el rebuild —
 /// ver `CLAUDE.md` para el mapeo completo y por qué "Ver Permisos Empleado"
-/// no tiene pestaña propia (ya lo cubre el reporte).
+/// no tiene pestaña propia (ya lo cubre el reporte, más el atajo de abajo a
+/// "Quién está fuera" para no tener que salir del módulo a consultarlo).
 ///
 /// **Esta clase es sólo el andamiaje**, mismo criterio que
 /// `PermisosRrhhScreen`: la barra de arriba y las pestañas. Todo el
@@ -72,12 +74,31 @@ class BiometricoScreen extends ConsumerWidget {
         appBar: AppBar(
           title: const Text('Asistencia Biométrica'),
           actions: [
+            // Atajo a "Quién está fuera" (vacaciones/permisos del mes) sin
+            // salir de Biométrico a buscarlo en Permisos RRHH — mismo sheet,
+            // mismo dato (p_list_Permiso 'Q'), no una vista nueva duplicada.
+            // Sin gate de botón propio: es de sólo lectura y no tiene un
+            // botón de Biométrico (verEmp/defHrs/marBio/marOlv) al que
+            // corresponda — el backend igual controla su propio acceso.
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: Esp.xs),
+              child: IconButton(
+                style: estiloBotonAccion(context),
+                tooltip: 'Quién está fuera (vacaciones y permisos)',
+                icon: const Icon(Icons.groups_outlined),
+                onPressed: () => mostrarQuienEstaFuera(context),
+              ),
+            ),
             PermissionWidget(
               buttonName: 'marBio',
-              child: IconButton(
-                tooltip: 'Importar marcaciones del mes desde el biométrico',
-                icon: const Icon(Icons.sync),
-                onPressed: () => _confirmarImportar(context, ref),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: Esp.xs),
+                child: IconButton(
+                  style: estiloBotonAccion(context),
+                  tooltip: 'Importar marcaciones del mes desde el biométrico',
+                  icon: const Icon(Icons.sync),
+                  onPressed: () => _confirmarImportar(context, ref),
+                ),
               ),
             ),
           ],

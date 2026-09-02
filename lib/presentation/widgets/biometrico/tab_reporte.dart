@@ -40,12 +40,14 @@ class TabReporte extends ConsumerWidget {
                     ),
                     if (elegido != null) ...[
                       IconButton(
+                        style: estiloBotonAccion(context),
                         tooltip: 'Actualizar',
                         icon: const Icon(Icons.refresh),
                         onPressed:
                             () =>
                                 _refrescar(ref, elegido.idEmpleado, mes),
                       ),
+                      const SizedBox(width: Esp.xs),
                       _BotonDescargarPdf(
                         idEmpleado: elegido.idEmpleado,
                         mes: mes,
@@ -104,6 +106,7 @@ class _SelectorDeMes extends ConsumerWidget {
     return Row(
       children: [
         IconButton(
+          style: estiloBotonAccion(context),
           tooltip: 'Mes anterior',
           icon: const Icon(Icons.chevron_left),
           onPressed:
@@ -118,6 +121,7 @@ class _SelectorDeMes extends ConsumerWidget {
           ),
         ),
         IconButton(
+          style: estiloBotonAccion(context),
           tooltip: 'Mes siguiente',
           // No se navega más allá del mes en curso: todavía no hay
           // marcaciones futuras que reportar.
@@ -208,6 +212,7 @@ class _BotonDescargarPdfState extends ConsumerState<_BotonDescargarPdf> {
   @override
   Widget build(BuildContext context) {
     return IconButton(
+      style: estiloBotonAccion(context),
       tooltip: 'Descargar PDF',
       icon:
           _generando

@@ -320,48 +320,61 @@ class _CeldaDia extends ConsumerWidget {
               border: Border(left: BorderSide(color: color.fondo, width: 3)),
             ),
             padding: const EdgeInsets.fromLTRB(Esp.s, Esp.xs, Esp.xs, Esp.xs),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            child: Stack(
               children: [
-                Text(
-                  '$dia',
-                  style: TextStyle(
-                    color: cs.onSurface,
-                    fontWeight: esHoy ? Peso.titulo : Peso.dato,
-                    fontFeatures: cifrasTabulares,
-                  ),
-                ),
-                // Antes el porqué del día (vacación, feriado, falta...)
-                // sólo se veía tocando la celda para abrir el detalle. Ahora
-                // el mismo motivo corto que ya usa el PDF (columna Obs)
-                // aparece adentro de la celda — de un vistazo, sin abrir
-                // nada. `FittedBox` en vez de un tamaño de fuente fijo: si
-                // la celda queda muy angosta (ver `alturaMinimaCelda` en
-                // `_Grilla`) encoge el contenido en vez de desbordar.
-                if (entrada != null)
-                  Expanded(
-                    child: FittedBox(
-                      fit: BoxFit.scaleDown,
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            _iconoDeEstado(entrada!.estado),
-                            size: 14,
-                            color: color.texto,
-                          ),
-                          Text(
-                            _textoDeCelda(entrada!),
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              fontSize: 9,
-                              color: color.texto,
-                              fontWeight: Peso.dato,
-                            ),
-                          ),
-                        ],
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '$dia',
+                      style: TextStyle(
+                        color: cs.onSurface,
+                        fontWeight: esHoy ? Peso.titulo : Peso.dato,
+                        fontFeatures: cifrasTabulares,
                       ),
                     ),
+                    // Antes el porqué del día (vacación, feriado, falta...)
+                    // sólo se veía tocando la celda para abrir el detalle. Ahora
+                    // el mismo motivo corto que ya usa el PDF (columna Obs)
+                    // aparece adentro de la celda — de un vistazo, sin abrir
+                    // nada. `FittedBox` en vez de un tamaño de fuente fijo: si
+                    // la celda queda muy angosta (ver `alturaMinimaCelda` en
+                    // `_Grilla`) encoge el contenido en vez de desbordar.
+                    if (entrada != null)
+                      Expanded(
+                        child: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                _iconoDeEstado(entrada!.estado),
+                                size: 14,
+                                color: color.texto,
+                              ),
+                              Text(
+                                _textoDeCelda(entrada!),
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  fontSize: 9,
+                                  color: color.texto,
+                                  fontWeight: Peso.dato,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+                // Marca de "problema" (falta, o trabajó con atraso) — un
+                // vistazo alcanza para saber si vale la pena abrir la celda,
+                // sin competir con el resto del contenido de adentro.
+                if (entrada?.tieneProblema ?? false)
+                  Positioned(
+                    top: 0,
+                    right: 0,
+                    child: Icon(Icons.priority_high, size: 13, color: cs.error),
                   ),
               ],
             ),
@@ -474,7 +487,23 @@ class _FilaAngosta extends ConsumerWidget {
         ),
       ),
       title: Text(_diasSemana[fecha.weekday - 1]),
-      subtitle: entrada == null ? null : Text(_etiquetaDeEstado(entrada!.estado)),
+      subtitle:
+          entrada == null
+              ? null
+              : Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(_etiquetaDeEstado(entrada!.estado)),
+                  // Mismo criterio que la marca de la celda ancha: falta, o
+                  // trabajó con atraso — acá al lado de la etiqueta en vez de
+                  // superpuesta al avatar (evita cualquier riesgo de recorte
+                  // dentro del slot fijo de `ListTile.leading`).
+                  if (entrada!.tieneProblema) ...[
+                    const SizedBox(width: Esp.xs),
+                    Icon(Icons.priority_high, size: 14, color: cs.error),
+                  ],
+                ],
+              ),
       trailing: entrada == null ? null : Icon(_iconoDeEstado(entrada!.estado), color: color.fondo),
     );
   }

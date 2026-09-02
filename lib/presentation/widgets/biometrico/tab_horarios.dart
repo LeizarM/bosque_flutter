@@ -469,6 +469,95 @@ class _SeccionSemanales extends ConsumerWidget {
       if (context.mounted) avisarError(context, e);
     }
   }
+
+  /// Renombrar un horario semanal existente — hasta el fix de
+  /// `sql/07_fix_p_abm_BioHrSemanal_permitir_renombrar.sql` no había forma de
+  /// hacer esto: la rama ACCION='U' de la SP tenía la columna `nombre`
+  /// comentada a propósito, así que aunque hubiera existido este botón no
+  /// habría cambiado nada — se arregló la SP primero.
+  static Future<void> _editar(
+    BuildContext context,
+    WidgetRef ref,
+    BioHrSemanalEntity horario,
+  ) async {
+    final nombreCtrl = TextEditingController(text: horario.nombre);
+    final motivoCtrl = TextEditingController();
+    final ok = await showDialog<bool>(
+      context: context,
+      builder:
+          (c) => AlertDialog(
+            title: const Text('Renombrar horario semanal'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: nombreCtrl,
+                  autofocus: true,
+                  decoration: const InputDecoration(labelText: 'Nombre'),
+                ),
+                const SizedBox(height: Esp.m),
+                TextField(
+                  controller: motivoCtrl,
+                  maxLines: 2,
+                  decoration: const InputDecoration(
+                    labelText: 'Motivo',
+                    hintText: 'Por qué se renombra — queda en el historial',
+                  ),
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(c, false),
+                child: const Text('Cancelar'),
+              ),
+              FilledButton(
+                onPressed:
+                    nombreCtrl.text.trim().isEmpty
+                        ? null
+                        : () => Navigator.pop(c, true),
+                child: const Text('Guardar'),
+              ),
+            ],
+          ),
+    );
+    if (ok != true || !context.mounted) return;
+
+    final nombre = nombreCtrl.text.trim();
+    if (nombre == horario.nombre) return; // no cambió nada
+
+    final duplicado =
+        (ref.read(bioHrSemanalListProvider).valueOrNull ?? [])
+            .where(
+              (s) =>
+                  s.idHrSemanal != horario.idHrSemanal &&
+                  s.nombre.trim().toLowerCase() == nombre.toLowerCase(),
+            )
+            .firstOrNull;
+    if (duplicado != null) {
+      final seguir = await confirmar(
+        context,
+        titulo: 'Nombre repetido',
+        mensaje:
+            'Ya existe un horario semanal llamado "${duplicado.nombre}". '
+            '¿Renombrar igual?',
+        accion: 'Renombrar igual',
+      );
+      if (!seguir || !context.mounted) return;
+    }
+
+    try {
+      await ref.read(biometricoRepositoryProvider).registrarHorarioSemanal({
+        'idHrSemanal': horario.idHrSemanal.toInt(),
+        'nombre': nombre,
+        'estado': horario.estado,
+      }, 'U', motivo: motivoCtrl.text);
+      ref.invalidate(bioHrSemanalListProvider);
+      if (context.mounted) avisar(context, 'Horario semanal renombrado.');
+    } catch (e) {
+      if (context.mounted) avisarError(context, e);
+    }
+  }
 }
 
 class _TarjetaSemanal extends ConsumerStatefulWidget {
@@ -493,6 +582,16 @@ class _TarjetaSemanalState extends ConsumerState<_TarjetaSemanal> {
             trailing: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
+                IconButton(
+                  tooltip: 'Renombrar',
+                  icon: const Icon(Icons.edit_outlined),
+                  onPressed:
+                      () => _SeccionSemanales._editar(
+                        context,
+                        ref,
+                        widget.horario,
+                      ),
+                ),
                 IconButton(
                   tooltip: 'Ver historial',
                   icon: const Icon(Icons.history),
@@ -1355,11 +1454,19 @@ class _DialogoAsignarHorarioState
             const SizedBox(height: Esp.m),
             InkWell(
               onTap: () async {
+                // BUG real (2026-09-01): antes lastDate salía de
+                // _inicio.year+1 — el año de la asignación VIEJA que se está
+                // editando, no de hoy. Para una asignación de 2023 eso ponía
+                // el tope en 2024, así que era imposible elegir cualquier
+                // fecha cercana a la actual (ej. hoy, o el mes que viene) —
+                // el date picker literalmente no dejaba avanzar el
+                // calendario más allá de esa fecha tope.
+                final hoy = DateTime.now();
                 final f = await showDatePicker(
                   context: context,
                   initialDate: _inicio,
                   firstDate: DateTime(2020),
-                  lastDate: DateTime(_inicio.year + 1),
+                  lastDate: DateTime(hoy.year + 2),
                 );
                 if (f != null) setState(() => _inicio = f);
               },
