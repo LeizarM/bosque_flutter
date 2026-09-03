@@ -340,6 +340,27 @@ final routerProvider = Provider<GoRouter>((ref) {
               name: 'tcrDocumento',
               builder: (context, state) => const CartasCiteScreen(),
             ),
+            // Tareas Rutinarias — reutiliza la vista legacy 78
+            // ('tacTareas/Tareas'), misma regla de siempre: la ruta es
+            // EXACTAMENTE tb_vista.direccion. Los 134 usuarios que ya
+            // tienen acceso a esa vista la conservan sin tocar
+            // tb_vistaUsuario (ver memoria del proyecto).
+            GoRoute(
+              path: '/dashboard/tacTareas/Tareas',
+              name: 'tacTareasMisTareas',
+              builder: (context, state) => const MisTareasRutinariasScreen(),
+            ),
+            // Programar tarea a mi equipo (jefe → dependientes) — capacidad
+            // nueva, sin pantalla equivalente en el JSF viejo. La fila de
+            // tb_vista ('tacTareas/Dependientes') se da de alta con
+            // sql/2026-09-02_tac_tareaRutinaria_13_vista_dependientesJefe.sql;
+            // hasta entonces la pantalla es alcanzable por el FAB de "Mis
+            // tareas rutinarias" aunque no aparezca todavía en el sidebar.
+            GoRoute(
+              path: '/dashboard/tacTareas/Dependientes',
+              name: 'tacTareasDependientes',
+              builder: (context, state) => const DependientesJefeScreen(),
+            ),
           ],
         ),
 
@@ -559,6 +580,15 @@ final routerProvider = Provider<GoRouter>((ref) {
         GoRoute(
           path: '/tbioBiometrico/biometrico',
           redirect: (context, state) => '/dashboard/tbioBiometrico/biometrico',
+        ),
+        // TAREAS RUTINARIAS
+        GoRoute(
+          path: '/tacTareas/Tareas',
+          redirect: (context, state) => '/dashboard/tacTareas/Tareas',
+        ),
+        GoRoute(
+          path: '/tacTareas/Dependientes',
+          redirect: (context, state) => '/dashboard/tacTareas/Dependientes',
         ),
 
         GoRoute(

@@ -1134,4 +1134,158 @@ class AppConstants {
       '/biometrico/reporte-mensual-detallado-todos-pdf';
   static const String biometricoHorarioVigentePorEmpleadoPdf =
       '/biometrico/horario-vigente-por-empleado-pdf';
+
+  // ── TAREAS RUTINARIAS ────────────────────────────────────────────────────
+  // Prefijo "tar" (no "tpex"/"mul"/etc.) — módulo nuevo, procs p_abm_tac_*/
+  // p_list_tac_* en Bosque Spring. Ver TareasRutinariasController.java.
+
+  // Especiales: jefe → dependientes
+  static const String tarListarDependientesJefe =
+      '/tareas-rutinarias/listar-dependientes-jefe';
+  static const String tarRegistrarTareaConCargos =
+      '/tareas-rutinarias/registrar-tarea-rutinaria-con-cargos';
+
+  // Documentación (catálogo)
+  static const String tarRegistrarDocumentacion =
+      '/tareas-rutinarias/registrar-documentacion';
+  static const String tarEliminarDocumentacion =
+      '/tareas-rutinarias/eliminar-documentacion';
+  static const String tarObtenerDocumentacion =
+      '/tareas-rutinarias/obtener-documentacion';
+
+  // Tarea rutinaria (definición)
+  static const String tarRegistrarTareaRutinaria =
+      '/tareas-rutinarias/registrar-tarea-rutinaria';
+  static const String tarEliminarTareaRutinaria =
+      '/tareas-rutinarias/eliminar-tarea-rutinaria';
+  static const String tarObtenerTareaRutinaria =
+      '/tareas-rutinarias/obtener-tarea-rutinaria';
+
+  // Llegada (caja fuerte)
+  static const String tarRegistrarLlegada =
+      '/tareas-rutinarias/registrar-llegada';
+  static const String tarEliminarLlegada =
+      '/tareas-rutinarias/eliminar-llegada';
+  static const String tarObtenerLlegada =
+      '/tareas-rutinarias/obtener-llegada';
+
+  // Traspaso de movimiento de caja
+  static const String tarRegistrarTraspasoMovCaja =
+      '/tareas-rutinarias/registrar-traspaso-mov-caja';
+  static const String tarEliminarTraspasoMovCaja =
+      '/tareas-rutinarias/eliminar-traspaso-mov-caja';
+  static const String tarObtenerTraspasoMovCaja =
+      '/tareas-rutinarias/obtener-traspaso-mov-caja';
+
+  // Acción de tarea rutinaria (catálogo idATR)
+  static const String tarRegistrarAccionTareaRutinaria =
+      '/tareas-rutinarias/registrar-accion-tarea-rutinaria';
+  static const String tarEliminarAccionTareaRutinaria =
+      '/tareas-rutinarias/eliminar-accion-tarea-rutinaria';
+  static const String tarObtenerAccionTareaRutinaria =
+      '/tareas-rutinarias/obtener-accion-tarea-rutinaria';
+
+  // Arqueo de caja de sucursales
+  static const String tarRegistrarArqueoCajaSucursales =
+      '/tareas-rutinarias/registrar-arqueo-caja-sucursales';
+  static const String tarEliminarArqueoCajaSucursales =
+      '/tareas-rutinarias/eliminar-arqueo-caja-sucursales';
+  static const String tarObtenerArqueoCajaSucursales =
+      '/tareas-rutinarias/obtener-arqueo-caja-sucursales';
+
+  // Monto de caja chica por sucursal
+  static const String tarRegistrarMontoCajaChicaXSuc =
+      '/tareas-rutinarias/registrar-monto-caja-chica-x-suc';
+  static const String tarEliminarMontoCajaChicaXSuc =
+      '/tareas-rutinarias/eliminar-monto-caja-chica-x-suc';
+  static const String tarObtenerMontoCajaChicaXSuc =
+      '/tareas-rutinarias/obtener-monto-caja-chica-x-suc';
+
+  // Caja chica
+  static const String tarRegistrarCajaChica =
+      '/tareas-rutinarias/registrar-caja-chica';
+  static const String tarEliminarCajaChica =
+      '/tareas-rutinarias/eliminar-caja-chica';
+  static const String tarObtenerCajaChica =
+      '/tareas-rutinarias/obtener-caja-chica';
+
+  // Sucursal × movimiento de caja
+  static const String tarRegistrarSucXMovCaja =
+      '/tareas-rutinarias/registrar-suc-x-mov-caja';
+  static const String tarEliminarSucXMovCaja =
+      '/tareas-rutinarias/eliminar-suc-x-mov-caja';
+  static const String tarObtenerSucXMovCaja =
+      '/tareas-rutinarias/obtener-suc-x-mov-caja';
+
+  // Bitácora de tarea rutinaria
+  static const String tarRegistrarBitTareaRuti =
+      '/tareas-rutinarias/registrar-bit-tarea-ruti';
+  static const String tarEliminarBitTareaRuti =
+      '/tareas-rutinarias/eliminar-bit-tarea-ruti';
+  static const String tarObtenerBitTareaRuti =
+      '/tareas-rutinarias/obtener-bit-tarea-ruti';
+
+  // Movimiento de caja
+  static const String tarRegistrarMovCaja =
+      '/tareas-rutinarias/registrar-mov-caja';
+  static const String tarEliminarMovCaja =
+      '/tareas-rutinarias/eliminar-mov-caja';
+  static const String tarObtenerMovCaja = '/tareas-rutinarias/obtener-mov-caja';
+
+  // Frecuencia (catálogo)
+  static const String tarRegistrarFrecuencia =
+      '/tareas-rutinarias/registrar-frecuencia';
+  static const String tarEliminarFrecuencia =
+      '/tareas-rutinarias/eliminar-frecuencia';
+  static const String tarObtenerFrecuencia =
+      '/tareas-rutinarias/obtener-frecuencia';
+
+  // Corte (catálogo: denominaciones)
+  static const String tarRegistrarCorte = '/tareas-rutinarias/registrar-corte';
+  static const String tarEliminarCorte = '/tareas-rutinarias/eliminar-corte';
+  static const String tarObtenerCorte = '/tareas-rutinarias/obtener-corte';
+
+  // Asignación de cargo a tarea rutinaria (CRUD estándar; el alta con
+  // validación de subárbol es tarRegistrarTareaConCargos, arriba)
+  static const String tarRegistrarTarRuXCargo =
+      '/tareas-rutinarias/registrar-tar-ru-x-cargo';
+  static const String tarEliminarTarRuXCargo =
+      '/tareas-rutinarias/eliminar-tar-ru-x-cargo';
+  static const String tarObtenerTarRuXCargo =
+      '/tareas-rutinarias/obtener-tar-ru-x-cargo';
+
+  // Detalle de arqueo de caja de sucursales
+  static const String tarRegistrarDetArqueoCajaSucursales =
+      '/tareas-rutinarias/registrar-det-arqueo-caja-sucursales';
+  static const String tarEliminarDetArqueoCajaSucursales =
+      '/tareas-rutinarias/eliminar-det-arqueo-caja-sucursales';
+  static const String tarObtenerDetArqueoCajaSucursales =
+      '/tareas-rutinarias/obtener-det-arqueo-caja-sucursales';
+
+  // Vale
+  static const String tarRegistrarVale = '/tareas-rutinarias/registrar-vale';
+  static const String tarEliminarVale = '/tareas-rutinarias/eliminar-vale';
+  static const String tarObtenerVale = '/tareas-rutinarias/obtener-vale';
+
+  // Detalle de documentación
+  static const String tarRegistrarDetDocumentacion =
+      '/tareas-rutinarias/registrar-det-documentacion';
+  static const String tarEliminarDetDocumentacion =
+      '/tareas-rutinarias/eliminar-det-documentacion';
+  static const String tarObtenerDetDocumentacion =
+      '/tareas-rutinarias/obtener-det-documentacion';
+
+  // Llegada de coche
+  static const String tarRegistrarCocheLlegadas =
+      '/tareas-rutinarias/registrar-coche-llegadas';
+  static const String tarEliminarCocheLlegadas =
+      '/tareas-rutinarias/eliminar-coche-llegadas';
+  static const String tarObtenerCocheLlegadas =
+      '/tareas-rutinarias/obtener-coche-llegadas';
+
+  // Coche (catálogo de vehículos)
+  static const String tarRegistrarCoche =
+      '/tareas-rutinarias/registrar-coche';
+  static const String tarEliminarCoche = '/tareas-rutinarias/eliminar-coche';
+  static const String tarObtenerCoche = '/tareas-rutinarias/obtener-coche';
 }

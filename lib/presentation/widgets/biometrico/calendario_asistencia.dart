@@ -142,10 +142,12 @@ class _Cifra extends StatelessWidget {
     children: [
       Text(
         '$valor',
-        style: context.numero(fuerte: true, color: color)?.copyWith(
-          fontSize: 22,
-          fontWeight: destacar ? Peso.dato : Peso.titulo,
-        ),
+        style: context
+            .numero(fuerte: true, color: color)
+            ?.copyWith(
+              fontSize: 22,
+              fontWeight: destacar ? Peso.dato : Peso.titulo,
+            ),
       ),
       Text(etiqueta, style: context.apagado()),
     ],
@@ -288,7 +290,10 @@ class _CeldaDia extends ConsumerWidget {
     // distinguían de un día en blanco — pedido explícito del usuario) y
     // subió a 0.35: suficiente para notarse de un vistazo sin volver a la
     // "cuadrícula de colores a pleno" del diseño original.
-    final fondo = Color.alphaBlend(color.fondo.withValues(alpha: 0.35), cs.surface);
+    final fondo = Color.alphaBlend(
+      color.fondo.withValues(alpha: 0.35),
+      cs.surface,
+    );
 
     return Container(
       // El anillo de "hoy" es el único borde puramente decorativo — comunica
@@ -472,7 +477,10 @@ class _FilaAngosta extends ConsumerWidget {
         alignment: Alignment.center,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
-          color: Color.alphaBlend(color.fondo.withValues(alpha: 0.35), cs.surface),
+          color: Color.alphaBlend(
+            color.fondo.withValues(alpha: 0.35),
+            cs.surface,
+          ),
           border: Border.all(
             color: esHoy ? cs.primary : color.fondo.withValues(alpha: 0.5),
             width: esHoy ? 1.5 : 1,
@@ -504,7 +512,10 @@ class _FilaAngosta extends ConsumerWidget {
                   ],
                 ],
               ),
-      trailing: entrada == null ? null : Icon(_iconoDeEstado(entrada!.estado), color: color.fondo),
+      trailing:
+          entrada == null
+              ? null
+              : Icon(_iconoDeEstado(entrada!.estado), color: color.fondo),
     );
   }
 }
@@ -545,7 +556,11 @@ class _Leyenda extends StatelessWidget {
 }
 
 class _ItemLeyenda extends StatelessWidget {
-  const _ItemLeyenda({required this.color, required this.icono, required this.texto});
+  const _ItemLeyenda({
+    required this.color,
+    required this.icono,
+    required this.texto,
+  });
   final Color color;
   final IconData icono;
   final String texto;
@@ -558,7 +573,11 @@ class _ItemLeyenda extends StatelessWidget {
         width: 14,
         height: 14,
         decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-        child: Icon(icono, size: 10, color: Theme.of(context).colorScheme.onSurface),
+        child: Icon(
+          icono,
+          size: 10,
+          color: Theme.of(context).colorScheme.onSurface,
+        ),
       ),
       const SizedBox(width: Esp.xs),
       Text(texto, style: context.apagado()),
@@ -603,7 +622,8 @@ void _mostrarDetalle(
                 const SizedBox(height: Esp.m),
                 Text(dia.motivo!, style: context.apagado()),
               ],
-              if (dia.horaEntradaEsperada != null || dia.horaEntradaReal != null) ...[
+              if (dia.horaEntradaEsperada != null ||
+                  dia.horaEntradaReal != null) ...[
                 const SizedBox(height: Esp.l),
                 _FilaHora(
                   etiqueta: 'Entrada',
@@ -670,7 +690,11 @@ void _mostrarDetalle(
 }
 
 class _FilaHora extends StatelessWidget {
-  const _FilaHora({required this.etiqueta, required this.esperada, required this.real});
+  const _FilaHora({
+    required this.etiqueta,
+    required this.esperada,
+    required this.real,
+  });
   final String etiqueta;
   final DateTime? esperada;
   final DateTime? real;
@@ -720,7 +744,7 @@ String _etiquetaDeEstado(String estado) => switch (estado) {
   'TRABAJADO' => 'Trabajó',
   'FALTA' => 'Falta',
   'FERIADO' => 'Feriado',
-  'SABADO_LIBRE' => 'No le tocaba (sábado)',
+  'SABADO_LIBRE' => 'Descanso',
   'PERMISO' => 'Permiso',
   'VACACION' => 'Vacación',
   'SIN_HORARIO' => 'Sin horario asignado',
@@ -735,12 +759,13 @@ String _etiquetaDeEstado(String estado) => switch (estado) {
 /// terminaría encogiendo hasta ilegible en vez de simplemente acortar.
 String _textoDeCelda(AsistenciaDiaEntity dia) {
   final motivo = dia.motivo?.trim();
-  if (motivo == null || motivo.isEmpty) return _etiquetaCortaDeEstado(dia.estado);
+  if (motivo == null || motivo.isEmpty)
+    return _etiquetaCortaDeEstado(dia.estado);
   return motivo.length > 24 ? '${motivo.substring(0, 23)}…' : motivo;
 }
 
 /// Igual que [_etiquetaDeEstado] pero recortada para entrar en una celda
-/// chica de la grilla ("No le tocaba (sábado)" no entra en ~60px de ancho;
+/// chica de la grilla ("Descanso (sábado)" no entra en ~60px de ancho;
 /// "Libre" sí). La hoja de detalle sigue usando la versión larga.
 String _etiquetaCortaDeEstado(String estado) => switch (estado) {
   'TRABAJADO' => 'Trabajó',
@@ -763,8 +788,18 @@ TonoEtiqueta _tonoDeEstado(String estado) => switch (estado) {
 /// `EEEE d 'de' MMMM, yyyy` a mano — sin `intl` por lo mismo que [fechaCorta].
 String fechaLarga(DateTime f) {
   const meses = [
-    'enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
-    'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre',
+    'enero',
+    'febrero',
+    'marzo',
+    'abril',
+    'mayo',
+    'junio',
+    'julio',
+    'agosto',
+    'septiembre',
+    'octubre',
+    'noviembre',
+    'diciembre',
   ];
   return '${_diasSemana[f.weekday - 1]} ${f.day} de ${meses[f.month - 1]}, ${f.year}';
 }
