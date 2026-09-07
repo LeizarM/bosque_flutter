@@ -9,6 +9,7 @@ import 'package:bosque_flutter/data/models/celda_turno_model.dart';
 import 'package:bosque_flutter/data/models/convocatoria_model.dart';
 import 'package:bosque_flutter/data/models/cumple_sabado_model.dart';
 import 'package:bosque_flutter/data/models/estado_turno_model.dart';
+import 'package:bosque_flutter/data/models/excusa_horario_model.dart';
 import 'package:bosque_flutter/data/models/intervencion_model.dart';
 import 'package:bosque_flutter/data/models/mi_equipo_model.dart';
 import 'package:bosque_flutter/data/models/participante_turno_model.dart';
@@ -27,6 +28,7 @@ import 'package:bosque_flutter/domain/entities/celda_turno_entity.dart';
 import 'package:bosque_flutter/domain/entities/convocatoria_entity.dart';
 import 'package:bosque_flutter/domain/entities/cumple_sabado_entity.dart';
 import 'package:bosque_flutter/domain/entities/estado_turno_entity.dart';
+import 'package:bosque_flutter/domain/entities/excusa_horario_entity.dart';
 import 'package:bosque_flutter/domain/entities/intervencion_entity.dart';
 import 'package:bosque_flutter/domain/entities/mi_equipo_entity.dart';
 import 'package:bosque_flutter/domain/entities/participante_turno_entity.dart';
@@ -494,6 +496,24 @@ class RolSabadosImpl extends BaseApiRepository implements RolSabadosRepository {
       },
       errorMessage: 'Error al cruzar las vacaciones y permisos',
     );
+  }
+
+  @override
+  Future<List<ExcusaHorarioEntity>> refrescarExcusasHorario({
+    required int idRol,
+    bool soloInformar = false,
+    required int audUsuario,
+  }) async {
+    final r = await postAndReturnList<ExcusaHorarioModel>(
+      endpoint: AppConstants.rolSabRefrescarExcusasHorario,
+      data: {
+        'idRol': idRol,
+        'observacion': soloInformar ? 'INFORMAR' : '',
+        'audUsuario': audUsuario,
+      },
+      fromJson: ExcusaHorarioModel.fromJson,
+    );
+    return r.map((e) => e.toEntity()).toList();
   }
 
   @override

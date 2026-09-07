@@ -226,6 +226,7 @@ class _InformeEmpDescuentosScreenState
         showSearchBox: true,
         searchDelay: const Duration(milliseconds: 300),
         searchFieldProps: TextFieldProps(
+          autofocus: true,
           decoration: InputDecoration(
             hintText: 'Escriba para buscar...',
             prefixIcon: Icon(Icons.search, color: colorScheme.primary),

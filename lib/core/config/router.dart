@@ -323,6 +323,19 @@ final routerProvider = Provider<GoRouter>((ref) {
               name: 'trsSabados',
               builder: (context, state) => const RolSabadosScreen(),
             ),
+            // Dias No Laborables (ABM admin) — reemplaza al modulo JSF legacy.
+            // La ruta es EXACTAMENTE tb_vista.direccion (codVista 14 =
+            // 'tbDiaNoLaborable/diaNoLaborable'), misma regla que las demas
+            // rutas de este archivo. La vista, sus 4 botones (tb_vistaBtn:
+            // btnNuevoDNL, btnEditarDNL, btnEliminarDNL — btnEditarPEDNL es
+            // del ABM por-empresa legacy que no se migro) y el acceso de los
+            // 194 usuarios ya existen en tb_vista/tb_vistaUsuario: no hace
+            // falta darlos de alta.
+            GoRoute(
+              path: '/dashboard/tbDiaNoLaborable/diaNoLaborable',
+              name: 'tbDiaNoLaborable',
+              builder: (context, state) => const DiasNoLaborablesScreen(),
+            ),
             // Biométrico — la ruta es tb_vista.direccion (codVista 106 =
             // 'tbioBiometrico/biometrico'), misma regla que Cartas CITE.
             GoRoute(
@@ -360,6 +373,78 @@ final routerProvider = Provider<GoRouter>((ref) {
               path: '/dashboard/tacTareas/Dependientes',
               name: 'tacTareasDependientes',
               builder: (context, state) => const DependientesJefeScreen(),
+            ),
+            // Coches (idATR=6) y Caja Fuerte (idATR=4) — ninguna tiene fila
+            // propia en tb_vista, se llega por navegación directa desde
+            // "Mis tareas rutinarias" (push), no desde el sidebar.
+            GoRoute(
+              path: '/dashboard/tacTareas/Coches',
+              name: 'tacTareasCoches',
+              builder: (context, state) {
+                final extra = state.extra as Map<String, dynamic>? ?? {};
+                return CochesScreen(
+                  idTarRuti: (extra['idTarRuti'] as int?) ?? 0,
+                  idBitTarea: (extra['idBitTarea'] as int?) ?? 0,
+                  nombreTarea: (extra['nombreTarea'] as String?) ?? 'Coches',
+                );
+              },
+            ),
+            GoRoute(
+              path: '/dashboard/tacTareas/CajaFuerte',
+              name: 'tacTareasCajaFuerte',
+              builder: (context, state) {
+                final extra = state.extra as Map<String, dynamic>? ?? {};
+                return CajaFuerteScreen(
+                  idTarRuti: (extra['idTarRuti'] as int?) ?? 0,
+                  idBitTarea: (extra['idBitTarea'] as int?) ?? 0,
+                  nombreTarea: (extra['nombreTarea'] as String?) ?? 'Caja Fuerte',
+                );
+              },
+            ),
+            GoRoute(
+              path: '/dashboard/tacTareas/ArqueoCaja',
+              name: 'tacTareasArqueoCaja',
+              builder: (context, state) {
+                final extra = state.extra as Map<String, dynamic>? ?? {};
+                return ArqueoCajaScreen(
+                  idTarRuti: (extra['idTarRuti'] as int?) ?? 0,
+                  idBitTarea: (extra['idBitTarea'] as int?) ?? 0,
+                  nombreTarea: (extra['nombreTarea'] as String?) ?? 'Arqueo de Caja',
+                );
+              },
+            ),
+            GoRoute(
+              path: '/dashboard/tacTareas/CajaChica',
+              name: 'tacTareasCajaChica',
+              builder: (context, state) {
+                final extra = state.extra as Map<String, dynamic>? ?? {};
+                return CajaChicaScreen(
+                  idBitTarea: (extra['idBitTarea'] as int?) ?? 0,
+                  nombreTarea: (extra['nombreTarea'] as String?) ?? 'Caja Chica',
+                );
+              },
+            ),
+            GoRoute(
+              path: '/dashboard/tacTareas/CierreOperaciones',
+              name: 'tacTareasCierreOperaciones',
+              builder: (context, state) {
+                final extra = state.extra as Map<String, dynamic>? ?? {};
+                return CierreOperacionesScreen(
+                  idBitTarea: (extra['idBitTarea'] as int?) ?? 0,
+                  nombreTarea: (extra['nombreTarea'] as String?) ?? 'Cierre de Operaciones',
+                );
+              },
+            ),
+            GoRoute(
+              path: '/dashboard/tacTareas/VerificarCierre',
+              name: 'tacTareasVerificarCierre',
+              builder: (context, state) {
+                final extra = state.extra as Map<String, dynamic>? ?? {};
+                return VerificarCierreScreen(
+                  idBitTarea: (extra['idBitTarea'] as int?) ?? 0,
+                  nombreTarea: (extra['nombreTarea'] as String?) ?? 'Verificar Cierre de Operaciones',
+                );
+              },
             ),
           ],
         ),
@@ -511,6 +596,11 @@ final routerProvider = Provider<GoRouter>((ref) {
         GoRoute(
           path: '/trs_Sabados/Main',
           redirect: (context, state) => '/dashboard/trs_Sabados/Main',
+        ),
+        // Dias No Laborables
+        GoRoute(
+          path: '/tbDiaNoLaborable/diaNoLaborable',
+          redirect: (context, state) => '/dashboard/tbDiaNoLaborable/diaNoLaborable',
         ),
         // Lote de producción
         GoRoute(

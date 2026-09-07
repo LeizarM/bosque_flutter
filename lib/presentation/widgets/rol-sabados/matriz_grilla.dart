@@ -791,8 +791,18 @@ class CeldaMatriz extends StatelessWidget {
     // que este tooltip es para el escritorio: se ve al pasar el mouse. El dato
     // completo vive igual en el editor de la celda, a un toque de acá, que es
     // lo que hace que no dependa del hover.
-    if (celda?.hayCambio != true) return cuadro;
-    return Tooltip(message: celda!.cambioTexto, child: cuadro);
+    //
+    // `observacion` viaja desde `trs_Asignacion.observacion` hace rato (la
+    // escribe `trs_sp_corregirCelda`, origen='M') pero nadie la mostraba acá
+    // — sólo el cambio tenía tooltip. Es el motivo por el que RR.HH. no veía
+    // POR QUÉ quedó excusada una celda (por horario biométrico o por
+    // cualquier otra corrección manual) sin abrir el editor.
+    final texto = [
+      if (celda?.hayCambio == true) celda!.cambioTexto,
+      if ((celda?.observacion ?? '').isNotEmpty) celda!.observacion,
+    ].join('\n');
+    if (texto.isEmpty) return cuadro;
+    return Tooltip(message: texto, child: cuadro);
   }
 }
 

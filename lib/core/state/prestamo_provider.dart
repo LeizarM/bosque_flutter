@@ -1,4 +1,5 @@
 import 'dart:typed_data';
+import 'package:bosque_flutter/data/models/prestamo_model.dart';
 import 'package:bosque_flutter/data/repositories/prestamo_impl.dart';
 import 'package:bosque_flutter/domain/entities/prestamo_entity.dart';
 import 'package:bosque_flutter/domain/entities/prestamo_detalle_entity.dart';
@@ -16,7 +17,7 @@ class _FiltrosPersistidosPrestamo {
     this.fechaDesde,
     this.fechaHasta,
     this.tamanoPagina = 15,
-    this.estadoFiltro = 'TODOS',
+    this.estadoFiltro = 'NO ASIGNADOS',
   });
 
   _FiltrosPersistidosPrestamo copyWith({
@@ -58,7 +59,36 @@ final reporteCuotasProvider = FutureProvider.family<Uint8List, int>((
   return await repo.getReporteCuotas(codPrestamo);
 });
 
-// ─────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════════════════════
+// PROVIDER DE TOTAL
+// ══════════════════════════════════════════════════════════════════════════════
+final prestamosTotalProvider = FutureProvider.autoDispose.family<
+  double,
+  ({int? codEmpresa, String? fechaDesde, String? fechaHasta})
+>((ref, args) async {
+  final repo = PrestamoImpl();
+  return repo.getTotalPrestamos(
+    args.codEmpresa,
+    args.fechaDesde,
+    args.fechaHasta,
+  );
+});
+
+final prestamosTotalSAPProvider = FutureProvider.autoDispose.family<
+  double,
+  ({int? codEmpresa, String? fechaDesde, String? fechaHasta})
+>((ref, args) async {
+  final repo = PrestamoImpl();
+  return repo.getTotalPrestamosSAP(
+    args.codEmpresa,
+    args.fechaDesde,
+    args.fechaHasta,
+  );
+});
+
+// ══════════════════════════════════════════════════════════════════════════════
+// LISTA PAGINADA DE PRESTAMOS VIGENTES O BANDEJA SAP
+// ══════════════════════════════════════════════════════════════════════════════
 // ESTADO UNIFICADO DE PRESTAMOS
 // ─────────────────────────────────────────────
 class PrestamoState {
@@ -68,11 +98,12 @@ class PrestamoState {
   final int totalPaginas;
   final int tamanoPagina;
   final String search;
-  final String? fechaDesde;
-  final String? fechaHasta;
+  final String? mes;
+  final String? anio;
   final int totalRegistros;
   final String? mensajeError;
   final String estadoFiltro;
+  final int? codEmpleadoFiltro;
 
   const PrestamoState({
     this.items = const [],
@@ -81,11 +112,12 @@ class PrestamoState {
     this.totalPaginas = 1,
     this.tamanoPagina = 15,
     this.search = '',
-    this.fechaDesde,
-    this.fechaHasta,
+    this.mes,
+    this.anio,
     this.totalRegistros = 0,
     this.mensajeError,
     this.estadoFiltro = 'TODOS',
+    this.codEmpleadoFiltro,
   });
 
   PrestamoState copyWith({
@@ -95,11 +127,14 @@ class PrestamoState {
     int? totalPaginas,
     int? tamanoPagina,
     String? search,
-    String? fechaDesde,
-    String? fechaHasta,
+    String? mes,
+    String? anio,
     int? totalRegistros,
     String? mensajeError,
     String? estadoFiltro,
+    int? codEmpleadoFiltro,
+    bool clearCodEmpleado = false,
+    bool clearError = false,
   }) => PrestamoState(
     items: items ?? this.items,
     cargando: cargando ?? this.cargando,
@@ -107,11 +142,13 @@ class PrestamoState {
     totalPaginas: totalPaginas ?? this.totalPaginas,
     tamanoPagina: tamanoPagina ?? this.tamanoPagina,
     search: search ?? this.search,
-    fechaDesde: fechaDesde ?? this.fechaDesde,
-    fechaHasta: fechaHasta ?? this.fechaHasta,
+    mes: mes ?? this.mes,
+    anio: anio ?? this.anio,
     totalRegistros: totalRegistros ?? this.totalRegistros,
-    mensajeError: mensajeError ?? this.mensajeError,
+    mensajeError: clearError ? null : (mensajeError ?? this.mensajeError),
     estadoFiltro: estadoFiltro ?? this.estadoFiltro,
+    codEmpleadoFiltro:
+        clearCodEmpleado ? null : (codEmpleadoFiltro ?? this.codEmpleadoFiltro),
   );
 }
 
@@ -120,43 +157,86 @@ class PrestamoNotifier extends StateNotifier<PrestamoState> {
   PrestamoImpl get repo => _repo;
   final int codEmpresa;
   final Ref ref;
+  final bool isVigentes;
 
-  PrestamoNotifier(this._repo, this.codEmpresa, this.ref)
-    : super(const PrestamoState()) {
-    final filtros = ref.read(_filtrosPrestamoProvider);
+  PrestamoNotifier(
+    this._repo,
+    this.codEmpresa,
+    this.ref, {
+    this.isVigentes = false,
+  }) : super(const PrestamoState()) {
+    final estadoDefault = isVigentes ? 'PEN' : 'TODOS';
+    final now = DateTime.now();
     state = state.copyWith(
-      tamanoPagina: filtros.tamanoPagina,
-      fechaDesde: filtros.fechaDesde,
-      fechaHasta: filtros.fechaHasta,
-      estadoFiltro: filtros.estadoFiltro,
+      estadoFiltro: estadoDefault,
+      mes: now.month.toString(),
+      anio: now.year.toString(),
     );
     cargar();
   }
 
-  Future<void> cargar({int? pagina, String? search}) async {
+  Future<void> cargar({
+    int? pagina,
+    String? search,
+    int? codEmpleado,
+    bool clearCodEmpleado = false,
+  }) async {
     if (state.cargando) return;
 
     final p = pagina ?? state.pagina;
     final s = search ?? state.search;
+    final c =
+        clearCodEmpleado ? null : (codEmpleado ?? state.codEmpleadoFiltro);
 
     state = state.copyWith(
       cargando: true,
       mensajeError: null,
       search: s,
       pagina: p,
+      codEmpleadoFiltro: c,
+      clearCodEmpleado: clearCodEmpleado,
     );
 
     try {
       final empFiltro = codEmpresa == 0 ? null : codEmpresa;
-      final data = await _repo.getPrestamosSAP(
-        p,
-        state.tamanoPagina,
-        empFiltro,
-        s,
-        state.fechaDesde,
-        state.fechaHasta,
-        state.estadoFiltro,
-      );
+
+      String? fDesde;
+      String? fHasta;
+      if (state.mes != null && state.anio != null) {
+        final mesStr = state.mes!.padLeft(2, '0');
+        final d = DateTime.tryParse('${state.anio}-$mesStr-01');
+        if (d != null) {
+          fDesde = '${state.anio}-$mesStr-01';
+          final ultimoDia = DateTime(d.year, d.month + 1, 0).day;
+          fHasta = '${state.anio}-$mesStr-$ultimoDia';
+        }
+      }
+
+      final fDesdeSQL = isVigentes ? null : fDesde;
+      final fHastaSQL = isVigentes ? null : fHasta;
+
+      final data =
+          isVigentes
+              ? await _repo.getPrestamosVigentes(
+                p,
+                state.tamanoPagina,
+                empFiltro,
+                s,
+                fDesdeSQL,
+                fHastaSQL,
+                state.estadoFiltro,
+                c,
+              )
+              : await _repo.getPrestamosSAP(
+                p,
+                state.tamanoPagina,
+                empFiltro,
+                s,
+                fDesdeSQL,
+                fHastaSQL,
+                state.estadoFiltro,
+                c,
+              );
 
       if (!mounted) return;
 
@@ -179,25 +259,20 @@ class PrestamoNotifier extends StateNotifier<PrestamoState> {
   }
 
   void cambiarTamanoPagina(int size) {
-    ref
-        .read(_filtrosPrestamoProvider.notifier)
-        .update((s) => s.copyWith(tamanoPagina: size));
     state = state.copyWith(tamanoPagina: size, pagina: 1);
     cargar();
   }
 
-  void filtrarFechas(String? desde, String? hasta) {
-    ref
-        .read(_filtrosPrestamoProvider.notifier)
-        .update((s) => s.copyWith(fechaDesde: desde, fechaHasta: hasta));
-    state = state.copyWith(fechaDesde: desde, fechaHasta: hasta, pagina: 1);
+  void setFechaFiltro({String? mes, String? anio}) {
+    state = state.copyWith(
+      mes: mes ?? state.mes,
+      anio: anio ?? state.anio,
+      pagina: 1,
+    );
     cargar();
   }
 
   void filtrarEstado(String estado) {
-    ref
-        .read(_filtrosPrestamoProvider.notifier)
-        .update((s) => s.copyWith(estadoFiltro: estado));
     state = state.copyWith(estadoFiltro: estado, pagina: 1);
     cargar();
   }
@@ -211,9 +286,10 @@ class PrestamoNotifier extends StateNotifier<PrestamoState> {
     required String tipoPago,
     int forzar = 0,
     String? xmlCuotas,
+    String? tipoCalculo,
   }) async {
     try {
-      state = state.copyWith(cargando: true, mensajeError: null);
+      state = state.copyWith(cargando: true, clearError: true);
       final resp = await _repo.asignarPrestamosMasivo(
         sapRecord: sapRecord,
         xmlEmpleados: xmlEmpleados,
@@ -223,6 +299,7 @@ class PrestamoNotifier extends StateNotifier<PrestamoState> {
         tipoPago: tipoPago,
         forzar: forzar,
         xmlCuotas: xmlCuotas,
+        tipoCalculo: tipoCalculo,
       );
       state = state.copyWith(cargando: false);
       if (mounted) cargar();
@@ -247,9 +324,10 @@ class PrestamoNotifier extends StateNotifier<PrestamoState> {
     required String tipoPago,
     int forzar = 0,
     String? xmlCuotas,
+    String? tipoCalculo,
   }) async {
     try {
-      state = state.copyWith(cargando: true, mensajeError: null);
+      state = state.copyWith(cargando: true, clearError: true);
       final resp = await _repo.crearPrestamoManualMasivo(
         codEmpresa: codEmpresa,
         db: db,
@@ -263,6 +341,7 @@ class PrestamoNotifier extends StateNotifier<PrestamoState> {
         tipoPago: tipoPago,
         forzar: forzar,
         xmlCuotas: xmlCuotas,
+        tipoCalculo: tipoCalculo,
       );
       state = state.copyWith(cargando: false);
       if (mounted) cargar();
@@ -283,7 +362,7 @@ class PrestamoNotifier extends StateNotifier<PrestamoState> {
     String? estadoCuota,
   }) async {
     try {
-      state = state.copyWith(cargando: true, mensajeError: null);
+      state = state.copyWith(cargando: true, clearError: true);
       final resp = await _repo.actualizarCuotaPrestamo(
         codPrestDetalle: codPrestDetalle,
         tipoPago: tipoPago,
@@ -315,7 +394,7 @@ class PrestamoNotifier extends StateNotifier<PrestamoState> {
     required int audUsuario,
   }) async {
     try {
-      state = state.copyWith(cargando: true, mensajeError: null);
+      state = state.copyWith(cargando: true, clearError: true);
       final msg = await _repo.anularPrestamo(
         codPrestamo: codPrestamo,
         audUsuario: audUsuario,
@@ -341,7 +420,7 @@ class PrestamoNotifier extends StateNotifier<PrestamoState> {
     required int audUsuario,
   }) async {
     try {
-      state = state.copyWith(cargando: true, mensajeError: null);
+      state = state.copyWith(cargando: true, clearError: true);
       final resp = await _repo.adelantarCuotaPrestamo(
         codPrestamo: codPrestamo,
         montoPago: montoPago,
@@ -379,6 +458,7 @@ class PrestamoNotifier extends StateNotifier<PrestamoState> {
     DateTime? fechaDesembolso,
     int forzar = 0,
     String? xmlCuotas,
+    String? tipoCalculo,
   }) async {
     state = state.copyWith(cargando: true);
     try {
@@ -393,6 +473,7 @@ class PrestamoNotifier extends StateNotifier<PrestamoState> {
         fechaDesembolso: fechaDesembolso,
         forzar: forzar,
         xmlCuotas: xmlCuotas,
+        tipoCalculo: tipoCalculo,
       );
       state = state.copyWith(cargando: false);
       if (mounted) {
@@ -406,16 +487,88 @@ class PrestamoNotifier extends StateNotifier<PrestamoState> {
       rethrow;
     }
   }
+
+  Future<String> asignarPagos(List<PrestamoDetalleEntity> pagos) async {
+    try {
+      state = state.copyWith(cargando: true, clearError: true);
+      final resp = await _repo.asignarPagos(pagos);
+      state = state.copyWith(cargando: false);
+      if (mounted) cargar();
+      return resp.message;
+    } catch (e) {
+      if (mounted)
+        state = state.copyWith(cargando: false, mensajeError: e.toString());
+      rethrow;
+    }
+  }
+
+  Future<PrestamoResponse> revertirPagoMasivo({
+    required int codPrestDetalle,
+    required int audUsuario,
+    required int codPrestamo,
+  }) async {
+    try {
+      state = state.copyWith(cargando: true, clearError: true);
+      final resp = await _repo.revertirPagoMasivo(
+        codPrestDetalle: codPrestDetalle,
+        audUsuario: audUsuario,
+      );
+      state = state.copyWith(cargando: false);
+
+      // Invalidate to refresh the list of payments
+      ref.invalidate(
+        prestamoDetallesProvider((
+          codPrestamo: codPrestamo,
+          mostrarAnulados: 0,
+        )),
+      );
+      ref.invalidate(
+        prestamoDetallesProvider((
+          codPrestamo: codPrestamo,
+          mostrarAnulados: 1,
+        )),
+      );
+
+      if (mounted) cargar();
+      return resp;
+    } catch (e) {
+      if (mounted)
+        state = state.copyWith(cargando: false, mensajeError: e.toString());
+      rethrow;
+    }
+  }
 }
 
 final prestamoProvider = StateNotifierProvider.family
     .autoDispose<PrestamoNotifier, PrestamoState, int>((ref, codEmpresa) {
-      return PrestamoNotifier(PrestamoImpl(), codEmpresa, ref);
+      return PrestamoNotifier(
+        PrestamoImpl(),
+        codEmpresa,
+        ref,
+        isVigentes: false,
+      );
+    });
+
+final prestamoVigentesProvider = StateNotifierProvider.family
+    .autoDispose<PrestamoNotifier, PrestamoState, int>((ref, codEmpresa) {
+      return PrestamoNotifier(
+        PrestamoImpl(),
+        codEmpresa,
+        ref,
+        isVigentes: true,
+      );
     });
 
 final searchEmpleadoPrestamoProvider = StateProvider.autoDispose<String>(
   (ref) => '',
 );
+
+final prestamoVigentesPorEmpleadoProvider = FutureProvider.family
+    .autoDispose<List<PrestamoEntity>, int>((ref, codEmpresa) async {
+      final repo = PrestamoImpl();
+      final search = ref.watch(searchEmpleadoPrestamoProvider);
+      return await repo.getPrestamosVigentesPorEmpleado(codEmpresa, search);
+    });
 
 final prestamoDetallesProvider = FutureProvider.family.autoDispose<
   List<PrestamoDetalleEntity>,

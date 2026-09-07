@@ -14,6 +14,7 @@ export 'package:bosque_flutter/presentation/screens/depositos-cheques/deposito_c
 export 'package:bosque_flutter/presentation/screens/depositos-cheques/deposito_cheque_identificar_view_screen.dart';
 export 'package:bosque_flutter/presentation/screens/depositos-cheques/deposito_cheque_register_screen.dart';
 export 'package:bosque_flutter/presentation/screens/depositos-cheques/deposito_cheque_view_screen.dart';
+export 'package:bosque_flutter/presentation/screens/dias-no-laborables/dias_no_laborables_screen.dart';
 export 'package:bosque_flutter/presentation/screens/entregas/entregas_dashboard_screen.dart';
 export 'package:bosque_flutter/presentation/screens/entregas/entregas_home_screen.dart';
 export 'package:bosque_flutter/presentation/screens/entregas/pendientes_entrega_screen.dart';
@@ -29,6 +30,12 @@ export 'package:bosque_flutter/presentation/screens/lote-produccion/resmado_regi
 export 'package:bosque_flutter/presentation/screens/lote-produccion/ver_lote_produccion_screen.dart';
 export 'package:bosque_flutter/presentation/screens/lote-produccion/ver_resmado_screen.dart';
 export 'package:bosque_flutter/presentation/screens/solicitud-corte/solicitud_corte_screen.dart';
+export 'package:bosque_flutter/presentation/screens/tareas-rutinarias/arqueo_caja_screen.dart';
+export 'package:bosque_flutter/presentation/screens/tareas-rutinarias/caja_chica_screen.dart';
+export 'package:bosque_flutter/presentation/screens/tareas-rutinarias/caja_fuerte_screen.dart';
+export 'package:bosque_flutter/presentation/screens/tareas-rutinarias/cierre_operaciones_screen.dart';
+export 'package:bosque_flutter/presentation/screens/tareas-rutinarias/verificar_cierre_screen.dart';
+export 'package:bosque_flutter/presentation/screens/tareas-rutinarias/coches_screen.dart';
 export 'package:bosque_flutter/presentation/screens/tareas-rutinarias/dependientes_jefe_screen.dart';
 export 'package:bosque_flutter/presentation/screens/tareas-rutinarias/mis_tareas_rutinarias_screen.dart';
 export 'package:bosque_flutter/presentation/screens/pagos-extranjeros/cobranzas_asientos_screen.dart';

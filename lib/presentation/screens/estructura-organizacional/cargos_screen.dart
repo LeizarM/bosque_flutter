@@ -5,6 +5,8 @@ import 'package:bosque_flutter/core/utils/responsive_utils_bosque.dart';
 import 'package:bosque_flutter/domain/entities/area_entity.dart';
 import 'package:bosque_flutter/domain/entities/cargo_entity.dart';
 import 'package:bosque_flutter/presentation/screens/estructura-organizacional/organigrama_custom.dart';
+import 'package:bosque_flutter/presentation/screens/estructura-organizacional/tareas_rutinarias_catalogo_screen.dart';
+import 'package:bosque_flutter/presentation/screens/estructura-organizacional/tareas_rutinarias_por_cargo_screen.dart';
 import 'package:bosque_flutter/presentation/widgets/estructura-organizacional/cargo_actions_bottom_sheet.dart';
 import 'package:bosque_flutter/presentation/widgets/estructura-organizacional/editar_cargo_form.dart';
 import 'package:bosque_flutter/presentation/widgets/estructura-organizacional/form_area.dart';
@@ -239,6 +241,22 @@ class _CargosScreenState extends ConsumerState<CargosScreen> {
           style: const TextStyle(fontSize: 16),
         ),
         actions: [
+          // Catálogo global de tareas rutinarias — buscar CUALQUIER tarea
+          // (no solo las de un cargo puntual) para copiarla a uno o varios
+          // cargos, sin tener que saber de antemano en qué cargo vive hoy.
+          IconButton(
+            icon: const Icon(Icons.assignment_outlined),
+            tooltip: 'Catálogo de tareas rutinarias',
+            onPressed:
+                () => Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder:
+                        (_) => TareasRutinariasCatalogoScreen(
+                          codEmpresa: widget.codEmpresa,
+                        ),
+                  ),
+                ),
+          ),
           // Botón para crear nuevo cargo
           IconButton(
             icon: const Icon(Icons.add_circle),
@@ -617,6 +635,12 @@ class _CargosScreenState extends ConsumerState<CargosScreen> {
   void _showCargoActions(CargoEntity cargo) {
     showModalBottomSheet(
       context: context,
+      // Sin esto, la hoja se limita a 9/16 de la pantalla y NO es
+      // scrolleable — con 6 acciones (5 propias + "Tareas rutinarias")
+      // se corta en cualquier viewport bajo (browser achicado, celular en
+      // horizontal). isScrollControlled la deja ocupar hasta toda la
+      // pantalla y habilita que su propio contenido decida cómo scrollear.
+      isScrollControlled: true,
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
@@ -635,6 +659,14 @@ class _CargosScreenState extends ConsumerState<CargosScreen> {
             onAddChild: () {
               Navigator.of(context).pop();
               _showCrearCargoHijoDialog(cargo);
+            },
+            onTareasRutinarias: () {
+              Navigator.of(context).pop();
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => TareasRutinariasPorCargoScreen(cargo: cargo),
+                ),
+              );
             },
             onDuplicate: () {
               Navigator.of(context).pop();

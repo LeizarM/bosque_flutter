@@ -24,6 +24,7 @@ class PrestamosDesktopView extends ConsumerWidget {
   final void Function(PrestamoEntity) onEditar;
   final void Function(PrestamoEntity) onAnular;
   final int uid;
+  final bool isVigentesTab;
 
   const PrestamosDesktopView({
     super.key,
@@ -34,6 +35,7 @@ class PrestamosDesktopView extends ConsumerWidget {
     required this.onEditar,
     required this.onAnular,
     required this.uid,
+    this.isVigentesTab = false,
   });
 
   @override
@@ -65,6 +67,7 @@ class PrestamosDesktopView extends ConsumerWidget {
               PrestamosTH('ASIGNADO A', wTrans, Alignment.centerLeft),
               PrestamosTH('FECHA', wFec, Alignment.center),
               PrestamosTH('MONTO', wMon, Alignment.centerRight),
+              if (isVigentesTab) PrestamosTH('SALDO', wSal, Alignment.centerRight),
               PrestamosTH('ESTADO', wEst, Alignment.center),
               PrestamosTH('ACCIÓN', wAcc, Alignment.center),
             ],
@@ -80,17 +83,20 @@ class PrestamosDesktopView extends ConsumerWidget {
                   ? const PrestamosEmptyTable()
                   : ListView.builder(
                     itemCount: st.items.length,
-                    itemBuilder:
-                        (c, i) => PrestamosDesktopRow(
-                          item: st.items[i],
-                          index: i,
-                          onAsignar: () => onAsignar(st.items[i]),
-                          onVerDetalle: () => onVerDetalle(st.items[i]),
-                          onEditar: () => onEditar(st.items[i]),
-                          onAnular: () => onAnular(st.items[i]),
-                          uid: uid,
-                          hPad: hPad,
-                        ),
+                    itemBuilder: (c, i) {
+                      final e = st.items[i];
+                      return PrestamosDesktopRow(
+                        item: e,
+                        index: i,
+                        onAsignar: () => onAsignar(e),
+                        onVerDetalle: () => onVerDetalle(e),
+                        onEditar: () => onEditar(e),
+                        onAnular: () => onAnular(e),
+                        uid: uid,
+                        hPad: hPad,
+                        isVigentesTab: isVigentesTab,
+                      );
+                    },
                   ),
         ),
 
@@ -149,6 +155,7 @@ class PrestamosDesktopRow extends ConsumerStatefulWidget {
   final VoidCallback onAnular;
   final int uid;
   final double hPad;
+  final bool isVigentesTab;
 
   const PrestamosDesktopRow({
     super.key,
@@ -160,6 +167,7 @@ class PrestamosDesktopRow extends ConsumerStatefulWidget {
     required this.onAnular,
     required this.uid,
     required this.hPad,
+    this.isVigentesTab = false,
   });
 
   @override
@@ -338,20 +346,52 @@ class _PrestamosDesktopRowState extends ConsumerState<PrestamosDesktopRow> {
                         ),
                       ),
                       Text(
-                        fmtPrestamo.format(e.debe),
+                        fmtPrestamo.format(e.haber > 0 ? e.haber : e.debe),
                         style: TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.bold,
-                          color:
-                              isDark
+                          color: e.haber > 0 
+                               ? Colors.blue.shade600 
+                               : (isDark
                                   ? Colors.greenAccent.shade200
-                                  : const Color(0xFF1B5E20),
+                                  : const Color(0xFF1B5E20)),
                         ),
                       ),
                     ],
                   ),
                 ),
               ),
+              // NEW: Saldo
+              if (widget.isVigentesTab)
+                SizedBox(
+                  width: wSal,
+                  child: Padding(
+                    padding: const EdgeInsets.only(right: 8),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Text(
+                          'Bs.',
+                          style: TextStyle(
+                            fontSize: 9,
+                            color: cs.onSurface.withValues(alpha: 0.5),
+                          ),
+                        ),
+                        Text(
+                          fmtPrestamo.format(e.saldoPendiente ?? 0),
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.bold,
+                            color: (e.saldoPendiente ?? 0) > 0 
+                                ? cs.primary 
+                                : Colors.green,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
               // Estado
               SizedBox(
                 width: wEst,
@@ -371,49 +411,33 @@ class _PrestamosDesktopRowState extends ConsumerState<PrestamosDesktopRow> {
                               ),
                         );
 
-                        if (estadoFound.codTipos == 'CAN' ||
-                            estadoFound.codTipos == 'ANU') {
-                          final isAnulado = estadoFound.codTipos == 'ANU';
-                          return Column(
-                            children: [
-                              if (e.estadoPrestamo == 'PEN' || e.estadoPrestamo == null) ...[
-                                PrestamosEstadoChip(estado: e.estadoAsignacion),
-                                const SizedBox(height: 4),
-                              ],
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 6,
-                                  vertical: 2,
-                                ),
-                                decoration: BoxDecoration(
-                                  color:
-                                      isAnulado
-                                          ? Colors.red.withValues(alpha: 0.2)
-                                          : Colors.green.withValues(alpha: 0.2),
-                                  borderRadius: BorderRadius.circular(4),
-                                  border: Border.all(
-                                    color:
-                                        isAnulado
-                                            ? Colors.red.withValues(alpha: 0.5)
-                                            : Colors.green.withValues(alpha: 0.5),
-                                  ),
-                                ),
-                                child: Text(
-                                  estadoFound.nombre,
-                                  style: TextStyle(
-                                    fontSize: 9,
-                                    fontWeight: FontWeight.bold,
-                                    color:
-                                        isAnulado ? Colors.red : Colors.green,
-                                  ),
-                                ),
+                        if (widget.isVigentesTab) {
+                          // En la pestaña de préstamos, mostrar siempre el estado del préstamo
+                          final colorBase = estadoFound.codTipos == 'ANU'
+                              ? Colors.red
+                              : estadoFound.codTipos == 'CAN'
+                                  ? Colors.green
+                                  : Colors.orange; // PEN
+                          
+                          return Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: colorBase.withValues(alpha: 0.2),
+                              borderRadius: BorderRadius.circular(4),
+                              border: Border.all(color: colorBase.withValues(alpha: 0.5)),
+                            ),
+                            child: Text(
+                              estadoFound.nombre,
+                              style: TextStyle(
+                                fontSize: 9,
+                                fontWeight: FontWeight.bold,
+                                color: colorBase,
                               ),
-                            ],
+                            ),
                           );
                         } else {
-                          return PrestamosEstadoChip(
-                            estado: e.estadoAsignacion,
-                          );
+                          // En la Bandeja SAP, mostrar el estado de asignación
+                          return PrestamosEstadoChip(estado: e.estadoAsignacion);
                         }
                       },
                       loading:
@@ -438,77 +462,43 @@ class _PrestamosDesktopRowState extends ConsumerState<PrestamosDesktopRow> {
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      if (e.estadoAsignacion != 'ASIGNADO')
+                      if (e.estadoAsignacion != 'ASIGNADO' && !widget.isVigentesTab)
                         PermissionWidget(
                           buttonName: 'btnAsignarPrestamo',
                           child: IconButton(
                             icon: Icon(
-                              Icons.person_add_alt_1_rounded,
+                              (e.haber > 0) ? Icons.payments_rounded : Icons.person_add_alt_1_rounded,
                               size: 18,
-                              color: cs.primary,
+                              color: (e.haber > 0) ? Colors.blue.shade600 : cs.primary,
                             ),
-                            tooltip: 'Asignar préstamo',
-                            onPressed: () {
-                              showPrestamoAsignacionDialog(
-                                context,
-                                modo: PrestamoDialogModo.asignacionSap,
-                                audUsuarioI: widget.uid,
-                                cabecera: e,
-                              ).then((v) {
-                                if (v == true) {
-                                  final activeFiltro = ref.read(
-                                    codEmpresaPrestamosProvider,
-                                  );
-                                  ref
-                                      .read(
-                                        prestamoProvider(activeFiltro).notifier,
-                                      )
-                                      .cargar();
-                                }
-                              });
-                            },
+                            tooltip: (e.haber > 0) ? 'Asignar Pago' : 'Asignar préstamo',
+                            onPressed: widget.onAsignar,
                           ),
                         ),
-                      if (e.estadoAsignacion == 'ASIGNADO' &&
-                          e.estadoPrestamo != 'ANU' &&
-                          e.estadoPrestamo != 'CAN')
-                        PermissionWidget(
-                          buttonName: 'btnEditarPrestamo',
-                          child: IconButton(
-                            icon: const Icon(Icons.edit_rounded, size: 18),
-                            tooltip: 'Editar Préstamo',
-                            onPressed: () {
-                              showPrestamoAsignacionDialog(
-                                context,
-                                modo: PrestamoDialogModo.edicionSap,
-                                audUsuarioI: widget.uid,
-                                cabecera: e,
-                              ).then((v) {
-                                if (v == true) {
-                                  final activeFiltro = ref.read(
-                                    codEmpresaPrestamosProvider,
-                                  );
-                                  ref
-                                      .read(
-                                        prestamoProvider(activeFiltro).notifier,
-                                      )
-                                      .cargar();
-                                }
-                              });
-                            },
-                          ),
-                        ),
-                      if (e.estadoAsignacion == 'ASIGNADO')
+                      if (e.estadoAsignacion == 'ASIGNADO' || widget.isVigentesTab)
                         IconButton(
                           icon: const Icon(
                             Icons.remove_red_eye_rounded,
                             size: 18,
                           ),
                           tooltip: 'Ver Detalle',
-                          onPressed: () => widget.onVerDetalle(),
+                          onPressed: widget.onVerDetalle,
                         ),
                       if (e.estadoAsignacion == 'ASIGNADO' &&
-                          e.estadoPrestamo == 'PEN')
+                          e.estadoPrestamo != 'ANU' &&
+                          e.estadoPrestamo != 'CAN' &&
+                          e.haber == 0)
+                        PermissionWidget(
+                          buttonName: 'btnEditarPrestamo',
+                          child: IconButton(
+                            icon: const Icon(Icons.edit_rounded, size: 18),
+                            tooltip: 'Editar Préstamo',
+                            onPressed: widget.onEditar,
+                          ),
+                        ),
+                      if (e.estadoAsignacion == 'ASIGNADO' &&
+                          e.estadoPrestamo == 'PEN' &&
+                          e.haber == 0)
                         PermissionWidget(
                           buttonName: 'btnAnularPrestamo',
                           child: IconButton(
@@ -518,7 +508,7 @@ class _PrestamosDesktopRowState extends ConsumerState<PrestamosDesktopRow> {
                               color: Colors.red,
                             ),
                             tooltip: 'Anular Préstamo',
-                            onPressed: () => widget.onAnular(),
+                            onPressed: widget.onAnular,
                           ),
                         ),
                     ],

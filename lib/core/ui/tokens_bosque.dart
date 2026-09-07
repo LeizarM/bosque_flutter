@@ -85,8 +85,17 @@ extension EstiloModulo on BuildContext {
       _t.titleSmall?.copyWith(fontWeight: Peso.titulo);
 
   /// Texto de apoyo: explica, no compite.
-  TextStyle? apagado() =>
-      _t.bodySmall?.copyWith(color: Theme.of(this).hintColor);
+  ///
+  /// Antes usaba `Theme.of(this).hintColor` — un token de Material 2 que en
+  /// modo oscuro es blanco translúcido fijo, sin relación con el tono real
+  /// de la superficie sobre la que cae. Sobre un `AlertDialog` (superficie
+  /// `surfaceContainerHigh`, que para varias semillas de este tema queda
+  /// bastante clara incluso en oscuro) eso es blanco sobre casi-blanco:
+  /// invisible — el bug real detrás de "el diálogo de Enlazar no muestra
+  /// nada". `onSurfaceVariant` es el token M3 correcto para texto secundario:
+  /// Flutter lo calcula para contrastar con la MISMA familia tonal que
+  /// `surface`/`surfaceContainerHigh`, así que siempre queda legible.
+  TextStyle? apagado() => _t.bodySmall?.copyWith(color: cs.onSurfaceVariant);
 }
 
 // ═══════════════════════════════════════════════════════════════════════════

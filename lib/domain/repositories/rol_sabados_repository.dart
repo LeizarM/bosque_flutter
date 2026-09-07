@@ -6,6 +6,7 @@ import 'package:bosque_flutter/domain/entities/celda_turno_entity.dart';
 import 'package:bosque_flutter/domain/entities/convocatoria_entity.dart';
 import 'package:bosque_flutter/domain/entities/cumple_sabado_entity.dart';
 import 'package:bosque_flutter/domain/entities/estado_turno_entity.dart';
+import 'package:bosque_flutter/domain/entities/excusa_horario_entity.dart';
 import 'package:bosque_flutter/domain/entities/intervencion_entity.dart';
 import 'package:bosque_flutter/domain/entities/mi_equipo_entity.dart';
 import 'package:bosque_flutter/domain/entities/participante_turno_entity.dart';
@@ -227,6 +228,19 @@ abstract class RolSabadosRepository {
   /// Cruza el rol con las vacaciones, bajas y permisos de RR.HH. y corrige las
   /// celdas. Va en los dos sentidos y sólo toca lo que puso la rotación.
   Future<void> refrescarPermisos({
+    required int idRol,
+    bool soloInformar = false,
+    required int audUsuario,
+  });
+
+  /// El biométrico pisa al rol: excusa (celda 'E') a quien ya cumplió su cuota
+  /// semanal de horas por un horario rotativo (p.ej. "Horario Extendido")
+  /// antes de que llegue el sábado que le tocaba por la rotación A/B.
+  ///
+  /// [soloInformar] no escribe nada: devuelve a quién le tocaría excusar. Sin
+  /// él, además de devolver la lista, aplica cada fila (salvo la que falle
+  /// puntualmente — [ExcusaHorarioEntity.aplicado] dice cuál).
+  Future<List<ExcusaHorarioEntity>> refrescarExcusasHorario({
     required int idRol,
     bool soloInformar = false,
     required int audUsuario,

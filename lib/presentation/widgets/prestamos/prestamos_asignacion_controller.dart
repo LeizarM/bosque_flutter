@@ -7,7 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
-enum PrestamoDialogModo { asignacionSap, edicionSap, manual }
+enum PrestamoDialogModo { asignacionSap, edicionSap, manual, asignacionPago }
 
 class PrestamosAsignacionController extends ChangeNotifier {
   final PrestamoDialogModo modo;
@@ -82,9 +82,20 @@ class PrestamosAsignacionController extends ChangeNotifier {
       if (asignados.isNotEmpty) {
         fecIniPago = DateFormat(
           'yyyy-MM-dd',
-        ).parse(asignados.first.fecIniPago ?? '');
-        numCuotas = (asignados.first.numCuotas ?? 1).toDouble();
-        tipoPagoGlobal = asignados.first.tipoPago ?? 'PLAN';
+        ).parse(asignados.first.fecIniPago ?? cabecera.fecIniPago ?? '');
+
+        if (cabecera.tipoCalculo == 'MONTO_FIJO') {
+          isMontoFijo = true;
+        } else {
+          isMontoFijo = false;
+        }
+        // montoCuota viene calculado desde SQL:
+        //   MONTO_FIJO => ROUND(montoPrestamo / cuotaReferencia, 2)
+        //   CUOTAS     => cuotaReferencia (número de cuotas)
+        numCuotas = (asignados.first.montoCuota ?? 1).toDouble();
+
+        tipoPagoGlobal =
+            asignados.first.tipoPago ?? cabecera.tipoPago ?? 'PLAN';
 
         for (final asig in asignados) {
           if (asig.codEmpleado != null) {
@@ -114,7 +125,13 @@ class PrestamosAsignacionController extends ChangeNotifier {
           )).future,
         );
         if (detalles.isNotEmpty) {
-          numCuotas = detalles.length.toDouble();
+          if (cabecera.tipoCalculo == 'MONTO_FIJO') {
+            isMontoFijo = true;
+            numCuotas = detalles.first.haber ?? 0.0;
+          } else {
+            isMontoFijo = false;
+            numCuotas = detalles.length.toDouble();
+          }
           fecIniPago = detalles.first.fechaPago;
         } else {
           numCuotas = 1;
@@ -176,15 +193,13 @@ class PrestamosAsignacionController extends ChangeNotifier {
           fechaDesembolso != null &&
           montoManual > 0 &&
           concepto.isNotEmpty &&
-          (totalCalc - montoManual).abs() < 0.01;
+          (totalCalc - montoManual).abs() < 0.001;
     } else {
-      esValido = (totalMonto - totalCalc).abs() < 0.01;
+      esValido = (totalMonto - totalCalc).abs() < 0.001;
     }
 
-    // Check si hay montos negativos
-    if (seleccionados.values.any((e) => e.montoCalculado <= 0)) {
-      esValido = false;
-    }
+    // Check si hay montos negativos o en cero (ahora manejado por SQL, UI solo hace el calculo base)
+    // El SQL rechazará montos <= 0 con RAISERROR.
 
     notifyListeners();
   }

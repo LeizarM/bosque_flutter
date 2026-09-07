@@ -18,6 +18,7 @@ const wN = 52.0;
 const wTrans = 250.0;
 const wFec = 108.0;
 const wMon = 148.0;
+const wSal = 148.0;
 const wEst = 150.0;
 const wAcc = 120.0;
 

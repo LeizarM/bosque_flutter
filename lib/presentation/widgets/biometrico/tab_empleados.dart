@@ -415,8 +415,16 @@ class _BuscadorEmpleadoBosqueState extends State<_BuscadorEmpleadoBosque> {
                         itemCount: _resultados.length,
                         itemBuilder: (context, i) {
                           final e = _resultados[i];
+                          // `e.datoPersona` (nivel raíz) siempre viene vacío
+                          // en /rrhh/obtenerLstEmpleados — el nombre real
+                          // cuelga de `persona`. Mismo hallazgo ya
+                          // documentado en buscador_empleado.dart (Permisos
+                          // RRHH), el otro consumidor de este endpoint.
+                          final nombre = e.persona.datoPersona ?? '';
                           return ListTile(
-                            title: Text(e.datoPersona),
+                            title: Text(
+                              nombre.isNotEmpty ? nombre : 'Empleado #${e.codEmpleado}',
+                            ),
                             onTap: () => Navigator.pop(context, e),
                           );
                         },

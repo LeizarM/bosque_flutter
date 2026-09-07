@@ -11,10 +11,12 @@ class PrestamoDetalleEntity {
   final double montoPago;
   final double debe;
   final double haber;
+  final double? haberAnterior;
   final double saldo;
   final DateTime? fechaPago;
   final int? audUsuario;
   final DateTime? audFecha;
+  final int? transIdSAP_pago;
 
   PrestamoDetalleEntity({
     required this.codPrestDetalle,
@@ -29,10 +31,12 @@ class PrestamoDetalleEntity {
     required this.montoPago,
     required this.debe,
     required this.haber,
+    this.haberAnterior,
     required this.saldo,
     this.fechaPago,
     this.audUsuario,
     this.audFecha,
+    this.transIdSAP_pago,
   });
 
   PrestamoDetalleEntity copyWith({
@@ -48,10 +52,12 @@ class PrestamoDetalleEntity {
     double? montoPago,
     double? debe,
     double? haber,
+    double? haberAnterior,
     double? saldo,
     DateTime? fechaPago,
     int? audUsuario,
     DateTime? audFecha,
+    int? transIdSAP_pago,
   }) {
     return PrestamoDetalleEntity(
       codPrestDetalle: codPrestDetalle ?? this.codPrestDetalle,
@@ -66,10 +72,12 @@ class PrestamoDetalleEntity {
       montoPago: montoPago ?? this.montoPago,
       debe: debe ?? this.debe,
       haber: haber ?? this.haber,
+      haberAnterior: haberAnterior ?? this.haberAnterior,
       saldo: saldo ?? this.saldo,
       fechaPago: fechaPago ?? this.fechaPago,
       audUsuario: audUsuario ?? this.audUsuario,
       audFecha: audFecha ?? this.audFecha,
+      transIdSAP_pago: transIdSAP_pago ?? this.transIdSAP_pago,
     );
   }
 }

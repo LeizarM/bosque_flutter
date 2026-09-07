@@ -1,5 +1,5 @@
 // Entrada aparte, solo para revisar el diseño del módulo:
-//   flutter build web -t lib/vista_previa_comisiones.dart --output build/preview
+//   flutter build web -t lib/presentation/screens/comisiones/vista_previa_comisiones.dart --output build/preview
 //
 // No entra en la app: main.dart no la importa. Existe porque el módulo vive
 // detrás de un login, de permisos y de un backend que habla con SAP, así que

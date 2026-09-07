@@ -14,10 +14,12 @@ class PrestamoDetalleModel extends PrestamoDetalleEntity {
     required super.montoPago,
     required super.debe,
     required super.haber,
+    super.haberAnterior,
     required super.saldo,
     super.fechaPago,
     super.audUsuario,
     super.audFecha,
+    super.transIdSAP_pago,
   });
 
   factory PrestamoDetalleModel.fromJson(Map<String, dynamic> json) {
@@ -34,6 +36,7 @@ class PrestamoDetalleModel extends PrestamoDetalleEntity {
       montoPago: (json['montoPago'] ?? 0.0).toDouble(),
       debe: (json['debe'] ?? 0.0).toDouble(),
       haber: (json['haber'] ?? 0.0).toDouble(),
+      haberAnterior: (json['haberAnterior'] as num?)?.toDouble(),
       saldo: (json['saldo'] ?? 0.0).toDouble(),
       fechaPago:
           json['fechaPago'] != null
@@ -44,6 +47,7 @@ class PrestamoDetalleModel extends PrestamoDetalleEntity {
           json['audFecha'] != null
               ? DateTime.tryParse(json['audFecha'].toString())
               : null,
+      transIdSAP_pago: json['transIdSAP_pago'],
     );
   }
 
@@ -61,10 +65,12 @@ class PrestamoDetalleModel extends PrestamoDetalleEntity {
       'montoPago': montoPago,
       'debe': debe,
       'haber': haber,
+      'haberAnterior': haberAnterior,
       'saldo': saldo,
       'fechaPago': fechaPago?.toIso8601String(),
       'audUsuario': audUsuario,
       'audFecha': audFecha?.toIso8601String(),
+      'transIdSAP_pago': transIdSAP_pago,
     };
   }
 }

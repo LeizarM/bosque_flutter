@@ -86,7 +86,7 @@ class _CampoDeshabilitado extends StatelessWidget {
       ),
       child: Text(
         texto,
-        style: TextStyle(color: esError ? cs.error : Theme.of(context).hintColor),
+        style: TextStyle(color: esError ? cs.error : cs.onSurfaceVariant),
       ),
     );
   }

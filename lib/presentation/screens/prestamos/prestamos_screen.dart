@@ -9,6 +9,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 // ── Widget imports ──────────────────────────────────────────────────────────
+import 'package:bosque_flutter/presentation/widgets/prestamos/pagos_asignacion_dialog.dart';
 import 'package:bosque_flutter/presentation/widgets/prestamos/prestamos_constants.dart';
 import 'package:bosque_flutter/presentation/widgets/prestamos/prestamos_app_bar.dart';
 import 'package:bosque_flutter/presentation/widgets/prestamos/prestamos_filter_bar.dart';
@@ -54,15 +55,36 @@ class _PrestamosScreenState extends ConsumerState<PrestamosScreen> {
 
   void _abrirAsignacion(BuildContext ctx, PrestamoEntity e) {
     final emp = ref.read(codEmpresaPrestamosProvider);
-    showPrestamoAsignacionDialog(
-      ctx,
-      modo: PrestamoDialogModo.asignacionSap,
-      audUsuarioI: _uid,
-      cabecera: e,
-    ).then((_) {
-      if (!mounted) return;
-      ref.read(prestamoProvider(emp).notifier).cargar();
-    });
+    final isPago = e.haber > 0;
+
+    if (isPago) {
+      showPagosAsignacionDialog(ctx, sapRecord: e, audUsuarioI: _uid).then((
+        msg,
+      ) {
+        if (!mounted) return;
+        if (msg != null && msg.isNotEmpty) {
+          ScaffoldMessenger.of(ctx).showSnackBar(
+            SnackBar(
+              content: Text(msg),
+              backgroundColor: Theme.of(ctx).colorScheme.primary,
+            ),
+          );
+        }
+        ref.read(prestamoProvider(emp).notifier).cargar();
+        ref.read(prestamoVigentesProvider(emp).notifier).cargar();
+      });
+    } else {
+      showPrestamoAsignacionDialog(
+        ctx,
+        modo: PrestamoDialogModo.asignacionSap,
+        audUsuarioI: _uid,
+        cabecera: e,
+      ).then((_) {
+        if (!mounted) return;
+        ref.read(prestamoProvider(emp).notifier).cargar();
+        ref.read(prestamoVigentesProvider(emp).notifier).cargar();
+      });
+    }
   }
 
   void _editar(BuildContext ctx, PrestamoEntity e) {
@@ -84,6 +106,7 @@ class _PrestamosScreenState extends ConsumerState<PrestamosScreen> {
     ).then((_) {
       if (!mounted) return;
       ref.read(prestamoProvider(emp).notifier).cargar();
+      ref.read(prestamoVigentesProvider(emp).notifier).cargar();
     });
   }
 
@@ -96,12 +119,23 @@ class _PrestamosScreenState extends ConsumerState<PrestamosScreen> {
     }
 
     final nombreAsignado = e.nombreEmpleadoAsignado ?? '';
-    if (nombreAsignado.toUpperCase().startsWith('VARIOS EMPLEADOS')) {
+    if (nombreAsignado.toUpperCase().startsWith('VARIOS')) {
       showModalBottomSheet(
         context: ctx,
         isScrollControlled: true,
         backgroundColor: Colors.transparent,
-        builder: (context) => PrestamosEmpleadosSheet(prestamo: e),
+        builder:
+            (context) => PrestamosEmpleadosSheet(
+              prestamo: e,
+              onEditar: (p) {
+                Navigator.pop(context); // Cerrar sheet
+                _editar(ctx, p);
+              },
+              onAnular: (p) {
+                Navigator.pop(context); // Cerrar sheet
+                _anularPrestamo(ctx, p);
+              },
+            ),
       );
     } else {
       showModalBottomSheet(
@@ -155,6 +189,8 @@ class _PrestamosScreenState extends ConsumerState<PrestamosScreen> {
                       ),
                     );
                   }
+                  ref.read(prestamoProvider(emp).notifier).cargar();
+                  ref.read(prestamoVigentesProvider(emp).notifier).cargar();
                 } catch (err) {
                   // El error ya se muestra a través del listener global de SnackBar
                 }
@@ -174,6 +210,8 @@ class _PrestamosScreenState extends ConsumerState<PrestamosScreen> {
   Widget build(BuildContext context) {
     final emp = ref.watch(codEmpresaPrestamosProvider);
     ref.listenMessages(prestamoProvider(emp), context);
+    ref.listenMessages(prestamoVigentesProvider(emp), context);
+
     ref.listen<PrestamoState>(prestamoProvider(emp), (prev, next) {
       if (!mounted) return;
       if (next.search.isEmpty && _searchCtrl.text.isNotEmpty) {
@@ -181,45 +219,106 @@ class _PrestamosScreenState extends ConsumerState<PrestamosScreen> {
       }
     });
 
-    final st = ref.watch(prestamoProvider(emp));
-    final ntf = ref.read(prestamoProvider(emp).notifier);
+    final stSAP = ref.watch(prestamoProvider(emp));
+    final ntfSAP = ref.read(prestamoProvider(emp).notifier);
+
+    final stVig = ref.watch(prestamoVigentesProvider(emp));
+    final ntfVig = ref.read(prestamoVigentesProvider(emp).notifier);
+
     final cs = Theme.of(context).colorScheme;
     final isDesktop = ResponsiveUtilsBosque.isDesktop(context);
 
-    return Scaffold(
-      backgroundColor: cs.surfaceContainerHighest.withValues(alpha: 0.15),
-      appBar: PrestamosAppBar(st: st, ntf: ntf),
-      body: Column(
-        children: [
-          PrestamosFilterBar(
-            st: st,
-            ntf: ntf,
-            searchCtrl: _searchCtrl,
-            onSearch: _onSearch,
+    return DefaultTabController(
+      length: 2,
+      child: Scaffold(
+        backgroundColor: cs.surfaceContainerHighest.withValues(alpha: 0.15),
+        appBar: PrestamosAppBar(
+          st: stSAP,
+          ntf: ntfSAP,
+          ntfVig: ntfVig,
+          bottom: TabBar(
+            labelColor: cs.onPrimary,
+            unselectedLabelColor: cs.onPrimary.withValues(alpha: 0.6),
+            indicatorColor: cs.onPrimary,
+            tabs: const [Tab(text: 'PENDIENTES SAP'), Tab(text: 'PRÉSTAMOS')],
           ),
-          Expanded(
-            child:
-                isDesktop
-                    ? PrestamosDesktopView(
-                      st: st,
-                      ntf: ntf,
-                      onAsignar: (e) => _abrirAsignacion(context, e),
-                      onVerDetalle: (e) => _verDetalle(context, e),
-                      onEditar: (e) => _editar(context, e),
-                      onAnular: (e) => _anularPrestamo(context, e),
-                      uid: _uid,
-                    )
-                    : PrestamosMobileView(
-                      st: st,
-                      ntf: ntf,
-                      onAsignar: (e) => _abrirAsignacion(context, e),
-                      onVerDetalle: (e) => _verDetalle(context, e),
-                      onEditar: (e) => _editar(context, e),
-                      onAnular: (e) => _anularPrestamo(context, e),
-                      uid: _uid,
-                    ),
-          ),
-        ],
+        ),
+        body: TabBarView(
+          children: [
+            // Tab 1: Bandeja SAP
+            Column(
+              children: [
+                PrestamosFilterBar(
+                  st: stSAP,
+                  ntf: ntfSAP,
+                  searchCtrl: _searchCtrl,
+                  onSearch: _onSearch,
+                  isVigentesTab: false,
+                ),
+                Expanded(
+                  child:
+                      isDesktop
+                          ? PrestamosDesktopView(
+                            st: stSAP,
+                            ntf: ntfSAP,
+                            onAsignar: (e) => _abrirAsignacion(context, e),
+                            onVerDetalle: (e) => _verDetalle(context, e),
+                            onEditar: (e) => _editar(context, e),
+                            onAnular: (e) => _anularPrestamo(context, e),
+                            uid: _uid,
+                          )
+                          : PrestamosMobileView(
+                            st: stSAP,
+                            ntf: ntfSAP,
+                            onAsignar: (e) => _abrirAsignacion(context, e),
+                            onVerDetalle: (e) => _verDetalle(context, e),
+                            onEditar: (e) => _editar(context, e),
+                            onAnular: (e) => _anularPrestamo(context, e),
+                            uid: _uid,
+                          ),
+                ),
+              ],
+            ),
+            // Tab 2: Vigentes
+            Column(
+              children: [
+                PrestamosFilterBar(
+                  st: stVig,
+                  ntf: ntfVig,
+                  searchCtrl: TextEditingController(),
+                  onSearch: (q) {
+                    ntfVig.cargar(search: q, pagina: 1);
+                  },
+                  isVigentesTab: true,
+                ),
+                Expanded(
+                  child:
+                      isDesktop
+                          ? PrestamosDesktopView(
+                            st: stVig,
+                            ntf: ntfVig,
+                            onAsignar: (e) => _abrirAsignacion(context, e),
+                            onVerDetalle: (e) => _verDetalle(context, e),
+                            onEditar: (e) => _editar(context, e),
+                            onAnular: (e) => _anularPrestamo(context, e),
+                            uid: _uid,
+                            isVigentesTab: true,
+                          )
+                          : PrestamosMobileView(
+                            st: stVig,
+                            ntf: ntfVig,
+                            onAsignar: (e) => _abrirAsignacion(context, e),
+                            onVerDetalle: (e) => _verDetalle(context, e),
+                            onEditar: (e) => _editar(context, e),
+                            onAnular: (e) => _anularPrestamo(context, e),
+                            uid: _uid,
+                            isVigentesTab: true,
+                          ),
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }

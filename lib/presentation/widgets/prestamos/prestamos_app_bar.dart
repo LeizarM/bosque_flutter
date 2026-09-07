@@ -9,11 +9,20 @@ import 'package:bosque_flutter/presentation/widgets/prestamos/prestamos_reportes
 class PrestamosAppBar extends ConsumerWidget implements PreferredSizeWidget {
   final PrestamoState st;
   final PrestamoNotifier ntf;
+  final PrestamoNotifier? ntfVig;
+  final PreferredSizeWidget? bottom;
 
-  const PrestamosAppBar({super.key, required this.st, required this.ntf});
+  const PrestamosAppBar({
+    super.key,
+    required this.st,
+    required this.ntf,
+    this.ntfVig,
+    this.bottom,
+  });
 
   @override
-  Size get preferredSize => const Size.fromHeight(kToolbarHeight);
+  Size get preferredSize =>
+      Size.fromHeight(kToolbarHeight + (bottom?.preferredSize.height ?? 0.0));
 
   @override
   Widget build(BuildContext ctx, WidgetRef ref) {
@@ -22,6 +31,7 @@ class PrestamosAppBar extends ConsumerWidget implements PreferredSizeWidget {
       backgroundColor: cs.primary,
       foregroundColor: cs.onPrimary,
       elevation: 0,
+      bottom: bottom,
       title: Row(
         children: [
           const Icon(Icons.account_balance_wallet_rounded, size: 20),
@@ -114,7 +124,10 @@ class PrestamosAppBar extends ConsumerWidget implements PreferredSizeWidget {
               duration: const Duration(milliseconds: 600),
               child: const Icon(Icons.refresh_rounded),
             ),
-            onPressed: () => ntf.cargar(pagina: 1),
+            onPressed: () {
+              ntf.cargar(pagina: 1);
+              ntfVig?.cargar(pagina: 1);
+            },
           ),
         ),
         const SizedBox(width: 4),

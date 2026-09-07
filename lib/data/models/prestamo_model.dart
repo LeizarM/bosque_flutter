@@ -57,6 +57,7 @@ class PrestamoModel {
   DateTime fechaAsiento;
   String numAsiento;
   String concepto;
+  String? observacion;
   String referencia;
   double debe;
   double haber;
@@ -68,8 +69,15 @@ class PrestamoModel {
   double? saldoPendiente;
   double? numCuotas;
   double? cuotaReferencia;
+  double? montoCuota; // Calculado por SQL: MONTO_FIJO => monto/nCuotas, CUOTAS => nCuotas
   String? fecIniPago;
   String? tipoPago;
+  String? tipoCalculo;
+
+  // Campos originales del préstamo para pagos
+  double? montoOriginalPrestamo;
+  String? fechaDesembolsoOriginal;
+  String? conceptoOriginal;
 
   // Params Auxiliares
   int? fila;
@@ -91,6 +99,7 @@ class PrestamoModel {
     required this.nombreCuenta,
     required this.fechaAsiento,
     required this.numAsiento,
+    this.observacion,
     required this.concepto,
     required this.referencia,
     required this.debe,
@@ -103,8 +112,13 @@ class PrestamoModel {
     this.saldoPendiente,
     this.numCuotas,
     this.cuotaReferencia,
+    this.montoCuota,
     this.fecIniPago,
     this.tipoPago,
+    this.tipoCalculo,
+    this.montoOriginalPrestamo,
+    this.fechaDesembolsoOriginal,
+    this.conceptoOriginal,
     this.fila,
     this.pagina,
     this.tamanoPagina,
@@ -129,7 +143,8 @@ class PrestamoModel {
             : DateTime.now(),
     numAsiento: json["numAsiento"] ?? '',
     concepto: json["concepto"] ?? '',
-    referencia: json["referencia"] ?? '',
+    observacion: json["observacion"]?.toString(),
+    referencia: json["referencia"] ?? json["referencia1"] ?? '',
     debe: json["debe"]?.toDouble() ?? 0.0,
     haber: json["haber"]?.toDouble() ?? 0.0,
     estadoAsignacion: json["estadoAsignacion"] ?? '',
@@ -139,9 +154,14 @@ class PrestamoModel {
     nombreEmpleadoAsignado: json["nombreEmpleadoAsignado"] ?? '',
     saldoPendiente: json["saldoPendiente"]?.toDouble() ?? 0.0,
     numCuotas: json["numCuotas"]?.toDouble() ?? 0.0,
-    cuotaReferencia: json["cuotaReferencia"]?.toDouble(),
-    fecIniPago: json["fecIniPago"]?.toString(),
-    tipoPago: json["tipoPago"]?.toString(),
+    cuotaReferencia: json["cuotaReferencia"]?.toDouble() ?? 0.0,
+    montoCuota: json["montoCuota"]?.toDouble(),
+    fecIniPago: json["fecIniPago"] ?? '',
+    tipoPago: json["tipoPago"] ?? '',
+    tipoCalculo: json["tipoCalculo"],
+    montoOriginalPrestamo: json["montoOriginalPrestamo"]?.toDouble(),
+    fechaDesembolsoOriginal: json["fechaDesembolsoOriginal"]?.toString(),
+    conceptoOriginal: json["conceptoOriginal"]?.toString(),
     fila: json["fila"] ?? 0,
     pagina: json["pagina"] ?? 0,
     tamanoPagina: json["tamanoPagina"] ?? 0,
@@ -164,6 +184,7 @@ class PrestamoModel {
         "${fechaAsiento.year.toString().padLeft(4, '0')}-${fechaAsiento.month.toString().padLeft(2, '0')}-${fechaAsiento.day.toString().padLeft(2, '0')}",
     "numAsiento": numAsiento,
     "concepto": concepto,
+    "observacion": observacion,
     "referencia": referencia,
     "debe": debe,
     "haber": haber,
@@ -175,8 +196,13 @@ class PrestamoModel {
     "saldoPendiente": saldoPendiente,
     "numCuotas": numCuotas,
     "cuotaReferencia": cuotaReferencia,
+    "montoCuota": montoCuota,
     "fecIniPago": fecIniPago,
     "tipoPago": tipoPago,
+    "tipoCalculo": tipoCalculo,
+    "montoOriginalPrestamo": montoOriginalPrestamo,
+    "fechaDesembolsoOriginal": fechaDesembolsoOriginal,
+    "conceptoOriginal": conceptoOriginal,
     "fila": fila,
     "pagina": pagina,
     "tamanoPagina": tamanoPagina,
@@ -198,6 +224,7 @@ class PrestamoModel {
     fechaAsiento: fechaAsiento,
     numAsiento: numAsiento,
     concepto: concepto,
+    observacion: observacion,
     referencia: referencia,
     debe: debe,
     haber: haber,
@@ -209,8 +236,13 @@ class PrestamoModel {
     saldoPendiente: saldoPendiente,
     numCuotas: numCuotas,
     cuotaReferencia: cuotaReferencia,
+    montoCuota: montoCuota,
     fecIniPago: fecIniPago,
     tipoPago: tipoPago,
+    tipoCalculo: tipoCalculo,
+    montoOriginalPrestamo: montoOriginalPrestamo,
+    fechaDesembolsoOriginal: fechaDesembolsoOriginal,
+    conceptoOriginal: conceptoOriginal,
     fila: fila,
     pagina: pagina,
     tamanoPagina: tamanoPagina,
@@ -232,6 +264,7 @@ class PrestamoModel {
     fechaAsiento: entity.fechaAsiento,
     numAsiento: entity.numAsiento,
     concepto: entity.concepto,
+    observacion: entity.observacion,
     referencia: entity.referencia,
     debe: entity.debe,
     haber: entity.haber,
@@ -243,8 +276,10 @@ class PrestamoModel {
     saldoPendiente: entity.saldoPendiente,
     numCuotas: entity.numCuotas,
     cuotaReferencia: entity.cuotaReferencia,
+    montoCuota: entity.montoCuota,
     fecIniPago: entity.fecIniPago,
     tipoPago: entity.tipoPago,
+    tipoCalculo: entity.tipoCalculo,
     fila: entity.fila,
     pagina: entity.pagina,
     tamanoPagina: entity.tamanoPagina,

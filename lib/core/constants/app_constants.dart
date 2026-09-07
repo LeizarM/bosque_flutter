@@ -554,8 +554,19 @@ class AppConstants {
   // RUTAS MODULO: PRESTAMOS (PERSONAL)
   // ═══════════════════════════════════════════════════════════════════════════════
   static const String prestamoListarSAP = '/prestamos/listarPrestamosSAP';
+  static const String prestamoListarVigentes = '/prestamos/listarVigentes';
+  static const String prestamoListarVigentesPorEmpleado =
+      '/prestamos/listarVigentesPorEmpleado';
+  static const String prestamoTotalPrestamos = '/prestamos/totalPrestamos';
+  static const String prestamoTotalPrestamosSAP =
+      '/prestamos/totalPrestamosSAP';
+  static const String prestamoAsignarPagos = '/prestamos/asignarPagos';
   static const String prestamoAsignarMasivo =
       '/prestamos/asignarPrestamosMasivo';
+  static const String prestamoAsignarPagosMasivo =
+      '/prestamos/asignar-pagos-masivo';
+  static const String prestamoRevertirPagoMasivo =
+      '/prestamos/revertirPagoMasivo';
   static const String prestamoEditarMasivo = '/prestamos/editarPrestamoMasivo';
   static const String prestamoActualizarDetalle =
       '/prestamos/actualizarDetalle';
@@ -680,6 +691,10 @@ class AppConstants {
   static const String rolSabRefrescarPermisos = '$_rolSab/refrescar-permisos';
   static const String rolSabObtenerDesfasesPermiso =
       '$_rolSab/obtener-desfases-permiso';
+
+  // El biométrico (tbio_) pisa al rol: excusa por cuota de horas cumplida.
+  static const String rolSabRefrescarExcusasHorario =
+      '$_rolSab/refrescar-excusas-horario';
 
   // Su Equipo: lo que usa un jefe para decidir quien de su gente viene.
   // mi-equipo y programar NO llevan identidad en el body: el servidor la saca
@@ -1061,8 +1076,7 @@ class AppConstants {
       '/talonarios/listar-tipos-disponibles';
 
   // Talonarios
-  static const String talRegistrarTalonario =
-      '/talonarios/registrar-talonario';
+  static const String talRegistrarTalonario = '/talonarios/registrar-talonario';
   static const String talEliminarTalonario = '/talonarios/eliminar-talonario';
   static const String talObtenerTalonario = '/talonarios/obtener-talonario';
   static const String talListarTalonarios = '/talonarios/listar-talonarios';
@@ -1093,17 +1107,21 @@ class AppConstants {
   // Todos POST. Los "registrar*" van con acc ('I'/'U'/'D') como query param
   // en el propio endpoint (ver BiometricoImpl) porque el backend lo recibe
   // por @RequestParam, no en el body.
-  static const String biometricoListarMarcaciones = '/biometrico/marcaciones/listar';
+  static const String biometricoListarMarcaciones =
+      '/biometrico/marcaciones/listar';
   static const String biometricoImportarMarcacionesMensual =
       '/biometrico/marcaciones/importar-mensual';
   static const String biometricoListarMarcacionesAdicionales =
       '/biometrico/marcaciones-adicionales/listar';
   static const String biometricoRegistrarMarcacionAdicional =
       '/biometrico/marcaciones-adicionales/registrar';
-  static const String biometricoListarEmpleados = '/biometrico/empleados/listar';
-  static const String biometricoRegistrarEmpleado = '/biometrico/empleados/registrar';
+  static const String biometricoListarEmpleados =
+      '/biometrico/empleados/listar';
+  static const String biometricoRegistrarEmpleado =
+      '/biometrico/empleados/registrar';
   static const String biometricoListarHorarios = '/biometrico/horarios/listar';
-  static const String biometricoRegistrarHorario = '/biometrico/horarios/registrar';
+  static const String biometricoRegistrarHorario =
+      '/biometrico/horarios/registrar';
   static const String biometricoListarHorariosSemanales =
       '/biometrico/horarios-semanales/listar';
   static const String biometricoRegistrarHorarioSemanal =
@@ -1145,6 +1163,13 @@ class AppConstants {
   static const String tarRegistrarTareaConCargos =
       '/tareas-rutinarias/registrar-tarea-rutinaria-con-cargos';
 
+  // Admin "Tareas Rutinarias por Cargo" (reemplaza dlgTarFunXCargo de
+  // WizardEstOrg.java — solo el lado de Tareas Rutinarias, no FUNCIONES).
+  static const String tarRegistrarTareaPorCargoAdmin =
+      '/tareas-rutinarias/admin/registrar-tarea-rutinaria-por-cargo';
+  static const String tarObtenerTareasPorCargo =
+      '/tareas-rutinarias/admin/obtener-tareas-rutinarias-por-cargo';
+
   // Documentación (catálogo)
   static const String tarRegistrarDocumentacion =
       '/tareas-rutinarias/registrar-documentacion';
@@ -1166,8 +1191,7 @@ class AppConstants {
       '/tareas-rutinarias/registrar-llegada';
   static const String tarEliminarLlegada =
       '/tareas-rutinarias/eliminar-llegada';
-  static const String tarObtenerLlegada =
-      '/tareas-rutinarias/obtener-llegada';
+  static const String tarObtenerLlegada = '/tareas-rutinarias/obtener-llegada';
 
   // Traspaso de movimiento de caja
   static const String tarRegistrarTraspasoMovCaja =
@@ -1284,8 +1308,82 @@ class AppConstants {
       '/tareas-rutinarias/obtener-coche-llegadas';
 
   // Coche (catálogo de vehículos)
-  static const String tarRegistrarCoche =
-      '/tareas-rutinarias/registrar-coche';
+  static const String tarRegistrarCoche = '/tareas-rutinarias/registrar-coche';
   static const String tarEliminarCoche = '/tareas-rutinarias/eliminar-coche';
   static const String tarObtenerCoche = '/tareas-rutinarias/obtener-coche';
+
+  // Flujo especial: Coches del día (idATR=6) — p_coches_*, no CRUD estándar.
+  static const String tarCochesListarDelDia =
+      '/tareas-rutinarias/coches/listar-del-dia';
+  static const String tarCochesMarcarLlegada =
+      '/tareas-rutinarias/coches/marcar-llegada';
+
+  // Flujo especial: Caja Fuerte (idATR=4) — p_cajaFuerte_registrar.
+  static const String tarCajaFuerteRegistrar =
+      '/tareas-rutinarias/caja-fuerte/registrar';
+
+  // Flujo especial: Arqueo de Caja (idATR=2) — p_arqueo_registrar.
+  static const String tarArqueoCajaRegistrar =
+      '/tareas-rutinarias/arqueo-caja/registrar';
+  // Contexto real (no manual): saldo SAP por caja, tipo de cambio hoy/ayer,
+  // arqueo anterior — ver ACCIONes 'A'/'T'/'H' de p_list_tac_SucXMovCaja y
+  // p_list_tac_ArqueoCajaSucursales.
+  static const String tarArqueoCajaSaldoSap =
+      '/tareas-rutinarias/arqueo-caja/saldo-sap';
+  static const String tarArqueoCajaTipoCambio =
+      '/tareas-rutinarias/arqueo-caja/tipo-cambio';
+  static const String tarArqueoCajaAnterior =
+      '/tareas-rutinarias/arqueo-caja/anterior';
+
+  // Flujo especial: Caja Chica (idATR=7) — p_cajaChica_*.
+  static const String tarCajaChicaListarDelLote =
+      '/tareas-rutinarias/caja-chica/listar-del-lote';
+  static const String tarCajaChicaRegistrarEgreso =
+      '/tareas-rutinarias/caja-chica/registrar-egreso';
+  static const String tarCajaChicaFinalizar =
+      '/tareas-rutinarias/caja-chica/finalizar';
+  // "Ver Cajas Chicas" del legacy — histórico de lotes por sucursal.
+  static const String tarCajaChicaHistorialLotes =
+      '/tareas-rutinarias/caja-chica/historial-lotes';
+  // Picker "Empleado Destino" — búsqueda real por nombre+cargo (el legacy
+  // usa un <p:selectOneMenu filter="true">, no un id numérico crudo).
+  static const String tarCajaChicaBuscarEmpleados =
+      '/tareas-rutinarias/caja-chica/buscar-empleados';
+
+  // Flujo especial: Cierre de Operaciones (idATR=3) — p_cierreOperaciones_confirmarTraspasos.
+  // El listado reutiliza tarObtenerTraspasoMovCaja (filtrado por fecha,
+  // ahora elegible con un selector — antes hardcodeado a hoy).
+  static const String tarCierreOperacionesConfirmar =
+      '/tareas-rutinarias/cierre-operaciones/confirmar';
+
+  // Flujo especial: Verificar Cierre de Operaciones (idATR=5) — el paso
+  // supervisor. Los paneles de arqueos/llegadas de HOY ahora vienen
+  // enriquecidos (empleado/sucursal/tarea) y soportan "mostrar otras
+  // sucursales" — antes reutilizaban tarObtenerArqueoCajaSucursales/
+  // tarObtenerLlegada crudos, sin esos datos.
+  static const String tarVerificarCierreArqueosDeHoy =
+      '/tareas-rutinarias/verificar-cierre/arqueos-de-hoy';
+  static const String tarVerificarCierreLlegadasDeHoy =
+      '/tareas-rutinarias/verificar-cierre/llegadas-de-hoy';
+  static const String tarVerificarCierreMarcarArqueoRevisado =
+      '/tareas-rutinarias/verificar-cierre/marcar-arqueo-revisado';
+  static const String tarVerificarCierreMarcarLlegadaVerificada =
+      '/tareas-rutinarias/verificar-cierre/marcar-llegada-verificada';
+  static const String tarVerificarCierreConfirmar =
+      '/tareas-rutinarias/verificar-cierre/confirmar';
+
+  // ── Dias No Laborables (ABM admin) ──────────────────────────────────────
+  // Reemplaza al modulo JSF legacy tbDiaNoLaborable. Backend: bloque
+  // /dias-no-laborables/* en DiaNoLaborableAdminController. No confundir con
+  // `feriados` (linea 532) ni `rolSabObtenerDiasNoLaborables` (linea 635),
+  // que son lecturas de otros modulos.
+  static const String _diasNoLab = '/dias-no-laborables';
+  static const String diasNoLabRegistrar =
+      '$_diasNoLab/registrar-dia-no-laborable';
+  static const String diasNoLabEliminar =
+      '$_diasNoLab/eliminar-dia-no-laborable';
+  static const String diasNoLabObtener =
+      '$_diasNoLab/obtener-dias-no-laborables';
+  static const String diasNoLabObtenerSucursales =
+      '$_diasNoLab/obtener-sucursales-dia-no-laborable';
 }

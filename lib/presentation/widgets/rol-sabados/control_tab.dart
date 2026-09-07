@@ -28,6 +28,8 @@ class ControlTab extends ConsumerWidget {
         const SizedBox(height: Esp.m),
         _Permisos(idRol: idRol),
         const SizedBox(height: Esp.m),
+        _ExcusasHorario(idRol: idRol),
+        const SizedBox(height: Esp.m),
         _Programaciones(idRol: idRol),
         const SizedBox(height: Esp.m),
         _Cumples(idRol: idRol),
@@ -421,6 +423,122 @@ class _PermisosState extends ConsumerState<_Permisos> {
           .read(rolSabadosAccionesProvider)
           .refrescarPermisos(idRol: widget.idRol),
       exito: 'Vacaciones y permisos aplicados a la grilla.',
+    );
+    if (mounted) setState(() => _aplicando = false);
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+
+/// El biométrico (tbio_) pisa al rol de sábados: quién ya cumplió su cuota
+/// semanal de horas por un horario rotativo (p.ej. "Horario Extendido") y por
+/// eso el sábado que le tocaba por la rotación A/B se excusa solo.
+class _ExcusasHorario extends ConsumerStatefulWidget {
+  const _ExcusasHorario({required this.idRol});
+  final int idRol;
+
+  @override
+  ConsumerState<_ExcusasHorario> createState() => _ExcusasHorarioState();
+}
+
+class _ExcusasHorarioState extends ConsumerState<_ExcusasHorario> {
+  bool _aplicando = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final datos = ref.watch(excusasHorarioProvider(widget.idRol));
+
+    return _Bloque(
+      icono: Icons.schedule_outlined,
+      titulo: 'Excusas por horario biométrico',
+      explicacion:
+          'Gente con horario rotativo (Biométrico) que ya cumplió su cuota '
+          'semanal de Lunes a Viernes: ese sábado que le tocaba por rotación '
+          'sobra.',
+      accion: datos.maybeWhen(
+        data:
+            (lista) =>
+                lista.isEmpty
+                    ? const SizedBox.shrink()
+                    : TextButton.icon(
+                      onPressed: _aplicando ? null : _aplicar,
+                      icon:
+                          _aplicando
+                              ? const SizedBox(
+                                width: 14,
+                                height: 14,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
+                              )
+                              : const Icon(Icons.sync, size: 16),
+                      label: const Text('Aplicar'),
+                    ),
+        orElse: () => const SizedBox.shrink(),
+      ),
+      hijo: datos.when(
+        loading: _cargando,
+        error: (e, _) => _error(context, e),
+        data: (lista) {
+          if (lista.isEmpty) {
+            return _todoBien(
+              context,
+              'Nadie tiene un horario rotativo que ya cubra un sábado próximo.',
+            );
+          }
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                '${lista.length} sábado(s) para excusar.',
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: Theme.of(context).colorScheme.error,
+                  fontWeight: Peso.titulo,
+                ),
+              ),
+              const SizedBox(height: Esp.s),
+              for (final d in lista.take(25))
+                ListTile(
+                  dense: true,
+                  contentPadding: EdgeInsets.zero,
+                  leading: Icon(
+                    Icons.schedule,
+                    size: 18,
+                    color: Theme.of(context).colorScheme.error,
+                  ),
+                  title: Text(d.nombreEmpleado),
+                  subtitle: Text(
+                    '${fechaCorta(d.fecha)} · '
+                    '${d.minutosSemana.toStringAsFixed(0)} de '
+                    '${d.minutosCuota.toStringAsFixed(0)} min cumplidos'
+                    '${d.aplicado ? ' · aplicado' : ''}'
+                    '${d.error.isEmpty ? '' : ' · ${d.error}'}',
+                  ),
+                  trailing: const Etiqueta(texto: 'E', tono: TonoEtiqueta.aviso),
+                ),
+              if (lista.length > 25)
+                Padding(
+                  padding: const EdgeInsets.only(top: 8),
+                  child: Text(
+                    'Se muestran 25 de ${lista.length}.',
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  Future<void> _aplicar() async {
+    setState(() => _aplicando = true);
+    await ejecutarAccion(
+      context,
+      () => ref
+          .read(rolSabadosAccionesProvider)
+          .aplicarExcusasHorario(idRol: widget.idRol),
+      exito: 'Sábados excusados por horario biométrico.',
     );
     if (mounted) setState(() => _aplicando = false);
   }

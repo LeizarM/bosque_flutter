@@ -7,6 +7,7 @@ import 'package:bosque_flutter/domain/entities/celda_turno_entity.dart';
 import 'package:bosque_flutter/domain/entities/convocatoria_entity.dart';
 import 'package:bosque_flutter/domain/entities/cumple_sabado_entity.dart';
 import 'package:bosque_flutter/domain/entities/estado_turno_entity.dart';
+import 'package:bosque_flutter/domain/entities/excusa_horario_entity.dart';
 import 'package:bosque_flutter/domain/entities/intervencion_entity.dart';
 import 'package:bosque_flutter/domain/entities/mi_equipo_entity.dart';
 import 'package:bosque_flutter/domain/entities/participante_turno_entity.dart';
@@ -392,6 +393,23 @@ class RolSabadosAcciones {
     _refrescar(idRol);
   }
 
+  // ── el biométrico pisa al rol ─────────────────────────────────────────
+
+  /// Aplica de verdad las excusas por horario (no `soloInformar`). La
+  /// previsualización vive en [excusasHorarioProvider], que llama al mismo
+  /// endpoint con `soloInformar=true` y no pasa por acá.
+  Future<List<ExcusaHorarioEntity>> aplicarExcusasHorario({
+    required int idRol,
+  }) async {
+    final resultado = await _repo.refrescarExcusasHorario(
+      idRol: idRol,
+      audUsuario: await _usuario(),
+    );
+    _ref.invalidate(excusasHorarioProvider(idRol));
+    _refrescar(idRol);
+    return resultado;
+  }
+
   // ── convocatoria ──────────────────────────────────────────────────────
 
   Future<void> convocar({
@@ -587,6 +605,50 @@ final automatizacionProvider = FutureProvider.autoDispose
 final desfasesPermisoProvider = FutureProvider.autoDispose
     .family<List<PermisoSabadoEntity>, int>((ref, idRol) async {
       return ref.watch(rolSabadosRepositoryProvider).getDesfasesPermiso(idRol);
+    });
+
+/// Previsualización de a quién le tocaría excusar por horario biométrico —
+/// llama al endpoint real con `soloInformar=true`, no escribe nada.
+final excusasHorarioProvider = FutureProvider.autoDispose
+    .family<List<ExcusaHorarioEntity>, int>((ref, idRol) async {
+      return ref
+          .watch(rolSabadosRepositoryProvider)
+          .refrescarExcusasHorario(
+            idRol: idRol,
+            soloInformar: true,
+            audUsuario: 0, // sólo lee: el backend no lo usa en modo INFORMAR
+          );
+    });
+
+/// **Dispara la excusa automática por horario biométrico apenas se entra al
+/// módulo — nada de job programado ni de botón.** Pedido explícito del
+/// usuario (04/09/2026): el primer intento fue un `@Scheduled` de madrugada
+/// en el backend, y lo pidió sacar porque no quería depender de que el
+/// servidor esté prendido a esa hora ni de esperar a otro día para probarlo
+/// — "que sea en cuanto entre al módulo, ese job no es necesario".
+///
+/// `RolSabadosScreen` lo observa una vez por `idRol`, apenas hay uno
+/// seleccionado. Se apoya en la MISMA regla que ya usan
+/// [excusasHorarioProvider]/[RolSabadosAcciones.aplicarExcusasHorario]
+/// (`ExcusaHorarioService.calcular`, del lado del backend) — no hay ninguna
+/// decisión nueva acá, sólo un disparador distinto.
+///
+/// **Por qué atrapa el error y no deja que se propague.** No todo el que abre
+/// la pantalla es RR.HH. (el endpoint exige `ROLE_ADM` o estar en
+/// `trs_Rrhh`), y aunque lo fuera, esto es un efecto de fondo que nadie pidió
+/// mirando la pantalla: un 403 puntual, o la red, no tienen por qué
+/// interrumpirle la grilla a alguien que sólo la vino a mirar. Por eso este
+/// provider nunca se `watch`ea con `.when()` en ningún lado — nada muestra su
+/// error ni su carga.
+final aplicarExcusasHorarioAlEntrarProvider = FutureProvider.autoDispose
+    .family<void, int>((ref, idRol) async {
+      try {
+        await ref
+            .read(rolSabadosAccionesProvider)
+            .aplicarExcusasHorario(idRol: idRol);
+      } catch (_) {
+        // Silencioso a propósito — ver el javadoc de arriba.
+      }
     });
 
 /// La lista nominal de un evento. Se pide por sábado, no por rol.

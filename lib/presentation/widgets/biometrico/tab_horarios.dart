@@ -183,6 +183,7 @@ class _SeccionPlantillas extends ConsumerWidget {
                         TextField(
                           controller: nombreCtrl,
                           decoration: const InputDecoration(labelText: 'Nombre'),
+                          onChanged: (_) => setState(() {}),
                         ),
                         const SizedBox(height: Esp.m),
                         Row(
@@ -398,40 +399,44 @@ class _SeccionSemanales extends ConsumerWidget {
     final ok = await showDialog<bool>(
       context: context,
       builder:
-          (c) => AlertDialog(
-            title: const Text('Nuevo horario semanal'),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextField(
-                  controller: nombreCtrl,
-                  autofocus: true,
-                  decoration: const InputDecoration(labelText: 'Nombre'),
-                ),
-                const SizedBox(height: Esp.m),
-                TextField(
-                  controller: motivoCtrl,
-                  maxLines: 2,
-                  decoration: const InputDecoration(
-                    labelText: 'Motivo',
-                    hintText: 'Por qué se crea este horario semanal',
+          (c) => StatefulBuilder(
+            builder:
+                (c, setState) => AlertDialog(
+                  title: const Text('Nuevo horario semanal'),
+                  content: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      TextField(
+                        controller: nombreCtrl,
+                        autofocus: true,
+                        decoration: const InputDecoration(labelText: 'Nombre'),
+                        onChanged: (_) => setState(() {}),
+                      ),
+                      const SizedBox(height: Esp.m),
+                      TextField(
+                        controller: motivoCtrl,
+                        maxLines: 2,
+                        decoration: const InputDecoration(
+                          labelText: 'Motivo',
+                          hintText: 'Por qué se crea este horario semanal',
+                        ),
+                      ),
+                    ],
                   ),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(c, false),
+                      child: const Text('Cancelar'),
+                    ),
+                    FilledButton(
+                      onPressed:
+                          nombreCtrl.text.trim().isEmpty
+                              ? null
+                              : () => Navigator.pop(c, true),
+                      child: const Text('Crear'),
+                    ),
+                  ],
                 ),
-              ],
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(c, false),
-                child: const Text('Cancelar'),
-              ),
-              FilledButton(
-                onPressed:
-                    nombreCtrl.text.trim().isEmpty
-                        ? null
-                        : () => Navigator.pop(c, true),
-                child: const Text('Crear'),
-              ),
-            ],
           ),
     );
     if (ok != true || !context.mounted) return;
@@ -485,40 +490,44 @@ class _SeccionSemanales extends ConsumerWidget {
     final ok = await showDialog<bool>(
       context: context,
       builder:
-          (c) => AlertDialog(
-            title: const Text('Renombrar horario semanal'),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextField(
-                  controller: nombreCtrl,
-                  autofocus: true,
-                  decoration: const InputDecoration(labelText: 'Nombre'),
-                ),
-                const SizedBox(height: Esp.m),
-                TextField(
-                  controller: motivoCtrl,
-                  maxLines: 2,
-                  decoration: const InputDecoration(
-                    labelText: 'Motivo',
-                    hintText: 'Por qué se renombra — queda en el historial',
+          (c) => StatefulBuilder(
+            builder:
+                (c, setState) => AlertDialog(
+                  title: const Text('Renombrar horario semanal'),
+                  content: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      TextField(
+                        controller: nombreCtrl,
+                        autofocus: true,
+                        decoration: const InputDecoration(labelText: 'Nombre'),
+                        onChanged: (_) => setState(() {}),
+                      ),
+                      const SizedBox(height: Esp.m),
+                      TextField(
+                        controller: motivoCtrl,
+                        maxLines: 2,
+                        decoration: const InputDecoration(
+                          labelText: 'Motivo',
+                          hintText: 'Por qué se renombra — queda en el historial',
+                        ),
+                      ),
+                    ],
                   ),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(c, false),
+                      child: const Text('Cancelar'),
+                    ),
+                    FilledButton(
+                      onPressed:
+                          nombreCtrl.text.trim().isEmpty
+                              ? null
+                              : () => Navigator.pop(c, true),
+                      child: const Text('Guardar'),
+                    ),
+                  ],
                 ),
-              ],
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(c, false),
-                child: const Text('Cancelar'),
-              ),
-              FilledButton(
-                onPressed:
-                    nombreCtrl.text.trim().isEmpty
-                        ? null
-                        : () => Navigator.pop(c, true),
-                child: const Text('Guardar'),
-              ),
-            ],
           ),
     );
     if (ok != true || !context.mounted) return;
@@ -786,7 +795,12 @@ class _AsignacionesDelEmpleado extends ConsumerWidget {
                     data: (semanales) =>
                         semanales.isEmpty
                             ? null
-                            : () => _asignarNuevo(context, ref, semanales),
+                            : () => _asignarNuevo(
+                              context,
+                              ref,
+                              semanales,
+                              async.valueOrNull ?? [],
+                            ),
                     orElse: () => null,
                   ),
             ),
@@ -928,12 +942,41 @@ class _AsignacionesDelEmpleado extends ConsumerWidget {
     BuildContext context,
     WidgetRef ref,
     List<BioHrSemanalEntity> semanales,
+    List<BioHrEmpleadoEntity> actuales,
   ) async {
     final resultado = await showDialog<_HorarioElegido>(
       context: context,
       builder: (c) => _DialogoAsignarHorario(semanales: semanales),
     );
     if (resultado == null || !context.mounted) return;
+
+    // El mismo horario semanal ya está en el historial de este empleado
+    // (p.ej. volvió a "ADM CONT 1" después de un tramo con otro horario) —
+    // no es necesariamente un error, es un caso legítimo (Edwin Morales:
+    // ADM CONT 1 → Horario Extendido → ADM CONT 1 de nuevo), pero también es
+    // exactamente la situación en la que alguien que en realidad quería
+    // CORREGIR la fecha de una fila existente termina creando una fila
+    // nueva y duplicada por usar "Asignar" en vez de "Editar". Un aviso, no
+    // un bloqueo — igual que el resto de los duplicados de este módulo
+    // (Plantillas de turno, Horarios semanales).
+    final duplicado =
+        actuales
+            .where((a) => a.idHrSemanal == resultado.semanal.idHrSemanal)
+            .firstOrNull;
+    if (duplicado != null) {
+      final inactivo = duplicado.inicio == null || duplicado.inicio!.year <= 2000;
+      final seguir = await confirmar(
+        context,
+        titulo: 'Horario ya asignado',
+        mensaje:
+            'Este empleado ya tiene una asignación de "${resultado.semanal.nombre}" '
+            '(${inactivo ? 'inactiva' : 'vigente desde ${fechaCorta(duplicado.inicio!)}'}). '
+            'Si sólo querés cambiar la fecha, usá "Editar" en esa fila del historial '
+            'en vez de crear una nueva. ¿Crear esta asignación de todas formas?',
+        accion: 'Asignar igual',
+      );
+      if (!seguir || !context.mounted) return;
+    }
 
     try {
       await ref.read(biometricoRepositoryProvider).registrarHorarioEmpleado({

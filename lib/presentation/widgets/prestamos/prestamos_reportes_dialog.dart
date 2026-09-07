@@ -258,6 +258,7 @@ class _ReportesPrestamosDialogState
                 ),
                 popupProps: PopupProps.menu(
                   showSearchBox: true,
+                  isFilterOnline: true,
                   searchDelay: const Duration(milliseconds: 300),
                   searchFieldProps: TextFieldProps(
                     decoration: InputDecoration(
@@ -273,6 +274,17 @@ class _ReportesPrestamosDialogState
                       (context, searchEntry) => const Center(
                         child: Text('No se encontraron empleados'),
                       ),
+                  itemBuilder: (ctx, item, isSelected) {
+                    return ListTile(
+                      title: Text(
+                        item.persona.datoPersona ?? '',
+                        style: const TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    );
+                  },
                 ),
               ),
             ],

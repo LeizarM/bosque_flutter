@@ -9,7 +9,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class PrestamosEmpleadosSheet extends ConsumerStatefulWidget {
   final PrestamoEntity prestamo;
-  const PrestamosEmpleadosSheet({super.key, required this.prestamo});
+  final Function(PrestamoEntity)? onEditar;
+  final Function(PrestamoEntity)? onAnular;
+  const PrestamosEmpleadosSheet({
+    super.key,
+    required this.prestamo,
+    this.onEditar,
+    this.onAnular,
+  });
   @override
   ConsumerState<PrestamosEmpleadosSheet> createState() =>
       _PrestamosEmpleadosSheetState();
@@ -56,7 +63,9 @@ class _PrestamosEmpleadosSheetState
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Empleados Asignados',
+                            p.haber > 0
+                                ? 'Préstamos Vinculados'
+                                : 'Empleados Asignados',
                             style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.bold,
@@ -168,27 +177,53 @@ class _PrestamosEmpleadosSheetState
                                 ),
                               ),
                               const SizedBox(width: 8),
-                              Icon(
-                                Icons.chevron_right_rounded,
-                                color: cs.onSurface.withValues(alpha: 0.3),
+                              // VER DETALLE
+                              IconButton(
+                                icon: const Icon(Icons.remove_red_eye_rounded, size: 18),
+                                tooltip: 'Ver Detalle',
+                                onPressed: () {
+                                  showModalBottomSheet(
+                                    context: ctx,
+                                    isScrollControlled: true,
+                                    backgroundColor: Colors.transparent,
+                                    constraints: BoxConstraints(
+                                      maxWidth:
+                                          ResponsiveUtilsBosque.isDesktop(ctx)
+                                              ? 800
+                                              : double.infinity,
+                                    ),
+                                    builder:
+                                        (context) =>
+                                            PrestamosDetalleSheet(prestamo: e),
+                                  );
+                                },
                               ),
+                              if (widget.onEditar != null && e.estadoPrestamo != 'ANU' && e.estadoPrestamo != 'CAN' && e.haber == 0)
+                                IconButton(
+                                  icon: const Icon(Icons.edit_rounded, size: 18),
+                                  tooltip: 'Editar Préstamo Individual',
+                                  onPressed: () => widget.onEditar!(e),
+                                ),
+                              if (widget.onAnular != null && e.estadoPrestamo == 'PEN' && e.haber == 0)
+                                IconButton(
+                                  icon: const Icon(Icons.cancel_rounded, size: 18, color: Colors.red),
+                                  tooltip: 'Anular Préstamo Individual',
+                                  onPressed: () => widget.onAnular!(e),
+                                ),
                             ],
                           ),
                           onTap: () {
-                            // Abrir detalle (amortización) del empleado seleccionado
                             showModalBottomSheet(
                               context: ctx,
                               isScrollControlled: true,
                               backgroundColor: Colors.transparent,
                               constraints: BoxConstraints(
-                                maxWidth:
-                                    ResponsiveUtilsBosque.isDesktop(ctx)
-                                        ? 800
-                                        : double.infinity,
+                                maxWidth: ResponsiveUtilsBosque.isDesktop(ctx)
+                                    ? 800
+                                    : double.infinity,
                               ),
-                              builder:
-                                  (context) =>
-                                      PrestamosDetalleSheet(prestamo: e),
+                              builder: (context) =>
+                                  PrestamosDetalleSheet(prestamo: e),
                             );
                           },
                         );

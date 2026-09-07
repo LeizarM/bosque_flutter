@@ -126,6 +126,14 @@ class _RolSabadosScreenState extends ConsumerState<RolSabadosScreen>
   Widget build(BuildContext context) {
     final idRol = ref.watch(rolSeleccionadoProvider);
 
+    // El biométrico pisa al rol, EN CUANTO se entra al módulo — sin job de
+    // madrugada ni botón. `aplicarExcusasHorarioAlEntrarProvider` cachea por
+    // `idRol` (es `autoDispose.family`), así que esto no reintenta la
+    // escritura en cada rebuild de esta pantalla; sólo la primera vez que
+    // hay un rol seleccionado. No se lee su valor ni su error a propósito —
+    // ver el javadoc del provider.
+    if (idRol != null) ref.watch(aplicarExcusasHorarioAlEntrarProvider(idRol));
+
     // `valueOrNull` y no un `when`: mientras el permiso viaja, la pantalla se
     // arma con las cuatro de siempre y la quinta entra sola al llegar.
     final equipo = ref.watch(miEquipoProvider).valueOrNull;

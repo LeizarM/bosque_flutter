@@ -13,7 +13,38 @@ abstract class PrestamoRepository {
     String? fechaDesde,
     String? fechaHasta,
     String? estadoFiltro,
+    int? codEmpleado,
   );
+
+  Future<List<PrestamoEntity>> getPrestamosVigentes(
+    int pagina,
+    int tamanoPagina,
+    int? codEmpresa,
+    String? search,
+    String? fechaDesde,
+    String? fechaHasta,
+    String? estadoFiltro,
+    int? codEmpleado,
+  );
+
+  Future<List<PrestamoEntity>> getPrestamosVigentesPorEmpleado(
+    int? codEmpresa,
+    String? search,
+  );
+
+  Future<double> getTotalPrestamos(
+    int? codEmpresa,
+    String? fechaDesde,
+    String? fechaHasta,
+  );
+
+  Future<double> getTotalPrestamosSAP(
+    int? codEmpresa,
+    String? fechaDesde,
+    String? fechaHasta,
+  );
+
+  Future<PrestamoResponse> asignarPagos(List<PrestamoDetalleEntity> pagos);
 
   Future<PrestamoResponse> asignarPrestamosMasivo({
     required PrestamoEntity sapRecord,
@@ -24,6 +55,12 @@ abstract class PrestamoRepository {
     required String tipoPago,
     int forzar = 0,
     String? xmlCuotas,
+    String? tipoCalculo,
+  });
+
+  Future<PrestamoResponse> asignarPagosMasivo({
+    required String xmlPagos,
+    required int audUsuario,
   });
 
   Future<PrestamoResponse> crearPrestamoManualMasivo({
@@ -37,6 +74,7 @@ abstract class PrestamoRepository {
     required double numCuotas,
     required int audUsuarioI,
     required String tipoPago,
+    String? tipoCalculo,
   });
 
   Future<List<PrestamoDetalleEntity>> listarDetallesPrestamo(
@@ -81,6 +119,11 @@ abstract class PrestamoRepository {
     required int audUsuario,
   });
 
+  Future<PrestamoResponse> revertirPagoMasivo({
+    required int codPrestDetalle,
+    required int audUsuario,
+  });
+
   Future<PrestamoResponse> adelantarCuotaPrestamo({
     required int codPrestamo,
     required double montoPago,
@@ -98,5 +141,8 @@ abstract class PrestamoRepository {
     required double montoPrestamo,
     String? descripcion,
     DateTime? fechaDesembolso,
+    int forzar = 0,
+    String? xmlCuotas,
+    String? tipoCalculo,
   });
 }

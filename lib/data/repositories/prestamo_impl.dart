@@ -24,6 +24,7 @@ class PrestamoImpl extends BaseApiRepository implements PrestamoRepository {
     String? fechaDesde,
     String? fechaHasta,
     String? estadoFiltro,
+    int? codEmpleado,
   ) async {
     final modelos = await postAndReturnList<PrestamoModel>(
       endpoint: AppConstants.prestamoListarSAP,
@@ -35,10 +36,123 @@ class PrestamoImpl extends BaseApiRepository implements PrestamoRepository {
         'fechaDesde': fechaDesde,
         'fechaHasta': fechaHasta,
         'tipoEstado': estadoFiltro,
+        'codEmpleado': codEmpleado,
       },
       fromJson: (json) => PrestamoModel.fromJson(json),
     );
     return modelos.map((e) => e.toEntity()).toList();
+  }
+
+  @override
+  Future<List<PrestamoEntity>> getPrestamosVigentes(
+    int pagina,
+    int tamanoPagina,
+    int? codEmpresa,
+    String? search,
+    String? fechaDesde,
+    String? fechaHasta,
+    String? estadoFiltro,
+    int? codEmpleado,
+  ) async {
+    final modelos = await postAndReturnList<PrestamoModel>(
+      endpoint: AppConstants.prestamoListarVigentes,
+      data: {
+        'pagina': pagina,
+        'tamanoPagina': tamanoPagina,
+        'codEmpresa': codEmpresa,
+        'search': search,
+        'fechaDesde': fechaDesde,
+        'fechaHasta': fechaHasta,
+        'tipoEstado': estadoFiltro,
+        'codEmpleado': codEmpleado,
+      },
+      fromJson: (json) => PrestamoModel.fromJson(json),
+    );
+    return modelos.map((e) => e.toEntity()).toList();
+  }
+
+  @override
+  Future<List<PrestamoEntity>> getPrestamosVigentesPorEmpleado(
+    int? codEmpresa,
+    String? search,
+  ) async {
+    final modelos = await postAndReturnList<PrestamoModel>(
+      endpoint: AppConstants.prestamoListarVigentesPorEmpleado,
+      data: {
+        'pagina': 1,
+        'tamanoPagina': 9999, // Get all active loans for the dialog
+        'codEmpresa': codEmpresa,
+        'Search': search,
+      },
+      fromJson: (json) => PrestamoModel.fromJson(json),
+    );
+    return modelos.map((e) => e.toEntity()).toList();
+  }
+
+  @override
+  Future<double> getTotalPrestamos(
+    int? codEmpresa,
+    String? fechaDesde,
+    String? fechaHasta,
+  ) async {
+    final modelos = await postAndReturnList<TipoPrestamoModel>(
+      endpoint: AppConstants.prestamoTotalPrestamos,
+      data: {
+        'codEmpresa': codEmpresa,
+        'fechaDesde': fechaDesde,
+        'fechaHasta': fechaHasta,
+      },
+      fromJson: (json) => TipoPrestamoModel.fromJson(json),
+    );
+    if (modelos.isNotEmpty) {
+      return double.tryParse(modelos.first.nombre) ?? 0.0;
+    }
+    return 0.0;
+  }
+
+  @override
+  Future<double> getTotalPrestamosSAP(
+    int? codEmpresa,
+    String? fechaDesde,
+    String? fechaHasta,
+  ) async {
+    final modelos = await postAndReturnList<TipoPrestamoModel>(
+      endpoint: AppConstants.prestamoTotalPrestamosSAP,
+      data: {
+        'codEmpresa': codEmpresa,
+        'fechaDesde': fechaDesde,
+        'fechaHasta': fechaHasta,
+      },
+      fromJson: (json) => TipoPrestamoModel.fromJson(json),
+    );
+    if (modelos.isNotEmpty) {
+      return double.tryParse(modelos.first.nombre) ?? 0.0;
+    }
+    return 0.0;
+  }
+
+  @override
+  Future<PrestamoResponse> asignarPagos(
+    List<PrestamoDetalleEntity> pagos,
+  ) async {
+    final pagosJson =
+        pagos
+            .map(
+              (p) => {
+                'codPrestamo': p.codPrestamo,
+                'montoPago': p.montoPago,
+                'fechaPago': p.fechaPago?.toIso8601String(),
+                'transIdSAP_pago': p.transIdSAP_pago,
+                'audUsuario': p.audUsuario,
+              },
+            )
+            .toList();
+
+    return await postAndReturnFullResponse<PrestamoResponse>(
+      endpoint: AppConstants.prestamoAsignarPagos,
+      data: pagosJson,
+      fromJson: (json) => PrestamoResponse.fromJson(json),
+    );
   }
 
   @override
@@ -51,6 +165,7 @@ class PrestamoImpl extends BaseApiRepository implements PrestamoRepository {
     required String tipoPago,
     int forzar = 0,
     String? xmlCuotas,
+    String? tipoCalculo,
   }) async {
     return await postAndReturnFullResponse<PrestamoResponse>(
       endpoint: AppConstants.prestamoAsignarMasivo,
@@ -72,7 +187,32 @@ class PrestamoImpl extends BaseApiRepository implements PrestamoRepository {
         'tipoPago': tipoPago,
         'forzar': forzar,
         if (xmlCuotas != null) 'xmlCuotas': xmlCuotas,
+        if (tipoCalculo != null) 'tipoCalculo': tipoCalculo,
       },
+      fromJson: (json) => PrestamoResponse.fromJson(json),
+    );
+  }
+
+  @override
+  Future<PrestamoResponse> asignarPagosMasivo({
+    required String xmlPagos,
+    required int audUsuario,
+  }) async {
+    return await postAndReturnFullResponse<PrestamoResponse>(
+      endpoint: AppConstants.prestamoAsignarPagosMasivo,
+      data: {'xmlPagos': xmlPagos, 'audUsuario': audUsuario},
+      fromJson: (json) => PrestamoResponse.fromJson(json),
+    );
+  }
+
+  @override
+  Future<PrestamoResponse> revertirPagoMasivo({
+    required int codPrestDetalle,
+    required int audUsuario,
+  }) async {
+    return await postAndReturnFullResponse<PrestamoResponse>(
+      endpoint: AppConstants.prestamoRevertirPagoMasivo,
+      data: {'codPrestDetalle': codPrestDetalle, 'audUsuario': audUsuario},
       fromJson: (json) => PrestamoResponse.fromJson(json),
     );
   }
@@ -91,6 +231,7 @@ class PrestamoImpl extends BaseApiRepository implements PrestamoRepository {
     required String tipoPago,
     int forzar = 0,
     String? xmlCuotas,
+    String? tipoCalculo,
   }) async {
     return await postAndReturnFullResponse<PrestamoResponse>(
       endpoint: AppConstants.prestamoAsignarMasivo,
@@ -110,6 +251,7 @@ class PrestamoImpl extends BaseApiRepository implements PrestamoRepository {
         'tipoPago': tipoPago,
         'forzar': forzar,
         if (xmlCuotas != null) 'xmlCuotas': xmlCuotas,
+        if (tipoCalculo != null) 'tipoCalculo': tipoCalculo,
       },
       fromJson: (json) => PrestamoResponse.fromJson(json),
     );
@@ -129,7 +271,6 @@ class PrestamoImpl extends BaseApiRepository implements PrestamoRepository {
     return modelos;
   }
 
-  @override
   Future<List<PrestamoDetalleEntity>> previsualizarCuotas({
     required double montoPrestamo,
     required double numCuotas,
@@ -223,6 +364,7 @@ class PrestamoImpl extends BaseApiRepository implements PrestamoRepository {
     DateTime? fechaDesembolso,
     int forzar = 0,
     String? xmlCuotas,
+    String? tipoCalculo,
   }) async {
     return await postAndReturnFullResponse<PrestamoResponse>(
       endpoint: AppConstants.prestamoEditarMasivo,
@@ -238,6 +380,7 @@ class PrestamoImpl extends BaseApiRepository implements PrestamoRepository {
           'fechaDesembolso': DateFormat('yyyy-MM-dd').format(fechaDesembolso),
         'forzar': forzar,
         if (xmlCuotas != null) 'xmlCuotas': xmlCuotas,
+        if (tipoCalculo != null) 'tipoCalculo': tipoCalculo,
       },
       fromJson: (json) => PrestamoResponse.fromJson(json),
     );
@@ -293,7 +436,10 @@ class PrestamoImpl extends BaseApiRepository implements PrestamoRepository {
     }
   }
 
-  Future<Uint8List> _descargarReporteGlobal(String endpoint, Map<String, dynamic> params) async {
+  Future<Uint8List> _descargarReporteGlobal(
+    String endpoint,
+    Map<String, dynamic> params,
+  ) async {
     final response = await dio.post(
       endpoint,
       data: params,
@@ -310,17 +456,32 @@ class PrestamoImpl extends BaseApiRepository implements PrestamoRepository {
   }
 
   @override
-  Future<Uint8List> getReportePersonal(Map<String, dynamic> params) => _descargarReporteGlobal(AppConstants.prestamoReportePersonal, params);
+  Future<Uint8List> getReportePersonal(Map<String, dynamic> params) =>
+      _descargarReporteGlobal(AppConstants.prestamoReportePersonal, params);
 
   @override
-  Future<Uint8List> getReporteMayorGlobalResumido(Map<String, dynamic> params) => _descargarReporteGlobal(AppConstants.prestamoReporteMayorGlobalResumido, params);
+  Future<Uint8List> getReporteMayorGlobalResumido(
+    Map<String, dynamic> params,
+  ) => _descargarReporteGlobal(
+    AppConstants.prestamoReporteMayorGlobalResumido,
+    params,
+  );
 
   @override
-  Future<Uint8List> getReporteGlobalDetallado(Map<String, dynamic> params) => _descargarReporteGlobal(AppConstants.prestamoReporteGlobalDetallado, params);
+  Future<Uint8List> getReporteGlobalDetallado(Map<String, dynamic> params) =>
+      _descargarReporteGlobal(
+        AppConstants.prestamoReporteGlobalDetallado,
+        params,
+      );
 
   @override
-  Future<Uint8List> getReporteCortoLargoPlazo(Map<String, dynamic> params) => _descargarReporteGlobal(AppConstants.prestamoReporteCortoLargoPlazo, params);
+  Future<Uint8List> getReporteCortoLargoPlazo(Map<String, dynamic> params) =>
+      _descargarReporteGlobal(
+        AppConstants.prestamoReporteCortoLargoPlazo,
+        params,
+      );
 
   @override
-  Future<Uint8List> getReporteMayorGeneral(Map<String, dynamic> params) => _descargarReporteGlobal(AppConstants.prestamoReporteMayorGeneral, params);
+  Future<Uint8List> getReporteMayorGeneral(Map<String, dynamic> params) =>
+      _descargarReporteGlobal(AppConstants.prestamoReporteMayorGeneral, params);
 }

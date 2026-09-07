@@ -91,7 +91,12 @@ class _PrestamoAsignacionDialogState
       _ctrl.cargarDatosEdicion(ref, widget.cabecera!).then((_) {
         // Inicializar campos UI con los datos cargados
         if (mounted) {
-          _numCuotasCtrl.text = _ctrl.numCuotas.toStringAsFixed(0);
+          _numCuotasCtrl.text =
+              _ctrl.isMontoFijo
+                  ? (_ctrl.numCuotas == _ctrl.numCuotas.truncateToDouble()
+                      ? _ctrl.numCuotas.toStringAsFixed(0)
+                      : _ctrl.numCuotas.toString())
+                  : _ctrl.numCuotas.toStringAsFixed(0);
           _montoManualCtrl.text = _ctrl.montoManual.toString();
           _conceptoCtrl.text = _ctrl.concepto;
           for (final entry in _ctrl.seleccionados.entries) {
@@ -108,13 +113,14 @@ class _PrestamoAsignacionDialogState
 
   void _triggerPreview() {
     final selList = _ctrl.seleccionados.values.toList();
-    if (selList.length == 1 &&
+    if (selList.isNotEmpty &&
         _ctrl.fecIniPago != null &&
-        _ctrl.esValido &&
         _ctrl.totalMonto > 0) {
-      final asig = selList.first;
+      final montoBase =
+          selList.length > 1 ? _ctrl.totalMonto : selList.first.montoCalculado;
+      final cuotasBase = _ctrl.getActualCuotas(montoBase);
       final currentHash =
-          '${asig.montoCalculado}-${_ctrl.getActualCuotas(asig.montoCalculado)}-${_ctrl.fecIniPago}-${_ctrl.tipoPagoGlobal}';
+          '$montoBase-$cuotasBase-${_ctrl.fecIniPago}-${_ctrl.tipoPagoGlobal}';
 
       if (currentHash == _lastPreviewHash) return;
 
@@ -134,11 +140,11 @@ class _PrestamoAsignacionDialogState
 
         try {
           if (empId == 0) throw Exception('No hay empresa seleccionada');
-          final asig = selList.first;
+          final montoRedondeado = double.parse(montoBase.toStringAsFixed(2));
           final repo = ref.read(prestamoProvider(empId).notifier).repo;
           final result = await repo.previsualizarCuotas(
-            montoPrestamo: asig.montoCalculado,
-            numCuotas: _ctrl.getActualCuotas(asig.montoCalculado),
+            montoPrestamo: montoRedondeado,
+            numCuotas: cuotasBase,
             fecIniPago: DateFormat('yyyy-MM-dd').format(_ctrl.fecIniPago!),
             tipoPago: _ctrl.tipoPagoGlobal,
           );
@@ -226,6 +232,7 @@ class _PrestamoAsignacionDialogState
           audUsuarioI: widget.audUsuarioI,
           tipoPago: _ctrl.tipoPagoGlobal,
           forzar: f,
+          tipoCalculo: _ctrl.isMontoFijo ? 'MONTO_FIJO' : 'CUOTAS',
         );
       } else if (widget.modo == PrestamoDialogModo.asignacionSap) {
         return ntf.asignarMasivo(
@@ -236,6 +243,7 @@ class _PrestamoAsignacionDialogState
           audUsuarioI: widget.audUsuarioI,
           tipoPago: _ctrl.tipoPagoGlobal,
           forzar: f,
+          tipoCalculo: _ctrl.isMontoFijo ? 'MONTO_FIJO' : 'CUOTAS',
         );
       } else {
         return ntf.editarPrestamoMasivo(
@@ -251,6 +259,7 @@ class _PrestamoAsignacionDialogState
           descripcion: widget.cabecera!.concepto,
           fechaDesembolso: widget.cabecera!.fechaAsiento,
           forzar: f,
+          tipoCalculo: _ctrl.isMontoFijo ? 'MONTO_FIJO' : 'CUOTAS',
         );
       }
     }
@@ -316,6 +325,14 @@ class _PrestamoAsignacionDialogState
           subtitulo: 'Registro manual · Fuera de SAP',
           icon: Icons.add_card_rounded,
           labelConfirmar: 'Crear Préstamo',
+        );
+      case PrestamoDialogModo.asignacionPago:
+        return (
+          titulo: 'Asignar Pago',
+          subtitulo:
+              'SAP: ${widget.cabecera?.numAsiento} · ${widget.cabecera?.concepto}',
+          icon: Icons.payments_rounded,
+          labelConfirmar: 'Confirmar Pagos',
         );
     }
   }
@@ -519,112 +536,24 @@ class _PrestamoAsignacionDialogState
   ) {
     return Column(
       children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 6),
-          child: Row(
-            children: [
-              Expanded(
-                child: ValueListenableBuilder<TextEditingValue>(
-                  valueListenable: _searchCtrl,
-                  builder:
-                      (_, val, __) => SearchBar(
-                        controller: _searchCtrl,
-                        hintText:
-                            _ctrl.swapCodEmpleado != null
-                                ? 'Buscar reemplazo…'
-                                : 'Buscar empleado…',
-                        leading: const Icon(Icons.search, size: 18),
-                        trailing: [
-                          if (val.text.isNotEmpty)
-                            IconButton(
-                              icon: const Icon(Icons.close, size: 15),
-                              onPressed: () {
-                                _searchCtrl.clear();
-                                _onSearch('');
-                              },
-                            ),
-                        ],
-                        onChanged: _onSearch,
-                        elevation: const WidgetStatePropertyAll(0),
-                        constraints: const BoxConstraints(
-                          minHeight: 38,
-                          maxHeight: 38,
-                        ),
-                        backgroundColor: WidgetStatePropertyAll(
-                          cs.surfaceContainerLowest,
-                        ),
-                        side: WidgetStatePropertyAll(
-                          BorderSide(color: cs.outlineVariant.withValues(alpha: 0.5)),
-                        ),
-                        shape: WidgetStatePropertyAll(
-                          RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(11),
-                          ),
-                        ),
-                        padding: const WidgetStatePropertyAll(
-                          EdgeInsets.symmetric(horizontal: 10),
-                        ),
-                        textStyle: const WidgetStatePropertyAll(
-                          TextStyle(fontSize: 12.5),
-                        ),
-                      ),
-                ),
+        EmpleadosSeleccionHeader(
+          searchCtrl: _searchCtrl,
+          onSearch: _onSearch,
+          isSwapMode: _ctrl.swapCodEmpleado != null,
+          isLoading: empAsync.isLoading,
+          isAllSelected:
+              empAsync.valueOrNull?.isNotEmpty == true &&
+              empAsync.valueOrNull!.every(
+                (e) => _ctrl.seleccionados.containsKey(e.codEmpleado),
               ),
-              if (_ctrl.swapCodEmpleado == null) ...[
-                const SizedBox(width: 6),
-                empAsync.when(
-                  data: (emps) {
-                    final allSel =
-                        emps.isNotEmpty &&
-                        emps.every(
-                          (e) => _ctrl.seleccionados.containsKey(e.codEmpleado),
-                        );
-                    return Tooltip(
-                      message:
-                          allSel ? 'Deseleccionar todos' : 'Seleccionar todos',
-                      child: InkWell(
-                        onTap:
-                            emps.isEmpty
-                                ? null
-                                : () => _ctrl.toggleTodos(emps, !allSel),
-                        borderRadius: BorderRadius.circular(11),
-                        child: Container(
-                          width: 38,
-                          height: 38,
-                          alignment: Alignment.center,
-                          decoration: BoxDecoration(
-                            color:
-                                allSel ? cs.primary : cs.surfaceContainerLowest,
-                            borderRadius: BorderRadius.circular(11),
-                            border: Border.all(
-                              color:
-                                  allSel
-                                      ? cs.primary
-                                      : cs.outlineVariant.withValues(alpha: 0.5),
-                            ),
-                          ),
-                          child: Icon(
-                            allSel
-                                ? Icons.deselect_rounded
-                                : Icons.select_all_rounded,
-                            size: 17,
-                            color: allSel ? cs.onPrimary : cs.onSurfaceVariant,
-                          ),
-                        ),
-                      ),
-                    );
-                  },
-                  loading:
-                      () => const SizedBox(
-                        width: 38,
-                        height: 38,
-                        child: Center(child: CircularProgressIndicator()),
-                      ),
-                  error: (_, __) => const SizedBox(width: 38, height: 38),
-                ),
-              ],
-            ],
-          ),
+          onToggleAll: () {
+            if (empAsync.valueOrNull == null || empAsync.valueOrNull!.isEmpty)
+              return;
+            final allSel = empAsync.valueOrNull!.every(
+              (e) => _ctrl.seleccionados.containsKey(e.codEmpleado),
+            );
+            _ctrl.toggleTodos(empAsync.valueOrNull!, !allSel);
+          },
         ),
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 0, 16, 2),
@@ -784,7 +713,8 @@ class _PrestamoAsignacionDialogState
           color: active ? cs.primary : cs.surfaceContainerLowest,
           borderRadius: BorderRadius.circular(18),
           border: Border.all(
-            color: active ? cs.primary : cs.outlineVariant.withValues(alpha: 0.5),
+            color:
+                active ? cs.primary : cs.outlineVariant.withValues(alpha: 0.5),
           ),
         ),
         child: Row(
@@ -823,7 +753,9 @@ class _PrestamoAsignacionDialogState
       child: Container(
         decoration: BoxDecoration(
           border: Border(
-            bottom: BorderSide(color: cs.outlineVariant.withValues(alpha: 0.15)),
+            bottom: BorderSide(
+              color: cs.outlineVariant.withValues(alpha: 0.15),
+            ),
           ),
         ),
         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 5),
@@ -1333,30 +1265,26 @@ class _PrestamoAsignacionDialogState
         ),
       );
     }
-    if (selList.length > 1) {
-      return Container(
-        padding: const EdgeInsets.all(14),
+    // Si hay más de 1 empleado, agregamos un mensaje referencial pero dejamos ver la tabla
+    Widget referencialMsg = const SizedBox.shrink();
+    if (selList.length > 1 &&
+        _ctrl.cuotasPreview != null &&
+        _ctrl.cuotasPreview!.isNotEmpty) {
+      referencialMsg = Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         decoration: BoxDecoration(
-          color: cs.surface,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.4)),
+          color: cs.primaryContainer.withValues(alpha: 0.3),
+          borderRadius: BorderRadius.circular(8),
         ),
         child: Row(
           children: [
-            Icon(
-              Icons.info_outline_rounded,
-              size: 19,
-              color: cs.onSurfaceVariant,
-            ),
-            const SizedBox(width: 10),
+            Icon(Icons.info_outline, size: 16, color: cs.primary),
+            const SizedBox(width: 8),
             Expanded(
               child: Text(
-                'El detalle de cuotas se muestra al seleccionar un solo empleado. Con ${selList.length} empleados se usan estos parámetros para todos.',
-                style: TextStyle(
-                  fontSize: 11.5,
-                  color: cs.onSurfaceVariant,
-                  height: 1.4,
-                ),
+                'Mostrando previsualización referencial para el Monto Total (Bs. ${_ctrl.totalMonto.toStringAsFixed(2)}). Las fechas aplican para todos los empleados seleccionados.',
+                style: TextStyle(fontSize: 11.5, color: cs.onSurfaceVariant),
               ),
             ),
           ],
@@ -1391,91 +1319,97 @@ class _PrestamoAsignacionDialogState
     final mostrarResumen = cuotas.length > 12;
     final cuotasVisibles = mostrarResumen ? 12 : cuotas.length;
 
-    return Container(
-      decoration: BoxDecoration(
-        color: cs.surface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.4)),
-      ),
-      child: ListView.builder(
-        shrinkWrap: true,
-        physics: const NeverScrollableScrollPhysics(),
-        padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 8),
-        itemCount: cuotasVisibles,
-        itemBuilder: (context, i) {
-          if (mostrarResumen && i == 10) {
-            final omitidas = cuotas.length - 12;
-            return Container(
-              margin: const EdgeInsets.symmetric(vertical: 4),
-              padding: const EdgeInsets.symmetric(vertical: 8),
-              alignment: Alignment.center,
-              child: Text(
-                '... y $omitidas cuotas más ...',
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold,
-                  color: cs.onSurfaceVariant.withValues(alpha: 0.6),
-                ),
-              ),
-            );
-          }
-
-          final idxCuota = (mostrarResumen && i == 11) ? cuotas.length - 1 : i;
-          final c = cuotas[idxCuota];
-          final fecha = c.fechaPago ?? DateTime.now();
-
-          return Container(
-            margin: const EdgeInsets.symmetric(vertical: 2),
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 9),
-            decoration: BoxDecoration(
-              color:
-                  idxCuota.isEven
-                      ? cs.surfaceContainerLowest.withValues(alpha: 0.5)
-                      : Colors.transparent,
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Row(
-              children: [
-                Container(
-                  width: 24,
-                  height: 24,
+    return Column(
+      children: [
+        referencialMsg,
+        Container(
+          decoration: BoxDecoration(
+            color: cs.surface,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.4)),
+          ),
+          child: ListView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 8),
+            itemCount: cuotasVisibles,
+            itemBuilder: (context, i) {
+              if (mostrarResumen && i == 10) {
+                final omitidas = cuotas.length - 12;
+                return Container(
+                  margin: const EdgeInsets.symmetric(vertical: 4),
+                  padding: const EdgeInsets.symmetric(vertical: 8),
                   alignment: Alignment.center,
-                  decoration: BoxDecoration(
-                    color: cs.primaryContainer,
-                    borderRadius: BorderRadius.circular(6),
-                  ),
                   child: Text(
-                    '${c.numeroCuota}',
+                    '... y $omitidas cuotas más ...',
                     style: TextStyle(
-                      fontSize: 10,
-                      fontWeight: FontWeight.bold,
-                      color: cs.onPrimaryContainer,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    DateFormat('dd/MM/yyyy').format(fecha),
-                    style: const TextStyle(
                       fontSize: 12,
-                      fontWeight: FontWeight.w600,
+                      fontWeight: FontWeight.bold,
+                      color: cs.onSurfaceVariant.withValues(alpha: 0.6),
                     ),
                   ),
+                );
+              }
+
+              final idxCuota =
+                  (mostrarResumen && i == 11) ? cuotas.length - 1 : i;
+              final c = cuotas[idxCuota];
+              final fecha = c.fechaPago ?? DateTime.now();
+
+              return Container(
+                margin: const EdgeInsets.symmetric(vertical: 2),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 9),
+                decoration: BoxDecoration(
+                  color:
+                      idxCuota.isEven
+                          ? cs.surfaceContainerLowest.withValues(alpha: 0.5)
+                          : Colors.transparent,
+                  borderRadius: BorderRadius.circular(10),
                 ),
-                Text(
-                  'Bs. ${c.haber.toStringAsFixed(2)}',
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w800,
-                    color: cs.primary,
-                  ),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 24,
+                      height: 24,
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        color: cs.primaryContainer,
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        '${c.numeroCuota}',
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                          color: cs.onPrimaryContainer,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        DateFormat('dd/MM/yyyy').format(fecha),
+                        style: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                    Text(
+                      'Bs. ${c.haber.toStringAsFixed(2)}',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w800,
+                        color: cs.primary,
+                      ),
+                    ),
+                  ],
                 ),
-              ],
-            ),
-          );
-        },
-      ),
+              );
+            },
+          ),
+        ),
+      ],
     );
   }
 }

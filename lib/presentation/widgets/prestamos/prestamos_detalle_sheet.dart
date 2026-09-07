@@ -27,6 +27,68 @@ class PrestamosDetalleSheet extends ConsumerStatefulWidget {
 class _PrestamosDetalleSheetState extends ConsumerState<PrestamosDetalleSheet> {
   bool _mostrarAnulados = false;
 
+  void _showRevertDialog(PrestamoDetalleEntity d, int audUsuario) {
+    showDialog(
+      context: context,
+      builder:
+          (ctx) => AlertDialog(
+            title: const Text('Revertir Pago SAP'),
+            content: Text(
+              '¿Desea revertir el pago de Bs. ${d.montoPago}? El asiento SAP volverá a la bandeja como NO ASIGNADO y las cuotas volverán a su estado anterior.',
+              style: const TextStyle(fontSize: 14),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Cancelar'),
+              ),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.redAccent,
+                ),
+                onPressed: () async {
+                  final messenger = ScaffoldMessenger.of(context);
+                  Navigator.pop(ctx);
+
+                  try {
+                    final ntf = ref.read(prestamoProvider(0).notifier);
+                    final res = await ntf.revertirPagoMasivo(
+                      codPrestDetalle: d.codPrestDetalle,
+                      audUsuario: audUsuario,
+                      codPrestamo: d.codPrestamo,
+                    );
+
+                    if (mounted) {
+                      messenger.showSnackBar(
+                        SnackBar(
+                          content: Text(res.message),
+                          backgroundColor: Colors.green,
+                        ),
+                      );
+                    }
+                  } catch (e) {
+                    if (mounted) {
+                      messenger.showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            e.toString().replaceAll('Exception: ', ''),
+                          ),
+                          backgroundColor: Colors.red,
+                        ),
+                      );
+                    }
+                  }
+                },
+                child: const Text(
+                  'Revertir',
+                  style: TextStyle(color: Colors.white),
+                ),
+              ),
+            ],
+          ),
+    );
+  }
+
   void _showEditDialog(
     PrestamoDetalleEntity d,
     int codPrestamo,
@@ -178,14 +240,26 @@ class _PrestamosDetalleSheetState extends ConsumerState<PrestamosDetalleSheet> {
                 Navigator.pop(ctx);
                 try {
                   final ntf = ref.read(prestamoProvider(0).notifier);
-                  final msg = await ntf.actualizarCuotaPrestamo(
-                    codPrestDetalle: d.codPrestDetalle,
-                    tipoPago: d.tipoPago ?? 'CONT',
-                    fechaPago: d.fechaPago ?? DateTime.now(),
-                    audUsuario: audUsuario,
-                    codPrestamo: codPrestamo,
-                    estadoCuota: isCancel ? 'Cancelado' : 'No Cancelado',
-                  );
+                  String msg = '';
+                  if (!isCancel &&
+                      d.numeroCuota == 0 &&
+                      d.transIdSAP_pago != null) {
+                    final res = await ntf.revertirPagoMasivo(
+                      codPrestDetalle: d.codPrestDetalle,
+                      audUsuario: audUsuario,
+                      codPrestamo: codPrestamo,
+                    );
+                    msg = res.message;
+                  } else {
+                    msg = await ntf.actualizarCuotaPrestamo(
+                      codPrestDetalle: d.codPrestDetalle,
+                      tipoPago: d.tipoPago ?? 'CONT',
+                      fechaPago: d.fechaPago ?? DateTime.now(),
+                      audUsuario: audUsuario,
+                      codPrestamo: codPrestamo,
+                      estadoCuota: isCancel ? 'Cancelado' : 'No Cancelado',
+                    );
+                  }
                   if (mounted) {
                     messenger.showSnackBar(
                       SnackBar(
@@ -400,6 +474,10 @@ class _PrestamosDetalleSheetState extends ConsumerState<PrestamosDetalleSheet> {
     final cs = Theme.of(ctx).colorScheme;
     final isDark = Theme.of(ctx).brightness == Brightness.dark;
 
+    final montoTotalHeader =
+        p.montoOriginalPrestamo ?? (p.debe > 0 ? p.debe : p.haber);
+    final conceptoHeader = p.conceptoOriginal ?? p.concepto;
+
     double? saldoPendienteCalculado = p.saldoPendiente;
     if (stAsync.value != null) {
       double totalPagado = 0.0;
@@ -408,8 +486,7 @@ class _PrestamosDetalleSheetState extends ConsumerState<PrestamosDetalleSheet> {
           totalPagado += d.haber > 0 ? d.haber : d.debe;
         }
       }
-      final montoTotal = p.debe > 0 ? p.debe : p.haber;
-      saldoPendienteCalculado = montoTotal - totalPagado;
+      saldoPendienteCalculado = montoTotalHeader - totalPagado;
       if (saldoPendienteCalculado < 0) saldoPendienteCalculado = 0;
     }
 
@@ -452,7 +529,7 @@ class _PrestamosDetalleSheetState extends ConsumerState<PrestamosDetalleSheet> {
                           ),
                           const SizedBox(height: 2),
                           Text(
-                            p.concepto,
+                            conceptoHeader,
                             style: TextStyle(
                               fontSize:
                                   ResponsiveUtilsBosque.isDesktop(ctx)
@@ -476,7 +553,7 @@ class _PrestamosDetalleSheetState extends ConsumerState<PrestamosDetalleSheet> {
                           ),
                         ),
                         Text(
-                          'Bs. ${fmtAnticipo.format(p.debe > 0 ? p.debe : p.haber)}',
+                          'Bs. ${fmtAnticipo.format(montoTotalHeader)}',
                           style: TextStyle(
                             fontSize:
                                 ResponsiveUtilsBosque.isDesktop(ctx) ? 16 : 13,
@@ -520,52 +597,52 @@ class _PrestamosDetalleSheetState extends ConsumerState<PrestamosDetalleSheet> {
                             runSpacing: 8,
                             alignment: WrapAlignment.end,
                             children: [
-                              if (saldoPendienteCalculado > 0 &&
-                                  p.estadoPrestamo != 'ANU')
-                                PermissionWidget(
-                                  buttonName: 'btnRegistrarNuevaCuota',
-                                  child: SizedBox(
-                                    height: 28,
-                                    child: FilledButton.icon(
-                                      style: FilledButton.styleFrom(
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 12,
-                                        ),
-                                        textStyle: TextStyle(
-                                          fontSize:
-                                              ResponsiveUtilsBosque.isDesktop(
-                                                    context,
-                                                  )
-                                                  ? 16
-                                                  : 14,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                      onPressed: () {
-                                        final audUsr =
-                                            ref
-                                                .read(userProvider)
-                                                ?.codUsuario ??
-                                            0;
-                                        _showAdelantoDialog(
-                                          codPrestamo,
-                                          saldoPendienteCalculado!,
-                                          audUsr,
-                                        );
-                                      },
-                                      icon: Icon(
-                                        Icons.payment_rounded,
-                                        size:
-                                            ResponsiveUtilsBosque.isDesktop(
-                                                  context,
-                                                )
-                                                ? 18
-                                                : 14,
-                                      ),
-                                      label: const Text('Nueva Cuota'),
-                                    ),
-                                  ),
-                                ),
+                              // if (saldoPendienteCalculado > 0 &&
+                              //     p.estadoPrestamo != 'ANU')
+                              //   PermissionWidget(
+                              //     buttonName: 'btnRegistrarNuevaCuota',
+                              //     child: SizedBox(
+                              //       height: 28,
+                              //       child: FilledButton.icon(
+                              //         style: FilledButton.styleFrom(
+                              //           padding: const EdgeInsets.symmetric(
+                              //             horizontal: 12,
+                              //           ),
+                              //           textStyle: TextStyle(
+                              //             fontSize:
+                              //                 ResponsiveUtilsBosque.isDesktop(
+                              //                       context,
+                              //                     )
+                              //                     ? 16
+                              //                     : 14,
+                              //             fontWeight: FontWeight.bold,
+                              //           ),
+                              //         ),
+                              //         onPressed: () {
+                              //           final audUsr =
+                              //               ref
+                              //                   .read(userProvider)
+                              //                   ?.codUsuario ??
+                              //               0;
+                              //           _showAdelantoDialog(
+                              //             codPrestamo,
+                              //             saldoPendienteCalculado!,
+                              //             audUsr,
+                              //           );
+                              //         },
+                              //         icon: Icon(
+                              //           Icons.payment_rounded,
+                              //           size:
+                              //               ResponsiveUtilsBosque.isDesktop(
+                              //                     context,
+                              //                   )
+                              //                   ? 18
+                              //                   : 14,
+                              //         ),
+                              //         label: const Text('Nueva Cuota'),
+                              //       ),
+                              //     ),
+                              //   ),
                               SizedBox(
                                 height: 28,
                                 child: OutlinedButton.icon(
@@ -939,16 +1016,51 @@ class _PrestamosDetalleSheetState extends ConsumerState<PrestamosDetalleSheet> {
                                                 },
                                               ),
                                             ),
-                                          if (d.tipoPago == 'CONT' &&
-                                              d.estadoCuota != 'Cancelado')
+                                          // if (d.tipoPago == 'CONT' &&
+                                          //     d.estadoCuota != 'Cancelado')
+                                          //   PermissionWidget(
+                                          //     buttonName:
+                                          //         'btnCobrarCuotaContado',
+                                          //     child: IconButton(
+                                          //       icon: const Icon(
+                                          //         Icons.check_circle_outline,
+                                          //         size: 20,
+                                          //         color: Colors.green,
+                                          //       ),
+                                          //       constraints:
+                                          //           const BoxConstraints(),
+                                          //       padding:
+                                          //           const EdgeInsets.symmetric(
+                                          //             horizontal: 4,
+                                          //           ),
+                                          //       tooltip: 'Cobrar Cuota',
+                                          //       onPressed: () {
+                                          //         final audUsuario =
+                                          //             ref
+                                          //                 .read(userProvider)
+                                          //                 ?.codUsuario ??
+                                          //             0;
+                                          //         _showConfirmPayDialog(
+                                          //           d,
+                                          //           codPrestamo,
+                                          //           audUsuario,
+                                          //           true,
+                                          //         );
+                                          //       },
+                                          //     ),
+                                          //   ),
+                                          if (d.numeroCuota == 0 &&
+                                              d.estadoCuota == 'Cancelado' &&
+                                              d.haber > 0 &&
+                                              d.transIdSAP_pago != null)
                                             PermissionWidget(
                                               buttonName:
-                                                  'btnCobrarCuotaContado',
+                                                  'btnRevertirPagoMasivo',
                                               child: IconButton(
                                                 icon: const Icon(
-                                                  Icons.check_circle_outline,
+                                                  Icons.undo_rounded,
                                                   size: 20,
-                                                  color: Colors.green,
+                                                  color: Colors.deepPurple,
                                                 ),
                                                 constraints:
                                                     const BoxConstraints(),
@@ -956,18 +1068,16 @@ class _PrestamosDetalleSheetState extends ConsumerState<PrestamosDetalleSheet> {
                                                     const EdgeInsets.symmetric(
                                                       horizontal: 4,
                                                     ),
-                                                tooltip: 'Cobrar Cuota',
+                                                tooltip: 'Revertir Pago SAP',
                                                 onPressed: () {
                                                   final audUsuario =
                                                       ref
                                                           .read(userProvider)
                                                           ?.codUsuario ??
                                                       0;
-                                                  _showConfirmPayDialog(
+                                                  _showRevertDialog(
                                                     d,
-                                                    codPrestamo,
                                                     audUsuario,
-                                                    true,
                                                   );
                                                 },
                                               ),

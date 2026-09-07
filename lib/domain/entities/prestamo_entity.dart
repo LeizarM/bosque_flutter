@@ -7,6 +7,7 @@ class PrestamoEntity {
   final String numAsiento;
   final String concepto;
   final String referencia;
+  final String? observacion;
   final double debe;
   final double haber;
   final String estadoAsignacion;
@@ -17,8 +18,15 @@ class PrestamoEntity {
   final double? saldoPendiente;
   final double? numCuotas;
   final double? cuotaReferencia;
+  final double? montoCuota; // Calculado por SQL
   final String? fecIniPago;
   final String? tipoPago;
+  final String? tipoCalculo;
+
+  // Campos originales del préstamo para pagos
+  final double? montoOriginalPrestamo;
+  final String? fechaDesembolsoOriginal;
+  final String? conceptoOriginal;
 
   // Params Auxiliares
   final int? fila;
@@ -42,6 +50,7 @@ class PrestamoEntity {
     required this.numAsiento,
     required this.concepto,
     required this.referencia,
+    this.observacion,
     required this.debe,
     required this.haber,
     required this.estadoAsignacion,
@@ -52,8 +61,13 @@ class PrestamoEntity {
     this.saldoPendiente,
     this.numCuotas,
     this.cuotaReferencia,
+    this.montoCuota,
     this.fecIniPago,
     this.tipoPago,
+    this.tipoCalculo,
+    this.montoOriginalPrestamo,
+    this.fechaDesembolsoOriginal,
+    this.conceptoOriginal,
     this.fila,
     this.pagina,
     this.tamanoPagina,

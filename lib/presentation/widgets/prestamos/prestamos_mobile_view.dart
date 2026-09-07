@@ -20,6 +20,7 @@ class PrestamosMobileView extends ConsumerWidget {
   final void Function(PrestamoEntity) onEditar;
   final void Function(PrestamoEntity) onAnular;
   final int uid;
+  final bool isVigentesTab;
 
   const PrestamosMobileView({
     super.key,
@@ -30,11 +31,11 @@ class PrestamosMobileView extends ConsumerWidget {
     required this.onEditar,
     required this.onAnular,
     required this.uid,
+    this.isVigentesTab = false,
   });
 
   @override
   Widget build(BuildContext ctx, WidgetRef ref) {
-
     if (st.cargando) {
       return const Center(child: CircularProgressIndicator());
     }
@@ -58,6 +59,7 @@ class PrestamosMobileView extends ConsumerWidget {
                   onEditar: () => onEditar(st.items[i]),
                   onAnular: () => onAnular(st.items[i]),
                   uid: uid,
+                  isVigentesTab: isVigentesTab,
                 ),
           ),
         ),
@@ -76,6 +78,7 @@ class PrestamosMobileCard extends ConsumerWidget {
   final VoidCallback onEditar;
   final VoidCallback onAnular;
   final int uid;
+  final bool isVigentesTab;
 
   const PrestamosMobileCard({
     super.key,
@@ -85,6 +88,7 @@ class PrestamosMobileCard extends ConsumerWidget {
     required this.onEditar,
     required this.onAnular,
     required this.uid,
+    this.isVigentesTab = false,
   });
 
   @override
@@ -195,9 +199,13 @@ class PrestamosMobileCard extends ConsumerWidget {
                                   ),
                             );
 
-                            if (estadoFound.codTipos == 'CAN' ||
-                                estadoFound.codTipos == 'ANU') {
-                              final isAnulado = estadoFound.codTipos == 'ANU';
+                            if (isVigentesTab) {
+                              final colorBase = estadoFound.codTipos == 'ANU'
+                                  ? Colors.red
+                                  : estadoFound.codTipos == 'CAN'
+                                      ? Colors.green
+                                      : Colors.orange; // PEN
+
                               return Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
@@ -208,16 +216,10 @@ class PrestamosMobileCard extends ConsumerWidget {
                                       vertical: 2,
                                     ),
                                     decoration: BoxDecoration(
-                                      color:
-                                          isAnulado
-                                              ? Colors.red.withValues(alpha: 0.2)
-                                              : Colors.green.withValues(alpha: 0.2),
+                                      color: colorBase.withValues(alpha: 0.2),
                                       borderRadius: BorderRadius.circular(4),
                                       border: Border.all(
-                                        color:
-                                            isAnulado
-                                                ? Colors.red.withValues(alpha: 0.5)
-                                                : Colors.green.withValues(alpha: 0.5),
+                                        color: colorBase.withValues(alpha: 0.5),
                                       ),
                                     ),
                                     child: Text(
@@ -225,10 +227,7 @@ class PrestamosMobileCard extends ConsumerWidget {
                                       style: TextStyle(
                                         fontSize: 9,
                                         fontWeight: FontWeight.bold,
-                                        color:
-                                            isAnulado
-                                                ? Colors.red
-                                                : Colors.green,
+                                        color: colorBase,
                                       ),
                                     ),
                                   ),
@@ -250,7 +249,7 @@ class PrestamosMobileCard extends ConsumerWidget {
                       Text(
                         e.estadoPrestamo == 'ANU'
                             ? 'Bs. ---'
-                            : 'Bs. ${fmtPrestamo.format(e.debe)}',
+                            : 'Bs. ${fmtPrestamo.format(e.haber > 0 ? e.haber : e.debe)}',
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: 13,
@@ -284,32 +283,20 @@ class PrestamosMobileCard extends ConsumerWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
-                  if (e.estadoAsignacion != 'ASIGNADO')
+                  if (e.estadoAsignacion != 'ASIGNADO' && !isVigentesTab)
                     PermissionWidget(
                       buttonName: 'btnAsignarPrestamo',
                       child: TextButton.icon(
-                        onPressed: () {
-                          showPrestamoAsignacionDialog(
-                            ctx,
-                            modo: PrestamoDialogModo.asignacionSap,
-                            audUsuarioI: uid,
-                            cabecera: e,
-                          ).then((v) {
-                            if (v == true) {
-                              final activeFiltro = ref.read(
-                                codEmpresaPrestamosProvider,
-                              );
-                              ref
-                                  .read(prestamoProvider(activeFiltro).notifier)
-                                  .cargar();
-                            }
-                          });
-                        },
-                        icon: const Icon(
-                          Icons.person_add_alt_1_rounded,
+                        onPressed: onAsignar,
+                        icon: Icon(
+                          (e.haber > 0)
+                              ? Icons.payments_rounded
+                              : Icons.person_add_alt_1_rounded,
                           size: 16,
+                          color:
+                              (e.haber > 0) ? Colors.blue.shade600 : cs.primary,
                         ),
-                        label: const Text('Asignar'),
+                        label: Text((e.haber > 0) ? 'Asignar Pago' : 'Asignar'),
                         style: TextButton.styleFrom(
                           visualDensity: VisualDensity.compact,
                           padding: const EdgeInsets.symmetric(horizontal: 8),
@@ -318,27 +305,12 @@ class PrestamosMobileCard extends ConsumerWidget {
                     ),
                   if (e.estadoAsignacion == 'ASIGNADO' &&
                       e.estadoPrestamo != 'ANU' &&
-                      e.estadoPrestamo != 'CAN')
+                      e.estadoPrestamo != 'CAN' &&
+                      e.haber == 0)
                     PermissionWidget(
                       buttonName: 'btnEditarPrestamo',
                       child: IconButton(
-                        onPressed: () {
-                          showPrestamoAsignacionDialog(
-                            ctx,
-                            modo: PrestamoDialogModo.edicionSap,
-                            audUsuarioI: uid,
-                            cabecera: e,
-                          ).then((v) {
-                            if (v == true) {
-                              final activeFiltro = ref.read(
-                                codEmpresaPrestamosProvider,
-                              );
-                              ref
-                                  .read(prestamoProvider(activeFiltro).notifier)
-                                  .cargar();
-                            }
-                          });
-                        },
+                        onPressed: onEditar,
                         icon: const Icon(Icons.edit_rounded, size: 18),
                         tooltip: 'Editar Préstamo',
                         color: cs.primary,
@@ -346,7 +318,7 @@ class PrestamosMobileCard extends ConsumerWidget {
                         constraints: const BoxConstraints(),
                       ),
                     ),
-                  if (e.estadoAsignacion == 'ASIGNADO')
+                  if (e.estadoAsignacion == 'ASIGNADO' || isVigentesTab)
                     IconButton(
                       onPressed: onVerDetalle,
                       icon: const Icon(Icons.remove_red_eye_rounded, size: 18),
@@ -355,7 +327,8 @@ class PrestamosMobileCard extends ConsumerWidget {
                       constraints: const BoxConstraints(),
                     ),
                   if (e.estadoAsignacion == 'ASIGNADO' &&
-                      e.estadoPrestamo == 'PEN')
+                      e.estadoPrestamo == 'PEN' &&
+                      e.haber == 0)
                     PermissionWidget(
                       buttonName: 'btnAnularPrestamo',
                       child: IconButton(

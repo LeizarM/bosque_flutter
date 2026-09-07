@@ -109,7 +109,7 @@ abstract class BaseApiRepository {
   /// Lanza errores como String directo para evitar el prefijo "Exception: " en la UI.
   Future<T> postAndReturnFullResponse<T>({
     required String endpoint,
-    required Map<String, dynamic> data,
+    required dynamic data,
     required T Function(Map<String, dynamic>) fromJson,
     String errorMessage = 'Error en la operación',
   }) async {

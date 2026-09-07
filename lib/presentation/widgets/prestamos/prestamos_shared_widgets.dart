@@ -21,6 +21,9 @@ class PrestamoEmpleadoData {
   double monto;
   double montoCalculado;
   String tipoEstado;
+  double? saldoPendiente;
+  String? concepto;
+  String? numAsiento;
 
   /// Solo disponible en el formulario Manual
   final EmpleadoEntity? empleadoEntity;
@@ -33,6 +36,9 @@ class PrestamoEmpleadoData {
     this.monto = 0.0,
     this.montoCalculado = 0.0,
     this.tipoEstado = 'PEN',
+    this.saldoPendiente,
+    this.concepto,
+    this.numAsiento,
     this.empleadoEntity,
   });
 
@@ -730,3 +736,132 @@ class PrestamoFooterActions extends StatelessWidget {
     );
   }
 }
+
+// ══════════════════════════════════════════════════════════════════════════════
+// WIDGET: Cabecera de Selección de Empleados (Compartido por Asignación Préstamos y Pagos)
+// ══════════════════════════════════════════════════════════════════════════════
+class EmpleadosSeleccionHeader extends StatelessWidget {
+  final TextEditingController searchCtrl;
+  final void Function(String) onSearch;
+  final bool isSwapMode;
+  final bool isLoading;
+  final bool isAllSelected;
+  final VoidCallback? onToggleAll;
+
+  const EmpleadosSeleccionHeader({
+    super.key,
+    required this.searchCtrl,
+    required this.onSearch,
+    this.isSwapMode = false,
+    this.isLoading = false,
+    this.isAllSelected = false,
+    this.onToggleAll,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 6),
+      child: Row(
+        children: [
+          Expanded(
+            child: ValueListenableBuilder<TextEditingValue>(
+              valueListenable: searchCtrl,
+              builder:
+                  (_, val, __) => SearchBar(
+                    controller: searchCtrl,
+                    hintText:
+                        isSwapMode
+                            ? 'Buscar reemplazo…'
+                            : 'Buscar empleado…',
+                    leading: const Icon(Icons.search, size: 18),
+                    trailing: [
+                      if (val.text.isNotEmpty)
+                        IconButton(
+                          icon: const Icon(Icons.close, size: 15),
+                          onPressed: () {
+                            searchCtrl.clear();
+                            onSearch('');
+                          },
+                        ),
+                    ],
+                    onChanged: onSearch,
+                    elevation: const WidgetStatePropertyAll(0),
+                    constraints: const BoxConstraints(
+                      minHeight: 38,
+                      maxHeight: 38,
+                    ),
+                    backgroundColor: WidgetStatePropertyAll(
+                      cs.surfaceContainerLowest,
+                    ),
+                    side: WidgetStatePropertyAll(
+                      BorderSide(
+                        color: cs.outlineVariant.withValues(alpha: 0.5),
+                      ),
+                    ),
+                    shape: WidgetStatePropertyAll(
+                      RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(11),
+                      ),
+                    ),
+                    padding: const WidgetStatePropertyAll(
+                      EdgeInsets.symmetric(horizontal: 10),
+                    ),
+                    textStyle: const WidgetStatePropertyAll(
+                      TextStyle(fontSize: 12.5),
+                    ),
+                  ),
+            ),
+          ),
+          if (!isSwapMode) ...[
+            const SizedBox(width: 6),
+            isLoading
+                ? const SizedBox(
+                  width: 38,
+                  height: 38,
+                  child: Center(child: CircularProgressIndicator()),
+                )
+                : Tooltip(
+                  message:
+                      isAllSelected ? 'Deseleccionar todos' : 'Seleccionar todos',
+                  child: InkWell(
+                    onTap: onToggleAll,
+                    borderRadius: BorderRadius.circular(11),
+                    child: Container(
+                      width: 38,
+                      height: 38,
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        color:
+                            isAllSelected
+                                ? cs.primary
+                                : cs.surfaceContainerLowest,
+                        borderRadius: BorderRadius.circular(11),
+                        border: Border.all(
+                          color:
+                              isAllSelected
+                                  ? cs.primary
+                                  : cs.outlineVariant.withValues(alpha: 0.5),
+                        ),
+                      ),
+                      child: Icon(
+                        isAllSelected
+                            ? Icons.deselect_rounded
+                            : Icons.select_all_rounded,
+                        size: 17,
+                        color:
+                            isAllSelected
+                                ? cs.onPrimary
+                                : cs.onSurfaceVariant,
+                      ),
+                    ),
+                  ),
+                ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
