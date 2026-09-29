@@ -1,15 +1,12 @@
-// Destino final: lib/core/state/traspaso_efectivo_tesbase_provider.dart
 import 'package:bosque_flutter/data/repositories/traspaso_efectivo_tesbase_impl.dart';
 import 'package:bosque_flutter/domain/entities/traspaso_efectivo_tesbase_entity.dart';
 import 'package:bosque_flutter/domain/repositories/traspaso_efectivo_tesbase_repository.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// Estado de la tarea 289, "Verificar Traspaso de Efectivo Entre Sistemas"
-/// (idATR 11, TesBase).
-///
-/// **Qué día se revisa.** La ocurrencia del día D revisa lo que se registró el
-/// día hábil anterior (archivo SQL 58). La pantalla abre ese día y deja mirar
-/// otro, pero "Sin pendientes" siempre es sobre el de la ocurrencia.
+/// (idATR 11, TesBase). La ocurrencia del día D revisa lo registrado el día
+/// hábil anterior (SQL 58); la pantalla deja mirar otro día, pero
+/// "Sin pendientes" siempre es sobre el de la ocurrencia.
 class TraspasoEfectivoTesBaseState {
   /// Qué día revisa la ocurrencia. Nulo hasta la primera lectura.
   final DiaRevisadoTesBase? diaRevisado;

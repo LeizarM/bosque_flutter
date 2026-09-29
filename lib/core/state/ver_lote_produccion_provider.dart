@@ -1,9 +1,7 @@
-/// Estado de la pantalla "Ver lote de produccion": el listado y el detalle
-/// editable de un lote.
-///
-/// El listado y el detalle son dos providers separados porque tienen ciclos de
-/// vida distintos: el listado vive mientras la pantalla este abierta, el
-/// detalle nace y muere con cada lote que se abre.
+/// Estado de la pantalla "Ver lote de producción": listado y detalle editable
+/// de un lote. Son dos providers porque su ciclo de vida difiere: el listado
+/// vive mientras la pantalla está abierta; el detalle nace y muere con cada
+/// lote que se abre.
 library;
 
 import 'package:bosque_flutter/data/repositories/lote_produccion_impl.dart';
@@ -21,19 +19,13 @@ final loteProduccionRepositoryProvider = Provider<LoteProduccionRepository>(
   (ref) => LoteProduccionImpl(),
 );
 
-// ═══════════════════════════════════════════════════════════════════════════
-// CATALOGOS
-// ═══════════════════════════════════════════════════════════════════════════
-//
-// No son autoDispose a proposito: articulos, empresas y maquinas son los
-// mismos para todos los lotes y no cambian durante la sesion. Pedirlos dentro
-// del detalle significaba traer 2.356 articulos cada vez que se abria un lote.
+// CATÁLOGOS: no son autoDispose a propósito. Artículos, empresas y máquinas
+// son los mismos para todos los lotes y no cambian en la sesión; pedirlos
+// en el detalle traía 2.356 artículos cada vez que se abría un lote.
 
-/// Catalogo de articulos, ya ordenado.
-///
-/// El orden se resuelve aqui y no en el widget: ordenar 2.356 elementos en cada
-/// dibujo del detalle —y el detalle se redibuja con cada tecla— era la mitad
-/// del congelamiento al escribir un peso.
+/// Catálogo de artículos, ya ordenado. Se ordena aquí y no en el widget:
+/// ordenar 2.356 elementos en cada redibujo del detalle (uno por tecla)
+/// congelaba la escritura de un peso.
 final articulosProduccionProvider = FutureProvider<List<LoteProduccionEntity>>((
   ref,
 ) async {
@@ -52,9 +44,7 @@ final maquinasProduccionProvider =
       (ref) => ref.watch(loteProduccionRepositoryProvider).obtenerMaquinas(),
     );
 
-// ═══════════════════════════════════════════════════════════════════════════
 // LISTADO
-// ═══════════════════════════════════════════════════════════════════════════
 
 class VerLotesState {
   final List<LoteProduccionEntity> lotes;
@@ -85,8 +75,7 @@ class VerLotesState {
   }) : desde = desde ?? rangoPorDefecto().desde,
        hasta = hasta ?? rangoPorDefecto().hasta;
 
-  /// Del primer dia del mes en curso hasta hoy: es el recorte con el que se
-  /// mira la produccion todos los dias.
+  /// Del primer día del mes en curso hasta hoy.
   static ({DateTime desde, DateTime hasta}) rangoPorDefecto() {
     final hoy = DateTime.now();
     return (desde: DateTime(hoy.year, hoy.month, 1), hasta: hoy);
@@ -173,9 +162,7 @@ final verLotesProvider = StateNotifierProvider.autoDispose<
   VerLotesState
 >((ref) => VerLotesNotifier(ref, ref.watch(loteProduccionRepositoryProvider)));
 
-// ═══════════════════════════════════════════════════════════════════════════
 // DETALLE
-// ═══════════════════════════════════════════════════════════════════════════
 
 typedef DetalleLoteParams = ({int idLp, int audUsuario});
 
@@ -214,7 +201,7 @@ class DetalleLoteState {
     this.error,
   });
 
-  // ── Totales: se recalculan desde el detalle, nunca se editan a mano ──────
+  // Totales: se recalculan desde el detalle, nunca se editan a mano.
 
   double get totalPesoIngreso => ingresos.fold(0.0, (s, e) => s + e.pesoKilos);
   double get totalBalanza => ingresos.fold(0.0, (s, e) => s + e.balanza);
@@ -238,10 +225,8 @@ class DetalleLoteState {
     return null;
   }
 
-  /// Resmas que deberian haber salido segun el peso de balanza.
-  ///
-  /// Sin UTM no hay estimacion posible: devuelve 0 en lugar de inventar un
-  /// factor 1, que daria un numero con apariencia de dato real.
+  /// Resmas que deberían haber salido según el peso de balanza. Sin UTM devuelve
+  /// 0 en lugar de inventar un factor 1, que parecería un dato real.
   double get cantEstimadaResma {
     final utm = articuloSalida?.utm ?? 0;
     if (utm <= 0) return 0;
@@ -293,11 +278,7 @@ class DetalleLoteNotifier extends StateNotifier<DetalleLoteState> {
   final LoteProduccionRepository _repo;
   final DetalleLoteParams _params;
 
-  /// Las tres consultas del lote van juntas y los catalogos salen de la cache.
-  ///
-  /// Antes eran seis llamadas encadenadas —una esperando a la anterior— y tres
-  /// de ellas traian datos que no dependen del lote. Abrir un lote costaba seis
-  /// idas y vueltas al servidor, con el catalogo de articulos entero adentro.
+  /// Las tres consultas del lote van juntas; los catálogos salen de la caché.
   Future<void> cargar() async {
     state = state.copyWith(cargando: true, limpiarError: true);
     try {
@@ -322,9 +303,8 @@ class DetalleLoteNotifier extends StateNotifier<DetalleLoteState> {
       final empresas = catalogos[1] as List<EmpresaEntity>;
       final maquinas = catalogos[2] as List<MaquinaProduccionEntity>;
 
-      // Los repositorios devuelven lista vacia cuando la red falla, no una
-      // excepcion. Sin esto, un catalogo que fallo una vez quedaba cacheado
-      // vacio para toda la sesion y el selector de articulos no se recuperaba.
+      // Los repositorios devuelven lista vacía (no lanzan) si la red falla. Sin esto,
+      // un catálogo fallido quedaba vacío en caché toda la sesión.
       _invalidarSiVacio(articulos, articulosProduccionProvider);
       _invalidarSiVacio(empresas, empresasProduccionProvider);
       _invalidarSiVacio(maquinas, maquinasProduccionProvider);
@@ -356,7 +336,7 @@ class DetalleLoteNotifier extends StateNotifier<DetalleLoteState> {
   /// solo, y volver a pedir los 125 para quedarse con uno no aporta nada.
   void setLote(LoteProduccionEntity lote) => state = state.copyWith(lote: lote);
 
-  // ── Cabecera ─────────────────────────────────────────────────────────────
+  // Cabecera
 
   void setMaquina(int idMa) {
     final l = state.lote;
@@ -402,7 +382,7 @@ class DetalleLoteNotifier extends StateNotifier<DetalleLoteState> {
     state = state.copyWith(lote: l);
   }
 
-  // ── Detalle ──────────────────────────────────────────────────────────────
+  // Detalle
 
   void setArticuloIngreso(String cod) =>
       state = state.copyWith(codArticuloIngreso: cod);
@@ -426,14 +406,10 @@ class DetalleLoteNotifier extends StateNotifier<DetalleLoteState> {
 
   /// Agrega una bobina en blanco al final del material de ingreso.
   ///
-  /// Va con `idMi: 0` a proposito: el backend decide entre insertar y
-  /// actualizar mirando ese campo —`acc = idMi == 0 ? "I" : "U"`—, asi que una
-  /// fila nueva y una que ya esta en la base viajan en la misma lista sin que
-  /// haya que distinguirlas aqui.
-  ///
-  /// No toca ningun total. `totalPesoIngreso`, `totalBalanza`, `difProduccion`
-  /// y `cantEstimadaResma` se derivan de la lista, y `guardar` rearma la
-  /// cabecera con ellos: agregar la fila alcanza para que todo se recalcule.
+  /// Va con `idMi: 0` a propósito: el backend decide insertar o actualizar por
+  /// ese campo (`acc = idMi == 0 ? "I" : "U"`), así que filas nuevas y existentes
+  /// viajan en la misma lista. No toca totales: se derivan de la lista y
+  /// `guardar` rearma la cabecera con ellos.
   void agregarIngreso() {
     final articulo = _articulo(state.codArticuloIngreso);
     state = state.copyWith(
@@ -453,12 +429,10 @@ class DetalleLoteNotifier extends StateNotifier<DetalleLoteState> {
     );
   }
 
-  /// Quita una bobina que todavia no se guardo.
+  /// Quita una bobina que todavía no se guardó.
   ///
-  /// Solo las nuevas: el controlador del backend elige entre 'I' y 'U' y no
-  /// tiene accion de baja para el material de ingreso, asi que una fila que ya
-  /// esta en la base no se puede borrar desde la app. Esto existe para
-  /// deshacer un "Agregar bobina" de mas, no para corregir el pasado.
+  /// Solo las nuevas: el backend elige entre 'I' y 'U' y no tiene baja para el
+  /// material de ingreso, así que una fila ya guardada no se borra desde la app.
   void quitarIngreso(int indice) {
     if (indice < 0 || indice >= state.ingresos.length) return;
     if (state.ingresos[indice].idMi != 0) return;
@@ -491,15 +465,12 @@ class DetalleLoteNotifier extends StateNotifier<DetalleLoteState> {
     state = state.copyWith(mermas: lista);
   }
 
-  // ── Guardar ──────────────────────────────────────────────────────────────
+  // Guardar
 
-  /// Guarda cabecera y detalle, y deja el lote cerrado.
-  ///
-  /// Cerrarlo al guardar es la regla del sistema anterior: un lote se edita
-  /// mientras esta abierto y despues solo lo reabre quien tenga el permiso.
-  ///
+  /// Guarda cabecera y detalle, y deja el lote cerrado: regla del sistema
+  /// anterior, un lote se edita abierto y solo lo reabre quien tenga permiso.
   /// La cabecera va primero porque el SP recalcula la cantidad de bobinas
-  /// contra las filas de ingreso que ya estan en la base.
+  /// contra las filas de ingreso que ya están en la base.
   Future<String?> guardar() async {
     final lote = state.lote;
     if (lote == null) return 'No hay lote cargado.';

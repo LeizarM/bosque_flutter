@@ -1,36 +1,13 @@
-/// El catalogo de familias de producto (`tpr_producto`), nucleo del modulo de
-/// Precios: de la familia cuelgan los precios, los porcentajes y los costos
-/// sugeridos.
+/// El catálogo de familias de producto (`tpr_producto`), núcleo del módulo de
+/// Precios: de la familia cuelgan los precios, porcentajes y costos sugeridos.
+/// Reemplaza a `dlgDtFam`, `dlgFam` y `dlgProdV` con una lista y una ficha.
 ///
-/// Reemplaza a `dlgDtFam`, `dlgFam` y `dlgProdV` del monolito — tres dialogos
-/// que editaban la misma fila y que entre los tres no daban una lista donde
-/// buscar. Aca hay una sola lista, con los filtros del procedimiento, y una sola
-/// ficha.
-///
-/// ## Lo que decide la resolucion
-///
-/// El corte se mide sobre el ancho del CAJON (`LayoutBuilder`) y no sobre el de
-/// la ventana: adentro del `DashboardScreen` el sidebar se come 260 px y
-/// `MediaQuery` miente. Con eso:
-///
-/// * **Web / escritorio:** la planilla de nueve columnas, los filtros a la
-///   vista, paginacion y las acciones en la propia fila.
-/// * **Movil:** tarjetas con el codigo, la descripcion compuesta y el estado;
-///   los filtros adentro de un panel plegable, las acciones en un menu
-///   contextual y ni un pixel de scroll horizontal.
-///
-/// No es la misma grilla achicada: son dos formas distintas de la misma
-/// pregunta.
-///
-/// ## Alta y edicion
-///
-/// Desde el 2026-09-25 la ficha graba: `PreciosRepository.registrarFamilia`
-/// sobre `/price/familia/registrar` y `/price/familia/actualizar`
-/// (`p_abm_producto 'I'` y `'U'`). El alta tambien puede partir de otra
-/// familia ("Nueva a partir de esta"), que es como nace casi toda familia: la
-/// variante de otra con otro gramaje o color.
-///
-/// El listado arranca en las activas: son las que se reprecian.
+/// El corte se mide sobre el ancho del CAJÓN (`LayoutBuilder`): en el
+/// `DashboardScreen` el sidebar se come 260 px y `MediaQuery` miente. Escritorio:
+/// planilla de nueve columnas con paginación y acciones en la fila; móvil:
+/// tarjetas, filtros plegables y menú contextual. Graba con
+/// `PreciosRepository.registrarFamilia` (`/price/familia/registrar` y
+/// `/actualizar`, `p_abm_producto 'I'` y `'U'`). Arranca en las activas.
 library;
 
 import 'package:flutter/material.dart';
@@ -55,14 +32,9 @@ import 'package:bosque_flutter/presentation/widgets/precios/pdf_precios.dart';
 import 'package:bosque_flutter/presentation/widgets/precios/tabla_familias.dart';
 import 'package:bosque_flutter/presentation/widgets/precios/tarjeta_familia.dart';
 
-// ═══════════════════════════════════════════════════════════════════════════
-// Estado local de la pantalla
-//
-// Vive aca y no en `precios_provider.dart` a proposito: es estado que no debe
-// filtrarse a las otras pantallas del modulo, que se estan escribiendo en
-// paralelo. El filtro que SI viaja al backend usa `filtroFamiliasProvider`, que
-// el provider del modulo declara justamente para esta busqueda.
-// ═══════════════════════════════════════════════════════════════════════════
+// Estado local de la pantalla: vive aquí y no en `precios_provider.dart` para no
+// filtrarse a las otras pantallas del módulo. El filtro que SÍ viaja al backend
+// usa `filtroFamiliasProvider`, que declara el provider del módulo.
 
 /// Texto libre del buscador. Se aplica del lado del cliente, sobre lo que ya se
 /// descargo: el procedimiento del backend filtra por igualdad exacta de codigo o
@@ -70,11 +42,8 @@ import 'package:bosque_flutter/presentation/widgets/precios/tarjeta_familia.dart
 final _busquedaProvider = StateProvider.autoDispose<String>((ref) => '');
 
 /// Las familias del filtro, ya convertidas a la fila que dibuja la pantalla y
-/// ordenadas por codigo.
-///
-/// La conversion esta aca y no en el `build` para que escribir en el buscador no
-/// vuelva a parsear el listado entero en cada tecla: este provider solo se
-/// recalcula cuando cambia lo que devolvio el backend.
+/// ordenadas por código. La conversión está aquí y no en el `build` para que
+/// escribir en el buscador no reparsee el listado en cada tecla.
 final _filasProvider = FutureProvider.autoDispose
     .family<List<FamiliaVista>, FiltroFamilias>((ref, filtro) async {
       final crudas = await ref.watch(familiasProvider(filtro).future);
@@ -82,9 +51,7 @@ final _filasProvider = FutureProvider.autoDispose
         ..sort((a, b) => a.codigoFamilia.compareTo(b.codigoFamilia));
     });
 
-// ═══════════════════════════════════════════════════════════════════════════
 // La pantalla
-// ═══════════════════════════════════════════════════════════════════════════
 
 /// Las familias con una escritura de la fila en curso (baja, reactivacion o
 /// eliminacion). Vive fuera de la pantalla, que no tiene estado propio.
@@ -279,9 +246,8 @@ class FamiliasScreen extends ConsumerWidget {
     );
   }
 
-  /// El buscador mira todo el renglon: codigo, descripciones y estado. Se
-  /// comparan minusculas de los dos lados porque nadie escribe "Bond" con
-  /// mayuscula al buscar.
+  /// El buscador mira todo el renglón: código, descripciones y estado, en
+  /// minúsculas de los dos lados.
   List<FamiliaVista> _aplicarBusqueda(
     List<FamiliaVista> filas,
     String busqueda,
@@ -397,10 +363,9 @@ class FamiliasScreen extends ConsumerWidget {
     }
   }
 
-  /// La ficha de la familia. En un telefono es una hoja modal que sube desde
-  /// abajo —el gesto de cerrarla es el mismo que el de volver— y en escritorio
-  /// un dialogo centrado de ancho acotado: una hoja estirada de punta a punta de
-  /// un monitor de 1920 px deja los campos a medio metro uno del otro.
+  /// La ficha de la familia: hoja modal desde abajo en teléfono (cerrarla es el
+  /// mismo gesto que volver) y diálogo centrado de ancho acotado en escritorio (una
+  /// hoja de punta a punta en un monitor de 1920 px deja los campos a medio metro).
   Future<void> _abrirFicha(
     BuildContext context,
     WidgetRef ref, {
@@ -410,10 +375,9 @@ class FamiliasScreen extends ConsumerWidget {
   }) async {
     final alta = familia == null;
     final contenedor = ProviderScope.containerOf(context, listen: false);
-    // Graba y deja que la ficha cierre; si el servidor rechaza, la ficha
-    // muestra el motivo y queda abierta con lo cargado. Refresca aca y no al
-    // cerrar: la ficha se puede cerrar de mas de una forma (arrastrando la
-    // hoja, por ejemplo) y lo grabado tiene que aparecer igual.
+    // Graba y deja que la ficha cierre; si el servidor rechaza, la ficha muestra el
+    // motivo y queda abierta. Refresca aquí y no al cerrar: la ficha se cierra de
+    // varias formas (p. ej. arrastrando la hoja) y lo grabado debe aparecer igual.
     Future<void> guardar(
       ProductoFamiliaEntity f,
       List<PorcentajePrecioEntity>? porcentajes,
@@ -421,10 +385,8 @@ class FamiliasScreen extends ConsumerWidget {
       await contenedor
           .read(preciosRepositoryProvider)
           .registrarFamilia(f, alta: alta, porcentajes: porcentajes);
-      // Se invalida toda la familia de providers y no solo el filtro actual:
-      // al crear o editar una familia cambian tambien los listados de los
-      // otros filtros que quedaron en el cache. Y lo que ahora lee distinto la
-      // pantalla Porcentajes.
+      // Se invalida toda la familia de providers: al crear o editar cambian también
+      // los listados de otros filtros en caché y lo que lee la pantalla Porcentajes.
       contenedor.invalidate(familiasProvider);
       contenedor.invalidate(porcentajesPorFamiliaProvider(f.codigoFamilia));
       if (context.mounted) {
@@ -474,9 +436,7 @@ class FamiliasScreen extends ConsumerWidget {
   }
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
 // Encabezado
-// ═══════════════════════════════════════════════════════════════════════════
 
 /// Que hace cada opcion del menu de reportes.
 @immutable
@@ -640,13 +600,10 @@ class _MenuReportes extends StatelessWidget {
   }
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// Lista de movil
-// ═══════════════════════════════════════════════════════════════════════════
+// Lista de móvil
 
-/// Las tarjetas se entregan de a tandas: el catalogo completo son cientos de
-/// familias y un telefono no necesita paginador con numeros —nadie salta a la
-/// pagina 7 con el pulgar—, necesita no cargar de mas.
+/// Las tarjetas se entregan de a tandas: son cientos de familias y un teléfono no
+/// necesita paginador con números, necesita no cargar de más.
 class _ListaMovil extends StatefulWidget {
   const _ListaMovil({
     required this.filas,

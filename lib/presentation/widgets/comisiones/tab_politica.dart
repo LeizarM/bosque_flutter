@@ -11,18 +11,13 @@ import 'package:bosque_flutter/domain/entities/politica_bond_entity.dart';
 import 'package:bosque_flutter/presentation/widgets/comisiones/estado_vista.dart';
 import 'package:bosque_flutter/presentation/widgets/comisiones/comisiones_tema.dart';
 
-/// Administración de la política del descuento por familia.
-///
-/// Son tres reglas distintas que se administran juntas porque se piensan
-/// juntas:
-///
+/// Administración de la política del descuento por familia: tres reglas que se
+/// piensan juntas.
 ///   1. Qué porcentaje se paga de cada familia, y desde cuándo.
 ///   2. Qué vendedores quedan exentos de ese descuento.
-///   3. Qué clientes no cuentan para el total de qué vendedor.
-///
-/// La tercera no tiene nada que ver con el descuento: vivía escrita a mano
-/// dentro de p_list_paraPagar como `case when vs.idVendedor = 64` y se trajo a
-/// tabla para que el próximo cliente sea una fila y no un ALTER PROCEDURE.
+///   3. Qué clientes no cuentan para el total de qué vendedor (no es del
+///      descuento: era un `case when vs.idVendedor = 64` a mano en
+///      p_list_paraPagar; ahora es una fila y no un ALTER PROCEDURE).
 class TabPolitica extends ConsumerStatefulWidget {
   const TabPolitica({super.key});
 
@@ -55,8 +50,6 @@ class _TabPoliticaState extends ConsumerState<TabPolitica> {
         _Advertencia(padding: padding),
         Padding(
           padding: EdgeInsets.fromLTRB(padding, 4, padding, 12),
-          // Wrap y no Row: los tres rótulos no entran en una línea de teléfono
-          // y un Row los recortaría sin avisar.
           child: Wrap(
             spacing: 8,
             runSpacing: 8,
@@ -109,10 +102,10 @@ class _Advertencia extends StatelessWidget {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // La barra, no el relleno, es la que dice "esto importa". Va como
-            // hijo y no como Border(left:) porque un borde no uniforme con
-            // borderRadius no llega a pintarse. El padding vertical vive del
-            // lado del texto justamente para que la barra llegue a los bordes.
+            // La barra dice "esto importa". Va como hijo y no como Border(left:)
+            // porque un borde no uniforme con borderRadius no se pinta; el
+            // padding vertical vive del lado del texto para que la barra llegue a
+            // los bordes.
             Container(width: 3, color: cs.tertiary),
             Expanded(
               child: Padding(
@@ -159,8 +152,6 @@ class _Advertencia extends StatelessWidget {
     );
   }
 }
-
-// ── Sección 1: familias ──────────────────────────────────────────────────────
 
 class _SeccionFamilias extends ConsumerWidget {
   const _SeccionFamilias({required this.padding});
@@ -283,8 +274,6 @@ class _SeccionFamilias extends ConsumerWidget {
   }
 }
 
-// ── Sección 2: vendedores exentos ────────────────────────────────────────────
-
 class _SeccionExentos extends ConsumerWidget {
   const _SeccionExentos({required this.padding});
   final double padding;
@@ -385,8 +374,6 @@ class _SeccionExentos extends ConsumerWidget {
     );
   }
 }
-
-// ── Sección 3: clientes excluidos ────────────────────────────────────────────
 
 class _SeccionClientes extends ConsumerWidget {
   const _SeccionClientes({required this.padding});
@@ -493,8 +480,6 @@ class _SeccionClientes extends ConsumerWidget {
     );
   }
 }
-
-// ── Diálogos ─────────────────────────────────────────────────────────────────
 
 class _DialogoFamilia extends ConsumerStatefulWidget {
   const _DialogoFamilia({this.actual});
@@ -938,8 +923,6 @@ class _DialogoClienteState extends ConsumerState<_DialogoCliente> {
   }
 }
 
-// ── Piezas compartidas ───────────────────────────────────────────────────────
-
 class _BarraAccion extends StatelessWidget {
   const _BarraAccion({
     required this.padding,
@@ -1000,11 +983,9 @@ class _Ficha extends StatelessWidget {
   final VoidCallback? alEditar;
   final VoidCallback? alDesactivar;
 
-  /// Solo se muestra cuando [activa] es false. Existe porque no hay botón de
-  /// "reactivar": desactivar es una baja lógica (activo=0) y la única forma
-  /// de volver a aplicar la regla es cargarla de nuevo desde el botón de
-  /// arriba, no editando esta fila. Sin este texto el usuario que se
-  /// equivoca al desactivar no tiene cómo enterarse de eso.
+  /// Solo se muestra cuando [activa] es false. No hay botón de "reactivar":
+  /// desactivar es baja lógica (activo=0) y la regla solo vuelve a aplicarse
+  /// cargándola de nuevo desde el botón de arriba, no editando esta fila.
   final String? pistaInactiva;
 
   @override
@@ -1166,14 +1147,10 @@ void _avisar(BuildContext context, WidgetRef ref, bool exito, String textoOk) {
   ref.read(comisionesAccionesProvider.notifier).limpiar();
 }
 
-// ── Seccion 4: descuentos aplicados ──────────────────────────────────────────
-
-/// Que se esta descontando, item por item.
-///
-/// Va en esta pantalla y no en el preliminar porque responde otra pregunta: el
-/// preliminar dice cuanto se le paga a cada vendedor, esto dice de donde salio
-/// el descuento. Mezclarlas obligaria a poner dos granularidades -vendedor y
-/// linea de factura- en la misma hoja.
+/// Qué se está descontando, ítem por ítem. Va aquí y no en el preliminar porque
+/// responde otra pregunta (de dónde salió el descuento, no cuánto se le paga a
+/// cada vendedor): mezclarlas exigiría dos granularidades, vendedor y línea de
+/// factura, en la misma hoja.
 class _SeccionDescuentos extends ConsumerStatefulWidget {
   const _SeccionDescuentos({required this.padding});
   final double padding;
@@ -1213,9 +1190,9 @@ class _SeccionDescuentosState extends ConsumerState<_SeccionDescuentos> {
           empresas: _empresas,
           alCambiar: (f) => setState(() => _filtro = f),
         ),
-        // El resumen solo tiene sentido sobre el periodo abierto: en el
-        // historico los porcentajes son los que quedaron congelados, y
-        // reagruparlos por la politica de hoy mezclaria dos cosas.
+        // El resumen solo tiene sentido sobre el período abierto: en el histórico los
+        // porcentajes están congelados y reagruparlos por la política de hoy mezclaría
+        // dos cosas.
         if (_filtro.accion == 'P')
           resumen.maybeWhen(
             data:
@@ -1322,8 +1299,6 @@ class _Filtros extends StatelessWidget {
 
     return Padding(
       padding: EdgeInsets.fromLTRB(padding, 12, padding, 8),
-      // Wrap para que en un telefono los cuatro controles bajen de linea en vez
-      // de recortarse.
       child: Wrap(
         spacing: 12,
         runSpacing: 12,

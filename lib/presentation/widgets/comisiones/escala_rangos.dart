@@ -3,22 +3,13 @@ import 'package:flutter/material.dart';
 import 'package:bosque_flutter/domain/entities/comision_por_rango_entity.dart';
 import 'package:bosque_flutter/presentation/widgets/comisiones/comisiones_tema.dart';
 
-/// Escala visual de comision por dias de pago.
+/// Escala visual de comisión por días de pago: una banda continua donde cada
+/// segmento ocupa el ancho de sus días y se pinta con intensidad proporcional al
+/// porcentaje, de modo que se ven la pendiente y los huecos entre tramos.
 ///
-/// La regla de negocio es un incentivo: cuanto antes paga el cliente, mas alta
-/// es la comision. Una tabla de numeros no deja ver esa pendiente ni los huecos
-/// entre tramos; una banda continua si. Cada segmento ocupa el ancho de sus
-/// dias y se pinta con intensidad proporcional al porcentaje, de modo que la
-/// escala se lee de un vistazo y un tramo faltante salta a la vista.
-///
-/// Los centinelas -"anticipado", que es el tramo negativo, y "sin tope", el que
-/// llega a 1.000.000- no tienen ancho propio: no representan una cantidad de
-/// dias, son extremos abiertos. Se les da un ancho fijo en px y quedan FUERA
-/// del reparto por flex, para que el ancho de los demas siga siendo la verdad.
-///
-/// Antes se les inventaban 20 "dias equivalentes" y entraban al reparto como
-/// uno mas: en una escala de cinco tramos, el de 11-30 dias -que es el mas
-/// largo de verdad- terminaba empatado con un centinela que no mide nada.
+/// Los centinelas («anticipado», tramo negativo, y «sin tope», hasta 1.000.000)
+/// son extremos abiertos, no días: llevan ancho fijo en px y quedan FUERA del
+/// reparto por flex, para que el ancho de los demás siga siendo la verdad.
 class EscalaRangos extends StatelessWidget {
   const EscalaRangos({
     super.key,
@@ -30,11 +21,9 @@ class EscalaRangos extends StatelessWidget {
   final List<ComisionPorRangoEntity> rangos;
   final void Function(ComisionPorRangoEntity)? alTocar;
 
-  /// Alto de la banda.
-  ///
-  /// 72 y no 60: a 60 el hueco interno queda en 44 px contra 47 px de
-  /// contenido con textScale 1.3, y desborda. La app no clampea el textScaler
-  /// en ningun lado, asi que ese caso llega. 72 aguanta hasta 1.5.
+  /// Alto de la banda. 72 y no 60: a 60 el hueco interno queda en 44px contra 47px
+  /// de contenido con textScale 1.3 y desborda (la app no clampea el textScaler);
+  /// 72 aguanta hasta 1.5.
   final double alto;
 
   @override
@@ -46,10 +35,9 @@ class EscalaRangos extends StatelessWidget {
         .map((r) => r.comisionVisual)
         .fold<double>(0, (a, b) => a > b ? a : b);
 
-    // Si TODOS son centinelas no hay nada que repartir, y sacarlos a todos del
-    // flex dejaria la banda en ~61 px de 797 con el resto en blanco. No es un
-    // caso teorico: es el fixture del propio test de responsive, donde
-    // 'Contado' tiene solo anticipado y 'Credito' solo sinTope.
+    // Si TODOS son centinelas, sacarlos del flex dejaría la banda en ~61px de 797
+    // con el resto en blanco. Caso real: el fixture del test de responsive
+    // ('Contado' solo anticipado, 'Credito' solo sinTope).
     final soloCentinelas = ordenados.every(_esCentinela);
 
     return LayoutBuilder(
@@ -82,11 +70,9 @@ class EscalaRangos extends StatelessWidget {
   static bool _esCentinela(ComisionPorRangoEntity r) =>
       r.esAnticipado || r.sinTope;
 
-  /// Ancho del centinela, proporcional a la banda pero con piso y techo.
-  ///
-  /// No es un `SizedBox(width: 64)` fijo porque el rotulo "Anticipado" mide
-  /// 115 px: dentro de 64 el FittedBox lo baja a escala 0.426, o sea unos
-  /// 4,7 px de tipografia. Ilegible.
+  /// Ancho del centinela, proporcional a la banda con piso y techo. No un
+  /// `SizedBox(width: 64)` fijo: "Anticipado" mide 115px y en 64 el FittedBox lo
+  /// baja a escala 0.426 (~4,7px de tipografía), ilegible.
   static double _anchoCentinela(double banda) =>
       (banda * 0.16).clamp(56.0, 120.0);
 

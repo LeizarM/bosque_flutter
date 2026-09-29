@@ -1,22 +1,10 @@
 /// Los mismos precios cuando no entra una tabla: una tarjeta por lista de
 /// precios, agrupadas por sucursal.
 ///
-/// **Por que no es la tabla escalada.** En un telefono, ocho columnas se
-/// resuelven de dos maneras: achicando la letra hasta que no se lee, o con
-/// scroll horizontal, que obliga a recordar de que fila se estaba mirando el
-/// precio. Aca cada lista es una tarjeta: lo que se consulta —cuanto vale y con
-/// que porcentaje— queda a la vista, y el resto de los datos (lista SAP, id de
-/// precio, IVA, IT) se abre tocando la tarjeta. Nunca hay scroll horizontal.
-///
-/// Con el ancho medio (una tableta, o el escritorio con el menu abierto) las
-/// tarjetas van de a dos: una sola columna de tarjetas de 900 px deja el
-/// precio a un metro del nombre de la lista.
-///
-/// **Es un sliver**, como la tabla: la ficha de la familia se va con el scroll
-/// y deja la pantalla para las tarjetas.
-///
-/// La consulta es de solo lectura: no hay acciones por fila que meter en un
-/// menu contextual. El unico gesto de la tarjeta es abrir su detalle.
+/// No es la tabla escalada (ocho columnas en teléfono = letra ilegible o scroll
+/// horizontal): el precio y el porcentaje quedan a la vista y el resto (lista
+/// SAP, id, IVA, IT) se abre tocando la tarjeta. Con ancho medio van de a dos.
+/// Es un sliver, como la tabla; solo lectura (el único gesto abre el detalle).
 library;
 
 import 'package:flutter/material.dart';
@@ -68,12 +56,8 @@ class TarjetasPreciosVigentes extends StatelessWidget {
   }
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// ARMADO DE LA LISTA
-//
-// Se aplana en vez de anidar listas dentro de tarjetas por sucursal para que
-// el `SliverList.builder` siga construyendo solo lo que se ve.
-// ═══════════════════════════════════════════════════════════════════════════
+// Armado de la lista: se aplana (sin listas anidadas por sucursal) para que
+// `SliverList.builder` construya solo lo que se ve.
 
 sealed class _Renglon {
   const _Renglon();
@@ -108,9 +92,7 @@ List<_Renglon> _aplanar(List<GrupoSucursal> grupos, int columnas) {
 Color _colorDeGrupo(ColorScheme cs, GrupoSucursal g) =>
     colorDeCatalogo(cs, g.indice).fondo;
 
-// ═══════════════════════════════════════════════════════════════════════════
-// PIEZAS
-// ═══════════════════════════════════════════════════════════════════════════
+// Piezas
 
 class _TituloSucursal extends StatelessWidget {
   const _TituloSucursal({required this.grupo, required this.primero});
@@ -317,9 +299,7 @@ class _Tarjeta extends StatelessWidget {
   }
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// DETALLE
-// ═══════════════════════════════════════════════════════════════════════════
+// Detalle
 
 /// Todos los datos de una lista de precios, los que no entran en la tarjeta
 /// incluidos. Es el equivalente en telefono a correr la tabla de costado.
@@ -348,7 +328,7 @@ void mostrarDetalleDePrecio(BuildContext context, FilaPrecioVigente fila) {
                   fuerte: true,
                   vacio: fila.sinPrecio,
                   // El cero de la base significa que la lista no tiene precio
-                  // cargado; decirlo aca evita que alguien lo cotice en cero.
+                  // cargado; decirlo aquí evita que alguien lo cotice en cero.
                   nota:
                       fila.sinPrecio
                           ? 'La lista no tiene precio cargado.'

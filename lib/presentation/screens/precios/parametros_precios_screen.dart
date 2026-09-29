@@ -19,14 +19,9 @@ import 'package:bosque_flutter/presentation/widgets/precios/dialogo_parametro_gr
 import 'package:bosque_flutter/presentation/widgets/precios/tabla_parametros_gramaje.dart';
 import 'package:bosque_flutter/presentation/widgets/precios/tarjeta_tc_ancla.dart';
 
-// ═══════════════════════════════════════════════════════════════════════════
-// ESTADO LOCAL DE LA PANTALLA
-//
-// Vive aca y no en precios_provider.dart a proposito: es estado de ESTA
-// pantalla -el texto del buscador, la pagina, las escrituras de configuracion-
-// y no tiene por que filtrarse a las demas del modulo. Todo autoDispose: al
-// salir se reinicia, asi una visita no le deja el filtro puesto a la siguiente.
-// ═══════════════════════════════════════════════════════════════════════════
+// Estado local de la pantalla: vive aquí y no en precios_provider.dart (texto del
+// buscador, página, escrituras de configuración; no debe filtrarse a otras
+// pantallas). Todo autoDispose: una visita no deja su filtro a la siguiente.
 
 /// Los tres catalogos que hacen falta para leer y para editar un parametro de
 /// gramaje: el grupo, el tipo y el rango.
@@ -62,11 +57,9 @@ final _catalogosGramajeProvider = FutureProvider.autoDispose<_CatalogosGramaje>(
   },
 );
 
-/// Las asignaciones de gramaje con grupo, tipo y rango ya resueltos a texto.
-///
-/// El cruce se hace una sola vez aca y no dentro de la tabla: asi la tabla es
-/// un widget tonto que recibe texto, y ordenar o buscar no vuelve a recorrer
-/// los tres catalogos por cada fila dibujada.
+/// Las asignaciones de gramaje con grupo, tipo y rango ya resueltos a texto. El
+/// cruce se hace una vez aquí y no en la tabla (que queda como widget tonto):
+/// ordenar o buscar no recorre los tres catálogos por cada fila dibujada.
 final _filasGramajeProvider =
     FutureProvider.autoDispose<List<FilaParametroGramaje>>((ref) async {
       final pendientes = ref.watch(parametrosGramajeProvider.future);
@@ -114,12 +107,10 @@ final _busquedaGramajeProvider = StateProvider.autoDispose<String>((ref) => '');
 /// Pagina visible de la tabla de gramaje, base cero.
 final _paginaGramajeProvider = StateProvider.autoDispose<int>((ref) => 0);
 
-/// Las escrituras de configuracion de esta pantalla.
-///
-/// El estado es un solo booleano -hay una escritura en vuelo- y alcanza: cada
-/// metodo devuelve el mensaje de error del backend, o null si salio bien, y la
-/// pantalla decide como contarlo. No se guarda el error en el estado porque
-/// aca un error no cambia lo que se dibuja: se avisa y se sigue.
+/// Las escrituras de configuración de esta pantalla. El estado es un booleano
+/// (hay una escritura en vuelo); cada método devuelve el mensaje de error del
+/// backend o null si salió bien, y la pantalla decide cómo contarlo (un error no
+/// cambia lo que se dibuja: se avisa y se sigue).
 class _EscriturasParametros extends StateNotifier<bool> {
   _EscriturasParametros(this._ref) : super(false);
 
@@ -158,7 +149,7 @@ class _EscriturasParametros extends StateNotifier<bool> {
 
   /// Cambia el IVA y el IT. La tabla es un singleton: si ya hay una fila el
   /// backend la actualiza aunque el cuerpo traiga otro id, y solo inserta
-  /// cuando esta vacia. Por eso aca no hay "alta" separada del "cambio".
+  /// cuando esta vacia. Por eso aquí no hay "alta" separada del "cambio".
   Future<String?> guardarImpuestos({
     required ResultadoImpuestos valores,
     CostoIvaItEntity? actual,
@@ -209,10 +200,9 @@ class _EscriturasParametros extends StateNotifier<bool> {
         _lecturasDeGramaje,
       );
 
-  /// Todo lo que muestra parametros de gramaje queda viejo despues de
-  /// escribirlos, incluidas las consultas por grupo y por clave natural que
-  /// usan las otras pantallas del modulo: se invalidan las familias enteras,
-  /// no una instancia.
+  /// Todo lo que muestra parámetros de gramaje queda viejo tras escribirlos,
+  /// incluidas las consultas por grupo y clave natural de otras pantallas: se
+  /// invalidan las familias enteras, no una instancia.
   List<ProviderOrFamily> get _lecturasDeGramaje => [
     parametrosGramajeProvider,
     parametrosGramajePivoteProvider,
@@ -227,34 +217,19 @@ final _escrituraProvider =
       (ref) => _EscriturasParametros(ref),
     );
 
-// ═══════════════════════════════════════════════════════════════════════════
-// LA PANTALLA
-// ═══════════════════════════════════════════════════════════════════════════
+// La pantalla
 
-/// Parametros del modulo de Precios: impuestos, gramaje y ancla del tipo de
-/// cambio.
+/// Parámetros del módulo de Precios: impuestos, gramaje y ancla del tipo de
+/// cambio (se revisan juntos).
 ///
-/// Son las tres configuraciones que el resto del modulo da por sentadas, y van
-/// juntas porque se revisan juntas: quien viene a mirar con que IVA se esta
-/// calculando suele venir tambien a ver si el reprecio nocturno esta al dia.
+/// 1. **Impuestos** (tpr_costoIvaIt): ficha de una fila, se edita con
+///    confirmación (entra en el cálculo de todos los precios).
+/// 2. **Gramaje** (tpr_grupoFamTipoRangoGram): el único ABM completo.
+/// 3. **Ancla del TC** (tpr_tcAncla): SOLO CONSULTA, la escribe el proceso de
+///    repreciación nocturno, externo a la app.
 ///
-/// Cada seccion tiene un permiso de escritura distinto por naturaleza, no por
-/// configuracion:
-///
-/// 1. **Impuestos** (tpr_costoIvaIt) es una ficha de una sola fila que se
-///    edita con confirmacion, porque los dos numeros entran en el calculo de
-///    todos los precios del sistema.
-/// 2. **Parametros de gramaje** (tpr_grupoFamTipoRangoGram) es el unico ABM
-///    completo de la pantalla.
-/// 3. **Ancla del tipo de cambio** (tpr_tcAncla) es SOLO CONSULTA: la escribe
-///    el proceso de repreciacion nocturno, que vive fuera de la aplicacion.
-///
-/// El layout cambia con el ancho del CAJON, medido con `LayoutBuilder`: adentro
-/// del dashboard el sidebar se come su parte y `MediaQuery` informa la ventana
-/// entera. Con ancho sobrado las tres secciones se reparten en dos columnas -la
-/// tabla a la derecha, que es la que necesita el espacio-; apretado van una
-/// debajo de la otra, y en un telefono la tabla se vuelve tarjetas y el
-/// buscador se pliega.
+/// Layout por ancho del CAJÓN (`LayoutBuilder`, no `MediaQuery`): dos columnas
+/// con la tabla a la derecha, una sola apretado y, en teléfono, tarjetas.
 class ParametrosPreciosScreen extends ConsumerStatefulWidget {
   const ParametrosPreciosScreen({super.key});
 
@@ -265,11 +240,10 @@ class ParametrosPreciosScreen extends ConsumerStatefulWidget {
 
 class _ParametrosPreciosScreenState
     extends ConsumerState<ParametrosPreciosScreen> {
-  // Las secciones cambian de lugar al cruzar _anchoParaDosColumnas (agrandar
-  // o achicar la ventana). Sin clave se destruian y se volvian a crear: el
-  // dialogo abierto encima perdia su seccion -y con ella lo que se confirmaba-
-  // y el buscador de gramaje quedaba vacio con el filtro todavia puesto. Con
-  // la clave, Flutter las mueve enteras, con su estado.
+  // Las secciones cambian de lugar al cruzar _anchoParaDosColumnas. Sin clave se
+  // destruían y recreaban: un diálogo abierto encima perdía su sección (y lo que
+  // se confirmaba) y el buscador de gramaje quedaba vacío con el filtro puesto.
+  // Con la clave, Flutter las mueve enteras, con su estado.
   final _claveImpuestos = GlobalKey();
   final _claveGramaje = GlobalKey();
   final _claveTcAncla = GlobalKey();
@@ -307,18 +281,11 @@ class _ParametrosPreciosScreenState
     );
   }
 
-  /// Escritorio: la tabla a la derecha, con todo el ancho que sobra, y las dos
-  /// fichas de configuracion a la izquierda en una columna angosta. Cada lado
-  /// scrollea por su cuenta, que es lo que se espera de un tablero.
-  ///
-  /// Cada columna usa el aire de SU ancho. La de las fichas mide 400 px: ahi
-  /// adentro el aire es el de un telefono aunque la ventana sea enorme, y las
-  /// tarjetas del ancla se apilan en vez de ponerse en bloques. Eso es
-  /// exactamente lo que se pierde midiendo la ventana en lugar del cajon.
-  ///
-  /// Los anchos se calculan y no se miden con un LayoutBuilder por columna: las
-  /// secciones se construyen en el mismo paso que el resto, que es lo que les
-  /// permite mudarse de un diseno al otro con su estado (ver las claves).
+  /// Escritorio: la tabla a la derecha y las dos fichas a la izquierda (400 px);
+  /// cada lado scrollea por su cuenta. Cada columna usa el aire de SU ancho (la de
+  /// fichas es "teléfono" aunque la ventana sea enorme). Los anchos se calculan y
+  /// no se miden con un LayoutBuilder por columna, para que las secciones se
+  /// muden con su estado (ver las claves).
   Widget _dosColumnas(double ancho, double margen) {
     final aireFichas = Aire.de(_anchoColumnaFichas);
     return Row(
@@ -368,16 +335,13 @@ class _ParametrosPreciosScreenState
   );
 }
 
-/// Ancho de la columna de fichas en escritorio. Fijo y no proporcional: las
-/// fichas muestran cifras cortas y estirarlas hasta 700 px deja el numero
-/// perdido en el medio de una fila vacia.
+/// Ancho de la columna de fichas en escritorio. Fijo: las fichas muestran cifras
+/// cortas y estiradas a 700 px el número se pierde en una fila vacía.
 const double _anchoColumnaFichas = 400;
 
-/// A partir de aca la pantalla se parte en dos columnas.
-///
-/// No alcanza con que el cajon sea `Aire.amplio`: partir a los 1000 px deja la
-/// tabla en 560 y sus cinco columnas quedan apretadas. Con 1240 la tabla se
-/// queda con 800 y sigue siendo una tabla.
+/// A partir de aquí la pantalla se parte en dos columnas. No basta `Aire.amplio`:
+/// a 1000 px la tabla queda en 560 y sus cinco columnas apretadas; con 1240
+/// queda en 800 y sigue siendo una tabla.
 const double _anchoParaDosColumnas = 1240;
 
 class _Encabezado extends ConsumerWidget {
@@ -439,9 +403,7 @@ class _Encabezado extends ConsumerWidget {
   }
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// LA CAJA DE UNA SECCION
-// ═══════════════════════════════════════════════════════════════════════════
+// La caja de una sección
 
 /// El marco comun de las tres secciones: icono, titulo, una linea que explica
 /// para que sirve, y la accion de la seccion si la tiene.
@@ -501,9 +463,7 @@ class _Seccion extends StatelessWidget {
   }
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// 1. IMPUESTOS (tpr_costoIvaIt)
-// ═══════════════════════════════════════════════════════════════════════════
+// 1. Impuestos (tpr_costoIvaIt)
 
 class _SeccionImpuestos extends ConsumerWidget {
   const _SeccionImpuestos({super.key, required this.aire});
@@ -512,9 +472,9 @@ class _SeccionImpuestos extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // Se mira el LISTADO y no solo la fila vigente: es una sola peticion y de
-    // paso deja ver si el invariante de fila unica se rompio, que es lo que
-    // volveria no determinista el calculo de todos los precios.
+    // Se mira el LISTADO y no solo la fila vigente: es una sola petición y deja ver
+    // si se rompió el invariante de fila única (haría no determinista el cálculo
+    // de todos los precios).
     final async = ref.watch(costosIvaItProvider);
 
     return _Seccion(
@@ -527,9 +487,8 @@ class _SeccionImpuestos extends ConsumerWidget {
             () => const SizedBox(height: 140, child: EsqueletoLista(filas: 2)),
         error:
             (e, _) => MensajeError(
-              // Compacto: esta adentro de la tarjeta de la seccion, que ya
-              // scrollea. La version grande trae su propio scroll y, metida
-              // dentro de otro, se queda sin alto acotado y revienta.
+              // Compacto: va dentro de la tarjeta, que ya scrollea; la versión grande trae su
+              // propio scroll y anidada queda sin alto acotado.
               compacto: true,
               error: e,
               onReintentar: () => ref.invalidate(costosIvaItProvider),
@@ -606,9 +565,8 @@ class _SeccionImpuestos extends ConsumerWidget {
     WidgetRef ref,
     CostoIvaItEntity? vigente,
   ) async {
-    // La confirmacion la pide el propio dialogo, con los valores viejos y los
-    // nuevos a la vista: confirmar sin ver contra que se compara no es
-    // confirmar nada.
+    // La confirmación la pide el propio diálogo, con los valores viejos y los nuevos
+    // a la vista: confirmar sin ver contra qué se compara no es confirmar.
     final valores = await showDialog<ResultadoImpuestos>(
       context: context,
       builder: (_) => DialogoImpuestosPrecio(actual: vigente),
@@ -665,9 +623,7 @@ class _Cifra extends StatelessWidget {
   }
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// 2. PARAMETROS DE GRAMAJE (tpr_grupoFamTipoRangoGram)
-// ═══════════════════════════════════════════════════════════════════════════
+// 2. Parámetros de gramaje (tpr_grupoFamTipoRangoGram)
 
 class _SeccionGramaje extends ConsumerStatefulWidget {
   const _SeccionGramaje({super.key, required this.aire});
@@ -727,9 +683,8 @@ class _SeccionGramajeState extends ConsumerState<_SeccionGramaje> {
             () => const SizedBox(height: 240, child: EsqueletoLista(filas: 4)),
         error:
             (e, _) => MensajeError(
-              // Compacto: esta adentro de la tarjeta de la seccion, que ya
-              // scrollea. La version grande trae su propio scroll y, metida
-              // dentro de otro, se queda sin alto acotado y revienta.
+              // Compacto: va dentro de la tarjeta, que ya scrollea; la versión grande trae su
+              // propio scroll y anidada queda sin alto acotado.
               compacto: true,
               error: e,
               onReintentar: () => ref.invalidate(parametrosGramajeProvider),
@@ -885,7 +840,7 @@ class _SeccionGramajeState extends ConsumerState<_SeccionGramaje> {
             tipos: catalogos.tipos,
             rangos: catalogos.rangos,
             inicial: inicial,
-            // La tabla no tiene unique: el par repetido hay que atajarlo aca,
+            // La tabla no tiene unique: el par repetido hay que atajarlo aquí,
             // porque el backend lo aceptaria como una fila mas.
             clavesOcupadas: {for (final f in filas) f.parametro.claveNatural},
           ),
@@ -934,12 +889,9 @@ class _SeccionGramajeState extends ConsumerState<_SeccionGramaje> {
   }
 }
 
-/// Paginador propio, chico y del tema.
-///
-/// No se usa `BosquePaginator`: pinta el fondo con `Colors.white` fijo -que en
-/// modo oscuro queda como una franja blanca- y decide su forma con
-/// `ResponsiveUtilsBosque.isMobile`, que aca no sirve porque mide la ventana y
-/// no el cajon.
+/// Paginador propio, chico y del tema. No se usa `BosquePaginator`: pinta el
+/// fondo con `Colors.white` fijo (franja blanca en modo oscuro) y decide su forma
+/// con `ResponsiveUtilsBosque.isMobile`, que mide la ventana y no el cajón.
 class _Paginador extends StatelessWidget {
   const _Paginador({
     required this.pagina,
@@ -986,9 +938,7 @@ class _Paginador extends StatelessWidget {
   );
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// 3. ANCLA DEL TIPO DE CAMBIO (tpr_tcAncla)
-// ═══════════════════════════════════════════════════════════════════════════
+// 3. Ancla del tipo de cambio (tpr_tcAncla)
 
 class _SeccionTcAncla extends ConsumerWidget {
   const _SeccionTcAncla({super.key, required this.aire});
@@ -1011,9 +961,8 @@ class _SeccionTcAncla extends ConsumerWidget {
             () => const SizedBox(height: 160, child: EsqueletoLista(filas: 2)),
         error:
             (e, _) => MensajeError(
-              // Compacto: esta adentro de la tarjeta de la seccion, que ya
-              // scrollea. La version grande trae su propio scroll y, metida
-              // dentro de otro, se queda sin alto acotado y revienta.
+              // Compacto: va dentro de la tarjeta, que ya scrollea; la versión grande trae su
+              // propio scroll y anidada queda sin alto acotado.
               compacto: true,
               error: e,
               onReintentar: () => ref.invalidate(anclasTipoCambioProvider),

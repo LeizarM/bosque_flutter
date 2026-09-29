@@ -8,10 +8,8 @@ import 'package:bosque_flutter/domain/entities/nota_preliminar_entity.dart';
 import 'package:bosque_flutter/presentation/widgets/comisiones/estado_vista.dart';
 import 'package:bosque_flutter/presentation/widgets/comisiones/comisiones_tema.dart';
 
-/// Criterios de orden del detalle. El SP devuelve por fecha ascendente, que
-/// sirve para conciliar pero no para responder «cual pesa mas», que es lo que
-/// se suele mirar en un preliminar. Por eso el que entra por defecto es monto
-/// descendente.
+/// Criterios de orden del detalle. El SP devuelve por fecha ascendente (sirve
+/// para conciliar, no para ver «cuál pesa más»), por eso entra monto descendente.
 enum OrdenNota {
   monto('Monto'),
   fecha('Fecha factura'),
@@ -22,11 +20,9 @@ enum OrdenNota {
   final String etiqueta;
 }
 
-/// Desglose de una fila del preliminar: las notas que la componen.
-///
-/// Reemplaza al dialogo «NOTAS A PAGAR» de Comisiones.xhtml. Aquel era una
-/// tabla fija de diez columnas que en un telefono no entraba; aca el escritorio
-/// mantiene la tabla y el movil pasa a tarjetas, con la misma informacion.
+/// Desglose de una fila del preliminar: las notas que la componen. Reemplaza el
+/// diálogo «NOTAS A PAGAR» de Comisiones.xhtml (tabla fija de diez columnas que
+/// en teléfono no entraba): escritorio mantiene la tabla y móvil usa tarjetas.
 class DialogoNotasFila extends ConsumerStatefulWidget {
   const DialogoNotasFila({
     super.key,
@@ -186,8 +182,6 @@ class _DialogoNotasFilaState extends ConsumerState<DialogoNotasFila> {
   }
 }
 
-// ── Encabezado ───────────────────────────────────────────────────────────────
-
 class _Encabezado extends StatelessWidget {
   const _Encabezado({
     required this.nombreVendedor,
@@ -225,8 +219,6 @@ class _Encabezado extends StatelessWidget {
             style: tt.bodyMedium?.copyWith(color: cs.onSurfaceVariant),
           ),
           const SizedBox(height: 10),
-          // Wrap y no Row: en un telefono los cuatro datos no entran en una
-          // linea y un Row los recortaria sin avisar.
           Wrap(
             spacing: 8,
             runSpacing: 8,
@@ -243,8 +235,6 @@ class _Encabezado extends StatelessWidget {
     );
   }
 }
-
-// ── Barra de orden ───────────────────────────────────────────────────────────
 
 class _BarraOrden extends StatelessWidget {
   const _BarraOrden({
@@ -267,8 +257,6 @@ class _BarraOrden extends StatelessWidget {
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-      // Wrap para que en un telefono el contador, el desplegable y el sentido
-      // bajen de linea en vez de recortarse.
       child: Wrap(
         spacing: 12,
         runSpacing: 8,
@@ -308,8 +296,6 @@ class _BarraOrden extends StatelessWidget {
     );
   }
 }
-
-// ── Escritorio: tabla ────────────────────────────────────────────────────────
 
 class _TablaNotas extends StatelessWidget {
   const _TablaNotas({required this.notas});
@@ -403,8 +389,6 @@ class _TablaNotas extends StatelessWidget {
     );
   }
 }
-
-// ── Movil: tarjetas ──────────────────────────────────────────────────────────
 
 class _ListaTarjetas extends StatelessWidget {
   const _ListaTarjetas({required this.notas});

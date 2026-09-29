@@ -1,33 +1,26 @@
-// Destino final: lib/core/state/traspaso_entre_sistemas_provider.dart
 import 'package:bosque_flutter/data/repositories/traspaso_mov_caja_impl.dart';
 import 'package:bosque_flutter/domain/entities/traspaso_mov_caja_entity.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// Estado de la tarea 295, "Verificar traspaso Caja AXA contra movimiento de
-/// caja" (idATR 12). El nombre del archivo es de cuando se creyó que era la
-/// 289; la 289 es TesBase y vive en `traspaso_efectivo_tesbase_provider.dart`.
+/// caja" (idATR 12). El nombre del archivo viene de cuando se creyó que era la
+/// 289 (TesBase, en `traspaso_efectivo_tesbase_provider.dart`).
 ///
-/// El cajero compara el formulario manual de Caja AXA contra lo que quedó en
-/// el movimiento de caja del sistema, fila por fila. La lista NO sale de la
-/// base de Bosque: el servidor le pregunta a SAP y cruza contra lo que ya se
-/// verificó, así que cargar puede tardar y puede fallar.
+/// La lista NO sale de la base de Bosque: el servidor consulta SAP y cruza
+/// contra lo ya verificado, así que cargar puede tardar o fallar.
 class TraspasoEntreSistemasState {
   final List<TraspasoMovCajaEntity> filas;
   final DateTime fecha;
   final bool cargando;
 
-  /// Si la última lectura de la fecha terminó bien.
-  ///
-  /// Sin esto, una lectura fallida dejaba `filas` vacía y la pantalla mostraba
-  /// "No hubo traspasos" con el botón "Sin novedad": exactamente la confusión
-  /// entre "no pude preguntarle a SAP" y "SAP dice que no hubo nada" que este
-  /// estado existe para evitar. Se vio en una captura de la pantalla con un
-  /// error de lectura (2026-09-11).
+  /// Si la última lectura de la fecha terminó bien. Sin esto, una lectura
+  /// fallida dejaba `filas` vacía y la pantalla mostraba "No hubo traspasos"
+  /// con el botón "Sin novedad", confundiendo "no pude preguntarle a SAP" con
+  /// "SAP dice que no hubo nada".
   final bool cargado;
 
   /// Mientras una fila viaja, para que dos toques no manden dos escrituras.
-  /// Es el `idTrasp`, o `-1` cuando la fila todavía no tiene id (aún no se
-  /// guardó nunca) y se la identifica por su posición.
+  /// Es el `idTrasp`, o `-1` si la fila aún no tiene id (se identifica por posición).
   final int? guardando;
 
   final String? error;
@@ -81,8 +74,7 @@ class TraspasoEntreSistemasNotifier
   final TraspasoMovCajaImpl _repo;
 
   TraspasoEntreSistemasNotifier(this._repo, DateTime fecha)
-    // Arranca cargando: si arrancara en reposo, el primer cuadro —antes de que
-    // corra la lectura— se vería como un error de lectura.
+    // Arranca cargando: en reposo, el primer cuadro se vería como un error de lectura.
     : super(TraspasoEntreSistemasState(fecha: fecha, cargando: true)) {
     Future.microtask(cargar);
   }
@@ -97,8 +89,7 @@ class TraspasoEntreSistemasNotifier
     } catch (e) {
       if (!mounted || state.fecha != fecha) return;
       // Se deja el error a la vista y `cargado` en false: "no pude preguntarle
-      // a SAP" y "SAP dice que no hubo nada" llevan a acciones opuestas, y una
-      // de ellas habilita el botón de "Sin novedad".
+      // a SAP" y "SAP dice que no hubo nada" llevan a acciones opuestas.
       state = state.copyWith(
         cargando: false,
         cargado: false,
@@ -164,9 +155,8 @@ class TraspasoEntreSistemasNotifier
       );
       return true;
     } catch (e) {
-      // Llega aquí también cuando el servidor rechaza porque SÍ hay
-      // traspasos (error 24). Es el caso que importa: alguien intentó cerrar
-      // sin mirar, o la pantalla quedó vieja.
+      // Llega aquí también si el servidor rechaza porque SÍ hay traspasos
+      // (error 24): alguien intentó cerrar sin mirar, o la pantalla quedó vieja.
       state = state.copyWith(cargando: false, error: '$e');
       return false;
     }

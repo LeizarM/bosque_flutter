@@ -3,33 +3,26 @@ import 'package:bosque_flutter/core/ui/aviso.dart';
 import 'package:flutter/services.dart';
 import 'package:bosque_flutter/presentation/widgets/comisiones/comisiones_tema.dart';
 
-/// Estados de una vista de datos: cargando, vacia y con error.
-///
-/// Los tres comparten alto y composicion para que la tabla no salte cuando el
-/// estado cambia. En Bosque v2 la pantalla quedaba en blanco durante la carga y
-/// el usuario volvia a pulsar Desplegar creyendo que se habia colgado.
+/// Estados de una vista de datos: cargando, vacía y con error. Comparten alto y
+/// composición para que la tabla no salte al cambiar; en Bosque v2 la pantalla
+/// quedaba en blanco al cargar y el usuario volvía a pulsar Desplegar creyendo
+/// que se había colgado.
 class EstadoVista {
   const EstadoVista._();
 
   /// Alto minimo compartido por los tres estados.
   static const double _alto = 240;
 
-  /// Carga de una tabla: la silueta de la tabla, no un circulo girando.
-  ///
-  /// Un spinner centrado no dice nada salvo "espera", y al llegar los datos la
-  /// pantalla salta de golpe. La silueta ocupa desde el principio el sitio que
-  /// van a ocupar las filas: no hay salto, y se entiende que lo que viene es
-  /// una tabla y cuanta.
+  /// Carga de una tabla: la silueta de la tabla, no un círculo girando. Ocupa
+  /// desde el principio el sitio de las filas, así no hay salto al llegar los datos.
   static Widget cargandoTabla(
     BuildContext context, {
     int filas = 6,
     int columnas = 5,
   }) => EsqueletoTabla(filas: filas, columnas: columnas);
 
-  /// Spinner con la accion que se esta ejecutando.
-  ///
-  /// Para esperas sin forma conocida -ejecutar un calculo, guardar-. Si lo que
-  /// se espera es una tabla, va cargandoTabla.
+  /// Spinner con la acción en curso, para esperas sin forma conocida (ejecutar un
+  /// cálculo, guardar). Si se espera una tabla, va cargandoTabla.
   static Widget cargando(BuildContext context, {String mensaje = 'Cargando'}) {
     final cs = Theme.of(context).colorScheme;
     return SizedBox(
@@ -67,9 +60,8 @@ class EstadoVista {
     IconData icono = Icons.inbox_outlined,
     String? textoAccion,
     VoidCallback? alPulsarAccion,
-    // El icono de la accion era Icons.add clavado, que solo sirve cuando la
-    // accion es «crear». En un vacio que ofrece MIRAR algo, un «+» promete un
-    // formulario que no existe.
+    // Icons.add solo sirve para «crear»: en un vacío que ofrece MIRAR algo, un «+»
+    // promete un formulario que no existe.
     IconData iconoAccion = Icons.add,
   }) {
     final cs = Theme.of(context).colorScheme;
@@ -159,10 +151,8 @@ class EstadoVista {
   }
 }
 
-/// Etiqueta compacta de porcentaje.
-///
-/// El porcentaje es el dato que se lee primero en todas las tablas del modulo,
-/// asi que se distingue del resto del texto en vez de quedar como una columna mas.
+/// Etiqueta compacta de porcentaje: el dato que se lee primero en las tablas del
+/// módulo, así que se distingue del resto del texto.
 class ChipPorcentaje extends StatelessWidget {
   const ChipPorcentaje({
     super.key,
@@ -174,9 +164,8 @@ class ChipPorcentaje extends StatelessWidget {
   /// Porcentaje en base 100.
   final double valor;
 
-  /// Colores propios, para cuando el chip codifica algo mas que su valor
-  /// (en el preliminar, el tramo al que pertenece la fila). Si van en null se
-  /// usan los del tema, que es el comportamiento de siempre.
+  /// Colores propios, para cuando el chip codifica algo más que su valor (en el
+  /// preliminar, el tramo de la fila). En null se usan los del tema.
   final Color? fondoTono;
   final Color? textoTono;
 
@@ -236,21 +225,15 @@ class ChipVigencia extends StatelessWidget {
   }
 }
 
-/// Silueta de una tabla mientras cargan los datos.
-///
-/// El brillo que recorre la silueta no es decoracion: sin movimiento, unas
-/// barras grises quietas se leen como contenido roto o como una tabla vacia.
-/// Moviendose se leen como "viene en camino".
+/// Silueta de una tabla mientras cargan los datos. El brillo que la recorre no
+/// es decoración: barras grises quietas se leen como contenido roto o tabla vacía.
 class EsqueletoTabla extends StatefulWidget {
   const EsqueletoTabla({super.key, this.filas = 6, this.columnas = 5});
 
-  /// Filas a dibujar cuando el alto disponible es ilimitado -dentro de un
-  /// scroll, por ejemplo-. Con alto acotado manda el alto: se dibujan las que
-  /// entren.
-  ///
-  /// Antes era un numero fijo y cada pestania elegia el suyo. El Preliminar
-  /// pedia ocho, que necesitan 393px, y su Expanded daba 340: se desbordaba
-  /// por 52. Un contador fijo no puede saber cuanto espacio le van a dar.
+  /// Filas a dibujar cuando el alto disponible es ilimitado (dentro de un scroll,
+  /// por ejemplo); con alto acotado manda el alto y se dibujan las que entren. Un
+  /// número fijo no sabe cuánto espacio le darán: ocho filas necesitan 393px y el
+  /// Expanded del Preliminar daba 340.
   final int filas;
   final int columnas;
 
@@ -346,10 +329,9 @@ class _EsqueletoTablaState extends State<EsqueletoTabla>
                     )
                     : widget.filas;
 
-            // El scroll no scrollea: da alto ilimitado a la Column para que
-            // nunca pueda desbordar, y recorta lo que sobre. La cuenta de
-            // arriba ya hace que normalmente no sobre nada; esto cubre el caso
-            // raro de un hueco mas bajo que el propio encabezado.
+            // El scroll no scrollea: da alto ilimitado a la Column para que no
+            // desborde y recorta lo que sobre (caso raro de un hueco más bajo que
+            // el encabezado).
             return SingleChildScrollView(
               physics: const NeverScrollableScrollPhysics(),
               child: Column(
@@ -387,15 +369,10 @@ class _EsqueletoTablaState extends State<EsqueletoTabla>
   }
 }
 
-/// El número de un documento, copiable de un clic.
-///
-/// Existe porque estos números se transcriben a SAP a mano. Seleccionar ocho
-/// dígitos dentro de una celda de tabla —donde la fila además captura gestos—
-/// es más trabajo que un clic, y en un teléfono la selección de texto pelea con
-/// el scroll de la lista.
-///
-/// Avisa que copió: sin confirmación, quien hace clic no sabe si funcionó y lo
-/// vuelve a hacer.
+/// El número de un documento, copiable de un clic. Estos números se transcriben
+/// a SAP a mano y seleccionar ocho dígitos dentro de una celda (la fila captura
+/// gestos, y en teléfono la selección pelea con el scroll) es más trabajo que un
+/// clic. Avisa que copió: sin confirmación, quien hace clic lo repite.
 class NumeroCopiable extends StatelessWidget {
   const NumeroCopiable({
     super.key,

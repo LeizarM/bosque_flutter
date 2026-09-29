@@ -1,18 +1,8 @@
-/// Los filtros del catalogo de familias.
-///
-/// **El mismo criterio, dos formas.** En web los filtros estan a la vista: hay
-/// ancho de sobra y lo que se busca es cruzar dos o tres criterios de un vistazo
-/// (las familias inactivas de tal proveedor). En un telefono los mismos siete
-/// combos desplegados dejarian la lista abajo del pliegue, asi que van dentro de
-/// un panel plegable que arranca cerrado y muestra en el titulo cuantos
-/// criterios estan puestos, para que nadie se coma un filtro olvidado.
-///
-/// **Por que los combos de aca muestran tambien lo inactivo.** Es la diferencia
-/// con los combos del formulario, que solo listan lo activo. Filtrar es buscar
-/// lo que ya existe: hay familias que apuntan a un color o a una presentacion
-/// que despues se dieron de baja, y si el filtro no los ofrece esas familias no
-/// hay forma de encontrarlas. Lo inactivo se marca con un sufijo en vez de
-/// esconderse.
+/// Los filtros del catálogo de familias. En web van a la vista; en teléfono, en
+/// un panel plegable cerrado al inicio que muestra en el título cuántos criterios
+/// hay puestos (para no olvidar un filtro). Los combos muestran también lo
+/// inactivo (con sufijo), a diferencia de los del formulario: hay familias que
+/// apuntan a un color o presentación dados de baja y no se podrían encontrar.
 library;
 
 import 'dart:async';
@@ -104,12 +94,9 @@ class _FiltrosFamiliasState extends ConsumerState<FiltrosFamilias> {
     widget.onFiltro(filtroFamiliasInicial);
   }
 
-  /// Cuantos criterios estan puestos. Va en el titulo del panel plegable de
-  /// movil: un filtro olvidado adentro de un panel cerrado explica una lista
-  /// vacia que de otro modo parece un error del sistema.
-  ///
-  /// El estado cuenta solo si se aparto del inicial: "Activas" es con lo que
-  /// arranca la pantalla, no algo que el usuario haya puesto.
+  /// Cuántos criterios hay puestos, para el título del panel plegable de móvil:
+  /// un filtro olvidado en un panel cerrado explicaría una lista vacía. El estado
+  /// cuenta solo si se apartó del inicial ("Activas" es el valor de arranque).
   int get _criteriosPuestos {
     final f = widget.filtro;
     return [
@@ -129,12 +116,11 @@ class _FiltrosFamiliasState extends ConsumerState<FiltrosFamilias> {
     return widget.compacto ? _movil(context) : _escritorio(context);
   }
 
-  // ── Escritorio: todo a la vista ───────────────────────────────────────────
+  // Escritorio: todo a la vista
 
-  /// Todo en `Wrap` y nada en `Row` con `Spacer`: entre 600 y 1000 px de cajon
-  /// —una tablet, o la ventana a media pantalla— el buscador, el selector de
-  /// estado y el boton de limpiar suman mas que el ancho disponible y una fila
-  /// rigida ahi pinta la franja de desborde.
+  /// Todo en `Wrap` y nada en `Row` con `Spacer`: entre 600 y 1000 px de cajón
+  /// (tablet o ventana a media pantalla) buscador, estado y botón de limpiar
+  /// suman más que el ancho y una fila rígida desborda.
   Widget _escritorio(BuildContext context) => Column(
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
@@ -158,7 +144,7 @@ class _FiltrosFamiliasState extends ConsumerState<FiltrosFamilias> {
     ],
   );
 
-  // ── Movil: buscador afuera, criterios adentro ─────────────────────────────
+  // Móvil: buscador afuera, criterios adentro
 
   Widget _movil(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
@@ -220,7 +206,7 @@ class _FiltrosFamiliasState extends ConsumerState<FiltrosFamilias> {
     );
   }
 
-  // ── Piezas ────────────────────────────────────────────────────────────────
+  // Piezas
 
   Widget _campoBuscador() => TextField(
     controller: _buscador,
@@ -431,9 +417,8 @@ class _FiltrosFamiliasState extends ConsumerState<FiltrosFamilias> {
   }
 }
 
-/// En escritorio los combos van en un `Wrap` y necesitan un ancho; en movil
-/// ocupan el renglon entero. `ComboBuscable` usa `expandedInsets: zero`, asi que
-/// toma el ancho que le de el padre.
+/// En escritorio los combos van en un `Wrap` y necesitan un ancho; en móvil ocupan el
+/// renglón entero (`ComboBuscable` usa `expandedInsets: zero`: toma el del padre).
 class _Envoltura extends StatelessWidget {
   const _Envoltura({required this.compacto, required this.child});
 

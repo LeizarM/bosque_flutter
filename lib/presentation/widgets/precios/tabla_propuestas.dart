@@ -1,22 +1,9 @@
 /// Las dos superficies del listado de propuestas: la planilla de escritorio y
-/// las tarjetas del telefono.
+/// las tarjetas del teléfono.
 ///
-/// **Por que no se usa `BosqueFlatTable`.** Esa tabla reparte las columnas por
-/// `flex` dentro de un `Row`, sin ancho minimo ni scroll lateral: sirve hasta
-/// unas siete columnas y aca son diez. Con diez, «Aprobado / rechazado por»
-/// queda en cuarenta pixeles y no se lee ningun nombre. Se sigue el patron de
-/// la planilla de lotes de produccion: **cabecera fija, columnas de ancho
-/// declarado y un scroll horizontal controlado**, con la fila completa siempre
-/// del mismo alto para no perder el renglon a lo ancho.
-///
-/// **Que cambia respecto de la grilla del sistema anterior.**
-///
-/// - **Las acciones estan al principio**, junto al numero y al estado. Antes
-///   habia que recorrer nueve columnas de costado para llegar al boton.
-/// - **El estado es un chip de color**, no un texto con un `style` inline que
-///   pintaba verde y rojo fijos; aca el color sale del tema.
-/// - **Los botones que no se pueden usar dicen por que**, en vez de
-///   desaparecer sin explicacion como hacia el `rendered` del XHTML.
+/// No usa `BosqueFlatTable` (con diez columnas «Aprobado / rechazado por» queda en
+/// 40 px): sigue la planilla de lotes de producción, con cabecera fija, columnas
+/// de ancho declarado, un scroll horizontal controlado y filas del mismo alto.
 library;
 
 import 'dart:math' as math;
@@ -56,9 +43,7 @@ const double _altoBanda = 24;
 const double _altoCabecera = 40;
 const double _altoFila = 60;
 
-// ═══════════════════════════════════════════════════════════════════════════
-// LA PLANILLA
-// ═══════════════════════════════════════════════════════════════════════════
+// La planilla
 
 class TablaPropuestas extends StatefulWidget {
   const TablaPropuestas({
@@ -79,9 +64,8 @@ class TablaPropuestas extends StatefulWidget {
   final ManejadoresPropuesta manejadores;
   final EdgeInsets padding;
 
-  /// Hay una escritura del circuito en vuelo. Mientras tanto ninguna fila
-  /// acepta otra: dos aprobaciones seguidas sobre la misma propuesta eran la
-  /// forma de duplicar el registro en el sistema anterior.
+  /// Hay una escritura del circuito en vuelo: mientras tanto ninguna fila acepta
+  /// otra (dos aprobaciones seguidas duplicaban el registro en el sistema anterior).
   final bool ocupado;
 
   @override
@@ -97,7 +81,7 @@ class _TablaPropuestasState extends State<TablaPropuestas> {
     super.dispose();
   }
 
-  // ── Columnas ──────────────────────────────────────────────────────────────
+  // Columnas
 
   List<_Col> _columnas() => [
     _Col(
@@ -203,7 +187,7 @@ class _TablaPropuestasState extends State<TablaPropuestas> {
     ),
   ];
 
-  // ── Dibujo ────────────────────────────────────────────────────────────────
+  // Dibujo
 
   @override
   Widget build(BuildContext context) {
@@ -395,9 +379,7 @@ class _TablaPropuestasState extends State<TablaPropuestas> {
       );
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// PIEZAS DE LA PLANILLA
-// ═══════════════════════════════════════════════════════════════════════════
+// Piezas de la planilla
 
 class _Col {
   const _Col(
@@ -497,14 +479,10 @@ class _Fecha extends StatelessWidget {
   );
 }
 
-/// Cada accion de una fila con su color, para reconocerla sin leer el tooltip.
-///
-/// **Por que matices fijos y no roles del tema.** El resto del modulo se pinta con
-/// los roles del tema (el usuario elige la semilla), pero siete acciones no se
-/// distinguen con dos familias de color: con la semilla verde, "aprobar" y "ver"
-/// salian iguales. Aca el matiz dice que hace el boton -verde aprueba, rojo
-/// rechaza- y tiene que ser el mismo con cualquier semilla. Lo que si sigue al
-/// tema es el brillo: en oscuro el icono se aclara y el fondo se oscurece.
+/// Cada acción de una fila con su color, para reconocerla sin leer el tooltip.
+/// Matices fijos y no roles del tema: siete acciones no se distinguen con dos
+/// familias de color (con semilla verde, "aprobar" y "ver" salían iguales). Solo
+/// el brillo sigue al tema: en oscuro el icono se aclara y el fondo se oscurece.
 enum AccionDePropuesta {
   ver(Color(0xFF1E88E5)),
   pdf(Color(0xFFF4511E)),
@@ -522,12 +500,9 @@ enum AccionDePropuesta {
   ({Color icono, Color fondo}) tonos(ColorScheme cs) => tonosDeMatiz(matiz, cs);
 }
 
-/// El tipo de la propuesta con su color, para distinguir de un vistazo las de
-/// familia y las de articulo (pedido del 2026-09-25).
-///
-/// Matices fijos, como las acciones de la fila y por la misma razon: tienen que
-/// decir lo mismo con cualquier semilla. Indigo y marron no los usa ninguna
-/// accion ni ningun estado, asi que no se confunden con "ver" ni con "generar".
+/// El tipo de la propuesta con su color, para distinguir las de familia y las de
+/// artículo. Matices fijos, como las acciones de la fila: índigo y marrón no los
+/// usa ninguna acción ni estado, así que no se confunden con "ver" ni "generar".
 class EtiquetaTipoPropuesta extends StatelessWidget {
   const EtiquetaTipoPropuesta({super.key, required this.fila});
 
@@ -573,9 +548,8 @@ class EtiquetaTipoPropuesta extends StatelessWidget {
   }
 }
 
-/// Un matiz fijo llevado al brillo del tema: en oscuro el icono se aclara y el
-/// fondo se oscurece. Lo usan las acciones de las propuestas y las cifras del
-/// asistente, para que el mismo color diga lo mismo en todo el modulo.
+/// Un matiz fijo llevado al brillo del tema (en oscuro el icono se aclara y el fondo
+/// se oscurece). Lo usan las acciones de las propuestas y las cifras del asistente.
 ({Color icono, Color fondo}) tonosDeMatiz(Color matiz, ColorScheme cs) {
   final oscuro = cs.brightness == Brightness.dark;
   final icono = oscuro ? Color.lerp(matiz, Colors.white, 0.35)! : matiz;
@@ -586,21 +560,15 @@ class EtiquetaTipoPropuesta extends StatelessWidget {
   return (icono: icono, fondo: fondo);
 }
 
-/// Ancho de la columna ACCIONES: el peor caso tiene que entrar entero.
-///
-/// Un IconButton compacto de Material 3 ocupa 40 px, no los 34 del minimo que
-/// declara [_Boton]: el area tactil lo agranda. Una fila Pendiente vista por
-/// alguien con todos los permisos (ROLE_ADM, por ejemplo) lleva SIETE: ver,
-/// PDF, editar, aprobar, rechazar, enviar a autorizar y marcar como generada.
-/// Con 224 px desbordaba 32 px. Si se agrega un boton, sumar 40.
+/// Ancho de la columna ACCIONES: el peor caso tiene que entrar entero. Un
+/// IconButton compacto de Material 3 ocupa 40 px (no los 34 de [_Boton]) y una
+/// fila Pendiente con todos los permisos (ROLE_ADM) lleva SIETE botones; con
+/// 224 px desbordaba 32 px. Si se agrega un botón, sumar 40.
 const double _anchoAcciones = 7 * 40 + 2 * Esp.s;
 
-/// Las acciones de una fila en escritorio, una al lado de la otra.
-///
-/// Solo aparecen las que el usuario tiene asignadas; de esas, la que todavia no
-/// corresponde queda deshabilitada **con el motivo en el tooltip**. Ese motivo
-/// es la regla del circuito, y verla escrita es la unica forma de aprenderla
-/// sin preguntar.
+/// Las acciones de una fila en escritorio, una al lado de la otra. Solo aparecen las
+/// asignadas al usuario; la que aún no corresponde queda deshabilitada **con el
+/// motivo en el tooltip** (es la regla del circuito y la única forma de aprenderla).
 class _AccionesEnLinea extends StatelessWidget {
   const _AccionesEnLinea({
     required this.fila,
@@ -740,15 +708,11 @@ class _Boton extends StatelessWidget {
   }
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// LAS TARJETAS
-// ═══════════════════════════════════════════════════════════════════════════
+// Las tarjetas
 
-/// La misma propuesta cuando no entra una planilla.
-///
-/// No es la tabla encogida: se queda con lo que se mira de un vistazo —titulo,
-/// estado, cuando y quien— y manda las acciones a un menu, que es como se
-/// tocan bien con el pulgar. Sin scroll horizontal en ningun caso.
+/// La misma propuesta cuando no entra una planilla. No es la tabla encogida: deja
+/// lo que se mira de un vistazo (título, estado, cuándo y quién) y manda las
+/// acciones a un menú, más fácil de tocar con el pulgar. Sin scroll horizontal.
 class TarjetaPropuestaAutorizacion extends StatelessWidget {
   const TarjetaPropuestaAutorizacion({
     super.key,

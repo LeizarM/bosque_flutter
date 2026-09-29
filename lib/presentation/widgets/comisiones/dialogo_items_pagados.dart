@@ -8,47 +8,19 @@ import 'package:bosque_flutter/domain/entities/pagado_item_entity.dart';
 import 'package:bosque_flutter/presentation/widgets/comisiones/comisiones_tema.dart';
 import 'package:bosque_flutter/presentation/widgets/comisiones/estado_vista.dart';
 
-/// El detalle por ítem de lo que YA se pagó, con el foco en lo EXCLUIDO.
-///
-/// Por qué existe: hasta ahora, del detalle de una nota pagada solo sobrevivía
-/// `tcom_pagado.detalleItems`, un varchar armado con FOR XML PATH. Alcanzaba
-/// para imprimir un renglón y para nada más: no se podía agrupar por familia,
-/// ni sumar lo excluido, ni cruzarlo con el maestro de artículos. Y lo excluido
-/// es la mayoría —15 de cada 19 líneas medidas—, o sea que lo que no se podía
-/// ver era justamente lo que más había.
-///
-/// Cómo se acota lo que se pide. El SP acepta `@mes`, `@anio`, `@esInterno` y,
-/// opcionales, `@idPagado`, `@docNum` y `@origen`, y los tres últimos aplican
-/// tanto en la rama 'L' (listado) como en la 'R' (resumen por motivo). El
-/// diálogo abre con el período entero —ninguna pantalla conoce `idPagado`— y
-/// desde ahí:
-///
-///   - elegir una nota manda `@docNum` + `@origen` a las DOS ramas, así el
-///     titular de arriba y las líneas de abajo no pueden hablar de notas
-///     distintas;
-///   - `@origen` viaja siempre con `@docNum` porque el número solo no
-///     identifica una nota: se repite entre empresas —198 casos medidos en un
-///     mismo período— y además es lo único que separa ESPPAPEL de
-///     IMPEXPAP/PAPIRUS/PRODUCTIVA PAPEL, que se congelan las cuatro con
-///     `esInterno = 1`;
-///   - «solo lo excluido» NO va al SP: es un `where` sobre `aplicaDescuento`,
-///     que ya viene en cada fila. Pedirlo al backend obligaba a bajar el mes
-///     dos veces para tildar y destildar un chip.
-///
-/// Por qué nunca muestra un cero pelado: un período puede tener CERO ítems y
-/// estar perfecto —ninguna nota cayó dentro de la vigencia de la política—, o
-/// puede tenerlos en cero porque el congelado nunca corrió. Son dos cosas
-/// opuestas que se ven igual. El corte (`tcom_pagadoItemCorte`) las separa y
-/// además redacta la explicación en su campo `lectura`, así que aquí el vacío
-/// muestra el corte y no un contador en cero. Y cuando el corte no se pudo
-/// leer, se dice que no se pudo leer: acusar a la base de no haber congelado
-/// nada por un error de red es el mismo fallo que este diálogo corrige, dado
-/// vuelta.
+/// Detalle por ítem de lo que YA se pagó, con foco en lo EXCLUIDO (la mayoría:
+/// 15 de cada 19 líneas medidas). Nunca muestra un cero pelado: el corte
+/// (`tcom_pagadoItemCorte`, campo `lectura`) distingue «no había nada» de «nunca
+/// se congeló»; si no se pudo leer, se dice eso y no que la base no congeló nada.
 class DialogoItemsPagados extends ConsumerStatefulWidget {
   const DialogoItemsPagados({super.key, required this.filtro, this.subtitulo});
 
-  /// Período y alcance. `idPagado` viaja tal cual al SP; si es null —el caso
-  /// normal— se pide el período entero.
+  /// Período y alcance. SP: `@mes`, `@anio`, `@esInterno` y opcionales
+  /// `@idPagado` (null = período entero), `@docNum` y `@origen`, que aplican en
+  /// las ramas 'L' (listado) y 'R' (resumen). Elegir una nota manda `@docNum` +
+  /// `@origen` a las DOS ramas; `@origen` siempre viaja: `docNum` se repite entre
+  /// empresas (198 casos por período) y solo `@origen` separa ESPPAPEL de las
+  /// otras tres (`esInterno = 1`). «Solo lo excluido» NO va al SP: es filtro local.
   final FiltroItemsPagados filtro;
 
   /// Contexto de quien abre: «ejecutado el 12/08/2026», por ejemplo. Va debajo
@@ -60,12 +32,10 @@ class DialogoItemsPagados extends ConsumerStatefulWidget {
       _DialogoItemsPagadosState();
 }
 
-/// Una nota del período: el par (origen, docNum), no el número solo.
-///
-/// `docNum` se repite entre empresas —198 casos medidos en el mismo período—,
-/// así que un selector por número suelto mezclaría dos notas distintas en una
-/// sola opción. Lleva == y hashCode porque es el `value` de un DropdownButton,
-/// que compara por igualdad.
+/// Una nota del período: el par (origen, docNum), no el número solo, porque
+/// `docNum` se repite entre empresas (198 casos en el mismo período) y un
+/// selector por número mezclaría dos notas. Lleva == y hashCode: es el `value`
+/// de un DropdownButton, que compara por igualdad.
 @immutable
 class _NotaPagada {
   const _NotaPagada({required this.docNum, this.origen});
@@ -83,8 +53,8 @@ class _NotaPagada {
 }
 
 class _DialogoItemsPagadosState extends ConsumerState<DialogoItemsPagados> {
-  /// Arranca en TRUE, y no es un capricho: lo excluido es la mayoría y es lo
-  /// que no existía en ningún lado. Lo que descontó ya se veía en el reporte.
+  /// Arranca en TRUE: lo excluido es la mayoría y era lo que no existía en
+  /// ningún lado (lo que descontó ya se veía en el reporte).
   bool _soloExcluidos = true;
 
   /// Nota elegida, o null para todo el período.
@@ -94,10 +64,9 @@ class _DialogoItemsPagadosState extends ConsumerState<DialogoItemsPagados> {
   Widget build(BuildContext context) {
     final esMovil = ResponsiveUtilsBosque.isMobile(context);
 
-    // El período tal como lo pidió quien abre. Se observa SIEMPRE, aun con una
-    // nota elegida: de esta lista salen las notas del selector, y como el
-    // provider es autoDispose, dejar de observarla tiraría la entrada y volver
-    // a «Todas las notas» costaría bajar el mes otra vez.
+    // El período tal como lo pidió quien abre. Se observa SIEMPRE: de esta lista
+    // salen las notas del selector y, al ser autoDispose, dejar de observarla
+    // haría bajar el mes otra vez al volver a «Todas las notas».
     final periodo = widget.filtro;
     final indice = ref.watch(itemsPagadosProvider(periodo));
 
@@ -112,14 +81,12 @@ class _DialogoItemsPagadosState extends ConsumerState<DialogoItemsPagados> {
     final datos =
         nota == null ? indice : ref.watch(itemsPagadosProvider(filtro));
 
-    // El resumen va con la MISMA clave que el listado. Antes iba clavado al
-    // período: con una nota elegida la lista mostraba una línea y el titular
-    // seguía contando el mes entero.
+    // El resumen va con la MISMA clave que el listado: si iba clavado al período,
+    // con una nota elegida el titular seguía contando el mes entero.
     final resumen = ref.watch(resumenItemsPagadosProvider(filtro));
 
-    // El corte es por período: ni la nota ni el filtro de exclusión lo
-    // cambian, así que va con su propia clave y no se vuelve a pedir al tocar
-    // un filtro del listado.
+    // El corte es por período (ni la nota ni el filtro lo cambian): clave propia,
+    // para no pedirlo de nuevo al tocar un filtro del listado.
     final clave = ClavePeriodo(
       mes: widget.filtro.mes,
       anio: widget.filtro.anio,
@@ -128,9 +95,8 @@ class _DialogoItemsPagadosState extends ConsumerState<DialogoItemsPagados> {
     final corte = ref.watch(corteItemsPagadosProvider(clave));
 
     // El tope de ComisionesTema.anchoTabla dejaba tres columnas afuera y el
-    // scroll horizontal de la tabla no dibuja barra en web: quedaban
-    // inalcanzables. Con el ancho de la pantalla menos el margen, en un
-    // monitor común entran las nueve.
+    // scroll horizontal no dibuja barra en web (inalcanzables). Con el ancho de
+    // pantalla menos el margen entran las nueve en un monitor común.
     final pantalla = MediaQuery.sizeOf(context);
     final margen = esMovil ? 12.0 : 40.0;
 
@@ -219,8 +185,6 @@ List<_NotaPagada> _notasDe(List<PagadoItemEntity> items) {
   });
 }
 
-// ── Encabezado ───────────────────────────────────────────────────────────────
-
 class _Encabezado extends StatelessWidget {
   const _Encabezado({
     required this.filtro,
@@ -253,8 +217,6 @@ class _Encabezado extends StatelessWidget {
             style: tt.bodySmall?.copyWith(color: cs.onSurfaceVariant),
           ),
           const SizedBox(height: 10),
-          // Wrap y no Row: en un teléfono de 320 los tres datos no entran en
-          // una línea y un Row los recortaría sin avisar.
           Wrap(
             spacing: ComisionesTema.esp2,
             runSpacing: ComisionesTema.esp2,
@@ -277,20 +239,11 @@ class _Encabezado extends StatelessWidget {
 String _periodo(FiltroItemsPagados f) =>
     '${f.mes.toString().padLeft(2, '0')}/${f.anio}';
 
-// ── Cuerpo ───────────────────────────────────────────────────────────────────
-
-/// Cuánto del alto del cuerpo puede ocupar el resumen antes de desplazarse.
-///
-/// El resumen crece con la cantidad de motivos, y el máximo real son CINCO
-/// filas —DESCONTO y los cuatro motivos de exclusión—, que con sus
-/// explicaciones miden más que la pantalla de un teléfono. Suelto en el Column
-/// eso desbordaba: medido, 360x640 se pasaba 29 px con tres filas y 139 px con
-/// cinco; 320x568 con cinco, 324 px.
-///
-/// Algo MENOS de la mitad, y no la mitad justa, porque debajo del resumen
-/// todavía tienen que entrar la barra de filtros —que en un teléfono ocupa dos
-/// o tres renglones— y algo de lista. Con dos o tres motivos, que es el caso
-/// normal, el resumen entra entero y esta cuenta no se nota.
+/// Cuánto del alto del cuerpo puede ocupar el resumen antes de desplazarse. El
+/// máximo real son CINCO filas (DESCONTO y cuatro motivos de exclusión) y miden
+/// más que un teléfono: suelto en el Column desbordaba (360x640: 29px con tres
+/// filas, 139px con cinco; 320x568 con cinco: 324px). Algo MENOS de la mitad:
+/// debajo aún deben entrar la barra de filtros y algo de lista.
 const double _fraccionResumen = 0.4;
 
 class _Cuerpo extends StatefulWidget {
@@ -315,9 +268,8 @@ class _Cuerpo extends StatefulWidget {
   final List<_NotaPagada> notas;
   final _NotaPagada? notaElegida;
 
-  /// Los dos viajan como AsyncValue y no como valor pelado: `null` no
-  /// distingue «no llegó» de «falló», y esa confusión era la que hacía que un
-  /// error de red se mostrara como una acusación sobre la base.
+  /// Viajan como AsyncValue y no como valor pelado: `null` no distingue «no
+  /// llegó» de «falló», y un error de red se mostraba como acusación sobre la base.
   final AsyncValue<List<PagadoItemResumenEntity>> resumen;
   final AsyncValue<PagadoItemCorteEntity?> corte;
 
@@ -333,9 +285,9 @@ class _Cuerpo extends StatefulWidget {
 }
 
 class _CuerpoState extends State<_Cuerpo> {
-  /// Controller propio del resumen: cuando el bloque no entra se desplaza
-  /// adentro, y sin controller explícito quedaría colgado del
-  /// PrimaryScrollController, que también reclaman la lista y el vacío.
+  /// Controller propio del resumen: sin uno explícito, el desplazamiento interno
+  /// quedaría colgado del PrimaryScrollController, que también reclaman la lista
+  /// y el vacío.
   final _resumen = ScrollController();
 
   @override
@@ -349,17 +301,15 @@ class _CuerpoState extends State<_Cuerpo> {
     final items = widget.items;
 
     // «Solo lo excluido» se resuelve aquí y no en el SP: es un where sobre un
-    // campo que ya viene en cada fila. Con el filtro en la clave del provider,
-    // tildar el chip destruía la entrada del cache —es autoDispose— y
-    // destildarlo volvía a bajar el mes entero.
+    // campo que ya viene en cada fila. Con el filtro en la clave del provider
+    // (autoDispose), tildar el chip destruía el cache y destildar bajaba el mes.
     final visibles =
         widget.soloExcluidos
             ? items.where((i) => i.excluido).toList(growable: false)
             : items;
 
-    // Si la nota elegida ya no está entre las del período —el índice se
-    // recargó— se cae a «todas» al dibujar. No se toca el estado aquí:
-    // cambiarlo durante el build es un bucle de rebuilds.
+    // Si la nota elegida ya no está entre las del período (el índice se recargó)
+    // se cae a «todas» al dibujar; cambiar el estado en el build es un bucle.
     final notaValida =
         widget.notaElegida != null && widget.notas.contains(widget.notaElegida)
             ? widget.notaElegida
@@ -372,17 +322,11 @@ class _CuerpoState extends State<_Cuerpo> {
                 ? limites.maxHeight * _fraccionResumen
                 : double.infinity;
 
-        // Alto minimo para que la lista tenga sentido: por debajo, en vez de
-        // apretar todo hasta que algo desborde, el cuerpo entero se desplaza.
-        //
-        // El desborde vivia aca: _BarraFiltros es hijo rigido y el unico
-        // Flexible era la lista, asi que en un telefono ACOSTADO -640x360,
-        // 800x360, 568x320- el Flexible se encogia a cero y el Column
-        // reventaba igual. Medido tambien con el resumen vacio, asi que no era
-        // culpa de cuanto se lleva el resumen.
-        //
-        // Se scrollea en vez de esconder: decidir por el usuario que mitad de
-        // la pantalla no merece verse es peor que pedirle que baje.
+        // Alto mínimo para que la lista tenga sentido: por debajo, el cuerpo
+        // entero se desplaza en vez de apretar hasta desbordar. Con la barra de
+        // filtros rígida, en un teléfono ACOSTADO (640x360, 800x360, 568x320) el
+        // Flexible de la lista se encogía a cero y el Column reventaba, incluso
+        // con el resumen vacío.
         const minimoUtil = 260.0;
         final apretado =
             limites.maxHeight.isFinite && limites.maxHeight < minimoUtil;
@@ -391,9 +335,8 @@ class _CuerpoState extends State<_Cuerpo> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // El resumen va ARRIBA de la lista: la pregunta que trae a alguien
-            // aquí es «¿cuánto quedó afuera y por qué?», y esa se responde con
-            // el reparto por motivo, no leyendo doscientas líneas.
+            // El resumen va ARRIBA: la pregunta que trae a alguien es «¿cuánto
+            // quedó afuera y por qué?», y se responde con el reparto por motivo.
             _ZonaResumen(
               resumen: widget.resumen,
               esMovil: widget.esMovil,
@@ -401,11 +344,9 @@ class _CuerpoState extends State<_Cuerpo> {
               controlador: _resumen,
               alReintentar: widget.alReintentarResumen,
             ),
-            // La barra depende de que HAYA líneas, y de nada más. Antes
-            // dependía también de que el resumen hubiera llegado: si la rama
-            // 'R' fallaba, la barra no se dibujaba y el vacío de abajo seguía
-            // diciendo «Quite Solo lo excluido», o sea mandaba a apagar un
-            // control que no estaba en pantalla.
+            // La barra depende de que HAYA líneas y de nada más: si dependía del
+            // resumen y la rama 'R' fallaba, el vacío seguía diciendo «Quite Solo lo
+            // excluido» sobre un control ausente.
             if (items.isNotEmpty) ...[
               _BarraFiltros(
                 cantidad: visibles.length,
@@ -438,9 +379,8 @@ class _CuerpoState extends State<_Cuerpo> {
           ],
         );
 
-        // Sin scroll cuando entra: un SingleChildScrollView permanente le saca
-        // el alto acotado al Flexible de la lista y la lista deja de tener su
-        // propio scroll.
+        // Sin scroll cuando entra: un SingleChildScrollView permanente le quita
+        // el alto acotado al Flexible de la lista y ésta pierde su propio scroll.
         if (!apretado) return cuerpo;
 
         return SingleChildScrollView(
@@ -454,13 +394,9 @@ class _CuerpoState extends State<_Cuerpo> {
   }
 }
 
-// ── Resumen por motivo ───────────────────────────────────────────────────────
-
-/// Los tres estados del resumen, que antes se veían todos igual: sin resumen.
-///
-/// Todavía no llegó, no llegó nunca, o el período no tiene nada que repartir.
-/// El del medio es el que hay que decir: si no, la única señal de que la rama
-/// 'R' falló es un bloque que falta.
+/// Los tres estados del resumen: todavía no llegó, no llegó nunca, o el período
+/// no tiene nada que repartir. El del medio hay que decirlo: si no, la única
+/// señal de que la rama 'R' falló es un bloque que falta.
 class _ZonaResumen extends StatelessWidget {
   const _ZonaResumen({
     required this.resumen,
@@ -486,9 +422,8 @@ class _ZonaResumen extends StatelessWidget {
     if (resumen.hasError && filas == null) {
       contenido = _ResumenFallido(alReintentar: alReintentar);
     } else if (filas == null || filas.isEmpty) {
-      // Cargando, o período sin nada que repartir. En los dos casos el que
-      // habla es lo de abajo —el esqueleto o la lectura del corte—, y un
-      // bloque a medio llenar aquí arriba solo agregaría ruido.
+      // Cargando, o período sin nada que repartir: habla lo de abajo (esqueleto o
+      // lectura del corte) y un bloque a medias solo agrega ruido.
       contenido = null;
     } else {
       contenido = _ResumenPorMotivo(resumen: filas, esMovil: esMovil);
@@ -540,10 +475,8 @@ class _ResumenFallido extends StatelessWidget {
   }
 }
 
-/// El reparto de lo pagado entre lo que descontó y lo que no.
-///
-/// Se dibuja con una barra proporcional además de los números porque «15 de
-/// 19» y «79 %» se leen distinto: el ancho se entiende sin hacer la cuenta.
+/// El reparto de lo pagado entre lo que descontó y lo que no. Lleva barra
+/// proporcional además de números: «15 de 19» y «79 %» se leen distinto.
 class _ResumenPorMotivo extends StatelessWidget {
   const _ResumenPorMotivo({required this.resumen, required this.esMovil});
 
@@ -578,17 +511,15 @@ class _ResumenPorMotivo extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // El titular es el dato, no el rótulo: sin esto hay que sumar cuatro
-          // filas de tabla para saber cuánto quedó afuera.
-          //
-          // Cuando NO hay exclusiones el titular se da vuelta en vez de
-          // anunciar «0 de 1 ítems no descontaron»: un cero al lado de un uno
-          // se lee como un problema, y aquí es exactamente lo contrario.
+          // filas para saber cuánto quedó afuera. Sin exclusiones se da vuelta en
+          // vez de «0 de 1 ítems no descontaron» (un cero junto a un uno parece
+          // un problema).
           Text(
             _titular(total, excluidos),
             style: tt.titleSmall?.copyWith(fontWeight: FontWeight.w700),
           ),
-          // Y la línea del monto solo cuando hay monto: «0.00 Bs quedaron
-          // fuera del descuento» era el segundo cero pelado de la misma caja.
+          // La línea del monto solo cuando hay monto: «0.00 Bs quedaron fuera del
+          // descuento» sería otro cero pelado.
           if (excluidos > 0) ...[
             const SizedBox(height: 2),
             Text(
@@ -646,10 +577,9 @@ class _BarraProporcion extends StatelessWidget {
                 Expanded(
                   flex: r.items,
                   child: Container(
-                    // Sin colores sueltos: lo que descontó lleva el acento del
-                    // tema y lo excluido, tonos del canal de error, que es el
-                    // único par que se distingue en las nueve semillas y en
-                    // los dos modos.
+                    // Sin colores sueltos: lo descontado lleva el acento del tema
+                    // y lo excluido, tonos del canal de error (único par que se
+                    // distingue en las nueve semillas y en los dos modos).
                     color:
                         r.descuenta ? cs.primary : _tonoExclusion(cs, filas, r),
                   ),
@@ -661,9 +591,8 @@ class _BarraProporcion extends StatelessWidget {
   }
 }
 
-/// Los motivos de exclusión se separan entre sí por opacidad sobre el mismo
-/// canal, no por matices distintos: cuatro matices inventados dejarían de
-/// funcionar en cuanto el usuario cambie el color de acento en ajustes.
+/// Los motivos de exclusión se separan por opacidad sobre el mismo canal, no por
+/// matices: cuatro matices inventados dejarían de funcionar al cambiar el acento.
 Color _tonoExclusion(
   ColorScheme cs,
   List<PagadoItemResumenEntity> filas,
@@ -731,11 +660,9 @@ class _FilaResumen extends StatelessWidget {
               '${FormatoComision.monto.format(r.montoBs)} Bs',
               style: ComisionesTema.numeroApoyo(context),
             ),
-            // Lo descontado por motivo lo trae la rama 'R' y hasta ahora se
-            // parseaba y se tiraba. En las filas de exclusión es cero por
-            // definición —por eso no se pinta— y en la de DESCONTO es el único
-            // número que dice cuánto se descontó de verdad: el de arriba es la
-            // base de la línea, no el descuento.
+            // El descuento por motivo lo trae la rama 'R' (antes se tiraba). En
+            // las filas de exclusión es cero y no se pinta; en la de DESCONTO es el
+            // único número que dice cuánto se descontó: el de arriba es la base.
             if (r.descuentoBs > 0)
               Text(
                 '-${FormatoComision.monto.format(r.descuentoBs)} Bs',
@@ -749,8 +676,6 @@ class _FilaResumen extends StatelessWidget {
     );
   }
 }
-
-// ── Barra de filtros ─────────────────────────────────────────────────────────
 
 class _BarraFiltros extends StatelessWidget {
   const _BarraFiltros({
@@ -777,10 +702,9 @@ class _BarraFiltros extends StatelessWidget {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
 
-    // El origen solo se nombra cuando hace falta: si el mismo docNum aparece
-    // con dos empresas hay que poder distinguirlas —pasa en 198 casos de un
-    // mismo período— y si no, «Nota 262220421» ya alcanza y entra en el
-    // teléfono.
+    // El origen solo se nombra cuando hace falta: si un mismo docNum aparece con
+    // dos empresas hay que distinguirlas (198 casos en un período); si no,
+    // «Nota 262220421» alcanza y entra en un teléfono.
     final vistos = <int>{};
     final repetidos = <int>{};
     for (final n in notas) {
@@ -793,16 +717,13 @@ class _BarraFiltros extends StatelessWidget {
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-      // Wrap para que en un teléfono el contador, el selector de nota y el
-      // interruptor bajen de línea en vez de recortarse.
       child: Wrap(
         spacing: ComisionesTema.esp3,
         runSpacing: ComisionesTema.esp2,
         crossAxisAlignment: WrapCrossAlignment.center,
         children: [
-          // Sin contador en cero: cuando la lista está vacía el que habla es
-          // el estado de abajo, que dice POR QUÉ. Un «0 líneas» aquí arriba lo
-          // contradiría con un número que no explica nada.
+          // Sin contador en cero: con la lista vacía habla el estado de abajo, que
+          // dice POR QUÉ; un «0 líneas» aquí lo contradiría.
           if (cantidad > 0)
             Text(
               '$cantidad ${cantidad == 1 ? 'línea' : 'líneas'}',
@@ -854,20 +775,12 @@ class _BarraFiltros extends StatelessWidget {
   }
 }
 
-// ── Vacío: el corte, nunca un cero pelado ────────────────────────────────────
-
-/// Qué se muestra cuando no hay ítems.
-///
-/// NUNCA un contador en cero. Un período sin ítems puede estar perfecto —el
-/// congelado corrió y ninguna nota cayó dentro de la vigencia de la política—
-/// o puede estar roto —el congelado no corrió—, y esas dos cosas se ven igual
-/// mirando la tabla. El corte es el que las separa, y trae la explicación ya
-/// redactada por el SP en `lectura`.
-///
-/// El orden de las ramas importa, y no es el de antes: primero se resuelve lo
-/// que se puede resolver con lo que YA está en memoria, y recién después habla
-/// el corte. Así un período que sí tiene líneas nunca termina acusando a la
-/// base de no haber congelado nada solo porque el corte no se pudo leer.
+/// Qué se muestra cuando no hay ítems: NUNCA un contador en cero. Un período sin
+/// ítems puede estar perfecto (ninguna nota cayó en la vigencia) o roto (el
+/// congelado no corrió), y en la tabla se ven igual: el corte las separa con la
+/// explicación del SP en `lectura`. Las ramas resuelven primero lo que ya está en
+/// memoria y después el corte, para no acusar a la base de no haber congelado
+/// nada solo porque el corte no se pudo leer.
 class _SinItems extends StatelessWidget {
   const _SinItems({
     required this.corte,
@@ -881,16 +794,12 @@ class _SinItems extends StatelessWidget {
   final AsyncValue<PagadoItemCorteEntity?> corte;
   final bool soloExcluidos;
 
-  /// Vuelve al período completo desde el propio estado vacío.
-  ///
-  /// Hace falta porque con la lista vacía la barra de filtros no se dibuja, y
-  /// el desplegable de notas era la única forma de volver: el diálogo quedaba
-  /// sin salida.
+  /// Vuelve al período completo desde el propio estado vacío: con la lista vacía
+  /// la barra de filtros no se dibuja y el desplegable de notas era la única salida.
   final VoidCallback? alVolverAlPeriodo;
 
-  /// Cuántas líneas trajo la consulta ANTES del filtro de exclusión. Es lo que
-  /// permite distinguir «el filtro vació la lista» de «el período está vacío»
-  /// sin depender del corte.
+  /// Líneas que trajo la consulta ANTES del filtro de exclusión: distingue «el
+  /// filtro vació la lista» de «el período está vacío» sin depender del corte.
   final int itemsDelPeriodo;
 
   final _NotaPagada? notaElegida;
@@ -903,17 +812,13 @@ class _SinItems extends StatelessWidget {
   Widget _contenido(BuildContext context) {
     final c = corte.valueOrNull;
 
-    // (1) La lista la vacía el FILTRO, no el período, y eso se sabe sin el
-    //     corte: las líneas están en memoria. Antes esta rama exigía
-    //     `corte.items > 0`, así que con el corte caído o inexistente un
-    //     período CON líneas terminaba en «este período no tiene corte»
-    //     mientras el resumen de arriba contaba sus ítems.
+    // (1) La lista la vacía el FILTRO, no el período, y eso se sabe sin el corte
+    //     (las líneas están en memoria): exigir `corte.items > 0` dejaba a un
+    //     período CON líneas en «no tiene corte» si el corte caía.
     if (soloExcluidos && itemsDelPeriodo > 0) {
-      // Con una nota elegida el corte NO sirve: es del período entero. Usarlo
-      // producía «Las 40 líneas congeladas de la nota 262211852 descontaron»
-      // sobre una nota de dos líneas — un número correcto puesto en boca de
-      // otro conjunto. `itemsDelPeriodo` ya viene filtrado por nota cuando hay
-      // una elegida, así que ese es el número que corresponde.
+      // Con una nota elegida el corte NO sirve (es del período entero): daba «Las
+      // 40 líneas congeladas de la nota 262211852 descontaron» sobre una nota de
+      // dos líneas. `itemsDelPeriodo` ya viene filtrado por nota.
       final cuantas =
           notaElegida != null
               ? itemsDelPeriodo
@@ -935,10 +840,9 @@ class _SinItems extends StatelessWidget {
     // (2) Con una nota elegida y sin líneas, el que está vacío es el filtro de
     //     nota. El corte es del período entero y no explica esto.
     if (notaElegida != null) {
-      // El botón va aquí y el texto ya no manda a tocar el desplegable: con la
-      // lista vacía la barra de filtros no se dibuja, así que ese control NO
-      // está en pantalla. Y era la única forma de volver: sin esto había que
-      // cerrar el diálogo y abrirlo de nuevo.
+      // El botón va aquí: con la lista vacía la barra de filtros no se dibuja,
+      // así que el desplegable no está en pantalla y habría que cerrar y reabrir
+      // el diálogo.
       return EstadoVista.vacio(
         context,
         icono: Icons.search_off_outlined,
@@ -956,10 +860,9 @@ class _SinItems extends StatelessWidget {
     // (3) De aquí en adelante la lista está vacía porque el período no trajo
     //     nada, y el único que puede explicarlo es el corte.
 
-    // Un error de red NO es una respuesta de la base. Se dice, con reintento,
-    // en vez de imprimir «no quedó registro de que el detalle se haya
-    // congelado»: ese texto sobre una llamada fallida es el mismo fallo que
-    // este diálogo corrige, dado vuelta.
+    // Un error de red NO es una respuesta de la base: se dice, con reintento, en
+    // vez de «no quedó registro de que el detalle se haya congelado» (el mismo
+    // fallo que este diálogo corrige, dado vuelta).
     if (corte.hasError && !corte.hasValue) {
       return EstadoVista.error(
         context,
@@ -974,8 +877,8 @@ class _SinItems extends StatelessWidget {
       return EstadoVista.cargando(context, mensaje: 'Leyendo el corte');
     }
 
-    // El corte no existe: el período nunca se congeló. Es el caso (b), el que
-    // sin esta tabla pasaba por «no había nada».
+    // El corte no existe: el período nunca se congeló (el caso «roto», que sin
+    // esta tabla pasaba por «no había nada»).
     if (c == null) {
       return EstadoVista.vacio(
         context,
@@ -1005,9 +908,9 @@ class _DetalleCorte extends StatelessWidget {
     final tt = Theme.of(context).textTheme;
     final c = corte;
 
-    // `vacioExplicado` separa el cero honesto —el corte corrió y no había nada
-    // que congelar— de la incoherencia: el corte dice haber congelado N ítems
-    // y la consulta no trajo ninguno. Las dos se veían con el mismo título.
+    // `vacioExplicado` separa el cero honesto (el corte corrió y no había nada que
+    // congelar) de la incoherencia: el corte dice haber congelado N ítems y la
+    // consulta no trajo ninguno.
     final coherente = c.vacioExplicado;
 
     return Padding(
@@ -1068,17 +971,15 @@ class _DetalleCorte extends StatelessWidget {
             children: [
               _Dato(rotulo: 'Notas pagadas', valor: '${c.notasPagadas}'),
               _Dato(rotulo: 'Con detalle', valor: '${c.notasConItems}'),
-              // El número que hay que mirar: notas que se pagaron y de las que
-              // no quedó detalle. Si es alto y no lo explica la vigencia, algo
-              // se perdió entre la captura y el pago.
+              // El número a mirar: notas pagadas sin detalle. Si es alto y no lo
+              // explica la vigencia, algo se perdió entre la captura y el pago.
               _Dato(
                 rotulo: 'Sin detalle',
                 valor: '${c.notasSinItems}',
                 alerta: c.notasSinItems > 0,
               ),
-              // Solo cuando el corte dice haber congelado algo: en el cero
-              // honesto estos dos serían dos ceros más al lado de la frase que
-              // está tratando de explicar el cero.
+              // Solo si el corte dice haber congelado algo: en el cero honesto
+              // serían dos ceros más junto a la frase que explica el cero.
               if (c.items > 0) ...[
                 _Dato(rotulo: 'Ítems congelados', valor: '${c.items}'),
                 _Dato(
@@ -1108,12 +1009,9 @@ class _DetalleCorte extends StatelessWidget {
   }
 }
 
-/// Contenedor de los estados vacíos que no puede desbordar.
-///
-/// Los tres estados de EstadoVista miden 240 px de alto fijo, y el cuerpo del
-/// diálogo en un teléfono acostado mide menos que eso. Con el contenido suelto,
-/// el vacío que explica el cero desbordaba justo en la pantalla donde menos se
-/// puede leer.
+/// Contenedor de los estados vacíos que no puede desbordar: los tres estados de
+/// EstadoVista miden 240px de alto fijo y el cuerpo del diálogo en un teléfono
+/// acostado mide menos.
 class _Desplazable extends StatelessWidget {
   const _Desplazable({required this.child});
 
@@ -1166,14 +1064,8 @@ class _Dato extends StatelessWidget {
   }
 }
 
-// ── Escritorio: tabla ────────────────────────────────────────────────────────
-
-/// Una columna de la tabla de escritorio.
-///
-/// Las columnas se declaran UNA vez y de aquí salen el encabezado, cada fila y
-/// el ancho mínimo. Antes eran tres cosas separadas —los DataColumn, las
-/// DataCell y un 1340 sumado a mano en un comentario— y el comentario contaba
-/// ocho columnas donde la tabla declaraba nueve.
+/// Una columna de la tabla de escritorio. Se declaran UNA vez y de aquí salen el
+/// encabezado, cada fila y el ancho mínimo, para que no se desincronicen.
 class _Columna {
   const _Columna(
     this.rotulo,
@@ -1184,19 +1076,16 @@ class _Columna {
 
   final String rotulo;
 
-  /// Ancho fijo, o el mínimo de la columna elástica.
-  ///
-  /// Los importes van en JetBrains Mono a 13 px —7.8 px por carácter— así que
-  /// la cuenta es literal: «1,234,567.89» son doce caracteres, 94 px. Por eso
-  /// Monto y Descuento miden 110 y no los 90 que tenían anotados.
+  /// Ancho fijo, o el mínimo de la columna elástica. Los importes van en
+  /// JetBrains Mono a 13px (7.8px por carácter): «1,234,567.89» son doce
+  /// caracteres, 94px, por eso Monto y Descuento miden 110.
   final double ancho;
 
   /// Alineada a la derecha, como los importes de todo el módulo.
   final bool numerica;
 
-  /// La que se queda con el ancho sobrante cuando la pantalla da de más. Es la
-  /// descripción porque es la única que gana algo: las demás muestran un dato
-  /// de largo conocido.
+  /// La que se queda con el ancho sobrante: la descripción, la única que gana
+  /// algo (las demás muestran un dato de largo conocido).
   final bool elastica;
 }
 
@@ -1209,24 +1098,18 @@ const _columnas = <_Columna>[
   _Columna('Monto Bs', 110, numerica: true),
   _Columna('% pago', 70, numerica: true),
   _Columna('Descuento Bs', 110, numerica: true),
-  // La más ancha de las fijas: lleva un chip con texto e icono —«Familia sin
-  // política»— que no se puede recortar sin perder justo el dato por el que
-  // alguien abre este diálogo.
-  //
-  // 300 y no 200: con 200 el chip del motivo más largo desbordaba 89 px hacia
-  // la derecha, en CUALQUIER ancho de pantalla, porque la celda es un SizedBox
-  // fijo y el chip no se achica. Los tests no lo veían porque su fixture usa
-  // motivos cortos; se reprodujo recién al armar uno con los cinco.
+  // La más ancha de las fijas: lleva un chip con texto e icono («Familia sin
+  // política») que no se puede recortar. 300 y no 200: con 200 el chip del motivo
+  // más largo desbordaba 89px a la derecha en CUALQUIER ancho (celda SizedBox fija,
+  // el chip no se achica); los tests no lo veían porque su fixture usa motivos cortos.
   _Columna('Motivo', 300),
 ];
 
 /// El mismo `horizontalMargin` que el tema le da a las DataTable del módulo.
 const double _margenTabla = ComisionesTema.esp4;
 
-/// Ancho mínimo antes de que el scroll horizontal empiece a hacer falta.
-///
-/// Se calcula, no se escribe: sumado a mano se desincroniza de las columnas en
-/// cuanto alguna cambia, y eso ya pasó una vez.
+/// Ancho mínimo antes de que haga falta el scroll horizontal. Se calcula, no se
+/// escribe: sumado a mano se desincroniza cuando cambia una columna.
 final double _anchoMinimoTabla =
     _columnas.fold<double>(0, (s, c) => s + c.ancho) +
     ComisionesTema.separacionColumnas * (_columnas.length - 1) +
@@ -1258,14 +1141,10 @@ Widget _celda(int k, Widget hijo) => Align(
   child: hijo,
 );
 
-/// La tabla de escritorio, virtualizada.
-///
-/// Antes era un DataTable con `rows: [for (final i in items) ...]` dentro de un
-/// SingleChildScrollView: los miles de DataRow de un mes grande —cada uno con
-/// su ChipEstado— se construían enteros en el frame en que abría el diálogo,
-/// aunque solo se vieran quince. Ahora el alto de fila es fijo
-/// (`ComisionesTema.altoFila`), así que la lista sabe cuánto mide sin
-/// construir nada y solo instancia lo que se ve.
+/// La tabla de escritorio, virtualizada: el alto de fila es fijo
+/// (`ComisionesTema.altoFila`), así que la lista sabe cuánto mide sin construir
+/// nada y solo instancia lo visible (un DataTable construía los miles de DataRow
+/// de un mes grande, cada uno con su ChipEstado, aunque se vieran quince).
 class _TablaItems extends StatefulWidget {
   const _TablaItems({required this.items});
 
@@ -1276,10 +1155,8 @@ class _TablaItems extends StatefulWidget {
 }
 
 class _TablaItemsState extends State<_TablaItems> {
-  /// Controller propio para el scroll horizontal.
-  ///
-  /// Sin el, el Scrollbar y el SingleChildScrollView no comparten posicion: la
-  /// barra se dibuja pero no se mueve con la tabla ni la mueve. Un adorno.
+  /// Controller propio para el scroll horizontal: sin él, el Scrollbar y el
+  /// SingleChildScrollView no comparten posición y la barra sería un adorno.
   final _horizontal = ScrollController();
 
   @override
@@ -1299,18 +1176,14 @@ class _TablaItemsState extends State<_TablaItems> {
                 ? _anchoMinimoTabla
                 : limites.maxWidth;
 
-        // Con el alto de fila fijo, lo que mide el contenido se sabe sin
-        // construir una sola fila. El tope es lo que deja que el diálogo siga
-        // encogiendo con pocas líneas: sin él la lista se estira hasta el
-        // borde y un período de tres líneas abriría un diálogo de pantalla
-        // entera con el aire abajo.
+        // Con el alto de fila fijo el contenido se mide sin construir filas. El
+        // tope deja que el diálogo siga encogiendo con pocas líneas: sin él, tres
+        // líneas abrirían un diálogo de pantalla entera con aire abajo.
         final altoContenido = widget.items.length * ComisionesTema.altoFila;
 
-        // El encabezado es un hijo rígido: si el cuerpo mide menos que él, el
-        // Column desborda. Pasa de verdad —600x480 con el resumen puesto deja
-        // 28 px para la tabla— así que se encoge con lo que haya. Una tabla de
-        // 28 px no sirve para nada, pero un desborde tampoco, y este además
-        // tapa el resto con la reja amarilla.
+        // El encabezado es un hijo rígido: si el cuerpo mide menos, el Column
+        // desborda. Pasa de verdad (600x480 con el resumen puesto deja 28px para
+        // la tabla), así que se encoge con lo que haya.
         final disponible =
             limites.maxHeight.isFinite
                 ? limites.maxHeight - _padInferiorTabla
@@ -1322,9 +1195,8 @@ class _TablaItemsState extends State<_TablaItems> {
 
         return Scrollbar(
           controller: _horizontal,
-          // Siempre visible, no solo al arrastrar: en web el scroll
-          // horizontal no se descubre solo, y lo que queda afuera es
-          // justamente la columna del motivo.
+          // Siempre visible: en web el scroll horizontal no se descubre solo, y lo
+          // que queda afuera es la columna del motivo.
           thumbVisibility: true,
           child: SingleChildScrollView(
             controller: _horizontal,
@@ -1335,9 +1207,8 @@ class _TablaItemsState extends State<_TablaItems> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  // El encabezado queda fijo y no se va con el scroll vertical
-                  // como hacía el DataTable: en una lista larga se perdía de
-                  // vista a la tercera pantalla.
+                  // El encabezado queda fijo y no se va con el scroll vertical: en
+                  // una lista larga se perdía de vista a la tercera pantalla.
                   _EncabezadoTabla(alto: altoEncabezado),
                   Flexible(
                     child: ConstrainedBox(
@@ -1425,8 +1296,8 @@ class _FilaTablaState extends State<_FilaTabla> {
       WidgetState.hovered,
     });
     // La línea excluida se marca con un lavado de error, no con texto rojo: es
-    // la fila entera la que quedó afuera, no un dato suyo. Bajo el cursor gana
-    // el resaltado, que es el que dice «estoy leyendo este renglón».
+    // la fila entera la que quedó afuera, no un dato suyo. Bajo el cursor gana el
+    // resaltado.
     final fondo =
         _encima
             ? resaltado
@@ -1495,8 +1366,6 @@ class _FilaTablaState extends State<_FilaTabla> {
   }
 }
 
-// ── Móvil: tarjetas ──────────────────────────────────────────────────────────
-
 class _ListaTarjetas extends StatelessWidget {
   const _ListaTarjetas({required this.items});
 
@@ -1505,9 +1374,8 @@ class _ListaTarjetas extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListView.separated(
-      // Controller propio: el resumen de arriba puede estar desplazándose al
-      // mismo tiempo, y dos scrollables colgados del PrimaryScrollController
-      // es una asercion en tiempo de ejecucion.
+      // primary: false: el resumen de arriba puede desplazarse a la vez y dos
+      // scrollables sobre el PrimaryScrollController fallan en un assert.
       primary: false,
       padding: const EdgeInsets.fromLTRB(12, 8, 12, 16),
       itemCount: items.length,
@@ -1531,9 +1399,8 @@ class _Tarjeta extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(ComisionesTema.esp3),
       decoration: BoxDecoration(
-        // La tarjeta excluida se distingue por el borde, no por el relleno: en
-        // una lista donde la mayoría está excluida, rellenarlas todas deja la
-        // pantalla teñida y ya no destaca nada.
+        // La tarjeta excluida se distingue por el borde, no por el relleno: si la
+        // mayoría está excluida, rellenarlas todas tiñe la pantalla y nada destaca.
         border: Border.all(color: i.excluido ? cs.error : cs.outlineVariant),
         borderRadius: ComisionesTema.brControl,
       ),
@@ -1612,9 +1479,8 @@ class _Tarjeta extends StatelessWidget {
               ),
             ],
           ),
-          // El por qué va completo en la tarjeta y no solo en el chip: en un
-          // teléfono no hay tooltip donde esconderlo, y «Fuera de vigencia» sin
-          // la explicación no le dice nada a quien pregunta por su comisión.
+          // El por qué va completo en la tarjeta y no solo en el chip: en teléfono
+          // no hay tooltip, y «Fuera de vigencia» sin explicación no dice nada.
           if (i.excluido) ...[
             const SizedBox(height: ComisionesTema.esp2),
             Text(

@@ -1,5 +1,3 @@
-// lib/core/state/talonarios_provider.dart
-
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:bosque_flutter/data/repositories/talonarios_impl.dart';
@@ -74,15 +72,10 @@ typedef FiltroTalonarios =
       bool incluirCerrados,
     });
 
-/// Lo que se pide al entrar: **sin los cerrados**.
-///
-/// No es una preferencia estética. Los cerrados son estado terminal —no
-/// admiten ninguna acción— y hoy son el 54% de las filas. Sacarlos lleva la
-/// carga inicial de 1045 filas / 334 KB a 480 / 153 KB, y lo que queda es
-/// justamente lo que la pantalla sirve para gestionar.
-///
-/// La base resuelve la consulta completa en 0 ms; el costo está en el payload
-/// y en construir 1045 objetos en Dart.
+/// Lo que se pide al entrar: **sin los cerrados** (estado terminal, sin
+/// acciones; hoy el 54% de las filas). Baja la carga inicial de 1045 filas /
+/// 334 KB a 480 / 153 KB; el costo está en el payload y en construir los
+/// objetos, no en la base.
 const FiltroTalonarios filtroTalonariosVacio = (
   codTipoRecibo: null,
   codEmpresa: null,
@@ -129,15 +122,12 @@ final talonariosDisponiblesProvider =
 /// Clave de [usoTipoEmpresaProvider].
 typedef ComboTipoEmpresa = ({BigInt codTipoRecibo, BigInt codEmpresa});
 
-/// Cuántos talonarios existen ya con esa combinación de tipo y empresa.
+/// Cuántos talonarios existen ya con esa combinación de tipo y empresa; avisa
+/// en el alta si la sigla nunca se usó en esa empresa (p. ej. EC2, de
+/// Esppapel, en Impexpap).
 ///
-/// Sirve para avisar en el alta cuando alguien elige una sigla que nunca se
-/// usó en esa empresa (p. ej. EC2, que es de Esppapel, en Impexpap).
-///
-/// **Es un aviso, no una regla.** No hay ninguna restricción en la base que
-/// ate un tipo a una empresa, y el historial la contradiría: ER1 se usó en
-/// Esppapel y en Impexpap, y PR2 en Impexpap y en Papirus. Bloquear sería
-/// inventar una regla que el negocio no tiene.
+/// **Es un aviso, no una regla:** la base no ata un tipo a una empresa y el
+/// historial lo contradice (ER1 en Esppapel e Impexpap, PR2 en Impexpap y Papirus).
 final usoTipoEmpresaProvider = FutureProvider.family<int, ComboTipoEmpresa>((
   ref,
   combo,

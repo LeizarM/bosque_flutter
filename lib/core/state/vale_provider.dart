@@ -1,4 +1,3 @@
-// Destino final: lib/core/state/vale_provider.dart
 import 'package:bosque_flutter/data/repositories/vale_impl.dart';
 import 'package:bosque_flutter/domain/entities/vale_entity.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';

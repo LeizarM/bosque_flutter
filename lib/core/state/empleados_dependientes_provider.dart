@@ -135,7 +135,6 @@ final registrarPersonaProvider =
     FutureProvider.family<PersonaEntity, PersonaEntity>((ref, persona) async {
       try {
         final repo = FichaTrabajadorImpl();
-        // Convertir PersonaEntity a PersonaModel antes de enviarlo
         final personaModel = PersonaModel.fromEntity(persona);
         final result = await repo.registrarPersona(personaModel);
         return result;
@@ -346,7 +345,6 @@ final empObtenerDatosEmpleados = FutureProvider.family<int, int>((
   return codPersona;
 });
 //provider para manejar foto del empleado
-// Provider para manejar fotos
 final subirFotoProvider = FutureProvider.family<bool, (int, Uint8List)>((
   ref,
   params,
@@ -364,7 +362,7 @@ final subirFotoDocProvider =
         codEmpleado: params.$1,
         tipoDocumento: params.$2,
         archivo: params.$3,
-        lado: params.$4, // <--- nuevo
+        lado: params.$4,
       );
     });
 
@@ -375,7 +373,7 @@ final personaLstProvider = FutureProvider<List<PersonaEntity>>((ref) async {
   final personas = await repo.obtenerListaPersonas();
   return personas;
 });
-// para manejar persmisos de edición
+// para manejar permisos de edición
 final permissionServiceProvider = Provider<PermissionVerificationService>((
   ref,
 ) {
@@ -529,10 +527,8 @@ final obtenerPersonaXCodPersona = FutureProvider.family<PersonaEntity, int>((
     '⭐ Provider obtenerPersonaXCodPersona - Iniciando con codPersona: $codEmpleado',
   );
 
-  // Reemplaza 'PersonaRepoImpl()' con tu clase de repositorio de Persona real
   final repo = FichaTrabajadorImpl();
 
-  // Reemplaza 'obtenerPersonaPorCod' con el método real de tu repositorio que trae la PersonaEntity.
   final PersonaEntity persona = await repo.obtenerDatosEmpleado(codEmpleado);
 
   if (persona.codPersona == 0) {

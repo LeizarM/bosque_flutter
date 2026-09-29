@@ -58,13 +58,6 @@ final getLstPersona = FutureProvider.family<List<PersonaEntity>, String>((
   final personas = await repo.getLstPersonas(buscarPersona);
   return personas;
 });
-//provider para obtener los datos de una persona por su codPersona
-/*final obtenerPersonaProvider = FutureProvider.family<PersonaEntity, int>(
-  (ref, codPersona) async {
-    final repo = RegistroEmpleadoImpl();
-    return await repo.obtenerPersona(codPersona);
-  },
-);*/
 //provider combinado pais y ciudad
 final currentNacionalidadProvider = StateProvider<int?>((ref) => null);
 final ciudadesCombinadasProvider = FutureProvider<List<CiudadEntity>>((
@@ -72,19 +65,19 @@ final ciudadesCombinadasProvider = FutureProvider<List<CiudadEntity>>((
 ) async {
   const int COD_PAIS_BOLIVIA = 1;
 
-  // 1. Obtener la nacionalidad seleccionada (Esto hace que el provider sea reactivo)
+  // 1. Nacionalidad seleccionada (hace reactivo al provider)
   final int nacionalidadId = ref.watch(currentNacionalidadProvider) ?? 0;
 
-  // 2. Obtener las ciudades de la nacionalidad actual (usando .future para esperar el resultado)
+  // 2. Ciudades de la nacionalidad actual (.future espera el resultado)
   final ciudadesNac = await ref.watch(ciudadProvider(nacionalidadId).future);
 
-  // 3. Obtener condicionalmente las ciudades de Bolivia (ID 1)
+  // 3. Ciudades de Bolivia (ID 1), solo si la nacionalidad es otra
   List<CiudadEntity> ciudadesBol = [];
   if (nacionalidadId != 0 && nacionalidadId != COD_PAIS_BOLIVIA) {
     ciudadesBol = await ref.watch(ciudadProvider(COD_PAIS_BOLIVIA).future);
   }
 
-  // 4. Combinar listas, priorizando las de la nacionalidad seleccionada (para asegurar unicidad)
+  // 4. Combinar priorizando las de la nacionalidad (sin repetir codCiudad)
   final Set<int> addedIds = ciudadesNac.map((c) => c.codCiudad).toSet();
   final List<CiudadEntity> ciudadesFinal = [...ciudadesNac];
 
@@ -96,12 +89,6 @@ final ciudadesCombinadasProvider = FutureProvider<List<CiudadEntity>>((
 
   return ciudadesFinal;
 });
-//provider para el manejo de telefonos
-/*final telefonoProvider = FutureProvider.family<List<TelefonoEntity>,int>((ref, codPersona)async{
- final repo = RegistroEmpleadoImpl();
-  final telefonos = await repo.obtenerTelefono(codPersona);
-  return telefonos;
-});*/
 //provider para el manejo de educacion
 final registrarEducacionProvider =
     FutureProvider.family<EducacionEntity, EducacionEntity>((
@@ -192,7 +179,7 @@ final obtenerBancosPlanilla = FutureProvider<List<BancoEntity>>((ref) async {
   final listaBancos = await repo.getBancosPlanilla();
   return listaBancos;
 });
-//provider para obtener la lista de tipos de educacion
+//provider para obtener los tipos de relacion laboral
 final getTipoRelacionLaboral = FutureProvider<List<TipoRelacionLaboralEntity>>((
   ref,
 ) async {
@@ -259,7 +246,7 @@ final eliminarCuentaBancaria = FutureProvider.family<void, int>((
   final repo = RegistroEmpleadoImpl();
   await repo.eliminarCuentaBancaria(codCuenta);
 });
-//provider para eliminar una cuenta bancaria por su codigo
+//provider para eliminar una relacion laboral por su codigo
 final eliminarRelacionLaboral = FutureProvider.family<void, int>((
   ref,
   codRelEmplEmpr,
@@ -292,7 +279,7 @@ final getHistorialCargosEmpleado =
       final cargos = await repo.obtenerHistorialCargosEmpleado(codEmpleado);
       return cargos;
     });
-//obtener el historial de cargos de un empleado
+//obtener el historial de relaciones laborales de un empleado
 final getHistorialRelLabEmpleado =
     FutureProvider.family<List<RelacionLaboralEntity>, int>((
       ref,
@@ -302,7 +289,7 @@ final getHistorialRelLabEmpleado =
       final relacion = await repo.obtenerHistorialRelLabEmpleado(codEmpleado);
       return relacion;
     });
-//provider para eliminar una cuenta bancaria por su codigo
+//provider para eliminar un cargo de un empleado
 final eliminarEmpleadoCargo =
     FutureProvider.family<void, (int, int, DateTime, int)>((ref, params) async {
       final repo = RegistroEmpleadoImpl();

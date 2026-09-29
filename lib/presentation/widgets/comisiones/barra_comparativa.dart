@@ -1,21 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:bosque_flutter/presentation/widgets/comisiones/comisiones_tema.dart';
 
-// BarraComparativa vivia aca y la usaba la vista de grafico del
-// preliminar. Se quito al pasar el grafico a un ranking agrupado por
-// vendedor: la fila nueva (_FilaVendedor) lleva puesto y desglose, que
-// esta clase no contemplaba, y no quedo ningun otro llamador.
-
-/// Tarjeta de una cifra: rótulo arriba, número grande abajo.
-///
-/// Una cifra de cabecera: rotulo, numero y una linea de contexto.
-///
-/// Antes era una caja con fondo, borde y radio. Tres cajas seguidas compiten
-/// entre si y con la tabla de abajo, y el borde no comunica nada: no hay nada
-/// que separar porque las tres cifras son del mismo bloque. Ahora la caja la
-/// pone FranjaCifras una sola vez alrededor de todas, y aca queda el dato.
-///
-/// La cifra importante se distingue por color y tamano, no por tener recuadro.
+/// Cifra de cabecera: rótulo, número y una línea de contexto. Sin caja propia:
+/// la caja la pone FranjaCifras una sola vez alrededor de todas, y la cifra
+/// importante se distingue por color y tamaño.
 class TarjetaCifra extends StatelessWidget {
   const TarjetaCifra({
     super.key,
@@ -93,11 +81,8 @@ class TarjetaCifra extends StatelessWidget {
   }
 }
 
-/// Agrupa las cifras de cabecera en un solo bloque.
-///
-/// Una caja alrededor de las tres en vez de tres cajas: las cifras de un
-/// periodo son una unidad, y separarlas con recuadros sugiere que no lo son.
-/// Las reglas verticales separan sin encerrar.
+/// Agrupa las cifras de cabecera en un solo bloque: las cifras de un período son
+/// una unidad, así que se separan con reglas verticales en vez de recuadros.
 class FranjaCifras extends StatelessWidget {
   const FranjaCifras({super.key, required this.cifras});
 
@@ -108,9 +93,8 @@ class FranjaCifras extends StatelessWidget {
     final cs = Theme.of(context).colorScheme;
     if (cifras.isEmpty) return const SizedBox.shrink();
 
-    // En un telefono las reglas verticales obligarian a tres columnas de menos
-    // de 100px y el importe se cortaria; apiladas cada cifra tiene el ancho
-    // completo.
+    // En teléfono las reglas verticales darían tres columnas de <100px y el importe
+    // se cortaría; apiladas, cada cifra usa el ancho completo.
     if (ComisionesTema.esMovil(context)) {
       return Container(
         decoration: ComisionesTema.contenedor(context),

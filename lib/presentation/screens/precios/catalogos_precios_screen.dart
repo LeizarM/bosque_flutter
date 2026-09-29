@@ -17,17 +17,12 @@ import 'package:bosque_flutter/presentation/widgets/precios/formularios_catalogo
 import 'package:bosque_flutter/presentation/widgets/precios/panel_catalogo.dart';
 import 'package:bosque_flutter/presentation/widgets/precios/sincronizacion_sap.dart';
 
-// ═══════════════════════════════════════════════════════════════════════════
-// ESTADO LOCAL DE LA PANTALLA
-// ═══════════════════════════════════════════════════════════════════════════
+// Estado local de la pantalla
 
-/// El filtro de activos / inactivos de cada pestania.
-///
-/// Vive aqui y no en `precios_provider.dart` a proposito: es estado de ESTA
-/// pantalla y no tiene por que verlo el resto del modulo. Es family porque cada
-/// catalogo filtra por su cuenta -se pueden estar mirando los colores inactivos
-/// y los tipos activos al mismo tiempo- y autoDispose porque un filtro puesto en
-/// una visita no tiene que reaparecer en la siguiente.
+/// El filtro de activos / inactivos de cada pestaña. Vive aquí y no en
+/// `precios_provider.dart`: es estado de ESTA pantalla. Es family porque cada
+/// catálogo filtra por su cuenta y autoDispose porque un filtro puesto en una
+/// visita no debe reaparecer en la siguiente.
 final _filtroEstadoProvider = StateProvider.autoDispose.family<int, String>(
   (ref, catalogo) => estadoTodos,
 );
@@ -36,24 +31,15 @@ const String _claveColores = 'colores';
 const String _claveTipos = 'tipos';
 const String _clavePresentaciones = 'presentaciones';
 
-// ═══════════════════════════════════════════════════════════════════════════
-// PANTALLA
-// ═══════════════════════════════════════════════════════════════════════════
+// Pantalla
 
-/// Los seis catalogos simples del modulo de precios, en una pantalla con
-/// pestanias: colores, tipos de papel, presentaciones, rangos de gramaje,
-/// grupos de familia SAP y proveedores externos SAP.
+/// Los seis catálogos simples del módulo de precios, en pestañas: colores, tipos
+/// de papel, presentaciones, rangos de gramaje, grupos de familia SAP y
+/// proveedores externos SAP. Van juntos: se administran a la vez y ninguno
+/// justifica su entrada de menú.
 ///
-/// **Por que juntos y no seis pantallas.** Son seis tablas de dos a seis
-/// columnas que se administran en el mismo momento -cargar una familia de
-/// producto nueva suele pedir tocar dos o tres de ellas- y ninguna justifica una
-/// entrada propia en el menu. En Bosque v2 cada una era su XHTML y llegar a
-/// cualquiera costaba tres clics desde otra.
-///
-/// **El diseno cambia con el ancho, no se escala.** El corte lo decide [Aire]
-/// sobre el ancho del CAJON que mide el LayoutBuilder, no sobre el de la
-/// ventana: adentro del DashboardScreen la barra lateral se come 260px y
-/// MediaQuery informa un ancho que esta pantalla no tiene.
+/// El diseño cambia con el ancho del CAJÓN ([Aire] sobre `LayoutBuilder`, no
+/// `MediaQuery`: en el DashboardScreen la barra lateral se come 260 px).
 class CatalogosPreciosScreen extends ConsumerWidget {
   const CatalogosPreciosScreen({super.key});
 
@@ -63,9 +49,8 @@ class CatalogosPreciosScreen extends ConsumerWidget {
       builder: (context, cajon) {
         final aire = Aire.de(cajon.maxWidth);
 
-        // Seis pestanias no entran repartidas en el ancho de un telefono: se
-        // aplastan hasta que los titulos quedan cortados. Cuando el cajon no da
-        // para las seis, la barra se desliza.
+        // Seis pestañas no entran repartidas en un teléfono (los títulos quedan
+        // cortados): si el cajón no da para las seis, la barra se desliza.
         final desliza = aire != Aire.amplio;
 
         return DefaultTabController(
@@ -164,9 +149,7 @@ class _Encabezado extends StatelessWidget {
   }
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// COLORES (tpr_color)
-// ═══════════════════════════════════════════════════════════════════════════
+// Colores (tpr_color)
 
 class _PanelColores extends ConsumerWidget {
   const _PanelColores();
@@ -307,9 +290,7 @@ Future<void> _eliminarColor(
   mensajeOk: 'Color eliminado',
 );
 
-// ═══════════════════════════════════════════════════════════════════════════
-// TIPOS DE PAPEL (tpr_tipo)
-// ═══════════════════════════════════════════════════════════════════════════
+// Tipos de papel (tpr_tipo)
 
 class _PanelTipos extends ConsumerWidget {
   const _PanelTipos();
@@ -405,8 +386,7 @@ Future<void> _editarTipo(
           titulo:
               esNuevo ? 'Nuevo tipo de papel' : 'Editar ${tipo.nombreLegible}',
           etiquetaCampo: 'Tipo de papel',
-          // El procedimiento acepta 150 desde que se corrigio el parametro, que
-          // antes estaba en 50 y truncaba en silencio.
+          // El procedimiento acepta 150 (antes truncaba en 50 en silencio).
           ayuda: 'Hasta 150 caracteres.',
           maxLargo: 150,
           esNuevo: esNuevo,
@@ -451,9 +431,7 @@ Future<void> _eliminarTipo(
   mensajeOk: 'Tipo eliminado',
 );
 
-// ═══════════════════════════════════════════════════════════════════════════
-// PRESENTACIONES (tpr_presentacion)
-// ═══════════════════════════════════════════════════════════════════════════
+// Presentaciones (tpr_presentacion)
 
 class _PanelPresentaciones extends ConsumerWidget {
   const _PanelPresentaciones();
@@ -610,9 +588,7 @@ Future<void> _eliminarPresentacion(
   mensajeOk: 'Presentación eliminada',
 );
 
-// ═══════════════════════════════════════════════════════════════════════════
-// RANGOS DE GRAMAJE (tpr_RangoGramaje)
-// ═══════════════════════════════════════════════════════════════════════════
+// Rangos de gramaje (tpr_RangoGramaje)
 
 class _PanelRangosGramaje extends ConsumerWidget {
   const _PanelRangosGramaje();
@@ -638,9 +614,8 @@ class _PanelRangosGramaje extends ConsumerWidget {
       resumen: _resumenRangos,
       columnas:
           (aire) => [
-            // El rango legible lo arma la entity: un solo texto para un dato
-            // que en la base son dos columnas, y el mismo en la tabla, en la
-            // tarjeta y en los combos del resto del modulo.
+            // El rango legible lo arma la entity: un texto para un dato que en la base son
+            // dos columnas, el mismo en tabla, tarjeta y combos del módulo.
             ColumnaCatalogo<RangoGramajeEntity>(
               'Rango',
               ancho: 200,
@@ -738,9 +713,7 @@ Future<void> _eliminarRango(
   mensajeOk: 'Rango eliminado',
 );
 
-// ═══════════════════════════════════════════════════════════════════════════
-// GRUPOS DE FAMILIA SAP (tpr_grupoFamiliaSap)
-// ═══════════════════════════════════════════════════════════════════════════
+// Grupos de familia SAP (tpr_grupoFamiliaSap)
 
 class _PanelGruposFamiliaSap extends ConsumerWidget {
   const _PanelGruposFamiliaSap();
@@ -777,9 +750,8 @@ class _PanelGruposFamiliaSap extends ConsumerWidget {
               expande: true,
               celda: (g) => CeldaTexto(g.grpFam, fuerte: true),
             ),
-            // Con el cajon apretado los tres codigos se resumen en una linea:
-            // cinco columnas en 600px dejan 120px por columna y no entra ni el
-            // titulo.
+            // Con el cajón apretado los tres códigos se resumen en una línea: cinco columnas
+            // en 600 px dejan 120 px por columna y no entra ni el título.
             if (aire != Aire.amplio)
               ColumnaCatalogo<GrupoFamiliaSapEntity>(
                 'Códigos SAP',
@@ -895,9 +867,7 @@ Future<void> _eliminarGrupo(
   mensajeOk: 'Grupo eliminado',
 );
 
-// ═══════════════════════════════════════════════════════════════════════════
-// PROVEEDORES EXTERNOS SAP (tpr_proveedorExtSap)
-// ═══════════════════════════════════════════════════════════════════════════
+// Proveedores externos SAP (tpr_proveedorExtSap)
 
 class _PanelProveedoresSap extends ConsumerWidget {
   const _PanelProveedoresSap();
@@ -1010,21 +980,15 @@ Future<void> _eliminarProveedor(
   mensajeOk: 'Proveedor eliminado',
 );
 
-// ═══════════════════════════════════════════════════════════════════════════
-// PIEZAS COMPARTIDAS POR LAS SEIS PESTANIAS
-// ═══════════════════════════════════════════════════════════════════════════
+// Piezas compartidas por las seis pestañas
 
-/// La baja de cualquiera de los seis catalogos.
-///
-/// Los seis procedimientos se comportan igual: confirman, y si el registro esta
-/// referenciado por una familia devuelven un mensaje de negocio en lugar de
-/// reventar con el error de clave foranea. Ese mensaje se muestra tal como
-/// viene, que es lo que explica por que no se pudo.
-/// Las filas con una baja en curso, por catalogo e id ("color:12"). La fila
-/// sigue en la tabla hasta que el pedido vuelve y se refresca: sin esto, un
+/// Las filas con una baja en curso, por catálogo e id ("color:12"): sin esto, un
 /// segundo "Eliminar" mandaba otra baja y terminaba en un "no existe".
 final Set<String> _bajasEnCurso = <String>{};
 
+/// La baja de cualquiera de los seis catálogos: confirma y, si el registro está
+/// referenciado por una familia, el procedimiento devuelve un mensaje de negocio
+/// (no el error de clave foránea) que se muestra tal cual.
 Future<void> _darDeBaja(
   BuildContext context,
   WidgetRef ref, {

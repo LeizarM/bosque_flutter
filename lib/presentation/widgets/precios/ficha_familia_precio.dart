@@ -1,18 +1,8 @@
-/// La ficha de la familia consultada: que producto es, con que costo e
-/// impuestos se armaron sus precios, cuantas listas tiene y entre que valores
-/// se mueve su precio.
-///
-/// **Por que estos datos estan aca y no en columnas de la tabla.** Grupo SAP,
-/// proveedor, gramaje, formato y color son de la FAMILIA: valen lo mismo en las
-/// doce filas de la grilla. El IVA y el IT tambien, porque en el resultset son
-/// subconsultas escalares sin correlacion. Repetirlos en cada fila cuesta la
-/// mitad del ancho de la tabla para no decir nada nuevo; dichos una vez arriba,
-/// la tabla queda para lo que si cambia de fila en fila: la sucursal, la lista,
-/// el porcentaje y el precio.
-///
-/// Las cuatro cifras van en las mismas tarjetas con franja de color que el
-/// resumen del asistente ([CifraResumen]): en escritorio en una fila, en el
-/// telefono de a dos.
+/// La ficha de la familia consultada: qué producto es, con qué costo e impuestos
+/// se armaron sus precios, cuántas listas tiene y entre qué valores se mueve.
+/// Estos datos van aquí y no en la tabla porque son de la FAMILIA (valen igual en
+/// todas las filas, también IVA e IT: subconsultas escalares sin correlación).
+/// Las cuatro cifras usan [CifraResumen].
 library;
 
 import 'package:flutter/material.dart';
@@ -62,9 +52,8 @@ class FichaFamiliaPrecio extends StatelessWidget {
         children: [
           _Encabezado(familia: familia, conResumen: chico),
           SizedBox(height: Esp.s),
-          // En un telefono los ocho atributos de la familia cuestan media
-          // pantalla y quien consulta un precio ya sabe que familia eligio.
-          // Quedan a un toque.
+          // En teléfono los ocho atributos cuestan media pantalla y quien consulta un precio
+          // ya sabe qué familia eligió: quedan a un toque.
           if (chico)
             _AtributosPlegados(familia: familia)
           else
@@ -77,9 +66,7 @@ class FichaFamiliaPrecio extends StatelessWidget {
   }
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// PIEZAS
-// ═══════════════════════════════════════════════════════════════════════════
+// Piezas
 
 class _Encabezado extends StatelessWidget {
   const _Encabezado({required this.familia, required this.conResumen});
@@ -295,8 +282,8 @@ class _AtributosPlegados extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Theme(
-    // El ExpansionTile pinta una linea divisoria arriba y abajo que aca corta
-    // la ficha en dos por la mitad.
+    // El ExpansionTile pinta una línea divisoria arriba y abajo que aquí corta la
+    // ficha en dos.
     data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
     child: ExpansionTile(
       title: Text(

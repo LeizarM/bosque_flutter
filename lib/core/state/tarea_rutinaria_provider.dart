@@ -1,4 +1,3 @@
-// Destino final: lib/core/state/tarea_rutinaria_provider.dart
 import 'package:bosque_flutter/data/repositories/tarea_rutinaria_impl.dart';
 import 'package:bosque_flutter/domain/entities/tarea_rutinaria_entity.dart';
 import 'package:bosque_flutter/domain/repositories/tarea_rutinaria_repository.dart';
@@ -8,12 +7,8 @@ class TareaRutinariaState {
   final List<TareaRutinariaEntity> items;
   final bool cargando;
 
-  /// Si alguna carga terminó bien.
-  ///
-  /// Sin esto, "todavía no se cargó" y "se cargó y vino vacío" son el mismo
-  /// estado: el provider arranca con la lista vacía y `cargando` en false, y
-  /// hasta que corre su primera carga cualquier pantalla que lo mire cree que
-  /// el catálogo no tiene nada.
+  /// Si alguna carga terminó bien: distingue "aún no se cargó" de "se cargó
+  /// y vino vacío".
   final bool cargado;
   final String? mensajeError;
   final String? mensajeExito;
@@ -42,9 +37,8 @@ class TareaRutinariaState {
 }
 
 class TareaRutinariaNotifier extends StateNotifier<TareaRutinariaState> {
-  // La interfaz y no la implementación: la implementación arma Dio, que lee
-  // la URL de dotenv, y eso impedía probar con un catálogo falso cualquier
-  // pantalla que use este provider.
+  // Interfaz y no implementación: la implementación arma Dio (lee la URL de
+  // dotenv) y eso impedía probar pantallas con un catálogo falso.
   final TareaRutinariaRepository _repo;
 
   TareaRutinariaNotifier(this._repo) : super(const TareaRutinariaState()) {

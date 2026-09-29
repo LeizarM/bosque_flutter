@@ -6,14 +6,9 @@ import 'package:bosque_flutter/domain/entities/tc_ancla_entity.dart';
 
 /// El ancla del tipo de cambio de una empresa, SOLO PARA MIRAR.
 ///
-/// tpr_tcAncla configura el reprecio nocturno automatico: con que tipo de
-/// cambio se repreciaron los precios la ultima vez y cuanta variacion hay que
-/// acumular para disparar otro. Quien la escribe es un proceso externo, no la
-/// aplicacion, asi que la tarjeta no tiene ni un boton de edicion: mostrar uno
-/// prometeria algo que el modulo no puede cumplir.
-///
-/// La bandera de "supera el umbral" es informativa: la decision de repreciar la
-/// toma el proceso nocturno, no esta pantalla.
+/// tpr_tcAncla (reprecio nocturno automático) la escribe un proceso externo, no
+/// la app: por eso no hay botón de edición. La bandera de "supera el umbral" es
+/// informativa; la decisión de repreciar es del proceso nocturno.
 class TarjetaTcAncla extends StatelessWidget {
   const TarjetaTcAncla({super.key, required this.ancla, this.compacta = false});
 

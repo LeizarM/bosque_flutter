@@ -3,19 +3,15 @@ import 'package:bosque_flutter/domain/entities/carta_cite_entity.dart';
 import 'package:bosque_flutter/domain/repositories/cartas_cite_repository.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-/// Estado y catálogos del módulo Cartas CITE.
-///
-/// Los catálogos son `FutureProvider` globales porque casi no cambian —seis
-/// tipos de documento, catorce áreas— y se consultan desde el listado y desde
-/// el formulario. El listado en cambio es un `StateNotifier` con sus filtros.
+/// Estado y catálogos del módulo Cartas CITE. Los catálogos son `FutureProvider`
+/// globales (casi no cambian: seis tipos de documento, catorce áreas); el
+/// listado es un `StateNotifier` con sus filtros.
 
 final cartasCiteRepositoryProvider = Provider<CartasCiteRepository>(
   (ref) => CartasCiteImpl(),
 );
 
-// ═══════════════════════════════════════════════════════════════════════════
 // CATÁLOGOS
-// ═══════════════════════════════════════════════════════════════════════════
 
 final tiposDocumentoCiteProvider =
     FutureProvider<List<TipoDocumentoCiteEntity>>((ref) async {
@@ -54,9 +50,7 @@ final firmaUsuarioCiteProvider =
       return ref.read(cartasCiteRepositoryProvider).firmaUsuario(codUsuario);
     });
 
-// ═══════════════════════════════════════════════════════════════════════════
 // LISTADO
-// ═══════════════════════════════════════════════════════════════════════════
 
 class CartasCiteState {
   final List<CartaCiteEntity> items;
@@ -140,9 +134,8 @@ class CartasCiteNotifier extends StateNotifier<CartasCiteState> {
   CartasCiteNotifier(this._repo, this._codUsuario)
     : super(
         CartasCiteState(
-          /// Tres meses hacia atrás y no "desde hoy" como el módulo viejo, que
-          /// abría con la fecha actual y mostraba la grilla vacía: parecía que
-          /// no había cartas cuando en realidad no había ninguna de hoy.
+          /// Tres meses atrás y no "desde hoy": con la fecha actual la grilla abría
+          /// vacía y parecía que no había cartas.
           fechaDesde: DateTime(
             DateTime.now().year,
             DateTime.now().month - 3,

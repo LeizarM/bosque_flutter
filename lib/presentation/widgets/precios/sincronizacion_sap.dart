@@ -1,12 +1,8 @@
-/// La sincronizacion de grupos de familia y proveedores con SAP
-/// (`p_abm_producto 'H'`), vista desde dos lugares:
-///
-/// * la ficha de una familia, que la dispara sola la primera vez que se abre en
-///   la sesion -el sistema anterior la corria al abrir la pantalla de precios-
-///   y muestra una linea con el estado, para que un grupo recien creado en SAP
-///   no parezca faltar mientras se consulta;
-/// * Catalogos, en las pestanias de grupos y proveedores, con un boton para
-///   traerlos a pedido.
+/// Sincronización de grupos de familia y proveedores con SAP
+/// (`p_abm_producto 'H'`), vista desde dos lugares: la ficha de una familia (la
+/// dispara sola la primera vez que se abre en la sesión, como el sistema anterior
+/// al abrir precios, y muestra una línea de estado para que un grupo nuevo en SAP
+/// no parezca faltar) y Catálogos (botón para traerlos a pedido).
 library;
 
 import 'package:flutter/material.dart';

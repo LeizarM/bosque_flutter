@@ -35,68 +35,49 @@ final rolesSabadosProvider = FutureProvider.autoDispose<List<RolSabadosEntity>>(
 /// El rol que se está mirando. null = todavía no eligió ninguno.
 final rolSeleccionadoProvider = StateProvider<int?>((ref) => null);
 
-/// Mes que se muestra en la grilla. 0 = el año entero.
-///
-/// Arranca en el mes actual y no en «todo el año» a propósito: un rol de 87
-/// personas × 52 sábados son 4.500 cruces, y de ellos casi siempre importan los
-/// del mes en curso. Mostrar el año completo de entrada es pedirle al navegador
-/// que dibuje diez veces más de lo que nadie va a mirar.
+/// Mes que se muestra en la grilla. 0 = el año entero. Arranca en el mes actual
+/// a propósito: un rol de 87 personas × 52 sábados son 4.500 cruces y casi
+/// siempre importan los del mes en curso.
 final filtroMesProvider = StateProvider<int>((ref) => DateTime.now().month);
 
 /// Texto del buscador de personas. Vacío = todas.
 final busquedaPersonaProvider = StateProvider<String>((ref) => '');
 
-/// Grupo que se muestra en la pestaña «Grupos». `''` = los dos.
-///
-/// **Se suma a [busquedaPersonaProvider], no lo reemplaza.** Son dos preguntas
-/// distintas y se hacen juntas: «mostrame el A» sirve para revisar el reparto —
-/// con 85 personas mezcladas hay que leer fila por fila cuál letra está
-/// resaltada— y «mostrame a Pérez» sirve para ir a alguien puntual.
-///
-/// Vive aquí y no adentro de la pestaña por lo mismo que los otros filtros del
-/// módulo: `grillaRolProvider` es `autoDispose`, así que ir a la grilla y
-/// volver reconstruye la vista entera y un estado local se perdería en cada
-/// vuelta. Mismo criterio y mismo tipo que [filtroEstadoCambioProvider].
+/// Grupo que se muestra en la pestaña «Grupos». `''` = los dos. **Se suma a
+/// [busquedaPersonaProvider], no lo reemplaza** («solo el A» revisa el reparto,
+/// «Pérez» va a alguien puntual). Vive aquí y no en la pestaña porque
+/// `grillaRolProvider` es `autoDispose` y un estado local se perdería al volver
+/// a la grilla (igual que [filtroEstadoCambioProvider]).
 final filtroGrupoProvider = StateProvider<String>((ref) => '');
 
 /// El cuarto valor de [filtroGrupoProvider]: en vez de una letra, muestra a
-/// quienes RR.HH. sacó de los sábados.
-///
-/// **Va en el mismo provider y no en un switch aparte.** Es otra vista de la
-/// misma lista, y los tres chips de arriba ya son mutuamente excluyentes: con
-/// un estado nuevo habría dos controles de filtrado con dos formas distintas en
-/// la misma barra, y estados imposibles como «grupo A + mostrar excluidos».
-/// Nunca choca con un grupo real, que es una sola letra.
+/// quienes RR.HH. sacó de los sábados. Va en el mismo provider y no en un switch
+/// aparte para evitar combinaciones imposibles como «grupo A + mostrar
+/// excluidos»; nunca choca con un grupo real (una sola letra).
 const String filtroSinSabados = 'SIN SABADOS';
 
-// ═══════════════════════════════════════════════════════════════════════════
-// LA GRILLA
-// ═══════════════════════════════════════════════════════════════════════════
+// La grilla
 
-/// La grilla ya cruzada y lista para pintar.
-///
-/// El backend devuelve tres listas sueltas (filas, columnas y celdas ocupadas)
-/// porque la matriz pivoteada tendría columnas dinámicas — 52 o 53 según el año.
-/// El cruce se hace aquí, una sola vez, y no en el `build` de cada celda.
+/// La grilla ya cruzada y lista para pintar. El backend devuelve tres listas
+/// sueltas (filas, columnas y celdas ocupadas) porque la matriz pivoteada
+/// tendría columnas dinámicas (52 o 53 según el año); el cruce se hace aquí,
+/// una vez, y no en el `build` de cada celda.
 class GrillaRol {
   final RolSabadosEntity rol;
   final List<SabadoEntity> sabados;
   final List<ParticipanteTurnoEntity> participantes;
 
   /// Clave `'idParticipante:idSabado'`. **Si la clave no está, esa persona está
-  /// LIBRE ese sábado** — el libre no se guarda, es la ausencia de la fila.
+  /// LIBRE ese sábado**: el libre no se guarda, es la ausencia de la fila.
   final Map<String, CeldaTurnoEntity> celdas;
 
   /// Catálogo indexado por letra, para el color y el nombre del estado.
   final Map<String, EstadoTurnoEntity> estados;
 
-  /// Cuánta gente viene cada sábado, y cuántos turnos tiene cada persona.
-  ///
-  /// **Precalculados a propósito.** Antes se contaban recorriendo el mapa de
-  /// celdas en cada llamada, y el encabezado llama una vez por columna: con
-  /// 2.262 celdas × 52 columnas eran 117.000 iteraciones en CADA redibujado, y
-  /// otro tanto por cada fila visible. Se calculan una sola vez, al armar la
-  /// grilla, en una pasada.
+  /// Cuánta gente viene cada sábado y cuántos turnos tiene cada persona.
+  /// **Precalculados a propósito:** el encabezado los pide una vez por columna y
+  /// recorrer `celdas` daría ~117.000 iteraciones por redibujado (2.262 celdas
+  /// × 52 columnas). Se calculan una vez, al armar la grilla.
   final Map<int, int> coberturaPorSabado;
   final Map<int, int> turnosPorParticipante;
 
@@ -124,10 +105,8 @@ class GrillaRol {
       turnosPorParticipante[idParticipante] ?? 0;
 }
 
-/// Carga la grilla completa de un rol.
-///
-/// Las cuatro consultas van en paralelo con `Future.wait`: son independientes y
-/// en serie sumarían cuatro viajes de red para pintar una sola pantalla.
+/// Carga la grilla completa de un rol. Las consultas van en paralelo con
+/// `Future.wait`: son independientes y en serie sumarían varios viajes de red.
 final grillaRolProvider = FutureProvider.autoDispose.family<GrillaRol, int>((
   ref,
   idRol,
@@ -177,9 +156,7 @@ final grillaRolProvider = FutureProvider.autoDispose.family<GrillaRol, int>((
   );
 });
 
-// ═══════════════════════════════════════════════════════════════════════════
-// ACCIONES
-// ═══════════════════════════════════════════════════════════════════════════
+// Acciones
 
 /// Las escrituras del módulo. Cada una invalida la grilla al terminar: el
 /// backend puede rehacer MUCHAS celdas de una sola llamada (un evento rehace el
@@ -263,17 +240,11 @@ class RolSabadosAcciones {
     _refrescar(idRol);
   }
 
-  /// Publica, reabre o cierra el rol.
-  ///
-  /// Invalida **las dos** fuentes del estado y no una: la etiqueta del selector
-  /// lee de [rolesSabadosProvider], pero la grilla se queda con su propia copia
-  /// de la cabecera dentro de `GrillaRol` —de ahí sale `rol.estaCerrado`, que
-  /// es lo que apaga los botones de editar en la matriz, la agenda y Grupos—.
-  /// Refrescando sólo la lista, la etiqueta diría CERRADO y la grilla seguiría
-  /// dejando tocar celdas hasta que el backend las rebotara de a una.
-  ///
-  /// [aplicaAsuetoCumple] es el valor que el rol ya tiene; ver el contrato del
-  /// repositorio para por qué hay que reenviarlo.
+  /// Publica, reabre o cierra el rol. Invalida **las dos** fuentes del estado:
+  /// la etiqueta del selector lee de [rolesSabadosProvider], pero la grilla
+  /// guarda su propia copia de la cabecera (`GrillaRol.rol`, que apaga los
+  /// botones de editar). [aplicaAsuetoCumple] es el valor que el rol ya tiene;
+  /// ver el contrato del repositorio para saber por qué se reenvía.
   Future<void> cambiarEstadoRol({
     required int idRol,
     required String estado,
@@ -289,7 +260,7 @@ class RolSabadosAcciones {
     _refrescar(idRol);
   }
 
-  // ── cambios ───────────────────────────────────────────────────────────
+  // Cambios
 
   Future<void> registrarCambio({
     required int idRol,
@@ -334,10 +305,10 @@ class RolSabadosAcciones {
     _ref.invalidate(cambiosProvider(idRol));
   }
 
-  // ── grupos ─────────────────────────────────
+  // Grupos
 
   /// Cambia a alguien de grupo. NO regenera: armar los grupos son muchos
-  /// cambios y una sola regeneracion al final, no una por persona.
+  /// cambios y una sola regeneración al final, no una por persona.
   Future<void> asignarGrupo({
     required int idRol,
     required int idParticipante,
@@ -351,11 +322,8 @@ class RolSabadosAcciones {
     _refrescar(idRol);
   }
 
-  // ── la ventana de sábados de una persona ──────────────────────────────
-  //
-  // Estas dos SÍ mueven celdas, y por eso refrescan la grilla igual que
-  // corregirCelda: el backend aplica el corte y la vuelta él mismo, sin
-  // esperar a una regeneración —que sobre un rol publicado está bloqueada—.
+  // Ventana de sábados de una persona. Estas dos SÍ mueven celdas: el backend
+  // aplica el corte y la vuelta sin regenerar (bloqueado en un rol publicado).
 
   /// Saca a alguien de los sábados a partir del día siguiente a [fechaBaja].
   Future<void> sacarDeSabados({
@@ -385,7 +353,7 @@ class RolSabadosAcciones {
     _refrescar(idRol);
   }
 
-  // ── vacaciones y permisos ─────────────────────────────────────────────
+  // Vacaciones y permisos
 
   Future<void> refrescarPermisos({required int idRol}) async {
     await _repo.refrescarPermisos(idRol: idRol, audUsuario: await _usuario());
@@ -393,7 +361,7 @@ class RolSabadosAcciones {
     _refrescar(idRol);
   }
 
-  // ── el biométrico pisa al rol ─────────────────────────────────────────
+  // El biométrico pisa al rol
 
   /// Aplica de verdad las excusas por horario (no `soloInformar`). La
   /// previsualización vive en [excusasHorarioProvider], que llama al mismo
@@ -410,7 +378,7 @@ class RolSabadosAcciones {
     return resultado;
   }
 
-  // ── convocatoria ──────────────────────────────────────────────────────
+  // Convocatoria
 
   Future<void> convocar({
     required int idRol,
@@ -434,14 +402,12 @@ class RolSabadosAcciones {
     _refrescar(idRol);
   }
 
-  // ── su equipo (jefes) ─────────────────────────────────────────────────
+  // Su equipo (jefes)
 
   /// Un jefe manda a alguien de su equipo a trabajar ('1') o lo libera ('L').
-  ///
-  /// **No llama a `_usuario()` y no es un olvido:** el endpoint deriva quién
-  /// programa del token, justamente para que nadie pueda programar a nombre de
-  /// otro. Si le agregas el `audUsuario` que usan todas las demás acciones de
-  /// esta clase, el body deja de coincidir con lo que espera el controller.
+  /// **No llama a `_usuario()` a propósito:** el endpoint deriva quién programa
+  /// del token para que nadie programe a nombre de otro; agregar `audUsuario`
+  /// rompería el body que espera el controller.
   Future<void> programar({
     required int idRol,
     required int idSabado,
@@ -462,7 +428,7 @@ class RolSabadosAcciones {
     _ref.invalidate(intervencionesProvider(idRol));
   }
 
-  // ── ABM de programadores (ROLE_ADM) ───────────────────────────────────
+  // ABM de programadores (ROLE_ADM)
 
   /// Alta o modificación. `idProgramador` 0 = alta.
   Future<void> registrarProgramador({
@@ -501,7 +467,7 @@ class RolSabadosAcciones {
     _ref.invalidate(miEquipoProvider);
   }
 
-  // ── El padrón de RR.HH. ───────────────────────────────────────────────
+  // El padrón de RR.HH.
 
   Future<void> registrarRrhh({
     required int codEmpleado,
@@ -522,20 +488,17 @@ class RolSabadosAcciones {
     _invalidarRrhh();
   }
 
-  /// Por el mismo motivo que los programadores: el admin puede estar
-  /// agregándose o sacándose a sí mismo, y de eso depende si la grilla le deja
-  /// tocar celdas. Si no se invalida `miEquipoProvider`, la app sigue creyendo
-  /// lo que sabía al entrar y le abre un editor que el servidor va a rechazar.
+  /// Igual que con los programadores: si el admin se agrega o se saca a sí
+  /// mismo, hay que invalidar `miEquipoProvider` o la app abriría un editor que
+  /// el servidor va a rechazar.
   void _invalidarRrhh() {
     _ref.invalidate(rrhhSabadosProvider);
     _ref.invalidate(miEquipoProvider);
   }
 
-  /// Declara el puente. Devuelve el mensaje del servidor, que dice cuántos
-  /// permisos se crearon y cuántos se saltearon.
-  ///
-  /// Se invalida la grilla porque las celdas de esa gente pasaron a `V`, y
-  /// también las intervenciones: quedaron escritas con origen `M`.
+  /// Declara el puente. Devuelve el mensaje del servidor (cuántos permisos se
+  /// crearon y cuántos se saltearon). Se invalida la grilla porque las celdas de
+  /// esa gente pasaron a `V`, y las intervenciones porque quedaron con origen `M`.
   Future<String> aplicarPuente({
     required int idRol,
     required int idSabado,
@@ -559,9 +522,7 @@ final rolSabadosAccionesProvider = Provider<RolSabadosAcciones>(
   (ref) => RolSabadosAcciones(ref),
 );
 
-// ═══════════════════════════════════════════════════════════════════════════
-// CAMBIOS · PROGRAMACIONES · CONTROLES
-// ═══════════════════════════════════════════════════════════════════════════
+// Cambios, programaciones y controles
 
 /// Filtro de estado de la pestaña de cambios. '' = todos.
 final filtroEstadoCambioProvider = StateProvider<String>((ref) => '');
@@ -620,26 +581,13 @@ final excusasHorarioProvider = FutureProvider.autoDispose
           );
     });
 
-/// **Dispara la excusa automática por horario biométrico apenas se entra al
-/// módulo — nada de job programado ni de botón.** Pedido explícito del
-/// usuario (04/09/2026): el primer intento fue un `@Scheduled` de madrugada
-/// en el backend, y lo pidió sacar porque no quería depender de que el
-/// servidor esté prendido a esa hora ni de esperar a otro día para probarlo
-/// — "que sea en cuanto entre al módulo, ese job no es necesario".
-///
-/// `RolSabadosScreen` lo observa una vez por `idRol`, apenas hay uno
-/// seleccionado. Se apoya en la MISMA regla que ya usan
-/// [excusasHorarioProvider]/[RolSabadosAcciones.aplicarExcusasHorario]
-/// (`ExcusaHorarioService.calcular`, del lado del backend) — no hay ninguna
-/// decisión nueva aquí, sólo un disparador distinto.
-///
-/// **Por qué atrapa el error y no deja que se propague.** No todo el que abre
-/// la pantalla es RR.HH. (el endpoint exige `ROLE_ADM` o estar en
-/// `trs_Rrhh`), y aunque lo fuera, esto es un efecto de fondo que nadie pidió
-/// mirando la pantalla: un 403 puntual, o la red, no tienen por qué
-/// interrumpirle la grilla a alguien que sólo la vino a mirar. Por eso este
-/// provider nunca se `watch`ea con `.when()` en ningún lado — nada muestra su
-/// error ni su carga.
+/// **Dispara la excusa automática por horario biométrico al entrar al módulo,
+/// sin job programado ni botón** (pedido explícito del usuario).
+/// `RolSabadosScreen` lo observa una vez por `idRol` y usa la MISMA regla que
+/// [excusasHorarioProvider] y [RolSabadosAcciones.aplicarExcusasHorario].
+/// **Atrapa el error a propósito:** no todo el que abre la pantalla es RR.HH.
+/// (el endpoint exige `ROLE_ADM` o `trs_Rrhh`) y un 403 o un fallo de red no
+/// deben interrumpir la grilla; por eso nunca se observa con `.when()`.
 final aplicarExcusasHorarioAlEntrarProvider = FutureProvider.autoDispose
     .family<void, int>((ref, idRol) async {
       try {
@@ -647,7 +595,7 @@ final aplicarExcusasHorarioAlEntrarProvider = FutureProvider.autoDispose
             .read(rolSabadosAccionesProvider)
             .aplicarExcusasHorario(idRol: idRol);
       } catch (_) {
-        // Silencioso a propósito — ver el javadoc de arriba.
+        // Silencioso a propósito: ver la documentación de arriba.
       }
     });
 
@@ -657,19 +605,12 @@ final detalleEventoProvider = FutureProvider.autoDispose
       return ref.watch(rolSabadosRepositoryProvider).getDetalleEvento(idSabado);
     });
 
-// ═══════════════════════════════════════════════════════════════════════════
-// SU EQUIPO
-// ═══════════════════════════════════════════════════════════════════════════
+// Su equipo
 
-/// Mi permiso para programar y la gente que puedo mover.
-///
-/// **No es autoDispose a propósito.** De esto depende que la pestaña exista, y
-/// se consulta desde varias pantallas del módulo: si se tirara al salir, cada
-/// vuelta costaría un viaje de red para preguntar algo que no cambia mientras
-/// dure la sesión.
-///
-/// Mira `userProvider` para rehacerse cuando cambia el usuario: el permiso lo
-/// resuelve el servidor con el token, así que otro login es otro equipo.
+/// Mi permiso para programar y la gente que puedo mover. **No es autoDispose a
+/// propósito:** de esto depende que exista la pestaña y se consulta desde varias
+/// pantallas. Observa `userProvider` porque el permiso lo resuelve el servidor
+/// con el token: otro login es otro equipo.
 final miEquipoProvider = FutureProvider<MiEquipoEntity>((ref) async {
   ref.watch(userProvider);
   return ref.watch(rolSabadosRepositoryProvider).getMiEquipo();
@@ -677,28 +618,15 @@ final miEquipoProvider = FutureProvider<MiEquipoEntity>((ref) async {
 
 /// El sábado sobre el que está trabajando el jefe. null = todavía no eligió.
 ///
-/// La pestaña trabaja de a un sábado y no con la grilla entera: la decisión que
-/// toma un jefe es «este sábado, quién viene», no «el año que viene, quiénes».
+/// La pestaña trabaja con un sábado a la vez y no con la grilla entera: la
+/// decisión de un jefe es «este sábado, quién viene».
 final sabadoElegidoProvider = StateProvider<int?>((ref) => null);
 
-/// Si la cabecera de «Su equipo» está plegada. null = todavía no lo decidió
-/// nadie y manda el ancho de la pantalla.
-///
-/// **Por qué `bool?` y no `bool`.** El default depende del ancho —en el teléfono
-/// la cabecera se come más de la mitad del alto útil, en escritorio no le saca
-/// lugar a nadie— pero la elección de quien la usa NO depende del ancho. Con un
-/// `bool` no habría forma de distinguir «lo abrió» de «viene así de fábrica», y
-/// el default por dispositivo sería imposible. El ancho propone, el usuario
-/// dispone.
-///
-/// **Sin `autoDispose`, igual que [sabadoElegidoProvider] y por lo mismo:**
-/// `grillaRolProvider` sí lo es, así que al ir a otra pestaña y volver la vista
-/// se reconstruye entera y habría que replegar la cabecera cada vez.
-///
-/// **No va a disco.** En el módulo no persiste ningún estado de interfaz —ni el
-/// mes de la grilla, ni la búsqueda, ni el sábado elegido—, y aquí persistir
-/// sería peor que no hacerlo: el plegado se decide planificando («abrime los
-/// meses») y se cobra el jueves siguiente, que es el contexto opuesto.
+/// Si la cabecera de «Su equipo» está plegada. null = nadie lo decidió aún y
+/// manda el ancho de la pantalla (`bool?` distingue «lo abrió» de «viene así de
+/// fábrica»). Sin `autoDispose`, como [sabadoElegidoProvider]: al cambiar de
+/// pestaña habría que replegarla cada vez. No va a disco: el plegado se decide
+/// planificando y se cobra otro día, en el contexto opuesto.
 final cabeceraEquipoPlegadaProvider = StateProvider<bool?>((ref) => null);
 
 /// El padrón de programadores, para el ABM de ROLE_ADM.
@@ -708,23 +636,11 @@ final programadoresProvider =
     });
 
 /// Quién manda en el módulo: Sistemas (`ROLE_ADM`) o RR.HH. (`trs_Rrhh`).
-///
-/// **Una sola definición, y a propósito.** Esta cuenta —`esAdmin || soyRrhh`—
-/// estaba escrita tres veces: en el encabezado de la pantalla, en el permiso de
-/// celda y en la etiqueta de estado del rol. Tres copias de una regla de
-/// permisos es tres lugares donde puede quedar desincronizada, y el que se
-/// olvide no falla: silenciosamente deja pasar a alguien, o deja afuera a quien
-/// debía entrar.
-///
-/// **Falla cerrado.** Ser de RR.HH. no viaja en el token, es una fila en
-/// `trs_Rrhh` que llega por `/mi-equipo`. Mientras esa respuesta viaja —o si
-/// falla— aquí se contesta que no. Un `ROLE_ADM` no depende de esa llamada, así
-/// que ese pasa igual. Equivocarse para este lado se ve —«no me deja»— y se
-/// pregunta; para el otro lado no se ve hasta que alguien encuentra su año
-/// rehecho.
-///
-/// Espeja a `exigirAdminORrhh` del backend, que es quien decide de verdad: esto
-/// sólo evita ofrecer botones que iban a rebotar con un 403.
+/// Definición única a propósito: `esAdmin || soyRrhh` estaba copiada en tres
+/// lugares y una copia desincronizada deja pasar o excluye a alguien sin fallar.
+/// **Falla cerrado:** ser de RR.HH. no viaja en el token sino en `trs_Rrhh` (vía
+/// `/mi-equipo`), así que mientras esa respuesta viaja, o si falla, contesta que
+/// no. Espeja a `exigirAdminORrhh` del backend, que es quien decide de verdad.
 final administraRolProvider = Provider<bool>((ref) {
   if (ref.watch(userProvider)?.tipoUsuario == 'ROLE_ADM') return true;
   return ref.watch(miEquipoProvider).valueOrNull?.soyRrhh == true;
@@ -732,10 +648,8 @@ final administraRolProvider = Provider<bool>((ref) {
 
 /// Quién puede escribir celdas, resuelto UNA vez para toda la grilla.
 ///
-/// El servidor decide de verdad —`p_abm_trs_Asignacion` corta con el error 29—;
-/// esto es para no ofrecer un editor que va a rebotar. Sin esta clase, tocar la
-/// celda de alguien ajeno abría la hoja, dejaba elegir una letra y recién
-/// después mostraba un cartel: tres pasos para averiguar que no se podía.
+/// El servidor decide de verdad (`p_abm_trs_Asignacion` corta con el error 29);
+/// esto evita ofrecer un editor que va a rebotar.
 class PermisoDeCelda {
   const PermisoDeCelda({required this.todas, required this.miGente});
 
@@ -747,22 +661,19 @@ class PermisoDeCelda {
 
   bool puedeCon(int codEmpleado) => todas || miGente.contains(codEmpleado);
 
-  /// Nadie puede nada. Es el valor mientras `miEquipoProvider` carga, y el que
-  /// queda si esa llamada falla: ante la duda, no ofrecer el editor. Equivocarse
-  /// para este lado se ve —«no me deja»— y se pregunta; para el otro lado no se
-  /// ve hasta que alguien encuentra su sábado cambiado.
+  /// Nadie puede nada: el valor mientras `miEquipoProvider` carga y si esa
+  /// llamada falla. Ante la duda no se ofrece el editor: equivocarse para este
+  /// lado se ve («no me deja»); para el otro no, hasta que alguien encuentra su
+  /// sábado cambiado.
   static const nadie = PermisoDeCelda(todas: false, miGente: {});
 }
 
-/// Lo que la grilla necesita saber antes de dejar tocar una celda.
-///
-/// Se calcula aquí y no en cada celda: una matriz de 85 × 52 son 4.420 celdas, y
-/// que cada una observe providers por su cuenta es 4.420 suscripciones para
-/// responder siempre lo mismo.
+/// Lo que la grilla necesita saber antes de dejar tocar una celda. Se calcula
+/// aquí y no en cada celda: 85 × 52 son 4.420 celdas y que cada una observe
+/// providers serían 4.420 suscripciones para responder siempre lo mismo.
 final permisoDeCeldaProvider = Provider.autoDispose<PermisoDeCelda>((ref) {
-  // `todas` es exactamente «quién administra»: la misma gente que abre los ABM
-  // y regenera el rol es la que puede escribir cualquier celda con cualquier
-  // letra. Sale de [administraRolProvider] para que sea una sola definición.
+  // `todas` = quién administra (abre los ABM y regenera el rol); sale de
+  // [administraRolProvider] para tener una sola definición.
   final todas = ref.watch(administraRolProvider);
   final equipo = ref.watch(miEquipoProvider).valueOrNull;
   if (equipo == null) {
@@ -783,16 +694,15 @@ final rrhhSabadosProvider = FutureProvider.autoDispose<List<RrhhSabadosEntity>>(
   },
 );
 
-/// Lo que define un puente: el sábado y el horario del permiso.
-///
-/// Las horas van en la clave porque **cambiarlas cambia cuánto se le descuenta
-/// a cada uno** — la simulación hay que rehacerla, no reutilizarla.
+/// Lo que define un puente: el sábado y el horario del permiso. Las horas van en
+/// la clave porque **cambiarlas cambia cuánto se le descuenta a cada uno**: hay
+/// que rehacer la simulación, no reutilizarla.
 typedef PuenteAConsultar = ({int idSabado, String horaDesde, String horaHasta});
 
 /// Qué pasaría si se declarara ese sábado como puente a cuenta de vacación.
 ///
-/// **No escribe nada**: con `@ACCION='S'` el backend hace `RETURN` antes de
-/// cualquier transacción. Es lo que alimenta el diálogo de confirmación.
+/// **No escribe nada** (con `@ACCION='S'` el backend hace `RETURN` antes de
+/// cualquier transacción); alimenta el diálogo de confirmación.
 final previaPuenteProvider = FutureProvider.autoDispose
     .family<List<PuenteVacacionEntity>, PuenteAConsultar>((ref, p) async {
       if (p.idSabado == 0) return const <PuenteVacacionEntity>[];
@@ -805,40 +715,28 @@ final previaPuenteProvider = FutureProvider.autoDispose
           );
     });
 
-/// Lo que define una previsualización de permiso.
-///
-/// Es un `record` y no una clase porque Riverpod compara la clave de la familia
-/// por `==`, y los records ya lo traen estructural: tocar el `SegmentedButton`
-/// del alcance produce otra clave y la lista se vuelve a pedir sola. Con una
-/// clase habría que escribir `==` y `hashCode` a mano, y olvidarse de uno de los
-/// cuatro campos dejaría la lista vieja en pantalla sin que nada falle.
+/// Lo que define una previsualización de permiso. Es un `record` porque Riverpod
+/// compara la clave de la familia por `==` y los records ya lo traen estructural;
+/// con una clase, olvidar un campo en `==`/`hashCode` dejaría la lista vieja en
+/// pantalla sin que nada falle.
 typedef PreviaDePermiso =
     ({int codEmpleado, int codSucursal, String alcance, int idRol});
 
 /// A quiénes le quedaría a cargo ese permiso, **antes** de darlo de alta.
 ///
-/// `autoDispose` porque vive adentro de una hoja modal: al cerrarla no queda
-/// nada que refrescar, y sin esto la caché se quedaría con una entrada por cada
-/// combinación que el admin probó mientras dudaba.
+/// `autoDispose` porque vive dentro de una hoja modal: sin esto la caché
+/// guardaría una entrada por cada combinación que el admin probó mientras dudaba.
 final previaDependientesProvider = FutureProvider.autoDispose
     .family<List<ProgramadorDependienteEntity>, PreviaDePermiso>((
       ref,
       p,
     ) async {
-      // Sin persona no hay nada que preguntar: se corta aquí para no pegarle al
-      // servidor mientras todavía se está buscando a alguien en el combo.
-      //
-      // **`codSucursal == 0` NO corta**, aunque aquí antes cortaba. Cuando el 0
-      // quería decir «no sé cuál es su sucursal» tenía sentido; desde que
-      // significa «todas las sucursales» —el mismo idioma que el NULL de
-      // `trs_Programador.codSucursal`— cortar aquí dejaba a la opción «Todas»
-      // devolviendo lista vacía sin llegar nunca al backend. La pantalla
-      // entonces decía «el organigrama no le da NINGÚN dependiente», que era
-      // exactamente lo contrario de la verdad.
-      //
-      // El caso «no sé cuál es su sucursal» lo resuelve la pantalla, que no
-      // dibuja la previsualización ni deja guardar. Es donde se puede explicar
-      // qué hacer al respecto; aquí sólo se sabría que hay un cero.
+      // Sin persona no hay nada que preguntar: se corta aquí para no llamar al
+      // servidor mientras se busca a alguien en el combo. **`codSucursal == 0`
+      // NO corta:** significa «todas las sucursales» (como el NULL de
+      // `trs_Programador.codSucursal`); cortar dejaba a «Todas» devolviendo lista
+      // vacía sin llegar al backend. El caso «no sé cuál es su sucursal» lo
+      // resuelve la pantalla, que no dibuja la previsualización ni deja guardar.
       if (p.codEmpleado == 0) {
         return const <ProgramadorDependienteEntity>[];
       }

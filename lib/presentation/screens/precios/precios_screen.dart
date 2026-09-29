@@ -1,27 +1,11 @@
-/// Precios vigentes: que vale hoy una familia de producto en cada sucursal y
-/// en cada lista de precios.
+/// Precios vigentes: qué vale hoy una familia de producto en cada sucursal y
+/// lista de precios. Reemplaza a `dlgPreA` y `dlgVista` del sistema anterior.
+/// Solo consulta: no escribe (quien reprecia usa propuestas).
 ///
-/// Reemplaza a los dialogos `dlgPreA` y `dlgVista` del sistema anterior, que
-/// mostraban lo mismo partido en dos ventanas modales encimadas —una para
-/// elegir la familia y otra para ver la grilla— y obligaban a cerrar y volver a
-/// abrir para cambiar de familia.
-///
-/// Lo que cambia respecto de aquella pantalla:
-///
-/// - **El precio en cero dice "Sin precio".** Un cuarto de tpr_precio esta en
-///   cero, y ese cero significa que la lista no tiene precio cargado, no que el
-///   producto se venda a cero. Antes se mostraba `0.00` junto a los precios de
-///   verdad.
-/// - **La familia se elige buscando.** Son setecientas: el desplegable viejo
-///   las listaba en el orden en que salieron de la base.
-/// - **Los filtros se acumulan.** Se puede mirar una sola sucursal, una sola
-///   lista, o esconder las listas sin precio.
-/// - **El costo y los impuestos con los que se armo el precio estan a la
-///   vista**, arriba, una sola vez: en el resultset del backend el IVA y el IT
-///   son subconsultas escalares, iguales en todas las filas.
-///
-/// **Es una pantalla de consulta: no escribe nada.** Quien reprecia usa la
-/// pantalla de propuestas.
+/// El precio en cero dice "Sin precio": un cuarto de tpr_precio está en cero y
+/// significa que la lista no tiene precio cargado, no que se venda a 0. Costo e
+/// impuestos van arriba una vez (en el resultset el IVA y el IT son subconsultas
+/// escalares, iguales en todas las filas).
 library;
 
 import 'package:flutter/material.dart';
@@ -36,15 +20,9 @@ import 'package:bosque_flutter/presentation/widgets/precios/precios_vigentes_dat
 import 'package:bosque_flutter/presentation/widgets/precios/tabla_precios_vigentes.dart';
 import 'package:bosque_flutter/presentation/widgets/precios/tarjetas_precios_vigentes.dart';
 
-// ═══════════════════════════════════════════════════════════════════════════
-// ESTADO DE LA PANTALLA
-//
-// Vive aca y no en `precios_provider.dart` a proposito: son los filtros de ESTA
-// consulta y no tienen por que sobrevivir a la salida ni aparecer en la
-// pantalla de propuestas, que tiene su propia idea de "la familia elegida" —la
-// que se esta repreciando— y la usa para otra cosa. Todos son autoDispose: al
-// salir del modulo quedan como estaban al entrar.
-// ═══════════════════════════════════════════════════════════════════════════
+// Estado de la pantalla: vive aquí y no en `precios_provider.dart` porque son
+// los filtros de ESTA consulta; la pantalla de propuestas tiene su propia idea
+// de "la familia elegida" (la que se está repreciando). Todos son autoDispose.
 
 /// La familia que se esta consultando. Null mientras no se eligio ninguna.
 final _familiaConsultadaProvider = StateProvider.autoDispose<int?>(
@@ -73,10 +51,9 @@ final _vistaProvider = StateProvider.autoDispose<VistaPrecios>(
   (ref) => VistaPrecios.completa,
 );
 
-/// Las familias que alimentan el selector, ya tipadas y ordenadas por codigo.
-///
-/// Se pide una sola vez por estado —con y sin inactivas son dos claves
-/// distintas de la misma consulta— y Riverpod se queda con las dos.
+/// Las familias que alimentan el selector, ya tipadas y ordenadas por código.
+/// Con y sin inactivas son dos claves distintas de la misma consulta y Riverpod
+/// se queda con las dos.
 final _familiasDelSelectorProvider =
     FutureProvider.autoDispose<List<FamiliaPrecio>>((ref) async {
       final incluirInactivas = ref.watch(_incluirInactivasProvider);
@@ -105,12 +82,10 @@ final _filasProvider = FutureProvider.autoDispose
       );
     });
 
-/// La ficha de la familia consultada.
-///
-/// Se pide aparte del selector y no se busca dentro de su lista: si alguien
-/// apaga "incluir inactivas" despues de elegir una familia de baja, la lista
-/// deja de tenerla y la ficha desapareceria de la pantalla como si fuera un
-/// error. Es una consulta de una sola fila.
+/// La ficha de la familia consultada. Se pide aparte y no se busca en la lista
+/// del selector: si se apaga "incluir inactivas" tras elegir una familia de
+/// baja, la ficha desaparecería como si fuera un error. Es una consulta de una
+/// sola fila.
 final _familiaConsultadaDetalleProvider = FutureProvider.autoDispose
     .family<FamiliaPrecio?, int>((ref, codigoFamilia) async {
       final cruda = await ref.watch(familiaProvider(codigoFamilia).future);
@@ -135,9 +110,7 @@ void _limpiarFiltros(WidgetRef ref) {
   ref.read(_soloConPrecioProvider.notifier).state = false;
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// LA PANTALLA
-// ═══════════════════════════════════════════════════════════════════════════
+// La pantalla
 
 class PreciosScreen extends ConsumerWidget {
   const PreciosScreen({super.key});
@@ -175,9 +148,7 @@ class PreciosScreen extends ConsumerWidget {
   );
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// CABECERA
-// ═══════════════════════════════════════════════════════════════════════════
+// Cabecera
 
 class _Cabecera extends ConsumerWidget {
   const _Cabecera({required this.aire});
@@ -234,14 +205,9 @@ class _Cabecera extends ConsumerWidget {
   }
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// FILTROS
-//
-// En escritorio los tres filtros estan a la vista y en una sola linea. En
-// telefono solo queda arriba el selector de familia —sin el no hay nada que
-// mostrar— y los demas se pliegan, porque ocupaban la mitad de la pantalla
-// para afinar una lista de doce tarjetas.
-// ═══════════════════════════════════════════════════════════════════════════
+// Filtros: en escritorio los tres están a la vista en una línea; en teléfono
+// solo queda arriba el selector de familia (sin él no hay nada que mostrar) y
+// los demás se pliegan (ocupaban la mitad de la pantalla).
 
 class _BarraFiltros extends ConsumerWidget {
   const _BarraFiltros({required this.aire});
@@ -252,10 +218,9 @@ class _BarraFiltros extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final codigo = ref.watch(_familiaConsultadaProvider);
 
-    // Las opciones de sucursal y de lista salen de las filas que ya se
-    // trajeron, no de una consulta aparte: asi no se ofrece una lista que esta
-    // familia no tiene, que era la forma de llegar a una grilla vacia sin
-    // entender por que.
+    // Las opciones de sucursal y lista salen de las filas ya traídas, no de otra
+    // consulta: así no se ofrece una lista que esta familia no tiene (llevaba a una
+    // grilla vacía sin explicación).
     final filas =
         codigo == null
             ? const <FilaPrecioVigente>[]
@@ -629,9 +594,7 @@ class _ComboEnError extends StatelessWidget {
   );
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// CUERPO
-// ═══════════════════════════════════════════════════════════════════════════
+// Cuerpo
 
 class _Cuerpo extends ConsumerWidget {
   const _Cuerpo({required this.aire});
@@ -778,10 +741,9 @@ class _Listado extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // La tabla se muestra cuando el cajon la deja entrar entera. Por debajo de
-    // los 1000 px no se achica la letra ni se parte en dos: cambia a tarjetas,
-    // que es lo que se lee sin correr nada de costado. En el ancho medio van de
-    // a dos.
+    // La tabla se muestra cuando el cajón la deja entrar entera; por debajo de
+    // 1000 px no se achica la letra ni se parte: pasa a tarjetas (de a dos en el
+    // ancho medio).
     if (aire == Aire.amplio) {
       return TablaPreciosVigentes(
         filas: visibles,
@@ -798,9 +760,7 @@ class _Listado extends ConsumerWidget {
   }
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// ESTADOS SIN DATOS
-// ═══════════════════════════════════════════════════════════════════════════
+// Estados sin datos
 
 /// Se distinguen los dos vacios: la familia no tiene ninguna lista de precios
 /// cargada, o las tiene pero ninguna pasa los filtros. Cada uno se resuelve en

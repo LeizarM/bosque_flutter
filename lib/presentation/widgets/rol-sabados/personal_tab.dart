@@ -9,25 +9,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// Armar los grupos A y B a mano, persona por persona.
 ///
-/// **Por qué hace falta.** Al generar el rol, el sistema reparte los grupos solo:
-/// ordena por sucursal, nivel de cargo y apellido, y va alternando A, B, A, B…
-/// Es un reparto parejo en cantidad, pero ciego al oficio: puede dejar a los dos
-/// electricistas en el mismo grupo y que un sábado no haya ninguno.
-///
-/// **Lo que el reparto automático NO sabe** y sólo sabe quien arma el turno:
-/// quién cubre qué función, quién no puede quedar solo, qué dos personas
-/// conviene separar.
-///
-/// **El cambio sobrevive a las regeneraciones.** {@code trs_sp_generarRol} le
-/// asigna grupo únicamente a quien entra por primera vez — a los que ya están no
-/// los toca nunca. Así que esto se hace una vez y queda.
-///
-/// **Aquí también se decide quién hace sábados y desde cuándo.** Alguien puede
-/// tener otro horario y no venir nunca, o dejar de venir a mitad de año, o
-/// volver en octubre. Eso NO es dar de baja al empleado: es cerrar y abrir su
-/// ventana de participación. Lo que ya trabajó queda escrito en la grilla — el
-/// backend borra sólo celdas futuras y de la rotación. Es de Sistemas o de
-/// RR.HH.; el resto ve la lista y no la toca.
+/// El reparto automático (sucursal, cargo, apellido, A/B alternado) es ciego al
+/// oficio; el cambio manual sobrevive a las regeneraciones (`trs_sp_generarRol`
+/// asigna grupo sólo a quien entra por primera vez). Aquí también se cierra y
+/// abre la ventana de participación (NO es dar de baja al empleado; el backend
+/// borra sólo celdas futuras y de la rotación). Sólo Sistemas o RR.HH. editan.
 class PersonalTab extends ConsumerWidget {
   const PersonalTab({super.key, required this.idRol});
 
@@ -49,20 +35,17 @@ class PersonalTab extends ConsumerWidget {
         final busqueda = ref.watch(busquedaPersonaProvider);
         final grupo = ref.watch(filtroGrupoProvider);
 
-        // Quién hace sábados HOY y quién no. La separación se hace una vez y
-        // manda en todo lo de abajo: los contadores de A y B —y con ellos el
-        // aviso de «desparejo»— hablan del reparto real de este sábado, no de
-        // la nómina. Sumar a alguien que no viene diría que hay una persona más
-        // de la que va a haber.
+        // Quién hace sábados HOY y quién no: la separación manda en todo lo de abajo.
+        // Los contadores de A y B (y el aviso de «desparejo») hablan del reparto real
+        // de este sábado, no de la nómina.
         final vigentes = <ParticipanteTurnoEntity>[];
         final afuera = <ParticipanteTurnoEntity>[];
         for (final p in g.participantes) {
           (p.haceSabados ? vigentes : afuera).add(p);
         }
 
-        // Los dos filtros se encadenan: primero la letra, después el texto.
-        // El orden no cambia el resultado, pero comparar una letra es más
-        // barato que un `contains`, así que el `contains` corre sobre menos.
+        // Los dos filtros se encadenan: primero la letra (más barata), después el
+        // texto, así el `contains` corre sobre menos.
         final base =
             grupo == filtroSinSabados
                 ? afuera
@@ -74,20 +57,14 @@ class PersonalTab extends ConsumerWidget {
         final enA = vigentes.where((p) => p.grupoRotacion == 'A').length;
         final enB = vigentes.where((p) => p.grupoRotacion == 'B').length;
 
-        // El ABM de la ventana es de RR.HH., igual que el de programadores:
-        // decide quién viene a trabajar un sábado, y eso no se delega en quien
-        // va a venir. Un jefe ve la lista completa —también a los excluidos— y
-        // no puede tocarla.
-        //
-        // Sale de [administraRolProvider] y no de `tipoUsuario == 'ROLE_ADM'`.
-        // Era la cuarta copia de esa cuenta y estaba desactualizada: le escondía
-        // el menú a RR.HH., que es de quien es la decisión. El provider existe
-        // justamente para que la regla se escriba una vez — cada copia suelta
-        // termina así, no fallando sino dejando afuera a quien debía entrar.
+        // El ABM de la ventana es de RR.HH.: decide quién viene a trabajar y no se
+        // delega en quien va a venir; un jefe ve la lista (también los excluidos) sin
+        // tocarla. Sale de [administraRolProvider] y no de `tipoUsuario == 'ROLE_ADM'`
+        // (esa copia le escondía el menú a RR.HH.).
         final administra = ref.watch(administraRolProvider);
 
-        // Una sola vez para las 85 filas, y no una por fila: es un recorrido de
-        // 52 sábados y la respuesta es la misma para todos.
+        // Una vez para las 85 filas: es un recorrido de 52 sábados con la misma
+        // respuesta para todos.
         final quedanSabados = sabadosQueVienen(g).isNotEmpty;
 
         return Column(
@@ -127,9 +104,8 @@ class PersonalTab extends ConsumerWidget {
 
 /// Los sábados del rol a los que todavía se llega, en orden.
 ///
-/// Todo lo que mueve la ventana mira de hoy en adelante: el pasado no se toca
-/// ni al sacar ni al devolver a alguien, así que ofrecer un sábado de marzo
-/// sería ofrecer una fecha que no cambia nada.
+/// La ventana mira de hoy en adelante: el pasado no se toca, ofrecer un sábado
+/// de marzo no cambiaría nada.
 List<SabadoEntity> sabadosQueVienen(GrillaRol g) {
   final hoy = DateTime.now();
   final desde = DateTime(hoy.year, hoy.month, hoy.day);
@@ -144,26 +120,13 @@ List<SabadoEntity> sabadosQueVienen(GrillaRol g) {
   return futuros;
 }
 
-/// Cuántos quedaron en cada grupo, qué significa que estén desparejos — y el
+/// Cuántos quedaron en cada grupo, qué significa que estén desparejos y el
 /// filtro de la lista de abajo.
 ///
-/// **Los contadores SON el filtro, y no hay un control aparte.** Las pastillas
-/// «Grupo A · 43» y «Grupo B · 42» ya estaban aquí arriba de sólo lectura;
-/// agregar un selector nuevo habría puesto los mismos tres números dos veces en
-/// la misma pantalla, y encima obligaría a mirar uno para saber cuántos hay y
-/// tocar el otro para verlos. Un contador que además filtra se lee solo: el
-/// número dice cuántos vas a ver y tocarlo te los muestra. `ChoiceChip` es
-/// además lo que el módulo ya usa para filtrar en «Cambios» y en «Su equipo».
-///
-/// **Los números NO son del resultado de la búsqueda.** Es a propósito: de esa
-/// cuenta sale el aviso de «desparejo», que habla del reparto real y no de a
-/// cuántos encontró el buscador. Cuánto quedó visible lo dice el rótulo del
-/// buscador, que para eso está.
-///
-/// **Y A y B cuentan sólo a quien hace sábados.** Quien quedó afuera tiene
-/// igual su letra guardada —vuelve con ella— pero hoy no ocupa un lugar en la
-/// cobertura, así que sumarlo diría que ese sábado hay una persona más de la
-/// que va a haber. Los excluidos se cuentan aparte, en su propio chip.
+/// **Los contadores SON el filtro** (`ChoiceChip`, como en «Cambios» y «Su
+/// equipo»). No son del resultado de la búsqueda: de esa cuenta sale el aviso de
+/// «desparejo». A y B cuentan sólo a quien hace sábados; el excluido conserva
+/// su letra y se cuenta aparte en su propio chip.
 class _Balance extends ConsumerWidget {
   const _Balance({
     required this.enA,
@@ -176,8 +139,7 @@ class _Balance extends ConsumerWidget {
   final int enB;
 
   /// Cuántos quedaron fuera de los sábados. Su chip **sólo aparece si hay
-  /// alguien**: en la mayoría de los roles no hay ninguno, y un chip en cero es
-  /// un control que nunca se toca ocupando el renglón de los que sí.
+  /// alguien**: en la mayoría de los roles no hay ninguno.
   final int sinSabados;
 
   /// `'A'`, `'B'`, [filtroSinSabados] o `''` para todos los que hacen sábados.
@@ -199,11 +161,8 @@ class _Balance extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Wrap y no Row: en 360 px quedan 336 útiles y los tres chips miden
-          // ~380 (unos 95 el de «Todos» y ~143 cada uno de los de grupo, que
-          // llevan insignia). No entran en un renglón: bajan al segundo. Una
-          // Row los cortaría en vez de bajarlos, y encima está el aviso de
-          // «Diferencia de N» cuando aparece.
+          // Wrap y no Row: en 360 px quedan 336 útiles y los tres chips miden ~380 (~95
+          // «Todos», ~143 cada grupo por la insignia), más el aviso «Diferencia de N».
           Wrap(
             spacing: Esp.m,
             runSpacing: Esp.s,
@@ -229,11 +188,9 @@ class _Balance extends ConsumerWidget {
                 elegido: filtro == 'B',
                 onElegir: () => mostrar('B'),
               ),
-              // Cuarto chip y no un switch aparte: es otra vista de la misma
-              // lista y reusa el mismo estado, así que los cuatro se leen y se
-              // tocan igual. Apagados y detrás de un chip, no escondidos: al
-              // excluido hay que poder encontrarlo, porque si no aparece en
-              // ningún lado nadie lo puede devolver a los sábados.
+              // Cuarto chip y no un switch aparte: es otra vista de la misma lista y reusa el
+              // mismo estado. Apagados pero detrás de un chip, no escondidos: si el excluido
+              // no aparece en ningún lado, nadie lo puede devolver a los sábados.
               if (sinSabados > 0)
                 _ChipGrupo(
                   etiqueta: 'Sin sábados',
@@ -276,11 +233,9 @@ class _Balance extends ConsumerWidget {
 
 /// Un contador que además filtra.
 ///
-/// La insignia es la misma [InsigniaGrupo] de la matriz y de la agenda: el
-/// color del grupo tiene que significar lo mismo en las tres vistas, y así el
-/// chip no necesita una paleta propia. Cuando el chip queda elegido, Material
-/// pone su tilde en el lugar de la insignia — la letra sigue en el rótulo, así
-/// que no se pierde nada.
+/// La insignia es la misma [InsigniaGrupo] de la matriz y la agenda (el color
+/// del grupo significa lo mismo en las tres vistas). Elegido, Material pone su
+/// tilde en lugar de la insignia; la letra sigue en el rótulo.
 class _ChipGrupo extends StatelessWidget {
   const _ChipGrupo({
     required this.etiqueta,
@@ -296,8 +251,8 @@ class _ChipGrupo extends StatelessWidget {
   /// `null` en el chip de «Todos», que no es de ningún grupo.
   final String? grupo;
 
-  /// Para el chip que no es de un grupo pero sí necesita marca propia: el de
-  /// «Sin sábados». Se ignora si viene [grupo].
+  /// Para el chip sin grupo que necesita marca propia («Sin sábados»). Se ignora
+  /// si viene [grupo].
   final IconData? icono;
 
   final int cantidad;
@@ -315,10 +270,9 @@ class _ChipGrupo extends StatelessWidget {
               : (i == null ? null : Icon(i, size: 18)),
       label: Text('$etiqueta · $cantidad'),
       selected: elegido,
-      // Volver a tocar el que ya está elegido no lo apaga: siempre hay uno
-      // prendido y «Todos» es el único camino de vuelta. Con el toggle, el
-      // estado «ninguno elegido» y el estado «Todos» se verían distintos y
-      // mostrarían exactamente la misma lista.
+      // Volver a tocar el elegido no lo apaga: siempre hay uno prendido y «Todos» es
+      // el único camino de vuelta (con toggle, «ninguno» y «Todos» serían dos
+      // estados que muestran la misma lista).
       onSelected: (_) => onElegir(),
     );
   }
@@ -326,9 +280,8 @@ class _ChipGrupo extends StatelessWidget {
 
 /// Por qué la lista quedó vacía y cómo salir.
 ///
-/// Con dos filtros encimados, un «no hay nadie» a secas deja a quien mira sin
-/// saber cuál de los dos tiene que sacar — y el del grupo es justo el que no
-/// tiene una ✕ al lado para deshacerlo de un toque.
+/// Con dos filtros encimados, un «no hay nadie» no dice cuál sacar, y el del
+/// grupo no tiene una ✕ para deshacerlo de un toque.
 class _NadaQueMostrar extends StatelessWidget {
   const _NadaQueMostrar({required this.filtro, required this.busqueda});
 
@@ -405,11 +358,9 @@ class _BuscadorState extends ConsumerState<_Buscador> {
         controller: _texto,
         decoration: InputDecoration(
           hintText: 'Buscar por apellido o código…',
-          // El rótulo mira cuánto quedó, NO si hay texto escrito: el filtro de
-          // grupo achica la lista sin tocar el buscador, y con la condición
-          // vieja («¿hay búsqueda?») la etiqueta decía «85 personas» arriba de
-          // 43 filas. Comparado así es cierto con cualquiera de los dos
-          // filtros, con los dos juntos y con ninguno.
+          // El rótulo mira cuánto quedó, NO si hay texto: el filtro de grupo achica la
+          // lista sin tocar el buscador y con «¿hay búsqueda?» decía «85 personas» sobre
+          // 43 filas. Así es cierto con cualquiera de los filtros, ambos o ninguno.
           labelText:
               widget.visibles == widget.total
                   ? '${widget.total} personas'
@@ -448,8 +399,7 @@ class _FilaPersona extends ConsumerStatefulWidget {
   final ParticipanteTurnoEntity persona;
 
   /// La grilla entera y no sólo el contador de turnos: los diálogos de la
-  /// ventana necesitan los sábados que vienen y las celdas de esta persona para
-  /// poder decir cuántos sábados se liberan y cuántos sobreviven.
+  /// ventana necesitan los sábados que vienen y las celdas de esta persona.
   final GrillaRol grilla;
 
   /// Sistemas o RR.HH.: los dos únicos que mueven la ventana de sábados.
@@ -474,18 +424,15 @@ class _FilaPersonaState extends ConsumerState<_FilaPersona> {
     final hayContexto = p.cargo.isNotEmpty || p.sucursal.isNotEmpty;
     final fuera = !p.haceSabados;
 
-    // El menú pregunta por la DECISIÓN, no por si ya rige. Quien sale en
-    // diciembre sigue viniendo hasta entonces —así que no es `fuera`— pero ya
-    // se lo sacó, y tiene que poder devolvérselo hoy.
+    // El menú pregunta por la DECISIÓN, no por si ya rige: quien sale en diciembre
+    // sigue viniendo hasta entonces (no es `fuera`) pero ya se lo sacó, y debe
+    // poder devolvérselo hoy.
     final decidido = p.salidaDecidida;
 
-    // El menú de la ventana necesita un sábado al que llegar. En un rol del año
-    // pasado no queda ninguno y no se ofrece: no habría nada que liberar ni que
-    // agregar, y un menú que no puede hacer nada es peor que no tenerlo.
-    //
-    // A quien ya no figura en la relación laboral tampoco: esa columna la
-    // reconcilia la regeneración contra RR.HH., y devolverlo a los sábados con
-    // un clic sería saltearse el alta que todavía no existe.
+    // El menú necesita un sábado al que llegar: en un rol del año pasado no se
+    // ofrece (nada que liberar ni agregar). Tampoco a quien ya no figura en la
+    // relación laboral: esa columna la reconcilia la regeneración contra RR.HH. y
+    // devolverlo con un clic omitiría el alta que todavía no existe.
     final puedeMoverVentana =
         widget.administra &&
         !widget.bloqueado &&
@@ -495,14 +442,10 @@ class _FilaPersonaState extends ConsumerState<_FilaPersona> {
     final rotulo = _rotuloDeSituacion(p);
 
     return ListTile(
-      // El nombre y su estado en el mismo renglón: quien recorre 85 filas mira
-      // los nombres, no el tercer renglón en gris. Sin la etiqueta aquí, «sale el
-      // 7» sólo se ve entrando al filtro «Sin sábados», o sea justo cuando ya
-      // sabías que lo buscabas.
-      //
-      // Wrap y no Row: «ALMENDRAS ROCHA ERICK ALBERTO» más la etiqueta no entran
-      // juntos en 360 px, y ahí la etiqueta baja de renglón en vez de recortar
-      // el apellido.
+      // El nombre y su estado en el mismo renglón: quien recorre 85 filas mira los
+      // nombres, no el tercer renglón gris. Wrap y no Row: «ALMENDRAS ROCHA ERICK
+      // ALBERTO» más la etiqueta no entran juntos en 360 px y la etiqueta baja de
+      // renglón en vez de recortar el apellido.
       title: Wrap(
         crossAxisAlignment: WrapCrossAlignment.center,
         spacing: Esp.s,
@@ -512,8 +455,7 @@ class _FilaPersonaState extends ConsumerState<_FilaPersona> {
             p.nombreRol,
             overflow: TextOverflow.ellipsis,
             // Apagado y no tachado: sigue siendo empleado, lo que se cerró es su
-            // participación en los sábados. Sólo el color —el estilo del ListTile
-            // se hereda igual— para que la fila no cambie de altura ni de ritmo.
+            // participación. Sólo el color, para que la fila no cambie de altura.
             style: fuera ? TextStyle(color: Theme.of(context).hintColor) : null,
           ),
           if (rotulo != null) Etiqueta(texto: rotulo.$1, tono: rotulo.$2),
@@ -523,28 +465,12 @@ class _FilaPersonaState extends ConsumerState<_FilaPersona> {
       subtitle: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // El cargo va primero: para decidir de que grupo es alguien, importa
-          // mas que cubre esa persona que cuantos sabados lleva. La sucursal va
-          // pegada atras y APAGADA, un escalon abajo: dice donde esta, no que
-          // hace. Es contexto y no estado, asi que no lleva color propio ni
-          // pastilla — el color de este modulo codifica estado y nada mas.
-          //
-          // **Se muestra siempre, tambien la mayoritaria, y eso se decidio.**
-          // Con 56 de 85 en CENTRAL la tentacion es esconderla y dejar solo las
-          // excepciones. Dos razones para no hacerlo. Una: los JOIN de sucursal
-          // son LEFT y puede venir vacia, asi que un renglon sin sucursal
-          // significaria dos cosas incompatibles —«es de CENTRAL» y «no sabemos
-          // donde esta»—. Dos: «la mayoritaria» depende de a quien se este
-          // mirando, y las cuatro listas del modulo miran poblaciones distintas
-          // y filtrables —el grupo y el buscador achican esta, «Su equipo»
-          // muestra otra gente—, asi que la misma persona apareceria con
-          // sucursal en una pestaña y sin ella en otra. Aca una señal significa
-          // lo mismo en las cuatro vistas o no sirve.
-          //
-          // Lo que si seria ruido 56 veces —el CONTEO por sucursal— va una sola
-          // vez en el encabezado, que para eso esta. Y la empresa no va por
-          // fila: las 85 personas son de GENERAL, un dato que no separa a nadie
-          // ocupando lugar en 85 renglones.
+          // El cargo va primero; la sucursal, pegada y APAGADA (contexto, no estado).
+          // **Se muestra siempre, también la mayoritaria:** los JOIN de sucursal son LEFT
+          // (vacía sería ambiguo: «es de CENTRAL» o «no sabemos») y «la mayoritaria»
+          // cambia según la lista, así que la misma persona saldría con sucursal en una
+          // pestaña y sin ella en otra. El CONTEO va en el encabezado; la empresa no va
+          // por fila (las 85 son de GENERAL).
           if (hayContexto)
             Text.rich(
               TextSpan(
@@ -558,11 +484,9 @@ class _FilaPersonaState extends ConsumerState<_FilaPersona> {
                 ],
               ),
             ),
-          // El contador sale de la misma función que el de la grilla: es el
-          // mismo dato y con dos textos sueltos ya se decía distinto en cada
-          // pantalla. Lo único que cambió aquí es que ahora dice «en todo el
-          // año» — esta lista no se filtra por mes, pero la grilla sí, y el
-          // dato tiene que llamarse igual en las dos o no es el mismo dato.
+          // El contador sale de la misma función que el de la grilla (mismo dato, mismo
+          // texto). Dice «en todo el año» porque esta lista no se filtra por mes y la
+          // grilla sí.
           Text(
             '#${p.codEmpleado} · '
             '${sabadosDelAnio(turnos: widget.turnos, meta: p.turnosObjetivo)}'
@@ -571,21 +495,16 @@ class _FilaPersonaState extends ConsumerState<_FilaPersona> {
               context,
             ).textTheme.bodySmall?.copyWith(color: Theme.of(context).hintColor),
           ),
-          // POR QUÉ no viene y DESDE CUÁNDO, en el mismo renglón.
-          //
-          // Son dos situaciones distintas —«RR.HH. lo sacó de los sábados» y
-          // «ya no figura en la relación laboral»— y confundirlas es
-          // exactamente el error que este cambio vino a arreglar: una se
-          // deshace con un toque aquí y la otra la reconcilia la regeneración.
-          // También para la salida agendada: la etiqueta de arriba dice «SALE
-          // 07/08» recortado, y aquí va la fecha entera. Sin esto, quien todavía
-          // viene no tendría dónde leer desde cuándo deja de venir.
+          // POR QUÉ no viene y DESDE CUÁNDO, en el mismo renglón. Son dos situaciones
+          // distintas («RR.HH. lo sacó de los sábados» y «ya no figura en la relación
+          // laboral»): una se deshace con un toque aquí y la otra la reconcilia la
+          // regeneración. También para la salida agendada: la etiqueta dice «SALE 07/08»
+          // recortado y aquí va la fecha entera.
           if (decidido || fuera)
             Text(
               _porQueNoViene(p),
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                // Rojo sólo si ya rige. Una salida agendada es un aviso, no un
-                // problema, y el color del módulo codifica estado.
+                // Rojo sólo si ya rige: una salida agendada es un aviso, no un problema.
                 color:
                     fuera
                         ? Theme.of(context).colorScheme.error
@@ -605,19 +524,17 @@ class _FilaPersonaState extends ConsumerState<_FilaPersona> {
               : Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  // Ancho fijo y no un SegmentedButton: el de Material pide el
-                  // ancho que necesita y en 360 px empuja el nombre fuera de la
-                  // fila. Apagado para quien no hace sábados: cambiarle el grupo
-                  // no le cambiaría ningún día.
+                  // Ancho fijo y no SegmentedButton: el de Material pide el ancho que necesita y
+                  // en 360 px empuja el nombre fuera. Apagado para quien no hace sábados
+                  // (cambiarle el grupo no cambia ningún día).
                   _SelectorGrupo(
                     grupo: p.grupoRotacion,
                     habilitado: !widget.bloqueado && !fuera,
                     onElegir: _cambiar,
                   ),
-                  // Menú de tres puntos y no un tercer botón: el selector ya
-                  // mide 76 px y en 360 px cada píxel del trailing se lo saca al
-                  // apellido. Además son acciones que abren un diálogo, no un
-                  // interruptor.
+                  // Menú de tres puntos y no un tercer botón: el selector ya mide 76 px y en
+                  // 360 px cada píxel del trailing se lo saca al apellido; además abren un
+                  // diálogo, no son un interruptor.
                   if (puedeMoverVentana)
                     PopupMenuButton<bool>(
                       tooltip: 'Sábados de esta persona',
@@ -625,16 +542,11 @@ class _FilaPersonaState extends ConsumerState<_FilaPersona> {
                       padding: EdgeInsets.zero,
                       constraints: const BoxConstraints(minWidth: 220),
                       onSelected: (sacar) => sacar ? _sacar() : _devolver(),
-                      // Una sola acción, la que corresponde: quien está adentro
-                      // se saca y quien está afuera vuelve. Ofrecer las dos
-                      // siempre obligaría a deshabilitar una, y un menú con la
-                      // mitad de las opciones grises hace pensar que falta un
-                      // permiso.
-                      //
-                      // Manda `decidido` y no `fuera`: quien sale en diciembre
-                      // sigue viniendo hasta entonces, pero ya se lo sacó y
-                      // ofrecerle «Sacar» otra vez dejaría la decisión sin
-                      // forma de deshacerse hasta que llegue la fecha.
+                      // Una sola acción, la que corresponde: quien está adentro se saca y quien está
+                      // afuera vuelve (un menú con media opción gris hace pensar que falta un
+                      // permiso). Manda `decidido` y no `fuera`: quien sale en diciembre sigue
+                      // viniendo, pero ofrecerle «Sacar» otra vez dejaría la decisión sin forma de
+                      // deshacerse hasta que llegue la fecha.
                       itemBuilder:
                           (_) => [
                             PopupMenuItem(
@@ -655,18 +567,12 @@ class _FilaPersonaState extends ConsumerState<_FilaPersona> {
   Future<void> _cambiar(String grupo) async {
     if (grupo == widget.persona.grupoRotacion) return;
 
-    // Si el filtro muestra el grupo que esta persona está dejando, su fila se
-    // va de la lista apenas vuelve la grilla.
+    // Si el filtro muestra el grupo que esta persona está dejando, su fila se va de
+    // la lista apenas vuelve la grilla.
     //
-    // **Decisión: se avisa, no se retiene.** La alternativa era dejarla visible
-    // hasta el próximo rebuild, y sale cara: hay que llevar una lista de
-    // «excepciones al filtro» y decidir cuándo se limpia —¿al cambiar el
-    // filtro?, ¿al escribir en el buscador?, ¿a los cinco segundos?—, y
-    // mientras dure, el chip de arriba diría 42 con 43 filas debajo. Ese
-    // desacuerdo entre el contador y la lista es peor que la desaparición,
-    // porque no se explica solo. Que la lista muestre SIEMPRE exactamente lo
-    // que el filtro dice vale más que ahorrar media línea de aviso — y el
-    // aviso ya existía, sólo le faltaba la frase que explica adónde se fue.
+    // **Decisión: se avisa, no se retiene.** Retenerla exige una lista de
+    // «excepciones al filtro» y el chip diría 42 con 43 filas debajo; la lista debe
+    // mostrar SIEMPRE lo que el filtro dice.
     final filtro = ref.read(filtroGrupoProvider);
     final adondeSeFue =
         (filtro.isNotEmpty && filtro != grupo)
@@ -690,17 +596,16 @@ class _FilaPersonaState extends ConsumerState<_FilaPersona> {
     if (mounted) setState(() => _guardando = false);
   }
 
-  // ── la ventana de sábados ────────────────────────────────────────────
+  // La ventana de sábados
 
   Future<void> _sacar() async {
     final desde = await _preguntar(salida: true);
     if (desde == null || !mounted) return;
 
-    // El backend guarda el ÚLTIMO día que cuenta como suyo, y lo que se eligió
-    // es el primer sábado que ya no viene: se manda el día anterior. Así ese
-    // sábado y los que siguen quedan fuera, y el anterior —que sí trabajó—
-    // queda adentro. Con `DateTime(y, m, d - 1)` el cambio de mes lo resuelve
-    // Dart; restar 24 horas se rompería con cualquier corrimiento de reloj.
+    // El backend guarda el ÚLTIMO día que cuenta como suyo y lo elegido es el
+    // primer sábado que ya no viene: se manda el día anterior. `DateTime(y, m,
+    // d - 1)` deja el cambio de mes a Dart; restar 24 horas se rompería con
+    // cualquier corrimiento de reloj.
     final fecha = DateTime(desde.year, desde.month, desde.day - 1);
 
     setState(() => _guardando = true);
@@ -713,9 +618,8 @@ class _FilaPersonaState extends ConsumerState<_FilaPersona> {
             idParticipante: widget.persona.idParticipante,
             fechaBaja: fecha,
           ),
-      // El backend devuelve el detalle —cuántas celdas liberó y cuántas
-      // sobrevivieron por venir de un jefe o de una corrección— y ese mensaje
-      // gana a éste. Éste es el que se ve cuando el SP no dice nada.
+      // El detalle del backend (celdas liberadas y sobrevivientes por venir de un
+      // jefe o corrección) gana a éste, que sólo se ve si el SP no dice nada.
       exito:
           '${widget.persona.nombreRol} deja de hacer sábados desde el '
           '${fechaCorta(desde)}. Lo que ya trabajó queda en la grilla.',
@@ -758,20 +662,17 @@ class _FilaPersonaState extends ConsumerState<_FilaPersona> {
 
 /// La etiqueta que va al lado del nombre, o null si no hay nada que decir.
 ///
-/// **Sólo cuando hay algo que decir.** Ochenta y cuatro etiquetas «VIGENTE» no
-/// informan: hacen que la única fila que importa se pierda entre las demás.
-///
-/// El texto es corto a propósito —«SALE 07/08» y no «SALE EL 07/08/2026»—
-/// porque compite con el nombre por el ancho del renglón. La fecha completa
-/// está tres renglones abajo, en [_porQueNoViene], para quien la necesite.
+/// Sólo cuando hay algo que decir: 84 etiquetas «VIGENTE» ocultarían la fila que
+/// importa. Es corta («SALE 07/08») porque compite con el nombre por el ancho;
+/// la fecha completa está en [_porQueNoViene].
 (String, TonoEtiqueta)? _rotuloDeSituacion(ParticipanteTurnoEntity p) {
   String corta(DateTime? f) {
     final t = fechaCorta(f); // dd/MM/yyyy
     return t.length >= 5 ? t.substring(0, 5) : t;
   }
 
-  // Aviso y no error para las dos con fecha: nada está mal, hay algo agendado.
-  // El rojo se reserva para lo que ya rige y saca a alguien de la grilla.
+  // Aviso y no error para las dos con fecha: hay algo agendado, nada está mal. El
+  // rojo se reserva para lo que ya rige y saca a alguien de la grilla.
   if (p.fueraDeLaEmpresa) return ('FUERA DE LA EMPRESA', TonoEtiqueta.error);
   if (p.sinSabados) return ('SIN SÁBADOS', TonoEtiqueta.error);
   if (p.saleDespues)
@@ -789,9 +690,8 @@ String _porQueNoViene(ParticipanteTurnoEntity p) {
     return 'Vuelve a los sábados el ${fechaCorta(p.fechaSituacion)}';
   }
   // Ya está sacado aunque la fecha no haya llegado: sus sábados de aquí en
-  // adelante ya se liberaron. Se dice en futuro porque todavía puede venir el
-  // sábado que viene, y se dice la fecha porque es lo primero que se pregunta
-  // quien lo ve en la lista de afuera.
+  // adelante ya se liberaron. Se dice en futuro y con la fecha, porque todavía
+  // puede venir el sábado que viene y es lo primero que se pregunta.
   if (p.saleDespues) {
     return 'Sale de los sábados el ${fechaCorta(p.fechaSituacion)}';
   }
@@ -800,17 +700,11 @@ String _porQueNoViene(ParticipanteTurnoEntity p) {
       : 'Sin sábados desde el ${fechaCorta(p.fechaSituacion)}';
 }
 
-/// Elegir desde qué sábado alguien deja de venir, o vuelve — con el efecto
+/// Elegir desde qué sábado alguien deja de venir, o vuelve, con el efecto
 /// escrito antes de apretar.
 ///
-/// **Se elige un SÁBADO y no una fecha cualquiera.** La pregunta real es «¿de
-/// qué día en adelante?», y los únicos días que cambian algo son los sábados del
-/// rol. Un calendario abierto dejaría elegir un martes y obligaría a explicar
-/// después qué pasó con el sábado del medio.
-///
-/// **Y dice cuántos sábados mueve.** «Se le liberan 12» es la diferencia entre
-/// confirmar sabiendo y confirmar de fe: es el número que RR.HH. va a ver
-/// cambiar en la cobertura de esos días.
+/// Se elige un SÁBADO y no una fecha (sólo los del rol cambian algo) y dice
+/// cuántos mueve («Se le liberan 12»): es lo que RR.HH. verá cambiar en la cobertura.
 class _DialogoVentana extends StatefulWidget {
   const _DialogoVentana({
     required this.persona,
@@ -831,9 +725,8 @@ class _DialogoVentana extends StatefulWidget {
 class _DialogoVentanaState extends State<_DialogoVentana> {
   late final List<SabadoEntity> _sabados = sabadosQueVienen(widget.grilla);
 
-  /// El primero al que se llega. Para la salida es «desde el próximo sábado ya
-  /// no viene» y para la vuelta «entra en el próximo»: en los dos casos es lo
-  /// que se quiere el 90% de las veces, y lo otro está a un toque.
+  /// El primero al que se llega: «desde el próximo sábado ya no viene» o «entra
+  /// en el próximo» es lo que se quiere el 90% de las veces.
   late SabadoEntity _elegido = _sabados.first;
 
   @override
@@ -842,8 +735,8 @@ class _DialogoVentanaState extends State<_DialogoVentana> {
     final cs = Theme.of(context).colorScheme;
     final corte = _elegido.fecha!;
 
-    // Una sola pasada por los sábados del rol: lo que quedó atrás, lo que se
-    // libera y lo que sobrevive salen juntos.
+    // Una sola pasada por los sábados del rol: lo que quedó atrás, lo que se libera
+    // y lo que sobrevive salen juntos.
     var yaTrabajo = 0;
     var libera = 0;
     var sobreviven = 0;
@@ -908,9 +801,8 @@ class _DialogoVentanaState extends State<_DialogoVentana> {
             ),
             const SizedBox(height: Esp.m),
             if (widget.salida) ...[
-              // Lo primero que hay que leer: el pasado no se toca. Es la
-              // pregunta que se hace cualquiera antes de apretar —«¿pierdo lo
-              // que ya trabajó?»— y la respuesta es que no.
+              // Lo primero que hay que leer: el pasado no se toca («¿pierdo lo que ya
+              // trabajó?» no).
               Text(
                 yaTrabajo == 0
                     ? 'Los sábados anteriores no se tocan: quedan en la grilla '
@@ -956,10 +848,9 @@ class _DialogoVentanaState extends State<_DialogoVentana> {
               ),
             ],
             const SizedBox(height: Esp.s),
-            // La meta de cobertura es un REQUISITO —cuánta gente hace falta ese
-            // día—, no un promedio de los que hay. Bajarla sola cuando alguien
-            // se va haría desaparecer el faltante justo cuando aparece, así que
-            // se avisa y la mueve RR.HH. si decide que la meta bajó.
+            // La meta de cobertura es un REQUISITO (cuánta gente hace falta ese día), no un
+            // promedio: bajarla sola haría desaparecer el faltante justo cuando aparece. Se
+            // avisa y la mueve RR.HH. si decide que bajó.
             Text(
               'La meta de cobertura del rol sigue en '
               '${widget.grilla.rol.coberturaObjetivo}: no se ajusta sola.',
@@ -1059,13 +950,10 @@ class _Boton extends StatelessWidget {
   }
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-
 /// El botón que aplica los cambios de grupo a la grilla.
 ///
-/// Va aparte de cada fila a propósito: cambiar el grupo es barato, pero
-/// regenerar rehace **todas** las celdas del año. Hacerlo por cada persona
-/// serían 87 regeneraciones para armar los grupos una vez.
+/// Va aparte de cada fila: cambiar el grupo es barato pero regenerar rehace
+/// **todas** las celdas del año (por persona serían 87 regeneraciones).
 class BotonRegenerar extends ConsumerStatefulWidget {
   const BotonRegenerar({super.key, required this.grilla});
   final GrillaRol grilla;
@@ -1116,10 +1004,8 @@ class _BotonRegenerarState extends ConsumerState<BotonRegenerar> {
                     style: Theme.of(context).textTheme.bodySmall,
                   ),
                   const SizedBox(height: Esp.s),
-                  // Este párrafo decía lo contrario —que se recalculaba también
-                  // enero— y era cierto hasta que la regeneración dejó de tocar
-                  // el pasado. Un aviso en rojo que miente es peor que ninguno:
-                  // enseña a ignorar los rojos.
+                  // Debe coincidir con lo que hace la regeneración (no toca el pasado): un aviso
+                  // en rojo que miente enseña a ignorar los rojos.
                   Text(
                     'Los sábados que ya pasaron quedan como están: no se '
                     'recalculan ni se borran. Si alguien cambió de grupo, el '

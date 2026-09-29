@@ -1,17 +1,11 @@
-/// Los dialogos del circuito de autorizacion de precios.
+/// Los diálogos del circuito de autorización de precios: cuatro confirmaciones
+/// y la puerta al detalle. Van juntos por el encabezado común (la propuesta de
+/// la que se habla) y para que digan lo mismo con el mismo tono.
 ///
-/// Son cuatro confirmaciones y la puerta al detalle. Estan juntos porque
-/// comparten el mismo encabezado —la propuesta de la que se habla— y porque las
-/// cuatro confirmaciones tienen que decir lo mismo con el mismo tono: cada una
-/// nombra la propuesta, dice que va a pasar y quien lo va a ver.
-///
-/// **Aprobar lleva un dialogo propio y no el [confirmar] compartido.** Es la
-/// escritura mas sensible del sistema: los precios propuestos pasan a ser los
-/// precios de venta vigentes de toda la empresa, en todas las sucursales y
-/// listas, y no hay accion que lo revierta desde la aplicacion. Un dialogo de
-/// dos botones se contesta con el pulgar; este pide ademas una marca explicita,
-/// que es barata de dar cuando se sabe lo que se hace y suficiente para frenar
-/// al que estaba apurado.
+/// Aprobar lleva diálogo propio y no el [confirmar] compartido: es la escritura
+/// más sensible (los precios propuestos pasan a ser los de venta vigentes de
+/// toda la empresa y la app no puede revertirlo), así que además de los dos
+/// botones pide una casilla explícita que frene al apurado.
 library;
 
 import 'package:flutter/material.dart';
@@ -24,9 +18,7 @@ import 'package:bosque_flutter/core/ui/tokens_bosque.dart';
 import 'package:bosque_flutter/presentation/widgets/precios/propuesta_en_autorizacion.dart';
 import 'package:bosque_flutter/presentation/widgets/precios/vista_preliminar_propuesta.dart';
 
-// ═══════════════════════════════════════════════════════════════════════════
-// CONFIRMACIONES
-// ═══════════════════════════════════════════════════════════════════════════
+// Confirmaciones
 
 /// Aprobar: el dialogo que dice, sin rodeos, que cambia en la empresa.
 ///
@@ -105,9 +97,7 @@ Future<bool> confirmarGeneracion(
 String _persona(String nombre) =>
     nombre.trim().isEmpty ? 'un usuario que ya no figura' : nombre.trim();
 
-// ═══════════════════════════════════════════════════════════════════════════
-// APROBAR
-// ═══════════════════════════════════════════════════════════════════════════
+// Aprobar
 
 class _DialogoAprobar extends StatefulWidget {
   const _DialogoAprobar({required this.fila});
@@ -176,9 +166,8 @@ class _DialogoAprobarState extends State<_DialogoAprobar> {
                 style: Theme.of(context).textTheme.bodySmall,
               ),
               SizedBox(height: Esp.s),
-              // La casilla es el freno. No pide escribir nada —eso convierte
-              // la confirmacion en un tramite y se copia y pega igual— pero si
-              // obliga a un segundo gesto consciente.
+              // La casilla es el freno: no pide escribir (eso lo vuelve trámite y se copia y
+              // pega) pero sí obliga a un segundo gesto consciente.
               CheckboxListTile(
                 value: _entendido,
                 onChanged: (v) => setState(() => _entendido = v ?? false),
@@ -210,21 +199,15 @@ class _DialogoAprobarState extends State<_DialogoAprobar> {
   }
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// DETALLE DE LA PROPUESTA
-// ═══════════════════════════════════════════════════════════════════════════
+// Detalle de la propuesta
 
-/// Abre el detalle de una propuesta: su cabecera y los articulos afectados con
-/// el precio ya calculado por unidad, en una matriz articulo x lista (ver
-/// [VistaPreliminarPropuesta]).
+/// Abre el detalle de una propuesta: su cabecera y los artículos afectados con el
+/// precio ya calculado por unidad, en una matriz artículo x lista (ver
+/// [VistaPreliminarPropuesta]). Une los tres diálogos del sistema anterior.
 ///
-/// Es la union de los tres dialogos que el sistema anterior tenia para lo
-/// mismo —uno por tipo de propuesta y otro para generar—, que mostraban la
-/// misma consulta con distintas columnas visibles.
-///
-/// [preliminar] es la version que abria el boton "Editar": la propuesta que
-/// todavia se esta armando, con el atajo para mandarla a autorizar al pie.
-/// [onEnviarAEspera] la cierra antes de ejecutar la accion.
+/// [preliminar] es la versión del botón "Editar" (propuesta en armado, con el
+/// atajo para mandarla a autorizar); [onEnviarAEspera] la cierra antes de
+/// ejecutar la acción.
 Future<void> abrirDetallePropuesta(
   BuildContext context, {
   required PropuestaEnAutorizacion fila,

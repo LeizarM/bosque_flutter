@@ -1,13 +1,10 @@
-// Destino final: lib/core/state/coches_provider.dart
 import 'package:bosque_flutter/data/repositories/coches_impl.dart';
 import 'package:bosque_flutter/domain/entities/coche_del_dia_entity.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-/// Parámetros de la ocurrencia puntual que identifican qué lista de coches
-/// cargar. codSucursal ya NO viaja aquí — el proc lo resuelve server-side
-/// del cargo vigente del empleado dueño de la ocurrencia, no del login del
-/// cliente (un empleado puede tener cargos en más de una sucursal — code-
-/// review, 2026-09-03).
+/// Ocurrencia puntual que identifica qué lista de coches cargar. codSucursal
+/// no viaja: el proc lo resuelve del cargo vigente del empleado dueño de la
+/// ocurrencia, no del login (un empleado puede tener cargos en varias sucursales).
 typedef CochesParams = ({int idTarRuti, int idBitTarea});
 
 // Marca de "no cambiar" para poder limpiar `errorCarga` pasándole null.
@@ -17,11 +14,8 @@ class CochesState {
   final List<CocheDelDiaEntity> items;
   final bool cargando;
 
-  /// Si alguna lectura terminó bien.
-  ///
-  /// Sin esto, una lectura fallida se veía como "No hay coches activos
-  /// configurados para tu sucursal": un error de red contado como una
-  /// configuración (auditoría del 2026-09-11).
+  /// Si alguna lectura terminó bien: sin esto, un error de red se veía como
+  /// "No hay coches activos configurados para tu sucursal".
   final bool cargado;
 
   /// Por qué falló la última lectura; queda hasta la próxima buena.

@@ -38,61 +38,6 @@ class EntregasDesktopView extends StatelessWidget {
   }
 }
 
-class EntregasTabletView extends StatelessWidget {
-  final List<MapEntry<int, List<EntregaEntity>>> entregasAgrupadas;
-  final bool rutaIniciada;
-  final Function(EntregaEntity) onMarcarEntrega;
-
-  const EntregasTabletView({
-    super.key,
-    required this.entregasAgrupadas,
-    required this.rutaIniciada,
-    required this.onMarcarEntrega,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final horizontalPadding = ResponsiveUtilsBosque.getHorizontalPadding(
-      context,
-    );
-    final verticalPadding = ResponsiveUtilsBosque.getVerticalPadding(context);
-
-    return Padding(
-      padding: EdgeInsets.symmetric(
-        horizontal: horizontalPadding,
-        vertical: verticalPadding,
-      ),
-      child: GridView.builder(
-        gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-          maxCrossAxisExtent: 400,
-          mainAxisSpacing:
-              ResponsiveUtilsBosque.getGridDimensions(context).mainAxisSpacing,
-          crossAxisSpacing:
-              ResponsiveUtilsBosque.getGridDimensions(context).crossAxisSpacing,
-          childAspectRatio: 1,
-        ),
-        itemCount: entregasAgrupadas.length,
-        itemBuilder: (context, index) {
-          final entregas = entregasAgrupadas[index].value;
-          final entregaPrimaria = entregas.first;
-          final todosEntregados = entregas.every((e) => e.fueEntregado == 1);
-          final algunoEntregado = entregas.any((e) => e.fueEntregado == 1);
-
-          return EntregaItem(
-            entrega: entregaPrimaria,
-            productosAdicionalesEntrega: entregas,
-            rutaIniciada: rutaIniciada,
-            onTap: () => onMarcarEntrega(entregaPrimaria),
-            disabled: !rutaIniciada || todosEntregados,
-            todosEntregados: todosEntregados,
-            algunoEntregado: algunoEntregado,
-          );
-        },
-      ),
-    );
-  }
-}
-
 class EntregasMobileView extends StatelessWidget {
   final List<MapEntry<int, List<EntregaEntity>>> entregasAgrupadas;
   final bool rutaIniciada;

@@ -1,4 +1,3 @@
-// Destino final: lib/core/state/tareas_por_cargo_provider.dart
 import 'package:bosque_flutter/data/repositories/tareas_por_cargo_impl.dart';
 import 'package:bosque_flutter/data/repositories/tar_ru_x_cargo_impl.dart';
 import 'package:bosque_flutter/domain/entities/tar_ru_x_cargo_entity.dart';
@@ -91,11 +90,9 @@ class TareasPorCargoNotifier extends StateNotifier<TareasPorCargoState> {
     }
   }
 
-  /// "Copiar": reusa una tarea ya existente (idTarRuti) para otros cargos —
-  /// mismo INSERT que ya hace p_abm_tac_TarRuXCargo ACCION='I' para el alta
-  /// suelta, una llamada por cargo elegido. No hace falta que sea atómico
-  /// entre sí (a diferencia de crear la tarea + su primer cargo, que sí
-  /// necesita una transacción): cada asignación es independiente.
+  /// "Copiar": reusa una tarea existente (idTarRuti) para otros cargos con el
+  /// mismo INSERT de p_abm_tac_TarRuXCargo ACCION='I', una llamada por cargo
+  /// elegido. No necesita ser atómico: cada asignación es independiente.
   Future<bool> copiarACargos(int idTarRuti, List<int> codCargosDestino) async {
     state = state.copyWith(guardando: true);
     try {
@@ -122,17 +119,11 @@ class TareasPorCargoNotifier extends StateNotifier<TareasPorCargoState> {
     }
   }
 
-  /// Engancha a ESTE cargo tareas que ya existen en el catálogo.
-  ///
-  /// Es la contraparte de [copiarACargos]: aquélla va de una tarea hacia
-  /// varios cargos, ésta de un cargo hacia varias tareas. Las dos terminan en
-  /// el mismo `p_abm_tac_TarRuXCargo ACCION='I'`.
-  ///
-  /// A diferencia de [copiarACargos], **no se corta en el primer error**. El
-  /// selector ya oculta las que el cargo tiene, así que un fallo aquí es un
-  /// caso de carrera — alguien más la asignó mientras el diálogo estaba
-  /// abierto — y no hay motivo para que eso impida agregar las otras cuatro.
-  /// Se cuenta lo que entró y se avisa lo que no.
+  /// Engancha a ESTE cargo tareas que ya existen (contraparte de [copiarACargos];
+  /// ambas terminan en `p_abm_tac_TarRuXCargo ACCION='I'`). A diferencia de
+  /// aquélla no se corta en el primer error: el selector ya oculta las que el
+  /// cargo tiene, así que un fallo es una carrera (alguien la asignó con el
+  /// diálogo abierto) y no debe impedir agregar las demás. Se avisa lo que no entró.
   Future<bool> asignarExistentes(
     List<int> idTarRutis, {
     DateTime? desde,
@@ -149,10 +140,9 @@ class TareasPorCargoNotifier extends StateNotifier<TareasPorCargoState> {
             idTarRuti: idTarRuti,
             codCargo: codCargo,
             estado: 1,
-            // Cuando quien asigna eligió una fecha, manda ésa. Con [desde] en
-            // null el SP resuelve con CAST(GETDATE() AS DATE) — el reloj del
-            // SERVIDOR, no el del teléfono, que es lo correcto para el caso
-            // "hoy" cerca de medianoche.
+            // Si quien asigna eligió fecha, se manda; con [desde] null el SP usa
+            // CAST(GETDATE() AS DATE) (reloj del SERVIDOR, no del teléfono: correcto para
+            // "hoy" cerca de medianoche).
             fechaInicio: desde,
             audUsuario: 0, // lo resuelve el backend desde el JWT
           ),

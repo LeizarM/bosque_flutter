@@ -1,21 +1,12 @@
 /// El costo de una familia y la grilla de precios que resulta: reemplaza a
-/// `dlgVista` ("Costo Propuesto", "Calcular", "GUARDAR") y a `dlgVistaP`.
+/// `dlgVista` y `dlgVistaP`.
 ///
-/// **El precio lo calcula el servidor.** "Calcular" pide la vista previa y
-/// "Guardar" vuelve a calcular del lado del servidor y graba: nunca se guarda
-/// un numero calculado aca. Por eso "Guardar" se apaga en cuanto el costo
-/// escrito deja de ser el de la grilla que se esta viendo: lo que se guarda
-/// tiene que ser lo que se vio.
-///
-/// **El porcentaje de utilidad se cambia en la misma grilla.** Lo pidio el
-/// usuario: antes habia que cerrar, ir a «Porcentajes», cambiarlo y volver a
-/// abrir la familia. Cada lista tiene su campo; "Calcular" manda los que
+/// **El precio lo calcula el servidor:** "Calcular" pide la vista previa y
+/// "Guardar" recalcula y graba (nunca se guarda un número calculado aquí), y se
+/// apaga cuando el costo o un porcentaje deja de ser el de la grilla a la vista.
+/// Los porcentajes de utilidad se editan en la grilla: "Calcular" manda los que
 /// difieren del vigente y "Guardar" los registra en tpr_porcentaje en la misma
-/// transaccion que los precios. Igual que con el costo, cambiar un porcentaje
-/// apaga "Guardar" hasta volver a calcular.
-///
-/// **Los articulos que se van a ver afectados** estan a un toque, en la
-/// segunda vista del editor: son los de tpr_articulo de la familia.
+/// transacción que los precios.
 library;
 
 import 'package:flutter/material.dart';
@@ -37,15 +28,11 @@ import 'package:bosque_flutter/presentation/widgets/precios/porcentajes_datos.da
 import 'package:bosque_flutter/presentation/widgets/precios/propuesta_detalle_dialogos.dart';
 import 'package:bosque_flutter/presentation/widgets/precios/propuesta_detalle_piezas.dart';
 
-/// Abre el editor. Devuelve la grilla guardada, o null si se cerro sin
-/// guardar.
+/// Abre el editor. Devuelve la grilla guardada, o null si se cerró sin guardar.
 ///
-/// Con [costoInicial] abre ya calculado con ese costo: es lo que usa la carga
-/// en lote para "abrir en el editor" una familia a la que ya se le escribio el
-/// costo en la tabla.
-///
-/// En el telefono es una hoja que ocupa casi toda la pantalla; en escritorio,
-/// un dialogo ancho y alto, porque la grilla es lo que se viene a mirar.
+/// Con [costoInicial] abre ya calculado (lo usa la carga en lote para "abrir en
+/// el editor" una familia con costo ya escrito). Teléfono: hoja casi a pantalla
+/// completa; escritorio: diálogo ancho y alto (la grilla es lo que se mira).
 Future<CalculoFamiliaEntity?> abrirEditorFamilia(
   BuildContext context, {
   required int codigoFamilia,
@@ -109,9 +96,8 @@ class _EditorFamiliaState extends ConsumerState<_EditorFamilia> {
   final _costo = TextEditingController();
   final _foco = FocusNode();
 
-  /// Lo escrito en la columna %, por lista de precio (idClasificacion). Nace
-  /// con la primera grilla y sobrevive a los recalculos: es lo que el usuario
-  /// esta escribiendo, no lo que llego.
+  /// Lo escrito en la columna %, por lista de precio (idClasificacion). Nace con
+  /// la primera grilla y sobrevive a los recálculos.
   final Map<BigInt, TextEditingController> _porcentajes = {};
 
   CalculoFamiliaEntity? _calculo;
@@ -206,9 +192,8 @@ class _EditorFamiliaState extends ConsumerState<_EditorFamilia> {
     return true;
   }
 
-  /// Deja cada lista con el porcentaje que tiene hoy la familia y, si la
-  /// grilla ya estaba calculada, la recalcula: si no, "Guardar" quedaria
-  /// apagado esperando un calculo que el usuario no pidio.
+  /// Deja cada lista con el porcentaje vigente de la familia y, si la grilla ya
+  /// estaba calculada, la recalcula (si no, "Guardar" quedaría apagado esperando).
   void _volverAVigentes() {
     final c = _calculo;
     if (c == null) return;
@@ -532,9 +517,7 @@ class _EditorFamiliaState extends ConsumerState<_EditorFamilia> {
   }
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// CABECERA
-// ═══════════════════════════════════════════════════════════════════════════
+// Cabecera
 
 class _Cabecera extends StatelessWidget {
   const _Cabecera({
@@ -606,9 +589,7 @@ class _Cabecera extends StatelessWidget {
   }
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// COSTO
-// ═══════════════════════════════════════════════════════════════════════════
+// Costo
 
 class _Costo extends StatelessWidget {
   const _Costo({
@@ -731,9 +712,7 @@ class _Dato extends StatelessWidget {
   );
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// LISTAS O ARTICULOS
-// ═══════════════════════════════════════════════════════════════════════════
+// Listas o artículos
 
 enum _Vista { listas, articulos }
 
@@ -818,13 +797,10 @@ class _Articulos extends StatelessWidget {
   }
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// GRILLA
-// ═══════════════════════════════════════════════════════════════════════════
+// Grilla
 
-/// Rebaja en el color principal, aumento en el de error: lo que se mira dos
-/// veces antes de aprobar es cuanto SUBE un precio. Mismo criterio que la
-/// vista preliminar.
+/// Rebaja en el color principal, aumento en el de error: antes de aprobar se
+/// mira cuánto SUBE un precio. Mismo criterio que la vista preliminar.
 Color _colorVariacion(ColorScheme cs, LineaArmadoEntity l) {
   if (!l.estaCalculada || l.variacion.abs() < 0.005) return cs.onSurfaceVariant;
   return l.variacion > 0 ? cs.error : cs.primary;
@@ -840,7 +816,7 @@ String _variacionLegible(LineaArmadoEntity l) {
   return '$signo${_fmtVariacion.format(l.variacionPorcentual)} %';
 }
 
-/// Las listas inactivas no se recalculan: su porcentaje no se cambia aca.
+/// Las listas inactivas no se recalculan: su porcentaje no se cambia aquí.
 bool _porcentajeEditable(LineaArmadoEntity l) =>
     l.estado != EstadoLineaArmado.listaInactiva;
 
@@ -977,10 +953,10 @@ class _Grilla extends StatelessWidget {
       );
     }
 
-    // Los anchos suman 980 px con la columna Guardado: entran en el dialogo de
-    // 1040 menos su margen. Si se agrega una columna, achicar otra: una grilla
-    // de nueve precios con scroll lateral esconde justo la columna que decide.
-    // El porcentaje es la mas ancha de las chicas porque es un campo.
+    // Los anchos suman 980 px con la columna Guardado: entran en el diálogo de 1040
+    // menos su margen. Si se agrega una columna, achicar otra: el scroll lateral
+    // esconde justo la columna que decide. El porcentaje es la más ancha de las
+    // chicas porque es un campo.
     return Padding(
       padding: const EdgeInsets.fromLTRB(Esp.l, 0, Esp.l, Esp.m),
       child: TablaPropuesta<LineaArmadoEntity>(
@@ -1264,9 +1240,7 @@ class _FilaPorcentaje extends StatelessWidget {
   }
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// PIE
-// ═══════════════════════════════════════════════════════════════════════════
+// Pie
 
 class _Pie extends StatelessWidget {
   const _Pie({

@@ -21,29 +21,21 @@ import 'package:bosque_flutter/domain/entities/tipo_producto_entity.dart';
 import 'package:bosque_flutter/domain/entities/vista_propuesta_entity.dart';
 import 'package:bosque_flutter/domain/repositories/precios_repository.dart';
 
-/// Repositorio del modulo de Precios (tpr).
-///
-/// Se declara UNA sola vez y tipado contra la interfaz, no contra `PreciosImpl`:
-/// asi la pantalla nunca conoce la implementacion y una prueba puede sustituirla
-/// con un override sin tocar una linea de la interfaz de usuario. El modulo TPEX
-/// instancia la clase concreta en mas de veinticinco lugares y por eso no se
-/// puede probar: aca no se repite ese error.
+/// Repositorio del módulo de Precios (tpr), declarado UNA vez y tipado contra la
+/// interfaz (no `PreciosImpl`): la pantalla no conoce la implementación y una
+/// prueba puede sustituirla con un override (TPEX instancia la concreta en
+/// más de veinticinco lugares y por eso no se puede probar).
 final preciosRepositoryProvider = Provider<PreciosRepository>(
   (ref) => PreciosImpl(),
 );
 
-// ═══════════════════════════════════════════════════════════════════════
-// Claves de los providers family
-//
-// Riverpod compara la clave con == para decidir si ya tiene la respuesta en
-// cache. Sin == y hashCode propios, dos filtros identicos serian dos instancias
-// distintas y cada reconstruccion volveria a pedirle los datos al backend.
-// ═══════════════════════════════════════════════════════════════════════
+// Claves de los providers family: Riverpod las compara con ==. Sin == y
+// hashCode propios, dos filtros idénticos serían dos instancias y cada
+// reconstrucción volvería a pedir los datos al backend.
 
-/// Filtro de la busqueda de familias de producto.
-///
-/// Todos los campos son nulables a proposito: null NO filtra. Un cero SI filtra
-/// -por cero- y no devuelve nada, que era el error tipico de la pantalla vieja.
+/// Filtro de la búsqueda de familias de producto. Todos los campos son
+/// nulables a propósito: null NO filtra; un cero SÍ filtra (por cero) y no
+/// devuelve nada, error típico de la pantalla vieja.
 @immutable
 class FiltroFamilias {
   const FiltroFamilias({
@@ -72,9 +64,8 @@ class FiltroFamilias {
   /// 1 activas, 0 inactivas, null todas.
   final int? estado;
 
-  /// Cada campo lleva su bandera de limpieza porque un null en `copyWith` no se
-  /// distingue de «no lo toques», y aca quitar un filtro es una accion legitima
-  /// del usuario.
+  /// Cada campo lleva su bandera de limpieza: un null en `copyWith` no se
+  /// distingue de «no lo toques», y aquí quitar un filtro es legítimo.
   FiltroFamilias copyWith({
     int? codigoFamilia,
     BigInt? idGrpFamiliaSap,
@@ -156,18 +147,16 @@ class FiltroFamilias {
   );
 }
 
-/// Clave de la consulta de articulos por familias.
-///
-/// Envuelve la lista porque `List` compara por identidad: dos listas con los
-/// mismos codigos no son la misma clave para Riverpod y cada rearmado del
-/// listado dispararia una descarga nueva.
+/// Clave de la consulta de artículos por familias. Envuelve la lista porque
+/// `List` compara por identidad: dos listas con los mismos códigos no serían
+/// la misma clave y cada rearmado del listado dispararía una descarga nueva.
 @immutable
 class ClaveFamilias {
   ClaveFamilias(List<int> codigos)
     : codigos = List<int>.unmodifiable(List<int>.of(codigos)..sort());
 
-  /// Ordenados para que el orden en que el usuario tildo las familias no genere
-  /// dos entradas distintas del cache para la misma consulta.
+  /// Ordenados para que el orden en que el usuario marcó las familias no genere
+  /// dos entradas distintas de la caché para la misma consulta.
   final List<int> codigos;
 
   bool get vacia => codigos.isEmpty;
@@ -358,12 +347,8 @@ class FiltroClasificaciones {
   int get hashCode => Object.hash(idClasificacion, codSucursal);
 }
 
-// ═══════════════════════════════════════════════════════════════════════
-// Lecturas: propuestas y circuito de autorizacion
-//
-// Son FutureProvider: la pantalla usa .when(...) y muestra el indicador
-// mientras el estado es loading. Nada de banderas de carga manuales.
-// ═══════════════════════════════════════════════════════════════════════
+// Lecturas: propuestas y circuito de autorización. Son FutureProvider: la
+// pantalla usa .when(...) y no lleva banderas de carga manuales.
 
 /// Propuestas con su estado de autorizacion. Es la grilla principal.
 final propuestasParaAutorizarProvider =
@@ -385,10 +370,8 @@ final costosFleteProvider =
       return ref.watch(preciosRepositoryProvider).obtenerCostosFlete();
     });
 
-/// La vista preliminar con las mismas filas que el PDF de la propuesta, y los
-/// precios por unidad del Excel de la generacion. Reemplaza a la lectura suelta
-/// de la rama D (articulosPorPropuestaProvider), que no tenia filas para las
-/// propuestas por articulo.
+/// Vista preliminar con las mismas filas que el PDF de la propuesta y los precios
+/// por unidad del Excel de la generación (incluye propuestas por artículo).
 final vistaPropuestaProvider = FutureProvider.autoDispose
     .family<VistaPropuestaEntity, BigInt>((ref, idPropuesta) async {
       return ref
@@ -396,9 +379,7 @@ final vistaPropuestaProvider = FutureProvider.autoDispose
           .obtenerVistaPropuesta(idPropuesta);
     });
 
-// ═══════════════════════════════════════════════════════════════════════
-// Lecturas: familias, precios y articulos
-// ═══════════════════════════════════════════════════════════════════════
+// Lecturas: familias, precios y artículos
 
 /// Familias de producto con su descripcion resuelta, segun el filtro.
 final familiasProvider = FutureProvider.autoDispose
@@ -441,11 +422,9 @@ final preciosTonPorFamiliaProvider = FutureProvider.autoDispose
           .obtenerPreciosTonPorFamilia(codigoFamilia);
     });
 
-/// Articulos del catalogo que pertenecen a las familias indicadas.
-///
-/// Con la clave vacia devuelve lista vacia sin pegarle al backend: pedir «los
-/// articulos de ninguna familia» es una pregunta sin sentido y el SP contesta
-/// con el catalogo entero.
+/// Artículos del catálogo de las familias indicadas. Con la clave vacía devuelve
+/// lista vacía sin llamar al backend: «los artículos de ninguna familia» no
+/// tiene sentido y el SP contesta con el catálogo entero.
 final articulosPorFamiliasProvider = FutureProvider.autoDispose
     .family<List<ArticuloPrecioEntity>, ClaveFamilias>((ref, clave) async {
       if (clave.vacia) return const <ArticuloPrecioEntity>[];
@@ -454,9 +433,7 @@ final articulosPorFamiliasProvider = FutureProvider.autoDispose
           .obtenerArticulosPorFamilias(clave.codigos);
     });
 
-// ═══════════════════════════════════════════════════════════════════════
-// Catalogos
-// ═══════════════════════════════════════════════════════════════════════
+// Catálogos
 
 /// Colores, activos e inactivos. Es la grilla del ABM.
 final coloresProvider = FutureProvider.autoDispose<List<ColorProductoEntity>>((
@@ -570,12 +547,10 @@ final proveedoresSapProvider =
       return ref.watch(preciosRepositoryProvider).obtenerProveedores();
     });
 
-// ── Sincronizacion de los catalogos con SAP ─────────────────────────────
-//
-// p_abm_producto 'H' trae de SAP los proveedores y grupos de familia nuevos.
-// El sistema anterior la corria sola cada vez que se abria la pantalla de
-// precios; aca corre una vez por sesion, la primera vez que se abre la ficha
-// de una familia, y a pedido desde Catalogos ("Traer de SAP").
+// Sincronización de los catálogos con SAP: p_abm_producto 'H' trae de SAP los
+// proveedores y grupos de familia nuevos. El sistema anterior la corría sola
+// al abrir la pantalla de precios; aquí corre una vez por sesión (al abrir la
+// ficha de una familia) y a petición desde Catálogos ("Traer de SAP").
 
 enum FaseSincronizacionSap { sinCorrer, corriendo, lista, fallo }
 
@@ -644,12 +619,8 @@ final proveedoresSapFiltradosProvider = FutureProvider.autoDispose
           );
     });
 
-// ═══════════════════════════════════════════════════════════════════════
-// Parametros de gramaje (tpr_grupoFamTipoRangoGram)
-//
-// La tabla no tiene PK ni IDENTITY: la fila se identifica por la clave natural
-// (idGrpFamiliaSap, idTipo).
-// ═══════════════════════════════════════════════════════════════════════
+// Parámetros de gramaje (tpr_grupoFamTipoRangoGram): sin PK ni IDENTITY, la fila
+// se identifica por la clave natural (idGrpFamiliaSap, idTipo).
 
 /// Todas las asignaciones cargadas, crudas.
 final parametrosGramajeProvider =
@@ -688,9 +659,7 @@ final parametrosGramajePivoteProvider =
           .obtenerParametrosGramajePivote();
     });
 
-// ═══════════════════════════════════════════════════════════════════════
 // Listas de precios
-// ═══════════════════════════════════════════════════════════════════════
 
 /// Listado plano de listas de precios.
 final clasificacionesPrecioProvider = FutureProvider.autoDispose
@@ -731,23 +700,17 @@ final existeVppProvider = FutureProvider.autoDispose.family<bool, ClaveVpp>((
       .existeVpp(vpp: clave.vpp, idClasificacion: clave.idClasificacion);
 });
 
-// ═══════════════════════════════════════════════════════════════════════
-// Porcentajes por familia y lista de precios (tpr_porcentaje)
-//
-// El margen sobre el costo. Esta en PUNTOS PORCENTUALES: 12.5 es 12,5%.
-//
+// Porcentajes por familia y lista de precios (tpr_porcentaje).
+// El margen está en PUNTOS PORCENTUALES: 12.5 es 12,5%.
 // Las tres grillas devuelven mapas porque muestran el cruce con tb_sucursal y
-// tpr_clasificacionPrecio -nombre de sucursal, nombre de la lista, vpp-, que no
-// son columnas de la tabla; ademas el margen llega en la clave `porcentaje` y
-// no en `porcen`. La lectura de la tabla cruda si devuelve la entity.
-// ═══════════════════════════════════════════════════════════════════════
+// tpr_clasificacionPrecio (nombre de sucursal, de lista, vpp), que no son
+// columnas de la tabla; además el margen llega en la clave `porcentaje` y no
+// en `porcen`. La lectura de la tabla cruda sí devuelve la entity.
 
-/// La grilla de porcentajes de una familia, una fila por sucursal y lista de
-/// precios. Es el dialogo dlgPorcen del sistema anterior.
-///
-/// Claves: codSucursal, nombre, idClasificacion, nombrePrecio, vpp, idPorcen,
-/// porcentaje. Las listas sin porcentaje vuelven con idPorcen y porcentaje en
-/// cero: son altas pendientes, no un error.
+/// Grilla de porcentajes de una familia: una fila por sucursal y lista de precios
+/// (dlgPorcen del sistema anterior). Claves: codSucursal, nombre, idClasificacion,
+/// nombrePrecio, vpp, idPorcen, porcentaje. Las listas sin porcentaje vuelven con
+/// idPorcen y porcentaje en cero: son altas pendientes, no un error.
 final porcentajesPorFamiliaProvider = FutureProvider.autoDispose
     .family<List<Map<String, dynamic>>, int>((ref, codigoFamilia) async {
       return ref
@@ -771,15 +734,12 @@ final historialCostoFamiliaProvider = FutureProvider.autoDispose
           .obtenerHistorialCosto(codigoFamilia);
     });
 
-/// Los destinos de la edicion masiva por grupo de familia SAP: las listas de
-/// precios activas con el porcentaje en cero. Es el grid de dlgPorcGrupo.
-///
-/// No lee tpr_porcentaje -todas las filas son altas- y tampoco depende del
-/// grupo, aunque el id se exija. Las familias alcanzadas, que son las que se
-/// pueden excluir con un tilde, salen de [familiasPorGrupoProvider].
-///
-/// El backend no ordena esta rama: el orden por vpp y sucursal lo pone la
-/// pantalla.
+/// Destinos de la edición masiva por grupo de familia SAP: listas de precios
+/// activas con el porcentaje en cero (el grid de dlgPorcGrupo). No lee
+/// tpr_porcentaje (todas las filas son altas) ni depende del grupo, aunque el
+/// id se exija. Las familias alcanzadas (excluibles con una marca) salen de
+/// [familiasPorGrupoProvider]. El backend no ordena: el orden por vpp y
+/// sucursal lo pone la pantalla.
 final destinosPorcentajeGrupoProvider = FutureProvider.autoDispose
     .family<List<Map<String, dynamic>>, BigInt>((ref, idGrpFamiliaSap) async {
       return ref
@@ -809,11 +769,9 @@ final porcentajesProvider = FutureProvider.autoDispose
 /// Convierte una fila de cualquiera de las grillas en la entity que se guarda.
 ///
 /// [codigoFamilia] viene aparte porque las grillas no lo traen: la de dlgPorcen
-/// se pidio para UNA familia y la de dlgPorcGrupo vale para todas las del
-/// grupo, que es justamente lo que hace que sea una edicion masiva.
-///
-/// `audUsuario` va en cero: el backend lo toma del token JWT y la capa de datos
-/// lo saca del cuerpo antes de mandarlo.
+/// es de UNA familia y la de dlgPorcGrupo vale para todas las del grupo
+/// (edición masiva). `audUsuario` va en cero: el backend lo toma del token JWT
+/// y la capa de datos lo saca del cuerpo antes de enviarlo.
 PorcentajePrecioEntity porcentajeDesdeFila(
   Map<String, dynamic> fila, {
   required int codigoFamilia,
@@ -860,24 +818,12 @@ class ConflictoPorcentaje {
       '${porcenAnterior.toStringAsFixed(2)} %.';
 }
 
-/// Comprueba que, dentro de cada sucursal, el margen no baje a medida que sube
-/// el vpp de la lista de precios.
-///
-/// Esta regla existia en el sistema anterior y estaba ROTA: `validaPorcentaje()`
-/// armaba el mensaje de error pero devolvia siempre 0, y el unico llamador solo
-/// miraba ese retorno. Nunca bloqueo una escritura, y por eso los datos de
-/// tpr_porcentaje se cargaron durante anios sin este control. Aca no se finge:
-/// la lista que devuelve esta funcion la mira
-/// [PorcentajesNotifier.guardarGrilla], que **no escribe nada** si no esta
-/// vacia.
-///
-/// Devuelve TODOS los choques y no solo el primero -el legacy cortaba con un
-/// break-: corregir de a uno obliga a reintentar el guardado tantas veces como
-/// errores haya.
-///
-/// Las filas se ordenan aca por sucursal y vpp, asi el resultado no depende de
-/// como las esta mostrando la pantalla ni del orden en que llegaron: la rama
-/// de dlgPorcGrupo el backend no la ordena.
+/// Comprueba que, dentro de cada sucursal, el margen no baje al subir el vpp.
+/// El sistema anterior tenía esta regla ROTA (`validaPorcentaje()` devolvía
+/// siempre 0) y nunca bloqueó una escritura; aquí
+/// [PorcentajesNotifier.guardarGrilla] **no escribe nada** si la lista devuelta
+/// no está vacía. Devuelve TODOS los choques (no solo el primero) y ordena por
+/// sucursal y vpp: la rama de dlgPorcGrupo llega sin ordenar.
 List<ConflictoPorcentaje> validarPorcentajesAscendentes(
   List<Map<String, dynamic>> filas,
 ) {
@@ -953,13 +899,10 @@ class EstadoPorcentajes {
   /// no se escribio NADA.
   final List<ConflictoPorcentaje> conflictos;
 
-  /// Cuantas filas alcanzo a escribir el ultimo guardado de grilla y cuantas
-  /// se habian pedido.
-  ///
-  /// No es un detalle de progreso: el backend no tiene escritura masiva y cada
-  /// fila viaja en su propia llamada, asi que un fallo a mitad de camino deja
-  /// las anteriores guardadas. La pantalla tiene que poder decir «se guardaron
-  /// 4 de 7» en vez de un «error» que haga creer que no se escribio nada.
+  /// Cuántas filas alcanzó a escribir el último guardado de grilla y cuántas se
+  /// pidieron. Cada fila viaja en su propia llamada (no hay escritura masiva), así
+  /// que un fallo a mitad deja las anteriores guardadas: la pantalla debe poder
+  /// decir «se guardaron 4 de 7» y no un «error» que sugiera que no se escribió nada.
   final int filasEscritas;
   final int filasPedidas;
 
@@ -987,15 +930,10 @@ class EstadoPorcentajes {
   );
 }
 
-/// Escrituras de tpr_porcentaje.
-///
-/// Va aparte de [PropuestaNotifier] y no como metodos suyos porque los
-/// porcentajes no son un paso del armado de una propuesta: en el sistema
-/// anterior `actualizaPorcen()` trabajaba sobre la familia buscada y no sobre
-/// el asistente, y se los edita con o sin propuesta abierta. Ademas este estado
-/// tiene que llevar cosas que en `EstadoPropuesta` no significarian nada: los
-/// conflictos de la validacion y cuantas filas de la grilla se alcanzaron a
-/// escribir.
+/// Escrituras de tpr_porcentaje. Va aparte de [PropuestaNotifier]: los porcentajes
+/// no son un paso del armado de una propuesta (se editan con o sin propuesta
+/// abierta) y su estado lleva conflictos de validación y cuántas filas de la
+/// grilla se escribieron.
 class PorcentajesNotifier extends StateNotifier<EstadoPorcentajes> {
   PorcentajesNotifier(this._ref) : super(const EstadoPorcentajes());
 
@@ -1003,11 +941,9 @@ class PorcentajesNotifier extends StateNotifier<EstadoPorcentajes> {
 
   PreciosRepository get _repo => _ref.read(preciosRepositoryProvider);
 
-  /// Las lecturas que cualquier escritura de porcentaje deja viejas.
-  ///
-  /// [destinosPorcentajeGrupoProvider] NO esta: esa rama no consulta
-  /// tpr_porcentaje -devuelve las listas activas con el margen en cero- y
-  /// tirarla obligaria a un viaje al servidor que no puede cambiar nada.
+  /// Lecturas que cualquier escritura de porcentaje deja viejas.
+  /// [destinosPorcentajeGrupoProvider] NO está: no consulta tpr_porcentaje
+  /// (devuelve listas activas con margen en cero), refrescarla no cambiaría nada.
   List<ProviderOrFamily> get _lecturasAfectadas => [
     porcentajesPorFamiliaProvider,
     porcentajesFaltantesProvider,
@@ -1031,11 +967,11 @@ class PorcentajesNotifier extends StateNotifier<EstadoPorcentajes> {
     );
   }
 
-  /// Alta o modificacion de UNA fila. idPorcen en cero inserta.
+  /// Alta o modificación de UNA fila. idPorcen en cero inserta.
   ///
-  /// No valida el orden ascendente y no puede hacerlo: esa regla compara las
-  /// listas de precios de una misma sucursal entre si y aca llega una sola
-  /// fila. Para guardar con la validacion puesta, [guardarGrilla].
+  /// No valida el orden ascendente y no puede: esa regla compara las listas de
+  /// una misma sucursal y aquí llega una sola fila. Para guardar con la
+  /// validación puesta, [guardarGrilla].
   Future<bool> guardarPorcentaje(PorcentajePrecioEntity porcentaje) async {
     state = state.copyWith(
       cargando: true,
@@ -1055,21 +991,12 @@ class PorcentajesNotifier extends StateNotifier<EstadoPorcentajes> {
     }
   }
 
-  /// Guarda una grilla completa de porcentajes de una familia.
-  ///
-  /// Primero valida que el margen no baje al subir el vpp dentro de cada
-  /// sucursal. **Si la validacion falla no se escribe una sola fila** y los
-  /// choques quedan en `state.conflictos` para que la pantalla los muestre:
-  /// esto es lo que el sistema anterior decia hacer y no hacia.
-  ///
-  /// Despues escribe fila por fila, porque el backend no tiene escritura
-  /// masiva. Eso NO es atomico: si una falla, las anteriores ya quedaron
-  /// guardadas, y por eso el estado publica cuantas entraron. Se corta en la
-  /// primera que falla en vez de seguir, para no acumular errores sobre una
-  /// grilla que probablemente ya no sea la que el usuario ve.
-  ///
-  /// [filas] son las filas tal como las devolvio la grilla, con el margen ya
-  /// editado por el usuario en la clave `porcentaje`.
+  /// Guarda una grilla completa de porcentajes de una familia. Primero valida que
+  /// el margen no baje al subir el vpp por sucursal: **si falla no se escribe una
+  /// sola fila** y los choques quedan en `state.conflictos`. Luego escribe fila
+  /// por fila (el backend no tiene escritura masiva), lo que NO es atómico: el
+  /// estado publica cuántas entraron y se corta en la primera que falla. [filas]
+  /// son las de la grilla, con el margen en `porcentaje`.
   Future<bool> guardarGrilla({
     required int codigoFamilia,
     required List<Map<String, dynamic>> filas,
@@ -1131,9 +1058,7 @@ final porcentajesNotifierProvider =
       (ref) => PorcentajesNotifier(ref),
     );
 
-// ═══════════════════════════════════════════════════════════════════════
 // IVA / IT y ancla del tipo de cambio
-// ═══════════════════════════════════════════════════════════════════════
 
 /// Las filas de IVA/IT, de la mas nueva a la mas vieja. En una base sana es una
 /// sola: mas de una avisa que el invariante de fila unica se rompio.
@@ -1159,7 +1084,7 @@ final costosIvaItPorPropuestaProvider = FutureProvider.autoDispose
     });
 
 /// Anclas del tipo de cambio, una por empresa. SOLO LECTURA: quien las escribe
-/// es el job del reprecio nocturno y tocarlas desde aca lo descalibraria.
+/// es el job del reprecio nocturno y tocarlas desde aquí lo descalibraría.
 final anclasTipoCambioProvider =
     FutureProvider.autoDispose<List<TcAnclaEntity>>((ref) async {
       return ref.watch(preciosRepositoryProvider).obtenerAnclasTipoCambio();
@@ -1173,15 +1098,11 @@ final anclaTipoCambioProvider = FutureProvider.autoDispose
           .obtenerAnclaTipoCambio(companyDB);
     });
 
-// ═══════════════════════════════════════════════════════════════════════
 // Armado de una propuesta
-// ═══════════════════════════════════════════════════════════════════════
 
-/// Lo que se esta armando en pantalla antes de mandarlo al backend.
-///
-/// Es inmutable y se reemplaza entero con [copyWith]: la propuesta se construye
-/// en varios pasos -cabecera, costo sugerido, porcentajes, precios, articulos-
-/// y con un objeto mutable un paso pisaba lo escrito por el anterior sin que la
+/// Lo que se está armando en pantalla antes de enviarlo al backend. Es inmutable
+/// y se reemplaza entero con [copyWith]: la propuesta se arma en varios pasos y
+/// con un objeto mutable un paso pisaba lo escrito por el anterior sin que la
 /// pantalla se enterara.
 @immutable
 class EstadoPropuesta {
@@ -1211,9 +1132,8 @@ class EstadoPropuesta {
   /// Los articulos que el usuario incluyo en la propuesta.
   final List<ArticuloPrecioEntity> articulosSeleccionados;
 
-  /// Hay una escritura en vuelo. Existe para que el boton quede deshabilitado
-  /// mientras la peticion viaja: sin esto el usuario vuelve a tocar Guardar y
-  /// se generan registros duplicados, que es lo que pasaba en Bosque v2.
+  /// Hay una escritura en vuelo: deshabilita Guardar para no generar registros
+  /// duplicados.
   final bool cargando;
 
   /// Mensaje de negocio del backend, listo para mostrar sin traducir.
@@ -1229,9 +1149,7 @@ class EstadoPropuesta {
   /// Cuantos articulos entran en la propuesta.
   int get cantidadArticulos => articulosSeleccionados.length;
 
-  /// Las banderas de limpieza existen porque un null en `copyWith` no se
-  /// distingue de «no lo toques», y cerrar la propuesta o borrar el error son
-  /// acciones legitimas.
+  /// Banderas de limpieza: mismo motivo que en [FiltroFamilias.copyWith].
   EstadoPropuesta copyWith({
     PropuestaPrecioEntity? propuesta,
     CostoSugeridoEntity? costoSugerido,
@@ -1259,10 +1177,8 @@ class EstadoPropuesta {
   );
 }
 
-/// Escrituras del modulo de precios.
-///
-/// Cada metodo invalida las lecturas que su escritura deja viejas: la grilla se
-/// refresca sola y la pantalla no tiene que acordarse de recargar nada.
+/// Escrituras del módulo de precios. Cada método invalida las lecturas que su
+/// escritura deja viejas: la pantalla no tiene que recargar nada.
 class PropuestaNotifier extends StateNotifier<EstadoPropuesta> {
   PropuestaNotifier(this._ref) : super(const EstadoPropuesta());
 
@@ -1298,14 +1214,14 @@ class PropuestaNotifier extends StateNotifier<EstadoPropuesta> {
     }
   }
 
-  // ---------- Manejo del estado en pantalla ----------
+  // Manejo del estado en pantalla
 
   /// Abre una propuesta para editarla.
   void abrirPropuesta(PropuestaPrecioEntity propuesta) {
     state = EstadoPropuesta(propuesta: propuesta);
   }
 
-  /// Cierra el armado y vuelve a foja cero.
+  /// Cierra el armado y vuelve al estado inicial.
   void cerrarPropuesta() => state = const EstadoPropuesta();
 
   /// Borra el mensaje de error, tipicamente al cerrar el aviso.
@@ -1360,13 +1276,12 @@ class PropuestaNotifier extends StateNotifier<EstadoPropuesta> {
   /// Vacia la seleccion de articulos sin cerrar la propuesta.
   void limpiarArticulos() => fijarArticulos(const <ArticuloPrecioEntity>[]);
 
-  // ---------- Escrituras del armado ----------
+  // Escrituras del armado
 
-  // guardarPropuesta, guardarCostoSugerido, guardarPrecioPropuesta y
-  // guardarCostoFlete se quitaron el 2026-09-25 con sus endpoints: ninguna
-  // pantalla las usaba. Todo eso lo escribe el asistente (armadoProvider).
+  // El armado (propuesta, costo sugerido, precios, flete) lo escribe el asistente
+  // (armadoProvider).
 
-  // ---------- Circuito de autorizacion ----------
+  // Circuito de autorización
 
   /// Aprueba o rechaza una propuesta. Es la operacion mas sensible del modulo:
   /// con [esAprobada] en 1 los precios propuestos pasan a ser los precios de
@@ -1414,21 +1329,16 @@ final propuestaProvider =
       (ref) => PropuestaNotifier(ref),
     );
 
-// ═══════════════════════════════════════════════════════════════════════
-// Filtros de pantalla
-//
-// Locales al modulo: se reinician al salir, para que un filtro de una visita no
-// reaparezca en la siguiente.
-// ═══════════════════════════════════════════════════════════════════════
+// Filtros de pantalla: locales al módulo, se reinician al salir para que un
+// filtro de una visita no reaparezca en la siguiente.
 
 /// Texto del buscador de la tabla activa.
 final filtroBusquedaPrecioProvider = StateProvider.autoDispose<String>(
   (ref) => '',
 );
 
-/// Con lo que arranca el buscador de familias, y a lo que vuelve "Limpiar":
-/// las activas (pedido del 2026-09-25), que son las que se reprecian. Las
-/// inactivas quedan a un toque.
+/// Con lo que arranca el buscador de familias y a lo que vuelve «Limpiar»: las
+/// activas (las que se reprecian); las inactivas quedan a un toque.
 const filtroFamiliasInicial = FiltroFamilias(estado: 1);
 
 /// Criterios activos del buscador de familias.

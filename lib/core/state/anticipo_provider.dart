@@ -8,8 +8,7 @@ import 'package:bosque_flutter/domain/entities/empleado_entity.dart';
 import 'package:bosque_flutter/domain/entities/persona_entity.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-// ── Filtros persistentes: sobreviven al cambio de empresa ──────────────────
-// NO es autoDispose para que los valores se mantengan al cambiar de empresa
+// Filtros persistentes: no es autoDispose para conservar los valores al cambiar de empresa.
 class _FiltrosPersistidos {
   final String? estadoFiltro;
   final String mes;
@@ -44,9 +43,7 @@ final _filtrosPersistidosProvider = StateProvider<_FiltrosPersistidos>(
   ),
 );
 
-// ─────────────────────────────────────────────
-// ESTADO UNIFICADO DE ANTICIPOS
-// ─────────────────────────────────────────────
+// Estado unificado de anticipos
 class AnticipoState {
   final List<AnticipoEntity> items;
   final bool cargando;
@@ -107,9 +104,7 @@ class AnticipoState {
   );
 }
 
-// ─────────────────────────────────────────────
-// ESTADO DEL DETALLE (sin cambios)
-// ─────────────────────────────────────────────
+// Estado del detalle
 class AnticipoDetalleState {
   final List<AnticipoDetalleEntity> items;
   final bool cargando;
@@ -148,9 +143,7 @@ class AnticipoDetalleState {
   );
 }
 
-// ─────────────────────────────────────────────
-// NOTIFIER — ANTICIPOS UNIFICADO
-// ─────────────────────────────────────────────
+// Notifier de anticipos unificado
 class AnticipoNotifier extends StateNotifier<AnticipoState> {
   final AnticipoImpl _repo;
   final int codEmpresa;
@@ -185,7 +178,7 @@ class AnticipoNotifier extends StateNotifier<AnticipoState> {
     cargar();
   }
 
-  // FIX PUNTO 5: clearEstado: estado == null resuelve "TODOS no muestra nada"
+  // clearEstado limpia el filtro cuando estado es null (TODOS); sin él, TODOS no mostraba nada.
   void cambiarFiltrado({String? estado}) {
     state = state.copyWith(
       estadoFiltro: estado,
@@ -199,7 +192,7 @@ class AnticipoNotifier extends StateNotifier<AnticipoState> {
   Future<void> cargar() async {
     state = state.copyWith(cargando: true);
     try {
-      // PUNTO 3: codEmpresa==0 → null (TODAS las empresas)
+      // codEmpresa 0 = todas las empresas (se envía null)
       final empFiltro = codEmpresa == 0 ? null : codEmpresa;
       final data = await _repo.getAnticipos(
         state.pagina,
@@ -255,12 +248,9 @@ class AnticipoNotifier extends StateNotifier<AnticipoState> {
     }
   }
 
-  // Eliminar filtrarEstado() — era duplicado de cambiarFiltrado()
 }
 
-// ─────────────────────────────────────────────
-// NOTIFIER — DETALLE (sin cambios)
-// ─────────────────────────────────────────────
+// Notifier del detalle
 class AnticipoDetalleNotifier extends StateNotifier<AnticipoDetalleState> {
   final AnticipoImpl _repo;
 
@@ -297,9 +287,7 @@ class AnticipoDetalleNotifier extends StateNotifier<AnticipoDetalleState> {
   }
 }
 
-// ─────────────────────────────────────────────
-// PROVIDERS
-// ─────────────────────────────────────────────
+// Providers
 final _repoProvider = Provider((ref) => AnticipoImpl());
 
 final anticipoProvider = StateNotifierProvider.family
@@ -313,9 +301,7 @@ final anticipoDetalleProvider = StateNotifierProvider.autoDispose<
   AnticipoDetalleState
 >((ref) => AnticipoDetalleNotifier(ref.read(_repoProvider)));
 
-// ─────────────────────────────────────────────
-// ESTADO — ANTICIPOS SIN ASIGNAR (flujo de casamiento Tigo)
-// ─────────────────────────────────────────────
+// Estado de anticipos sin asignar (flujo de casamiento Tigo)
 class AsignacionAnticipoState {
   final List<AnticipoDetalleEntity> items;
   final bool cargando;
@@ -362,10 +348,7 @@ class AsignacionAnticipoState {
   );
 }
 
-// ─────────────────────────────────────────────
-// NOTIFIER — ANTICIPOS SIN ASIGNAR
-// Parametrizado por codEmpresa de la cabecera SAP seleccionada
-// ─────────────────────────────────────────────
+// Notifier de anticipos sin asignar, parametrizado por codEmpresa de la cabecera SAP seleccionada
 class AsignacionAnticipoNotifier
     extends StateNotifier<AsignacionAnticipoState> {
   final AnticipoImpl _repo;
@@ -378,7 +361,7 @@ class AsignacionAnticipoNotifier
   }
 
   Future<void> cargar() async {
-    if (!mounted) return; // ← AGREGAR
+    if (!mounted) return;
     state = state.copyWith(cargando: true);
     try {
       final data = await _repo.getAnticipoDetalleNoAsignado(
@@ -388,7 +371,7 @@ class AsignacionAnticipoNotifier
         state.search.isEmpty ? null : state.search,
         null,
       );
-      if (!mounted) return; // ← AGREGAR
+      if (!mounted) return;
       state = state.copyWith(
         items: data,
         cargando: false,
@@ -399,7 +382,7 @@ class AsignacionAnticipoNotifier
         totalRegistros: data.isNotEmpty ? (data.first.totalRegistros ?? 0) : 0,
       );
     } catch (e) {
-      if (!mounted) return; // ← AGREGAR
+      if (!mounted) return;
       state = state.copyWith(cargando: false, mensajeError: e.toString());
     }
   }
@@ -442,14 +425,12 @@ final asignacionAnticipoProvider = StateNotifierProvider.family
           AsignacionAnticipoNotifier(ref.read(_repoProvider), codEmpresa, ref),
     );
 
-// ─────────────────────────────────────────────
-// CLASES Y ESTADOS PARA ASIGNACIÓN MANUAL
-// ─────────────────────────────────────────────
+// Clases y estados para asignación manual
 class EmpleadoAsignacion {
   final int codEmpleado;
   final String nombreCompleto;
   final EmpleadoEntity?
-  empleado; // Ahora es opcional (solo lo tenemos al buscar uno nuevo)
+  empleado; // Opcional: solo se conoce al buscar un empleado nuevo
   String tipo;
   double monto;
   double montoCalculadoPrev;
@@ -498,9 +479,7 @@ class AsignacionManualState {
   );
 }
 
-// ─────────────────────────────────────────────
-// NOTIFIER — ASIGNACIÓN MANUAL
-// ─────────────────────────────────────────────
+// Notifier de asignación manual
 class AsignacionManualNotifier extends StateNotifier<AsignacionManualState> {
   final AnticipoImpl _repo;
   final Ref ref;
@@ -569,8 +548,7 @@ class AsignacionManualNotifier extends StateNotifier<AsignacionManualState> {
     state = state.copyWith(empleados: list, preview: []);
   }
 
-  /// Establece el tipo de distribución para TODOS los empleados a la vez.
-  /// Útil para el usuario que quiere distribuir todo automático o todo fijo.
+  /// Establece el tipo de distribución (A=auto, F=fijo) para todos los empleados a la vez.
   void setAllTipo(String tipo) {
     if (state.empleados.isEmpty) return;
     final list =
@@ -589,7 +567,6 @@ class AsignacionManualNotifier extends StateNotifier<AsignacionManualState> {
     state = state.copyWith(empleados: list, preview: []);
   }
 
-  // Modificamos el método para recibir el concepto de la cabecera
   String _generarXml(String conceptoCabecera) {
     final buffer = StringBuffer('<empleados>');
     final conceptoLimpio = conceptoCabecera.replaceAll('"', '&quot;');
@@ -746,9 +723,7 @@ class AsignacionManualNotifier extends StateNotifier<AsignacionManualState> {
   }
 }
 
-// ─────────────────────────────────────────────
-// PROVIDERS DE ASIGNACIÓN Y BÚSQUEDA MANUAL
-// ─────────────────────────────────────────────
+// Providers de asignación y búsqueda manual
 
 final asignacionManualProvider = StateNotifierProvider.autoDispose<
   AsignacionManualNotifier,

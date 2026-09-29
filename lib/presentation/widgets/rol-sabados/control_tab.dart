@@ -6,12 +6,11 @@ import 'package:bosque_flutter/presentation/widgets/rol-sabados/estilo_modulo.da
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-/// Los controles del rol: qué tan bien está funcionando el default.
+/// Los controles del rol: qué tan bien funciona el default.
 ///
-/// El módulo se diseñó para que el sistema resuelva solo y nadie tenga que
-/// confirmar nada. Esta pestaña es cómo se verifica esa promesa: si las
-/// intervenciones crecen, la regla por defecto no representa cómo se trabaja de
-/// verdad, y hay que arreglar la regla — no seguir corrigiendo a mano.
+/// El sistema debe resolver solo. Si las intervenciones crecen, la regla por
+/// defecto no representa cómo se trabaja y hay que arreglarla, no corregir a
+/// mano.
 class ControlTab extends ConsumerWidget {
   const ControlTab({super.key, required this.idRol});
 
@@ -40,7 +39,7 @@ class ControlTab extends ConsumerWidget {
   }
 }
 
-/// Marco común: título, subtítulo explicando qué se está mirando, y contenido.
+/// Marco común: título, subtítulo de qué se mira y contenido.
 class _Bloque extends StatelessWidget {
   const _Bloque({
     required this.titulo,
@@ -117,8 +116,6 @@ Widget _todoBien(BuildContext context, String texto) => Row(
     Expanded(child: Text(texto, style: Theme.of(context).textTheme.bodySmall)),
   ],
 );
-
-// ═══════════════════════════════════════════════════════════════════════════
 
 class _Automatizacion extends ConsumerWidget {
   const _Automatizacion({required this.idRol});
@@ -217,8 +214,6 @@ class _Metrica extends StatelessWidget {
   );
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-
 class _FeriadosDesincronizados extends ConsumerStatefulWidget {
   const _FeriadosDesincronizados({required this.idRol});
   final int idRol;
@@ -310,13 +305,10 @@ class _FeriadosDesincronizadosState
   }
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-
 /// Vacaciones, bajas y permisos que la grilla todavía no refleja.
 ///
-/// Es el control más caro de ignorar: la rotación A/B sabe a quién le toca, pero
-/// no sabe quién está de vacaciones. Sin cruzar, la grilla dice que alguien viene
-/// un sábado que RR.HH. ya le dio libre — y eso se descubre el sábado.
+/// La rotación A/B sabe a quién le toca pero no quién está de vacaciones; sin
+/// cruzar, la grilla marca a alguien que RR.HH. ya liberó y se descubre el sábado.
 class _Permisos extends ConsumerStatefulWidget {
   const _Permisos({required this.idRol});
   final int idRol;
@@ -428,11 +420,9 @@ class _PermisosState extends ConsumerState<_Permisos> {
   }
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-
-/// El biométrico (tbio_) pisa al rol de sábados: quién ya cumplió su cuota
-/// semanal de horas por un horario rotativo (p.ej. "Horario Extendido") y por
-/// eso el sábado que le tocaba por la rotación A/B se excusa solo.
+/// El biométrico (tbio_) pisa al rol: quién ya cumplió su cuota semanal de
+/// horas por un horario rotativo (p.ej. "Horario Extendido") y por eso se
+/// excusa del sábado que le tocaba por la rotación A/B.
 class _ExcusasHorario extends ConsumerStatefulWidget {
   const _ExcusasHorario({required this.idRol});
   final int idRol;
@@ -547,8 +537,6 @@ class _ExcusasHorarioState extends ConsumerState<_ExcusasHorario> {
   }
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-
 class _Programaciones extends ConsumerWidget {
   const _Programaciones({required this.idRol});
   final int idRol;
@@ -611,8 +599,6 @@ class _Programaciones extends ConsumerWidget {
   }
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-
 class _Cumples extends ConsumerWidget {
   const _Cumples({required this.idRol});
   final int idRol;
@@ -662,8 +648,8 @@ class _Cumples extends ConsumerWidget {
                       ),
                     ],
                   ),
-                  // La situación puede decir "ASUETO ANULADO POR EVENTO": como
-                  // trailing aplastaría el nombre, va debajo del subtítulo.
+                  // La situación puede decir "ASUETO ANULADO POR EVENTO": como trailing
+                  // aplastaría el nombre, va debajo del subtítulo.
                   isThreeLine: true,
                 ),
             ],
@@ -673,8 +659,6 @@ class _Cumples extends ConsumerWidget {
     );
   }
 }
-
-// ═══════════════════════════════════════════════════════════════════════════
 
 class _Intervenciones extends ConsumerWidget {
   const _Intervenciones({required this.idRol});
@@ -701,8 +685,8 @@ class _Intervenciones extends ConsumerWidget {
             );
           }
 
-          // Agrupar por tipo dice más que la lista cruda: si 40 de 45 son
-          // CORRECCION MANUAL, el problema es la regla, no la gente.
+          // Agrupar por tipo dice más: si 40 de 45 son CORRECCION MANUAL, el problema es
+          // la regla, no la gente.
           final porTipo = <String, int>{};
           for (final i in lista) {
             porTipo[i.tipoIntervencion] =

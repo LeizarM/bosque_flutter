@@ -7,11 +7,9 @@ import 'package:bosque_flutter/core/ui/estados_vista.dart';
 import 'package:bosque_flutter/core/ui/tokens_bosque.dart';
 import 'package:bosque_flutter/domain/entities/costo_iva_it_entity.dart';
 
-/// Lo que devuelve [DialogoImpuestosPrecio] cuando la persona confirma.
-///
-/// El dialogo NO escribe: solo junta los dos porcentajes y los valida. La
-/// escritura la hace la pantalla, que es la que tiene el repositorio y sabe
-/// que lecturas invalidar.
+/// Lo que devuelve [DialogoImpuestosPrecio] al confirmar. El diálogo NO escribe:
+/// solo junta y valida los dos porcentajes; la escritura la hace la pantalla
+/// (tiene el repositorio y sabe qué lecturas invalidar).
 @immutable
 class ResultadoImpuestos {
   const ResultadoImpuestos({required this.iva, required this.it});
@@ -23,15 +21,12 @@ class ResultadoImpuestos {
   final double it;
 }
 
-/// Formulario del IVA y el IT que entran en la formula de precio.
+/// Formulario del IVA y el IT que entran en la fórmula de precio.
 ///
-/// Es una ficha de configuracion, no un alta: tpr_costoIvaIt es un singleton y
-/// el procedimiento rechaza una segunda fila. Por eso el dialogo siempre edita
-/// [actual], y solo cuando la tabla esta vacia se comporta como carga inicial.
-///
-/// Los dos valores los lee TODO el calculo de precios del sistema, asi que
-/// antes de devolver el resultado se pide una confirmacion explicita que
-/// muestra el valor anterior y el nuevo.
+/// Es una ficha de configuración, no un alta: tpr_costoIvaIt es un singleton y
+/// el procedimiento rechaza una segunda fila; siempre edita [actual] y solo con
+/// la tabla vacía es carga inicial. Como TODO el cálculo de precios lee estos
+/// valores, se pide confirmación explícita mostrando el anterior y el nuevo.
 class DialogoImpuestosPrecio extends StatefulWidget {
   const DialogoImpuestosPrecio({super.key, this.actual});
 
@@ -67,9 +62,8 @@ class _DialogoImpuestosPrecioState extends State<DialogoImpuestosPrecio> {
     final tt = Theme.of(context).textTheme;
     final anterior = widget.actual;
 
-    // El total se recalcula mientras se escribe: es la cifra que el usuario
-    // reconoce -hoy 19,046 %- y equivocarse en un decimal se ve mejor en la
-    // suma que en cada campo por separado.
+    // El total se recalcula al escribir: es la cifra que el usuario reconoce (hoy
+    // 19,046 %) y un decimal errado se ve mejor en la suma que en cada campo.
     final ivaNuevo = _aNumero(_iva.text);
     final itNuevo = _aNumero(_it.text);
     final total =
@@ -188,8 +182,7 @@ class _DialogoImpuestosPrecioState extends State<DialogoImpuestosPrecio> {
     final it = _aNumero(_it.text)!;
     final anterior = widget.actual;
 
-    // Nada que guardar: se evita una escritura que no cambia nada, y de paso
-    // la confirmacion en vano.
+    // Nada que guardar: se evita una escritura y la confirmación en vano.
     if (anterior != null && anterior.iva == iva && anterior.it == it) {
       Navigator.pop(context);
       return;

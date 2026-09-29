@@ -24,10 +24,7 @@ class TabVendedores extends ConsumerWidget {
     final padding = ResponsiveUtilsBosque.getHorizontalPadding(context);
     final esMovil = ResponsiveUtilsBosque.isMobile(context);
 
-    // Cuantas filas se estan viendo. Se calcula sobre la lista ya
-    // filtrada, que es lo que el usuario tiene delante; mientras carga
-    // o si falla queda en null y no se dibuja, en vez de mostrar un
-    // cero que no es cierto.
+    // Null mientras carga o si falla: mejor sin conteo que un cero falso.
     final conteo = vendedores.whenOrNull(
       data: (l) {
         final n = _filtrar(l, busqueda).length;
@@ -118,21 +115,8 @@ class _Tabla extends StatelessWidget {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
 
-    // La tarjeta llena el hueco en vez de flotar, y deja de estirarse en un
-    // monitor ancho.
-    //
-    // Antes: SingleChildScrollView > Card > DataTable. El scroll recibe el alto
-    // del Expanded pero pinta a la Card con su alto intrinseco y la ancla
-    // arriba: con cuatro filas eran 224 px de tarjeta y ~700 de fondo pelado
-    // debajo. La pagina se veia sin terminar.
-    //
-    // Los dos constraints van en el MISMO ConstrainedBox y no en dos anidados:
-    // Align llama a constraints.loosen(), asi que un minHeight puesto por
-    // encima del Align se pierde y la tarjeta se vuelve a encoger.
-    //
-    // El math.max no es adorno: en un hueco mas bajo que el padding, la resta
-    // da negativo y el layout muere con "BoxConstraints has a negative minimum
-    // height".
+    // minHeight y maxWidth van en el MISMO ConstrainedBox (Align hace loosen() y
+    // un minHeight por encima se pierde); el math.max evita un alto negativo.
     return LayoutBuilder(
       builder: (context, hueco) {
         final alto = math.max(0.0, hueco.maxHeight - 24);
@@ -158,11 +142,9 @@ class _Tabla extends StatelessWidget {
                         (context, limites) => SingleChildScrollView(
                           scrollDirection: Axis.horizontal,
                           child: ConstrainedBox(
-                            // La tabla ocupa todo el ancho disponible. Con un minimo fijo
-                            // quedaba una franja vacia a la derecha en pantallas anchas.
                             // El ancho se mide FUERA del scroll horizontal: adentro
-                            // limites.maxWidth es infinito, math.max lo propaga y el
-                            // layout muere con "BoxConstraints forces an infinite width".
+                            // maxWidth es infinito y math.max lo propaga
+                            // ("BoxConstraints forces an infinite width").
                             constraints: BoxConstraints(
                               minWidth: math.max(760, limites.maxWidth),
                             ),

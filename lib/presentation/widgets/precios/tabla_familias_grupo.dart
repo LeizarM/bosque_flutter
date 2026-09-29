@@ -1,19 +1,8 @@
-/// Las familias de un grupo de familia SAP en la edicion masiva, con el tilde
-/// que dice a cuales se les aplica.
-///
-/// **El tilde incluye.** En el dialogo dlgPorcGrupo del sistema anterior la
-/// casilla marcada significaba "a esta familia no la toques", y la primera
-/// version de esta pantalla lo copio. El usuario dijo que no se entendia: una
-/// casilla marcada se lee como "si". Ahora la columna se llama "Aplicar", nace
-/// todo marcado -igual que antes nacia nada excluido- y la fila desmarcada se
-/// apaga y dice "No se toca".
-///
-/// Por dentro se sigue guardando el conjunto de las EXCLUIDAS ([excluidas]):
-/// es el que cambia poco, y lo que se escribe no depende de como se dibuja.
-///
-/// **El diseno cambia con el ancho, no se escala.** Escritorio: tabla con
-/// columnas y el tilde en linea. Movil: una tarjeta por familia con el tilde a
-/// la izquierda, sin scroll horizontal.
+/// Las familias de un grupo SAP en la edición masiva, con el tilde que dice a
+/// cuáles se les aplica. El tilde INCLUYE ("Aplicar", todo marcado al inicio; la
+/// fila desmarcada dice "No se toca"): en dlgPorcGrupo del sistema anterior
+/// marcado era "no la toques" y no se entendía. Por dentro se guarda el conjunto
+/// de las EXCLUIDAS ([excluidas]).
 library;
 
 import 'package:flutter/material.dart';
@@ -67,9 +56,8 @@ class TablaFamiliasGrupo extends StatelessWidget {
       );
     }
 
-    // El proveedor es lo primero que se va cuando el cajon aprieta: ayuda a
-    // reconocer la familia, pero la decision se toma con el codigo y con lo que
-    // hoy tiene cargado.
+    // El proveedor es lo primero que se va cuando el cajón aprieta: ayuda a reconocer
+    // la familia, pero la decisión se toma con el código y lo que hoy tiene cargado.
     final amplio = aire == Aire.amplio;
     final cs = Theme.of(context).colorScheme;
 

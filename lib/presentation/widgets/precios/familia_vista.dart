@@ -1,24 +1,11 @@
 /// La fila de la grilla de familias de producto, ya lista para dibujar.
 ///
-/// **Por que no se usa [ProductoFamiliaEntity] aca.** La entity es el reflejo
-/// crudo de tpr_producto: guarda los ids de las claves foraneas, no los nombres.
-/// Lo que la pantalla tiene que mostrar —"Bond", "Blanco", "80 a 120 g"— no es
-/// ninguna columna de esa tabla: sale de seis JOIN que resuelve el backend en el
-/// listado. El contrato de `PreciosRepository.obtenerFamilias` lo dice de
-/// frente: esas lecturas devuelven `Map<String, dynamic>` porque no hay tabla
-/// detras del DTO de despliegue.
-///
-/// Asi que esta clase es el unico lugar del modulo donde se tocan las claves de
-/// ese mapa. Todo lo demas —tabla, tarjeta, dialogo— habla con campos tipados y
-/// no con cadenas magicas: si el backend renombra una clave, se arregla aqui y
-/// no en cinco archivos.
-///
-/// **Los ids son opcionales a proposito.** El contrato documenta que el listado
-/// trae las descripciones y no los ids. Si el backend igual los manda, se leen
-/// y sirven para preseleccionar los combos del formulario con exactitud; si no
-/// vienen, el formulario cae a emparejar por descripcion (ver `dialogo_familia`)
-/// y esta clase deja los ids en null en lugar de inventar ceros, que son un
-/// valor con significado propio en este modulo ("sin asignar").
+/// No usa [ProductoFamiliaEntity]: los nombres ("Bond", "80 a 120 g") salen de
+/// seis JOIN del backend, no de tpr_producto (ver
+/// `PreciosRepository.obtenerFamilias`). Solo aquí se tocan las claves de ese
+/// mapa: si el backend renombra una, se arregla aquí. Los ids son opcionales (el
+/// listado trae descripciones): sin ellos quedan en null, no en cero ("sin
+/// asignar"), y el formulario empareja por descripción (`dialogo_familia`).
 library;
 
 import 'package:flutter/foundation.dart';
@@ -115,9 +102,9 @@ class FamiliaVista {
 
   String get codigoLegible => codigoFamilia.toString();
 
-  /// Costo por tonelada con dos decimales. El double se muestra redondeado
-  /// siempre: crudo arrastra la basura binaria de la representacion.
-  /// Como en los reportes: coma para los miles y punto para los decimales.
+  /// Costo por tonelada con dos decimales; el double se muestra redondeado
+  /// (crudo arrastra basura binaria). Como en los reportes: coma en miles y
+  /// punto en decimales.
   String get costoTmLegible => _fmtCosto.format(costoTM);
 
   /// Todavia no tiene costo cargado por una propuesta.
@@ -125,13 +112,9 @@ class FamiliaVista {
 
   bool get tienePropuestaAprobada => idPropuestaAprobada > BigInt.zero;
 
-  /// Lo que el catalogo llama "la familia" cuando se la nombra en una linea:
-  /// grupo, tipo, presentacion, gramaje y color. Es lo que va en la tarjeta de
-  /// movil, donde no entran nueve columnas.
-  ///
-  /// Se saltean las partes vacias en lugar de dejar separadores colgando: hay
-  /// familias sin grupo y sin proveedor asignado, y "· · Bond" no es una
-  /// descripcion.
+  /// Lo que el catálogo llama "la familia" en una línea: grupo, tipo,
+  /// presentación, gramaje y color (tarjeta de móvil). Se saltean las partes
+  /// vacías: hay familias sin grupo ni proveedor y "· · Bond" no es una descripción.
   String get descripcion {
     final partes = <String>[
       for (final p in [
@@ -158,11 +141,8 @@ class FamiliaVista {
       valor.trim().isEmpty ? '-' : valor.trim();
 }
 
-// ── Lectura defensiva del mapa ──────────────────────────────────────────────
-//
-// El backend responde JSON: un bigint puede llegar como numero o como cadena
-// segun por donde pase, y las columnas nulables de la tabla llegan en null. Se
-// lee todo con default en vez de confiar en el tipo.
+// Lectura defensiva del mapa: un bigint puede llegar como número o cadena según
+// por dónde pase y las columnas nulables llegan en null; se lee todo con default.
 
 int _entero(Object? valor) => switch (valor) {
   int v => v,
@@ -180,11 +160,9 @@ double _decimal(Object? valor) => switch (valor) {
 
 String _texto(Object? valor) => valor == null ? '' : valor.toString().trim();
 
-/// `p_list_producto 'L'` no devuelve NULL cuando falta el grupo o el
-/// proveedor SAP: devuelve una frase ("-Sin Grupo de Proveedor SAP
-/// Asignado-"). Tomada como nombre, no empareja con ningun catalogo -y la
-/// ficha creia que el proveedor "no figura"- y ocupa la celda entera. Vacio
-/// es lo que significa.
+/// `p_list_producto 'L'` no devuelve NULL sin grupo o proveedor SAP: devuelve una
+/// frase ("-Sin Grupo de Proveedor SAP Asignado-") que no empareja con ningún
+/// catálogo y ocupa la celda entera. Vacío es lo que significa.
 String _sinRelleno(String valor) => valor.startsWith('-Sin') ? '' : valor;
 
 /// Null cuando la clave no vino: ese dato lo usa el formulario para saber si

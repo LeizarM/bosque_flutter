@@ -1,4 +1,3 @@
-// Destino final: lib/core/state/arqueo_caja_sucursales_provider.dart
 import 'package:bosque_flutter/data/repositories/arqueo_caja_sucursales_impl.dart';
 import 'package:bosque_flutter/domain/entities/arqueo_caja_sucursales_entity.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';

@@ -21,9 +21,7 @@ final garantiasRepositoryProvider = Provider<GarantiasRepository>(
   (ref) => GarantiasImpl(),
 );
 
-// ═══════════════════════════════════════════════════════════════════════
-// Filtro del reporte de busqueda
-// ═══════════════════════════════════════════════════════════════════════
+// Filtro del reporte de búsqueda
 
 /// Los filtros de `/garantias/listar` y `/garantias/reporte/busqueda`.
 /// Todos nulables: null no filtra.
@@ -82,12 +80,8 @@ class FiltroGarantias {
   );
 }
 
-// ═══════════════════════════════════════════════════════════════════════
-// Lecturas
-//
-// FutureProvider autoDispose: la pantalla usa .when(...) y, al salir del
-// modulo, todo se libera y la proxima visita vuelve a leer.
-// ═══════════════════════════════════════════════════════════════════════
+// Lecturas: FutureProvider autoDispose; la pantalla usa .when(...) y al salir
+// del módulo se libera todo y la próxima visita vuelve a leer.
 
 /// La grilla principal: una fila por cliente con garantias. Se trae entera
 /// (son unos pocos cientos) y el buscador filtra en memoria, sin viajar.
@@ -193,9 +187,7 @@ Future<List<ClienteSapEntity>> buscarClientesSap(
   return ref.read(garantiasRepositoryProvider).buscarClientesSap(t);
 }
 
-// ═══════════════════════════════════════════════════════════════════════
 // Escrituras
-// ═══════════════════════════════════════════════════════════════════════
 
 @immutable
 class EstadoOperacionGarantia {

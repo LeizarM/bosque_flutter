@@ -1,4 +1,3 @@
-// Destino final: lib/core/state/caja_chica_provider.dart
 import 'package:bosque_flutter/data/repositories/caja_chica_impl.dart';
 import 'package:bosque_flutter/domain/entities/caja_chica_entity.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';

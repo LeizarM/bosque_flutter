@@ -6,9 +6,7 @@ import 'package:bosque_flutter/domain/entities/lote_produccion_entity.dart';
 import 'package:bosque_flutter/domain/entities/resmado_entity.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-// ─────────────────────────────────────────────────────────────────────────────
 // State
-// ─────────────────────────────────────────────────────────────────────────────
 
 class ResmadoRegistroState {
   // Catálogos
@@ -106,9 +104,7 @@ class ResmadoRegistroState {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
 // Notifier
-// ─────────────────────────────────────────────────────────────────────────────
 
 class ResmadoRegistroNotifier extends StateNotifier<ResmadoRegistroState> {
   final ResmadoImpl _repo = ResmadoImpl();
@@ -307,9 +303,7 @@ class ResmadoRegistroNotifier extends StateNotifier<ResmadoRegistroState> {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
 // Provider (family: recibe [audUsuario, codEmpleado])
-// ─────────────────────────────────────────────────────────────────────────────
 
 typedef ResmadoParams = ({int audUsuario, int codEmpleado});
 

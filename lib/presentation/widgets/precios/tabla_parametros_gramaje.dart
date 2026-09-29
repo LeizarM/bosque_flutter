@@ -4,12 +4,11 @@ import 'package:bosque_flutter/core/ui/piezas_bosque.dart';
 import 'package:bosque_flutter/core/ui/tokens_bosque.dart';
 import 'package:bosque_flutter/domain/entities/grupo_fam_tipo_rango_gram_entity.dart';
 
-/// Una asignacion de gramaje con sus tres descripciones ya resueltas.
+/// Una asignación de gramaje con sus tres descripciones ya resueltas.
 ///
-/// La entity guarda ids -y ademas int, no BigInt, porque asi son las columnas
-/// de tpr_grupoFamTipoRangoGram-, pero en pantalla nadie reconoce un id: el
-/// cruce contra los catalogos se hace una sola vez, en la pantalla, y la tabla
-/// recibe el texto listo para dibujar.
+/// La entity guarda ids (int, no BigInt: así son las columnas de
+/// tpr_grupoFamTipoRangoGram); el cruce contra los catálogos se hace una vez, en
+/// la pantalla, y la tabla recibe el texto listo.
 @immutable
 class FilaParametroGramaje {
   const FilaParametroGramaje({
@@ -47,17 +46,13 @@ class FilaParametroGramaje {
   }
 }
 
-/// El listado de parametros de gramaje, en sus dos formas.
+/// El listado de parámetros de gramaje, en sus dos formas.
 ///
-/// El layout NO es el mismo escalado: en escritorio es una tabla con columnas
-/// y acciones en linea, y en movil son tarjetas con las acciones en un menu
-/// contextual. El corte se decide con el [Aire] que mide la pantalla sobre el
-/// ancho del cajon, no con `MediaQuery`: adentro del dashboard el sidebar se
-/// come 260 px y la ventana miente.
-///
-/// Son cinco columnas, asi que reparten el ancho sin scroll horizontal. Si
-/// algun dia se agregan mas, el patron correcto es el de TablaLotes -cabecera
-/// fija y scroll horizontal controlado-, no apretar estas.
+/// Escritorio: tabla con acciones en línea; móvil: tarjetas con menú contextual.
+/// El corte lo decide el [Aire] sobre el ancho del cajón, no `MediaQuery`: en el
+/// dashboard el sidebar se come 260 px y la ventana miente. Son cinco columnas
+/// sin scroll horizontal; si se agregan más, usar el patrón de TablaLotes
+/// (cabecera fija y scroll horizontal controlado), no apretar estas.
 class TablaParametrosGramaje extends StatelessWidget {
   const TablaParametrosGramaje({
     super.key,

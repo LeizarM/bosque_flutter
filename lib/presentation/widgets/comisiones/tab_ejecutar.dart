@@ -12,12 +12,10 @@ import 'package:bosque_flutter/presentation/widgets/comisiones/comisiones_tema.d
 import 'package:bosque_flutter/presentation/widgets/comisiones/reportes_pagadas.dart';
 import 'package:bosque_flutter/presentation/widgets/comisiones/dialogo_items_pagados.dart';
 
-/// Carga y ejecución del período de comisiones.
-///
-/// Son dos pasos deliberadamente separados. Cargar prepara las notas y se puede
-/// repetir; ejecutar hace el corte y no tiene vuelta atrás desde la aplicación.
-/// En Bosque v2 los dos botones vivían en el mismo wizard y el único freno era
-/// una bandera de pantalla que se perdía al refrescar.
+/// Carga y ejecución del período de comisiones. Son dos pasos deliberadamente
+/// separados: cargar prepara las notas y se puede repetir; ejecutar hace el
+/// corte y no tiene vuelta atrás desde la aplicación (en Bosque v2 ambos botones
+/// vivían en el mismo wizard con un freno que se perdía al refrescar).
 class TabEjecutar extends ConsumerWidget {
   const TabEjecutar({super.key});
 
@@ -47,16 +45,10 @@ class TabEjecutar extends ConsumerWidget {
       children: [
         _SelectorPeriodo(periodo: periodo),
         const SizedBox(height: 20),
-        // Los reportes de lo ya pagado, incluido el de importacion, que en el
-        // ERP viejo vivian en esta misma pestania. AlcanceReportes.todos y no
-        // `pagadas`: `pagadas` es el recorte que usa Preliminar, donde el de
-        // importacion no corresponde -esas notas no llevan comision por
-        // familia-. Aca corresponde, y es el unico lugar de la app desde donde
-        // se llega.
-        //
-        // Sin permiso propio a proposito: la pestania ya esta detras de
-        // TabEjecutar, y el XHTML tampoco ponia candado a los botones de
-        // adentro de un panel ya protegido.
+        // Reportes de lo ya pagado, incluido el de importación (en el ERP viejo
+        // vivían aquí). AlcanceReportes.todos y no `pagadas` (recorte de Preliminar,
+        // donde el de importación no corresponde). Sin permiso propio: la pestaña
+        // ya está protegida.
         BarraReportesPagadas(
           padding: 0,
           alcance: AlcanceReportes.todos,
@@ -82,8 +74,6 @@ class TabEjecutar extends ConsumerWidget {
     );
   }
 }
-
-// ── Selector de período ───────────────────────────────────────────────
 
 class _SelectorPeriodo extends ConsumerWidget {
   const _SelectorPeriodo({required this.periodo});
@@ -165,8 +155,6 @@ class _SelectorPeriodo extends ConsumerWidget {
   }
 }
 
-// ── Contenido según el estado ─────────────────────────────────────────
-
 class _Contenido extends ConsumerWidget {
   const _Contenido({required this.periodo, required this.estado});
 
@@ -242,11 +230,10 @@ class _PeriodoCerrado extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 18),
-            // La entrada al detalle congelado vive aca porque esta es la unica
-            // pantalla del modulo que tiene los tres datos que el SP exige
-            // -mes, anio y esInterno- ya resueltos y en la misma fila. Y es la
-            // que corresponde: el congelado se escribe al ejecutar, asi que su
-            // detalle es el comprobante de lo que se acaba de hacer.
+            // La entrada al detalle congelado vive aquí: es la única pantalla que
+            // tiene resueltos en la misma fila los tres datos que exige el SP
+            // (mes, año, esInterno), y el congelado se escribe al ejecutar: es el
+            // comprobante de lo que se acaba de hacer.
             Align(
               alignment: Alignment.centerLeft,
               child: OutlinedButton.icon(
@@ -266,9 +253,9 @@ class _PeriodoCerrado extends StatelessWidget {
                           ),
                     ),
                 icon: const Icon(Icons.rule_folder_outlined, size: 18),
-                // El rotulo nombra lo EXCLUIDO y no «ver detalle»: es lo que
-                // no se podia consultar en ningun lado, y es la pregunta que
-                // trae a alguien a esta pantalla.
+                // El rótulo nombra lo EXCLUIDO y no «ver detalle»: es lo que no
+                // se podía consultar en ningún lado y la pregunta que trae a
+                // alguien aquí.
                 label: const Text('Ver qué quedó fuera del descuento'),
               ),
             ),
@@ -451,8 +438,6 @@ class _PeriodoAbierto extends ConsumerWidget {
     }
   }
 }
-
-// ── Piezas ────────────────────────────────────────────────────────────
 
 class _Paso extends StatelessWidget {
   const _Paso({

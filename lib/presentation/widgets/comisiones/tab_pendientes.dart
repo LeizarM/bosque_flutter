@@ -11,24 +11,15 @@ import 'package:bosque_flutter/presentation/widgets/comisiones/barra_comparativa
 import 'package:bosque_flutter/presentation/widgets/comisiones/estado_vista.dart';
 import 'package:bosque_flutter/presentation/widgets/comisiones/comisiones_tema.dart';
 
-/// Notas cerradas que todavía no se pagaron, y descarga de los reportes.
-///
-/// En Bosque v2 esta lista existía pero nunca se llenaba: el método que la
-/// cargaba estaba comentado, así que el diálogo salía siempre vacío y lo único
-/// que funcionaba era el PDF.
-/// Lo que se escribió en el buscador de esta pestaña.
-///
-/// Propio y no `filtroBusquedaComisionProvider`: ese lo comparten Vendedores,
-/// Grupos y Asignaciones, y el texto se arrastraría al cambiar de pestaña. Son
-/// búsquedas distintas sobre datos distintos.
+/// Texto del buscador de esta pestaña. Propio y no `filtroBusquedaComisionProvider`
+/// (compartido por Vendedores, Grupos y Asignaciones): el texto se arrastraría al
+/// cambiar de pestaña.
 final filtroPendientesProvider = StateProvider.autoDispose<String>((_) => '');
 
-/// Filtra por vendedor o por número de documento.
-///
-/// Con búsqueda activa se van también las filas de TOTAL: el SP las calcula
-/// sobre TODAS las notas, así que junto a un detalle filtrado mostrarían un
-/// número que no corresponde a lo que se está viendo. El conteo real de lo
-/// visible va en la barra.
+/// Filtra por vendedor o número de documento. Con búsqueda activa se van también
+/// las filas de TOTAL: el SP las calcula sobre TODAS las notas y, junto a un
+/// detalle filtrado, mostrarían un número que no corresponde. El conteo real de
+/// lo visible va en la barra.
 List<NotaPendienteEntity> _filtrar(
   List<NotaPendienteEntity> lista,
   String busqueda,
@@ -107,6 +98,7 @@ class _BuscadorPendientes extends StatelessWidget {
   }
 }
 
+/// Notas cerradas que todavía no se pagaron.
 class TabPendientes extends ConsumerWidget {
   const TabPendientes({super.key});
 
@@ -120,13 +112,10 @@ class TabPendientes extends ConsumerWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        // La barra de reportes de comisiones pagadas vive solo en Preliminar.
-        // Estaba tambien aca y era una repeticion sin publico: no hay ningun
-        // usuario que abra Pendientes y no abra Preliminar -btnComPendientes
-        // esta en cero para los 128 `lim`, y los 6 `adm` ven las ocho
-        // pestanas-. El ERP viejo la repetia en sus cinco pestanas porque cada
-        // una era independiente; aca es un widget compartido y con una vez
-        // alcanza.
+        // La barra de reportes de pagadas vive solo en Preliminar: nadie abre
+        // Pendientes sin abrir Preliminar (btnComPendientes está en cero para los
+        // 128 `lim`; los 6 `adm` ven las ocho pestañas). El ERP viejo la repetía en
+        // cada pestaña.
         _BuscadorPendientes(
           padding: padding,
           texto: busqueda,
@@ -153,9 +142,8 @@ class TabPendientes extends ConsumerWidget {
             loading:
                 () => EstadoVista.cargandoTabla(
                   context,
-                  // Ocho: las mismas que declara la DataTable de abajo. Un
-                  // esqueleto con menos columnas hace saltar la tabla al
-                  // llegar los datos.
+                  // Ocho: las mismas columnas que declara la DataTable; con menos,
+                  // la tabla salta al llegar los datos.
                   columnas: 8,
                   filas: 7,
                 ),
@@ -168,11 +156,10 @@ class TabPendientes extends ConsumerWidget {
             data: (listaCruda) {
               final lista = _filtrar(listaCruda, busqueda);
               if (lista.isEmpty) {
-                // Dos vacíos distintos y no se pueden decir igual: que no
-                // quede nada por cobrar es una buena noticia; que la búsqueda
-                // no encuentre nada es que hay que cambiar el texto. Con el
-                // mensaje único, escribir un apellido mal tecleado anunciaba
-                // que estaba todo pagado.
+                // Dos vacíos distintos: que no quede nada por cobrar es buena
+                // noticia; que la búsqueda no encuentre nada es que hay que cambiar
+                // el texto (con mensaje único, un apellido mal tecleado anunciaba
+                // que todo estaba pagado).
                 final buscando = busqueda.trim().isNotEmpty;
                 return EstadoVista.vacio(
                   context,
@@ -219,10 +206,8 @@ class TabPendientes extends ConsumerWidget {
   }
 }
 
-/// Cifras de cabecera.
-///
-/// La tabla sola no dice cuanto se debe en total ni a cuanta gente: hay que
-/// bajar hasta la ultima fila para enterarse. Estas tarjetas lo ponen arriba.
+/// Cifras de cabecera: la tabla sola no dice cuánto se debe en total ni a
+/// cuánta gente sin bajar hasta la última fila.
 class _Resumen extends StatelessWidget {
   const _Resumen({required this.notas, required this.padding});
 
@@ -278,10 +263,6 @@ class _Resumen extends StatelessWidget {
   }
 }
 
-// ── Reportes ──────────────────────────────────────────────────────────
-
-// ── Tabla de escritorio ───────────────────────────────────────────────
-
 class _Tabla extends StatelessWidget {
   const _Tabla({required this.notas, required this.padding});
 
@@ -292,21 +273,8 @@ class _Tabla extends StatelessWidget {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
 
-    // La tarjeta llena el hueco en vez de flotar, y deja de estirarse en un
-    // monitor ancho.
-    //
-    // Antes: SingleChildScrollView > Card > DataTable. El scroll recibe el alto
-    // del Expanded pero pinta a la Card con su alto intrinseco y la ancla
-    // arriba: con cuatro filas eran 224 px de tarjeta y ~700 de fondo pelado
-    // debajo. La pagina se veia sin terminar.
-    //
-    // Los dos constraints van en el MISMO ConstrainedBox y no en dos anidados:
-    // Align llama a constraints.loosen(), asi que un minHeight puesto por
-    // encima del Align se pierde y la tarjeta se vuelve a encoger.
-    //
-    // El math.max no es adorno: en un hueco mas bajo que el padding, la resta
-    // da negativo y el layout muere con "BoxConstraints has a negative minimum
-    // height".
+    // minHeight y maxWidth van en el MISMO ConstrainedBox (Align hace loosen() y
+    // un minHeight por encima se pierde); el math.max evita un alto negativo.
     return LayoutBuilder(
       builder: (context, hueco) {
         final alto = math.max(0.0, hueco.maxHeight - 36);
@@ -332,11 +300,9 @@ class _Tabla extends StatelessWidget {
                         (context, limites) => SingleChildScrollView(
                           scrollDirection: Axis.horizontal,
                           child: ConstrainedBox(
-                            // La tabla ocupa todo el ancho disponible. Con un minimo fijo
-                            // quedaba una franja vacia a la derecha en pantallas anchas.
                             // El ancho se mide FUERA del scroll horizontal: adentro
-                            // limites.maxWidth es infinito, math.max lo propaga y el
-                            // layout muere con "BoxConstraints forces an infinite width".
+                            // maxWidth es infinito y math.max lo propaga
+                            // ("BoxConstraints forces an infinite width").
                             constraints: BoxConstraints(
                               minWidth: math.max(900, limites.maxWidth),
                             ),
@@ -491,8 +457,6 @@ class _Num extends StatelessWidget {
     );
   }
 }
-
-// ── Tarjetas para móvil ───────────────────────────────────────────────
 
 class _Tarjetas extends StatelessWidget {
   const _Tarjetas({required this.notas, required this.padding});

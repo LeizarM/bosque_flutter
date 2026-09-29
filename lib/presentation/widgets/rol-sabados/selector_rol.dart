@@ -7,10 +7,10 @@ import 'package:bosque_flutter/presentation/widgets/rol-sabados/estilo_modulo.da
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-/// El combo que elige qué rol se está mirando, con su resumen al lado.
+/// El combo que elige qué rol se mira, con su resumen al lado.
 ///
-/// Vive arriba de las cuatro pestañas y no dentro de una: todas hablan del mismo
-/// rol, y tenerlo repetido sería cuatro lugares donde desincronizarse.
+/// Vive arriba de las pestañas: todas hablan del mismo rol y repetirlo sería
+/// cuatro lugares donde desincronizarse.
 class SelectorDeRol extends ConsumerWidget {
   const SelectorDeRol({super.key});
 
@@ -36,9 +36,8 @@ class SelectorDeRol extends ConsumerWidget {
             ),
         data: (lista) {
           if (lista.isEmpty) {
-            // Esto se va a leer entero cada 1 de enero, hasta que alguien cree
-            // el rol del año. Señalar «arriba a la derecha» a quien no tiene la
-            // varita es mandarlo a mirar un lugar vacío.
+            // Se lee entero cada 1 de enero, hasta que alguien cree el rol del año; señalar
+            // «arriba a la derecha» a quien no tiene la varita lo manda a un lugar vacío.
             return Text(
               ref.watch(administraRolProvider)
                   ? 'Todavía no hay ningún rol generado. Crea uno con la varita '
@@ -80,8 +79,8 @@ class SelectorDeRol extends ConsumerWidget {
                 (v) => ref.read(rolSeleccionadoProvider.notifier).state = v,
           );
 
-          // En pantalla chica el combo de 260 px más los chips no entran en una
-          // fila: 260 + 32 de padding ya son 292 de los 360 que hay.
+          // En pantalla chica el combo de 260 px más los chips no entran en una fila:
+          // 260 + 32 de padding ya son 292 de los 360.
           if (Aire.de(MediaQuery.sizeOf(context).width).esChico) {
             return Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -114,8 +113,8 @@ class ResumenDelRol extends StatelessWidget {
 
   final RolSabadosEntity rol;
 
-  /// Apilado bajo el combo: no hay una Row de la que ocupar el resto, así que
-  /// el `Expanded` sobra — y adentro de una Column tira excepción.
+  /// Apilado bajo el combo: no hay Row de la que ocupar el resto, así que el
+  /// `Expanded` sobra (y dentro de una Column lanza excepción).
   final bool apilado;
 
   @override
@@ -138,21 +137,14 @@ class ResumenDelRol extends StatelessWidget {
   }
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// EL ALCANCE: QUÉ EMPRESA Y CUÁNTAS SUCURSALES HAY ADENTRO
-// ═══════════════════════════════════════════════════════════════════════════
+// El alcance: qué empresa y cuántas sucursales hay adentro
 
 /// Empresa y sucursales que el rol abarca de verdad, contadas sobre su gente.
 ///
-/// **No sale del rol, y no es un atajo.** `trs_Rol.codEmpresa` y `codSucursal`
-/// vienen en NULL porque el rol se genera global: preguntarle al rol por su
-/// alcance devolvería vacío siempre. El alcance existe una sola vez, repartido
-/// en los participantes, así que se cuenta desde ahí.
-///
-/// Se lee de `grillaRolProvider`, que es el mismo que ya está cargando la
-/// pantalla: no agrega ningún viaje de red. Mientras no haya participantes no
-/// dibuja nada — ni un cero ni un esqueleto. Un «0 sucursales» de medio segundo
-/// se lee como un dato, y es el más alarmante que este chip puede dar.
+/// **No sale del rol**: `trs_Rol.codEmpresa` y `codSucursal` vienen en NULL (el
+/// rol se genera global), así que el alcance se cuenta desde los participantes.
+/// Se lee de `grillaRolProvider` (ya cargado, sin viaje extra). Sin
+/// participantes no dibuja nada: un «0 sucursales» de medio segundo alarma.
 class AlcanceDelRol extends ConsumerWidget {
   const AlcanceDelRol({super.key, required this.idRol});
 
@@ -174,11 +166,9 @@ class AlcanceDelRol extends ConsumerWidget {
         borderRadius: BorderRadius.circular(4),
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: Esp.xs),
-          // Text.rich y no un Row: adentro de un Wrap, un Text envuelve solo
-          // cuando no entra, y un Row se pasa del borde. En 360 px apilado el
-          // chip queda con ~328 px y «GENERAL · SANTA CRUZ PLANTA INDUSTRIAL»
-          // no entra en una línea — así cae a dos, entero, sin recortar el
-          // nombre de la sucursal.
+          // Text.rich y no Row: dentro de un Wrap un Text envuelve cuando no entra y un
+          // Row se pasa del borde. En 360 px apilado el chip queda con ~328 px y
+          // «GENERAL · SANTA CRUZ PLANTA INDUSTRIAL» cae a dos líneas, sin recortar.
           child: Text.rich(
             TextSpan(
               children: [
@@ -219,9 +209,8 @@ class AlcanceDelRol extends ConsumerWidget {
                     style: ctx.tituloSeccion(),
                   )
                 else if (a.empresas.length > 1)
-                  // La anomalía que alguien querría ver: el rol es global, así
-                  // que puede juntar sucursales de empresas distintas sin que
-                  // nada lo avise. Aquí se avisa.
+                  // Anomalía visible: el rol es global y puede juntar sucursales de empresas
+                  // distintas sin que nada lo avise.
                   Text(
                     'Este rol junta ${a.empresas.length} empresas.',
                     style: ctx.tituloSeccion()?.copyWith(color: ctx.cs.error),
@@ -231,8 +220,8 @@ class AlcanceDelRol extends ConsumerWidget {
                   _FilaDeAlcance(
                     titulo: s.key,
                     cantidad: s.value,
-                    // La empresa sólo se repite por sucursal cuando hay más de
-                    // una: si es una sola, ya se nombró arriba.
+                    // La empresa sólo se repite por sucursal si hay más de una; si es una sola, ya
+                    // se nombró arriba.
                     detalle:
                         a.empresas.length > 1 ? a.empresaDe[s.key] ?? '' : '',
                   ),
@@ -273,8 +262,8 @@ class _FilaDeAlcance extends StatelessWidget {
   final int cantidad;
   final String detalle;
 
-  /// Pinta el número con el rol de error. Es lo único con color aquí: la
-  /// sucursal es contexto, pero «nadie le puso sucursal» sí es un estado.
+  /// Pinta el número con el rol de error: es lo único con color aquí («nadie le
+  /// puso sucursal» sí es un estado; la sucursal es contexto).
   final bool esProblema;
 
   @override
@@ -283,9 +272,8 @@ class _FilaDeAlcance extends StatelessWidget {
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // El nombre va en Expanded: en 360 px el diálogo deja ~280 px de
-        // contenido y «SANTA CRUZ PLANTA INDUSTRIAL» no entra al lado del
-        // número. Así envuelve en vez de empujar la cuenta fuera del borde.
+        // El nombre va en Expanded: en 360 px el diálogo deja ~280 px y «SANTA CRUZ
+        // PLANTA INDUSTRIAL» no entra junto al número; así envuelve en vez de empujar.
         Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -312,13 +300,11 @@ class _FilaDeAlcance extends StatelessWidget {
 
 /// Cuánta gente hay por sucursal y de qué empresas, ya ordenado y contado.
 ///
-/// Es una clase y no tres variables sueltas porque las tres respuestas —qué
-/// empresa, cuántas sucursales, cuántos quedaron afuera— salen de la misma
-/// pasada y tienen que contar lo mismo. Separadas, tarde o temprano una suma 85
-/// y otra 84.
+/// Una clase porque empresa, sucursales y «afuera» salen de la misma pasada y
+/// deben contar lo mismo (separadas, una sumaría 85 y otra 84).
 class Alcance {
-  /// Sucursales de mayor a menor. A igual cantidad, alfabético: sin desempate
-  /// la lista se reordenaría sola entre dos cargas y parecería que cambió algo.
+  /// Sucursales de mayor a menor; a igual cantidad, alfabético (sin desempate se
+  /// reordenaría sola entre cargas).
   final List<MapEntry<String, int>> porSucursal;
 
   /// A qué empresa pertenece cada sucursal.
@@ -327,8 +313,8 @@ class Alcance {
   /// Las empresas distintas que aparecen. Más de una es una anomalía visible.
   final Set<String> empresas;
 
-  /// Gente que llegó con la sucursal vacía. **Se cuenta aparte y se dice.**
-  /// Mezclarla con el resto escondería a quien no tiene ningún feriado.
+  /// Gente con la sucursal vacía. **Se cuenta aparte y se dice**: mezclarla
+  /// escondería a quien no tiene ningún feriado.
   final int sinSucursal;
 
   const Alcance({
@@ -368,10 +354,8 @@ class Alcance {
     );
   }
 
-  /// La línea del encabezado. Vacía = no hay nada que decir, y ahí no se dibuja.
-  ///
-  /// Con UNA sucursal se dice su nombre y no «1 sucursal»: el número no informa
-  /// nada que el nombre no diga mejor, y de paso deja claro cuál es.
+  /// La línea del encabezado. Vacía = nada que decir (no se dibuja). Con UNA
+  /// sucursal se dice su nombre y no «1 sucursal».
   String get resumen {
     final partes = <String>[
       if (empresas.length == 1)
@@ -388,15 +372,12 @@ class Alcance {
   }
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// EL ESTADO DEL ROL: ETIQUETA PARA TODOS, CONTROL PARA RR.HH.
-// ═══════════════════════════════════════════════════════════════════════════
+// El estado del rol: etiqueta para todos, control para RR.HH.
 
 /// Un paso posible del ciclo de vida del rol, con lo que hay que decir antes.
 ///
-/// Están aquí como datos y no como tres ramas de un `if` porque el texto es la
-/// mitad de la función: quien aprieta tiene que saber QUÉ deja de andar antes
-/// de apretar, no después.
+/// Son datos y no ramas de un `if` porque el texto es la mitad de la función:
+/// quien aprieta debe saber QUÉ deja de andar antes de apretar.
 enum PasoDelRol {
   publicar(
     destino: 'PUBLICADO',
@@ -472,15 +453,10 @@ enum PasoDelRol {
 
   /// A dónde se puede ir desde [estado].
   ///
-  /// **`CERRADO` no lleva a ningún lado, y no es una omisión.** El SP corta con
-  /// «El rol esta CERRADO; no admite modificaciones» en la primera validación
-  /// del UPDATE, antes de mirar el `@estado` que se le manda: un menú con
-  /// «Reabrir» ahí sería un botón que siempre falla.
-  ///
-  /// **Desde `BORRADOR` tampoco se ofrece cerrar**, aunque el SP lo aceptaría.
-  /// Cerrar es «este año ya está, no se toca más», y un año que nunca se
-  /// publicó no llegó a estar. Que el paso definitivo exija pasar por PUBLICADO
-  /// obliga a cruzar una confirmación más antes de la puerta sin picaporte.
+  /// **`CERRADO` no lleva a ningún lado:** el SP corta con «El rol esta CERRADO;
+  /// no admite modificaciones» antes de mirar `@estado`. **Desde `BORRADOR` no se
+  /// ofrece cerrar** (el SP lo aceptaría): el paso definitivo exige pasar por
+  /// PUBLICADO.
   static List<PasoDelRol> desde(String estado) => switch (estado) {
     'BORRADOR' => const [PasoDelRol.publicar],
     'PUBLICADO' => const [PasoDelRol.reabrir, PasoDelRol.cerrar],
@@ -490,23 +466,11 @@ enum PasoDelRol {
 
 /// La etiqueta del estado, que para RR.HH. además es el control.
 ///
-/// Es la misma pieza para los dos porque el estado es UNO: si el control
-/// viviera en otro lado —un botón en la barra, una pantalla de ajustes— habría
-/// dos lugares que dicen en qué estado está el rol y tarde o temprano dirían
-/// cosas distintas.
-///
-/// **Quién puede: [administraRolProvider]** — Sistemas o RR.HH. Es el mismo
-/// portón que los ABM y la varita, y por la misma razón: mover el estado del año
-/// decide qué puede hacer todo el resto de la empresa, así que no lo decide
-/// alguien que va a usar el permiso. Para los demás la etiqueta sigue siendo una
-/// etiqueta y ni siquiera se ve que se pueda apretar.
-///
-/// **Esto era `ROLE_ADM` estricto y tenía que dejar de serlo el mismo día que
-/// RR.HH. ganó la varita.** Reabrir a BORRADOR es el ÚNICO camino para regenerar
-/// un rol publicado —`trs_sp_generarRol` lo rechaza y en el mensaje manda aquí—,
-/// y hoy los dos únicos usuarios del padrón de RR.HH. son `lim`. Dejar la varita
-/// de un lado y la palanca del otro es dar un botón cuyo único desenlace posible
-/// es un error cuyas instrucciones no se pueden seguir.
+/// **Quién puede: [administraRolProvider]** (Sistemas o RR.HH.), el mismo portón
+/// que los ABM y la varita: mover el estado decide qué puede hacer toda la
+/// empresa. Reabrir a BORRADOR es el ÚNICO camino para regenerar un rol
+/// publicado (`trs_sp_generarRol` lo rechaza y remite aquí), así que darle a
+/// RR.HH. la varita sin la palanca sería un botón condenado a error.
 class EstadoDelRol extends ConsumerWidget {
   const EstadoDelRol({super.key, required this.rol});
 
@@ -536,10 +500,8 @@ class EstadoDelRol extends ConsumerWidget {
                   children: [
                     Icon(p.icono, size: 18),
                     const SizedBox(width: Esp.s),
-                    // Acotado a mano: el menú se estira hasta el más ancho de
-                    // sus items, y en 360 px «Cerrar el año» con el ícono y el
-                    // padding del menú se pasaría del borde. Con el tope, el
-                    // texto envuelve en vez de empujar.
+                    // Acotado a mano: el menú se estira al item más ancho y en 360 px «Cerrar el
+                    // año» con ícono y padding se pasaría del borde; con el tope, el texto envuelve.
                     ConstrainedBox(
                       constraints: const BoxConstraints(maxWidth: 200),
                       child: Text(p.verbo),
@@ -548,9 +510,8 @@ class EstadoDelRol extends ConsumerWidget {
                 ),
               ),
           ],
-      // El caret es lo único que distingue la versión que se puede apretar.
-      // Va al lado y no adentro de la etiqueta para no cambiarle la forma: el
-      // mismo estado se tiene que reconocer igual lo mire quien lo mire.
+      // El caret distingue la versión que se puede apretar. Va al lado y no dentro
+      // de la etiqueta para que el estado se reconozca igual para todos.
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [etiqueta, const Icon(Icons.arrow_drop_down, size: 18)],
@@ -559,9 +520,7 @@ class EstadoDelRol extends ConsumerWidget {
   }
 
   /// El color dice en qué punto del ciclo está, no si algo salió bien.
-  ///
-  /// `CERRADO` va en la familia de error porque es la única que se lee como
-  /// «aquí no se toca». No significa que cerrar esté mal.
+  /// `CERRADO` va en la familia de error porque se lee como «aquí no se toca».
   TonoEtiqueta _tono(String estado) => switch (estado) {
     'PUBLICADO' => TonoEtiqueta.exito,
     'CERRADO' => TonoEtiqueta.error,
@@ -591,8 +550,8 @@ class EstadoDelRol extends ConsumerWidget {
       builder:
           (ctx) => AlertDialog(
             title: Text(paso.titulo),
-            // Scrollable por lo mismo que el diálogo de generar: en un teléfono
-            // de 740 px de alto, el detalle de publicar no entra de una.
+            // Scrollable, como el diálogo de generar: en 740 px de alto el detalle de
+            // publicar no entra de una.
             content: SingleChildScrollView(
               child: Text(
                 '${paso.detalle}\n\n'
@@ -627,8 +586,8 @@ class EstadoDelRol extends ConsumerWidget {
           .cambiarEstadoRol(
             idRol: rol.idRol,
             estado: paso.destino,
-            // El valor que el rol YA tiene: el endpoint recibe la cabecera
-            // entera y este campo no puede viajar vacío. Ver el repositorio.
+            // El valor que el rol YA tiene: el endpoint recibe la cabecera entera y este
+            // campo no puede viajar vacío (ver el repositorio).
             aplicaAsuetoCumple: rol.aplicaAsuetoCumple,
           ),
       exito: paso.exito,

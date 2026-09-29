@@ -1,13 +1,9 @@
-/// Paso 1 del asistente: tipo, titulo, observaciones y fletes por sucursal.
+/// Paso 1 del asistente: tipo, título, observaciones y fletes por sucursal.
 ///
-/// Reemplaza a `dlgNuevo`. Dos diferencias con aquel:
-///
-/// - **Los fletes arrancan con los de la ultima propuesta por familia.** El
-///   legacy los ponia en cero, y un flete olvidado en cero abarataba toda la
-///   sucursal sin ningun aviso. Se dice de donde salieron para que se revisen.
-/// - **En una propuesta que ya existe los fletes se pueden cambiar**, y el
-///   servidor recalcula en el mismo momento los precios de todas sus familias.
-///   Cambiar solo el flete dejaria los precios calculados con el valor viejo.
+/// Reemplaza a `dlgNuevo`. Los fletes arrancan con los de la última propuesta por
+/// familia (el legacy los ponía en cero y un flete olvidado abarataba toda la
+/// sucursal). En una propuesta existente se pueden cambiar y el servidor
+/// recalcula al instante los precios de todas sus familias.
 library;
 
 import 'package:flutter/material.dart';
@@ -41,9 +37,8 @@ class _ArmadoPasoDatosState extends ConsumerState<ArmadoPasoDatos> {
   late final TextEditingController _titulo;
   late final TextEditingController _obs;
 
-  /// Un campo por sucursal. Se crean a medida que llegan los fletes y se
-  /// reescriben solo cuando cambian desde afuera (carga o descarte): pisarlos
-  /// en cada dibujo moveria el cursor mientras se escribe.
+  /// Un campo por sucursal, creado al llegar los fletes y reescrito solo cuando
+  /// cambian desde afuera (carga o descarte): pisarlos en cada dibujo movería el cursor.
   final Map<BigInt, TextEditingController> _fletes = {};
 
   @override
@@ -70,10 +65,9 @@ class _ArmadoPasoDatosState extends ConsumerState<ArmadoPasoDatos> {
         () => TextEditingController(text: fmtMonto.format(flete.valor)),
       );
 
-  /// Pone los campos al dia cuando los fletes cambian desde afuera: llegan del
-  /// servidor o se descartan los cambios. Si el campo ya dice lo mismo que el
-  /// estado -porque el cambio salio de tipear en el- no se toca, o el cursor
-  /// saltaria al final en cada tecla.
+  /// Pone los campos al día cuando los fletes cambian desde afuera (servidor o
+  /// descarte). Si el campo ya dice lo mismo que el estado (el cambio salió de
+  /// tipear en él) no se toca: el cursor saltaría al final en cada tecla.
   void _sincronizarCampos(List<FleteArmadoEntity> fletes) {
     for (final f in fletes) {
       final campo = _fletes[f.codSucursal];

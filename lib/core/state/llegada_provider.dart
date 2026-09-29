@@ -1,4 +1,3 @@
-// Destino final: lib/core/state/llegada_provider.dart
 import 'package:bosque_flutter/data/repositories/llegada_impl.dart';
 import 'package:bosque_flutter/domain/entities/llegada_entity.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';

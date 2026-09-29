@@ -53,9 +53,8 @@ class BarraModulo extends StatelessWidget {
 
     return Padding(
       padding: EdgeInsets.fromLTRB(padding, 8, padding, 8),
-      // Align + ConstrainedBox y no un ancho suelto: el Align afloja los
-      // constraints para que el tope se aplique, y asi la franja termina en el
-      // mismo borde que la tarjeta de abajo.
+      // Align + ConstrainedBox: el Align afloja los constraints para que el tope se
+      // aplique y la franja termine en el mismo borde que la tarjeta de abajo.
       child: Align(
         alignment: Alignment.centerLeft,
         child: ConstrainedBox(
@@ -99,10 +98,9 @@ class BarraModulo extends StatelessWidget {
                     onPressed: alPulsarAccion,
                     icon: const Icon(Icons.add, size: 18),
                     label: Text(textoAccion),
-                    // El style no se borra: sin el, la pildora queda en 44 px
-                    // visibles contra 48 del campo y la fila se ve desalineada. El
-                    // padding ya lo pone el filledButtonTheme del modulo; lo que
-                    // falta es el minimo que empareja las dos alturas.
+                    // El style se conserva: sin él, la píldora mide 44px visibles
+                    // contra 48 del campo y la fila se desalinea. El padding ya
+                    // lo pone filledButtonTheme.
                     style: FilledButton.styleFrom(
                       minimumSize: const Size(0, 48),
                     ),

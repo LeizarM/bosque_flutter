@@ -1,4 +1,3 @@
-// Destino final: lib/core/state/coche_llegadas_provider.dart
 import 'package:bosque_flutter/data/repositories/coche_llegadas_impl.dart';
 import 'package:bosque_flutter/domain/entities/coche_llegadas_entity.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';

@@ -53,7 +53,6 @@ class MenuNotifier extends StateNotifier<MenuState> {
 
   MenuNotifier(this._repository) : super(MenuState.initial());
 
-  // Cargar menú para un usuario
   Future<void> loadUserMenu(int userId) async {
     try {
       // Solo mostrar loading si no hay datos previos cargados
@@ -85,7 +84,6 @@ class MenuNotifier extends StateNotifier<MenuState> {
     }
   }
 
-  // Método para obtener y guardar el menú desde el servidor
   Future<void> fetchAndSaveMenu(int userId) async {
     try {
       console('🔄 Solicitando menú al servidor para usuario $userId');
@@ -94,10 +92,8 @@ class MenuNotifier extends StateNotifier<MenuState> {
       if (menuEntities.isNotEmpty) {
         console('✅ Menú obtenido con éxito: ${menuEntities.length} elementos');
 
-        // Guardar en caché
         await _saveMenuToCache(userId, menuEntities);
 
-        // Actualizar estado
         state = state.copyWith(
           status: MenuStatus.loaded,
           menuItems: menuEntities,
@@ -111,7 +107,6 @@ class MenuNotifier extends StateNotifier<MenuState> {
     }
   }
 
-  // Método para actualizar menú en segundo plano
   Future<void> _refreshMenuFromServer(int userId) async {
     try {
       final menuEntities = await _repository.getMenuItems(userId);
@@ -173,7 +168,6 @@ class MenuNotifier extends StateNotifier<MenuState> {
     return {};
   }
 
-  // Método para guardar menú en caché
   Future<void> _saveMenuToCache(
     int userId,
     List<MenuItemEntity> menuItems,
@@ -181,13 +175,10 @@ class MenuNotifier extends StateNotifier<MenuState> {
     try {
       final prefs = await SharedPreferences.getInstance();
 
-      // Convertir MenuItemEntity a JSON serializable
       final menuJson = _serializeMenuItems(menuItems);
 
-      // Guardar el menú serializado
       await prefs.setString(_menuCacheKey, jsonEncode(menuJson));
 
-      // Guardar el ID del usuario
       await prefs.setInt(_menuUserIdKey, userId);
       console('✅ Menú guardado en caché para usuario $userId');
     } catch (e) {
@@ -195,7 +186,6 @@ class MenuNotifier extends StateNotifier<MenuState> {
     }
   }
 
-  // Método para cargar menú desde caché
   Future<List<MenuItemEntity>?> _loadMenuFromCache(int userId) async {
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -215,7 +205,6 @@ class MenuNotifier extends StateNotifier<MenuState> {
         return null;
       }
 
-      // Deserializar el menú
       final menuJson = jsonDecode(menuJsonString) as List<dynamic>;
       final result = _deserializeMenuItems(menuJson);
       console('✅ Menú cargado de caché: ${result.length} elementos');
@@ -226,7 +215,7 @@ class MenuNotifier extends StateNotifier<MenuState> {
     }
   }
 
-  // Añadir este método en la clase MenuNotifier
+  // Carga el menú de caché sin comprobar el usuario.
   Future<void> loadMenuFromCacheOnly() async {
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -251,12 +240,10 @@ class MenuNotifier extends StateNotifier<MenuState> {
     }
   }
 
-  // Método auxiliar para serializar lista de MenuItemEntity
   List<Map<String, dynamic>> _serializeMenuItems(List<MenuItemEntity> items) {
     return items.map((item) => _serializeMenuItem(item)).toList();
   }
 
-  // Método auxiliar para serializar un solo MenuItemEntity
   Map<String, dynamic> _serializeMenuItem(MenuItemEntity item) {
     return {
       'codVista': item.codVista,
@@ -277,12 +264,10 @@ class MenuNotifier extends StateNotifier<MenuState> {
     };
   }
 
-  // Método auxiliar para deserializar lista de MenuItemEntity
   List<MenuItemEntity> _deserializeMenuItems(List<dynamic> jsonList) {
     return jsonList.map((json) => _deserializeMenuItem(json)).toList();
   }
 
-  // Método auxiliar para deserializar un solo MenuItemEntity
   MenuItemEntity _deserializeMenuItem(Map<String, dynamic> json) {
     return MenuItemEntity(
       codVista: json['codVista'],
@@ -304,7 +289,6 @@ class MenuNotifier extends StateNotifier<MenuState> {
     );
   }
 
-  // Método auxiliar para obtener todos los elementos del menú (aplanados)
   List<MenuItemEntity> getAllMenuItems() {
     List<MenuItemEntity> allItems = [];
 
@@ -321,7 +305,6 @@ class MenuNotifier extends StateNotifier<MenuState> {
     return allItems;
   }
 
-  // Método para obtener un item por su ruta
   MenuItemEntity? getMenuItemByPath(String path) {
     final allItems = getAllMenuItems();
     try {
@@ -339,7 +322,7 @@ class MenuNotifier extends StateNotifier<MenuState> {
       final prefs = await SharedPreferences.getInstance();
       await prefs.remove(_menuCacheKey);
       await prefs.remove(_menuUserIdKey);
-      // NO eliminamos _expandedMenuItemsKey para mantener el estado de expansión entre sesiones
+      // No se borra _expandedMenuItemsKey: la expansión persiste entre sesiones.
       state = MenuState.initial();
       console('✅ Caché de menú limpiada');
     } catch (e) {
@@ -379,7 +362,6 @@ final sidebarMenuProvider = Provider<List<SidebarMenuItem>>((ref) {
     return [];
   }
 
-  // Función para mapear un ícono string a IconData
   IconData mapIconToIconData(MenuItemEntity item) {
     // Si el ítem no tiene ícono, determinarlo basado en el título
     final title = item.titulo.toLowerCase();
@@ -405,13 +387,11 @@ final sidebarMenuProvider = Provider<List<SidebarMenuItem>>((ref) {
           return Icons.attach_money;
         case 'dollar':
           return Icons.attach_money;
-        // Añadir más íconos según sea necesario
         default:
           break;
       }
     }
 
-    // Determinar ícono basado en el título
     if (title.contains('rrhh') || title.contains('recurso')) {
       return Icons.people;
     } else if (title.contains('admin')) {
@@ -457,7 +437,6 @@ final sidebarMenuProvider = Provider<List<SidebarMenuItem>>((ref) {
 
   // Transformar ruta del formato antiguo al nuevo formato de dashboard
   String transformRoute(String originalRoute) {
-    // Si la ruta comienza con tven_ventas/VentasView, transformarla al nuevo formato
     if (originalRoute.startsWith('/tven_ventas/VentasView')) {
       return '/dashboard/ventas';
     }
@@ -469,40 +448,29 @@ final sidebarMenuProvider = Provider<List<SidebarMenuItem>>((ref) {
       return '/dashboard/tcomComisiones/Comisiones';
     }
 
-    // Talonarios (vista 91, "Talonario(s) Mantenimiento"). Mismo motivo que
-    // Comisiones: la fila de tb_vista la sigue usando Bosque v2.
-    //
-    // OJO con la otra entrada del mismo menú, "Talonarios" (vista 62,
-    // /tfmFacturasManuales/talonario): NO es lo mismo. Esa opera sobre
-    // tfm_facturaManual vía p_abm_FacturaManual — son talonarios de FACTURAS,
-    // con NIT y nro de autorización. El bean legacy lo dice: `codTalonario`
-    // "es el codFacturaManual". No mapearla aquí.
+    // Talonarios (vista 91, "Talonario(s) Mantenimiento"): igual que Comisiones,
+    // la fila de tb_vista la sigue usando Bosque v2.
+    // OJO: "Talonarios" (vista 62, /tfmFacturasManuales/talonario) NO es lo
+    // mismo: opera sobre tfm_facturaManual vía p_abm_FacturaManual (talonarios
+    // de FACTURAS, con NIT y nro de autorización; `codTalonario` "es el
+    // codFacturaManual"). No mapearla aquí.
     if (originalRoute.startsWith('/tmtoTalonario/talonario')) {
       return '/dashboard/tmtoTalonario/talonario';
     }
 
-    // Otras transformaciones de rutas específicas pueden agregarse aquí
-    // Por ejemplo:
-    // if (originalRoute.startsWith('/algunos_modulos/OtraVista')) {
-    //   return '/dashboard/otra-ruta';
-    // }
 
     return originalRoute;
   }
 
-  // Transformar MenuItemEntity a SidebarMenuItem
   List<SidebarMenuItem> transformMenu(List<MenuItemEntity> menuItems) {
     return menuItems.map((item) {
-      // Construir la ruta según el valor de direccion
       String route = '';
       if (item.direccion.isNotEmpty) {
-        // Usar directamente la dirección para la ruta
         route = '/${item.direccion}';
       } else if (item.routerLink != null && item.routerLink!.isNotEmpty) {
         route = '/${item.routerLink}';
       }
 
-      // Transformar la ruta al nuevo formato si es necesario
       route = transformRoute(route);
 
       return SidebarMenuItem(

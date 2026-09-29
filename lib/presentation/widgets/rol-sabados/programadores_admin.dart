@@ -1,17 +1,10 @@
 /// Quiénes pueden programar a su equipo: el ABM de `trs_Programador`.
 ///
-/// **Por qué existe esta pantalla.** El permiso para usar «Su Equipo» no sale de
-/// un rol de Spring ni de un cargo: sale de una fila en `trs_Programador`. Sin
-/// una pantalla para escribir esa fila, cada alta y cada baja de un jefe es un
-/// ticket a Sistemas y un `INSERT` a mano en el SSMS —para siempre—. Hoy la
-/// tabla tiene **una sola fila**: la pestaña la ven exactamente dos personas.
-///
-/// **Lo que esta pantalla NO hace, a propósito.** No arma el equipo. El equipo
-/// lo devuelve el organigrama (`fn_trs_ProgramadorDependiente`) y aquí sólo se
-/// decide *quién es jefe* y *hasta dónde llega*: sus directos, o todo el árbol
-/// debajo suyo. Por eso la columna que más importa de la lista no es el nombre
-/// sino el contador de dependientes: es lo único que confirma que el permiso
-/// sirve de algo.
+/// El permiso de «Su Equipo» sale de una fila en `trs_Programador` (no de un rol
+/// de Spring ni de un cargo); hoy la tabla tiene **una sola fila**. No arma el
+/// equipo (lo da el organigrama, `fn_trs_ProgramadorDependiente`): sólo decide
+/// *quién es jefe* y *hasta dónde llega*; por eso lo clave de la lista es el
+/// contador de dependientes.
 library;
 
 import 'package:bosque_flutter/core/state/rol_sabados_provider.dart';
@@ -25,10 +18,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// Abre el ABM de programadores.
 ///
-/// Va en una hoja y no en una pestaña más porque esto lo tocan seis personas de
-/// la empresa dos veces al año: no se gana nada ocupando lugar permanente en la
-/// barra. El ancho se topea en 720 px — en un monitor, una hoja de 1.900 px deja
-/// las tarjetas convertidas en renglones sueltos y perdidos.
+/// En una hoja y no en una pestaña: lo tocan seis personas dos veces al año.
+/// Ancho topeado en 720 px: en un monitor, una hoja de 1.900 px deja las
+/// tarjetas como renglones sueltos.
 Future<void> mostrarAdminProgramadores(BuildContext context) =>
     showModalBottomSheet<void>(
       context: context,
@@ -46,9 +38,8 @@ class _PanelProgramadores extends ConsumerWidget {
     final programadores = ref.watch(programadoresProvider);
 
     return SizedBox(
-      // Alto fijo y no `MainAxisSize.min`: la lista puede tener 1 fila o 40, y
-      // una hoja que salta de tamaño cada vez que se da un alta se lee como un
-      // error.
+      // Alto fijo y no `MainAxisSize.min`: la lista puede tener 1 fila o 40 y una
+      // hoja que salta de tamaño con cada alta se lee como un error.
       height: MediaQuery.sizeOf(context).height * 0.85,
       child: Column(
         children: [
@@ -75,11 +66,9 @@ class _PanelProgramadores extends ConsumerWidget {
                   );
                 }
 
-                // La misma persona puede entrar dos veces porque el UNIQUE es
-                // (codEmpleado, codSucursal): dos sucursales, dos filas. El SP
-                // resuelve con TOP 1, así que la segunda fila no da error —
-                // simplemente hace que el organigrama se valide contra un
-                // subárbol elegido al azar. Se marca en la lista.
+                // La misma persona puede entrar dos veces: el UNIQUE es (codEmpleado,
+                // codSucursal). El SP resuelve con TOP 1, así que la segunda fila no da error:
+                // el organigrama se valida contra un subárbol al azar. Se marca en la lista.
                 final repetidos = <int>{};
                 final vistos = <int>{};
                 for (final p in lista) {
@@ -159,9 +148,7 @@ class _Encabezado extends StatelessWidget {
   );
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// LISTADO
-// ═══════════════════════════════════════════════════════════════════════════
+// Listado
 
 class _Tarjeta extends ConsumerStatefulWidget {
   const _Tarjeta({required this.programador, required this.repetido});
@@ -193,8 +180,8 @@ class _TarjetaState extends ConsumerState<_Tarjeta> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Wrap y no Row: nombre + dos o tres etiquetas no entran en
-                  // los ~250 px que quedan libres en un teléfono de 360.
+                  // Wrap y no Row: nombre + 2 o 3 etiquetas no entran en los ~250 px libres de
+                  // un teléfono de 360.
                   Wrap(
                     spacing: Esp.s,
                     runSpacing: Esp.xs,
@@ -223,11 +210,9 @@ class _TarjetaState extends ConsumerState<_Tarjeta> {
                     ],
                   ),
                   const SizedBox(height: Esp.xs),
-                  // Tres casos distintos y hay que distinguirlos: sin sucursal
-                  // el permiso alcanza a TODAS —no es un dato faltante, es el
-                  // alcance más ancho que existe—; con nombre se muestra el
-                  // nombre; y si el backend todavía no lo manda queda el código,
-                  // que al menos no miente.
+                  // Tres casos: sin sucursal el permiso alcanza a TODAS (no es un dato faltante,
+                  // es el alcance más ancho); con nombre se muestra el nombre; y si el backend
+                  // aún no lo manda, queda el código, que al menos no miente.
                   Dato(
                     '#${p.codEmpleado} · '
                     '${p.codSucursal == 0 ? 'todas las sucursales' : (p.sucursal.isEmpty ? 'sucursal ${p.codSucursal}' : p.sucursal)}',
@@ -348,9 +333,8 @@ class _TarjetaState extends ConsumerState<_Tarjeta> {
 
 /// El contador de dependientes: el dato que dice si el permiso sirve.
 ///
-/// Va en un bloque propio y con cifras tabulares porque es lo único de la
-/// tarjeta que se compara entre filas — 20 contra 0 se tiene que ver de un
-/// vistazo, sin leer.
+/// Bloque propio y cifras tabulares: es lo único de la tarjeta que se compara
+/// entre filas (20 contra 0 debe verse de un vistazo).
 class _Dependientes extends StatelessWidget {
   const _Dependientes({required this.cantidad});
   final int cantidad;
@@ -381,16 +365,13 @@ class _Dependientes extends StatelessWidget {
   }
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// ALTA
-// ═══════════════════════════════════════════════════════════════════════════
+// Alta
 
 /// Formulario de alta de un jefe programador.
 ///
-/// La lista de gente sale de los **participantes del rol** y no del padrón de
-/// empleados: programar a alguien que no está en el rol no tiene sentido —no
-/// tiene celdas que escribir— y de paso evita ofrecer 1.200 nombres para elegir
-/// uno.
+/// La lista sale de los **participantes del rol** y no del padrón: programar a
+/// quien no está en el rol no tiene sentido (sin celdas) y evita ofrecer 1.200
+/// nombres.
 class _AltaProgramadorSheet extends ConsumerStatefulWidget {
   const _AltaProgramadorSheet();
 
@@ -401,23 +382,22 @@ class _AltaProgramadorSheet extends ConsumerStatefulWidget {
 class _AltaState extends ConsumerState<_AltaProgramadorSheet> {
   int? _codEmpleado;
 
-  /// 0 = sin reemplazo. Se usa el 0 y no null porque el combo necesita una
-  /// opción concreta para poder *sacar* al reemplazo una vez elegido.
+  /// 0 = sin reemplazo. Se usa 0 y no null porque el combo necesita una opción
+  /// concreta para poder *sacar* al reemplazo una vez elegido.
   int _codReemplazo = 0;
 
   String _alcance = 'DIRECTOS';
 
   /// `true` guarda `codSucursal` en NULL, que en `fn_trs_DependientePorCargo`
-  /// apaga el filtro de sucursal. Arranca en `false` porque el caso normal es
-  /// el jefe cuya gente está donde él, y el permiso más angosto es el que
-  /// conviene por defecto.
+  /// apaga el filtro de sucursal. Arranca en `false`: el caso normal es el jefe
+  /// cuya gente está donde él y el permiso más angosto es el más seguro.
   bool _todasLasSucursales = false;
 
   final _observacion = TextEditingController();
   bool _guardando = false;
 
-  /// Lo que se va a guardar en `codSucursal`. **0 significa TODAS**, igual que
-  /// el NULL de la tabla — el repositorio hace la conversión.
+  /// Lo que se guarda en `codSucursal`. **0 significa TODAS** (el NULL de la
+  /// tabla); el repositorio hace la conversión.
   int _sucursalAGuardar(ParticipanteTurnoEntity elegido) =>
       _todasLasSucursales ? 0 : elegido.codSucursal;
 
@@ -431,10 +411,9 @@ class _AltaState extends ConsumerState<_AltaProgramadorSheet> {
   Widget build(BuildContext context) {
     final idRol = ref.watch(rolSeleccionadoProvider);
 
-    // Alto fijo en los estados que no son el formulario: `MensajeVacio` y el
-    // spinner son `Center`, y un Center suelto adentro de una hoja
-    // `isScrollControlled` la estira a pantalla completa para mostrar dos
-    // renglones.
+    // Alto fijo fuera del formulario: `MensajeVacio` y el spinner son `Center`, y
+    // un Center suelto en una hoja `isScrollControlled` la estira a pantalla
+    // completa.
     if (idRol == null) {
       return const SizedBox(
         height: 240,
@@ -479,16 +458,14 @@ class _AltaState extends ConsumerState<_AltaProgramadorSheet> {
 
   Widget _formulario(
     BuildContext context,
-    // Viene por parámetro y no se vuelve a leer del provider: aquí arriba ya se
-    // comprobó que no es null, y volver a pedirlo obligaría a comprobarlo otra
-    // vez o a poner un `!` que el día que cambie el flujo revienta en pantalla.
+    // Viene por parámetro: aquí arriba ya se comprobó que no es null, y volver a
+    // leerlo del provider obligaría a comprobarlo otra vez o a usar un `!`.
     int idRol,
     List<ParticipanteTurnoEntity> gente,
   ) {
     final elegido = _buscar(gente, _codEmpleado);
 
-    // Los que ya están cargados: se necesita para avisar del duplicado ANTES de
-    // guardar, que es cuando todavía se puede evitar.
+    // Los ya cargados: para avisar del duplicado ANTES de guardar.
     final yaCargados =
         ref.watch(programadoresProvider).valueOrNull ??
         const <ProgramadorEntity>[];
@@ -522,9 +499,8 @@ class _AltaState extends ConsumerState<_AltaProgramadorSheet> {
                   if (_codReemplazo == v) _codReemplazo = 0;
                 }),
           ),
-          // Sin sucursal cargada no se puede elegir «sólo la suya»: no sabemos
-          // cuál es. Con «Todas» sí se puede guardar, porque ahí la sucursal
-          // deja de importar.
+          // Sin sucursal cargada no se puede elegir «sólo la suya» (no se sabe cuál);
+          // con «Todas» sí, porque la sucursal deja de importar.
           if (elegido != null &&
               elegido.codSucursal == 0 &&
               !_todasLasSucursales)
@@ -543,15 +519,11 @@ class _AltaState extends ConsumerState<_AltaProgramadorSheet> {
               'reemplazo, dale de baja y créala de nuevo.',
             ),
 
-          // ── DOS controles y no uno de tres opciones ──────────────────────
-          //
-          // Profundidad y sucursal son dos dimensiones independientes en
-          // `trs_Programador` (`alcance` y `codSucursal`), y colapsarlas en un
-          // solo selector deja combinaciones sin representar. No es teórico: el
-          // JEFE COMERCIAL Y DE PRODUCCIÓN tiene a su RESPONSABLE DE PRODUCCIÓN
-          // colgando DIRECTO, pero en la planta de ACHOCALLA — con la sucursal
-          // fija no le aparecía ni con «Sus directos» ni con «Todo su árbol»,
-          // porque la sucursal corta ANTES que la profundidad.
+          // DOS controles y no uno de tres opciones: profundidad (`alcance`) y sucursal
+          // (`codSucursal`) son independientes en `trs_Programador`. No es teórico: el
+          // JEFE COMERCIAL Y DE PRODUCCIÓN tiene a su RESPONSABLE DE PRODUCCIÓN directo
+          // pero en la planta de ACHOCALLA, y con la sucursal fija no aparecía (la
+          // sucursal corta ANTES que la profundidad).
           const SizedBox(height: Esp.l),
           Text('Hasta dónde baja', style: context.tituloSeccion()),
           const SizedBox(height: Esp.s),
@@ -655,11 +627,9 @@ class _AltaState extends ConsumerState<_AltaProgramadorSheet> {
           SizedBox(
             width: double.infinity,
             child: FilledButton.icon(
-              // Se apaga sólo cuando se pidió «sólo la suya» y no sabemos cuál
-              // es: ahí guardar crearía en silencio un permiso para TODAS, más
-              // ancho del que se pidió — el tipo de error que nadie sale a
-              // buscar porque no falla nada, sólo aparece gente de más.
-              // Con «Todas» elegido a mano no hay ambigüedad y se puede guardar.
+              // Se apaga si se pidió «sólo la suya» y no se sabe cuál: guardar crearía en
+              // silencio un permiso para TODAS, más ancho de lo pedido y sin que nada falle.
+              // Con «Todas» elegido a mano no hay ambigüedad.
               onPressed:
                   (_guardando ||
                           elegido == null ||
@@ -711,9 +681,8 @@ class _AltaState extends ConsumerState<_AltaProgramadorSheet> {
     ParticipanteTurnoEntity elegido,
     ProgramadorEntity? repetido,
   ) async {
-    // Segunda barrera para el duplicado: el aviso de arriba se puede pasar por
-    // alto, y la fila de más no falla en el momento sino la semana que viene,
-    // cuando el jefe abre «Su Equipo» y ve gente que no es suya.
+    // Segunda barrera para el duplicado: el aviso se puede pasar por alto y la fila
+    // de más no falla ahora sino cuando el jefe abre «Su Equipo» y ve gente ajena.
     if (repetido != null) {
       final seguir = await showDialog<bool>(
         context: context,
@@ -753,9 +722,8 @@ class _AltaState extends ConsumerState<_AltaProgramadorSheet> {
             // 0 = alta. Con un id > 0 el SP actualiza la fila existente.
             idProgramador: 0,
             codEmpleado: elegido.codEmpleado,
-            // 0 = todas, que es como el repositorio expresa el NULL de la
-            // tabla. Cuál sucursal concreta no se pregunta —siempre es la de la
-            // persona— pero SÍ se pregunta si limita o no, que es otra cosa.
+            // 0 = todas (cómo el repositorio expresa el NULL de la tabla). La sucursal
+            // concreta no se pregunta (es la de la persona), sí si limita o no.
             codSucursal: _sucursalAGuardar(elegido),
             alcance: _alcance,
             codEmpleadoReemplazo: _codReemplazo,
@@ -770,22 +738,12 @@ class _AltaState extends ConsumerState<_AltaProgramadorSheet> {
   }
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-
-/// Aclaración bajo un campo: explica POR QUÉ, no qué.
 /// Quiénes le van a quedar a cargo, **antes** de apretar «Dar de alta».
 ///
-/// **Por qué existe.** El alcance no se puede razonar mirando la pantalla: sale
-/// de recorrer `trh_cargo.codCargoPadre` hasta doce niveles, filtrando por
-/// sucursal y por empresa. Antes de esto, la única forma de saber a quién le
-/// habías dado el permiso era guardarlo y leer el conteo que devolvía el SP —o
-/// sea, enterarte después—. Con dos opciones de alcance que se parecen en el
-/// nombre, eso es exactamente donde se elige mal.
-///
-/// **Sale del mismo árbol que valida `trs_sp_programar`**
-/// (`fn_trs_DependientePorCargo`). Si fuera una consulta propia, esta lista y lo
-/// que el sistema después acepta podrían separarse, y una previsualización que
-/// miente es peor que no tenerla.
+/// El alcance no se razona mirando la pantalla (recorre `trh_cargo.codCargoPadre`
+/// hasta doce niveles, filtrando por sucursal y empresa). Sale del mismo árbol
+/// que valida `trs_sp_programar` (`fn_trs_DependientePorCargo`): una consulta
+/// propia podría divergir, y una previsualización que miente es peor que ninguna.
 class _PreviaDependientes extends ConsumerWidget {
   const _PreviaDependientes({required this.clave});
 
@@ -796,9 +754,8 @@ class _PreviaDependientes extends ConsumerWidget {
     final previa = ref.watch(previaDependientesProvider(clave));
 
     return previa.when(
-      // Sin alto fijo: son dos renglones dentro de un formulario que ya
-      // scrollea, y reservarles espacio haría saltar todo lo de abajo cada vez
-      // que se toca el alcance.
+      // Sin alto fijo: son dos renglones en un formulario que ya scrollea y
+      // reservarles espacio movería todo lo de abajo al tocar el alcance.
       loading:
           () => const Padding(
             padding: EdgeInsets.symmetric(vertical: Esp.s),
@@ -848,11 +805,9 @@ class _PreviaDependientes extends ConsumerWidget {
                         'que no va a poder moverles el sábado hasta que entren.',
               ),
             const SizedBox(height: Esp.s),
-            // Alto acotado a propósito: un `ListView` suelto adentro del
-            // `SingleChildScrollView` del formulario no tiene altura definida y
-            // revienta. 168 px son cuatro filas — suficiente para ver que la
-            // lista es la esperada, y el resto se scrollea aquí adentro sin
-            // empujar el botón de guardar fuera de la pantalla.
+            // Alto acotado: un `ListView` suelto dentro del `SingleChildScrollView` no
+            // tiene altura definida y revienta. 168 px son cuatro filas, suficiente para
+            // ver que la lista es la esperada sin empujar el botón fuera de pantalla.
             Container(
               constraints: const BoxConstraints(maxHeight: 168),
               decoration: BoxDecoration(
@@ -873,8 +828,8 @@ class _PreviaDependientes extends ConsumerWidget {
                       ),
                       child: Row(
                         children: [
-                          // La profundidad importa: «1» es su gente, «3» es
-                          // gente que probablemente ni sepa que le cuelga.
+                          // La profundidad importa: «1» es su gente, «3» es gente que probablemente ni
+                          // sepa que le cuelga.
                           SizedBox(
                             width: 22,
                             child: Text(
@@ -910,6 +865,7 @@ class _PreviaDependientes extends ConsumerWidget {
   }
 }
 
+/// Aclaración bajo un campo: explica POR QUÉ, no qué.
 class _Nota extends StatelessWidget {
   const _Nota(this.texto);
   final String texto;

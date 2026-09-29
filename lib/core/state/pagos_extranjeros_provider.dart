@@ -22,9 +22,7 @@ import 'package:bosque_flutter/domain/entities/tipos_transaccion_entity.dart';
 import 'package:bosque_flutter/domain/entities/transaccion_participante_entity.dart';
 import 'package:bosque_flutter/domain/entities/transacciones_entity.dart';
 
-// ═══════════════════════════════════════════════════════════════════════
 // Modelos auxiliares del formulario (solo para el estado de UI)
-// ═══════════════════════════════════════════════════════════════════════
 
 class DetalleFormItem {
   final int idDetalle;
@@ -154,9 +152,7 @@ class ProveedorFormItem {
   }
 }
 
-// ═══════════════════════════════════════════════════════════════════════
 // Estado principal
-// ═══════════════════════════════════════════════════════════════════════
 
 class PagosExtranjerosState {
   final int idSolicitud;
@@ -225,9 +221,7 @@ class PagosExtranjerosState {
   }
 }
 
-// ═══════════════════════════════════════════════════════════════════════
 // Notifier
-// ═══════════════════════════════════════════════════════════════════════
 
 class PagosExtranjerosNotifier extends StateNotifier<PagosExtranjerosState> {
   final PagosExtranjerosImpl _repo = PagosExtranjerosImpl();
@@ -438,9 +432,7 @@ class PagosExtranjerosNotifier extends StateNotifier<PagosExtranjerosState> {
     logContext: 'rechazando',
   );
 
-  // ══════════════════════════════════════════════════════════════════════
-  //   APROBACIÓN GRANULAR (por cuota + por proveedor)
-  // ══════════════════════════════════════════════════════════════════════
+  // APROBACIÓN GRANULAR (por cuota + por proveedor)
 
   /// Aprueba una cuota individual. El backend propaga automáticamente
   /// el estado del proveedor cuando todas sus cuotas están aprobadas.
@@ -694,9 +686,7 @@ class PagosExtranjerosNotifier extends StateNotifier<PagosExtranjerosState> {
   }
 }
 
-// ═══════════════════════════════════════════════════════════════════════
 // Provider
-// ═══════════════════════════════════════════════════════════════════════
 
 final pagosExtranjerosProvider =
     StateNotifierProvider<PagosExtranjerosNotifier, PagosExtranjerosState>(
@@ -739,9 +729,7 @@ final facProvYOrdCompraProyectoProvider = FutureProvider.autoDispose
       );
     });
 
-// ═══════════════════════════════════════════════════════════════════════
 // Provider para listar solicitudes registradas
-// ═══════════════════════════════════════════════════════════════════════
 
 /// Parámetro para el provider de solicitudes registradas.
 class FechaRangoParam {
@@ -778,9 +766,7 @@ final solicitudesRegistradasProvider = FutureProvider.autoDispose
       );
     });
 
-// ═══════════════════════════════════════════════════════════════════════
 // Modelo auxiliar para cargos en cotización / transacción
-// ═══════════════════════════════════════════════════════════════════════
 
 class CargoPagoFormItem {
   final BigInt idTipoCargo;
@@ -830,9 +816,7 @@ class CargoPagoFormItem {
   }
 }
 
-// ═══════════════════════════════════════════════════════════════════════
 // FASE 2-3 — Estado del formulario de cotización
-// ═══════════════════════════════════════════════════════════════════════
 
 class CotizacionFormState {
   final int idCotizacion;
@@ -924,9 +908,7 @@ class CotizacionFormState {
   }
 }
 
-// ═══════════════════════════════════════════════════════════════════════
 // FASE 2-3 — Notifier de cotización
-// ═══════════════════════════════════════════════════════════════════════
 
 class CotizacionNotifier extends StateNotifier<CotizacionFormState> {
   final PagosExtranjerosImpl _repo = PagosExtranjerosImpl();
@@ -1167,18 +1149,14 @@ class CotizacionNotifier extends StateNotifier<CotizacionFormState> {
   }
 }
 
-// ═══════════════════════════════════════════════════════════════════════
 // FASE 2-3 — Provider de cotización
-// ═══════════════════════════════════════════════════════════════════════
 
 final cotizacionFormProvider =
     StateNotifierProvider<CotizacionNotifier, CotizacionFormState>(
       (ref) => CotizacionNotifier(),
     );
 
-// ═══════════════════════════════════════════════════════════════════════
 // FASE 4-5 — Estado del formulario de transacción
-// ═══════════════════════════════════════════════════════════════════════
 
 class TransaccionFormState {
   final int idTransaccion;
@@ -1353,9 +1331,7 @@ class TransaccionFormState {
   }
 }
 
-// ═══════════════════════════════════════════════════════════════════════
 // FASE 4-5 — Notifier de transacción
-// ═══════════════════════════════════════════════════════════════════════
 
 class TransaccionNotifier extends StateNotifier<TransaccionFormState> {
   final PagosExtranjerosImpl _repo = PagosExtranjerosImpl();
@@ -1454,12 +1430,9 @@ class TransaccionNotifier extends StateNotifier<TransaccionFormState> {
   void setIdTipoTransaccion(BigInt id, {bool requiereForward = false}) =>
       state = state.copyWith(
         idTipoTransaccion: id,
-        // FIX: el backend exige fechaPactado/fechaVencimiento para FORWARD. Los
-        // date pickers muestran un default (now / now+90) pero el estado quedaba
-        // en null hasta que el usuario abría y elegía una fecha → el guardado
-        // fallaba con "FORWARD requiere Fecha Vencimiento". Al elegir un tipo
-        // forward sembramos esos defaults (null = copyWith conserva el actual,
-        // así los tipos no-forward no quedan con fechas espurias).
+        // FORWARD exige fechaPactado/fechaVencimiento en el backend, pero los pickers solo
+        // muestran un default (now / now+90) y el estado seguía en null ("FORWARD requiere
+        // Fecha Vencimiento"). Al elegir forward se siembran; null conserva en los demás.
         fechaPactado:
             requiereForward ? (state.fechaPactado ?? DateTime.now()) : null,
         fechaVencimiento:
@@ -1672,13 +1645,10 @@ class TransaccionNotifier extends StateNotifier<TransaccionFormState> {
     }
   }
 
-  // ── OPCIÓN B: Operación de TESORERÍA (sin solicitud ni cotización) ──
-  // Para tipos que NO son pago a proveedor (USDT, Fondeo/Traspaso Mercury,
-  // Devolución). El SP los acepta con idSolicitud/idCotizacion/cardCode NULL
-  // (esPagoProveedor=0) y codBanco sólo si el tipo lo requiere. El backend
-  // (SP) hace NULLIF(@idCotizacion,0)/NULLIF(@codBanco,0), así que mandar 0
-  // equivale a NULL y no viola las FK. Mismo payload que guardarTransaccion
-  // pero con validaciones relajadas (sin exigir cotización ni banco).
+  // OPCIÓN B: TESORERÍA (USDT, Fondeo/Traspaso Mercury, Devolución), sin solicitud
+  // ni cotización. El SP acepta idSolicitud/idCotizacion/cardCode NULL
+  // (esPagoProveedor=0) y hace NULLIF a idCotizacion/codBanco: 0 equivale a NULL y
+  // no viola las FK. Mismo payload que guardarTransaccion con validaciones relajadas.
   Future<bool> guardarOperacionTesoreria(int audUsuario) async {
     if (state.idTipoTransaccion == BigInt.zero) {
       state = state.copyWith(
@@ -1822,10 +1792,8 @@ class TransaccionNotifier extends StateNotifier<TransaccionFormState> {
     }
   }
 
-  // ── FASE 5: Confirmar pago ──────────────────────────────────────────
-  // El SP requiere transición escalonada:
-  //   PENDIENTE → PROCESADO → CONFIRMADO
-  // Por eso se hacen dos llamadas secuenciales.
+  // FASE 5: Confirmar pago. El SP requiere la transición escalonada
+  // PENDIENTE → PROCESADO → CONFIRMADO, por eso son dos llamadas secuenciales.
 
   Future<bool> confirmarPago({
     required BigInt idTransaccion,
@@ -1847,10 +1815,9 @@ class TransaccionNotifier extends StateNotifier<TransaccionFormState> {
           '${d.month.toString().padLeft(2, '0')}-'
           '${d.day.toString().padLeft(2, '0')} 00:00:00';
 
-      // Helper: payload completo con todos los campos del state.
-      // El backend Java deserializa en modelo completo: los primitivos que
-      // no se envían defaultean a 0 y el SP hace ISNULL(0, valorActual) = 0,
-      // sobreescribiendo valores reales. Por eso enviamos TODO en cada paso.
+      // Payload completo con todos los campos del state: el backend Java deserializa
+      // el modelo entero y los primitivos omitidos quedan en 0; el SP hace
+      // ISNULL(0, valorActual) = 0 y pisa valores reales. Por eso se envía TODO.
       Map<String, dynamic> fullPayload({
         required String estado,
         String? nroTransaccion,
@@ -1962,18 +1929,14 @@ class TransaccionNotifier extends StateNotifier<TransaccionFormState> {
   }
 }
 
-// ═══════════════════════════════════════════════════════════════════════
 // FASE 4-5 — Provider de transacción
-// ═══════════════════════════════════════════════════════════════════════
 
 final transaccionFormProvider =
     StateNotifierProvider<TransaccionNotifier, TransaccionFormState>(
       (ref) => TransaccionNotifier(),
     );
 
-// ═══════════════════════════════════════════════════════════════════════
 // Providers de lectura para las fases
-// ═══════════════════════════════════════════════════════════════════════
 
 /// Cotizaciones de una solicitud (para comparativa — Fase 3).
 final cotizacionesXSolicitudProvider = FutureProvider.autoDispose
@@ -2023,9 +1986,7 @@ final timelineSolicitudProvider = FutureProvider.autoDispose
       return repo.getTimelineSolicitud(idSolicitud);
     });
 
-// ═══════════════════════════════════════════════════════════════════════
 // Providers de catálogos (para dropdowns y tablas de configuración)
-// ═══════════════════════════════════════════════════════════════════════
 
 /// Lista de canales de pago activos.
 final canalesPagoProvider = FutureProvider.autoDispose<List<CanalesPagoEntity>>(
@@ -2117,9 +2078,7 @@ final bancosTPEXProvider = FutureProvider.autoDispose<List<BancoEntity>>((
   return repo.getBancos();
 });
 
-// ═══════════════════════════════════════════════════════════════════════
-// Providers de lectura adicionales (spec v2)
-// ═══════════════════════════════════════════════════════════════════════
+// Providers de lectura adicionales
 
 /// Cargos bancarios de una cotización.
 final cargosCotizacionProvider = FutureProvider.autoDispose

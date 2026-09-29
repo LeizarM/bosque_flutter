@@ -1,18 +1,9 @@
 /// Declarar un sábado como **puente a cuenta de vacación**.
 ///
-/// La empresa decide que ese sábado no se trabaja y se lo cobra a la vacación
-/// de cada uno. Hasta ahora eran cuarenta permisos cargados a mano, uno por
-/// persona, por la pantalla de solicitudes — que además los rebota: exige que
-/// no haya cruces, pide dos firmas por solicitud y frena a quien tenga el saldo
-/// bajo. Ninguna de esas tres cosas aplica cuando el que decide es la empresa.
-///
-/// **Por qué la hoja se abre en la simulación y no en un botón.** Esto escribe
-/// en `trh_permiso`, que es de RR.HH., y le descuenta saldo de vacación a
-/// cuarenta personas de una. La lista de quiénes y cuántos días no es un
-/// adorno: es la única forma de ver, antes de apretar, que el horario elegido
-/// descuenta lo que se esperaba y que no se está incluyendo a quien no
-/// corresponde. El backend la calcula con `@ACCION='S'`, que hace `RETURN`
-/// antes de cualquier transacción.
+/// La empresa decide que no se trabaja y se cobra a la vacación de cada uno (no
+/// sirve la pantalla de solicitudes: rebota por cruces, firmas y saldo). Escribe
+/// en `trh_permiso` y descuenta saldo a decenas de personas, por eso la hoja abre
+/// en la simulación (`@ACCION='S'`, hace `RETURN` antes de toda transacción).
 library;
 
 import 'package:bosque_flutter/core/state/rol_sabados_provider.dart';
@@ -46,15 +37,14 @@ class _PuenteSheet extends ConsumerStatefulWidget {
 }
 
 class _PuenteSheetState extends ConsumerState<_PuenteSheet> {
-  /// El turno real del sábado. Cambiarlas cambia cuánto se descuenta, así que
-  /// son editables y la lista de abajo se rehace sola con cada cambio.
+  /// El turno real del sábado: cambia cuánto se descuenta, así que son editables
+  /// y la lista se rehace con cada cambio.
   final _desde = TextEditingController(text: '08:30');
   final _hasta = TextEditingController(text: '12:30');
   final _motivo = TextEditingController();
 
-  /// Lo que se le está preguntando al servidor. Se actualiza al salir de los
-  /// campos de hora y no en cada tecla: con `onChanged` se dispararía una
-  /// consulta por dígito, y «0», «08», «08:» son horas que no existen.
+  /// Lo que se le pregunta al servidor. Se actualiza al salir de los campos de
+  /// hora, no en cada tecla: «0», «08», «08:» no son horas válidas.
   late PuenteAConsultar _clave = _claveActual();
   bool _guardando = false;
 
@@ -124,8 +114,8 @@ class _PuenteSheetState extends ConsumerState<_PuenteSheet> {
                 ),
               ],
             ),
-            // El detalle que nadie adivina mirando la pantalla, y que decide
-            // cuánto se le descuenta a cada uno.
+            // El detalle que decide cuánto se le descuenta a cada uno y no se adivina
+            // mirando la pantalla.
             const _Nota(
               'El horario decide los días que se descuentan, y no de forma '
               'proporcional: se resta hasta media hora de almuerzo si la franja '
@@ -175,8 +165,7 @@ class _PuenteSheetState extends ConsumerState<_PuenteSheet> {
             SizedBox(
               width: double.infinity,
               child: FilledButton.icon(
-                // Se apaga si no hay nadie a quien darle de alta: apretarlo
-                // devolvería el error del servidor y no habría hecho nada.
+                // Se apaga si no hay nadie a quien dar de alta: el servidor devolvería error.
                 onPressed:
                     (_guardando ||
                             (previa.valueOrNull
@@ -208,9 +197,8 @@ class _PuenteSheetState extends ConsumerState<_PuenteSheet> {
     final entran = lista.where((d) => d.entra).toList();
     final dias = entran.fold<double>(0, (a, d) => a + d.dias);
 
-    // Segundo paso deliberado. La hoja ya muestra la lista, pero apretar el
-    // botón es lo que descuenta vacación de verdad, y eso no se deshace desde
-    // ninguna pantalla: hay que ir a RR.HH. a borrar cuarenta permisos.
+    // Segundo paso deliberado: confirmar descuenta vacación de verdad y no se
+    // deshace desde ninguna pantalla (hay que borrar los permisos en RR.HH.).
     final ok = await showDialog<bool>(
       context: context,
       builder:
@@ -251,8 +239,8 @@ class _PuenteSheetState extends ConsumerState<_PuenteSheet> {
           );
       if (!mounted) return;
       Navigator.of(context).pop();
-      // El mensaje del servidor se muestra tal cual: dice cuántos entraron y
-      // cuántos se saltearon, que es más de lo que sabría decir un «Listo».
+      // El mensaje del servidor va tal cual: dice cuántos entraron y cuántos se
+      // omitieron, más que un «Listo».
       avisar(context, msg);
     } catch (e) {
       if (mounted) {
@@ -263,9 +251,8 @@ class _PuenteSheetState extends ConsumerState<_PuenteSheet> {
   }
 }
 
-/// Los días con hasta cuatro decimales, sin ceros de relleno. Un permiso de
-/// sábado puede valer 0.4375, y redondearlo a 0.44 en la confirmación mostraría
-/// un número que después no coincide con el que quedó guardado.
+/// Días con hasta cuatro decimales, sin ceros de relleno: un permiso de sábado
+/// puede valer 0.4375 y redondearlo a 0.44 no coincidiría con lo guardado.
 String _dias(double d) => d
     .toStringAsFixed(4)
     .replaceFirst(RegExp(r'0+$'), '')
@@ -314,9 +301,8 @@ class _Resumen extends StatelessWidget {
       );
     }
 
-    // El servidor manda el motivo como una fila, no como una excepción: leerlo
-    // aquí es lo que hace que en pantalla salga «falta tal dato» y no un error
-    // de driver. Ver `PuenteVacacionEntity.esError`.
+    // El servidor manda el motivo como una fila, no como excepción: así sale
+    // «falta tal dato» y no un error de driver. Ver `PuenteVacacionEntity.esError`.
     if (lista.first.esError) return _Aviso(lista.first.detalle);
 
     final entran = lista.where((d) => d.entra).toList();

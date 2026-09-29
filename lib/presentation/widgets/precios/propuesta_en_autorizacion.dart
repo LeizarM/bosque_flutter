@@ -1,19 +1,12 @@
-/// La fila del listado de propuestas, ya convertida en entities.
+/// La fila del listado de propuestas, ya convertida en entities: el DTO de
+/// despliegue del backend (tpr_propuesta, tpr_autorizacion y nombres por
+/// subconsulta a tb_usuario) llega como `Map<String, dynamic>` y aquí se parte en
+/// las DOS entities.
 ///
-/// El backend devuelve esta grilla como un DTO de despliegue —mezcla columnas
-/// de tpr_propuesta con columnas de tpr_autorizacion y con nombres resueltos
-/// por subconsulta a tb_usuario— y por eso el repositorio la entrega como
-/// `Map<String, dynamic>`. Aca ese mapa se parte en las DOS entities que le
-/// corresponden, para que la pantalla nunca lea una clave suelta ni decida el
-/// estado comparando cadenas.
-///
-/// **Lo que este objeto NO es.** No sirve para escribir. La grilla no trae
-/// `obs`, `codEmpresa` ni los ids de usuario, asi que la [PropuestaPrecioEntity]
-/// que se arma aca tiene esos campos en su valor vacio. Usarla para una
-/// modificacion de la cabecera haria un UPDATE que graba `obs = NULL` y
-/// borraria la observacion real: p_abm_propuesta escribe todas las columnas en
-/// la accion 'U', no solo las que cambiaron. Esta pantalla solo llama a las tres
-/// escrituras del circuito de autorizacion, que reciben el id y nada mas.
+/// NO sirve para escribir: la grilla no trae `obs`, `codEmpresa` ni ids de
+/// usuario y un UPDATE de cabecera grabaría `obs = NULL` (p_abm_propuesta escribe
+/// todas las columnas en la acción 'U'). Solo se usan las tres escrituras del
+/// circuito de autorización, que reciben el id.
 library;
 
 import 'package:flutter/material.dart';
@@ -22,24 +15,14 @@ import 'package:bosque_flutter/core/ui/piezas_bosque.dart';
 import 'package:bosque_flutter/domain/entities/autorizacion_precio_entity.dart';
 import 'package:bosque_flutter/domain/entities/propuesta_precio_entity.dart';
 
-// ═══════════════════════════════════════════════════════════════════════════
-// EL ESTADO, DE TEXTO A CODIGO
-// ═══════════════════════════════════════════════════════════════════════════
+// El estado, de texto a código
 
-/// Traduce la descripcion del estado al codigo del dominio (v_tipos grupo 38).
+/// Traduce la descripción del estado al código del dominio (v_tipos grupo 38).
 ///
-/// El listado principal no trae `esAprobada`: el procedimiento ya lo resolvio
-/// contra v_tipos y devuelve "Pendiente", "Aprobada", "No Aprobada" o
-/// "En Espera". Se vuelve al codigo porque el color, los permisos y las
-/// acciones se deciden con [AutorizacionPrecioEntity] y sus getters, no
-/// comparando cadenas por la pantalla.
-///
-/// "No Aprobada" se revisa ANTES que "Aprobada": la segunda esta contenida en
-/// la primera y el orden inverso pintaba de verde una propuesta rechazada.
-///
-/// Devuelve -1 si la descripcion no es ninguna de las cuatro. No es un error
-/// que se tape: la entity lo muestra como "Desconocido" y asi se ve que el
-/// catalogo cambio, en vez de caer en "Pendiente" y parecer normal.
+/// El listado trae "Pendiente", "Aprobada", "No Aprobada" o "En Espera". "No
+/// Aprobada" se revisa ANTES que "Aprobada" (la contiene: al revés pintaba de
+/// verde un rechazo). Devuelve -1 si no es ninguna: la entity lo muestra
+/// "Desconocido" y así se nota que el catálogo cambió.
 int codigoDeEstadoPropuesta(Object? descripcion) {
   final t = (descripcion ?? '').toString().trim().toLowerCase();
   if (t.isEmpty) return -1;
@@ -50,9 +33,7 @@ int codigoDeEstadoPropuesta(Object? descripcion) {
   return -1;
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// LA FILA
-// ═══════════════════════════════════════════════════════════════════════════
+// La fila
 
 /// Una propuesta del listado con su autorizacion y los nombres que se muestran.
 @immutable
@@ -80,11 +61,9 @@ class PropuestaEnAutorizacion {
   /// Quien genero (exporto) la propuesta. Vacio mientras no se genero.
   final String generadoPor;
 
-  /// Arma la fila desde el DTO del listado.
-  ///
-  /// Las fechas llegan como milisegundos desde epoch —el backend serializa
-  /// `java.util.Date` sin formato declarado— pero se acepta tambien el texto
-  /// ISO: un `@JsonFormat` agregado manana en el DTO no debe romper la grilla.
+  /// Arma la fila desde el DTO del listado. Las fechas llegan como milisegundos
+  /// desde epoch (`java.util.Date` sin formato), pero se acepta también texto ISO
+  /// por si el DTO agrega un `@JsonFormat`.
   factory PropuestaEnAutorizacion.desdeFila(Map<String, dynamic> fila) {
     return PropuestaEnAutorizacion(
       propuesta: PropuestaPrecioEntity(
@@ -105,10 +84,9 @@ class PropuestaEnAutorizacion {
         idAutorizacion: _entero(fila['idAutorizacion']),
         idPropuesta: _entero(fila['idPropuesta']),
         esAprobada: codigoDeEstadoPropuesta(fila['estado']),
-        // El DTO trae el NOMBRE de quien decidio, no su codigo de usuario. El
-        // id queda en cero y quien pregunte si hay auditoria mira
-        // [tieneResolucion], no el `tieneAuditoria` de la entity: ese pide un
-        // id que esta consulta nunca devuelve.
+        // El DTO trae el NOMBRE de quien decidió, no su código: el id queda en cero y
+        // se pregunta [tieneResolucion], no el `tieneAuditoria` de la entity (pide un
+        // id que esta consulta nunca devuelve).
         audUsuario: BigInt.zero,
         audFecha: _fecha(fila['audFechaAutorizacion']),
       ),
@@ -125,9 +103,8 @@ class PropuestaEnAutorizacion {
 
   String get titulo => propuesta.tituloLegible;
 
-  /// Que se esta repreciando. El tipo decide que dialogo abria el sistema
-  /// anterior y sigue siendo el dato que explica por que dos propuestas del
-  /// mismo dia se ven distintas.
+  /// Qué se está repreciando. El tipo decidía qué diálogo abría el sistema anterior
+  /// y explica por qué dos propuestas del mismo día se ven distintas.
   String get etiquetaTipo => switch (propuesta.tipo) {
     1 => 'Por familia',
     2 => 'Por artículo',
@@ -142,9 +119,8 @@ class PropuestaEnAutorizacion {
   String get fechaResolucion => fechaCorta(autorizacion.audFecha);
   String get fechaGeneracion => fechaCorta(propuesta.audFecGenerado);
 
-  /// Lo mismo que muestra la grilla, para el buscador: numero, titulo y las
-  /// tres personas. Se arma una vez por fila y por tecla, que a cien filas
-  /// —el TOP que devuelve el procedimiento— no se nota.
+  /// Lo que muestra la grilla, para el buscador: número, título y las tres
+  /// personas. Se arma por fila y tecla; con ~100 filas (TOP del SP) no se nota.
   bool coincideCon(String consulta) {
     final q = consulta.trim().toLowerCase();
     if (q.isEmpty) return true;
@@ -155,7 +131,7 @@ class PropuestaEnAutorizacion {
   }
 }
 
-// ── Lectura defensiva del DTO ───────────────────────────────────────────────
+// Lectura defensiva del DTO
 
 String _texto(Object? v) => (v ?? '').toString().trim();
 
@@ -180,14 +156,10 @@ DateTime? _fecha(Object? v) => switch (v) {
   _ => null,
 };
 
-// ═══════════════════════════════════════════════════════════════════════════
-// QUE SE PUEDE HACER CON UNA PROPUESTA
-// ═══════════════════════════════════════════════════════════════════════════
+// Qué se puede hacer con una propuesta
 
-/// Las acciones habilitadas sobre una fila, con el motivo cuando no lo estan.
-///
-/// Es un objeto y no cinco `if` repartidos por la tabla y la tarjeta: las dos
-/// superficies muestran las mismas acciones y tienen que decir lo mismo. Se
+/// Las acciones habilitadas sobre una fila, con el motivo cuando no lo están.
+/// Es un objeto y no `if` repartidos: tabla y tarjeta deben decir lo mismo. Se
 /// calcula con [accionesDe], que es pura.
 @immutable
 class AccionesPropuesta {
@@ -201,17 +173,15 @@ class AccionesPropuesta {
     required this.motivoGenerar,
   });
 
-  /// Seguir armando la propuesta en el asistente. En el sistema anterior el
-  /// boton "Editar" abria la vista preliminar con "Agregar Mas Familias" y
-  /// "Enviar a autorizar": el asistente tiene las tres cosas. Pide btnPen, como
-  /// entonces.
+  /// Seguir armando la propuesta en el asistente (el "Editar" del sistema anterior
+  /// abría la vista preliminar con "Agregar Más Familias" y "Enviar a autorizar").
+  /// Pide btnPen, como entonces.
   final bool puedeEditar;
 
-  /// **Visible** quiere decir "el usuario tiene el boton asignado"; el motivo
-  /// dice si ademas se puede usar ahora. Se separan a proposito: un control que
-  /// desaparece no se puede preguntar por que no esta, y uno que aparece
-  /// deshabilitado sin explicacion se lee como una falla del sistema. Quien no
-  /// tiene el permiso no ve nada, que es lo que hacia el `rendered` del XHTML.
+  /// **Visible** = el usuario tiene el botón asignado; el motivo dice si además se
+  /// puede usar ahora. Separados a propósito: un control que desaparece no se puede
+  /// explicar y uno deshabilitado sin motivo parece una falla. Sin permiso no se
+  /// ve nada (como el `rendered` del XHTML).
   final bool muestraResolver;
 
   /// Por que no se puede resolver todavia. Null cuando si se puede.
@@ -232,21 +202,16 @@ class AccionesPropuesta {
   bool get generarHabilitado => muestraGenerar && motivoGenerar == null;
 }
 
-/// Que puede hacer este usuario con esta propuesta.
+/// Qué puede hacer este usuario con esta propuesta. Reglas de estado del sistema
+/// anterior (el `rendered` de cada botón del XHTML):
 ///
-/// Las reglas de estado son las del sistema anterior, donde vivian dentro del
-/// `rendered` de cada boton del XHTML:
+/// * **Resolver** (aprobar o rechazar): solo En Espera; una Pendiente aún se arma.
+/// * **Enviar a autorizar**: mientras no esté Aprobada ni En Espera.
+/// * **Generar**: solo Aprobada (exportar precios que aún no son precios).
+/// * **Editar**: solo Pendiente.
 ///
-/// * **Resolver** (aprobar o rechazar) solo cuando la propuesta esta En Espera.
-///   Es el circuito: primero alguien la manda a autorizar y recien ahi el
-///   autorizador decide. Una propuesta Pendiente todavia se esta armando.
-/// * **Enviar a autorizar** mientras no este Aprobada ni ya En Espera.
-/// * **Generar** solo cuando esta Aprobada: generar es exportar precios que
-///   todavia no son precios.
-/// * **Editar** solo mientras esta Pendiente.
-///
-/// Los permisos se pasan ya resueltos —no se leen aca— para que la funcion
-/// quede pura y se pueda probar sin Riverpod ni contexto.
+/// Los permisos llegan ya resueltos para que la función sea pura y se pruebe
+/// sin Riverpod ni contexto.
 AccionesPropuesta accionesDe({
   required AutorizacionPrecioEntity autorizacion,
   required bool tieneBtnAprobar,
@@ -264,8 +229,8 @@ AccionesPropuesta accionesDe({
             : 'Solo se aprueba o rechaza una propuesta En Espera. '
                 'Esta está $estado.',
     muestraEnviarAEspera: tieneBtnPen,
-    // Solo desde Pendiente: el rechazo es definitivo (2026-09-28). El sistema
-    // anterior dejaba reenviar una rechazada y volvia a quedar En Espera.
+    // Solo desde Pendiente: el rechazo es definitivo (el sistema anterior dejaba
+    // reenviar una rechazada y volvía a En Espera).
     motivoEnviarAEspera:
         autorizacion.esPendiente
             ? null
@@ -282,16 +247,11 @@ AccionesPropuesta accionesDe({
   );
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// EL CHIP DE ESTADO
-// ═══════════════════════════════════════════════════════════════════════════
+// El chip de estado
 
-/// El estado de una propuesta, con el color puesto por lo que significa.
-///
-/// Se apoya en [Etiqueta], que toma los colores del ColorScheme: el usuario
-/// elige la semilla del tema entre nueve y hay modo oscuro, asi que un verde
-/// fijo —el `forestgreen` del XHTML anterior— se ve de otra aplicacion en la
-/// mayoria de las combinaciones.
+/// El estado de una propuesta, con el color puesto por lo que significa. Usa
+/// [Etiqueta] (colores del ColorScheme): con nueve semillas de tema y modo
+/// oscuro, un verde fijo (el `forestgreen` del XHTML) desentona.
 class ChipEstadoPropuesta extends StatelessWidget {
   const ChipEstadoPropuesta({super.key, required this.autorizacion});
 

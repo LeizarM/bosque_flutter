@@ -59,9 +59,7 @@ final reporteCuotasProvider = FutureProvider.family<Uint8List, int>((
   return await repo.getReporteCuotas(codPrestamo);
 });
 
-// ══════════════════════════════════════════════════════════════════════════════
 // PROVIDER DE TOTAL
-// ══════════════════════════════════════════════════════════════════════════════
 final prestamosTotalProvider = FutureProvider.autoDispose.family<
   double,
   ({int? codEmpresa, String? fechaDesde, String? fechaHasta})
@@ -86,11 +84,7 @@ final prestamosTotalSAPProvider = FutureProvider.autoDispose.family<
   );
 });
 
-// ══════════════════════════════════════════════════════════════════════════════
-// LISTA PAGINADA DE PRESTAMOS VIGENTES O BANDEJA SAP
-// ══════════════════════════════════════════════════════════════════════════════
-// ESTADO UNIFICADO DE PRESTAMOS
-// ─────────────────────────────────────────────
+// ESTADO UNIFICADO DE PRÉSTAMOS: LISTA PAGINADA DE VIGENTES O BANDEJA SAP
 class PrestamoState {
   final List<PrestamoEntity> items;
   final bool cargando;

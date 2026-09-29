@@ -14,10 +14,9 @@ import 'package:flutter/material.dart';
 
 export 'package:bosque_flutter/core/ui/tokens_bosque.dart' show Aire;
 
-// `MensajeVacio`, `Etiqueta`, `TonoEtiqueta`, `ComboBuscable` y `fechaCorta` se
-// mudaron a `core/ui/piezas_bosque.dart` —sin cambiar una línea— cuando el
-// segundo módulo las necesitó igual. Se re-exportan desde aquí para que los
-// widgets de sábados, que las toman de este archivo, no se enteren.
+// `MensajeVacio`, `Etiqueta`, `TonoEtiqueta`, `ComboBuscable` y `fechaCorta`
+// viven en `core/ui/piezas_bosque.dart`; se re-exportan para los widgets de
+// sábados.
 export 'package:bosque_flutter/core/ui/piezas_bosque.dart';
 
 String fechaHora(DateTime? f) =>
@@ -26,9 +25,8 @@ String fechaHora(DateTime? f) =>
         : '${fechaCorta(f)} ${f.hour.toString().padLeft(2, '0')}:'
             '${f.minute.toString().padLeft(2, '0')}';
 
-/// Convierte el `#RRGGBB` de `trs_EstadoTurno.color`.
-/// null si viene vacío o mal formado: mejor un fondo neutro que un crash por un
-/// color cargado a mano.
+/// Convierte el `#RRGGBB` de `trs_EstadoTurno.color`. null si viene vacío o mal
+/// formado: mejor un fondo neutro que un crash por un color cargado a mano.
 Color? colorDesdeHex(String hex) {
   var h = hex.trim().replaceFirst('#', '');
   if (h.length == 6) h = 'FF$h';
@@ -37,28 +35,15 @@ Color? colorDesdeHex(String hex) {
   return v == null ? null : Color(v);
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// EL AVISO
-// ═══════════════════════════════════════════════════════════════════════════
+// El aviso
 
-/// Muestra el resultado de una acción, ya traducido al idioma de quien usa la
-/// app (ver [humanizar]).
+/// Muestra el resultado de una acción, ya traducido para quien usa la app (ver
+/// [humanizar]).
 ///
-/// Los mensajes de éxito de los SPs explican el siguiente paso —«ejecuta
-/// REGENERAR», «quedó sin sucursal»— y por eso se muestran en lugar de un
-/// «Guardado» genérico. Los de error se reescriben, y si son técnicos se
-/// reemplazan por un aviso corto y el detalle va a la consola.
-///
-/// **Lo único que agrega este envoltorio es [humanizar].** El dibujo —la
-/// tarjeta arriba de todo, en el Overlay raíz, por encima de los diálogos y de
-/// sus velos— lo pone `shared/aviso.dart`, que es de toda la app: el problema
-/// que resolvía este archivo resultó no ser de este módulo. Aquí queda la
-/// traducción, que sí es de aquí: está escrita mirando los `RAISERROR` de los
-/// `trs_sp_`, y aplicársela a los textos que el resto de la app ya tiene
-/// escritos en castellano los reescribiría sin motivo.
-///
-/// La firma es la de siempre a propósito: cambia cómo se dibuja, no cómo se
-/// llama, así que sus diez llamadores no se enteran.
+/// Los éxitos de los SPs explican el siguiente paso («ejecuta REGENERAR») y se
+/// muestran en vez de un «Guardado»; los errores técnicos se reemplazan por un
+/// aviso corto y el detalle va a la consola. El dibujo (tarjeta en el Overlay
+/// raíz, sobre los diálogos) es de `shared/aviso.dart`.
 void avisar(BuildContext context, String mensaje, {bool esError = false}) =>
     compartido.avisar(context, humanizar(mensaje).texto, esError: esError);
 
@@ -81,41 +66,26 @@ Future<bool> ejecutarAccion(
   }
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// MEDIDAS SEGÚN EL DISPOSITIVO
-// ═══════════════════════════════════════════════════════════════════════════
+// Medidas según el dispositivo
 
-// `Aire` se mudó a `core/ui/tokens_bosque.dart` —sin cambiar los cortes de 600
-// y 1000— porque el segundo módulo que decide su layout por el ancho del cajón
-// lo necesitaba igual. Se re-exporta desde aquí para que los widgets del módulo,
-// que lo toman de este archivo, no se enteren.
+// `Aire` (cortes de 600 y 1000) vive en `core/ui/tokens_bosque.dart` y se
+// re-exporta arriba.
 
-/// Medidas de la matriz. Se calculan del ancho real disponible, no del tamaño
-/// de pantalla: dentro del dashboard hay un sidebar que se come su parte.
+/// Medidas de la matriz, calculadas del ancho real disponible (no de la
+/// pantalla: el dashboard tiene un sidebar).
 ///
-/// [anchoCelda] y [anchoNombre] son los **mínimos**: lo que la matriz necesita
-/// para ser legible cuando el ancho está justo. Cuando sobra, [repartir] decide
-/// hasta dónde crece cada uno.
+/// [anchoCelda] y [anchoNombre] son los **mínimos** para ser legible con el
+/// ancho justo; cuando sobra, [repartir] decide hasta dónde crece cada uno.
 class MedidasGrilla {
   final double anchoNombre;
   final double anchoCelda;
 
   /// Hasta dónde puede engordar una celda cuando sobra ancho.
   ///
-  /// **Por qué hay un tope y no se estira hasta llenar.** La celda tiene UNA
-  /// letra. Cinco columnas en un panel de 1900 px darían celdas de 300 px con
-  /// un `1` perdido en el medio: la letra deja de pertenecer a su fila y a su
-  /// columna, que es justo lo que una planilla tiene que dejar claro.
-  ///
-  /// El número sale de dos lados que coinciden: 64 px es el ancho por defecto
-  /// de una columna de Excel —la hoja que este módulo reemplaza— y es también
-  /// cerca del doble del alto de fila, la proporción a partir de la cual un
-  /// glifo solo empieza a flotar.
-  ///
-  /// **Es el mismo para los tres tamaños**, y a propósito: los mínimos cambian
-  /// con el dispositivo porque cambia cuánto hay que apretar, pero el punto en
-  /// que una celda deja de leerse mejor no depende de la pantalla. En un panel
-  /// chico el tope simplemente no se alcanza.
+  /// **Hay tope y no se estira hasta llenar:** la celda tiene UNA letra; con 5
+  /// columnas en 1900 px serían de 300 px con un `1` perdido. 64 px es el ancho por
+  /// defecto de una columna de Excel (la hoja que este módulo reemplaza) y cerca
+  /// del doble del alto de fila. Es el mismo para los tres tamaños.
   final double anchoCeldaMax;
 
   final double altoFila;
@@ -131,33 +101,19 @@ class MedidasGrilla {
 
   /// Cuánto mide cada cosa con el ancho que realmente hay.
   ///
-  /// El sobrante se gasta **en orden de lo que cada pixel compra para leer**:
-  ///
-  /// 1. la columna de nombres, hasta [idealNombre] —lo que necesita el apellido
-  ///    más largo, medido por [anchoParaNombres]—. Cada pixel aquí borra unos
-  ///    puntos suspensivos, que es la pérdida de información más cara de la
-  ///    grilla: dos personas distintas se ven iguales.
-  /// 2. las celdas, hasta [anchoCeldaMax]: aire alrededor de la letra y las
-  ///    columnas separadas entre sí.
-  /// 3. nada más. Lo que quede es margen, y la matriz lo centra.
-  ///
-  /// **Por qué un tope y no un reparto proporcional.** Con el tope, un mes de
-  /// cuatro sábados y uno de cinco dibujan celdas del MISMO ancho en la misma
-  /// pantalla. Repartiendo proporcionalmente, febrero se vería más gordo que
-  /// marzo y la grilla cambiaría de forma cada vez que se cambia de mes.
-  ///
-  /// Con «Todo el año» —52 columnas— no sobra nada: `libre` da negativo, los
-  /// nombres vuelven al mínimo y las celdas se quedan en [anchoCelda]. Esta
-  /// función nunca achica por debajo de los mínimos; cuando falta ancho, la
-  /// matriz scrollea.
+  /// El sobrante se gasta según lo que cada pixel compra para leer: 1) la columna
+  /// de nombres hasta [idealNombre] (evita los «…», la pérdida más cara); 2) las
+  /// celdas hasta [anchoCeldaMax] (mismo ancho en un mes de 4 y uno de 5 sábados);
+  /// 3) el resto es margen, centrado. Con «Todo el año» (52 columnas) todo queda
+  /// en los mínimos y la matriz scrollea.
   ({double nombre, double celda}) repartir({
     required double disponible,
     required int columnas,
     required double idealNombre,
   }) {
-    // Los nombres se miden contra las celdas en su ancho MÍNIMO: primero se
-    // resuelve si sobra o no, y recién con lo que quedó se engordan las celdas.
-    // Al revés, unas celdas anchas se comerían el lugar del apellido.
+    // Los nombres se miden con las celdas en su ancho MÍNIMO: primero se resuelve
+    // si sobra y con el resto se engordan las celdas; al revés, unas celdas anchas
+    // se comerían el lugar del apellido.
     final libre = disponible - columnas * anchoCelda;
     final nombre =
         libre <= anchoNombre
@@ -170,16 +126,16 @@ class MedidasGrilla {
             ? anchoCelda
             : (porColumna > anchoCeldaMax ? anchoCeldaMax : porColumna);
 
-    // A pixel entero: los bordes de media unidad sobre una posición fraccionaria
-    // salen borrosos, y son 52 bordes en fila.
+    // A pixel entero: bordes de media unidad en posición fraccionaria salen
+    // borrosos, y son 52 en fila.
     return (nombre: nombre, celda: celda.floorToDouble());
   }
 
   factory MedidasGrilla.para(double ancho) {
     final aire = Aire.de(ancho);
     return switch (aire) {
-      // En "medio" se recortan los nombres antes que las celdas: perder una
-      // columna cuesta más que perder unas letras del apellido.
+      // En "medio" se recortan los nombres antes que las celdas: perder una columna
+      // cuesta más que perder letras del apellido.
       Aire.medio => const MedidasGrilla(
         anchoNombre: 150,
         anchoCelda: 36,
@@ -192,8 +148,8 @@ class MedidasGrilla {
         altoFila: 34,
         altoCabecera: 52,
       ),
-      // En "justo" la matriz no se muestra; las medidas quedan por si el
-      // usuario fuerza la vista de matriz a mano.
+      // En "justo" la matriz no se muestra; las medidas quedan por si se fuerza la
+      // vista de matriz a mano.
       Aire.justo => const MedidasGrilla(
         anchoNombre: 120,
         anchoCelda: 32,
@@ -204,14 +160,10 @@ class MedidasGrilla {
   }
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// PIEZAS DE LA GRILLA
-// ═══════════════════════════════════════════════════════════════════════════
+// Piezas de la grilla
 
-/// `ene`, `feb`, … Sin `intl`: son doce palabras y se usan en tres lugares.
-///
-/// Estaba duplicado en la matriz y en la agenda. Que el mes se escriba distinto
-/// en dos vistas del mismo dato es de las cosas que nadie reporta y todos notan.
+/// `ene`, `feb`, … Sin `intl`: son doce palabras y se usan en tres lugares (el
+/// mes debe escribirse igual en todas las vistas).
 String mesCorto(int mes) {
   const meses = [
     'ene',
@@ -230,12 +182,8 @@ String mesCorto(int mes) {
   return (mes >= 1 && mes <= 12) ? meses[mes - 1] : '';
 }
 
-/// `Enero`, `Febrero`, … Mismo criterio que [mesCorto]: la lista de los doce
-/// nombres vive en un solo lugar.
-///
-/// Estaba encerrada adentro del selector de mes de la grilla, así que el título
-/// de cualquier otra vista que quisiera decir «octubre» tenía que copiarla. Con
-/// mayúscula inicial porque los dos usos son de rótulo, no de frase corrida.
+/// `Enero`, `Febrero`, … Mismo criterio que [mesCorto]: los doce nombres viven
+/// en un solo lugar. Con mayúscula inicial: los usos son de rótulo.
 String mesLargo(int mes) {
   const meses = [
     'Enero',
@@ -257,20 +205,10 @@ String mesLargo(int mes) {
 /// «25 sábados de 26 en todo el año»: lo que lleva trabajado una persona contra
 /// su meta.
 ///
-/// **Existe para que las pantallas que muestran este dato lo digan igual.** En
-/// la grilla aparece como «25/26» pegado al nombre y en «Grupos» como una línea
-/// de texto, pero es el MISMO número: los sábados que le tocan en Todo el rol,
-/// que es de un año. Con dos textos sueltos ya se estaba escribiendo de dos
-/// formas, y es la clase de diferencia que nadie reporta y todos notan — el
-/// mismo motivo por el que [mesCorto] vive aquí.
-///
-/// **«en todo el año» no es relleno.** La grilla arranca filtrada por mes: se
-/// ven las cinco columnas de agosto y al lado un 26. Sin esas cuatro palabras el
-/// contador parece del mes que está en pantalla, que es exactamente lo que se
-/// entendía mal.
-///
-/// Con meta 0 —alguien sin objetivo cargado— se omite: «de 0» se leería como una
-/// meta de cero sábados y no como la ausencia de meta.
+/// Existe para que la grilla («25/26») y «Grupos» digan igual el MISMO número.
+/// **«en todo el año» no es relleno**: la grilla arranca filtrada por mes y sin
+/// esas palabras el contador parece del mes en pantalla. Con meta 0 se omite:
+/// «de 0» se leería como una meta de cero sábados.
 String sabadosDelAnio({required int turnos, required int meta}) =>
     meta > 0
         ? '$turnos sábados de $meta en todo el año'
@@ -278,9 +216,8 @@ String sabadosDelAnio({required int turnos, required int meta}) =>
 
 /// El círculo con la A o la B.
 ///
-/// El grupo es lo que decide qué sábados le tocan a alguien, así que aparece en
-/// la matriz, en la agenda y en la pantalla de grupos. Una sola definición para
-/// que el mismo color signifique lo mismo en las tres.
+/// El grupo decide qué sábados le tocan a alguien; una sola definición para que
+/// el mismo color signifique lo mismo en matriz, agenda y grupos.
 class InsigniaGrupo extends StatelessWidget {
   const InsigniaGrupo({super.key, required this.grupo, this.diametro = 18});
 
@@ -313,8 +250,8 @@ class InsigniaGrupo extends StatelessWidget {
 
 /// El color de fondo de una celda, o null si está libre.
 ///
-/// **null es un dato**, no un faltante: en este modelo el libre es la ausencia
-/// de la fila, así que el cuadrito sin pintar significa «ese día no le tocaba».
+/// **null es un dato**: el libre es la ausencia de la fila, así que el cuadrito
+/// sin pintar significa «ese día no le tocaba».
 Color? fondoDeCelda(BuildContext context, CeldaTurnoEntity? celda) =>
     colorDeCelda(Theme.of(context).colorScheme, celda)?.fondo;
 
@@ -335,8 +272,8 @@ class LetraDeCelda extends StatelessWidget {
 
     return Text(
       c.codigoExcel,
-      // El color sale del mismo lugar que el fondo, no del tema: el fondo lleva
-      // un tono aplicado y el par tiene que decidirse junto.
+      // El color sale del mismo lugar que el fondo, no del tema: el fondo lleva un
+      // tono aplicado y el par se decide junto.
       style: (estiloTexto ?? context.numero(fuerte: true))?.copyWith(
         color: color.texto,
       ),
@@ -346,15 +283,9 @@ class LetraDeCelda extends StatelessWidget {
 
 /// La esquinita que marca una celda escrita por una persona.
 ///
-/// Significa que esa celda tiene origen 'M' o 'P' y que una **regeneración no
-/// la va a pisar**. Aparece igual en la matriz y en la agenda: si la señal
-/// cambiara de forma entre las dos vistas habría que aprenderla dos veces.
-///
-/// **Antes era un punto puesto con `Positioned` dentro de un `Stack` que
-/// envolvía a la letra.** Ese Stack se encogía al tamaño del carácter —unos
-/// 10×14 px— así que el punto caía ENCIMA de la letra y una `C` se leía `€`.
-/// Un triángulo en la esquina del cuadro no puede solaparse con nada: ocupa un
-/// lugar donde no hay glifo.
+/// Significa origen 'M' o 'P': una **regeneración no la va a pisar**. Igual en
+/// matriz y agenda. Es un triángulo en la esquina y no un punto sobre la letra
+/// (el Stack se encogía a ~10×14 px, el punto caía ENCIMA y una `C` se leía `€`).
 class MarcaDeIntervencion extends StatelessWidget {
   const MarcaDeIntervencion({super.key, required this.color, this.lado = 7});
 
@@ -387,27 +318,11 @@ class _Esquinita extends CustomPainter {
 
 /// La esquinita que marca una celda que salió de un cambio aprobado.
 ///
-/// **Va abajo a la izquierda porque arriba a la derecha ya está ocupado.** Una
-/// celda de cambio la escribió `trs_sp_corregirCelda`, así que su origen es 'M'
-/// y siempre lleva además la [MarcaDeIntervencion]. Las dos señales conviven en
-/// la misma celda de 42 px, y las esquinas opuestas son el único lugar donde
-/// está garantizado que no se pisen entre ellas ni pisen la letra.
-///
-/// **Por qué hace falta si la `C` ya se ve.** La `C` cuenta sólo la mitad de la
-/// historia: el que falta. La otra mitad es el `1` de quien vino a cubrirlo, y
-/// ese `1` es idéntico al de un sábado que le tocaba por rotación. Sin esta
-/// marca no hay manera de ver en la grilla que esa persona vino de más.
-///
-/// Es el mismo triángulo rotado media vuelta y no un ícono nuevo: a 7 px un
-/// ícono se lee como una mancha, y dos formas distintas serían dos cosas que
-/// aprender en vez de una.
-///
-/// **Va en `cs.tertiary` y no en `cs.secondary`.** El tema se arma con
-/// `colorSchemeSeed`, así que primary y secondary salen del mismo tono con
-/// distinta saturación: las dos esquinitas quedarían del mismo color y sólo se
-/// distinguirían por la esquina. `tertiary` rota el tono y se lee distinto.
-/// No choca con la familia `tertiaryContainer` de los estados V/P/A porque una
-/// celda de cambio es siempre `C` o `1`, nunca una de esas.
+/// **Abajo a la izquierda**, opuesta a la [MarcaDeIntervencion] (toda celda de
+/// cambio es origen 'M'): en 42 px es el único lugar sin pisarse ni tapar la
+/// letra. Hace falta porque el `1` de quien cubre es idéntico al de un sábado
+/// por rotación. **`cs.tertiary` y no `secondary`:** con `colorSchemeSeed`
+/// secondary sale del mismo tono que primary; `tertiary` rota el tono.
 class MarcaDeCambio extends StatelessWidget {
   const MarcaDeCambio({super.key, required this.color, this.lado = 7});
 
@@ -421,7 +336,7 @@ class MarcaDeCambio extends StatelessWidget {
   );
 }
 
-/// Texto chico y apagado: un dato de apoyo que acompaña a otro más importante.
+/// Texto chico y apagado: dato de apoyo de otro más importante.
 class Dato extends StatelessWidget {
   const Dato(this.texto, {super.key});
   final String texto;
@@ -437,16 +352,11 @@ class Dato extends StatelessWidget {
 
 /// Las personas en orden alfabético, listas para un [ComboBuscable].
 ///
-/// **El orden llega hecho y aquí no se rehace.** `p_list_trs_Participante`
-/// —`@ACCION='L'`, el mismo listado que dibuja la grilla— ya viene por apellido
-/// desde el script `17`, y ordena mejor de lo que se puede ordenar aquí: la base
-/// es `Modern_Spanish_CI_AS`, así que CÁCERES cae entre BUITRAGO y CALLANCHO y
-/// la Ñ va después de la N. El `compareTo` de Dart compara code units: con él
-/// —que es lo que había aquí— CÁCERES, LECOÑA y SIÑANI caían después de la Z, y
-/// el combo terminaba ordenado distinto que la grilla que tiene al lado.
-///
-/// Todas las listas que llegan son `grilla.participantes` o un `where` sobre
-/// ella, y filtrar no cambia el orden.
+/// **El orden llega hecho, aquí no se rehace:** `p_list_trs_Participante`
+/// (`@ACCION='L'`) ya viene por apellido (script `17`, colación
+/// `Modern_Spanish_CI_AS`: CÁCERES entre BUITRAGO y CALLANCHO, la Ñ tras la N).
+/// El `compareTo` de Dart compara code units y mandaría CÁCERES, LECOÑA y SIÑANI
+/// tras la Z. Filtrar no cambia el orden.
 List<DropdownMenuEntry<int>> entradasDePersonas(
   List<ParticipanteTurnoEntity> personas, {
   bool mostrarGrupo = true,
@@ -463,14 +373,9 @@ List<DropdownMenuEntry<int>> entradasDePersonas(
 
 /// Cuánto necesita la columna de nombres para que entren completos.
 ///
-/// **Por qué se mide y no se estima.** Los apellidos de un rol real van de
-/// «RAMOS RODRIGO» a «BALDERRAMA CRISTHIAN ALEJANDRO»: cualquier ancho fijo
-/// corta a la mitad de la gente o desperdicia espacio con la otra mitad. Se mide
-/// el más largo con la tipografía de verdad y se pide exactamente eso.
-///
-/// Se mide **uno solo** —el más largo en caracteres— y no los ochenta y cinco.
-/// Con la misma fuente esa es una aproximación buena, y ochenta y cinco
-/// `TextPainter` por cada `build` no lo son.
+/// Se mide y no se estima (los apellidos van de «RAMOS RODRIGO» a «BALDERRAMA
+/// CRISTHIAN ALEJANDRO»). Se mide **uno solo**, el más largo en caracteres: es
+/// buena aproximación y 85 `TextPainter` por `build` no lo son.
 double anchoParaNombres(
   BuildContext context,
   List<ParticipanteTurnoEntity> personas, {

@@ -187,7 +187,6 @@ class DepositosChequesNotifier extends StateNotifier<DepositosChequesState> {
         estado: deposito.estado,
         fotoPath: deposito.fotoPath,
         aCuenta: deposito.aCuenta,
-        //fechaI: deposito.fechaI,
         nroTransaccion: nuevoNroTransaccion, // Nuevo número de transacción
         obs: deposito.obs,
         audUsuario: deposito.audUsuario,
@@ -909,10 +908,9 @@ class DepositosChequesNotifier extends StateNotifier<DepositosChequesState> {
         final file = File('${tempDir.path}/$fileName');
         await file.writeAsBytes(bytes);
 
-        // Usar un plugin como share_plus para compartir la imagen
-        // await Share.shareFiles([file.path], text: 'Imagen de depósito');
+        // Pendiente: compartir con share_plus (Share.shareFiles); por ahora solo se
+        // registra la ruta.
 
-        // O simplemente mostrar un mensaje de éxito
         console('Imagen guardada en: ${file.path}');
       } else {
         throw Exception(
@@ -1024,7 +1022,7 @@ class DepositosChequesNotifier extends StateNotifier<DepositosChequesState> {
     );
   }
 
-  // Nuevo método para limpiar solo los resultados de búsqueda de depósitos
+  // Limpia solo los resultados de búsqueda de depósitos
   void clearDepositosResults() {
     state = state.copyWith(
       depositos: [],
@@ -1038,7 +1036,7 @@ class DepositosChequesNotifier extends StateNotifier<DepositosChequesState> {
     );
   }
 
-  // Nuevo método para limpiar específicamente el estado de registro de depósitos
+  // Limpia el estado de registro de depósitos
   void clearRegistroDepositos() {
     state = state.copyWith(
       clienteSeleccionado: null,
@@ -1050,7 +1048,7 @@ class DepositosChequesNotifier extends StateNotifier<DepositosChequesState> {
     );
   }
 
-  // Agrega este método para permitir setear la imagen desde la UI
+  // Permite fijar la imagen desde la UI
   void setImagenDeposito(File? imagen) {
     state = state.copyWith(imagenDeposito: imagen);
   }

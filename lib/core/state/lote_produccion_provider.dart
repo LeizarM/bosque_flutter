@@ -9,9 +9,7 @@ import 'package:bosque_flutter/domain/entities/material_salida_entity.dart';
 import 'package:bosque_flutter/domain/entities/merma_entity.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-// ─────────────────────────────────────────────────────────────────────────────
 // State
-// ─────────────────────────────────────────────────────────────────────────────
 
 class LoteProduccionRegistroState {
   // Catálogos
@@ -252,9 +250,7 @@ class LoteProduccionRegistroState {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
 // Notifier
-// ─────────────────────────────────────────────────────────────────────────────
 
 class LoteProduccionRegistroNotifier
     extends StateNotifier<LoteProduccionRegistroState> {
@@ -863,9 +859,7 @@ class LoteProduccionRegistroNotifier
       state = state.copyWith(clearError: true, clearSuccess: true);
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
 // Provider
-// ─────────────────────────────────────────────────────────────────────────────
 
 final loteProduccionRepoProvider = Provider<LoteProduccionImpl>((ref) {
   return LoteProduccionImpl();

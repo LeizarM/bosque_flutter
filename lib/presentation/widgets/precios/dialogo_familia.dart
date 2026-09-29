@@ -1,43 +1,16 @@
-/// Alta y edicion de una familia de producto.
+/// Alta y edición de una familia de producto (reemplaza a `dlgDtFam`, `dlgFam` y
+/// `dlgProdV`). Tres trampas:
 ///
-/// Reemplaza a los dialogos `dlgDtFam`, `dlgFam` y `dlgProdV` del monolito, que
-/// eran tres ventanas distintas para cargar la misma fila de `tpr_producto`.
+/// 1. La PK `codigoFamilia` (int, sin IDENTITY) la escribe el usuario: el alta
+///    la verifica con espera (`PreciosRepository.obtenerFamilia` da null si no
+///    existe); en la edición queda bloqueada.
+/// 2. Los combos solo listan lo activo (`*Activos`); si la familia ya apunta a
+///    algo inactivo, el formulario lo avisa y no lo cambia.
+/// 3. Formato y gramaje no se cargan (vacíos en la base): se devuelve lo que haya.
 ///
-/// ## Las tres trampas de esta pantalla
-///
-/// **1. La PK la escribe el usuario.** `codigoFamilia` es `int` y NO es
-/// autogenerada: no hay IDENTITY que la resuelva. Asi que el alta tiene un campo
-/// de codigo, y antes de grabar hay que saber si ese numero ya esta tomado — de
-/// otro modo el error llega desde la base, en ingles y con el formulario ya
-/// perdido. La verificacion se hace contra `PreciosRepository.obtenerFamilia`,
-/// que devuelve null cuando el codigo no existe, y corre mientras se escribe,
-/// con una espera para no pegarle al backend una vez por tecla. En la edicion el
-/// campo queda bloqueado: cambiar la PK no es editar, es otra familia.
-///
-/// **2. Los combos solo listan lo activo.** En la base hay colores, tipos y
-/// presentaciones dados de baja; ofrecerlos aca seria dejar que una familia
-/// nueva nazca apuntando a un catalogo muerto. Se usan las lecturas `*Activos`
-/// del repositorio, que existen exactamente para esto. La contracara esta
-/// contemplada: si se esta editando una familia que ya apunta a algo inactivo,
-/// ese valor no aparece en la lista y el formulario lo dice en lugar de
-/// cambiarlo por su cuenta.
-///
-/// **3. Formato y gramaje no se cargan.** Son columnas de `tpr_producto`, pero
-/// estan vacias en toda la base y el dialogo del sistema anterior no las
-/// pedia. La ficha no las muestra y, al editar, devuelve lo que la familia ya
-/// tenga para no borrarlo.
-///
-/// ## Porcentaje por familia
-///
-/// Como en el dialogo "Registro de familias" del sistema anterior, la ficha
-/// trae la grilla de porcentajes por sucursal y lista de precio, y se guarda
-/// con la familia en la misma transaccion (ver `porcentajes_ficha_familia.dart`).
-///
-/// ## SAP
-///
-/// Al abrirse, la ficha dispara la sincronizacion de grupos y proveedores con
-/// SAP de la sesion (`p_abm_producto 'H'`), que el sistema anterior corria al
-/// abrir la pantalla de precios.
+/// Guarda con la grilla de porcentajes en la misma transacción (ver
+/// `porcentajes_ficha_familia.dart`) y al abrirse sincroniza grupos y
+/// proveedores con SAP (`p_abm_producto 'H'`).
 library;
 
 import 'dart:async';
@@ -108,10 +81,9 @@ class _DialogoFamiliaState extends ConsumerState<DialogoFamilia> {
   late final TextEditingController _codigo;
   final _porcentajes = PorcentajesFicha();
 
-  // Null = todavia no lo toco nadie. En la edicion eso significa "usa lo que ya
-  // tiene la familia", que se resuelve en `_resuelto`. No se guarda el valor
-  // derivado en el estado para no tener que escribir en `setState` durante el
-  // primer `build`, que es cuando recien llegan los catalogos.
+  // Null = todavía no lo tocó nadie; en la edición usa lo de la familia (ver
+  // `_resuelto`). No se guarda el derivado en el estado para no escribir en
+  // `setState` durante el primer `build`, cuando recién llegan los catálogos.
   BigInt? _grupo;
   BigInt? _proveedor;
   BigInt? _presentacion;
@@ -158,7 +130,7 @@ class _DialogoFamiliaState extends ConsumerState<DialogoFamilia> {
     super.dispose();
   }
 
-  // ── El codigo ya existe ───────────────────────────────────────────────────
+  // El código ya existe
 
   void _verificarCodigo(String texto) {
     _reloj?.cancel();
@@ -197,16 +169,12 @@ class _DialogoFamiliaState extends ConsumerState<DialogoFamilia> {
     });
   }
 
-  // ── Resolucion de los combos ──────────────────────────────────────────────
+  // Resolución de los combos
 
-  /// Que id mostrar en un combo: lo que eligio la persona, si eligio; si no, lo
-  /// que ya tiene la familia.
-  ///
-  /// El listado de familias devuelve las descripciones resueltas y no los ids
-  /// (asi esta documentado el DTO en `PreciosRepository.obtenerFamilias`), asi
-  /// que cuando el id no viene se empareja por nombre contra el catalogo. Es
-  /// exacto mientras los nombres no se repitan, que es lo que ya asume la
-  /// pantalla vieja al mostrarlos.
+  /// Qué id mostrar en un combo: lo elegido o, si no, lo que ya tiene la familia.
+  /// El listado trae descripciones y no ids (ver
+  /// `PreciosRepository.obtenerFamilias`): sin id se empareja por nombre contra
+  /// el catálogo, exacto mientras los nombres no se repitan.
   BigInt? _resuelto<T>({
     required BigInt? elegido,
     required BigInt? idDelDto,
@@ -580,7 +548,7 @@ class _DialogoFamiliaState extends ConsumerState<DialogoFamilia> {
     );
   }
 
-  // ── Piezas del formulario ─────────────────────────────────────────────────
+  // Piezas del formulario
 
   /// Dos columnas cuando hay ancho, una sola cuando no. No es la misma grilla
   /// escalada: en un telefono un campo por renglon es lo unico que se lee.
@@ -750,7 +718,7 @@ class _DialogoFamiliaState extends ConsumerState<DialogoFamilia> {
     ),
   ]);
 
-  // ── Guardar y cerrar ──────────────────────────────────────────────────────
+  // Guardar y cerrar
 
   bool get _hayCambios {
     final f = widget.editar;
@@ -884,9 +852,7 @@ class _DialogoFamiliaState extends ConsumerState<DialogoFamilia> {
   }
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
 // Piezas chicas
-// ═══════════════════════════════════════════════════════════════════════════
 
 class _Seccion extends StatelessWidget {
   const _Seccion(this.titulo);
@@ -900,9 +866,8 @@ class _Seccion extends StatelessWidget {
   );
 }
 
-/// Un dato que la ficha muestra pero no escribe. Se dibuja como un campo
-/// deshabilitado y no como texto suelto para que se lea como parte del
-/// formulario, con su rotulo arriba igual que los demas.
+/// Un dato que la ficha muestra pero no escribe: se dibuja como un campo
+/// deshabilitado (no texto suelto) para que se lea como parte del formulario.
 class _Lectura extends StatelessWidget {
   const _Lectura({
     required this.rotulo,

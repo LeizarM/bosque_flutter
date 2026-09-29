@@ -1,4 +1,3 @@
-// Destino final: lib/core/state/corte_provider.dart
 import 'package:bosque_flutter/data/repositories/corte_impl.dart';
 import 'package:bosque_flutter/domain/entities/corte_entity.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';

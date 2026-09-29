@@ -1,24 +1,9 @@
-/// Las listas de precio (tpr_clasificacionPrecio), agrupadas por sucursal.
+/// Las listas de precio (tpr_clasificacionPrecio), agrupadas por sucursal:
+/// reemplaza a dlgClasi y dlgNClasi del sistema anterior.
 ///
-/// Reemplaza a los dialogos dlgClasi y dlgNClasi del sistema anterior.
-///
-/// **Por que agrupadas y no una tabla.** Una lista de precio no se entiende
-/// suelta: Central tiene las 1 a 4, Cochabamba las 5 a 8, Santa Cruz las 9 a
-/// 12. La version anterior de esta pantalla las mostraba en una sola grilla
-/// paginada, ordenada por estado y VPP, donde Central y Cochabamba quedaban
-/// intercaladas y todas se llamaban "Precio": para saber que listas tiene una
-/// sucursal habia que recorrer dos paginas. Aca cada sucursal es un bloque con
-/// sus listas en orden.
-///
-/// **Activar y desactivar pide confirmacion.** No es cosmetico: una lista
-/// inactiva deja de repreciarse y desaparece de Precios vigentes y de
-/// Porcentajes. Antes era un icono de interruptor, sin rotulo, que cambiaba al
-/// primer toque.
-///
-/// **El VPP repetido se avisa.** El VPP identifica la lista en todo el modulo;
-/// dos listas activas con el mismo VPP se mezclan en cualquier grilla ordenada
-/// por el. El formulario ya no deja crear uno repetido, pero en la base hay
-/// datos de antes.
+/// Desactivar una lista pide confirmación: deja de repreciarse y desaparece de
+/// Precios vigentes y Porcentajes. Dos listas activas con el mismo VPP (que
+/// identifica la lista en todo el módulo) se mezclan en cualquier grilla: se avisa.
 library;
 
 import 'package:flutter/material.dart';
@@ -34,15 +19,10 @@ import 'package:bosque_flutter/core/ui/tokens_bosque.dart';
 import 'package:bosque_flutter/domain/entities/clasificacion_precio_entity.dart';
 import 'package:bosque_flutter/presentation/widgets/precios/dialogo_lista_precio.dart';
 
-// ═══════════════════════════════════════════════════════════════════════════
 // Datos de la pantalla
-// ═══════════════════════════════════════════════════════════════════════════
 
-/// Una lista de precio con el nombre de su sucursal.
-///
-/// El nombre de la sucursal NO es una columna de tpr_clasificacionPrecio -sale
-/// de un JOIN- y por eso no esta en la entity. La entity sigue siendo la
-/// fuente: aca solo se le adosa el texto que hace falta para mostrarla.
+/// Una lista de precio con el nombre de su sucursal, que no es columna de
+/// tpr_clasificacionPrecio (sale de un JOIN) y por eso no está en la entity.
 @immutable
 class _Fila {
   const _Fila({required this.lista, required this.sucursal});
@@ -112,12 +92,9 @@ enum _Ver {
   final String etiqueta;
 }
 
-/// Las filas, emparejadas con el nombre de su sucursal.
-///
-/// Se apoya en dos lecturas porque ninguna alcanza sola: el listado plano trae
-/// la entity completa -con el numero de lista SAP- pero sin el nombre de la
-/// sucursal, y el listado con sucursal trae el nombre pero no el numero de
-/// lista.
+/// Las filas, emparejadas con el nombre de su sucursal. Usa dos lecturas porque
+/// ninguna alcanza sola: el listado plano trae la entity completa (con el número
+/// de lista SAP) pero sin sucursal, y el listado con sucursal al revés.
 final _filasProvider = FutureProvider.autoDispose<List<_Fila>>((ref) async {
   final listas = await ref.watch(
     clasificacionesPrecioProvider(const FiltroClasificaciones()).future,
@@ -147,12 +124,8 @@ final _filasProvider = FutureProvider.autoDispose<List<_Fila>>((ref) async {
   ];
 });
 
-/// Sucursales que ofrece el combo del formulario.
-///
-/// El repositorio de precios no expone un catalogo de sucursales, y esta
-/// pantalla no puede pedirselo al repositorio de otro modulo. Se arma con las
-/// sucursales que ya tienen listas; el formulario deja escribir el codigo a
-/// mano para la que todavia no tenga ninguna.
+/// Sucursales que ofrece el combo del formulario: las que ya tienen listas (ver
+/// [OpcionSucursal]).
 final _sucursalesProvider = FutureProvider.autoDispose<List<OpcionSucursal>>((
   ref,
 ) async {
@@ -208,9 +181,7 @@ Map<int, List<_Fila>> _vppsRepetidos(List<_Fila> filas) {
   return porVpp;
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
 // Pantalla
-// ═══════════════════════════════════════════════════════════════════════════
 
 class ListasPrecioScreen extends ConsumerStatefulWidget {
   const ListasPrecioScreen({super.key});
@@ -224,10 +195,9 @@ class _ListasPrecioScreenState extends ConsumerState<ListasPrecioScreen> {
   String _busqueda = '';
   _Ver _ver = _Ver.todas;
 
-  /// Las listas con una escritura en curso (activar, desactivar o eliminar):
-  /// su interruptor queda ocupado y un segundo toque no manda otra escritura.
-  /// Un conjunto y no una sola: al terminar la de una lista no se tiene que
-  /// liberar la de otra que sigue viajando.
+  /// Las listas con una escritura en curso (activar, desactivar o eliminar): su
+  /// interruptor queda ocupado y un segundo toque no manda otra. Es un conjunto:
+  /// al terminar una no se debe liberar otra que sigue viajando.
   final Set<BigInt> _ocupadas = <BigInt>{};
 
   /// Avisa y devuelve true si la lista ya tiene una escritura en curso.
@@ -252,7 +222,7 @@ class _ListasPrecioScreenState extends ConsumerState<ListasPrecioScreen> {
     ref.invalidate(vppsUsadosProvider);
   }
 
-  // ---------------------------- Acciones ----------------------------
+  // Acciones
 
   /// [compacto] viene del ancho del cajon, el mismo criterio del dibujo.
   void _abrirFormulario({
@@ -384,12 +354,12 @@ class _ListasPrecioScreenState extends ConsumerState<ListasPrecioScreen> {
     }
   }
 
-  // ---------------------------- Dibujo ----------------------------
+  // Dibujo
 
   @override
   Widget build(BuildContext context) {
-    // Se observa aca para que el combo del formulario ya este resuelto cuando
-    // se toque "Nueva lista".
+    // Se observa aquí para que el combo del formulario ya esté resuelto al tocar
+    // "Nueva lista".
     ref.watch(_sucursalesProvider);
     final asyncFilas = ref.watch(_filasProvider);
 
@@ -465,10 +435,9 @@ class _ListasPrecioScreenState extends ConsumerState<ListasPrecioScreen> {
 
     return LayoutBuilder(
       builder: (context, r) {
-        // Tope de 1000 px de contenido: en un monitor ancho, a 1900 px, el
-        // nombre de la lista quedaba a medio metro de su VPP y de su estado.
-        // Se resuelve con el margen y no envolviendo la lista, para que la
-        // rueda del mouse siga funcionando sobre los costados.
+        // Tope de 1000 px de contenido: a 1900 px el nombre quedaba a medio metro
+        // de su VPP y su estado. Se resuelve con el margen y no envolviendo la
+        // lista, para que la rueda del mouse siga funcionando en los costados.
         final lateral =
             r.maxWidth - 2 * margen > _anchoMaximo
                 ? (r.maxWidth - _anchoMaximo) / 2
@@ -531,9 +500,7 @@ class _ListasPrecioScreenState extends ConsumerState<ListasPrecioScreen> {
   }
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
 // Piezas
-// ═══════════════════════════════════════════════════════════════════════════
 
 class _Encabezado extends StatelessWidget {
   const _Encabezado({

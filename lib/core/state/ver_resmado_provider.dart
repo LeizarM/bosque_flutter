@@ -1,8 +1,7 @@
-/// Estado de la pantalla "Ver resmado": el listado y el detalle de un resmado.
-///
-/// Del resmado ya registrado solo se corrigen dos datos, la orden de
-/// fabricacion y la empresa. Lo demas —grupo, empleado, horas, articulos— se
-/// captura en el momento del resmado y aqui se muestra como lectura.
+/// Estado de la pantalla "Ver resmado": listado y detalle de un resmado.
+/// Del resmado ya registrado solo se corrigen la orden de fabricación y la
+/// empresa; el resto (grupo, empleado, horas, artículos) se captura al
+/// resmar y aquí es de lectura.
 library;
 
 import 'package:bosque_flutter/data/repositories/resmado_impl.dart';
@@ -17,9 +16,7 @@ final resmadoRepositoryProvider = Provider<ResmadoRepository>(
   (ref) => ResmadoImpl(),
 );
 
-// ═══════════════════════════════════════════════════════════════════════════
 // LISTADO
-// ═══════════════════════════════════════════════════════════════════════════
 
 class VerResmadosState {
   final List<ResmadoEntity> resmados;
@@ -72,11 +69,9 @@ class VerResmadosState {
   /// Cuantos quedan sin orden de fabricacion, sobre el total del periodo.
   int get sinOrden => resmados.where((r) => r.docNumOrdFab <= 0).length;
 
-  // ── Resumen del periodo ──────────────────────────────────────────────────
-  //
-  // Se calcula sobre [resmados] y no sobre [visibles] a proposito: el resumen
-  // describe el periodo, y los filtros son una lente sobre la tabla de abajo.
-  // Si tomara los visibles, los totales bailarian mientras se escribe.
+  // Resumen del periodo: se calcula sobre [resmados] y no sobre [visibles]; los
+  // filtros son una lente sobre la tabla y, con los visibles, los totales
+  // bailarían mientras se escribe.
 
   double get totalResmado => resmados.fold(0.0, (s, r) => s + r.total);
 
@@ -222,9 +217,7 @@ final verResmadosProvider =
       (ref) => VerResmadosNotifier(ref.watch(resmadoRepositoryProvider)),
     );
 
-// ═══════════════════════════════════════════════════════════════════════════
 // DETALLE
-// ═══════════════════════════════════════════════════════════════════════════
 
 /// Los articulos resmados de un resmado. Es solo lectura, asi que alcanza con
 /// un FutureProvider.

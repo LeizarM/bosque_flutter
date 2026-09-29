@@ -1,4 +1,3 @@
-// Destino final: lib/core/state/bitacora_tareas_provider.dart
 import 'dart:typed_data';
 
 import 'package:bosque_flutter/data/repositories/bitacora_tareas_impl.dart';
@@ -25,9 +24,7 @@ DateTime _soloDia(DateTime f) => DateTime(f.year, f.month, f.day);
 String _texto(Object e) =>
     e.toString().replaceFirst(RegExp(r'^Exception:\s*'), '');
 
-// ─────────────────────────────────────────────────────────────────────────────
 // CUMPLIMIENTO
-// ─────────────────────────────────────────────────────────────────────────────
 
 class OpcionFiltro {
   final int id;
@@ -343,9 +340,7 @@ final bitacoraCumplimientoProvider = StateNotifierProvider.autoDispose<
   BitacoraCumplimientoState
 >((ref) => BitacoraCumplimientoNotifier(ref.watch(bitacoraTareasRepoProvider)));
 
-// ─────────────────────────────────────────────────────────────────────────────
 // GENERACIÓN: CORRIDAS
-// ─────────────────────────────────────────────────────────────────────────────
 
 class CorridaGeneracion {
   final DateTime corrida;
@@ -472,9 +467,7 @@ final bitacoraGeneracionProvider = StateNotifierProvider.autoDispose<
   BitacoraGeneracionState
 >((ref) => BitacoraGeneracionNotifier(ref.watch(bitacoraTareasRepoProvider)));
 
-// ─────────────────────────────────────────────────────────────────────────────
 // GENERACIÓN: POR QUÉ, PARA UNA PERSONA
-// ─────────────────────────────────────────────────────────────────────────────
 
 class ResumenPorQue {
   final int generadas;

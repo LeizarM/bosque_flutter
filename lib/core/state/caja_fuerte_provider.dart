@@ -1,4 +1,3 @@
-// Destino final: lib/core/state/caja_fuerte_provider.dart
 import 'package:bosque_flutter/data/repositories/caja_fuerte_impl.dart';
 import 'package:bosque_flutter/domain/entities/llegada_caja_fuerte_entity.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -64,17 +63,10 @@ class CajaFuerteNotifier extends StateNotifier<CajaFuerteState> {
     required int idTarRuti,
     required int idBitTarea,
   }) async {
-    // Antes: se filtraban las filas válidas y se guardaban solo esas, sin
-    // avisar si alguna fila con datos parciales (p.ej. cliente escrito pero
-    // sin tipo elegido) quedaba afuera en silencio — el usuario veía "N
-    // llegada(s) registrada(s)" sin saber que faltó una. Ahora: si hay
-    // alguna fila con contenido pero incompleta, se bloquea el guardado en
-    // vez de descartarla.
-    // "Con contenido" = el usuario EMPEZO a llenarla. Ojo con el tipo: desde
-    // que arranca en 'efect' (2026-09-08) ya no sirve como senal de intencion
-    // — esta puesto en TODAS las filas, incluidas las recien agregadas y
-    // vacias. Mientras estuvo en la lista, tocar "Agregar Registro" seis veces
-    // y guardar daba "Hay 6 filas incompletas" sin haber escrito nada.
+    // Con contenido = el usuario EMPEZÓ a llenar la fila. El tipo no cuenta: arranca
+    // en 'efect' en todas las filas (también las nuevas y vacías).
+    // Si hay filas con contenido pero incompletas se bloquea el guardado en vez
+    // de descartarlas en silencio.
     final conContenido =
         state.filas
             .where(

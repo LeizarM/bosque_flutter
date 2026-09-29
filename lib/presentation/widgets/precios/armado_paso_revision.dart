@@ -1,17 +1,9 @@
-/// Paso 3 del asistente: lo que quedo armado y que sigue.
+/// Paso 3 del asistente: lo que quedó armado y qué sigue.
 ///
-/// Reemplaza al pie de `dlgPropEditar` ("ENVIAR A AUTORIZAR") y de `dlgPropH`.
-/// Enviar a autorizar pide el boton btnPen, igual que en el sistema anterior:
-/// quien no lo tiene ve el motivo y la propuesta queda Pendiente, lista para
-/// que alguien con el permiso la mande desde el listado.
-///
-/// **Como se lee.** Arriba, la propuesta: numero, titulo, observaciones,
-/// quien la armo y su estado. Debajo, las cifras (familias, listas, articulos
-/// que cambian de precio y cuanto se mueve el costo) y la tabla de lo cargado,
-/// con un boton para corregir cualquier familia sin volver al paso anterior.
-/// Al costado -debajo en el telefono-, los tres pasos que faltan con sus
-/// botones y los fletes. Antes era una columna de renglones "rotulo: valor"
-/// donde lo importante (enviar a autorizar) quedaba al final.
+/// Reemplaza al pie de `dlgPropEditar` y de `dlgPropH`. Enviar a autorizar pide el
+/// botón btnPen, igual que en el sistema anterior: quien no lo tiene ve el motivo
+/// y la propuesta queda Pendiente para que alguien con el permiso la envíe desde
+/// el listado.
 library;
 
 import 'dart:math' as math;
@@ -61,9 +53,8 @@ class ArmadoPasoRevision extends ConsumerWidget {
   /// Cierra el asistente.
   final VoidCallback onTerminar;
 
-  /// La fila del listado de esta propuesta, que es lo que piden la vista
-  /// preliminar y la confirmacion. Si todavia no esta en el listado -se esta
-  /// recargando- se arma con lo que sabe el asistente.
+  /// La fila del listado de esta propuesta (lo que piden la vista preliminar y la
+  /// confirmación); si aún no está (se recarga), se arma con lo que sabe el asistente.
   PropuestaEnAutorizacion _fila(WidgetRef ref, EstadoArmado estado) {
     final id = estado.idPropuesta!;
     final listado = ref.watch(propuestasParaAutorizarProvider).valueOrNull;
@@ -223,9 +214,7 @@ class ArmadoPasoRevision extends ConsumerWidget {
   }
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// CABECERA
-// ═══════════════════════════════════════════════════════════════════════════
+// Cabecera
 
 class _Cabecera extends StatelessWidget {
   const _Cabecera({
@@ -390,9 +379,7 @@ class _Cifras extends StatelessWidget {
   }
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// FAMILIAS
-// ═══════════════════════════════════════════════════════════════════════════
+// Familias
 
 /// Una familia de la propuesta con lo que el catalogo dice de ella.
 @immutable
@@ -842,9 +829,7 @@ class _TarjetaFamilia extends StatelessWidget {
   }
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// ARTICULOS (propuesta por articulo)
-// ═══════════════════════════════════════════════════════════════════════════
+// Artículos (propuesta por artículo)
 
 class _Articulos extends ConsumerWidget {
   const _Articulos({
@@ -1021,9 +1006,7 @@ class _RenglonArticulo extends StatelessWidget {
   }
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// QUE SIGUE Y FLETES
-// ═══════════════════════════════════════════════════════════════════════════
+// Qué sigue y fletes
 
 /// Los pasos que faltan, cada uno con su boton. El principal -enviar a
 /// autorizar- es el unico lleno.

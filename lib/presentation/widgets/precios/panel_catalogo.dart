@@ -7,26 +7,19 @@ import 'package:bosque_flutter/core/ui/tokens_bosque.dart';
 import 'package:bosque_flutter/presentation/widgets/precios/cifra_resumen.dart';
 import 'package:bosque_flutter/presentation/widgets/precios/tabla_propuestas.dart';
 
-/// Valor del filtro de estado que significa "no filtrar".
-///
-/// No se usa `null` porque `PopupMenuButton.onSelected` NO se dispara cuando el
-/// item elegido tiene valor nulo: Flutter interpreta ese nulo como "se cerro el
-/// menu sin elegir" y llama a `onCanceled`. Con un centinela el filtro funciona
-/// igual en los chips y en el menu compacto.
+/// Valor del filtro de estado que significa "no filtrar". No se usa `null`
+/// porque `PopupMenuButton.onSelected` NO se dispara con un item de valor nulo
+/// (Flutter lo toma como "se cerró sin elegir" y llama a `onCanceled`).
 const int estadoTodos = -1;
 
-/// Los matices de las dos acciones de cada fila. Son los de editar y rechazar
-/// del listado de propuestas ([AccionDePropuesta]): el mismo color dice lo
-/// mismo en todo el modulo.
+/// Matices de las dos acciones de cada fila: los de editar y rechazar del listado de
+/// propuestas ([AccionDePropuesta]), para que el mismo color diga lo mismo.
 const Color _matizEditar = Color(0xFFFFA000);
 const Color _matizEliminar = Color(0xFFD32F2F);
 
-/// Una columna de la tabla de un catalogo.
-///
-/// De ancho declarado y no por `flex`: una columna de estado no necesita mas
-/// que su etiqueta, y repartir el ancho de un monitor entre tres columnas dejaba
-/// cada dato perdido en una franja de 500 px. La columna que [expande] se queda
-/// con lo que sobre.
+/// Una columna de la tabla de un catálogo. De ancho declarado y no por `flex`:
+/// repartir el ancho de un monitor entre tres columnas dejaba cada dato perdido
+/// en una franja de 500 px. La columna que [expande] se queda con lo que sobre.
 @immutable
 class ColumnaCatalogo<T> {
   const ColumnaCatalogo(
@@ -71,26 +64,12 @@ class DatoResumen {
   final String? corto;
 }
 
-/// El cuerpo de una pestania de catalogo: buscador, filtro de estado, resumen,
-/// tabla en escritorio y tarjetas en movil.
-///
-/// Los seis catalogos del modulo de precios son la misma pantalla con otros
-/// campos: listar, buscar, dar de alta, editar y dar de baja. Esta pieza
-/// concentra ese esqueleto para que cada pestania aporte solo lo suyo -las
-/// columnas, la tarjeta, el resumen y el formulario- y no seis copias del mismo
-/// armado.
-///
-/// **Por que el ancho se mide con LayoutBuilder y no con MediaQuery.** Adentro
-/// del DashboardScreen la barra lateral se come 260px, asi que el ancho de la
-/// ventana no es el ancho que tiene esta pantalla para dibujar. Lo que decide el
-/// diseno es el cajon, y el corte lo pone [Aire].
-///
-/// **Por que ya no usa BosqueFlatTable.** Esa tabla pinta la cabecera con un
-/// color fijo que no sigue al tema, reparte las columnas por flex -tres columnas
-/// en un monitor quedaban a 500 px una de otra- y ocupa todo el alto aunque haya
-/// diez filas. Aca la tabla es la del resto del modulo: cabecera en los tonos
-/// del tema, columnas de ancho declarado, filas de 52 px y un alto que se ajusta
-/// a lo que hay.
+/// El cuerpo de una pestaña de catálogo: buscador, filtro de estado, resumen,
+/// tabla en escritorio y tarjetas en móvil. Los seis catálogos del módulo son la
+/// misma pantalla con otros campos: cada pestaña aporta solo columnas, tarjeta,
+/// resumen y formulario. No usa `BosqueFlatTable` (cabecera de color fijo, flex,
+/// alto de pantalla con diez filas) sino la tabla del módulo: filas de 52 px y
+/// alto ajustado a lo que hay.
 class PanelCatalogo<T> extends StatefulWidget {
   const PanelCatalogo({
     super.key,
@@ -183,9 +162,8 @@ class _PanelCatalogoState<T> extends State<PanelCatalogo<T>>
   int _pagina = 1;
   int _tamanoPagina = 15;
 
-  /// Las seis pestanias conviven en un TabBarView, que descarta el estado de la
-  /// que no se ve. Sin esto, volver a una pestania perdia lo que se habia
-  /// escrito en el buscador y la pagina en la que estaba.
+  /// Las seis pestañas conviven en un TabBarView, que descarta el estado de la
+  /// que no se ve: sin esto, volver a una pestaña perdía el buscador y la página.
   @override
   bool get wantKeepAlive => true;
 
@@ -230,9 +208,8 @@ class _PanelCatalogoState<T> extends State<PanelCatalogo<T>>
           floatingActionButton:
               (aire.esChico && widget.onNuevo != null)
                   ? FloatingActionButton.extended(
-                    // Sin hero: cada pestania tiene su boton y quedan vivas;
-                    // con la etiqueta por defecto, al salir de la pantalla
-                    // Flutter encuentra varios heroes con la misma.
+                    // Sin hero: cada pestaña tiene su botón y quedan vivas; con la etiqueta por
+                    // defecto, al salir Flutter encuentra varios heroes iguales.
                     heroTag: null,
                     onPressed: widget.onNuevo,
                     icon: const Icon(Icons.add),
@@ -262,10 +239,8 @@ class _PanelCatalogoState<T> extends State<PanelCatalogo<T>>
 
     final filtrada = _filtrar(lista);
 
-    // Paginacion del lado del cliente: son catalogos chicos y ya viajaron
-    // enteros, asi que pedir una pagina al backend seria una vuelta de red para
-    // no traer nada nuevo. El paginador solo aparece cuando hay mas filas que
-    // las que entran en una pagina: en un catalogo de ocho colores es ruido.
+    // Paginación del lado del cliente (catálogos chicos, ya descargados enteros): el
+    // paginador solo aparece si hay más filas que las de una página.
     final hayPaginacion = filtrada.length > _tamanoPagina;
     final totalPaginas =
         hayPaginacion ? (filtrada.length / _tamanoPagina).ceil() : 1;
@@ -314,10 +289,8 @@ class _PanelCatalogoState<T> extends State<PanelCatalogo<T>>
         ],
       );
     } else {
-      // El buscador y el filtro van juntos a la izquierda y el alta al borde
-      // derecho. Con un Spacer al lado del Flexible el alta quedaba en el
-      // medio: el Row le reparte a cada uno la mitad del espacio libre aunque
-      // el buscador no la use.
+      // Buscador y filtro a la izquierda, alta al borde derecho. Con un Spacer junto al
+      // Flexible el alta quedaba en el medio: el Row reparte la mitad libre a cada uno.
       barra = Row(
         children: [
           Expanded(
@@ -439,9 +412,7 @@ class _PanelCatalogoState<T> extends State<PanelCatalogo<T>>
   }
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// BARRA Y RESUMEN
-// ═══════════════════════════════════════════════════════════════════════════
+// Barra y resumen
 
 class _Buscador extends StatelessWidget {
   const _Buscador({
@@ -487,9 +458,8 @@ class _Buscador extends StatelessWidget {
   }
 }
 
-/// Las cifras del catalogo, en fila. Lo que antes era un hueco debajo de diez
-/// renglones ahora dice cuantos hay, cuantos se ofrecen y cuando se toco por
-/// ultima vez.
+/// Las cifras del catálogo, en fila: cuántos hay, cuántos se ofrecen y cuándo se
+/// tocó por última vez.
 class _Resumen extends StatelessWidget {
   const _Resumen({required this.datos, required this.compacto});
 
@@ -541,11 +511,9 @@ class _ResumenCorto extends StatelessWidget {
   }
 }
 
-/// Filtro de activos / inactivos.
-///
-/// En escritorio son tres pastillas siempre a la vista, con cuantos hay en
-/// cada una, que es la forma mas rapida de cambiar de uno a otro. Cuando el
-/// ancho no alcanza se colapsa en un menu de una sola linea.
+/// Filtro de activos / inactivos. En escritorio son tres pastillas a la vista,
+/// con cuántos hay en cada una; si el ancho no alcanza se colapsa en un menú de
+/// una sola línea.
 class FiltroEstado extends StatelessWidget {
   const FiltroEstado({
     super.key,
@@ -635,9 +603,7 @@ class FiltroEstado extends StatelessWidget {
   }
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// LA TABLA
-// ═══════════════════════════════════════════════════════════════════════════
+// La tabla
 
 const double _altoCabecera = 44;
 const double _altoFila = 52;
@@ -901,9 +867,7 @@ class BotonAccionCatalogo extends StatelessWidget {
   }
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// PIE Y PAGINACION
-// ═══════════════════════════════════════════════════════════════════════════
+// Pie y paginación
 
 class _Pie extends StatelessWidget {
   const _Pie({
@@ -980,16 +944,11 @@ class _Pie extends StatelessWidget {
   }
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// LA TARJETA DEL TELEFONO
-// ═══════════════════════════════════════════════════════════════════════════
+// La tarjeta del teléfono
 
-/// La fila de un catalogo en movil.
-///
-/// No es la tabla escalada: el nombre manda, el estado va como etiqueta al lado,
-/// los datos de apoyo bajan a una linea secundaria y las acciones se guardan en
-/// el menu contextual. Asi la fila entra en el ancho del telefono sin scroll
-/// horizontal.
+/// La fila de un catálogo en móvil. No es la tabla escalada: el nombre manda, el
+/// estado va como etiqueta, los datos de apoyo bajan a una línea secundaria y las
+/// acciones van al menú contextual, sin scroll horizontal.
 class TarjetaCatalogo extends StatelessWidget {
   const TarjetaCatalogo({
     super.key,
@@ -1136,9 +1095,7 @@ class TarjetaCatalogo extends StatelessWidget {
 
 enum _AccionFila { editar, eliminar }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// CELDAS
-// ═══════════════════════════════════════════════════════════════════════════
+// Celdas
 
 /// El texto de una celda de la tabla, recortado en vez de desbordado.
 class CeldaTexto extends StatelessWidget {

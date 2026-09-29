@@ -9,15 +9,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// Declara el evento de un sábado y arma su lista nominal.
 ///
-/// El orden importa y por eso la pantalla lo impone: **primero se declara el
-/// evento, y recién después se convoca**. Convocar a alguien para un sábado sin
-/// evento rebota en el backend, porque las ausencias de un sábado normal van por
-/// otro camino (las programa un jefe).
-///
-/// Los dos alcances resuelven casos distintos:
-/// - `TOTAL` — vienen todos, sin importar la rotación. Cierre de mes.
-/// - `SELECTIVA` — no viene nadie por rotación; sólo los que se convoquen. Es el
-///   inventario: van cinco personas elegidas y el resto se queda en casa.
+/// **Primero se declara el evento y después se convoca** (convocar sin evento
+/// rebota en el backend; las ausencias de un sábado normal las programa un jefe).
+/// `TOTAL`: vienen todos sin importar la rotación (cierre de mes). `SELECTIVA`:
+/// sólo los convocados (inventario).
 class EventoSheet extends ConsumerStatefulWidget {
   const EventoSheet({
     super.key,
@@ -214,9 +209,7 @@ class _SelectorAlcance extends StatelessWidget {
   );
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// LISTA NOMINAL
-// ═══════════════════════════════════════════════════════════════════════════
+// Lista nominal
 
 class _Convocatoria extends ConsumerStatefulWidget {
   const _Convocatoria({
@@ -349,8 +342,8 @@ class _ConvocatoriaState extends ConsumerState<_Convocatoria> {
                           ? '${c.tipo} · queda en "${c.celdaFinal}"'
                           : c.situacion,
                     ),
-                    // Un CONVOCADO que ya venía por rotación no agrega a nadie:
-                    // vale marcarlo para que no parezca que hizo algo.
+                    // Un CONVOCADO que ya venía por rotación no agrega a nadie: se marca para que
+                    // no parezca que hizo algo.
                     trailing:
                         c.redundante
                             ? const Etiqueta(
@@ -393,15 +386,12 @@ class _ConvocatoriaState extends ConsumerState<_Convocatoria> {
   }
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// GENERAR / REGENERAR
-// ═══════════════════════════════════════════════════════════════════════════
+// Generar / regenerar
 
 /// Genera un rol nuevo o reconcilia uno existente.
 ///
-/// La diferencia entre los dos modos es la que más confunde, así que está
-/// escrita en la pantalla: `REGENERAR` **no borra el trabajo de nadie** —
-/// rehace sólo las celdas que puso la rotación.
+/// `REGENERAR` **no borra el trabajo de nadie**: rehace sólo las celdas que puso
+/// la rotación (la diferencia está escrita en la pantalla).
 class GenerarRolDialog extends ConsumerStatefulWidget {
   const GenerarRolDialog({super.key, this.idRolExistente, this.anioExistente});
 
@@ -435,9 +425,8 @@ class _GenerarRolDialogState extends ConsumerState<GenerarRolDialog> {
   @override
   Widget build(BuildContext context) => AlertDialog(
     title: const Text('Generar rol'),
-    // Scrollable: en un teléfono de 740 px de alto, con el teclado abierto para
-    // escribir el año, la explicación de los dos modos no entra. Un AlertDialog
-    // no scrollea solo.
+    // Scrollable: en 740 px de alto con el teclado abierto la explicación de los
+    // dos modos no entra, y un AlertDialog no scrollea solo.
     content: SingleChildScrollView(
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -513,8 +502,7 @@ class _GenerarRolDialogState extends ConsumerState<GenerarRolDialog> {
           .read(rolSabadosAccionesProvider)
           .generarRol(anio: anio, modo: _modo);
       if (!mounted) return;
-      // Dejar seleccionado el rol recién generado ahorra un paso: es lo que la
-      // persona quiere mirar justo después.
+      // Dejar seleccionado el rol recién generado ahorra un paso.
       if (id > 0) ref.read(rolSeleccionadoProvider.notifier).state = id;
       Navigator.pop(context);
       avisar(context, _modo == 'CREAR' ? 'Rol generado.' : 'Rol regenerado.');

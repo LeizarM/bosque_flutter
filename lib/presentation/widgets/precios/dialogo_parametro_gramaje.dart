@@ -9,10 +9,8 @@ import 'package:bosque_flutter/domain/entities/grupo_familia_sap_entity.dart';
 import 'package:bosque_flutter/domain/entities/rango_gramaje_entity.dart';
 import 'package:bosque_flutter/domain/entities/tipo_producto_entity.dart';
 
-/// Lo que devuelve [DialogoParametroGramaje] cuando la persona acepta.
-///
-/// Son los tres ids y nada mas: el usuario de auditoria y la fecha los pone la
-/// pantalla, que es la que tiene el repositorio.
+/// Lo que devuelve [DialogoParametroGramaje] al aceptar: solo los tres ids; el
+/// usuario de auditoría y la fecha los pone la pantalla, que tiene el repositorio.
 @immutable
 class ResultadoParametroGramaje {
   const ResultadoParametroGramaje({
@@ -26,21 +24,13 @@ class ResultadoParametroGramaje {
   final int idRangoGram;
 }
 
-/// Alta y modificacion de una asignacion grupo de familia + tipo -> rango de
+/// Alta y modificación de una asignación grupo de familia + tipo -> rango de
 /// gramaje (tpr_grupoFamTipoRangoGram).
 ///
-/// LA REGLA QUE MANDA EN ESTE FORMULARIO: la tabla es un heap, no tiene PK ni
-/// IDENTITY, y la fila se identifica por la pareja (grupo, tipo). Entonces esa
-/// pareja ES la clave:
-///
-/// * al MODIFICAR los dos campos quedan deshabilitados y se muestran como
-///   texto, porque cambiarlos no seria editar esta fila sino apuntar a otra
-///   -y como la tabla no tiene unique, el backend terminaria creando una
-///   segunda fila para el mismo par sin que nada lo impida;
-/// * al CREAR se eligen los dos, y antes de aceptar se verifica contra
-///   [clavesOcupadas] que ese par todavia no exista.
-///
-/// El unico dato realmente editable de la fila es el rango de gramaje.
+/// La tabla es un heap (sin PK ni IDENTITY): el par (grupo, tipo) ES la clave. Al
+/// MODIFICAR ambos quedan deshabilitados (cambiarlos apuntaría a otra fila y sin
+/// unique el backend crearía un duplicado); al CREAR se valida contra
+/// [clavesOcupadas]. Solo el rango de gramaje es editable.
 class DialogoParametroGramaje extends StatefulWidget {
   const DialogoParametroGramaje({
     super.key,
@@ -88,9 +78,8 @@ class _DialogoParametroGramajeState extends State<DialogoParametroGramaje> {
     if (inicial != null) {
       _idGrupo = inicial.idGrpFamiliaSap;
       _idTipo = inicial.idTipo;
-      // Solo se preselecciona si el rango sigue en el catalogo: un Dropdown con
-      // un valor que no esta entre sus opciones revienta en un assert, y hay
-      // filas viejas que apuntan a rangos ya dados de baja.
+      // Solo se preselecciona si el rango sigue en el catálogo: un Dropdown con un valor
+      // fuera de sus opciones revienta en un assert y hay filas con rangos dados de baja.
       final vive = widget.rangos.any(
         (r) => r.idRangoGram.toInt() == inicial.idRangoGram,
       );
@@ -231,12 +220,10 @@ class _DialogoParametroGramajeState extends State<DialogoParametroGramaje> {
     );
   }
 
-  /// Un campo de la clave natural, visible pero deshabilitado.
-  ///
-  /// Es un [TextFormField] apagado y no un combo deshabilitado a proposito: si
-  /// el grupo o el tipo fueron dados de baja del catalogo, un combo con un
-  /// valor que no esta entre sus opciones revienta en el assert de Dropdown.
-  /// Asi la fila vieja se sigue pudiendo editar.
+  /// Campo de la clave natural, visible pero deshabilitado. Es un
+  /// [TextFormField] apagado y no un combo: si el grupo o el tipo se dieron de
+  /// baja del catálogo, un Dropdown con un valor fuera de sus opciones revienta
+  /// en un assert y la fila vieja dejaría de ser editable.
   Widget _claveBloqueada({required String etiqueta, required String valor}) =>
       TextFormField(
         key: ValueKey('clave-$etiqueta-$valor'),

@@ -1487,37 +1487,6 @@ class _ClienteSearchDialogState extends State<ClienteSearchDialog> {
   }
 }
 
-// DottedBorder widget (puedes usar el paquete dotted_border)
-class DottedBorder extends StatelessWidget {
-  final Widget child;
-  final Color color;
-  final List<double> dashPattern;
-  final BorderType borderType;
-  final Radius radius;
-  const DottedBorder({
-    required this.child,
-    this.color = Colors.grey,
-    this.dashPattern = const [6, 3],
-    this.borderType = BorderType.RRect,
-    this.radius = const Radius.circular(8),
-    super.key,
-  });
-  @override
-  Widget build(BuildContext context) {
-    // Aquí deberías usar el widget del paquete dotted_border real
-    // Esto es solo un placeholder visual
-    return Container(
-      decoration: BoxDecoration(
-        border: Border.all(color: color, style: BorderStyle.solid),
-        borderRadius: BorderRadius.all(radius),
-      ),
-      child: child,
-    );
-  }
-}
-
-enum BorderType { RRect }
-
 // Widget para celda editable de saldo pendiente con validación y error en tiempo real
 class _EditableSaldoPendienteCell extends StatefulWidget {
   final double valorOriginal;

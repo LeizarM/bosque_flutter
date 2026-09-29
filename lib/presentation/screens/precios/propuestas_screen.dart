@@ -1,26 +1,9 @@
-/// Propuestas de precios: el listado con su circuito de autorizacion.
+/// Propuestas de precios: el listado con su circuito de autorización. Reemplaza
+/// la tabla `dtAutorizacion` de `tprAutorizacion/Autorizacion.xhtml`.
 ///
-/// Es la pantalla principal del modulo y reemplaza la tabla `dtAutorizacion` de
-/// `tprAutorizacion/Autorizacion.xhtml`. Lo que cambia respecto de aquella:
-///
-/// - **El estado se ve de un vistazo.** Antes era una columna de texto con un
-///   `style` inline que pintaba verde y rojo fijos, ilegibles en modo oscuro.
-///   Aca es un chip cuyo color sale del tema y cubre los CUATRO estados del
-///   dominio, incluido En Espera, que el XHTML tenia que agregar a mano al
-///   combo porque el catalogo del backend lo trae comentado.
-/// - **Se puede buscar y filtrar por estado.** La grilla anterior mostraba las
-///   ultimas cien propuestas y habia que recorrerlas a ojo.
-/// - **Aprobar pide una confirmacion que dice que va a pasar.** En el sistema
-///   anterior aprobar era elegir una opcion en un radio dentro de un panel
-///   flotante: un toque, sin aviso, sobre la escritura que cambia los precios
-///   de venta de toda la empresa.
-/// - **Los botones que no corresponden dicen por que**, en vez de desaparecer.
-///
-/// **De donde sale el estado.** El listado llega como DTO de despliegue —un
-/// mapa— y [PropuestaEnAutorizacion] lo parte en sus dos entities. Todo lo que
-/// la pantalla decide sobre el circuito lo decide con
-/// `AutorizacionPrecioEntity` y sus getters (`esPendiente`, `estaAprobada`,
-/// `fueRechazada`, `estaEnEspera`), nunca comparando cadenas.
+/// El circuito se decide con los getters de `AutorizacionPrecioEntity`, nunca
+/// comparando cadenas: son CUATRO estados y En Espera no está en el catálogo del
+/// backend (viene comentado).
 library;
 
 import 'package:flutter/material.dart';
@@ -40,20 +23,14 @@ import 'package:bosque_flutter/presentation/widgets/precios/propuesta_en_autoriz
 import 'package:bosque_flutter/presentation/widgets/precios/tabla_propuestas.dart';
 import 'package:bosque_flutter/presentation/widgets/shared/permission_widget.dart';
 
-/// Los botones de `tb_vistaBtn` que gobiernan el circuito. Son los mismos
-/// nombres que consultaba `wProductoNew.esAutorizado(...)`, asi que no hay que
-/// dar de alta ningun permiso nuevo.
+/// Los botones de `tb_vistaBtn` que gobiernan el circuito: los mismos que
+/// consultaba `wProductoNew.esAutorizado(...)`, sin permisos nuevos.
 const String _btnAprobar = 'btnAprobar';
 const String _btnEnEspera = 'btnPen';
 const String _btnGenerar = 'btnGen';
 
-// ═══════════════════════════════════════════════════════════════════════════
-// ESTADO LOCAL DE LA PANTALLA
-//
-// Viven aqui y no en `precios_provider.dart` a proposito: son de esta grilla y
-// de ninguna otra del modulo. Son autoDispose, asi que al salir se reinician y
-// una visita no le deja la pagina 4 a la siguiente.
-// ═══════════════════════════════════════════════════════════════════════════
+// Estado local: vive aquí y no en `precios_provider.dart` porque es de esta grilla;
+// autoDispose, así que una visita no le deja la página 4 a la siguiente.
 
 /// Pagina visible de la planilla de escritorio, base cero.
 final _paginaProvider = StateProvider.autoDispose<int>((ref) => 0);
@@ -64,9 +41,7 @@ final _filasPorPaginaProvider = StateProvider.autoDispose<int>((ref) => 25);
 
 const List<int> _opcionesDeFilas = [25, 50, 100];
 
-// ═══════════════════════════════════════════════════════════════════════════
-// LA PANTALLA
-// ═══════════════════════════════════════════════════════════════════════════
+// La pantalla
 
 class PropuestasScreen extends ConsumerStatefulWidget {
   const PropuestasScreen({super.key});
@@ -84,14 +59,11 @@ class _PropuestasScreenState extends ConsumerState<PropuestasScreen> {
     super.dispose();
   }
 
-  // ── Escrituras del circuito ───────────────────────────────────────────────
+  // Escrituras del circuito
 
-  /// Corre una escritura del circuito y cuenta como fue.
-  ///
-  /// El notifier ya invalida las lecturas que su escritura deja viejas -la
-  /// grilla se refresca sola-, asi que aca solo queda el aviso. El mensaje de
-  /// error es el del procedimiento, que viene listo para mostrar: traducirlo
-  /// seria perder la unica explicacion que el usuario puede llevarle a quien
+  /// Corre una escritura del circuito y cuenta cómo fue. El notifier ya invalida las
+  /// lecturas que deja viejas; aquí solo queda el aviso. El mensaje de error es el
+  /// del procedimiento y no se traduce: es lo que el usuario puede llevarle a quien
   /// administra el sistema.
   Future<void> _ejecutar(
     Future<bool> Function() accion, {
@@ -168,16 +140,15 @@ class _PropuestasScreenState extends ConsumerState<PropuestasScreen> {
   void _pdf(PropuestaEnAutorizacion fila) =>
       verPdfDePropuesta(context, ref, fila);
 
-  /// El "Editar" del sistema anterior: seguir armando una propuesta
-  /// pendiente. Abre el mismo asistente que "Nueva propuesta", parado en el
-  /// paso de familias o articulos; la vista preliminar y el envio a autorizar
-  /// estan en su ultimo paso.
+  /// El "Editar" del sistema anterior: seguir armando una propuesta pendiente.
+  /// Abre el asistente de "Nueva propuesta" en el paso de familias o artículos; la
+  /// vista preliminar y el envío a autorizar están en su último paso.
   void _editar(PropuestaEnAutorizacion fila) =>
       abrirArmadoExistente(context, fila);
 
   void _nueva() => abrirArmadoNuevo(context);
 
-  // ── Dibujo ────────────────────────────────────────────────────────────────
+  // Dibujo
 
   @override
   Widget build(BuildContext context) {
@@ -185,17 +156,15 @@ class _PropuestasScreenState extends ConsumerState<PropuestasScreen> {
     final busqueda = ref.watch(filtroBusquedaPrecioProvider);
     final estado = ref.watch(filtroEstadoPropuestaProvider);
 
-    // Se observa el provider de permisos -tienePermisoDeBoton hace ref.watch-
-    // porque llegan por red despues del primer dibujo: con una lectura suelta
-    // la grilla se quedaba con los botones del estado inicial.
+    // Se observa el provider de permisos (tienePermisoDeBoton hace ref.watch): llegan
+    // por red tras el primer dibujo y una lectura suelta dejaría los botones iniciales.
     final permisos = ref.watch(buttonPermissionsProvider);
     final tieneBtnAprobar = tienePermisoDeBoton(ref, _btnAprobar);
     final tieneBtnPen = tienePermisoDeBoton(ref, _btnEnEspera);
     final tieneBtnGen = tienePermisoDeBoton(ref, _btnGenerar);
 
-    // Una sola escritura del circuito a la vez, sea cual sea la fila: el
-    // notifier es uno solo y dos aprobaciones en vuelo dejan la grilla
-    // contando una historia que no paso.
+    // Una sola escritura del circuito a la vez, sea cual sea la fila: el notifier es
+    // uno y dos aprobaciones en vuelo dejan la grilla contando una historia falsa.
     final ocupado = ref.watch(propuestaProvider.select((e) => e.cargando));
 
     final manejadores = ManejadoresPropuesta(
@@ -208,10 +177,8 @@ class _PropuestasScreenState extends ConsumerState<PropuestasScreen> {
       generar: _generar,
     );
 
-    // El ancho del CAJON, no el de la ventana: adentro del dashboard el menu
-    // lateral se come su parte y MediaQuery contaria ese espacio como
-    // disponible. Se mide afuera del Scaffold porque el boton flotante del
-    // telefono tambien depende de el.
+    // El ancho del CAJON y no el de la ventana (el menú lateral se come su parte). Se
+    // mide fuera del Scaffold porque el botón flotante del teléfono también depende de él.
     return LayoutBuilder(
       builder: (context, restricciones) {
         final aire = Aire.de(restricciones.maxWidth);
@@ -278,11 +245,8 @@ class _PropuestasScreenState extends ConsumerState<PropuestasScreen> {
                     total: todas.length,
                     enEspera:
                         todas.where((f) => f.autorizacion.estaEnEspera).length,
-                    // Tambien mientras se recarga el listado: con
-                    // `invalidate` la grilla se queda con los datos viejos a la
-                    // vista -es lo correcto, reemplazarlos por un esqueleto
-                    // hace parecer que se perdieron- y este es el unico aviso
-                    // de que hay una consulta en vuelo.
+                    // También al recargar: con `invalidate` la grilla conserva los datos viejos (un
+                    // esqueleto parecería que se perdieron) y este es el único aviso de consulta en vuelo.
                     cargando: permisos.isLoading || propuestas.isLoading,
                     onRecargar: _recargar,
                     onNueva: _nueva,
@@ -346,9 +310,7 @@ class _PropuestasScreenState extends ConsumerState<PropuestasScreen> {
   }
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// CABECERA
-// ═══════════════════════════════════════════════════════════════════════════
+// Cabecera
 
 class _Cabecera extends StatelessWidget {
   const _Cabecera({
@@ -370,8 +332,7 @@ class _Cabecera extends StatelessWidget {
   final bool cargando;
   final VoidCallback onRecargar;
 
-  /// Abre el asistente. En el telefono no se dibuja aca: va en el boton
-  /// flotante.
+  /// Abre el asistente. En teléfono no se dibuja aquí: va en el botón flotante.
   final VoidCallback onNueva;
 
   @override
@@ -443,16 +404,12 @@ class _Cabecera extends StatelessWidget {
   }
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// FILTROS
-// ═══════════════════════════════════════════════════════════════════════════
+// Filtros
 
-/// Buscador y estado.
-///
-/// **El combo de estados se arma aca y no con `estadosPropuestaProvider`.** Ese
-/// catalogo sale de una constante del backend donde En Espera esta comentado,
-/// asi que filtrar con el dejaria afuera justo el estado que le importa a quien
-/// autoriza. Los cuatro valores son los del dominio y los define la entity.
+/// Buscador y estado. El combo de estados se arma aquí y no con
+/// `estadosPropuestaProvider`: ese catálogo sale de una constante del backend
+/// donde En Espera está comentado, y filtrar con él dejaría afuera el estado que
+/// más le importa a quien autoriza. Los cuatro valores son los de la entity.
 class _BarraFiltros extends StatelessWidget {
   const _BarraFiltros({
     required this.aire,
@@ -522,9 +479,8 @@ class _BarraFiltros extends StatelessWidget {
       ),
       child:
           aire.esChico
-              // En el telefono los filtros van uno debajo del otro y el estado
-              // queda plegado en el combo: dos controles en fila dejan al
-              // buscador en cien pixeles.
+              // En teléfono los filtros van apilados y el estado plegado en el combo: dos
+              // controles en fila dejan al buscador en cien píxeles.
               ? Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [buscador, SizedBox(height: Esp.s), combo],
@@ -540,16 +496,11 @@ class _BarraFiltros extends StatelessWidget {
   }
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// LISTADO
-// ═══════════════════════════════════════════════════════════════════════════
+// Listado
 
-/// Elige la superficie segun el ancho disponible.
-///
-/// El corte es [Aire.amplio] —mil pixeles de cajon— y no "es un telefono": la
-/// planilla pide unos mil setecientos pixeles y abajo de mil seria casi todo
-/// scroll lateral. Una tablet en vertical y una ventana angosta en el monitor
-/// tienen el mismo problema aunque el dispositivo sea distinto.
+/// Elige la superficie según el ancho disponible. El corte es [Aire.amplio]
+/// (mil píxeles de cajón) y no "es un teléfono": la planilla pide unos 1700 px y
+/// bajo mil sería casi todo scroll lateral, igual en una tablet vertical.
 class _Listado extends ConsumerWidget {
   const _Listado({
     required this.aire,
@@ -647,9 +598,9 @@ class _Listado extends ConsumerWidget {
       );
     }
 
-    // ── Escritorio: planilla paginada ──
+    // Escritorio: planilla paginada
     final porPagina = ref.watch(_filasPorPaginaProvider);
-    // Al menos una: aca la lista nunca esta vacia, el caso vacio ya salio.
+    // Al menos una: aquí la lista nunca está vacía, el caso vacío ya salió.
     final totalPaginas = (filas.length / porPagina).ceil();
     // La pagina se ajusta en vez de reventar: al achicar el tamano de pagina o
     // al filtrar, la que se estaba mirando puede dejar de existir.
@@ -692,12 +643,9 @@ class _Listado extends ConsumerWidget {
   }
 }
 
-/// El paginador de la planilla.
-///
-/// Propio y no `BosquePaginator`: aquel pinta el fondo con `Colors.white` fijo
-/// y decide el ancho con `ResponsiveUtilsBosque`, dos cosas que en modo oscuro
-/// y dentro del dashboard se ven mal. Este toma todo del tema y del ancho que
-/// le pasa la pantalla.
+/// El paginador de la planilla. Propio y no `BosquePaginator`: aquel pinta el
+/// fondo con `Colors.white` y decide el ancho con `ResponsiveUtilsBosque`, que
+/// en modo oscuro y dentro del dashboard se ven mal. Este toma todo del tema.
 class _Paginador extends StatelessWidget {
   const _Paginador({
     required this.padding,

@@ -11,40 +11,29 @@ import 'package:bosque_flutter/domain/entities/bio_hrs_entity.dart';
 import 'package:bosque_flutter/domain/entities/resumen_asistencia_empleado_entity.dart';
 import 'package:bosque_flutter/domain/repositories/biometrico_repository.dart';
 
-/// LAZY: se fabrica recién cuando algo lo lee (ver el mismo patrón en
-/// `entregas_provider.dart`) — nadie paga el costo de este módulo si no
-/// entra a la pantalla de Biométrico.
+/// LAZY: se crea al primer uso (mismo patrón que `entregas_provider.dart`), así
+/// el módulo no cuesta nada si no se entra a Biométrico.
 final biometricoRepositoryProvider = Provider<BiometricoRepository>(
   (ref) => BiometricoImpl(),
 );
 
-/// El padrón cruce biométrico ⇄ Bosque, para el buscador de empleados.
-///
-/// Sólo ~400 filas (medido en la base de prueba): se trae completo una vez y
-/// se filtra en el cliente con [ComboBuscable] — no hace falta un buscador
-/// con rebote como el de `permisos-rrhh`, que sí busca contra miles de
-/// empleados en el servidor.
+/// Padrón cruce biométrico ⇄ Bosque para el buscador de empleados. Son ~400
+/// filas: se trae completo y se filtra en el cliente con [ComboBuscable], sin
+/// buscador con rebote como en `permisos-rrhh` (miles de empleados).
 final empleadosBiometricoProvider = FutureProvider<List<BioEmplBosqEmplEntity>>(
   (ref) async {
     final repo = ref.watch(biometricoRepositoryProvider);
-    // soloActivos: true — el backend cruza contra el padrón activo de Bosque y
-    // ya excluye a quien dejó la empresa (no es un filtro que se pueda aplicar
-    // aquí: BioEmplBosqEmplEntity no trae el estado activo/inactivo, sólo el
-    // backend lo sabe). Se recalcula en cada carga, así que si el empleado
-    // vuelve a estar activo reaparece solo, sin nada que tocar aquí.
+    // soloActivos: el backend cruza contra el padrón activo de Bosque; no se puede
+    // filtrar aquí porque BioEmplBosqEmplEntity no trae el estado activo/inactivo.
     final lista = await repo.listarEmpleados({'soloActivos': true});
     // Sólo los enlazados: elegir a alguien sin idEmpleadBio garantiza el 400
     // "El empleado no está enlazado..." del reporte. Mejor no ofrecerlo.
     final enlazados =
         lista.where((e) => e.enlazado).toList()
           ..sort((a, b) => a.datoNombreBosq.compareTo(b.datoNombreBosq));
-    // Un empleado enlazado a DOS usuarios del biométrico (dos filas de
-    // tbio_bioEmplBosqEmpl con el mismo idEmpleado — el mismo caso real que
-    // hacía aparecer duplicado en el Resumen mensual) aparecería dos veces aquí
-    // también. El backend ya dedupea el reporte; aquí se hace lo mismo por
-    // idEmpleado para que el buscador no muestre a la misma persona dos veces
-    // — cuál de los dos enlaces quede no importa, `calcularReporte` en el
-    // backend resuelve el enlace vigente por su cuenta igual.
+    // Un empleado enlazado a dos usuarios del biométrico (dos filas con el mismo
+    // idEmpleado) saldría duplicado; se dedupea por idEmpleado como hace el
+    // backend. Cuál enlace quede da igual: `calcularReporte` resuelve el vigente.
     final vistos = <BigInt>{};
     final sinDuplicar = [
       for (final e in enlazados)
@@ -54,10 +43,8 @@ final empleadosBiometricoProvider = FutureProvider<List<BioEmplBosqEmplEntity>>(
   },
 );
 
-/// El padrón COMPLETO del cruce (enlazados y no enlazados) — para la pestaña
-/// de Verificación de Empleados. `empleadosBiometricoProvider` de arriba
-/// filtra a propósito para el reporte; aquí hace falta ver a quién le falta
-/// enlazar.
+/// Padrón COMPLETO del cruce (enlazados y no enlazados) para la pestaña de
+/// Verificación de Empleados; el provider anterior filtra solo los enlazados.
 final todosLosEmpleadosBiometricoProvider =
     FutureProvider<List<BioEmplBosqEmplEntity>>((ref) async {
       final repo = ref.watch(biometricoRepositoryProvider);
@@ -70,9 +57,7 @@ final todosLosEmpleadosBiometricoProvider =
 final empleadoSeleccionadoBiometricoProvider =
     StateProvider<BioEmplBosqEmplEntity?>((ref) => null);
 
-// ═══════════════════════════════════════════════════════════════════════════
 // HORARIOS — plantillas de turno, horarios semanales y asignación
-// ═══════════════════════════════════════════════════════════════════════════
 
 /// Las plantillas de turno (`tbio_bioHrs`) — CRUD directo, lista completa.
 final bioHrsListProvider = FutureProvider<List<BioHrsEntity>>((ref) async {
@@ -106,10 +91,9 @@ final bioHrSemanalDetalleProvider =
       return lista;
     });
 
-/// Las asignaciones de horario (`tbio_bioHrEmpleado`) de UN empleado —
-/// "Programación Mensual por Empleado" del legacy: aquí se ve por qué un
-/// empleado puede tener N horarios en el mes (varias filas, cada una con su
-/// `inicio`).
+/// Asignaciones de horario (`tbio_bioHrEmpleado`) de UN empleado
+/// ("Programación Mensual por Empleado" del legacy): puede tener N horarios en
+/// el mes, cada uno con su `inicio`.
 final bioHrEmpleadoListProvider =
     FutureProvider.family<List<BioHrEmpleadoEntity>, BigInt>((
       ref,
@@ -127,14 +111,11 @@ final bioHrEmpleadoListProvider =
       return lista;
     });
 
-// ═══════════════════════════════════════════════════════════════════════════
 // BITÁCORA — quién y por qué, en Marcaciones olvidadas y Horarios
-// ═══════════════════════════════════════════════════════════════════════════
 
-/// La clave del historial de UNA fila puntual: qué tabla (`'BioHrEmpleado'`,
-/// `'BioHrs'`, `'BioHrSemanal'`, `'BioHrSemanalDetalle'`,
-/// `'BioCHECKINOUTAdicinal'`) y qué `idRegistro` — ver
-/// `sql/03_bitacora_biometrico.sql` para cómo se arma cada uno.
+/// Clave del historial de UNA fila: tabla (`'BioHrEmpleado'`, `'BioHrs'`,
+/// `'BioHrSemanal'`, `'BioHrSemanalDetalle'`, `'BioCHECKINOUTAdicinal'`) e
+/// `idRegistro`; ver `sql/03_bitacora_biometrico.sql`.
 typedef BitacoraDeRegistro = ({String tabla, String idRegistro});
 
 final bitacoraBiometricoProvider = FutureProvider.autoDispose
@@ -146,9 +127,7 @@ final bitacoraBiometricoProvider = FutureProvider.autoDispose
       });
     });
 
-// ═══════════════════════════════════════════════════════════════════════════
 // MARCACIONES OLVIDADAS
-// ═══════════════════════════════════════════════════════════════════════════
 
 /// Las marcaciones adicionales (`tbio_bioCHECKINOUTAdicinal`) de UN usuario
 /// del biométrico (USERID), más recientes primero.
@@ -212,10 +191,9 @@ final reporteBiometricoProvider =
       );
     });
 
-/// El resumen mensual de todos los empleados enlazados — una fila por
-/// persona, con los totales. Puede tardar (recorre a todos, ver el javadoc
-/// de `BiometricoController.calcularResumen`), así que cachea por mes con
-/// `.family` igual que el reporte individual.
+/// Resumen mensual de todos los empleados enlazados (una fila por persona).
+/// Puede tardar (ver `BiometricoController.calcularResumen`); cachea por mes
+/// con `.family`.
 final resumenMensualBiometricoProvider =
     FutureProvider.family<List<ResumenAsistenciaEmpleadoEntity>, DateTime>((
       ref,

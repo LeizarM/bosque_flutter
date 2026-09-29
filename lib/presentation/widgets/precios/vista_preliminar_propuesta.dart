@@ -1,26 +1,11 @@
-/// La vista preliminar de una propuesta: sus articulos con el precio de cada
-/// lista.
+/// La vista preliminar de una propuesta: sus artículos con el precio de cada
+/// lista. Todo sale de `/price/vistaPropuesta`, armada con los mismos
+/// procedimientos que el PDF (ramas F y H) y el Excel de la generación (ramas D y
+/// G): lo que se ve es lo que se imprime y se carga en SAP.
 ///
-/// **Todo sale de una sola consulta**, `/price/vistaPropuesta`, que el backend
-/// arma con los mismos procedimientos que el PDF (ramas F y H) y que el Excel
-/// de la generacion (ramas D y G). Lo que se ve aca es lo que se imprime y lo
-/// que se carga en SAP. Antes los precios por unidad se leian aparte de la
-/// rama D, que no tiene filas para las propuestas por articulo: esas abrian
-/// con "no tiene articulos".
-///
-/// **Que precio se muestra** (`MedidaVista`):
-///
-/// * **Por tonelada** (por defecto, 2026-09-25, "haz que se vea como en
-///   reporte"): las filas del PDF, con sus colores y sus numeros (1,714.26).
-/// * **Bs** (Impexpap): precio por tonelada / UTM x tipo de cambio de SAP.
-/// * **USD** (Impexpap): precio por tonelada / UTM.
-/// * **Bs Productiva**: el de Impexpap en Bs menos 7 %.
-///
-/// Bs y Bs Productiva son las dos columnas de precio del Excel. El tipo de
-/// cambio se muestra en la leyenda: es lo que hay que poder verificar.
-///
-/// Todos los numeros del dialogo van como en el PDF: coma para los miles y
-/// punto para los decimales. El dibujo vive en `vista_preliminar_reporte.dart`.
+/// Precio (`MedidaVista`): por tonelada (filas del PDF); Bs (Impexpap) = tonelada
+/// / UTM x tipo de cambio SAP; USD (Impexpap) = tonelada / UTM; Bs Productiva = Bs
+/// de Impexpap menos 7 %. El tipo de cambio va en la leyenda para verificarlo.
 library;
 
 import 'package:flutter/material.dart';
@@ -38,9 +23,7 @@ import 'package:bosque_flutter/presentation/widgets/precios/propuesta_en_autoriz
 import 'package:bosque_flutter/presentation/widgets/precios/tabla_propuestas.dart';
 import 'package:bosque_flutter/presentation/widgets/precios/vista_preliminar_reporte.dart';
 
-// ═══════════════════════════════════════════════════════════════════════════
-// EL DIALOGO
-// ═══════════════════════════════════════════════════════════════════════════
+// El diálogo
 
 class VistaPreliminarPropuesta extends ConsumerStatefulWidget {
   const VistaPreliminarPropuesta({
@@ -72,9 +55,8 @@ class _VistaPreliminarPropuestaState
 
   @override
   Widget build(BuildContext context) {
-    // Aca MediaQuery si corresponde: un dialogo vive en el Overlay raiz, no
-    // adentro del cajon de la pantalla. Lo de adentro se decide con
-    // LayoutBuilder.
+    // Aquí sí MediaQuery: un diálogo vive en el Overlay raíz, no dentro del cajón de
+    // la pantalla; lo de adentro se decide con LayoutBuilder.
     final pantalla = MediaQuery.sizeOf(context);
     final id = widget.fila.idPropuesta;
     final datos = ref.watch(vistaPropuestaProvider(id));
@@ -173,9 +155,7 @@ class _Cuenta {
   final int listas;
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// CABECERA Y PIE
-// ═══════════════════════════════════════════════════════════════════════════
+// Cabecera y pie
 
 class _Cabecera extends StatelessWidget {
   const _Cabecera({required this.fila, required this.preliminar});
@@ -374,9 +354,7 @@ class _Pie extends StatelessWidget {
   }
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// CONTENIDO
-// ═══════════════════════════════════════════════════════════════════════════
+// Contenido
 
 class _Contenido extends StatelessWidget {
   const _Contenido({

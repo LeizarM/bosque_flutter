@@ -1,4 +1,3 @@
-// Destino final: lib/core/state/det_documentacion_provider.dart
 import 'package:bosque_flutter/data/repositories/det_documentacion_impl.dart';
 import 'package:bosque_flutter/domain/entities/det_documentacion_entity.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';

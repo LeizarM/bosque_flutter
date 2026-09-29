@@ -11,13 +11,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// Permutas y coberturas: el caso «no puedo ese sábado».
 ///
-/// La distinción que ordena toda la pantalla: **registrar un cambio no mueve la
-/// grilla**. Nace SOLICITADO y ahí se queda. Recién al aprobarlo se escriben las
-/// tres celdas —titular en 'C', el que cubre en '1', y la reposición liberada—
-/// y las tres van juntas en una transacción.
-///
-/// Por eso APROBADO no se puede editar ni anular desde aquí: sus celdas ya están
-/// en la grilla y deshacerlas por este lado la dejaría mintiendo.
+/// **Registrar un cambio no mueve la grilla**: nace SOLICITADO y sólo al
+/// aprobarlo se escriben, en una transacción, las tres celdas (titular en 'C',
+/// quien cubre en '1' y la reposición liberada). Por eso APROBADO no se edita
+/// ni anula desde aquí: sus celdas ya están en la grilla.
 class CambiosTab extends ConsumerWidget {
   const CambiosTab({super.key, required this.idRol});
 
@@ -181,8 +178,7 @@ class _TarjetaState extends ConsumerState<_Tarjeta> {
             ),
 
             if (c.pendiente)
-              // Wrap y no Row: "Aprobar y aplicar" + "Anular" no entran juntos
-              // en 360 px y una Row los cortaría en vez de bajarlos.
+              // Wrap y no Row: "Aprobar y aplicar" + "Anular" no entran juntos en 360 px.
               Wrap(
                 alignment: WrapAlignment.end,
                 spacing: 8,
@@ -312,23 +308,14 @@ class _Linea extends StatelessWidget {
   );
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// ALTA
-// ═══════════════════════════════════════════════════════════════════════════
+// Alta
 
 /// Formulario de alta de una permuta o cobertura.
 ///
-/// **Lo que este formulario impide.** La tentacion es dejar elegir a cualquiera
-/// de las dos listas, pero un cambio solo tiene sentido si:
-///
-/// - a quien no viene **le tocaba venir** ese sabado — si no, no hay nada que
-///   cubrir; y
-/// - quien cubre **estaba libre** — si ya venia, cubrir no agrega a nadie y la
-///   cobertura del dia baja igual en uno.
-///
-/// El criterio NO es «que sean de grupos distintos». Un B puede tener turno un
-/// sabado de A si hubo evento TOTAL, si lo convocaron, o si un jefe lo programo.
-/// Por eso se mira la celda de verdad y no la paridad.
+/// Un cambio sólo tiene sentido si a quien no viene **le tocaba venir** ese
+/// sábado y quien cubre **estaba libre** (si ya venía, no agrega a nadie).
+/// NO se compara por «grupos distintos»: un B puede tener turno un sábado de A
+/// (evento TOTAL, convocado o programado por un jefe), por eso se mira la celda.
 class NuevoCambioSheet extends ConsumerStatefulWidget {
   const NuevoCambioSheet({super.key, required this.grilla});
   final GrillaRol grilla;
@@ -352,15 +339,13 @@ class _NuevoCambioSheetState extends ConsumerState<NuevoCambioSheet> {
     super.dispose();
   }
 
-  // ── quien es quien ese sabado ────────────────────────────────────────
+  // Quién es quién ese sábado
 
-  /// Tiene turno: la celda dice '1'. Una 'V' o una 'X' no cuentan — esa persona
-  /// ya no venia, asi que no hay nada que cubrirle.
+  /// Tiene turno: la celda dice '1'. Una 'V' o una 'X' no cuentan: ya no venía.
   bool _tieneTurno(ParticipanteTurnoEntity p, int idSabado) =>
       widget.grilla.celda(p.idParticipante, idSabado)?.codigoExcel == '1';
 
-  /// Esta libre: NO hay celda. En este modelo el libre es la ausencia de la
-  /// fila, asi que esto es exactamente «ese dia no le tocaba nada».
+  /// Está libre: NO hay celda (el libre es la ausencia de fila).
   bool _estaLibre(ParticipanteTurnoEntity p, int idSabado) =>
       widget.grilla.celda(p.idParticipante, idSabado) == null;
 
@@ -368,16 +353,16 @@ class _NuevoCambioSheetState extends ConsumerState<NuevoCambioSheet> {
   Widget build(BuildContext context) {
     final g = widget.grilla;
 
-    // Los sabados del mes que se esta mirando en la grilla: si el filtro dice
-    // agosto, ofrecer los 52 del anio obliga a buscar la fecha en una lista larga.
+    // Los sábados del mes que se mira en la grilla: ofrecer los 52 del año obliga
+    // a buscar la fecha en una lista larga.
     final delMes = filtrarSabados(g.sabados, ref.watch(filtroMesProvider));
     final hoy = DateTime.now();
     final futuros =
         delMes
             .where((s) => s.fecha == null || !s.fecha!.isBefore(hoy))
             .toList();
-    // Si el mes ya paso entero se muestran igual: puede haber que registrar algo
-    // de atras.
+    // Si el mes ya pasó entero se muestran igual: puede haber que registrar algo
+    // de atrás.
     final sabados = futuros.isEmpty ? delMes : futuros;
 
     if (sabados.isEmpty) {
@@ -474,8 +459,8 @@ class _NuevoCambioSheetState extends ConsumerState<NuevoCambioSheet> {
                     ),
                   ),
               ],
-              // Cambiar de sabado invalida a las dos personas: quien tenia turno
-              // el 8 puede estar libre el 15.
+              // Cambiar de sábado invalida a las dos personas: quien tenía turno el 8 puede
+              // estar libre el 15.
               onChanged:
                   (v) => setState(() {
                     _idSabado = v;
@@ -543,9 +528,8 @@ class _NuevoCambioSheetState extends ConsumerState<NuevoCambioSheet> {
                       _reemplazo == null
                           ? 'Elige primero con quién se cambia'
                           : 'los sábados de esa persona; pasan a ser del titular',
-                  // Tiene que ser un dia en el que quien cubre SI tenia turno:
-                  // es el que le pasa al titular. Si ya estaba libre no hay nada
-                  // que intercambiar.
+                  // Un día en el que quien cubre SÍ tenía turno (es el que le pasa al titular);
+                  // si ya estaba libre no hay nada que intercambiar.
                   opciones: [
                     if (_reemplazo != null)
                       for (final s in _sabadosConTurnoDe(_reemplazo!))
@@ -593,8 +577,8 @@ class _NuevoCambioSheetState extends ConsumerState<NuevoCambioSheet> {
     );
   }
 
-  /// Los sabados del rol en los que esa persona si tiene turno. Se recorre el
-  /// anio entero y no solo el mes: la reposicion bien puede caer en otro mes.
+  /// Los sábados del rol en los que esa persona sí tiene turno. Se recorre el año
+  /// entero: la reposición puede caer en otro mes.
   List<SabadoEntity> _sabadosConTurnoDe(int codEmpleado) {
     final p = widget.grilla.participantes.firstWhere(
       (x) => x.codEmpleado == codEmpleado,
@@ -634,7 +618,7 @@ class _NuevoCambioSheetState extends ConsumerState<NuevoCambioSheet> {
   }
 }
 
-/// Aclaracion corta bajo un campo. Explica POR QUE la lista es la que es: sin
+/// Aclaración corta bajo un campo: explica POR QUÉ la lista es la que es; sin
 /// eso, una lista corta parece un error de carga.
 class _Nota extends StatelessWidget {
   const _Nota(this.texto, {this.esAviso = false});
@@ -682,7 +666,7 @@ class _Combo<T> extends StatelessWidget {
       isDense: true,
     ),
     items: opciones,
-    // Sin opciones queda deshabilitado, no vacio y clickeable.
+    // Sin opciones queda deshabilitado, no vacío y clickeable.
     onChanged: opciones.isEmpty ? null : onChanged,
   );
 }

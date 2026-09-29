@@ -1,4 +1,3 @@
-// control_combustible_maquina_montacarga_notifier.dart
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:bosque_flutter/data/repositories/control_combustible_maquina_montacarga_impl.dart';
 import 'package:bosque_flutter/domain/entities/compra_garrafa_entity.dart';
@@ -343,7 +342,6 @@ class ControlCombustibleMaquinaMontacargaNotifier
   }
 }
 
-// Mantenemos el provider original
 final controlCombustibleMaquinaMontacargaProvider =
     Provider<ControlCombustibleMaquinaMontacargaRepository>((ref) {
       return ControlCombustibleMaquinaMontacargaImpl();
@@ -358,7 +356,7 @@ final controlCombustibleMaquinaMontacargaNotifierProvider =
       return ControlCombustibleMaquinaMontacargaNotifier(repository);
     });
 
-// Providers adicionales para acceder directamente a los almacenes y máquinas
+// Acceso directo a los almacenes y máquinas
 final almacenesProvider =
     Provider<List<ControlCombustibleMaquinaMontacargaEntity>>((ref) {
       return ref
@@ -374,7 +372,7 @@ final maquinasMontacargaProvider = Provider<List<MaquinaMontacargaEntity>>((
       .maquinasMontacarga;
 });
 
-// Nuevo provider para acceder directamente a los bidones
+// Acceso directo a los bidones
 final bidonesMaquinaProvider =
     Provider<List<ControlCombustibleMaquinaMontacargaEntity>>((ref) {
       return ref
@@ -382,7 +380,7 @@ final bidonesMaquinaProvider =
           .bidones;
     });
 
-// Nuevo provider para acceder directamente al reporte de movimientos
+// Acceso directo al reporte de movimientos
 final reporteMovimientosProvider =
     Provider<List<ControlCombustibleMaquinaMontacargaEntity>>((ref) {
       return ref
@@ -390,7 +388,7 @@ final reporteMovimientosProvider =
           .reporteMovimientos;
     });
 
-// Nuevo provider para acceder directamente a los bidones por sucursal
+// Acceso directo a los bidones por sucursal
 final bidonesSucursalProvider =
     Provider<List<ControlCombustibleMaquinaMontacargaEntity>>((ref) {
       return ref
@@ -398,7 +396,7 @@ final bidonesSucursalProvider =
           .bidonesSucursal;
     });
 
-// Nuevo provider para acceder directamente a los últimos movimientos
+// Acceso directo a los últimos movimientos
 final ultimosMovimientosProvider =
     Provider<List<ControlCombustibleMaquinaMontacargaEntity>>((ref) {
       return ref
@@ -416,7 +414,7 @@ final listBidonesPendientesProvider =
       return await repo.listBidonesPendientes(codSucursalMaqVehiDestino);
     });
 
-// Nuevo provider para acceder directamente a los bidones pendientes desde el state
+// Bidones pendientes leídos directamente del state
 final bidonesPendientesProvider = Provider<List<MovimientoEntity>>((ref) {
   return ref
       .watch(controlCombustibleMaquinaMontacargaNotifierProvider)

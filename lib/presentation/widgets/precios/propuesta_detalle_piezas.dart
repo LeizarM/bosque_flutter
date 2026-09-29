@@ -1,24 +1,13 @@
-/// Las piezas visuales compartidas del modulo de Precios (tpr). Nacieron para
-/// la pantalla "Detalle de propuesta", que se quito el 2026-09-25; las usan el
-/// asistente, las propuestas y las demas pantallas del modulo.
+/// Piezas visuales compartidas del módulo de Precios (tpr): las usan el
+/// asistente, las propuestas y las demás pantallas. Viven aparte para no repetir
+/// ancho de celda, rayado y formato de moneda, y por el molde de tablas (cabecera
+/// fija y scroll horizontal controlado para 7 y 12 columnas).
 ///
-/// Viven fuera de la pantalla por dos motivos. El primero es que las cinco
-/// pestanias muestran la misma clase de cosa -una grilla de numeros que se
-/// comparan entre si- y sin un lugar comun cada una iba a inventar su propio
-/// ancho de celda, su propio rayado y su propio formato de moneda. El segundo
-/// es el molde de tablas: la grilla de articulos tiene doce columnas y la de
-/// precios propuestos siete, asi que las dos necesitan cabecera fija y scroll
-/// horizontal controlado, que es codigo que no conviene escribir dos veces.
-///
-/// **Por que no se usa `BosqueFlatTable` aqui.** Ese componente reparte las
-/// columnas por `flex` dentro de un `Row`, sin ancho minimo ni scroll lateral:
-/// con siete columnas ya aplasta los importes, y con doce los deja en una
-/// tirita de dos caracteres. Ademas decide si es escritorio con
-/// `ResponsiveUtilsBosque`, o sea con el ancho de la VENTANA, y adentro del
-/// dashboard el sidebar se come 260 px: en un portatil de 1366 la ventana dice
-/// "escritorio" y el cajon real mide 1106. Aca el corte lo decide
-/// [Aire] sobre el ancho que entrega `LayoutBuilder`, que es el ancho que de
-/// verdad hay.
+/// No usa `BosqueFlatTable`: reparte columnas por `flex` sin ancho mínimo ni
+/// scroll lateral y decide escritorio con `ResponsiveUtilsBosque` (ancho de la
+/// VENTANA: en un portátil de 1366 dice "escritorio" y el cajón mide 1106, pues
+/// el sidebar se come 260 px). Aquí el corte lo decide [Aire] sobre el ancho que
+/// entrega `LayoutBuilder`.
 library;
 
 import 'dart:math' as math;
@@ -29,14 +18,11 @@ import 'package:intl/intl.dart';
 import 'package:bosque_flutter/core/ui/piezas_bosque.dart';
 import 'package:bosque_flutter/core/ui/tokens_bosque.dart';
 
-// ═══════════════════════════════════════════════════════════════════════════
-// FORMATO
-// ═══════════════════════════════════════════════════════════════════════════
+// Formato
 
-/// Dinero y porcentajes con separador de miles y coma decimal, que es como se
-/// escriben los numeros en Bolivia. El patron va explicito para no depender del
-/// locale del dispositivo: la misma propuesta tiene que leerse igual en el
-/// navegador de la oficina y en el telefono de quien autoriza.
+/// Dinero y porcentajes con separador de miles y coma decimal (como se escribe
+/// en Bolivia). El patrón va explícito para no depender del locale del
+/// dispositivo: la misma propuesta se lee igual en navegador y en teléfono.
 final NumberFormat fmtMonto = NumberFormat('#,##0.00', 'es');
 
 /// Cuatro decimales para el precio unitario, que en articulos chicos se juega
@@ -62,16 +48,10 @@ String montoFinoLegible(double valor, {String moneda = ''}) {
 /// Porcentaje listo para mostrar, sin ceros de relleno.
 String porcentajeLegible(double valor) => '${fmtCantidad.format(valor)} %';
 
-// ═══════════════════════════════════════════════════════════════════════════
-// LECTURA DE LAS RESPUESTAS CRUDAS
-//
-// Varias lecturas del repositorio devuelven `Map<String, dynamic>` porque son
-// DTO de despliegue del backend -descripciones resueltas por JOIN, pivotes- y
-// no tienen tabla detras. Leerlas con `fila['precio'] as double` revienta
-// apenas el driver decide mandar un entero, que es lo que hace SQL Server
-// cuando el valor no tiene parte decimal. Estos lectores convierten en vez de
-// castear, y ademas toleran una diferencia de mayusculas en la clave.
-// ═══════════════════════════════════════════════════════════════════════════
+// Lectura de las respuestas crudas: varias lecturas del repositorio devuelven
+// `Map<String, dynamic>` (DTO de despliegue, sin tabla detrás) y `as double`
+// revienta cuando SQL Server manda un entero sin parte decimal. Estos lectores
+// convierten en vez de castear y toleran mayúsculas distintas en la clave.
 
 Object? _valorCrudo(Map<String, dynamic> fila, String clave) {
   if (fila.containsKey(clave)) return fila[clave];
@@ -124,9 +104,7 @@ int enteroCrudo(Map<String, dynamic> fila, String clave) {
 BigInt idCrudo(Map<String, dynamic> fila, String clave) =>
     BigInt.from(enteroCrudo(fila, clave));
 
-// ═══════════════════════════════════════════════════════════════════════════
-// LA TABLA ANCHA (escritorio)
-// ═══════════════════════════════════════════════════════════════════════════
+// La tabla ancha (escritorio)
 
 const double _altoBanda = 24;
 const double _altoCabecera = 40;
@@ -145,9 +123,9 @@ class ColumnaPropuesta<T> {
 
   final String titulo;
 
-  /// Ancho fijo en pixeles. Fijo y no `flex`: con doce columnas el reparto
-  /// proporcional deja los importes en dos caracteres y un ancho pedido de mas
-  /// es justamente lo que dispara el scroll horizontal.
+  /// Ancho fijo en píxeles, no `flex`: con doce columnas el reparto
+  /// proporcional deja los importes en dos caracteres. Pedir de más es lo
+  /// que dispara el scroll horizontal.
   final double ancho;
 
   final Widget Function(BuildContext contexto, T fila) celda;
@@ -160,17 +138,13 @@ class ColumnaPropuesta<T> {
   final String? ayuda;
 }
 
-/// Planilla de ancho fijo con cabecera que no se va con el scroll.
+/// Planilla de ancho fijo con cabecera que no se va con el scroll (patrón de
+/// `TablaLotes`). Si la suma de anchos no entra aparece el scroll horizontal,
+/// arrastrable también con el mouse ([ArrastreLateral]); si sobra lugar, la
+/// última columna se estira.
 ///
-/// Es el patron de `TablaLotes`: las columnas piden su ancho, y si la suma no
-/// entra en el cajon aparece el scroll horizontal -arrastrable tambien con el
-/// mouse, ver [ArrastreLateral]-. Si sobra lugar, la ultima columna se estira:
-/// una planilla angosta con medio panel vacio al lado se lee como si le faltara
-/// algo.
-///
-/// **Solo para escritorio.** En movil la grilla se reemplaza por tarjetas; una
-/// tabla de doce columnas en un telefono es scroll horizontal infinito, que es
-/// exactamente lo que este modulo no puede tener.
+/// **Solo para escritorio.** En móvil se reemplaza por tarjetas: doce columnas
+/// en un teléfono serían scroll horizontal infinito.
 class TablaPropuesta<T> extends StatefulWidget {
   const TablaPropuesta({
     super.key,
@@ -432,9 +406,8 @@ Widget celdaTexto(
   ),
 );
 
-/// Celda numerica: cifras tabulares, para que los digitos no bailen de fila en
-/// fila. Sin esto, una columna de importes queda imposible de recorrer con la
-/// vista.
+/// Celda numérica: cifras tabulares para que los dígitos no bailen de fila en
+/// fila (sin esto una columna de importes es imposible de recorrer).
 Widget celdaNumero(
   BuildContext context,
   String texto, {
@@ -447,9 +420,7 @@ Widget celdaNumero(
   style: context.numero(fuerte: fuerte, color: color),
 );
 
-// ═══════════════════════════════════════════════════════════════════════════
-// LAS PIEZAS DEL MOVIL Y DE LOS PANELES
-// ═══════════════════════════════════════════════════════════════════════════
+// Las piezas del móvil y de los paneles
 
 /// Un dato con su rotulo, en una linea. Es la unidad de las tarjetas del movil
 /// y de la ficha de la propuesta.
@@ -516,11 +487,9 @@ class FilaDeDato extends StatelessWidget {
   }
 }
 
-/// La tarjeta que reemplaza a la fila de la tabla cuando el cajon es angosto.
-///
-/// No es la tabla escalada: el titulo y lo que se compara suben arriba, el
-/// resto baja a pares rotulo/valor, y las acciones viven en un menu contextual
-/// en vez de ocupar una columna propia.
+/// La tarjeta que reemplaza a la fila de la tabla cuando el cajón es angosto. No
+/// es la tabla escalada: el título y lo que se compara suben, el resto baja a
+/// pares rótulo/valor y las acciones van en un menú contextual.
 class TarjetaPropuesta extends StatelessWidget {
   const TarjetaPropuesta({
     super.key,
@@ -546,9 +515,8 @@ class TarjetaPropuesta extends StatelessWidget {
 
   final List<Widget> datos;
 
-  /// Las acciones van en un menu y no en botones sueltos: en una lista de
-  /// cincuenta tarjetas, dos botones por tarjeta son cien blancos de toque
-  /// compitiendo con el scroll.
+  /// Las acciones van en un menú y no en botones sueltos: en cincuenta tarjetas,
+  /// dos botones por tarjeta son cien blancos de toque compitiendo con el scroll.
   final List<PopupMenuEntry<String>> acciones;
   final void Function(String opcion)? alElegirAccion;
 
@@ -743,12 +711,9 @@ class BuscadorPropuesta extends StatelessWidget {
   }
 }
 
-/// Los filtros de una grilla: a la vista en escritorio, plegados en movil.
-///
-/// **Por que se pliegan y no se achican.** En un telefono los filtros y el
-/// buscador se comen la mitad del alto util, y quien entra a mirar una
-/// propuesta no viene a filtrar: viene a ver los precios. Plegados, el primer
-/// renglon de datos queda arriba del pliegue.
+/// Los filtros de una grilla: a la vista en escritorio, plegados en móvil (en un
+/// teléfono se comen la mitad del alto útil y quien entra a mirar una propuesta
+/// viene a ver precios, no a filtrar).
 class FiltrosPropuesta extends StatelessWidget {
   const FiltrosPropuesta({
     super.key,
@@ -780,7 +745,7 @@ class FiltrosPropuesta extends StatelessWidget {
 
     return Theme(
       // El ExpansionTile de Material 3 dibuja una linea arriba y otra abajo que
-      // aca se suman al borde de la tarjeta y quedan tres rayas juntas.
+      // aquí se suman al borde de la tarjeta y quedan tres rayas juntas.
       data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
       child: Container(
         decoration: BoxDecoration(

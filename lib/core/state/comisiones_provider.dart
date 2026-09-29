@@ -22,12 +22,8 @@ final comisionesRepositoryProvider = Provider<ComisionesRepository>(
   (ref) => ComisionesImpl(),
 );
 
-// ═══════════════════════════════════════════════════════════════════════
-// Lecturas
-//
-// Son FutureProvider: la pantalla usa .when(...) y muestra el spinner mientras
-// el estado es loading. Nada de banderas de carga manuales.
-// ═══════════════════════════════════════════════════════════════════════
+// Lecturas: FutureProvider; la pantalla usa .when(...) y muestra el spinner
+// mientras el estado es loading, sin banderas de carga manuales.
 
 /// Grupos activos.
 final gruposComisionProvider =
@@ -101,15 +97,11 @@ final comisionesDinamicasVigentesProvider = FutureProvider.autoDispose
           .obtenerComisionesDinamicasVigentes(esInterno: esInterno);
     });
 
-// ═══════════════════════════════════════════════════════════════════════
 // Escrituras
-// ═══════════════════════════════════════════════════════════════════════
 
-/// Estado de una operacion de guardado.
-///
-/// Existe para que el boton muestre spinner y quede deshabilitado mientras la
-/// peticion viaja: sin esto el usuario vuelve a tocar Guardar y se generan
-/// registros duplicados, que es lo que pasaba en la pantalla de Bosque v2.
+/// Estado de una operación de guardado. Mantiene el botón con spinner y
+/// deshabilitado mientras la petición viaja; sin esto un segundo toque en
+/// Guardar duplica registros.
 class EstadoAccion {
   final bool enProceso;
   final String? error;
@@ -228,10 +220,8 @@ class ComisionesAccionesNotifier extends StateNotifier<EstadoAccion> {
   );
 
   // ---------- Politica del descuento por familia ----------
-  //
-  // Toda escritura invalida ademas los providers del preliminar: cambiar un
-  // porcentaje cambia lo que se va a pagar, y dejar la pantalla mostrando el
-  // numero viejo seria peor que no mostrarlo.
+  // Toda escritura invalida también los providers del preliminar: cambiar un
+  // porcentaje cambia lo que se va a pagar y mostrar el número viejo sería peor.
 
   Future<bool> guardarPoliticaFamilia(FamiliaPoliticaEntity mb, int uid) =>
       _ejecutar(() => _repo.guardarPoliticaFamilia(mb, uid), [
@@ -293,11 +283,8 @@ class ComisionesAccionesNotifier extends StateNotifier<EstadoAccion> {
     [
       estadoPeriodoProvider,
       preliminarProvider,
-      // Ejecutar el pago es lo que ESCRIBE tcom_pagadoItem y su corte. Sin
-      // invalidar estos tres, el dialogo del detalle congelado sigue mostrando
-      // lo que leyo antes de la ejecucion -en el caso normal, que el periodo
-      // no tiene corte- justo despues del unico momento en que ese detalle
-      // cambia.
+      // Ejecutar el pago ESCRIBE tcom_pagadoItem y su corte: sin invalidar estos
+      // tres, el diálogo del detalle seguiría mostrando lo leído antes de ejecutar.
       itemsPagadosProvider,
       resumenItemsPagadosProvider,
       corteItemsPagadosProvider,
@@ -310,12 +297,8 @@ final comisionesAccionesProvider =
       (ref) => ComisionesAccionesNotifier(ref),
     );
 
-// ═══════════════════════════════════════════════════════════════════════
-// Filtros de pantalla
-//
-// Locales al modulo: se reinician al salir, para que un filtro de una visita
-// no reaparezca en la siguiente.
-// ═══════════════════════════════════════════════════════════════════════
+// Filtros de pantalla: locales al módulo, se reinician al salir para que el
+// filtro de una visita no reaparezca en la siguiente.
 
 /// Texto de busqueda de la tabla activa.
 final filtroBusquedaComisionProvider = StateProvider.autoDispose<String>(
@@ -330,13 +313,9 @@ final filtroEmpresaComisionProvider = StateProvider.autoDispose<int>(
 /// null = internas y externas, 1 = internas, 0 = externas.
 final filtroEsInternoProvider = StateProvider.autoDispose<int?>((ref) => null);
 
-// ═══════════════════════════════════════════════════════════════════════
-// Vistas preliminares
-//
-// Los cuatro providers son family porque dependen del periodo y del tipo de
-// cambio. Se declara == y hashCode para que Riverpod reconozca dos filtros
-// iguales como el mismo y no vuelva a pedir los datos al backend.
-// ═══════════════════════════════════════════════════════════════════════
+// Vistas preliminares: los cuatro providers son family (dependen del periodo y
+// del tipo de cambio). Se declara == y hashCode para que dos filtros iguales
+// sean la misma clave y no se vuelva a pedir al backend.
 
 /// Modalidad de calculo. Cada una corresponde a una rama del SP heredado y a
 /// un permiso de tb_vistaBtn sobre la vista 82.
@@ -364,11 +343,9 @@ enum ModalidadPreliminar {
 
   const ModalidadPreliminar(this.etiqueta, this.permiso, this.detalle);
 
-  /// El rotulo del boton.
-  ///
-  /// Las tres internas lo dicen: lo que cambia entre ellas es el CALCULO, no a
-  /// quien se le paga, y con «Internos / Dinamica anterior / Dinamica vigente»
-  /// parecia que solo la primera era del padron interno.
+  /// El rótulo del botón. Las tres internas lo dicen: lo que cambia entre ellas
+  /// es el cálculo, no a quién se le paga; con «Internos / Dinamica anterior /
+  /// Dinamica vigente» parecía que solo la primera era del padrón interno.
   final String etiqueta;
 
   /// Una linea que explica en que se diferencia de las otras. El nombre agrupa;
@@ -378,12 +355,9 @@ enum ModalidadPreliminar {
   /// nombreBtn en tb_vistaBtn, el mismo que usaba esAutorizado() en el XHTML.
   final String permiso;
 
-  /// Contra que mitad del periodo se paga esta modalidad: 1 internos, 0
-  /// externos.
-  ///
-  /// Las tres modalidades internas -la de siempre, la dinamica anterior y la
-  /// vigente- son tres formas de CALCULAR lo mismo, no tres periodos: el pago
-  /// de internos es uno solo. Por eso las tres van a 1 y solo `externo` va a 0.
+  /// Contra qué mitad del periodo se paga: 1 internos, 0 externos. Las tres
+  /// modalidades internas son tres formas de CALCULAR lo mismo, no tres periodos
+  /// (el pago de internos es uno solo): por eso van a 1 y solo `externo` va a 0.
   int get esInterno => this == ModalidadPreliminar.externo ? 0 : 1;
 
   /// Como se llama el reporte de lo ya pagado para esta modalidad. Es el
@@ -395,12 +369,10 @@ enum ModalidadPreliminar {
           : 'Pagadas internas';
 }
 
-/// Permisos de botón del módulo, definidos en tb_vistaBtn para la vista 82.
-///
-/// Los dos primeros vienen del legacy y ya existían en la tabla; los cinco
-/// siguientes se crean con el script 01_botones_comisiones.sql y cubren las
-/// pestañas que en Comisiones.xhtml no vivían sueltas, sino dentro de un tab
-/// o un diálogo ya protegido. Sin esas filas nadie salvo `adm` ve la pestaña:
+/// Permisos de botón del módulo, definidos en tb_vistaBtn para la vista 82. Los
+/// dos primeros vienen del legacy; los cinco siguientes los crea el script
+/// 01_botones_comisiones.sql (pestañas que en Comisiones.xhtml vivían dentro de
+/// un tab o diálogo ya protegido). Sin esas filas solo `adm` ve la pestaña:
 /// correr el script antes de desplegar.
 class PermisosComision {
   const PermisosComision._();
@@ -427,7 +399,7 @@ class PermisosComision {
   static const pendientes = 'btnComPendientes';
 
   /// Administrar la politica del descuento por familia. Va aparte de los
-  /// demas a proposito: cambiar un numero aca mueve la nomina del mes.
+  /// demas a proposito: cambiar un número aquí mueve la nómina del mes.
   static const politica = 'btnComPolitica';
 }
 
@@ -467,32 +439,12 @@ class SuperficiesComision {
   bool get vacio => pestanias.isEmpty;
 }
 
-/// Que ve este usuario, dados sus botones autorizados.
-///
-/// Funcion pura a proposito: es la regla de acceso del modulo y tiene que
-/// poder probarse contra filas reales de `tb_usuarioBtn` sin montar un arbol de
-/// widgets ni falsear a Riverpod.
-///
-/// El mapeo con Comisiones.xhtml, que es lo que hay que replicar:
-///
-///   XHTML                                     -> pestania nueva
-///   tab EJECUTAR COMISIONES (TabEjecutar)     -> Ejecutar
-///   tab PRELIMINAR (tabPreliminar)            -> Preliminar / Internos
-///   tab PRELIMINAR EXT (tabPreliminarExt)     -> Preliminar / Externos
-///   tab DINAMICA (tabPreliminarComDinamica)   -> Preliminar / Internos dinamica anterior
-///   tab DINAMICA NEW (…ComDinamicaNew)        -> Preliminar / Internos dinamica vigente
-///   boton Grupo Vendedor (btnGrpVen)          -> Asignaciones
-///
-/// OJO con la ultima linea: en el XHTML `btnGrpVen` abria `dlgGrpVen`, y ese
-/// dialogo traia TAMBIEN el alta de vendedores y la de grupos. Aca eso se
-/// partio en tres pestanias con tres permisos, asi que `btnGrpVen` solo ya no
-/// alcanza para administrar vendedores ni grupos: hacen falta
-/// `btnComVendedores` y `btnComGrupos`. Hoy no se lo lleva nadie por delante
-/// -no hay un solo usuario con `btnGrpVen` en `nivelAcceso != 0`-, pero quien
-/// otorgue ese boton esperando el comportamiento viejo va a recibir un tercio.
-///
-/// Escala por dias, Politica y Pendientes no existian en el XHTML: son
-/// superficie nueva, con permiso propio desde el primer dia.
+/// Qué ve este usuario según sus botones. Función pura: la regla de acceso debe
+/// poder probarse con filas reales de `tb_usuarioBtn`, sin widgets ni Riverpod.
+/// Mapeo con Comisiones.xhtml: TabEjecutar -> Ejecutar; los cuatro tabPreliminar*
+/// -> Preliminar (Internos, Externos, dinámica anterior y vigente); btnGrpVen ->
+/// Asignaciones. OJO: `btnGrpVen` abría `dlgGrpVen`, que también traía el alta de
+/// vendedores y grupos; ahora además hacen falta `btnComVendedores` y `btnComGrupos`.
 SuperficiesComision superficiesComision(bool Function(String) tiene) {
   final modalidades =
       ModalidadPreliminar.values.where((m) => tiene(m.permiso)).toList();
@@ -568,11 +520,10 @@ final filtroPreliminarProvider = StateProvider.autoDispose<FiltroPreliminar>((
   );
 });
 
-/// Tipo de cambio que sugiere el backend, con el que arranca el preliminar.
-///
-/// Sale de la misma cotizacion de SAP que aplica el calculo, de modo que el
-/// numero de la pantalla y el que se usa al convertir a dolares coinciden. No
-/// es autoDispose: cambiar de pestana no deberia volver a pedirlo.
+/// Tipo de cambio que sugiere el backend, con el que arranca el preliminar. Sale
+/// de la misma cotización de SAP que aplica el cálculo, así que coincide con el
+/// usado al convertir a dólares. No es autoDispose: cambiar de pestaña no debe
+/// volver a pedirlo.
 final tipoCambioSugeridoProvider = FutureProvider<TipoCambioComisionEntity>((
   ref,
 ) async {
@@ -603,9 +554,7 @@ final preliminarProvider = FutureProvider.autoDispose
       }
     });
 
-// ═══════════════════════════════════════════════════════════════════════
-// Carga y ejecucion del periodo
-// ═══════════════════════════════════════════════════════════════════════
+// Carga y ejecución del periodo
 
 @immutable
 class ClavePeriodo {
@@ -673,11 +622,9 @@ final rangosComisionProvider =
       return ref.watch(comisionesRepositoryProvider).obtenerRangosComision();
     });
 
-/// Identifica UNA fila del preliminar, para pedir su desglose de notas.
-///
-/// Lleva == y hashCode porque es la clave de un provider family: sin eso cada
-/// apertura del dialogo seria una instancia nueva y volveria a pegarle al
-/// backend aunque sea la misma fila.
+/// Identifica UNA fila del preliminar para pedir su desglose de notas. Lleva ==
+/// y hashCode por ser clave de un provider family: sin eso cada apertura del
+/// diálogo sería una instancia nueva y volvería a consultar el backend.
 @immutable
 class FiltroNotaPreliminar {
   const FiltroNotaPreliminar({
@@ -821,40 +768,16 @@ final descuentoDetalleProvider = FutureProvider.autoDispose
           );
     });
 
-// ═══════════════════════════════════════════════════════════════════════
-// Items congelados al ejecutar el pago
-//
-// Es el otro lado del preliminar. El preliminar lista notas cerradas y SIN
-// pagar; esto lee lo que quedo escrito UNA vez al ejecutar el periodo y nunca
-// mas se toca.
-// ═══════════════════════════════════════════════════════════════════════
+// Items congelados al ejecutar el pago: el otro lado del preliminar. Este lista
+// notas cerradas y SIN pagar; aquí se lee lo que quedó escrito UNA vez al
+// ejecutar el periodo y nunca más se toca.
 
-/// Identifica el detalle de items congelados que se quiere ver.
-///
-/// Lleva == y hashCode porque es la clave de un provider family: sin eso cada
-/// apertura del dialogo seria una instancia nueva y volveria a pegarle al
-/// backend aunque sea el mismo periodo.
-///
-/// QUE ENTRA EN LA CLAVE Y QUE NO. Entra lo que cambia lo que DEVUELVE el SP y
-/// no se puede derivar de lo ya traido; no entra lo que es un recorte de un
-/// payload que ya esta en memoria.
-///
-///   - [docNum] y [origen] entran. Son parametros del SP -@docNum y @origen,
-///     que aplican tanto en la rama 'L' como en la 'R'- y son la unica forma
-///     de que el listado y el resumen hablen de la MISMA nota: con el resumen
-///     clavado al periodo, la lista mostraba una linea y el titular seguia
-///     contando el mes entero.
-///   - [origen] no es decorativo: docNum NO es unico entre empresas -198 casos
-///     medidos en un mismo periodo- asi que una nota se identifica con el par
-///     (origen, docNum) y no con el numero solo. Ademas es lo unico que separa
-///     ESPPAPEL de IMPEXPAP/PAPIRUS/PRODUCTIVA PAPEL, que se congelan las
-///     cuatro con esInterno = 1.
-///   - «solo lo excluido» NO entra, y esa es la diferencia con la version
-///     anterior. Es un `where` sobre `excluido`, que viene en cada fila: con
-///     el filtro en la clave, tildar el chip destruia la entrada del cache
-///     -el provider es autoDispose- y destildarlo volvia a bajar el mes
-///     entero. Ida y vuelta eran dos descargas para no traer un solo dato
-///     nuevo.
+/// Identifica el detalle de items congelados (clave de un provider family: lleva
+/// == y hashCode). Entran las que cambian lo que DEVUELVE el SP: [docNum] y
+/// [origen] (parámetros de las ramas 'L' y 'R'; así lista y resumen hablan de la
+/// MISMA nota). docNum NO es único entre empresas (198 casos en un periodo);
+/// [origen] separa ESPPAPEL de IMPEXPAP/PAPIRUS/PRODUCTIVA PAPEL. «Solo lo
+/// excluido» NO entra: es un `where` sobre `excluido` y en la clave rompería el cache.
 @immutable
 class FiltroItemsPagados {
   const FiltroItemsPagados({
@@ -937,14 +860,10 @@ final itemsPagadosProvider = FutureProvider.autoDispose
           );
     });
 
-/// El reparto por motivo. Es lo que dice de un vistazo cuanto quedo AFUERA.
-///
-/// Se pide al SP y no se cuenta sobre el listado porque el listado es la
-/// respuesta a una pregunta y el resumen a otra: el SP suma sobre la tabla,
-/// que es la fuente, y no sobre lo que este dialogo haya decidido mostrar.
-///
-/// Va con la MISMA clave que el listado a proposito: con @docNum y @origen en
-/// las dos ramas, la lista y el titular no pueden hablar de notas distintas.
+/// El reparto por motivo: dice de un vistazo cuánto quedó AFUERA. Se pide al SP y
+/// no se cuenta sobre el listado (el SP suma sobre la tabla, la fuente), y va con
+/// la MISMA clave que el listado: con @docNum y @origen en las dos ramas, lista y
+/// titular no pueden hablar de notas distintas.
 final resumenItemsPagadosProvider = FutureProvider.autoDispose
     .family<List<PagadoItemResumenEntity>, FiltroItemsPagados>((ref, f) async {
       return ref
@@ -959,11 +878,9 @@ final resumenItemsPagadosProvider = FutureProvider.autoDispose
           );
     });
 
-/// El corte del periodo: la fila que explica un cero.
-///
-/// Va con ClavePeriodo y no con FiltroItemsPagados porque el corte es por
-/// periodo: ni idPagado ni la nota elegida lo cambian, y con la clave entera
-/// se volveria a pedir cada vez que se toca un filtro del listado.
+/// El corte del periodo: la fila que explica un cero. Va con ClavePeriodo y no
+/// con FiltroItemsPagados porque el corte es por periodo: con la clave entera se
+/// volvería a pedir cada vez que se toca un filtro del listado.
 final corteItemsPagadosProvider = FutureProvider.autoDispose
     .family<PagadoItemCorteEntity?, ClavePeriodo>((ref, clave) async {
       final cortes = await ref

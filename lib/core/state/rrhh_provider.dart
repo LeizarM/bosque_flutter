@@ -290,7 +290,6 @@ class EmpleadosXCargoNotifier
 }
 
 // Provider para los empleados asignados a un cargo específico
-// Usando autoDispose para limpiar cuando ya no se usa
 final empleadosXCargoProvider = StateNotifierProvider.autoDispose
     .family<EmpleadosXCargoNotifier, AsyncValue<List<CargoEntity>>, int>((
       ref,
@@ -311,15 +310,12 @@ final descuentosEmpleadoProvider = FutureProvider.autoDispose
         anio: params.$3,
       );
     });
-// Al final del archivo rrhh_provider.dart
 final areasPorEmpresaProvider = FutureProvider.family<List<AreaEntity>, int>((
   ref,
   codEmpresa,
 ) async {
   final repository = ref.watch(rrhhRepositoryProvider);
-  // Aquí llamarás a tu futuro método del repositorio
   return await repository.obtenerArea(codEmpresa);
-  //return []; // Esqueleto de momento
 });
 // Provider para la acción de registrar área
 final registrarAreaProvider = Provider((ref) {

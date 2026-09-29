@@ -8,16 +8,13 @@ import 'package:bosque_flutter/domain/entities/grupo_familia_sap_entity.dart';
 import 'package:bosque_flutter/domain/entities/proveedor_ext_sap_entity.dart';
 import 'package:bosque_flutter/domain/entities/rango_gramaje_entity.dart';
 
-/// El armazon de los formularios de catalogo del modulo de precios.
+/// El armazón de los formularios de catálogo del módulo de precios: título, el
+/// error del backend arriba de los campos, el botón que se apaga mientras la
+/// escritura viaja y el ancho máximo del cuerpo.
 ///
-/// Un solo lugar decide como se ve un alta o una edicion: titulo, el error del
-/// backend arriba de los campos, el boton que se apaga mientras la escritura
-/// viaja y el ancho maximo del cuerpo.
-///
-/// **El error se muestra adentro y el formulario NO se cierra.** El backend de
-/// este modulo responde con mensajes de negocio -nombre repetido, catalogo en
-/// uso- y cerrar el dialogo obligaria a escribir todo de nuevo para leer que
-/// fallo.
+/// El error se muestra adentro y el formulario NO se cierra: el backend responde
+/// con mensajes de negocio (nombre repetido, catálogo en uso) y cerrar obligaría
+/// a reescribir todo para leer qué falló.
 class MarcoFormulario extends StatelessWidget {
   const MarcoFormulario({
     super.key,
@@ -111,20 +108,13 @@ class _Nota extends StatelessWidget {
   }
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// COLOR, TIPO Y PRESENTACION
-// ═══════════════════════════════════════════════════════════════════════════
+// Color, tipo y presentación
 
-/// Alta y edicion de los catalogos que son un nombre y un estado: colores,
-/// tipos de papel y presentaciones.
+/// Alta y edición de los catálogos de nombre y estado: colores, tipos de papel y
+/// presentaciones (misma tabla de cinco columnas y mismo procedimiento de ABM).
 ///
-/// Los tres tienen la misma tabla de cinco columnas y el mismo procedimiento de
-/// ABM, asi que comparten formulario en lugar de repetirlo tres veces con otro
-/// texto.
-///
-/// **El estado no se ofrece en el alta.** Los tres procedimientos fuerzan
-/// estado = 1 en la rama de insercion e ignoran lo que se les mande: un
-/// interruptor que no hace nada miente sobre lo que va a pasar.
+/// El estado no se ofrece en el alta: los tres procedimientos fuerzan estado = 1
+/// al insertar e ignoran lo que se mande, y un interruptor que no hace nada miente.
 class FormularioNombreEstado extends StatefulWidget {
   const FormularioNombreEstado({
     super.key,
@@ -244,20 +234,14 @@ class _FormularioNombreEstadoState extends State<FormularioNombreEstado> {
   );
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// RANGO DE GRAMAJE
-// ═══════════════════════════════════════════════════════════════════════════
+// Rango de gramaje
 
-/// Alta y edicion de un rango de gramaje.
+/// Alta y edición de un rango de gramaje.
 ///
-/// **Los dos limites se cargan por separado aunque la tabla muestre uno solo.**
-/// El rango legible es texto armado para leer de un vistazo; lo que se guarda
-/// son dos decimales independientes y editarlos como uno seria adivinar donde
-/// corta.
-///
-/// **Los decimales importan.** En la base min y max son decimal(16,2) y son los
-/// unicos numericos exactos del modulo: el modelo viejo los mandaba contra un
-/// parametro entero y un 80,50 se guardaba como 80.
+/// Los dos límites se cargan por separado aunque la tabla muestre uno solo: lo
+/// que se guarda son dos decimales independientes. Importan los decimales: min y
+/// max son decimal(16,2), los únicos numéricos exactos del módulo (el modelo
+/// viejo los mandaba a un parámetro entero y un 80,50 se guardaba como 80).
 class FormularioRangoGramaje extends StatefulWidget {
   const FormularioRangoGramaje({
     super.key,
@@ -308,9 +292,8 @@ class _FormularioRangoGramajeState extends State<FormularioRangoGramaje> {
     super.dispose();
   }
 
-  /// Valida un limite. El del tope compara ademas contra el piso: el intervalo
-  /// invertido se avisa en el campo y no se manda, porque del backend volveria
-  /// como un mensaje generico que no dice cual de los dos esta mal.
+  /// Valida un límite. El del tope compara además contra el piso: el intervalo
+  /// invertido se avisa en el campo (del backend volvería un mensaje genérico).
   String? _validarLimite(
     String? valor,
     String nombre, {
@@ -441,16 +424,14 @@ class _FormularioRangoGramajeState extends State<FormularioRangoGramaje> {
   );
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// GRUPO DE FAMILIA SAP
-// ═══════════════════════════════════════════════════════════════════════════
+// Grupo de familia SAP
 
-/// Alta y edicion de un grupo de familia SAP con su equivalencia de codigo en
-/// las tres empresas.
+/// Alta y edición de un grupo de familia SAP con su equivalencia de código en las
+/// tres empresas.
 ///
-/// **Los tres codigos son TEXTO.** Son varchar(20) y admiten letras y ceros a
-/// la izquierda; el procedimiento viejo los declaraba enteros y rompia los
-/// codigos alfanumericos. Aqui no se convierten a numero en ningun momento.
+/// Los tres códigos son TEXTO (varchar(20), admiten letras y ceros a la
+/// izquierda; el procedimiento viejo los declaraba enteros y rompía los
+/// alfanuméricos): no se convierten a número.
 class FormularioGrupoFamiliaSap extends StatefulWidget {
   const FormularioGrupoFamiliaSap({
     super.key,
@@ -626,16 +607,13 @@ class _FormularioGrupoFamiliaSapState extends State<FormularioGrupoFamiliaSap> {
       );
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// PROVEEDOR EXTERNO SAP
-// ═══════════════════════════════════════════════════════════════════════════
+// Proveedor externo SAP
 
-/// Alta y edicion de un proveedor externo de SAP.
+/// Alta y edición de un proveedor externo de SAP.
 ///
-/// **El nombre no se trunca: el backend lo rechaza.** La columna es varchar(50)
-/// aunque el parametro del procedimiento declare 200, asi que un nombre mas
-/// largo vuelve como error de negocio. El limite se avisa en el campo, antes de
-/// enviar.
+/// El nombre no se trunca: el backend lo rechaza. La columna es varchar(50)
+/// aunque el parámetro del procedimiento declare 200; el límite se avisa en el
+/// campo, antes de enviar.
 class FormularioProveedorSap extends StatefulWidget {
   const FormularioProveedorSap({
     super.key,

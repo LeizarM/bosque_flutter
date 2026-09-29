@@ -175,13 +175,11 @@ class MultaNotifier extends StateNotifier<MultaState> {
     }
   }
 
-  // AGREGAR en MultaNotifier, antes de editarTodasMultas:
   Future<void> editarMulta(MultaEntity multa) async {
     await editarTodasMultas([multa]);
   }
 
-  // NUEVO: guarda múltiples registros y recarga una sola vez al final
-  // NUEVO: Guarda múltiples registros construyendo un XML y haciendo 1 sola petición
+  // Guarda varias multas en una sola petición (XML) y recarga una vez al final.
   Future<void> editarTodasMultas(List<MultaEntity> multas) async {
     if (multas.isEmpty) return;
     state = state.copyWith(cargando: true);

@@ -61,7 +61,7 @@ class EntregasState {
   }
 }
 
-// Notifier para manejar la lógica de estado de entregas - OPTIMIZADO
+// Notifier para manejar la lógica de estado de entregas
 class EntregasNotifier extends StateNotifier<EntregasState> {
   final EntregasRepository _repository;
   final UserStateNotifier _userNotifier;
@@ -113,14 +113,9 @@ class EntregasNotifier extends StateNotifier<EntregasState> {
         return;
       }
 
-      // La ruta guardada solo vale si es de HOY.
-      //
-      // Sin esta comprobación el flag vivía para siempre: un chofer que arranca la ruta el
-      // lunes y se olvida de finalizarla, el martes abre la app y ve "Ruta iniciada · desde
-      // el lunes 07:40". Y no es un detalle cosmético — con la ruta creída como iniciada, el
-      // botón "Marcar" queda habilitado sobre entregas de un día que en el backend ya se
-      // cerró: el cron de las 23:58:59 corre la ACCIÓN 'C' contra la base, pero no tiene
-      // forma de tocar el SharedPreferences del teléfono. El estado local quedaba mintiendo.
+      // La ruta guardada solo vale si es de HOY: si el chofer no la finaliza, al día
+      // siguiente la app seguiría mostrando "Ruta iniciada" y dejaría "Marcar" sobre un
+      // día que el backend ya cerró (cron 23:58:59, ACCIÓN 'C'; no toca el teléfono).
       final hoy = DateTime.now();
       final esDeHoy =
           fechaInicio != null &&
@@ -143,11 +138,8 @@ class EntregasNotifier extends StateNotifier<EntregasState> {
     }
   }
 
-  /// Borra la ruta guardada en el teléfono.
-  ///
-  /// Se usa cuando la ruta persistida quedó vieja (de otro día). No toca el backend: allá el
-  /// cierre lo hace el cron de las 23:58:59 con la ACCIÓN 'C'. Aquí solo se limpia la copia
-  /// local, que es la que estaba quedando desincronizada.
+  /// Borra la ruta guardada en el teléfono cuando quedó vieja (de otro día). No
+  /// toca el backend: allá el cierre lo hace el cron de las 23:58:59 (ACCIÓN 'C').
   Future<void> _limpiarEstadoRuta() async {
     state = state.copyWith(
       rutaIniciada: false,
@@ -470,7 +462,7 @@ class EntregasNotifier extends StateNotifier<EntregasState> {
     }
   }
 
-  // Ver extracto de rutas de choferes entre fechas osea sus rutas
+  // Extracto de rutas de choferes entre fechas
   Future<void> cargarExtractoChoferes(
     DateTime fechaInicio,
     DateTime fechaFin,
@@ -548,22 +540,10 @@ class EntregasNotifier extends StateNotifier<EntregasState> {
   }
 }
 
-// Proveedor para el repositorio de entregas
-/// Repositorio de entregas.
-///
-/// <h3>Por qué ya no lanza UnimplementedError</h3>
-/// Antes este provider explotaba a propósito para obligar a sobrescribirlo desde `main.dart`
-/// con `overrideWithValue(EntregasImpl())`. El problema es lo que significa `overrideWithValue`:
-/// **construye la instancia en el acto**, antes de `runApp`. O sea que toda la app —incluido
-/// quien solo va a ver el dashboard o RR.HH.— pagaba en el arranque la creación de
-/// `EntregasImpl`, que en su campo `_dio` llama a `DioClient.getInstance()` y arma el cliente
-/// HTTP con sus interceptores. Un módulo entre veinte retrasando el primer frame de todos.
-///
-/// Ahora la fábrica está aquí y Riverpod la ejecuta LAZY: la primera vez que alguien lea este
-/// provider. Si el usuario nunca entra a Entregas, nunca se construye nada.
-///
-/// Sigue siendo sobrescribible para tests con `ProviderScope(overrides: [...])`; lo único que
-/// cambia es que ya no hace falta hacerlo para que la app funcione.
+/// Repositorio de entregas, creado LAZY en la primera lectura. No sobrescribirlo
+/// con `overrideWithValue(EntregasImpl())` en `main.dart`: construye la
+/// instancia (y su cliente Dio) antes de `runApp` y retrasa el primer frame de
+/// toda la app. Sigue siendo sobrescribible en tests con `ProviderScope`.
 final entregasRepositoryProvider = Provider<EntregasRepository>(
   (ref) => EntregasImpl(),
 );
@@ -594,7 +574,7 @@ final initSharedPrefsProvider = FutureProvider<void>((ref) async {
   }
 });
 
-// Proveedor para el notificador de entregas - OPTIMIZADO
+// Proveedor para el notificador de entregas
 final entregasNotifierProvider =
     StateNotifierProvider<EntregasNotifier, EntregasState>((ref) {
       final repository = ref.watch(entregasRepositoryProvider);

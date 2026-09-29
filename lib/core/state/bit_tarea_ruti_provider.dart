@@ -1,4 +1,3 @@
-// Destino final: lib/core/state/bit_tarea_ruti_provider.dart
 import 'package:bosque_flutter/data/repositories/bit_tarea_ruti_impl.dart';
 import 'package:bosque_flutter/domain/entities/bit_tarea_ruti_entity.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -10,11 +9,8 @@ class BitTareaRutiState {
   final List<BitTareaRutiEntity> items;
   final bool cargando;
 
-  /// Si alguna lectura terminó bien.
-  ///
-  /// Sin esto, una lectura fallida dejaba la lista vacía y "Mis tareas" decía
-  /// "Todavía no tienes tareas rutinarias": un error de red contado como una
-  /// buena noticia (auditoría del 2026-09-11).
+  /// Si alguna lectura terminó bien. Sin esto, un error de red dejaba la lista
+  /// vacía y "Mis tareas" decía "Todavía no tienes tareas rutinarias".
   final bool cargado;
 
   /// Por qué falló la última lectura; queda hasta la próxima buena.

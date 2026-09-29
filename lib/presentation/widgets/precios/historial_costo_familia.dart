@@ -1,10 +1,7 @@
-/// El historial del costo de una familia: cada aprobacion que le cambio la
-/// propuesta y, si cambio, el costo. Es el dialogo "Bitacora de costo /
-/// propuesta" del sistema anterior, en simple: una lista, la mas reciente
-/// arriba, con la variacion de cada cambio.
-///
-/// Sale de tb_bitacora, que registra esos cambios desde el 24/06/2025: lo
-/// anterior no figura, y el dialogo lo dice.
+/// Historial del costo de una familia: cada aprobación que cambió la propuesta
+/// y, si cambió, el costo (la "Bitácora de costo / propuesta" del sistema
+/// anterior), la más reciente arriba. Sale de tb_bitacora, que registra esos
+/// cambios desde el 24/06/2025: lo anterior no figura y el diálogo lo dice.
 library;
 
 import 'package:flutter/material.dart';

@@ -74,14 +74,11 @@ class EnviarSolicitudNotifier extends StateNotifier<AsyncValue<String?>> {
       onSuccess(message);
     } catch (e, stack) {
       state = AsyncValue.error(e, stack);
-      // Gracias a baseapi.txt, e.toString() ya contiene el mensaje exacto enviado por la BD de SQL
+      // e.toString() ya trae el mensaje exacto de la BD (ver baseapi.txt).
       onError(e.toString().replaceAll("Exception: ", ""));
     }
   }
 }
-// ════════════════════════════════════════════════════════════════════════════
-// permisos_vacacion_provider.dart  — agregar al archivo existente
-// ════════════════════════════════════════════════════════════════════════════
 
 /// Solicitudes pendientes para el usuario logueado (Jefe o RRHH).
 /// Devuelve lista vacía si el usuario no tiene subordinados → widget se oculta.
@@ -181,12 +178,9 @@ final misSolicitudesProvider = FutureProvider.family.autoDispose<
         mes: filtro.mes,
       );
 
-  // **El orden se arregla aquí y no en el SP.** El SP ordena por `audFechaI`
-  // —cuándo se pidió—, que no es el orden en que la lista se lee: alguien
-  // pide en agosto la vacación de noviembre y en enero la de mayo. La
-  // pantalla agrupa por año de `desde`, y con el orden de pedido el mismo
-  // año sale partido en varios tramos. Ordenar en el SP tocaría una consulta
-  // en producción para cambiar cómo se ve una pantalla.
+  // El orden se arregla aquí y no en el SP: el SP ordena por `audFechaI`
+  // (cuándo se pidió) y la pantalla agrupa por año de `desde`, así que el
+  // mismo año saldría partido. Cambiar el SP tocaría una consulta en producción.
   return [...lista]..sort((a, b) => b.desde.compareTo(a.desde));
 });
 

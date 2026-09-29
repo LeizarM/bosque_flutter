@@ -15,7 +15,6 @@ final buttonPermissionsProvider = StateNotifierProvider<
   final user = ref.watch(userProvider);
   final userNotifier = ref.watch(userProvider.notifier);
 
-  // Crear el notificador con dependencia al usuario
   return ButtonPermissionsNotifier(ref, userNotifier, user);
 });
 
@@ -42,14 +41,12 @@ class ButtonPermissionsNotifier
     try {
       state = const AsyncValue.loading();
 
-      // Verificar si hay un usuario autenticado
       if (_currentUser == null) {
         console("No hay usuario autenticado. No se cargarán permisos.");
         state = const AsyncValue.data([]);
         return;
       }
 
-      // Obtener el ID de usuario
       final codUsuario = await _userNotifier.getCodUsuario();
       console("Cargando permisos para usuario: $codUsuario");
 
@@ -57,7 +54,6 @@ class ButtonPermissionsNotifier
       final tipoUsuario = await _userNotifier.getTipoUsuario();
       _authRepository.setTipoUsuario(tipoUsuario);
 
-      // Cargar permisos
       final permisos = await _authRepository.cargarPermisosBotones(codUsuario);
       console("Permisos cargados: ${permisos.length}");
 
@@ -74,7 +70,6 @@ class ButtonPermissionsNotifier
     }
   }
 
-  // Método para verificar si un botón está autorizado
   bool tienePermiso(String nombreBtn) {
     // Si no hay usuario, no hay permisos
     if (_currentUser == null) {
@@ -90,13 +85,11 @@ class ButtonPermissionsNotifier
     return _authRepository.tienePermiso(nombreBtn);
   }
 
-  // Método para recargar permisos manualmente
   Future<void> reloadPermisos() async {
     _authRepository.clearPermisos(); // Limpiar caché primero
     await _loadPermisos();
   }
 
-  // Método para limpiar permisos al cerrar sesión
   void clearPermisos() {
     console("Limpiando permisos de botones");
     _authRepository.clearPermisos();

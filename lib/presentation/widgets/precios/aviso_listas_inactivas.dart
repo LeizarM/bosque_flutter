@@ -1,10 +1,7 @@
-/// El aviso de que la grilla no muestra las listas de precio inactivas.
-///
-/// Las grillas de precios y de porcentajes salen de procedimientos que filtran
-/// `cp.estado = 1` -igual que en el sistema anterior: una lista desactivada no
-/// se reprecia-. Sin decirlo, una familia con doce precios se ve con diez y
-/// parece un error de carga. Pasó: las listas 1 y 2 de Central estaban
-/// desactivadas en la base de prueba y el reprecio "perdía" dos listas.
+/// Aviso de que la grilla no muestra las listas de precio inactivas: los
+/// procedimientos de precios y porcentajes filtran `cp.estado = 1` (como el
+/// sistema anterior) y, sin aviso, una familia con doce precios se ve con diez y
+/// parece un error de carga.
 library;
 
 import 'package:flutter/material.dart';

@@ -10,10 +10,9 @@ import 'package:bosque_flutter/presentation/widgets/comisiones/comisiones_tema.d
 
 /// Alta y modificación de un tramo de comisión por días de cobro.
 ///
-/// El porcentaje se pide en puntos porcentuales, que es como lo piensa el
-/// usuario, y se convierte a base 1 al guardar, que es como lo almacena esta
-/// tabla en particular. Es la única pantalla del módulo que hace esa conversión:
-/// los grupos guardan directamente puntos porcentuales.
+/// El porcentaje se pide en puntos porcentuales pero esta tabla lo guarda en
+/// base 1, así que se convierte al guardar. Es la única pantalla del módulo que
+/// convierte: los grupos guardan puntos porcentuales directamente.
 class DialogoRango extends ConsumerStatefulWidget {
   const DialogoRango({super.key, this.rango});
 

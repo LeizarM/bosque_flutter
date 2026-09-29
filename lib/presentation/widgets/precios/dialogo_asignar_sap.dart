@@ -1,10 +1,7 @@
 /// Cambiar el grupo de familia y el proveedor SAP de una familia sin abrir la
-/// ficha entera (`p_abm_producto 'F'` y `'G'`, en una transaccion).
-///
-/// Los combos arrancan en lo que tiene la familia. El listado de familias trae
-/// los nombres y no los ids, asi que se empareja por nombre contra el catalogo,
-/// igual que la ficha. Tambien dispara la sincronizacion con SAP de la sesion:
-/// si el grupo que se busca se creo hoy en SAP, aparece.
+/// ficha (`p_abm_producto 'F'` y `'G'`, en una transacción). Los combos arrancan
+/// en lo que tiene la familia (se empareja por nombre: el listado no trae ids) y
+/// se dispara la sincronización SAP de la sesión por si el grupo se creó hoy.
 library;
 
 import 'package:flutter/material.dart';

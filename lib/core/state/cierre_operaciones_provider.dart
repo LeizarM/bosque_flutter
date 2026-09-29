@@ -1,4 +1,3 @@
-// Destino final: lib/core/state/cierre_operaciones_provider.dart
 import 'dart:typed_data';
 
 import 'package:bosque_flutter/core/ui/mensajes_usuario.dart';
@@ -51,8 +50,7 @@ class PanelDatos<T> {
 /// Con qué se abrió la revisión. Es la clave del provider.
 ///
 /// No lleva permisos: **la tarea es el permiso**. Quien tiene la ocurrencia del
-/// día ve y marca las cinco secciones, y el servidor comprueba lo mismo
-/// (decisión de Marcelo, 2026-09-11).
+/// día ve y marca las cinco secciones, y el servidor comprueba lo mismo.
 class AperturaCierre {
   final int idBitTarea;
   final ModoCierre modo;
@@ -220,8 +218,7 @@ class CierreOperacionesState {
     return seccionesConfirmadas.contains(p);
   }
 
-  /// "Tiene que revisar TODO, una vez que revise todo recién se completa"
-  /// (Marcelo, 2026-09-11).
+  /// Regla de negocio: hay que revisar TODO; solo entonces se completa.
   bool get todoRevisado => paneles.every(seccionRevisada);
 
   /// No se cierra un día que no se pudo leer, ni desde otro día, ni con algo

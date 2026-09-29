@@ -12,19 +12,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// La grilla vista desde un teléfono: **un sábado a la vez**.
 ///
-/// La matriz de 29×52 no se arregla encogiéndola. En 360 px la columna de
-/// nombres se come más de la mitad de la pantalla y quedan tres columnas
-/// visibles de cincuenta y dos: no es una tabla, es una ventanita.
-///
-/// Pero es que además la pregunta cambia con el dispositivo. Frente a la
-/// planilla en el escritorio uno mira el año entero y busca desequilibrios;
-/// con el teléfono en la mano uno quiere saber **quién viene este sábado**.
-/// Esta vista responde eso, con exactamente los mismos datos que ya están en
-/// memoria — no hay una sola llamada extra al backend.
-///
-/// La tira de fechas de arriba es el encabezado de la matriz convertido en
-/// navegación: mismo dato, misma jerarquía visual (día, mes, cuánta gente
-/// viene), operable con el pulgar.
+/// La matriz de 29×52 no se encoge: en 360 px quedan 3 columnas de 52 y en el
+/// teléfono se quiere saber **quién viene este sábado**. Usa los mismos datos en
+/// memoria (sin llamadas extra); la tira de fechas es el encabezado convertido
+/// en navegación.
 class AgendaSabado extends ConsumerStatefulWidget {
   const AgendaSabado({
     super.key,
@@ -35,8 +26,8 @@ class AgendaSabado extends ConsumerStatefulWidget {
 
   final GrillaRol grilla;
 
-  /// Ya filtrados por mes y por búsqueda; [grilla] conserva el rol entero
-  /// porque los contadores se calculan sobre todo el año.
+  /// Ya filtrados por mes y búsqueda; [grilla] conserva el rol entero porque los
+  /// contadores se calculan sobre todo el año.
   final List<SabadoEntity> sabados;
   final List<ParticipanteTurnoEntity> participantes;
 
@@ -54,7 +45,7 @@ class _AgendaSabadoState extends ConsumerState<AgendaSabado> {
   void initState() {
     super.initState();
     _idSabado = _sabadoInicial()?.idSabado;
-    // Abrir en enero cuando estamos en septiembre obliga a arrastrar medio año.
+    // Abrir en enero estando en septiembre obliga a arrastrar medio año.
     WidgetsBinding.instance.addPostFrameCallback((_) => _centrarEnElActual());
   }
 
@@ -166,9 +157,7 @@ class _AgendaSabadoState extends ConsumerState<AgendaSabado> {
   }
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// LA TIRA DE SÁBADOS
-// ═══════════════════════════════════════════════════════════════════════════
+// La tira de sábados
 
 class _Tira extends StatelessWidget {
   const _Tira({
@@ -227,8 +216,8 @@ class _ChipFecha extends StatelessWidget {
     final cs = Theme.of(context).colorScheme;
     final f = sabado.fecha;
 
-    // El feriado y el evento se marcan con una barra arriba, no con el fondo:
-    // el fondo ya lo usa la selección y dos señales en el mismo canal se pisan.
+    // Feriado y evento se marcan con una barra arriba, no con el fondo: el fondo
+    // ya lo usa la selección y dos señales en el mismo canal se pisan.
     final Color? marca =
         sabado.esFeriadoBool
             ? cs.error
@@ -290,14 +279,10 @@ class _ChipFecha extends StatelessWidget {
   }
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-
-/// Qué sábado se está viendo, cómo viene de gente, y qué se puede hacer con él.
+/// Qué sábado se ve, cuánta gente viene y qué se puede hacer con él.
 ///
-/// **Aquí el PDF sí es un botón visible**, al revés que en la matriz. Es la
-/// pantalla del teléfono, que es desde donde se comparte al grupo de WhatsApp:
-/// esconder la acción de la semana detrás de un menú, en el único lugar donde
-/// hay lugar de sobra para mostrarla, sería esconderla por gusto.
+/// **Aquí el PDF sí es un botón visible**, al revés que en la matriz: el
+/// teléfono es desde donde se comparte al grupo de WhatsApp y hay lugar de sobra.
 class _Encabezado extends ConsumerStatefulWidget {
   const _Encabezado({
     required this.grilla,
@@ -314,8 +299,8 @@ class _Encabezado extends ConsumerStatefulWidget {
 }
 
 class _EncabezadoState extends ConsumerState<_Encabezado> {
-  /// Mientras el PDF se arma. El botón queda apagado: son 85 personas y el
-  /// reporte tarda, y un botón que no contesta se aprieta de nuevo.
+  /// Mientras el PDF se arma (son 85 personas y tarda) el botón queda apagado
+  /// para que no se apriete de nuevo.
   bool _ocupado = false;
 
   @override
@@ -374,14 +359,13 @@ class _EncabezadoState extends ConsumerState<_Encabezado> {
               ],
             ),
           ),
-          // Siempre, también con el rol CERRADO: el PDF de un sábado que ya
-          // pasó se sigue necesitando, y compartirlo no cambia nada del rol.
+          // Siempre, también con el rol CERRADO: el PDF de un sábado pasado se sigue
+          // necesitando y compartirlo no cambia nada del rol.
           IconButton(
             tooltip: 'Compartir el PDF de este sábado',
             icon:
                 _ocupado
-                    // Del tamaño del ícono que reemplaza, así el botón no salta
-                    // de lugar al empezar y la fila mide siempre lo mismo.
+                    // Del tamaño del ícono que reemplaza: el botón no salta y la fila mide igual.
                     ? const SizedBox(
                       width: 20,
                       height: 20,
@@ -462,9 +446,8 @@ class _Seccion extends StatelessWidget {
 
 /// Una persona en el sábado elegido.
 ///
-/// Es un `ListTile` y no una celda de 32 px justamente porque aquí sí hay lugar:
-/// el objetivo táctil llega a los 48 px que pide Material, cosa que en la matriz
-/// es imposible.
+/// `ListTile` y no una celda de 32 px: aquí sí hay lugar y el objetivo táctil
+/// llega a los 48 px de Material, imposible en la matriz.
 class _FilaPersona extends ConsumerWidget {
   const _FilaPersona({
     required this.grilla,
@@ -482,8 +465,8 @@ class _FilaPersona extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final cs = Theme.of(context).colorScheme;
 
-    // Aquí el provider se observa por fila y no una vez arriba, al revés que en
-    // la matriz: son las personas de UN sábado, unas decenas, no 4.420 celdas.
+    // El provider se observa por fila (al revés que en la matriz): son las
+    // personas de UN sábado, unas decenas, no 4.420 celdas.
     final puedeEditar = ref
         .watch(permisoDeCeldaProvider)
         .puedeCon(participante.codEmpleado);
@@ -499,8 +482,8 @@ class _FilaPersona extends ConsumerWidget {
                 sabado: sabado,
                 celda: celda,
               ),
-      // La misma letra y la misma marca que en la matriz: si la señal cambiara
-      // de forma entre las dos vistas habria que aprenderla dos veces.
+      // La misma letra y marca que en la matriz: si cambiara de forma entre las dos
+      // vistas habría que aprenderla dos veces.
       leading: SizedBox(
         width: 38,
         height: 38,
@@ -527,9 +510,8 @@ class _FilaPersona extends ConsumerWidget {
                 right: 0,
                 child: MarcaDeIntervencion(color: cs.primary, lado: 9),
               ),
-            // La misma esquina opuesta que en la matriz. Aquí además hace de
-            // ancla: el renglón de abajo puede quedar cortado por el
-            // `maxLines`, la marca no se corta nunca.
+            // Misma esquina opuesta que en la matriz; además hace de ancla: el renglón de
+            // abajo puede cortarse por `maxLines`, la marca nunca.
             if (celda?.hayCambio == true)
               Positioned(
                 bottom: 0,
@@ -541,24 +523,18 @@ class _FilaPersona extends ConsumerWidget {
       ),
       title: Text(participante.nombreRol),
       isThreeLine: participante.puesto.isNotEmpty,
-      // **Dos Text y no uno con `\n`.** Con un solo Text y `maxLines: 2`, un
-      // cargo largo —«SUPERVISOR DE PRODUCCION · GALPON EL ALTO» mide ~345 px
-      // sobre los ~274 utiles que quedan en 360 px— se parte en dos renglones y
-      // se come el cupo entero: el estado, que es la respuesta a «¿viene?»,
-      // desaparecia. Separados, cada uno tiene su propio limite y el estado no
-      // se puede perder nunca.
+      // **Dos Text y no uno con salto de línea.** Con `maxLines: 2`, un cargo largo
+      // («SUPERVISOR DE PRODUCCION · GALPON EL ALTO» mide ~345 px sobre ~274 útiles
+      // en 360 px) ocuparía todo el cupo y el estado, que responde «¿viene?»,
+      // desaparecería. Separados, cada uno tiene su propio límite.
       subtitle: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Cargo y sucursal APAGADOS y arriba: son quien es esa persona, o sea
-          // contexto para leer el renglon de abajo. La sucursal ademas explica
-          // la 'X' —el feriado se resuelve por sucursal, no por rol— asi que
-          // cuando la letra dice «Feriado» este renglon dice de donde salio.
-          //
-          // Se muestra siempre, tambien CENTRAL: aca la lista cambia de gente
-          // con cada sabado y con el buscador, asi que «la mayoritaria» seria
-          // una regla distinta en cada pantalla. El detalle del criterio esta en
-          // la fila de «Grupos» (personal_tab).
+          // Cargo y sucursal APAGADOS y arriba: contexto del renglón de abajo. La
+          // sucursal explica la 'X' (el feriado se resuelve por sucursal, no por rol).
+          // Se muestra siempre, también CENTRAL: la lista cambia con cada sábado y con el
+          // buscador, así que «la mayoritaria» sería otra regla en cada pantalla (criterio
+          // en la fila de «Grupos», `personal_tab`).
           if (participante.puesto.isNotEmpty)
             Text(
               participante.puesto,
@@ -574,11 +550,9 @@ class _FilaPersona extends ConsumerWidget {
 
   /// Qué le pasa a esa persona ese sábado.
   ///
-  /// **El cambio va antes que la observación** y no al final: el renglón se
-  /// corta a dos líneas, y de las dos cosas la que no se puede perder es con
-  /// quién. La observación suele ser el motivo del cambio —`trs_sp_corregirCelda`
-  /// lo copia a la celda—, así que cuando se corta se está perdiendo lo que ya
-  /// se dedujo, no un dato nuevo.
+  /// **El cambio va antes que la observación**: el renglón se corta a dos líneas
+  /// y lo que no se puede perder es con quién. La observación suele ser el motivo
+  /// del cambio (`trs_sp_corregirCelda` lo copia a la celda), no un dato nuevo.
   String _detalle() {
     final c = celda;
     if (c == null) return 'Libre · grupo ${participante.grupoRotacion}';

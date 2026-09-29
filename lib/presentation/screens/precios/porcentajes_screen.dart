@@ -1,51 +1,12 @@
-/// Porcentajes por familia y lista de precios (`tpr_porcentaje`).
+/// Porcentajes por familia y lista de precios (`tpr_porcentaje`): el margen sobre
+/// el costo que arma cada precio de venta. Sin porcentaje, la familia no tiene
+/// precio en esa lista. Reemplaza a dlgPorcen (*Por familia*) y dlgPorcGrupo
+/// (*Por grupo SAP*, edición masiva) de `Autorizacion.xhtml`.
 ///
-/// Es el margen que se le carga al costo para armar el precio de venta de cada
-/// familia en cada lista, la tabla de la que salen las 7.836 filas que alimentan
-/// el calculo. No es un catalogo secundario: sin porcentaje, la familia no tiene
-/// precio en esa lista.
-///
-/// Reemplaza a los dos dialogos de `tprAutorizacion/Autorizacion.xhtml`:
-///
-/// * **dlgPorcen** (PORCENTAJE FAMILIA) — el modo *Por familia*.
-/// * **dlgPorcGrupo** (PORCENTAJE POR GRUPO FAMILIA SAP) — el modo
-///   *Por grupo SAP*, la edicion masiva.
-///
-/// **Por que dos tarjetas y no dos pestanias.** Con las pestanias "Por familia"
-/// y "Por grupo SAP" a secas el usuario no sabia cual elegir ni que hacia cada
-/// una. Ahora cada modo es una tarjeta que dice para que sirve, y la edicion
-/// por grupo se lee en tres pasos numerados: el grupo, las familias a las que
-/// se aplica y los porcentajes nuevos.
-///
-/// ## La validacion que aca si valida
-///
-/// El sistema anterior decia controlar que los porcentajes fueran ascendentes
-/// por sucursal —a mayor numero de lista, mayor margen— y no lo hacia:
-/// `validaPorcentaje()` armaba el mensaje de error pero **devolvia siempre 0**,
-/// que era justo el valor que su unico llamador interpretaba como "esta todo
-/// bien". Nunca bloqueo una escritura, y por eso los datos se cargaron durante
-/// anios sin ese control.
-///
-/// Aca la regla se comprueba de verdad, con
-/// `validarPorcentajesAscendentes`: los choques se muestran **mientras se
-/// escribe**, la fila culpable queda marcada, y si quedan choques el guardado no
-/// escribe una sola fila. Como la base viene sin ese control, es esperable que
-/// una familia vieja abra con choques ya cargados: la pantalla los muestra
-/// apenas se abre en vez de descubrirlos recien al guardar.
-///
-/// ## Lo que decide la resolucion
-///
-/// El corte se mide sobre el ancho del CAJON (`LayoutBuilder`) y no sobre el de
-/// la ventana: adentro del `DashboardScreen` el sidebar se come 260 px y
-/// `MediaQuery` miente. Con eso:
-///
-/// * **Web / escritorio:** tablas con columnas, filtros a la vista, las dos
-///   grillas de la edicion masiva lado a lado y las acciones en la propia fila.
-/// * **Movil:** tarjetas, el buscador y el resumen apilados, las acciones en un
-///   menu contextual y ni un pixel de scroll horizontal.
-///
-/// No es la misma grilla encogida: son dos formas distintas de la misma
-/// pregunta.
+/// El sistema anterior decía validar porcentajes ascendentes por sucursal, pero
+/// `validaPorcentaje()` devolvía siempre 0 (hay datos viejos con choques). Aquí
+/// `validarPorcentajesAscendentes` los muestra mientras se escribe y bloquea el
+/// guardado.
 library;
 
 import 'package:flutter/material.dart';
@@ -65,13 +26,9 @@ import 'package:bosque_flutter/presentation/widgets/precios/selector_familia_por
 import 'package:bosque_flutter/presentation/widgets/precios/tabla_familias_grupo.dart';
 import 'package:bosque_flutter/presentation/widgets/precios/tabla_porcentajes.dart';
 
-// ═══════════════════════════════════════════════════════════════════════════
-// Estado local de la pantalla
-//
-// Vive aca y no en `precios_provider.dart` a proposito: es estado de ESTA
-// pantalla y no tiene por que verlo el resto del modulo. Todos son autoDispose:
-// una familia elegida en una visita no reaparece en la siguiente.
-// ═══════════════════════════════════════════════════════════════════════════
+// Estado local de la pantalla: vive aquí y no en `precios_provider.dart` porque es
+// de ESTA pantalla. Todos son autoDispose: una familia elegida no reaparece en la
+// siguiente visita.
 
 /// La familia que se esta editando en la primera pestania.
 final _familiaProvider = StateProvider.autoDispose<int?>((ref) => null);
@@ -79,11 +36,9 @@ final _familiaProvider = StateProvider.autoDispose<int?>((ref) => null);
 /// El grupo de familia SAP de la edicion masiva.
 final _grupoProvider = StateProvider.autoDispose<BigInt?>((ref) => null);
 
-/// El catalogo de familias, convertido y ordenado por codigo.
-///
-/// Se pide sin filtro: el buscador de familias trabaja del lado del cliente
-/// -por codigo y por descripcion- y el procedimiento del backend solo filtra por
-/// igualdad exacta de codigo o por id de catalogo, que no sirve para buscar.
+/// El catálogo de familias, convertido y ordenado por código. Se pide sin filtro:
+/// el buscador trabaja del lado del cliente (por código y descripción) y el
+/// procedimiento solo filtra por igualdad exacta de código o id de catálogo.
 final _catalogoFamiliasProvider =
     FutureProvider.autoDispose<List<FamiliaVista>>((ref) async {
       final crudas = await ref.watch(
@@ -103,10 +58,9 @@ final _filasFamiliaProvider = FutureProvider.autoDispose
         ..sort(FilaPorcentaje.comparar);
     });
 
-/// Los destinos de la edicion masiva: las listas de precios activas, con el
-/// margen en cero para que el usuario escriba el que quiere aplicar.
-///
-/// El backend NO ordena esta rama; el orden lo pone [FilaPorcentaje.comparar].
+/// Los destinos de la edición masiva: las listas de precios activas, con el
+/// margen en cero. El backend NO ordena esta rama; el orden lo pone
+/// [FilaPorcentaje.comparar].
 final _destinosGrupoProvider = FutureProvider.autoDispose
     .family<List<FilaPorcentaje>, BigInt>((ref, idGrpFamiliaSap) async {
       final crudas = await ref.watch(
@@ -116,22 +70,11 @@ final _destinosGrupoProvider = FutureProvider.autoDispose
         ..sort(FilaPorcentaje.comparar);
     });
 
-/// La tabla `tpr_porcentaje` entera, indexada de dos formas.
-///
-/// **Por que se lee entera y por que hace falta.** El procedimiento de alta no
-/// es un upsert: la rama 'I' inserta siempre. Si la edicion masiva mandara todas
-/// sus escrituras como altas, cada familia que ya tenia margen en esa lista
-/// terminaria con DOS filas y el calculo de precios quedaria eligiendo una al
-/// azar. Para saber cual es alta y cual modificacion hace falta el idPorcen de
-/// cada par (familia, lista), y eso no lo trae la grilla de destinos.
-///
-/// Se resuelve con UNA lectura sin filtros —7.836 filas, un viaje— en lugar de
-/// una consulta por familia, que en un grupo de cincuenta familias serian
-/// cincuenta viajes. De paso, la misma lectura da lo que hoy tiene cargada cada
-/// familia, que es lo que se muestra antes de decidir a quien excluir.
-///
-/// Solo se observa cuando hay un grupo elegido: es la lectura mas cara del
-/// modulo y no tiene sentido pagarla para mirar una sola familia.
+/// La tabla `tpr_porcentaje` entera, indexada de dos formas. La rama 'I' del alta
+/// inserta siempre (no es un upsert): sin el idPorcen de cada par (familia,
+/// lista), que la grilla de destinos no trae, la edición masiva dejaría DOS filas
+/// por lista. Se lee UNA vez sin filtros (7.836 filas) en vez de una consulta por
+/// familia, y solo con un grupo elegido: es la lectura más cara del módulo.
 final _tablaPorcentajesProvider = FutureProvider.autoDispose<_TablaPorcentajes>(
   (ref) async {
     final filas = await ref.watch(
@@ -209,9 +152,7 @@ class _TablaPorcentajes {
 String _clave(int codigoFamilia, BigInt idClasificacion) =>
     '$codigoFamilia|$idClasificacion';
 
-// ═══════════════════════════════════════════════════════════════════════════
 // La pantalla
-// ═══════════════════════════════════════════════════════════════════════════
 
 class PorcentajesScreen extends ConsumerWidget {
   const PorcentajesScreen({super.key});
@@ -489,9 +430,7 @@ class _NumeroPaso extends StatelessWidget {
   }
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// Pestania 1 — POR FAMILIA (dlgPorcen)
-// ═══════════════════════════════════════════════════════════════════════════
+// Pestaña 1: por familia (dlgPorcen)
 
 class _PanelFamilia extends ConsumerStatefulWidget {
   const _PanelFamilia({required this.aire});
@@ -569,9 +508,8 @@ class _PanelFamiliaState extends ConsumerState<_PanelFamilia>
       return;
     }
 
-    // Se valida sobre la grilla COMPLETA y no sobre lo que cambio: la regla
-    // compara cada lista con la anterior de su sucursal, y esa anterior puede
-    // ser una fila que nadie toco.
+    // Se valida sobre la grilla COMPLETA y no sobre lo que cambió: la regla compara
+    // cada lista con la anterior de su sucursal, que puede ser una fila que nadie tocó.
     final conflictos = validarPorcentajesAscendentes([
       for (final f in filas)
         if (_valorDe(f) != null) f.aMapa(_valorDe(f)!),
@@ -598,9 +536,8 @@ class _PanelFamiliaState extends ConsumerState<_PanelFamilia>
     final estado = ref.read(porcentajesNotifierProvider);
     setState(() {
       _guardando = false;
-      // Solo se limpia si entro todo. Con un guardado a medias, lo que quedo
-      // escrito ya viene en la lectura refrescada y lo que no, sigue en
-      // pantalla para reintentarlo.
+      // Solo se limpia si entró todo: con un guardado a medias, lo escrito ya viene en
+      // la lectura refrescada y el resto sigue en pantalla para reintentar.
       if (ok) _editado.clear();
     });
 
@@ -614,9 +551,9 @@ class _PanelFamiliaState extends ConsumerState<_PanelFamilia>
       return;
     }
 
-    // El backend no tiene escritura masiva: cada fila viaja sola y un fallo a
-    // mitad de camino deja las anteriores guardadas. Decir "error" a secas
-    // haria creer que no se escribio nada.
+    // El backend no tiene escritura masiva: cada fila viaja sola y un fallo a mitad
+    // deja las anteriores guardadas. Decir "error" a secas haría creer que no se
+    // escribió nada.
     final parcial =
         estado.guardadoParcial
             ? 'Se guardaron ${estado.filasEscritas} de '
@@ -633,9 +570,8 @@ class _PanelFamiliaState extends ConsumerState<_PanelFamilia>
   Widget build(BuildContext context) {
     super.build(context);
 
-    // Cambiar de familia descarta lo escrito: lo editado es de la familia
-    // anterior y aplicarlo a otra seria escribir margenes en el producto
-    // equivocado.
+    // Cambiar de familia descarta lo escrito: es de la familia anterior y aplicarlo
+    // a otra escribiría márgenes en el producto equivocado.
     ref.listen<int?>(_familiaProvider, (_, __) => _editado.clear());
 
     final codigoFamilia = ref.watch(_familiaProvider);
@@ -844,9 +780,8 @@ class _GrillaFamilia extends ConsumerWidget {
         final pendientes = filas.where((f) => f.esAlta).length;
         final cambios = cambiadas(filas);
 
-        // La validacion corre en cada tecla, no solo al guardar: enterarse de
-        // que la serie quedo mal recien despues de apretar el boton obliga a
-        // rehacer el razonamiento entero.
+        // La validación corre en cada tecla, no solo al guardar: enterarse tarde de que
+        // la serie quedó mal obliga a rehacer el razonamiento.
         final conflictos =
             hayInvalidos
                 ? const <ConflictoPorcentaje>[]
@@ -978,11 +913,9 @@ class _ResumenFamilia extends StatelessWidget {
   }
 }
 
-/// La barra fija de abajo con la accion que escribe.
-///
-/// Va pegada al borde inferior y no al final del scroll a proposito: con doce
-/// listas de precio la grilla no entra en un telefono, y un boton de guardar
-/// que hay que ir a buscar bajando es un boton que no se usa.
+/// La barra fija de abajo con la acción que escribe. Va pegada al borde inferior
+/// y no al final del scroll: con doce listas la grilla no entra en un teléfono y
+/// un botón de guardar que hay que ir a buscar no se usa.
 class _BarraGuardar extends StatelessWidget {
   const _BarraGuardar({required this.margen, required this.children});
 
@@ -1004,9 +937,7 @@ class _BarraGuardar extends StatelessWidget {
   }
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// Pestania 2 — POR GRUPO DE FAMILIA SAP (dlgPorcGrupo)
-// ═══════════════════════════════════════════════════════════════════════════
+// Pestaña 2: por grupo de familia SAP (dlgPorcGrupo)
 
 class _PanelGrupo extends ConsumerStatefulWidget {
   const _PanelGrupo({required this.aire});
@@ -1023,8 +954,8 @@ class _PanelGrupoState extends ConsumerState<_PanelGrupo>
   /// grilla (cero); null = lo escrito no es un numero.
   final Map<BigInt, double?> _valores = {};
 
-  /// Las familias que NO se van a tocar. El tilde de la tabla excluye, igual
-  /// que en el dialogo del sistema anterior.
+  /// Las familias que NO se van a tocar: el tilde de la tabla incluye y este
+  /// conjunto guarda las desmarcadas.
   final Set<int> _excluidas = {};
 
   String _busqueda = '';
@@ -1051,10 +982,8 @@ class _PanelGrupoState extends ConsumerState<_PanelGrupo>
           ? _valores[fila.idClasificacion]
           : fila.porcen;
 
-  /// Pone el mismo margen en todas las listas.
-  ///
-  /// No es un adorno: el caso real de esta pantalla es "a todo el grupo, 15 %",
-  /// y cargarlo lista por lista en doce filas es donde se equivoca la mano.
+  /// Pone el mismo margen en todas las listas. El caso real es "a todo el grupo,
+  /// 15 %" y cargarlo lista por lista en doce filas es donde se equivoca la mano.
   Future<void> _igualarTodas(List<FilaPorcentaje> destinos) async {
     final valor = await _pedirValor();
     if (valor == null || !mounted) return;
@@ -1065,9 +994,8 @@ class _PanelGrupoState extends ConsumerState<_PanelGrupo>
     });
   }
 
-  /// Llena la grilla con los margenes que hoy tiene una familia del grupo: el
-  /// caso comun es "que todas queden como la 12601", y cargarlos a mano lista
-  /// por lista es donde se equivoca la mano.
+  /// Llena la grilla con los márgenes que hoy tiene una familia del grupo: el caso
+  /// común es "que todas queden como la 12601".
   void _copiarDe(
     FamiliaGrupoVista familia,
     List<FilaPorcentaje> destinos,
@@ -1101,19 +1029,11 @@ class _PanelGrupoState extends ConsumerState<_PanelGrupo>
 
   /// Escribe el margen de la grilla en todas las familias no excluidas.
   ///
-  /// **Por que no pasa por `PorcentajesNotifier.guardarGrilla`.** Ese metodo
-  /// invalida las lecturas del modulo al terminar, y una de ellas es la tabla
-  /// entera de porcentajes que esta pestania esta observando: llamarlo una vez
-  /// por familia dispararia una relectura de 7.836 filas por familia. Aca el
-  /// bucle escribe con el repositorio y se invalida UNA sola vez al final, que
-  /// es lo mismo que hace el notifier pero sin pagarlo cincuenta veces.
-  ///
-  /// **Esto no es atomico y no se disimula.** El backend no tiene escritura
-  /// masiva —el procedimiento del sistema anterior, `p_abm_porcentajeXGrupo`,
-  /// no esta expuesto—, asi que cada fila viaja en su propia llamada. Si una
-  /// falla, las anteriores ya quedaron guardadas: por eso se corta en la
-  /// primera, se informa cuantas familias entraron y se puede cancelar en el
-  /// medio.
+  /// No usa `PorcentajesNotifier.guardarGrilla`: invalida la tabla entera y por
+  /// familia releería 7.836 filas; aquí se invalida UNA vez al final. No es
+  /// atómico: el backend no tiene escritura masiva, así que si una falla las
+  /// anteriores ya quedaron guardadas: se corta en la primera y se informa
+  /// cuántas familias entraron.
   Future<void> _aplicar({
     required BigInt idGrupo,
     required String nombreGrupo,
@@ -1196,9 +1116,9 @@ class _PanelGrupoState extends ConsumerState<_PanelGrupo>
     final repo = contenedor.read(preciosRepositoryProvider);
     String? error;
     var hechas = 0;
-    // Filas escritas, no familias: si la primera familia falla a mitad, lo
-    // que ya entro tiene que invalidar la tabla, o un reintento lo daria de
-    // alta otra vez (la rama de alta inserta siempre).
+    // Filas escritas, no familias: si la primera falla a mitad, lo que ya entró debe
+    // invalidar la tabla o un reintento lo daría de alta otra vez (el alta inserta
+    // siempre).
     var filas = 0;
 
     for (final familia in alcanzadas) {
@@ -1390,15 +1310,10 @@ class _PanelGrupoState extends ConsumerState<_PanelGrupo>
   }
 }
 
-/// Pide el margen para "Igualar todas".
-///
-/// **El campo es del dialogo, no de quien lo abre.** Antes el controlador se
-/// creaba afuera y se liberaba apenas `showDialog` devolvia el valor. Pero ese
-/// futuro se completa al cerrar, no al terminar la animacion de salida: el
-/// dialogo se seguia dibujando unos cuadros con el controlador ya liberado, y
-/// eso arrastraba una cascada de errores (claves globales duplicadas, arbol
-/// en construccion en el ambito equivocado). Como estado del dialogo, se
-/// libera cuando el dialogo desaparece de verdad.
+/// Pide el margen para "Igualar todas". El controlador es del diálogo y no de
+/// quien lo abre: el futuro de `showDialog` se completa al cerrar, no al terminar
+/// la animación de salida, y liberarlo afuera dejaba al diálogo dibujándose con
+/// un controlador liberado (errores en cascada).
 class _DialogoIgualar extends StatefulWidget {
   const _DialogoIgualar();
 
@@ -1689,8 +1604,8 @@ class _CuerpoGrupo extends ConsumerWidget {
         valores: valores,
         habilitado: !aplicando,
         clavesEnConflicto: clavesEnConflicto,
-        // En esta grilla el idPorcen no es de nadie: cada familia tiene el
-        // suyo y se resuelve al escribir. Marcar "sin cargar" aca mentiria.
+        // En esta grilla el idPorcen no es de nadie: cada familia tiene el suyo y se
+        // resuelve al escribir. Marcar "sin cargar" aquí mentiría.
         mostrarPendientes: false,
         // Y no hay "lo guardado" contra que comparar: la grilla nace en cero.
         resaltarCambios: false,
@@ -1785,11 +1700,8 @@ class _CuerpoGrupo extends ConsumerWidget {
                         'poder aplicar.',
                   ),
                 const SizedBox(height: Esp.s),
-                // En escritorio las dos grillas van lado a lado, como en el
-                // diálogo del sistema anterior: se elige el porcentaje mirando
-                // a quién le va a caer. Cuando el cajón no da, se apilan.
-                // Primero las familias y despues los porcentajes: es el orden
-                // en que se decide.
+                // Escritorio: las dos grillas lado a lado, como en el diálogo anterior (se elige el
+                // porcentaje mirando a quién le cae); si el cajón no da, se apilan, familias primero.
                 if (aire == Aire.amplio)
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -1852,11 +1764,8 @@ class _CuerpoGrupo extends ConsumerWidget {
   }
 }
 
-/// El resumen de lo que va a pasar, ANTES de tocar el botón.
-///
-/// Una edición masiva que solo dice "Aplicar" obliga a confiar: acá se lee
-/// cuántas familias se tocan, cuántas quedaron afuera y cuántas filas se van a
-/// escribir, que en un grupo grande son varios cientos.
+/// El resumen de lo que va a pasar, ANTES de tocar el botón: cuántas familias se
+/// tocan, cuántas quedan afuera y cuántas filas se escriben.
 class _ResumenGrupo extends StatelessWidget {
   const _ResumenGrupo({
     required this.alcanzadas,

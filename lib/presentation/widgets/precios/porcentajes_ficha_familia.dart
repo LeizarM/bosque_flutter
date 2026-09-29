@@ -1,17 +1,8 @@
-/// La grilla "Porcentaje por familia" de la ficha, como en el dialogo
-/// "Registro de familias" del sistema anterior: una fila por lista de precio
-/// activa, agrupadas por sucursal, con el margen de la familia en cada una.
-///
-/// * **Alta:** las listas activas en 0 %. Si la familia nace "a partir de"
-///   otra, con los porcentajes de esa otra: es casi siempre lo que corresponde.
-///   Se graban todas, como en el sistema anterior.
-/// * **Edicion:** los porcentajes que ya tiene la familia; las listas que
-///   todavia no tiene aparecen en 0 %. Se graban solo las que cambiaron.
-///
-/// La regla de porcentajes ascendentes por sucursal no se exige: en el sistema
-/// anterior `validaPorcentaje()` armaba el mensaje pero siempre devolvia 0, asi
-/// que nunca bloqueo nada (ver `PrecioController`). La pantalla Porcentajes la
-/// muestra como aviso.
+/// La grilla "Porcentaje por familia" de la ficha: una fila por lista de precio
+/// activa, agrupadas por sucursal. Alta: listas en 0 % (o con los de la familia
+/// plantilla), se graban todas; edición: solo las que cambiaron. No se exige que
+/// asciendan por sucursal (`validaPorcentaje()` legacy devolvía siempre 0, ver
+/// `PrecioController`); la pantalla Porcentajes lo avisa.
 library;
 
 import 'package:flutter/material.dart';

@@ -11,111 +11,63 @@ import 'package:bosque_flutter/domain/entities/vacacion_asignada_entity.dart';
 import 'package:bosque_flutter/domain/repositories/permisos_rrhh_repository.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-/// El repositorio del módulo.
-///
-/// **Se declara aquí y no en `main.dart`.** El `ProviderScope` de `main.dart` ya
-/// no tiene `overrides`: los registrados ahí construían su repo —y con él todo
-/// el cliente Dio— antes del primer frame, para todos los usuarios, entraran o
-/// no al módulo. Así se fabrica solo y de forma perezosa. (El `CLAUDE.md` que
-/// manda registrarlo en `main.dart` está desactualizado; ver `main.dart:45`.)
+/// Repositorio del módulo. Se declara aquí y no en `main.dart`: los overrides
+/// registrados allá construían el repo (y todo el cliente Dio) antes del primer
+/// frame para todos los usuarios; así se fabrica de forma perezosa. (El
+/// `CLAUDE.md` que manda registrarlo en `main.dart` está desactualizado.)
 final permisosRrhhRepositoryProvider = Provider<PermisosRrhhRepository>(
   (ref) => PermisosRrhhImpl(),
 );
 
-// ═══════════════════════════════════════════════════════════════════════════
 // AUTORIZACIÓN (SUPUESTO D4 — pendiente de confirmación de RR.HH., ver plan §5)
-// ═══════════════════════════════════════════════════════════════════════════
-//
-// Van aquí y no en `permisos_rrhh_comunes.dart`: en el Rol de Sábados la decisión
-// de permiso vive entera en el provider del módulo (`administraRolProvider`,
-// `permisoDeCeldaProvider`) y el archivo de piezas no sabe nada de ACL. Allá el
-// gate es un `Provider<bool>` propio; aquí el ACL es el de `tb_vistaBtn`, así que
-// lo que queda es la constante con el nombre real del botón.
+// Van aquí y no en `permisos_rrhh_comunes.dart`: la decisión de permiso vive en
+// el provider del módulo (como en Rol de Sábados) y el archivo de piezas no sabe
+// de ACL; solo queda la constante con el nombre real del botón de `tb_vistaBtn`.
 
-/// El botón del ACL (`tb_vistaBtn` / `tb_usuarioBtn`) que habilita la consulta
-/// de saldo dentro de la vista 24.
-///
-/// **Esconder no es autorizar.** El gate de verdad está en el backend, que
-/// resuelve la identidad desde el token (`Authentication`) y no desde el body;
-/// esto es sólo para no ofrecer una pantalla que va a devolver 403.
-///
-/// **Ojo con los usuarios `lim`.** `tienePermiso` le dice que sí a cualquiera
-/// con `tipoUsuario == 'ROLE_ADM'` sin mirar la tabla; el resto —`rramos`, por
-/// ejemplo— necesita su fila real en `tb_usuarioBtn` o el módulo se le esconde
-/// entero.
+/// Botón del ACL (`tb_vistaBtn` / `tb_usuarioBtn`) que habilita la consulta de
+/// saldo dentro de la vista 24. Esconder no es autorizar: el gate real está en el
+/// backend (identidad desde el token) y esto solo evita ofrecer una pantalla que
+/// devolvería 403. Usuarios `lim`: `tienePermiso` da acceso a todo `ROLE_ADM` sin
+/// mirar la tabla; el resto (p. ej. `rramos`) necesita su fila en
+/// `tb_usuarioBtn` o el módulo se le esconde.
 const String btnConsultaSaldo = 'btnDetalles';
 
-/// El botón del ACL que habilita la **calculadora de antigüedad**.
-///
-/// **Son dos permisos distintos, no uno.** El backend exige `btnApoyoCalc` en
+/// Botón del ACL de la **calculadora de antigüedad**. No es el mismo permiso que
+/// `btnDetalles`: el backend exige `btnApoyoCalc` en
 /// `/permiso-rrhh/herramientas/calculo-antiguedad` y `btnDetalles` en los otros
-/// dos endpoints, y los dos padrones no coinciden: medido contra `BOSQUE-2_0`
-/// con `nivelAcceso != 0`, `btnDetalles` lo tienen 5 usuarios y `btnApoyoCalc`
-/// 6. Esconder las tres pestañas detrás de una sola constante dejaba a quien
-/// tuviera `btnDetalles` sin `btnApoyoCalc` eligiendo dos fechas para recibir un
-/// 403 — el callejón sin salida que este gate existe para evitar.
-///
-/// Si RR.HH. confirma que quiere un permiso único, el que cambia es el backend
-/// (`PermisoRrhhController` línea del `exigirBoton` de la calculadora), no esto.
+/// dos endpoints, y los padrones difieren (5 vs 6 usuarios), así que con una sola
+/// constante alguien vería la pestaña y recibiría 403. Si RR.HH. quiere un
+/// permiso único, cambia el `exigirBoton` de `PermisoRrhhController`, no esto.
 const String btnCalculadora = 'btnApoyoCalc';
 
-/// El botón del ACL que habilita **bajar la boleta** de un permiso en PDF.
-///
-/// Es el mismo que exige el backend en `/vacacion/RptPermisoVacacion`
-/// (codBtn 109, 6 usuarios con `nivelAcceso != 0`). Ahí el gate tiene tres
-/// puertas —este botón, o que la boleta sea propia, o que el empleado esté en
-/// el subárbol de cargos de quien pide—, así que esconderlo aquí sólo evita el
-/// 403: **quién puede bajar qué lo decide el servidor**.
+/// Botón del ACL para **bajar la boleta** de un permiso en PDF; el mismo que
+/// exige el backend en `/vacacion/RptPermisoVacacion` (codBtn 109, 6 usuarios).
+/// Allá el gate tiene tres puertas (este botón, boleta propia, o empleado en el
+/// subárbol de cargos de quien pide): esconderlo aquí solo evita el 403, **quién
+/// puede bajar qué lo decide el servidor**.
 const String btnBoleta = 'btnReImprimirBoleta';
 
 /// El botón del ACL de los **reportes de saldos** (codBtn 210, 4 usuarios).
 /// Es el mismo que el backend exige en `/permiso-rrhh/reportes/*`.
 const String btnReportes = 'btnReportesPYV';
 
-/// El botón del ACL de la **ABM de vacación asignada** (alta y edición).
-///
-/// ## ⚠ PLACEHOLDER — este botón es prestado, no es el suyo
-///
-/// El legacy gobierna esta ABM con `btnEditNewVacAsigAntesDos`, y **ese nombre
-/// no existe en `tb_vistaBtn`**: verificado contra `BOSQUE-2_0`, no está en la
-/// vista 24 ni en ninguna otra, ni en `tb_vistaBtnEliminado`. Vive sólo en el
-/// `permiso.xhtml`, donde `Loggin.autorizarBtn` no lo encuentra, devuelve
-/// permiso 0 y cae en el fallback de administrador.
-///
-/// Por eso esta constante estrena **nombre propio**, que tampoco existe todavía
-/// en la tabla, y eso es deliberado: mientras no exista, `tienePermiso` sólo
-/// deja pasar a los `ROLE_ADM` y esconde el botón para el resto. **Cerrado por
-/// omisión**, que es lo correcto para un alta que vale 15 a 30 días pagados.
-///
-/// Antes apuntaba a `btnEditVacAntPenult` (codBtn 117) como parche para que los
-/// `lim` no vieran un botón que devolvía 403. Estaba mal: ese botón en el legacy
-/// autoriza «editar el permiso ya gozado», así que reusarlo le daba alta y
-/// edición de vacación asignada a los 5 usuarios que lo tienen, y que **no**
-/// tienen esa atribución.
-///
-/// **Es el mismo literal que usa el backend** (`BTN_VACACION_ASIGNADA` en
-/// `PermisoRrhhController`): cliente y servidor tienen que decir lo mismo o el
-/// módulo esconde lo que el servidor deja pasar, y al revés.
-///
-/// **Para abrirlo a RR.HH.:** correr `sql/04_botones_vacacion_asignada.sql` y
-/// después subir el `nivelAcceso` desde la pantalla de permisos. No hay que
-/// tocar esta línea.
+/// Botón del ACL de la ABM de vacación asignada. PLACEHOLDER: el legacy usa
+/// `btnEditNewVacAsigAntesDos`, inexistente en `tb_vistaBtn`; este nombre propio
+/// tampoco existe aún, a propósito: mientras no exista, `tienePermiso` solo deja
+/// pasar a `ROLE_ADM` (cerrado por omisión). No reusar `btnEditVacAntPenult`
+/// («editar el permiso ya gozado»). Debe coincidir con `BTN_VACACION_ASIGNADA`;
+/// para abrirlo a RR.HH.: `sql/04_botones_vacacion_asignada.sql` y `nivelAcceso`.
 const String btnVacacionAsignada = 'btnNuevaVacAsignada';
 
-/// El botón del ACL de la **baja** de una vacación asignada.
-///
-/// **Botón propio, ya no un alias del alta.** Borrar no es lo mismo que cargar:
-/// en el legacy el botón Eliminar está con `rendered="false"`, o sea que hoy no
-/// lo ejecuta nadie, y traerlo no es migrar sino habilitar. Los dos nombres se
-/// crean juntos en el mismo script, así que separarlos no cuesta nada y permite
-/// que la baja quede en menos manos que el alta sin tocar código.
+/// Botón del ACL de la **baja** de una vacación asignada. Botón propio, no alias
+/// del alta: en el legacy Eliminar está con `rendered="false"` (hoy no lo ejecuta
+/// nadie), así que traerlo es habilitar, no migrar. Ambos nombres se crean en el
+/// mismo script, y separarlos permite dejar la baja en menos manos sin tocar código.
 const String btnVacacionAsignadaBaja = 'btnEliminarVacAsignada';
 
-/// El botón del ACL del **abono de días individual** (`codBtn` 119, «Editar
-/// Abono Dias»): 5 usuarios con `nivelAcceso != 0`.
-///
-/// Cubre también el alta: en el legacy el alta no tiene botón propio, se abre
-/// desde el mismo modal.
+/// Botón del ACL del **abono de días individual** (`codBtn` 119, «Editar Abono
+/// Dias»): 5 usuarios con `nivelAcceso != 0`. Cubre también el alta: en el legacy
+/// no tiene botón propio, se abre desde el mismo modal.
 const String btnAbonoDias = 'btnEditarAbonoDia';
 
 /// El botón del ACL del **abono de días colectivo** (`codBtn` 107): 4 usuarios,
@@ -126,33 +78,24 @@ const String btnAbonoGrupal = 'btnNuevoAbonoGrupal';
 /// El botón del ACL de la **vacación colectiva** (`codBtn` 108): 5 usuarios.
 const String btnVacacionGrupal = 'btnNuevaVacGrupal';
 
-/// El botón del ACL de **«Programar permiso»** (`codBtn` 112).
-///
-/// **Son 4 usuarios, uno menos que los otros dos de esta tanda.** Por eso es
-/// una constante propia y no se comparte con [btnProgramarVacacion]: esconder
-/// las tres operaciones detrás de un solo nombre le concedería a una persona
-/// una atribución que hoy no tiene.
+/// Botón del ACL de **«Programar permiso»** (`codBtn` 112): 4 usuarios, uno menos
+/// que los otros dos de esta tanda. Constante propia y no compartida con
+/// [btnProgramarVacacion]: un solo nombre para las tres operaciones concedería a
+/// alguien una atribución que hoy no tiene.
 const String btnProgramarPermiso = 'btnProgramarPermiso';
 
 /// El botón del ACL de **«Programar vacación»** (`codBtn` 113): 5 usuarios.
 const String btnProgramarVacacion = 'btnProgramarVacacion';
 
-/// El botón del ACL de **«Vacación pagada»** (PVA).
-///
-/// **Está DUPLICADO en `tb_vistaBtn`** —`codBtn` 110 y 114, 5 usuarios cada
-/// uno—. `AccesoModuloHelper.tieneBoton` usa `anyMatch` y lo tolera, así que
-/// del lado del cliente no hay nada que hacer; lo que hay que saber es que si
-/// los dos padrones no son el mismo conjunto de personas, **el permiso efectivo
-/// es la unión de los dos**. Vale confirmarlo con RR.HH. antes de habilitar
-/// días pagados.
+/// Botón del ACL de **«Vacación pagada»** (PVA). Está DUPLICADO en `tb_vistaBtn`
+/// (`codBtn` 110 y 114, 5 usuarios cada uno); `AccesoModuloHelper.tieneBoton` usa
+/// `anyMatch` y lo tolera, pero si los padrones difieren el permiso efectivo es
+/// la unión de ambos. Confirmarlo con RR.HH. antes de habilitar días pagados.
 const String btnVacacionPagada = 'btnNuevaVacPagada';
 
-/// El empleado que se está mirando.
-///
-/// **Global y no estado local del widget** a propósito: los providers de abajo
-/// son `autoDispose`, así que salir del módulo y volver reconstruye la vista, y
-/// un `setState` guardado en la pantalla se habría perdido. Aquí el módulo
-/// vuelve mostrando a la misma persona.
+/// El empleado que se está mirando. Global y no estado local del widget: los
+/// providers de abajo son `autoDispose` y un `setState` se perdería al salir del
+/// módulo; así vuelve mostrando a la misma persona.
 final empleadoSeleccionadoProvider = StateProvider<EmpleadoEntity?>(
   (ref) => null,
 );
@@ -162,11 +105,9 @@ final empleadoSeleccionadoProvider = StateProvider<EmpleadoEntity?>(
 /// Escribirlo en cada tecla dispararía una consulta por letra.
 final busquedaEmpleadoProvider = StateProvider<String>((ref) => '');
 
-/// Empresa por la que se filtra la búsqueda. 0 = todas.
-///
-/// Los tres `StateProvider` de este archivo **no son `autoDispose` a
-/// propósito**, al revés que los `FutureProvider`: son estado de interfaz y se
-/// perderían en cada vuelta al módulo.
+/// Empresa por la que se filtra la búsqueda. 0 = todas. Los tres `StateProvider`
+/// de este archivo no son `autoDispose` a propósito (a diferencia de los
+/// `FutureProvider`): son estado de interfaz y se perderían al volver al módulo.
 final filtroEmpresaProvider = StateProvider<int>((ref) => 0);
 
 /// Si la búsqueda trae sólo a los empleados activos.
@@ -176,10 +117,8 @@ final filtroEmpresaProvider = StateProvider<int>((ref) => 0);
 final filtroSoloActivosProvider = StateProvider<bool>((ref) => true);
 
 /// Resultado del buscador (`p_list_Empleado 'Y'`, vía `/rrhh/obtenerLstEmpleados`).
-///
-/// **No es un `family`**: los tres filtros son estado global del módulo, así que
-/// se leen con `watch` y Riverpod rearma la búsqueda cuando cambia cualquiera.
-/// Un `family` aquí pediría una clave, y la clave sería justamente esos tres.
+/// No es un `family`: los tres filtros son estado global del módulo y se leen con
+/// `watch`, así Riverpod rearma la búsqueda al cambiar cualquiera.
 final empleadosBuscadosProvider =
     FutureProvider.autoDispose<List<EmpleadoEntity>>((ref) {
       return ref
@@ -193,11 +132,10 @@ final empleadosBuscadosProvider =
           );
     });
 
-/// Ficha de saldo del empleado `cod` (`ACCION 'C'`).
-///
-/// `family` con un `int`: dos `int` iguales son el mismo parámetro, así que
-/// Riverpod cachea. Un rebuild no vuelve a pegarle al backend — que es lo que
-/// hacía el getter del JSF que este módulo reemplaza, en cada render.
+/// Ficha de saldo del empleado `cod` (`ACCION 'C'`). `family` con un `int`: dos
+/// `int` iguales son el mismo parámetro y Riverpod cachea, así un rebuild no
+/// vuelve a consultar el backend (el getter del JSF que este módulo reemplaza sí lo
+/// hacía en cada render).
 final fichaSaldoProvider = FutureProvider.autoDispose.family<
   FichaSaldoEntity?,
   int
@@ -210,22 +148,16 @@ final desgloseSaldoProvider = FutureProvider.autoDispose
           ref.watch(permisosRrhhRepositoryProvider).getDesgloseSaldo(cod),
     );
 
-/// El rango de la calculadora de antigüedad.
-///
-/// **Es un record y no una clase ni una Entity**, y no es un detalle: la clave
-/// de un `family` se compara con `==`. Un objeto sin `==`/`hashCode` es una
-/// clave nueva en cada rebuild, así que cada rebuild dispararía otra petición y
-/// dejaría otro provider vivo — un bucle. Los records tienen igualdad
-/// estructural de fábrica. (Hay un caso latente de esto en
-/// `previsualizarSaldoProvider`, que usa una Entity como parámetro.)
+/// El rango de la calculadora de antigüedad. Es un record y no una clase/Entity:
+/// la clave de un `family` se compara con `==` y un objeto sin `==`/`hashCode`
+/// sería una clave nueva por rebuild (petición y provider vivo cada vez: un
+/// bucle). Caso latente: `previsualizarSaldoProvider` usa una Entity.
 typedef RangoDeCalculo = ({DateTime desde, DateTime hasta});
 
-/// La frase en prosa del SP para un rango simulado (`ACCION 'U'`).
-///
-/// Es **orientativa**: la función cuenta años enteros con un `WHILE` y no es el
-/// mismo algoritmo que calcula el saldo real. Además da «= 0 dias por
-/// antiguedad» en el aniversario exacto y cuando las dos fechas caen en el mismo
-/// mes; la pantalla detecta esa subcadena y avisa.
+/// La frase en prosa del SP para un rango simulado (`ACCION 'U'`). Es
+/// orientativa: cuenta años enteros con un `WHILE` (no es el algoritmo del saldo
+/// real) y da «= 0 dias por antiguedad» en el aniversario exacto y cuando ambas
+/// fechas caen en el mismo mes; la pantalla detecta esa subcadena y avisa.
 final calculoAntiguedadProvider = FutureProvider.autoDispose
     .family<String, RangoDeCalculo>(
       (ref, r) => ref
@@ -234,17 +166,11 @@ final calculoAntiguedadProvider = FutureProvider.autoDispose
     );
 
 /// Empleado + relación laboral: la clave de todo lo que se lee de una persona.
-///
-/// **Son las dos cosas y no sólo el empleado.** Las lecturas del legacy filtran
-/// por `codEmpleado` **y** `codRelEmplEmpr` (`p_list_vacacionAsignada 'B'`,
-/// `p_list_AbonoDias 'B'`), porque el saldo es de la relación vigente: la misma
-/// persona en dos contratos tiene dos historias distintas y sumarlas daría un
-/// número que no es el de nadie. `codRelEmplEmpr` en 0 = «la vigente, resuélvela
-/// tú», que es lo que sabe la pantalla antes de tener la ficha.
-///
-/// Es un **record** por lo mismo que [RangoDeCalculo]: la clave de un `family`
-/// se compara con `==`, y un objeto sin igualdad estructural sería una clave
-/// nueva por rebuild — una petición por frame.
+/// Las lecturas del legacy filtran por `codEmpleado` y `codRelEmplEmpr`
+/// (`p_list_vacacionAsignada 'B'`, `p_list_AbonoDias 'B'`) porque el saldo es de
+/// la relación vigente: dos contratos son dos historias que no deben sumarse.
+/// `codRelEmplEmpr` = 0 significa «la vigente, resuélvela tú». Es un record por
+/// la misma razón que [RangoDeCalculo] (igualdad estructural en la clave).
 typedef ClaveEmpleadoRelacion = ({int codEmpleado, int codRelEmplEmpr});
 
 /// El historial de vacación asignada: una fila por aniversario, con las
@@ -277,15 +203,11 @@ final empleadosColectivaProvider = FutureProvider.autoDispose
           .getEmpleadosParaColectiva(codEmpresa: codEmpresa),
     );
 
-// ═══════════════════════════════════════════════════════════════════════════
 // NÓMINA DE PERMISOS (el kardex) Y SUS FILTROS
-// ═══════════════════════════════════════════════════════════════════════════
 
-/// El combo de tipo de la Nómina. **Vacío = «Todos»**, que es lo que el DAO del
-/// legacy traduce a `@tipoPermiso = NULL`.
-///
-/// `StateProvider` y no `autoDispose`, igual que los otros filtros del módulo:
-/// es estado de interfaz y se perdería en cada vuelta.
+/// El combo de tipo de la Nómina. Vacío = «Todos» (el DAO del legacy lo traduce a
+/// `@tipoPermiso = NULL`). `StateProvider` sin `autoDispose`, como los demás
+/// filtros del módulo.
 final filtroTipoPermisoProvider = StateProvider<String>((ref) => '');
 
 /// «Fecha Inicio» del filtro. **Compara contra el INICIO del permiso**
@@ -303,15 +225,10 @@ final filtroFechaFinProvider = StateProvider<DateTime?>((ref) => null);
 final filtroFechaRangoProvider = StateProvider<DateTime?>((ref) => null);
 
 /// La clave de la Nómina: la persona, su relación laboral y los tres filtros.
-///
-/// **Es un record por lo mismo que [RangoDeCalculo]**: la clave de un `family`
-/// se compara con `==` y un objeto sin igualdad estructural sería una clave
-/// nueva por rebuild, o sea una petición por frame.
-///
-/// **Es `family` y no un provider que observe los filtros** —al revés que
-/// [empleadosBuscadosProvider]— porque en el legacy la consulta la dispara un
-/// botón («Buscar Permisos»), no cada tecla: con `watch` sobre cuatro filtros,
-/// elegir una fecha en el calendario pegaría un viaje al servidor por cada
+/// Es un record por lo mismo que [RangoDeCalculo]. Es `family` y no un provider
+/// que observe los filtros (al revés que [empleadosBuscadosProvider]) porque en
+/// el legacy la consulta la dispara el botón «Buscar Permisos», no cada tecla:
+/// con `watch`, elegir una fecha en el calendario consultaría al servidor en cada
 /// toque. La pantalla arma la clave cuando la persona aprieta buscar.
 typedef FiltroNominaPermisos =
     ({
@@ -421,26 +338,19 @@ final diasNoHabilesProvider = FutureProvider.autoDispose
           .getDiasNoHabiles(r.codEmpleado, r.desde, r.hasta),
     );
 
-/// La clave de «Buscar Vac Ganadas»: la persona y el rango de fechas.
-///
-/// **Ese botón ignora el combo de tipo y la «Fecha Rango»** —en el legacy sólo
-/// usa Fecha Inicio y Fecha Fin—, así que la clave es más corta que la de la
-/// Nómina a propósito. Con la clave grande, cambiar el combo invalidaría una
-/// lista que el combo no filtra.
+/// La clave de «Buscar Vac Ganadas»: la persona y el rango de fechas. Ese botón
+/// ignora el combo de tipo y la «Fecha Rango» (en el legacy solo usa Fecha Inicio
+/// y Fecha Fin), así que la clave es más corta que la de la Nómina a propósito:
+/// con la clave grande, cambiar el combo invalidaría una lista que no filtra.
 typedef ClaveVacGanadas =
     ({int codEmpleado, int codRelEmplEmpr, DateTime? desde, DateTime? hasta});
 
-/// «Buscar Vac Ganadas»: la segunda grilla de la pantalla («Nómina de
-/// Vacaciones Asignadas»).
-///
-/// **Va a `/permisos/vacaciones-ganadas`, que es `p_list_vacacionAsignada 'D'`:
-/// el mismo SP y la misma ACCION que el botón del legacy.** No se recorta en
-/// memoria lo que trajo [historialVacacionAsignadaProvider], que es la ACCION
-/// 'B': aquella se pide con una fecha de corte —o sea que el conjunto de
-/// partida ya viene recortado por otra cosa— y además **inventa** filas
-/// sintéticas por aniversario para ofrecer el «Nuevo» de su grilla. Filtrar eso
-/// con un `where` de Dart devolvía un conjunto que podía no ser el del ERP, sin
-/// que nada avisara: un 200 con la lista vacía.
+/// «Buscar Vac Ganadas»: la segunda grilla de la pantalla («Nómina de Vacaciones
+/// Asignadas»). Va a `/permisos/vacaciones-ganadas` (`p_list_vacacionAsignada
+/// 'D'`, el mismo SP y ACCION del legacy). No recortar en memoria lo que trajo
+/// [historialVacacionAsignadaProvider] (ACCION 'B'): parte de una fecha de corte
+/// e inventa filas sintéticas por aniversario, así que filtrarlo con `where`
+/// podía dar un conjunto distinto al del ERP y un 200 con la lista vacía.
 final vacGanadasProvider = FutureProvider.autoDispose
     .family<List<VacacionAsignadaEntity>, ClaveVacGanadas>(
       (ref, k) => ref
@@ -453,16 +363,12 @@ final vacGanadasProvider = FutureProvider.autoDispose
           ),
     );
 
-/// Los tipos del combo (`v_tipos` grupo 13). La clave es
-/// `incluirVacacionYPago`: `false` da los 7 del modal de permiso (sin `vac` ni
-/// `pva`), `true` los 9 del filtro de la Nómina.
-///
-/// **Se llama `...RrhhProvider` y no `tiposPermisoProvider` porque ese nombre
-/// ya está tomado** por el flujo del EMPLEADO
-/// (`permisos_vacacion_provider.dart`), que filtra por `codEmpleado` +
-/// `codUsuarioLogueado` — los tipos que ESA persona puede pedirse—. Aquí RR.HH.
-/// carga a nombre de otro, así que la lista es otra. Dos nombres iguales en un
-/// mismo widget serían un `import as` y un error esperando.
+/// Los tipos del combo (`v_tipos` grupo 13). La clave es `incluirVacacionYPago`:
+/// `false` da los 7 del modal de permiso (sin `vac` ni `pva`), `true` los 9 del
+/// filtro de la Nómina. Se llama `...RrhhProvider` porque `tiposPermisoProvider`
+/// ya lo usa el flujo del EMPLEADO (`permisos_vacacion_provider.dart`), que
+/// filtra por `codEmpleado` + `codUsuarioLogueado`; aquí RR.HH. carga a nombre de
+/// otro y la lista es otra.
 final tiposPermisoRrhhProvider = FutureProvider.autoDispose
     .family<List<TipoPermisoVacacionEntity>, bool>(
       (ref, incluirVacacionYPago) => ref
@@ -470,63 +376,33 @@ final tiposPermisoRrhhProvider = FutureProvider.autoDispose
           .getTiposPermiso(incluirVacacionYPago: incluirVacacionYPago),
     );
 
-// **La simulación del permiso individual NO tiene provider**, por lo mismo que
-// la colectiva: simular es algo que alguien dispara al cambiar una fecha —con
-// su rebote—, no algo que la pantalla observa. El modal la llama a mano contra
-// el repositorio y se guarda el resultado en su propio estado; un `family` con
-// (empleado, desde, hasta) dejaría un provider vivo por cada media hora que
-// alguien pruebe en el selector.
+// La simulación del permiso individual NO tiene provider: la dispara alguien al
+// cambiar una fecha (con rebote), no la observa la pantalla. El modal la llama a
+// mano; un `family` (empleado, desde, hasta) dejaría un provider vivo por prueba.
 
-// **La simulación de la vacación colectiva NO tiene provider, y no es un
-// olvido.** Su clave incluiría la lista de empleados tildados, y en Dart dos
-// `List` con el mismo contenido no son `==`: cada rebuild sería una clave nueva,
-// o sea otra petición y otro provider vivo. Es exactamente la trampa que
-// documenta `RangoDeCalculo`, pero sin salida —no se puede hacer estructural una
-// lista—. La hoja de la carga colectiva la llama a mano contra el repositorio y
-// se guarda el resultado en su propio estado, que además es lo que corresponde:
-// simular es algo que alguien aprieta, no algo que la pantalla observa.
+// La simulación de la vacación colectiva NO tiene provider, a propósito: su clave
+// incluiría la lista de marcados y dos `List` iguales no son `==` en Dart, así que
+// cada rebuild sería otra petición y otro provider vivo (como `RangoDeCalculo`,
+// pero sin salida). La hoja la llama a mano contra el repositorio.
 
-// ═══════════════════════════════════════════════════════════════════════════
 // ACCIONES
-// ═══════════════════════════════════════════════════════════════════════════
 
-/// Las escrituras del módulo, todas juntas.
-///
-/// **Toda escritura invalida la ficha y el desglose, no sólo la lista.** Es lo
-/// que hace el legacy —`saveVacAsign()` llama a `cargarSaldoPenultVac()` **y** a
-/// `cargarRegSaldoEmpl()`— y con razón: un día asignado cambia el saldo, y dejar
-/// la cifra vieja en pantalla mientras la grilla ya muestra la fila nueva es la
-/// forma más barata de que alguien cargue el mismo día dos veces.
-///
-/// **Y se relee siempre, aunque parezca de más.** Los SP de escritura no
-/// devuelven el id generado, así que el estado de después sólo se conoce
-/// preguntando; y esta pantalla no es la única que escribe: un proceso
-/// automático inserta en `trh_vacacionAsignada` el día 1 de cada mes a las 07:00
-/// y ya dejó filas fechadas en 2026. Nada de cachear como si la tabla fuera
-/// nuestra.
-///
-/// **El error no se atrapa aquí**: sube al widget, que es el único que puede
-/// decidir si lo muestra en la hoja, en un aviso o cerrando el modal. Igual que
-/// en `RolSabadosAcciones`.
+/// Las escrituras del módulo. Toda escritura invalida la ficha y el desglose, no
+/// solo la lista (como el legacy: `saveVacAsign()` recarga saldo y ficha): un día
+/// asignado cambia el saldo. Se relee siempre: los SP de escritura no devuelven el
+/// id y un proceso automático inserta en `trh_vacacionAsignada` el día 1 de cada
+/// mes a las 07:00. El error no se atrapa aquí: sube al widget, que decide cómo
+/// mostrarlo (igual que `RolSabadosAcciones`).
 class PermisosRrhhAcciones {
   final Ref _ref;
   PermisosRrhhAcciones(this._ref);
 
   PermisosRrhhRepository get _repo => _ref.read(permisosRrhhRepositoryProvider);
 
-  /// Tira todo lo que quedó viejo después de escribir.
-  ///
-  /// Con `codEmpleado` invalida la ficha y el desglose de esa persona; sin él
-  /// —una carga colectiva, donde los tocados son N— invalida las dos familias
-  /// enteras, que es lo que hace `Ref.invalidate` cuando se le pasa la familia
-  /// en vez de una instancia.
-  ///
-  /// Las dos listas se invalidan siempre completas: su clave lleva la relación
-  /// laboral, y quien acaba de escribir no siempre sabe con cuál se pidió.
-  ///
-  /// **Es el `_recargar` que hoy vive en `permisos_rrhh_screen.dart`**, mudado
-  /// aquí como su propio comentario pedía. Público porque la pantalla también lo
-  /// usa para su «actualizar» a mano.
+  /// Invalida lo que quedó viejo tras escribir: con `codEmpleado`, la ficha y el
+  /// desglose de esa persona; sin él (carga colectiva) las dos familias enteras.
+  /// Las dos listas siempre completas: su clave lleva la relación laboral, que
+  /// quien escribió no siempre conoce. Público: la pantalla lo usa en «actualizar».
   void refrescar([int? codEmpleado]) {
     if (codEmpleado == null) {
       _ref.invalidate(fichaSaldoProvider);
@@ -537,20 +413,16 @@ class PermisosRrhhAcciones {
     }
     _ref.invalidate(historialVacacionAsignadaProvider);
     _ref.invalidate(detalleAbonosProvider);
-    // El kardex se invalida entero: su clave lleva los cuatro filtros, y quien
-    // acaba de escribir no sabe con cuáles está mirando la grilla. `vacGanadas`
-    // no hace falta nombrarlo —deriva del historial, así que Riverpod lo
-    // recalcula solo cuando aquel se invalida—.
+    // El kardex se invalida entero: su clave lleva los cuatro filtros y quien escribió
+    // no sabe con cuáles se mira la grilla. `vacGanadas` no hace falta nombrarlo:
+    // deriva del historial y Riverpod lo recalcula solo.
     _ref.invalidate(nominaPermisosProvider);
   }
 
-  /// Alta o edición de una vacación asignada. **Devuelve la fila releída**, que
-  /// es lo que de verdad quedó guardado: el SP no devuelve el id generado y en
-  /// esa tabla escribe además un proceso automático.
-  ///
-  /// [confirmado] sólo en el reintento, después de que la persona haya leído el
-  /// aviso del 400 confirmable: en esta tabla la repetición es sospechosa pero
-  /// legítima, así que se advierte y no se bloquea.
+  /// Alta o edición de una vacación asignada. **Devuelve la fila releída**, lo que
+  /// de verdad quedó guardado (el SP no devuelve el id y un proceso automático
+  /// también escribe en esa tabla). [confirmado] solo en el reintento tras el aviso
+  /// del 400 confirmable: la repetición es sospechosa pero legítima, no se bloquea.
   Future<VacacionAsignadaEntity> registrarVacacionAsignada(
     VacacionAsignadaEntity vacacion, {
     bool confirmado = false,
@@ -631,15 +503,10 @@ class PermisosRrhhAcciones {
   // ── El permiso individual ─────────────────────────────────────────────
 
   /// Programa un permiso a nombre del empleado («Registro de permisos»).
-  ///
-  /// [tipoPermiso] es uno de los 7 del combo —`baja`, `clb`, `def`, `libre`,
-  /// `otro`, `pcr`, `sinsuel`—; **`'vac'` no entra por aquí**: el servidor lo
-  /// rechaza con un 400 porque la vacación pide otro botón del ACL. Es
-  /// [registrarVacacion].
-  ///
-  /// Devuelve el mensaje del servidor: `p_abm_Permiso` no devuelve el id
-  /// generado, así que no hay fila que releer con certeza. Lo que quedó
-  /// guardado lo dice el kardex, que se refresca aquí.
+  /// [tipoPermiso] es uno de los 7 del combo (`baja`, `clb`, `def`, `libre`, `otro`,
+  /// `pcr`, `sinsuel`); `'vac'` NO entra aquí (400: pide otro botón del ACL), para
+  /// eso está [registrarVacacion]. Devuelve el mensaje del servidor: `p_abm_Permiso`
+  /// no devuelve el id, así que lo guardado lo dice el kardex, que se refresca aquí.
   Future<String> registrarPermiso({
     required int codEmpleado,
     required String tipoPermiso,
@@ -658,14 +525,10 @@ class PermisosRrhhAcciones {
     return msg;
   }
 
-  /// Programa una vacación individual («Registro de vacación individual»).
-  ///
-  /// **Es otra ruta, no [registrarPermiso] con `'vac'`.** Del otro lado es el
-  /// mismo DAO y el mismo INSERT, pero con otro botón del ACL
-  /// ([btnProgramarVacacion], 5 usuarios contra 4) y con el tipo puesto por el
-  /// servidor. Mandar `'vac'` por la ruta del permiso da un 400 —y, para quien
-  /// tiene el botón de vacación y no el de permiso, un 403 después de haber
-  /// llenado el formulario.
+  /// Programa una vacación individual («Registro de vacación individual»). Es otra
+  /// ruta, no [registrarPermiso] con `'vac'`: mismo DAO e INSERT, pero otro botón
+  /// del ACL ([btnProgramarVacacion], 5 usuarios contra 4) y el tipo lo pone el
+  /// servidor. Mandar `'vac'` por la ruta del permiso da 400 (o 403 sin ese botón).
   Future<String> registrarVacacion({
     required int codEmpleado,
     required DateTime desde,
@@ -682,17 +545,10 @@ class PermisosRrhhAcciones {
     return msg;
   }
 
-  /// Paga días de vacación («Pago de vacaciones», `tipoPermiso = 'pva'`).
-  ///
-  /// **Esto es plata**, y es la única escritura del módulo donde los días los
-  /// tipea una persona y no los calcula nadie: 32 filas en 10 años, una de
-  /// ellas de 247 días. La pantalla tiene que confirmar en dos pasos diciendo
-  /// el saldo antes y después, y bloquear el reenvío mientras la llamada está
-  /// en vuelo — un doble toque aquí cuesta dinero.
-  ///
-  /// El refresco de la ficha no es decorativo: es lo que muestra el saldo nuevo
-  /// inmediatamente después, que es la única forma de que quien pagó vea lo que
-  /// hizo.
+  /// Paga días de vacación («Pago de vacaciones», `tipoPermiso = 'pva'`). Es dinero
+  /// y la única escritura donde una persona tipea los días (32 filas en 10 años,
+  /// una de 247): confirmar en dos pasos con el saldo antes y después y bloquear
+  /// el reenvío mientras la llamada está en vuelo. El refresco muestra el saldo nuevo.
   Future<String> registrarVacacionPagada({
     required int codEmpleado,
     required DateTime fecha,

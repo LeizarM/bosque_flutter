@@ -5,9 +5,7 @@ import 'package:bosque_flutter/domain/entities/planilla_entity.dart';
 import 'package:bosque_flutter/domain/entities/planilla_detalle_entity.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-// ═══════════════════════════════════════════════════════════════════════════════
 // FILTROS PERSISTIDOS (se mantienen al cambiar de pantalla)
-// ═══════════════════════════════════════════════════════════════════════════════
 
 class _FiltrosPersistidos {
   final String mes;
@@ -27,9 +25,7 @@ final _filtrosPersistidosPlanillaProvider = StateProvider<_FiltrosPersistidos>(
   ),
 );
 
-// ═══════════════════════════════════════════════════════════════════════════════
 // STATE + NOTIFIER: Cabeceras de Planilla
-// ═══════════════════════════════════════════════════════════════════════════════
 
 class PlanillaState {
   final List<PlanillaEntity> items;
@@ -198,17 +194,17 @@ class PlanillaNotifier extends StateNotifier<PlanillaState> {
     try {
       final response = await _repo.ejecutarPlanilla(soloValidar: true);
       state = state.copyWith(generando: false);
-      // Si todo está bien y no hay advertencias, retornamos un string vacío.
+      // Sin advertencias: cadena vacía.
       return response.errormsg ?? '';
     } catch (e) {
       final msg = e.toString();
-      // Si es una advertencia, la procesamos y evitamos marcarlo como un error global.
+      // Advertencia (no bloquea): se devuelve el texto, no se marca error global.
       if (msg.contains('ADVERTENCIAS_SQL|')) {
         state = state.copyWith(generando: false);
         return msg.split('ADVERTENCIAS_SQL|').last.trim();
       }
 
-      // Si es un error real bloqueante, lo marcamos en el estado para el snackbar.
+      // Error bloqueante: va al estado para el snackbar.
       state = state.copyWith(generando: false, mensajeError: msg);
       return null;
     }
@@ -239,9 +235,7 @@ final planillaProvider =
       return PlanillaNotifier(ref.read(_planillaRepoProvider), ref);
     });
 
-// ═══════════════════════════════════════════════════════════════════════════════
 // STATE + NOTIFIER: Detalle de Planilla (empleados de una planilla)
-// ═══════════════════════════════════════════════════════════════════════════════
 
 class PlanillaDetalleState {
   final List<PlanillaDetalleEntity> items;
@@ -340,9 +334,7 @@ final planillaDetalleProvider = StateNotifierProvider.family.autoDispose<
   return PlanillaDetalleNotifier(ref.read(_planillaRepoProvider), codPlanilla);
 });
 
-// ═══════════════════════════════════════════════════════════════════════════════
 // PDF PROVIDERS
-// ═══════════════════════════════════════════════════════════════════════════════
 
 final pdfEstimadoPagoBancoProvider = FutureProvider<Uint8List>((ref) async {
   final repo = PlanillaImpl();
@@ -359,8 +351,8 @@ final excelPlanillaTributariaProvider =
       );
     });
 
-/// El record da igualdad por valor, así que el cache de la family sigue
-/// funcionando igual que cuando la clave era un `int` suelto.
+/// La clave es un record: tiene igualdad por valor y la caché de la family
+/// funciona.
 final pdfPlanillaCompactaProvider =
     FutureProvider.family<Uint8List, (int codPlanilla, int codEmpresa)>((
       ref,

@@ -14,18 +14,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// La pestaña de la grilla: filtros arriba y, debajo, la matriz o la agenda
-/// según el ancho que haya.
+/// según el ancho.
 ///
-/// **Por qué dos vistas y no una que se encoge.** La matriz es 87 personas × 52
-/// sábados. En 360 px la columna de nombres se come más de la mitad y quedan
-/// tres columnas visibles de cincuenta y dos. Y ademas la pregunta cambia con el
-/// dispositivo: en el escritorio uno mira el año y busca desequilibrios; con el
-/// teléfono en la mano uno quiere saber quién viene este sábado.
-///
-/// El corte se mide sobre el ancho **real del panel** con un `LayoutBuilder`, no
-/// sobre el de la pantalla: adentro del dashboard hay un sidebar que se lleva su
-/// parte, y una ventana de escritorio angosta merece el mismo trato que un
-/// teléfono.
+/// Dos vistas y no una que se encoge: la matriz son 87 personas × 52 sábados y
+/// en 360 px quedan 3 columnas. El corte usa el ancho **real del panel**
+/// (`LayoutBuilder`, no la pantalla: el dashboard tiene sidebar).
 class GrillaTab extends ConsumerWidget {
   const GrillaTab({
     super.key,
@@ -122,12 +115,9 @@ class GrillaTab extends ConsumerWidget {
 
 /// La tabla con primera columna y encabezado congelados.
 ///
-/// Los cuatro `ScrollController` vienen de afuera porque están **atados entre
-/// sí** en la pantalla: el nombre y la fecha no se pueden despegar de su celda.
-/// Sin eso, al llegar a septiembre ya no se sabe de quién es cada fila.
-/// **Es `ConsumerWidget` sólo por el permiso de edición.** Se observa aquí, una
-/// vez, y baja como un `bool` a cada celda: si lo observara `CeldaMatriz`,
-/// serían 4.420 suscripciones para responder siempre lo mismo.
+/// Los cuatro `ScrollController` vienen **atados entre sí** desde la pantalla.
+/// Es `ConsumerWidget` sólo por el permiso de edición: se observa aquí una vez y
+/// baja como `bool` (en `CeldaMatriz` serían 4.420 suscripciones).
 class Matriz extends ConsumerWidget {
   const Matriz({
     super.key,
@@ -144,17 +134,15 @@ class Matriz extends ConsumerWidget {
 
   final GrillaRol grilla;
 
-  /// Ya filtrados por mes y por búsqueda. La grilla completa sigue en [grilla]
-  /// porque los contadores —cobertura del día, turnos del año— se calculan sobre
-  /// el rol: filtrar la vista no cambia cuántos sábados le tocan a alguien.
+  /// Ya filtrados por mes y búsqueda. La grilla completa sigue en [grilla]:
+  /// cobertura del día y turnos del año se calculan sobre el rol entero.
   final List<SabadoEntity> sabados;
   final List<ParticipanteTurnoEntity> participantes;
 
   final MedidasGrilla medidas;
 
-  /// Lo que mide el panel. Con el filtro en un mes son cuatro o cinco columnas
-  /// y en un monitor sobra medio metro de blanco: de aquí sale cuánto puede
-  /// crecer cada columna antes de que crecer deje de servir.
+  /// Lo que mide el panel: con un mes filtrado (4 o 5 columnas) en un monitor
+  /// sobra medio metro de blanco; de aquí sale cuánto puede crecer cada columna.
   final double anchoDisponible;
 
   final ScrollController hCuerpo;
@@ -197,7 +185,7 @@ class Matriz extends ConsumerWidget {
     final tabla = Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        // ── encabezado: esquina fija + fechas que scrollean ──────────────
+        // Encabezado: esquina fija + fechas que scrollean
         SizedBox(
           height: m.altoCabecera,
           child: Row(
@@ -229,7 +217,7 @@ class Matriz extends ConsumerWidget {
         ),
         const Divider(height: 1),
 
-        // ── cuerpo: nombres fijos + celdas ───────────────────────────────
+        // Cuerpo: nombres fijos + celdas
         Expanded(
           child: Row(
             children: [
@@ -269,8 +257,7 @@ class Matriz extends ConsumerWidget {
                                 sabado: s,
                                 ancho: anchoCelda,
                                 alto: m.altoFila,
-                                // Se resuelve por FILA y no por celda: el
-                                // permiso depende de la persona, no del sábado.
+                                // Se resuelve por FILA y no por celda: el permiso depende de la persona.
                                 puedeEditar: permiso.puedeCon(p.codEmpleado),
                               ),
                           ],
@@ -311,22 +298,13 @@ class Matriz extends ConsumerWidget {
   }
 }
 
-/// La esquina fija de arriba a la izquierda. Mide exactamente lo que mide la
-/// columna de nombres, así que es el punto por donde se la puede verificar.
+/// La esquina fija de arriba a la izquierda; mide lo mismo que la columna de
+/// nombres, así que sirve para verificarla.
 ///
-/// **Lleva dos rótulos porque la columna muestra dos cosas.** El nombre siempre
-/// tuvo su título; el número del final —«26/26»— no tenía ninguno, y así es
-/// ilegible: quien abre la grilla la ve filtrada por agosto, cuenta cinco
-/// columnas de sábado, lee 26 al lado del nombre y no hay NADA en pantalla que
-/// diga que ese 26 es del año entero. El rótulo va alineado a la derecha, contra
-/// el mismo borde que los números, que es donde se lo busca.
-///
-/// **Abreviado, y el texto completo en el tooltip.** Aquí el ancho es prestado:
-/// con «Todo el año» la columna vuelve a su mínimo —150 px en tablet— y cada
-/// pixel que gane el rótulo se lo saca al apellido, que es la pérdida que todo
-/// el reparto de anchos está escrito para evitar. Un tooltip no paga ancho, así
-/// que la explicación entera —y el criterio del rojo, que no está escrito en
-/// ningún otro lado— va ahí.
+/// Dos rótulos abreviados: el «26/26» final necesita título (filtrada por
+/// agosto, nada dice que es del año entero). Con «Todo el año» la columna vuelve
+/// a 150 px en tablet, así que el texto completo y el criterio del rojo van al
+/// tooltip.
 class _Esquina extends StatelessWidget {
   const _Esquina({required this.ancho});
   final double ancho;
@@ -349,8 +327,8 @@ class _Esquina extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: Esp.m),
       child: Row(
         children: [
-          // Con Expanded y ellipsis: si algún día el rótulo de la derecha no
-          // entra, se corta el título de la columna y no se desborda la fila.
+          // Expanded + ellipsis: si el rótulo de la derecha no entra, se corta el título
+          // y no se desborda la fila.
           Expanded(
             child: Text(
               'Personal',
@@ -361,8 +339,8 @@ class _Esquina extends StatelessWidget {
             ),
           ),
           const SizedBox(width: Esp.s),
-          // Apagado y no en negrita: titula una columna de apoyo, no compite
-          // con el nombre, que es lo que se escanea.
+          // Apagado y no en negrita: titula una columna de apoyo y no compite con el
+          // nombre, que es lo que se escanea.
           Text('Sáb. año', style: context.apagado()),
         ],
       ),
@@ -375,22 +353,10 @@ enum _AccionColumna { exportar, evento, puente }
 
 /// Una columna: el día, el mes y cuánta gente viene.
 ///
-/// **Tocarla abre un menú de dos entradas, y eso es una decisión de espacio.**
-/// La celda mide entre 42 y 64 px y ya lleva tres renglones —día, mes y
-/// cobertura—: no entra un botón, ni medio. Un ícono de 12 px sería un objetivo
-/// táctil que no cumple con nada y encima taparía el número de cobertura, que es
-/// el dato por el que se escanea esta fila. Un menú, en cambio, **no paga
-/// ancho**: se dibuja en el Overlay, cada acción va con su texto completo y no
-/// hay que adivinarla.
-///
-/// Se descartó dejar el toque como estaba —abrir el evento— y colgar el PDF de
-/// un toque largo o del botón derecho: eso es exactamente el gesto que nadie
-/// descubre, y este reporte es lo que RR.HH. va a usar todas las semanas.
-///
-/// El precio es un toque más para «declarar el evento», que se usa unas pocas
-/// veces al año contra las 52 que se exporta. Y a cambio la cabecera deja de
-/// estar muerta cuando el rol está CERRADO: hoy no responde al toque, y el PDF
-/// de un sábado ya pasado se sigue necesitando.
+/// **Tocarla abre un menú de dos entradas, por espacio:** la celda (42 a 64 px)
+/// ya lleva tres renglones y un ícono de 12 px no sería un objetivo táctil
+/// válido. Un menú no paga ancho y, a diferencia de un toque largo, se
+/// descubre; sigue vivo con el rol CERRADO (el PDF se sigue necesitando).
 class CabeceraSabado extends ConsumerStatefulWidget {
   const CabeceraSabado({
     super.key,
@@ -412,9 +378,9 @@ class CabeceraSabado extends ConsumerStatefulWidget {
 }
 
 class _CabeceraSabadoState extends ConsumerState<CabeceraSabado> {
-  /// Mientras el PDF se arma. **Vive aquí y no adentro del menú** porque el menú
-  /// se cierra al elegir: si el estado se fuera con él, el segundo toque
-  /// encontraría el ítem habilitado otra vez y saldrían dos PDF del mismo día.
+  /// Mientras el PDF se arma. **Vive aquí y no en el menú**: el menú se cierra al
+  /// elegir y el segundo toque encontraría el ítem habilitado (dos PDF del mismo
+  /// día).
   bool _ocupado = false;
 
   @override
@@ -427,9 +393,8 @@ class _CabeceraSabadoState extends ConsumerState<CabeceraSabado> {
     // El sábado corto es el que hay que mirar: falta gente ese día.
     final corto = widget.objetivo > 0 && widget.cobertura < widget.objetivo;
 
-    // `PopupMenuButton` con `child` es exactamente `Tooltip > InkWell > child`,
-    // sin relleno ni tamaño mínimo: reemplaza al par que había aquí sin mover un
-    // pixel de la columna. (Con `icon` en vez de `child` sí impondría 48 px.)
+    // `PopupMenuButton` con `child` es `Tooltip > InkWell > child` sin relleno ni
+    // tamaño mínimo, sin mover un pixel de la columna (con `icon` impondría 48 px).
     return PopupMenuButton<_AccionColumna>(
       tooltip: '${_tooltip()}\nToca para exportar el PDF o marcar el evento.',
       onSelected: (a) {
@@ -455,8 +420,8 @@ class _CabeceraSabadoState extends ConsumerState<CabeceraSabado> {
                         : 'Exportar el PDF de este sábado',
               ),
             ),
-            // Igual que antes: sobre un rol cerrado no se declara nada. Lo que
-            // cambia es que ahora la cabecera sigue sirviendo para lo otro.
+            // Sobre un rol cerrado no se declara nada; la cabecera sigue sirviendo para lo
+            // otro.
             if (!widget.grilla.rol.estaCerrado)
               const PopupMenuItem<_AccionColumna>(
                 value: _AccionColumna.evento,
@@ -465,11 +430,9 @@ class _CabeceraSabadoState extends ConsumerState<CabeceraSabado> {
                   texto: 'Declarar el evento del día',
                 ),
               ),
-            // El puente cuelga de aquí y no de un botón propio porque es de la
-            // misma familia que «declarar el evento»: las dos son decisiones
-            // sobre ESE día. Quién puede lo decide el servidor con el token; la
-            // entrada se ofrece igual porque esconderla dejaría a RR.HH.
-            // buscando dónde está.
+            // El puente cuelga de aquí y no de un botón propio: es de la misma familia que
+            // «declarar el evento» (decisiones sobre ESE día). Quién puede lo decide el
+            // servidor con el token; se ofrece igual para que RR.HH. no busque dónde está.
             if (!widget.grilla.rol.estaCerrado)
               const PopupMenuItem<_AccionColumna>(
                 value: _AccionColumna.puente,
@@ -493,9 +456,8 @@ class _CabeceraSabadoState extends ConsumerState<CabeceraSabado> {
             right: BorderSide(color: cs.outlineVariant, width: .5),
           ),
         ),
-        // Tres renglones en 48 px: con el interlineado por defecto (~1.45) se
-        // pasan por 4 px. Se compacta a 1.1, que es lo que corresponde a un
-        // dato tabular de una sola línea.
+        // Tres renglones en 48 px: con el interlineado por defecto (~1.45) se pasan por
+        // 4 px; se compacta a 1.1, propio de un dato tabular de una línea.
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           mainAxisSize: MainAxisSize.min,
@@ -507,11 +469,9 @@ class _CabeceraSabadoState extends ConsumerState<CabeceraSabado> {
                 context,
               ).textTheme.labelSmall?.copyWith(height: 1.1),
             ),
-            // La ruedita ocupa el lugar de la cobertura mientras dura, y ahí
-            // porque es la columna que se tocó: el menú ya se cerró y sin esto
-            // no queda NADA en pantalla diciendo que algo está pasando. Mide 12
-            // px, menos que el renglón que reemplaza, así que la cabecera no
-            // crece.
+            // La ruedita ocupa el lugar de la cobertura mientras dura (el menú ya se
+            // cerró y sin esto nada indica que algo pasa). Mide 12 px, menos que el
+            // renglón que reemplaza, así que la cabecera no crece.
             if (_ocupado)
               const SizedBox(
                 width: 12,
@@ -586,17 +546,14 @@ class _ItemMenu extends StatelessWidget {
   Widget build(BuildContext context) => Row(
     mainAxisSize: MainAxisSize.min,
     children: [
-      // El color sale del estilo de texto que pone el propio `PopupMenuItem`,
-      // que es quien sabe si el ítem está deshabilitado. Sin esto el ícono
-      // queda a full color al lado de un texto gris, y el ítem parece
-      // apretable mientras el PDF se está generando.
+      // El color sale del estilo del propio `PopupMenuItem`, que sabe si está
+      // deshabilitado; si no, el ícono queda a full color junto a un texto gris y
+      // el ítem parece apretable mientras el PDF se genera.
       Icon(icono, size: 18, color: DefaultTextStyle.of(context).style.color),
       const SizedBox(width: Esp.m),
-      // **Flexible y no `Text` suelto.** El menú de Material se dibuja en pasos
-      // fijos de ancho y aquí se queda en 256 px: «Exportar el PDF de este
-      // sábado» con el ícono adelante no entra en un renglón y desbordaba de
-      // verdad —lo agarró el test—. Así se parte en dos y no se pierde texto,
-      // que es justo lo que el menú vino a comprar.
+      // **Flexible y no `Text` suelto:** el menú de Material se dibuja en pasos fijos
+      // de ancho (aquí 256 px) y «Exportar el PDF de este sábado» con el ícono
+      // desbordaba de verdad (lo detectó el test); así se parte en dos sin perder texto.
       Flexible(child: Text(texto)),
     ],
   );
@@ -619,42 +576,26 @@ class FilaNombre extends StatelessWidget {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final meta = participante.turnosObjetivo;
-    // Una diferencia de 1 es normal cuando el año tiene 53 sábados; de 2 en
-    // adelante ya hay un desequilibrio que mirar.
+    // Una diferencia de 1 es normal si el año tiene 53 sábados; de 2 en adelante
+    // hay un desequilibrio que mirar.
     final desviado = meta > 0 && (turnos - meta).abs() > 1;
 
-    // Para qué lado y por cuánto. Sin esto el rojo es una alarma sin causa: no
-    // se ve si a esa persona le faltan sábados o le sobran, y con 28/26 —que
-    // también se pinta— la lectura intuitiva es la contraria a la verdadera.
-    // `desviado` exige más de 1, así que aquí la diferencia es 2 o más y el
-    // plural siempre cae bien.
+    // Para qué lado y por cuánto: sin esto el rojo es una alarma sin causa (con
+    // 28/26, que también se pinta, la lectura intuitiva sería la contraria).
+    // `desviado` exige más de 1, así que aquí la diferencia es 2 o más y el plural
+    // siempre cae bien.
     final diferencia = turnos - meta;
 
-    // **La sucursal va al tooltip, y esto es una decision, no una comodidad.**
-    //
-    // La columna se ensancha, pero no sobra: `anchoParaNombres` pide exactamente
-    // 18 (insignia) + 8 + el apellido mas largo MEDIDO con la tipografia real +
-    // 8 + 46 (el contador) + 24 (padding). Pide lo que el nombre necesita y ni
-    // un pixel mas, asi que por construccion no hay hueco para nada mas. Y ese
-    // ideal solo se consigue con un mes filtrado: con «Todo el año» son 52
-    // columnas, `repartir` no tiene sobrante que dar y la columna vuelve a su
-    // minimo de 210 px, de los cuales 104 ya estan tomados — al nombre le quedan
-    // 106 y «BALDERRAMA CRISTHIAN ALEJANDRO» ya se corta ahi. Robarle ancho al
-    // apellido para escribir «CENTRAL» es exactamente la perdida que el reparto
-    // esta escrito para evitar: dos personas distintas que se ven iguales.
-    //
-    // El segundo renglon tampoco: la fila mide 34 px y duplicarla es mostrar la
-    // mitad de la gente por pantalla en una tabla de 87 filas.
-    //
-    // Y ademas la pregunta de esta vista es «¿como quedo el año?», que se
-    // contesta escaneando columnas; «¿de donde es este?» es una consulta de una
-    // persona a la vez, que es justo lo que un hover contesta bien. El reparto
-    // por sucursal del rol entero esta en el encabezado, una sola vez.
+    // **La sucursal va al tooltip (decisión):** `anchoParaNombres` pide 18 (insignia)
+    // + 8 + apellido MEDIDO + 8 + 46 (contador) + 24, ni un pixel de sobra. Con
+    // «Todo el año» la columna vuelve a su mínimo de 210 px y al nombre le quedan
+    // 106 (104 tomados): «BALDERRAMA CRISTHIAN ALEJANDRO» ya se corta. Un segundo
+    // renglón duplicaría la fila de 34 px (87 filas) y esta vista responde «¿cómo
+    // quedó el año?», no «¿de dónde es?» (eso lo contesta el hover).
 
-    // El contador se escribe con la misma función que «Grupos»: es el mismo
-    // número y tiene que leerse igual en las dos pantallas. Aquí además el
-    // tooltip es el único lugar donde el «26/26» se explica entero, así que
-    // sigue una línea que cuenta qué significa el color —o su ausencia—.
+    // El contador se escribe con la misma función que «Grupos» (mismo número, misma
+    // lectura). El tooltip es el único lugar donde el «26/26» se explica entero,
+    // con una línea sobre qué significa el color, o su ausencia.
     return Tooltip(
       message: [
         participante.nombreRol,
@@ -703,10 +644,8 @@ class FilaNombre extends StatelessWidget {
   }
 }
 
-/// Un cruce persona × sábado.
-///
-/// Si no hay celda, esa persona está LIBRE y el cuadrito va vacío. Ese vacío es
-/// un dato, no un «todavía no cargó».
+/// Un cruce persona × sábado. Sin celda, esa persona está LIBRE y el cuadrito
+/// va vacío: ese vacío es un dato, no un «todavía no cargó».
 class CeldaMatriz extends StatelessWidget {
   const CeldaMatriz({
     super.key,
@@ -734,9 +673,9 @@ class CeldaMatriz extends StatelessWidget {
     final celda = grilla.celda(participante.idParticipante, sabado.idSabado);
 
     final cuadro = InkWell(
-      // Sin permiso la celda queda muerta, igual que con el rol cerrado. El
-      // servidor rechaza igual (error 29 de p_abm_trs_Asignacion); esto evita
-      // el camino de abrir la hoja, elegir una letra y recién ahí enterarse.
+      // Sin permiso la celda queda muerta, como con el rol cerrado. El servidor
+      // rechaza igual (error 29 de p_abm_trs_Asignacion); esto evita abrir la hoja,
+      // elegir una letra y enterarse recién ahí.
       onTap:
           (grilla.rol.estaCerrado || !puedeEditar)
               ? null
@@ -757,10 +696,9 @@ class CeldaMatriz extends StatelessWidget {
             bottom: BorderSide(color: cs.outlineVariant, width: .5),
           ),
         ),
-        // Sin `alignment` en el Container: con el, el hijo recibe restricciones
-        // sueltas y el Stack se encoge al tamanio de la letra, que es
-        // exactamente como el punto terminaba encima del glifo. Asi el Stack
-        // ocupa la celda entera y la esquinita cae donde no hay nada.
+        // Sin `alignment` en el Container: con él, el hijo recibe restricciones sueltas
+        // y el Stack se encoge a la letra (el punto terminaba sobre el glifo). Así el
+        // Stack ocupa la celda entera y la esquinita cae donde no hay nada.
         child: Stack(
           children: [
             Center(child: LetraDeCelda(celda: celda)),
@@ -770,8 +708,8 @@ class CeldaMatriz extends StatelessWidget {
                 right: 0,
                 child: MarcaDeIntervencion(color: cs.primary),
               ),
-            // Esquina opuesta a la de intervención: una celda de cambio lleva
-            // las dos marcas siempre, porque la escribe trs_sp_corregirCelda.
+            // Esquina opuesta a la de intervención: una celda de cambio lleva las dos marcas
+            // siempre (la escribe trs_sp_corregirCelda).
             if (celda?.hayCambio == true)
               Positioned(
                 bottom: 0,
@@ -783,20 +721,10 @@ class CeldaMatriz extends StatelessWidget {
       ),
     );
 
-    // El `Tooltip` sólo se construye cuando hay algo que decir. En una grilla
-    // de 85 personas × 52 sábados son 4.420 celdas, y envolverlas todas para
-    // que el 1% muestre un texto es pagar el árbol de widgets entero por nada.
-    //
-    // En el teléfono la grilla ni se dibuja —esa vista es `AgendaSabado`—, así
-    // que este tooltip es para el escritorio: se ve al pasar el mouse. El dato
-    // completo vive igual en el editor de la celda, a un toque de aquí, que es
-    // lo que hace que no dependa del hover.
-    //
-    // `observacion` viaja desde `trs_Asignacion.observacion` hace rato (la
-    // escribe `trs_sp_corregirCelda`, origen='M') pero nadie la mostraba aquí
-    // — sólo el cambio tenía tooltip. Es el motivo por el que RR.HH. no veía
-    // POR QUÉ quedó excusada una celda (por horario biométrico o por
-    // cualquier otra corrección manual) sin abrir el editor.
+    // El `Tooltip` sólo se construye si hay algo que decir (envolver las 4.420
+    // celdas es pagar el árbol entero); es para el mouse, porque en teléfono no se
+    // dibuja la grilla. Muestra `observacion` (`trs_sp_corregirCelda`, origen='M')
+    // para que RR.HH. vea POR QUÉ quedó excusada una celda sin abrir el editor.
     final texto = [
       if (celda?.hayCambio == true) celda!.cambioTexto,
       if ((celda?.observacion ?? '').isNotEmpty) celda!.observacion,
@@ -806,8 +734,8 @@ class CeldaMatriz extends StatelessWidget {
   }
 }
 
-/// Qué significa cada letra, con su color. Incluye el vacío, que es el estado
-/// más frecuente y el único que no tiene letra.
+/// Qué significa cada letra, con su color. Incluye el vacío, el estado más
+/// frecuente y el único sin letra.
 class LeyendaDeEstados extends StatelessWidget {
   const LeyendaDeEstados({super.key, required this.grilla});
   final GrillaRol grilla;
@@ -835,8 +763,8 @@ class LeyendaDeEstados extends StatelessWidget {
                   borderRadius: BorderRadius.circular(Esp.xs),
                   border: Border.all(color: cs.outlineVariant),
                 ),
-                // La leyenda muestra la letra dentro de su color, igual que la
-                // grilla: asi se aprende mirando una sola cosa.
+                // La letra dentro de su color, igual que la grilla: se aprende mirando una sola
+                // cosa.
                 child: Text(
                   e.codigoExcel,
                   style: Theme.of(context).textTheme.labelSmall?.copyWith(
@@ -855,8 +783,7 @@ class LeyendaDeEstados extends StatelessWidget {
               style: Theme.of(context).textTheme.labelSmall,
             ),
             const SizedBox(width: Esp.l),
-            // La esquinita es una convención más: sin explicarla parece un
-            // defecto de dibujo.
+            // La esquinita es una convención más: sin explicarla parece un defecto.
             SizedBox(
               width: 16,
               height: 16,
@@ -883,10 +810,8 @@ class LeyendaDeEstados extends StatelessWidget {
               style: Theme.of(context).textTheme.labelSmall,
             ),
             const SizedBox(width: Esp.l),
-            // La segunda esquinita, por el mismo motivo que la primera. Y con
-            // más razón: las dos aparecen JUNTAS en toda celda de cambio —una
-            // arriba y otra abajo—, así que sin esta entrada la de al lado
-            // queda explicando la mitad de lo que se ve.
+            // La segunda esquinita: las dos aparecen JUNTAS en toda celda de cambio (una
+            // arriba y otra abajo); sin esta entrada la otra explica sólo la mitad.
             SizedBox(
               width: 16,
               height: 16,

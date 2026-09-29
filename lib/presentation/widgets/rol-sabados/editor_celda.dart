@@ -9,10 +9,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// Abre el editor de una celda.
 ///
-/// Vive suelto y no dentro de la matriz porque las dos vistas —la matriz del
-/// escritorio y la agenda del teléfono— editan exactamente lo mismo. Si cada una
-/// tuviera su propio editor, tarde o temprano una arreglaría un caso que la otra
-/// no.
+/// Vive suelto porque la matriz del escritorio y la agenda del teléfono editan
+/// exactamente lo mismo; con dos editores, un caso se arreglaría en uno solo.
 Future<void> mostrarEditorDeCelda({
   required BuildContext context,
   required GrillaRol grilla,
@@ -79,7 +77,7 @@ class EditorDeCeldaState extends ConsumerState<EditorDeCelda> {
             : '${f.day.toString().padLeft(2, '0')}/'
                 '${f.month.toString().padLeft(2, '0')}/${f.year}';
 
-    // 'L' no es un estado: liberar BORRA la fila, y por eso va en su propio botón.
+    // 'L' no es un estado: liberar BORRA la fila, por eso va en su propio botón.
     final letras =
         widget.grilla.estados.values
             .where((e) => e.estado == 'A' && e.codigoExcel != 'L')
@@ -105,11 +103,9 @@ class EditorDeCeldaState extends ConsumerState<EditorDeCelda> {
             style: Theme.of(context).textTheme.bodySmall,
           ),
 
-          // Va arriba, pegado al nombre, y no abajo con el origen: es la
-          // respuesta a «¿por qué esta celda dice lo que dice?», así que se
-          // lee ANTES de tocar los chips y no después. El motivo del cambio ya
-          // está en el campo Motivo —`trs_sp_corregirCelda` lo copia—, así que
-          // aquí va sólo lo que faltaba: con quién.
+          // Arriba, junto al nombre: responde «¿por qué dice esto?» antes de tocar los
+          // chips. El motivo ya está en el campo Motivo (`trs_sp_corregirCelda` lo
+          // copia); aquí va sólo con quién.
           if (widget.celda?.hayCambio == true) ...[
             const SizedBox(height: Esp.s),
             Row(
@@ -226,15 +222,9 @@ class EditorDeCeldaState extends ConsumerState<EditorDeCelda> {
 
   /// Guarda, cierra la hoja y avisa.
   ///
-  /// **Antes esto tenía su propio `try/catch` con dos `ScaffoldMessenger`**, o
-  /// sea que el módulo avisaba de dos maneras distintas: por aquí y por
-  /// [ejecutarAccion]. Cuando los avisos pasaron a dibujarse por encima de los
-  /// diálogos, estos dos se habrían quedado abajo —justo los que salen desde una
-  /// hoja modal, que es donde peor se ve—. Un solo camino para avisar es lo que
-  /// hace que un arreglo así alcance a todo el módulo de una vez.
-  ///
-  /// Lo único que queda propio es el `_guardando`: se apaga sólo si la cosa
-  /// falló, porque si salió bien la hoja ya se cerró.
+  /// Los avisos van por [ejecutarAccion] (se dibujan sobre los diálogos), no por
+  /// un `ScaffoldMessenger` propio. `_guardando` se apaga sólo si falla: si salió
+  /// bien, la hoja ya se cerró.
   Future<void> _ejecutar(Future<void> Function() accion, String exito) async {
     setState(() => _guardando = true);
     final ok = await ejecutarAccion(

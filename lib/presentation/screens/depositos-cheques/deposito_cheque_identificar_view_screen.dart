@@ -15,25 +15,6 @@ import 'package:image_picker/image_picker.dart';
 import '../../../core/state/depositos_cheques_provider.dart';
 import '../../../core/utils/responsive_utils_bosque.dart';
 
-// Un modelo simple para representar documentos
-class DocumentoDisponible {
-  final String numero;
-  final int numeroFactura;
-  final DateTime fecha;
-  final double total;
-  final double saldo;
-  bool seleccionado;
-
-  DocumentoDisponible({
-    required this.numero,
-    required this.numeroFactura,
-    required this.fecha,
-    required this.total,
-    required this.saldo,
-    this.seleccionado = false,
-  });
-}
-
 final depositosChequesIdentificarViewProvider =
     StateNotifierProvider<DepositosChequesNotifier, DepositosChequesState>(
       (ref) => DepositosChequesNotifier(ref),

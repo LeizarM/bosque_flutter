@@ -9,21 +9,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// La decisión de un jefe sobre una persona en un sábado: **viene o no viene**.
 ///
-/// Vive suelta —como `mostrarEditorDeCelda`— porque se abre desde dos lugares:
-/// la lista del sábado elegido y el panorama de ocho columnas. Si cada uno
-/// tuviera su propia hoja, tarde o temprano una aceptaría algo que la otra no.
-///
-/// **Por qué sólo dos salidas.** El jefe no edita la grilla: decide sobre su
-/// gente. 'V', 'B', 'X' y 'P' los carga RR.HH. desde el legajo, y dejarlos a un
-/// tap de distancia sería invitar a que alguien "arregle" una vacación desde
-/// aquí. Lo que no se puede tocar ya viene bloqueado desde la lista, así que si
-/// esta hoja se abrió es porque la celda es programable.
-///
-/// **Por qué no hay «Anular».** `trs_sp_programar` anula por (jefe, sábado):
-/// borra TODAS las celdas de esa programación de una, y desde el teléfono no
-/// hay forma de listar a quiénes alcanza antes de apretar. Corregir una
-/// decisión es volver a decidir sobre esa persona, que es exactamente lo que
-/// hacen los dos botones de abajo.
+/// Vive suelta (como `mostrarEditorDeCelda`): se abre desde la lista y desde el
+/// panorama. **Sólo dos salidas:** 'V', 'B', 'X' y 'P' los carga RR.HH. y esas
+/// celdas ya llegan bloqueadas. **No hay «Anular»:** `trs_sp_programar` anula
+/// por (jefe, sábado) y borra TODAS las celdas de esa programación; corregir es
+/// volver a decidir.
 Future<void> mostrarDecisionDelJefe({
   required BuildContext context,
   required int idRol,
@@ -71,8 +61,8 @@ class _DecisionDelJefeState extends ConsumerState<_DecisionDelJefe> {
   @override
   void initState() {
     super.initState();
-    // Si ya hay una decisión escrita, su motivo es el punto de partida: casi
-    // siempre se corrige la letra y el motivo sigue siendo el mismo.
+    // Con decisión previa, su motivo es el punto de partida: casi siempre se
+    // corrige la letra y el motivo sigue igual.
     _motivo.text = widget.celda?.observacion ?? '';
   }
 
@@ -87,8 +77,8 @@ class _DecisionDelJefeState extends ConsumerState<_DecisionDelJefe> {
     final cs = Theme.of(context).colorScheme;
     final actual = widget.celda?.codigoExcel;
 
-    // Sin celda es LIBRE: en este modelo el libre es la ausencia de la fila, no
-    // una letra. Para el jefe eso y una 'L' significan lo mismo.
+    // Sin celda es LIBRE (ausencia de fila, no una letra): para el jefe equivale
+    // a una 'L'.
     final vieneAhora = actual == '1';
     final libreAhora = actual == null || actual == 'L';
 
@@ -117,14 +107,9 @@ class _DecisionDelJefeState extends ConsumerState<_DecisionDelJefe> {
             ),
             const SizedBox(height: Esp.s),
 
-            // La cobertura del día está en memoria y es el número que evita que
-            // treinta jefes vacíen el mismo sábado sin enterarse.
-            //
-            // Dice «todo el rol» y no «X de Y» a propósito: esta hoja se abre
-            // desde una barra que arriba muestra «tu equipo: vienen 3 de 6», y
-            // dos cifras de universos distintos con el mismo molde se leen como
-            // la misma. Aquí el denominador tampoco es «cuántos hay» sino
-            // «cuántos hacen falta», que es otra cosa todavía.
+            // Cobertura del día (en memoria): evita que treinta jefes vacíen el mismo
+            // sábado. Dice «todo el rol» y no «X de Y» porque la barra de arriba muestra
+            // «tu equipo: vienen 3 de 6»; aquí el denominador es «cuántos hacen falta».
             Text(
               objetivo > 0
                   ? 'Todo el rol ese sábado: vienen $cobertura · '
@@ -140,9 +125,8 @@ class _DecisionDelJefeState extends ConsumerState<_DecisionDelJefe> {
             ),
 
             const SizedBox(height: Esp.l),
-            // Dos botones apilados y a todo el ancho, no uno al lado del otro:
-            // en 360 px la fila deja 170 px por botón y «Que no venga» con el
-            // icono no entra sin recortarse.
+            // Botones apilados y a todo el ancho: en 360 px la fila deja 170 px por botón
+            // y «Que no venga» con el icono no entra sin recortarse.
             _BotonGrande(
               icono: Icons.check_circle_outline,
               texto: 'Que venga',
@@ -204,8 +188,8 @@ class _DecisionDelJefeState extends ConsumerState<_DecisionDelJefe> {
     );
   }
 
-  /// Días entre hoy y el sábado, contados por fecha y no por horas: avisar el
-  /// viernes a las 23 y el viernes a las 8 es "un día" en los dos casos.
+  /// Días entre hoy y el sábado, por fecha y no por horas: el viernes a las 23 y
+  /// a las 8 es "un día" en ambos casos.
   int? _diasHasta(DateTime? fecha) {
     if (fecha == null) return null;
     final hoy = DateTime.now();
@@ -240,9 +224,8 @@ class _DecisionDelJefeState extends ConsumerState<_DecisionDelJefe> {
   }
 }
 
-/// Un botón de 56 px de alto, del ancho de la hoja. Marcado = es lo que dice la
-/// grilla hoy, así que apretarlo de nuevo no cambia nada… pero se deja
-/// habilitado: reafirmar deja el motivo escrito, y eso sí sirve.
+/// Botón de 56 px de alto y del ancho de la hoja. Marcado = lo que dice la
+/// grilla hoy; se deja habilitado porque reafirmar deja el motivo escrito.
 class _BotonGrande extends StatelessWidget {
   const _BotonGrande({
     required this.icono,
@@ -277,11 +260,9 @@ class _BotonGrande extends StatelessWidget {
 
 /// El aviso de que se está decidiendo sobre la hora.
 ///
-/// **Va etiquetado como estimación a propósito.** El número que queda guardado
-/// en `trs_Programacion.diasAntelacion` lo calcula el servidor con su propio
-/// reloj; éste sale del teléfono, que puede tener la fecha corrida o estar en
-/// otro huso. Sirve para pensarlo dos veces antes de apretar, no para discutir
-/// después si el aviso fue tardío.
+/// Va etiquetado como estimación: `trs_Programacion.diasAntelacion` lo calcula
+/// el servidor con su reloj; éste sale del teléfono (fecha o huso pueden estar
+/// corridos). Sirve para pensarlo dos veces, no para discutir si fue tardío.
 class _AvisoTardio extends StatelessWidget {
   const _AvisoTardio({required this.dias});
   final int dias;

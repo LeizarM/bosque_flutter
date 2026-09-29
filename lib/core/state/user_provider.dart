@@ -38,27 +38,20 @@ final asyncUserProvider = FutureProvider<LoginEntity?>((ref) async {
 });
 
 class UserStateNotifier extends StateNotifier<LoginEntity?> {
-  /// `late` para que se construya recién cuando alguien lo use.
-  ///
-  /// `AuthRepositoryImpl` levanta el cliente HTTP en un inicializador de campo,
-  /// así que sin el `late` basta con *leer* `userProvider` para armar la red
-  /// entera. En la app da igual porque eso ya pasó al iniciar sesión, pero
-  /// cualquier pantalla que lo observe queda atada a que haya plataforma
-  /// debajo. Sólo lo usan `getUsers` y `changePassword`.
+  /// `late` para construirlo solo cuando alguien lo use: `AuthRepositoryImpl`
+  /// levanta el cliente HTTP en un inicializador de campo, y sin `late` bastaría
+  /// *leer* `userProvider` para armar la red entera (ataría cualquier pantalla que
+  /// lo observe a que haya plataforma). Solo lo usan `getUsers` y `changePassword`.
   late final AuthRepository _authRepository = AuthRepositoryImpl();
 
   UserStateNotifier() : super(null) {
     _loadUserFromStorage(); // Cargar datos del usuario al inicializar
   }
 
-  /// Igual que el de arriba pero **sin tocar el storage seguro**.
-  ///
-  /// El constructor normal arranca `getUserData()` con un `timeout` de 4 s, y
-  /// en un widget test ese Timer queda pendiente cuando se desmonta el árbol:
-  /// el framework lo denuncia como «A Timer is still pending» y da el caso por
-  /// fallado. Como el problema lo hereda **cualquier** pantalla que observe
-  /// `userProvider`, la costura vive aquí y no repetida en cada archivo de
-  /// prueba. En producción nadie lo llama.
+  /// Igual que el constructor normal pero **sin tocar el storage seguro**: aquél
+  /// arranca `getUserData()` con un `timeout` de 4 s y en un widget test ese Timer
+  /// queda pendiente al desmontar el árbol («A Timer is still pending»). Vive aquí
+  /// y no repetido en cada prueba; en producción nadie lo llama.
   UserStateNotifier.sinStorage(LoginEntity? inicial) : super(inicial);
 
   Future<void> _loadUserFromStorage() async {
@@ -114,10 +107,9 @@ class UserStateNotifier extends StateNotifier<LoginEntity?> {
     final storage = SecureStorage();
     await storage.clearSession();
 
-    // NOTA: la limpieza del estado de permisos (buttonPermissionsProvider) la
-    // hace el llamador que posee el `ref` REAL de la app (el callback de 401 en
-    // router.dart y los handlers de logout). Antes se creaba aquí un
-    // ProviderContainer() aislado que NO afectaba el estado vivo de la app.
+    // NOTA: la limpieza del estado de permisos (buttonPermissionsProvider) la hace
+    // el llamador que posee el `ref` real de la app (callback de 401 en router.dart
+    // y handlers de logout); un ProviderContainer() aquí no afectaría el estado vivo.
   }
 
   Future<int> getCodCiudad() async {
@@ -136,8 +128,7 @@ class UserStateNotifier extends StateNotifier<LoginEntity?> {
     if (state != null) {
       return state!.token;
     }
-    // Fallback al storage, con null-safety (antes usaba userDataJson! y '?? 0',
-    // que crasheaba o devolvía un int en un Future<String>).
+    // Fallback al storage, con null-safety.
     final storage = SecureStorage();
     final userDataJson = await storage.getUserData();
     if (userDataJson == null) return '';
@@ -244,7 +235,6 @@ class UserStateNotifier extends StateNotifier<LoginEntity?> {
 
       return users;
     } catch (e) {
-      //console('Error al obtener usuarios: $e');
       return [];
     }
   }

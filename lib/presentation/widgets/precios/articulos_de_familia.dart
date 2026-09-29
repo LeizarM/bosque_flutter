@@ -1,15 +1,10 @@
-/// Los articulos del catalogo (tpr_articulo) que pertenecen a una familia: son
-/// los que cambian de precio cuando la familia se reprecia.
+/// Los artículos del catálogo (tpr_articulo) de una familia: los que cambian de
+/// precio cuando la familia se reprecia. Se ven en el paso de familias y en el
+/// editor de la familia.
 ///
-/// Lo pidio el usuario al armar una propuesta por familias: se elegia la
-/// familia y se le cargaba el costo sin ver a que articulos iba a alcanzar.
-/// Aca se ven en el paso de familias (el boton con la cantidad abre la lista)
-/// y en el editor de la familia.
-///
-/// **De donde sale el precio de cada articulo.** La propuesta guarda el precio
-/// por tonelada de cada lista; al aprobarla, cada articulo toma ese precio
-/// dividido por su UTM (unidades por tonelada), igual que en la vista
-/// preliminar. Por eso se muestra la UTM al lado de cada uno.
+/// Precio por artículo: la propuesta guarda el precio por tonelada de cada lista;
+/// al aprobarla, cada artículo toma ese precio dividido por su UTM (unidades por
+/// tonelada), igual que la vista preliminar. Por eso se muestra la UTM.
 library;
 
 import 'package:flutter/material.dart';

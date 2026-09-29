@@ -1,4 +1,3 @@
-// Destino final: lib/core/state/dependientes_jefe_provider.dart
 import 'package:bosque_flutter/data/repositories/dependientes_jefe_impl.dart';
 import 'package:bosque_flutter/domain/entities/dependiente_cargo_entity.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -10,8 +9,8 @@ class DependientesJefeState {
   final List<DependienteCargoEntity> dependientes;
   final bool cargando;
 
-  /// Si alguna lectura terminó bien. Sin esto, una lectura fallida se veía
-  /// como "No hay cargos para este filtro" (auditoría del 2026-09-11).
+  /// Si alguna lectura terminó bien. Sin esto, una lectura fallida se veía como
+  /// "No hay cargos para este filtro".
   final bool cargado;
 
   /// Por qué falló la última lectura; queda hasta la próxima buena.
@@ -183,16 +182,11 @@ final dependientesJefeProvider = StateNotifierProvider.autoDispose<
 >((ref) => DependientesJefeNotifier(ref.read(_dependientesJefeRepoProvider)));
 
 /// Si quien entró puede programar tareas a su equipo: su cargo vigente tiene
-/// codNivel <= nivelMaximoJefe (tac_configuracion, hoy 3).
-///
-/// Decide si "Mis tareas rutinarias" muestra el botón "Mi equipo". Marcelo
-/// (2026-09-11), sacándolo del menú: "que solo te aparezca si el umbral de tu
-/// cargo es <=3; si es mayor, que no aparezca y ya".
-///
-/// La regla no se copia aquí: se le pregunta al mismo procedimiento que usa la
-/// pantalla, pidiendo lo mínimo (solo directos, solo su sucursal). Ante
-/// cualquier falla, falso: el botón no aparece, y la pantalla de todos modos
-/// vuelve a validar en el servidor.
+/// codNivel <= nivelMaximoJefe (tac_configuracion, hoy 3); decide si "Mis tareas
+/// rutinarias" muestra el botón "Mi equipo". La regla no se copia aquí: se
+/// pregunta al mismo procedimiento que la pantalla, pidiendo lo mínimo (solo
+/// directos, su sucursal). Ante cualquier falla, falso: el botón no aparece y la
+/// pantalla igual valida en el servidor.
 final puedeProgramarAMiEquipoProvider = FutureProvider.autoDispose<bool>((
   ref,
 ) async {

@@ -1,16 +1,8 @@
-/// La planilla de familias de producto para web y escritorio.
-///
-/// **Por que no usa `BosqueFlatTable`.** Ese componente reparte las columnas por
-/// `flex` dentro de un `Row`, sin ancho minimo ni scroll horizontal: con cuatro
-/// columnas anda bien, con nueve las aplasta y "Grupo de familia SAP" queda en
-/// dos letras y puntos suspensivos. Esta tabla sigue el patron de `TablaLotes`,
-/// que es el que el repositorio usa para las planillas anchas: **anchos fijos
-/// por columna, cabecera que no se va con el scroll y un unico scroll horizontal
-/// controlado**, arrastrable tambien con el mouse.
-///
-/// Cuando sobra lugar la tabla se estira en vez de dejar medio panel vacio al
-/// lado: el sobrante se lo lleva la columna de grupo de familia, que es la que
-/// mas texto tiene.
+/// La planilla de familias de producto para web y escritorio. Sigue el patrón de
+/// `TablaLotes` y no `BosqueFlatTable` (flex sin ancho mínimo: con nueve columnas
+/// las aplasta): anchos fijos, cabecera fija y un único scroll horizontal
+/// controlado, arrastrable con el mouse. Si sobra lugar, la columna de grupo de
+/// familia se lleva el sobrante.
 library;
 
 import 'dart:math' as math;
@@ -66,9 +58,8 @@ class _TablaFamiliasState extends State<TablaFamilias> {
   @override
   void didUpdateWidget(TablaFamilias anterior) {
     super.didUpdateWidget(anterior);
-    // Al cambiar el filtro el listado es otro: quedarse en la pagina 7 de un
-    // resultado que ahora tiene dos paginas muestra una tabla vacia y parece
-    // que la busqueda no encontro nada.
+    // Al cambiar el filtro el listado es otro: quedarse en la página 7 de un resultado
+    // de dos páginas muestra una tabla vacía y parece que la búsqueda no encontró nada.
     if (anterior.filas.length != widget.filas.length) {
       _pagina = 1;
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -84,17 +75,9 @@ class _TablaFamiliasState extends State<TablaFamilias> {
     super.dispose();
   }
 
-  // ── Columnas ──────────────────────────────────────────────────────────────
-  //
-  // Formato y gramaje NO estan aca: las dos columnas estan 100% vacias en la
-  // base de produccion y gastarian 200 px en mostrar guiones. Viven en el
-  // formulario, que es donde algun dia se van a cargar.
-  //
-  // Dos juegos. El completo, una columna por dato, pide unos 1450 px. Una
-  // ventana de 1280 con el menu lateral abierto deja cerca de 1000, y ahi las
-  // acciones quedaban fuera de la vista: el apretado junta de a dos los datos
-  // descriptivos (arriba el principal, abajo el que lo acompana) y entra en
-  // unos 990 sin barra lateral.
+  // Formato y gramaje NO van: están 100 % vacías en producción (200 px de guiones).
+  // Dos juegos: el completo pide ~1450 px; con el menú lateral una ventana de 1280
+  // deja ~1000, así que el apretado junta de a dos los datos descriptivos (~990 px).
 
   List<_Col> _columnas({required bool apretada}) => [
     _Col(
@@ -192,7 +175,7 @@ class _TablaFamiliasState extends State<TablaFamilias> {
     ],
   );
 
-  // ── Dibujo ────────────────────────────────────────────────────────────────
+  // Dibujo
 
   @override
   Widget build(BuildContext context) {
@@ -230,9 +213,8 @@ class _TablaFamiliasState extends State<TablaFamilias> {
                 final desborda = pedido > restricciones.maxWidth;
 
                 return ScrollConfiguration(
-                  // Sin esto, en web la tabla ancha queda inalcanzable: Flutter
-                  // saca el mouse de los dispositivos de arrastre y la rueda va
-                  // al eje vertical.
+                  // Sin esto, en web la tabla ancha queda inalcanzable: Flutter saca el mouse de los
+                  // dispositivos de arrastre y la rueda va al eje vertical.
                   behavior: const ArrastreLateral(),
                   child: Scrollbar(
                     controller: _scrollH,
@@ -355,9 +337,7 @@ class _TablaFamiliasState extends State<TablaFamilias> {
   }
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
 // Celdas
-// ═══════════════════════════════════════════════════════════════════════════
 
 /// Un boton de la fila, con su color como las acciones de las propuestas: se
 /// reconoce sin leer el tooltip. 34x34: el `IconButton` de fabrica mide 48 y
@@ -576,14 +556,11 @@ Widget _cifra(
   ),
 );
 
-// ═══════════════════════════════════════════════════════════════════════════
-// Pie de paginacion
-// ═══════════════════════════════════════════════════════════════════════════
+// Pie de paginación
 
-/// **Por que no `BosquePaginator`.** Aquel pinta su fondo con `Colors.white` y
-/// decide si es movil con `ResponsiveUtilsBosque.isMobile`, que devuelve falso
-/// entre 451 y 800 px. Este sale del tema y se acomoda con `Wrap`, que es lo
-/// mismo pero sin ninguna de las dos cosas.
+/// No usa `BosquePaginator`: pinta su fondo con `Colors.white` y decide si es
+/// móvil con `ResponsiveUtilsBosque.isMobile`, que devuelve falso entre 451 y
+/// 800 px. Este sale del tema y se acomoda con `Wrap`.
 class _Paginador extends StatelessWidget {
   const _Paginador({
     required this.pagina,

@@ -1,24 +1,9 @@
-// Entrada aparte, solo para revisar el diseño del módulo:
-//   flutter build web -t lib/presentation/screens/comisiones/vista_previa_comisiones.dart --output build/preview
-//
-// No entra en la app: main.dart no la importa. Existe porque el módulo vive
-// detrás de un login, de permisos y de un backend que habla con SAP, así que
-// mirar un cambio de tipografía o de densidad obligaba a levantar todo y entrar
-// con tres usuarios distintos.
-//
-// Monta las pestañas REALES con datos de mentira, no una galería de widgets
-// sueltos. La versión anterior mostraba piezas aisladas y por eso no servía
-// para juzgar la apariencia: una tabla se ve bien o mal por cómo convive con
-// el filtro de arriba y el pie de abajo, no en el vacío.
-//
-// Los textos son los más largos que hay en la base real. Con nombres cortos
-// todo entra y todo se ve bien, que es justo el error que hay que evitar.
-import 'package:flutter/material.dart';
+// Datos de mentira de la vista previa de Comisiones.
+// Los textos son los más largos de la base real: con nombres cortos todo entra
+// y el problema de layout pasa desapercibido.
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:responsive_framework/responsive_framework.dart';
 
 import 'package:bosque_flutter/core/state/comisiones_provider.dart';
-import 'package:bosque_flutter/core/utils/responsive_utils_bosque.dart';
 import 'package:bosque_flutter/domain/entities/comision_por_rango_entity.dart';
 import 'package:bosque_flutter/domain/entities/grupo_comision_entity.dart';
 import 'package:bosque_flutter/domain/entities/grupo_x_vendedor_entity.dart';
@@ -29,29 +14,14 @@ import 'package:bosque_flutter/domain/entities/preliminar_comision_entity.dart';
 import 'package:bosque_flutter/domain/entities/tipo_cambio_comision_entity.dart';
 import 'package:bosque_flutter/domain/entities/vendedor_comision_entity.dart';
 import 'package:bosque_flutter/domain/repositories/comisiones_repository.dart';
-import 'package:bosque_flutter/presentation/widgets/comisiones/barra_pestanas.dart';
-import 'package:bosque_flutter/presentation/widgets/comisiones/comisiones_tema.dart';
-import 'package:bosque_flutter/presentation/widgets/comisiones/dialogo_items_pagados.dart';
-import 'package:bosque_flutter/presentation/widgets/comisiones/tab_asignaciones.dart';
-import 'package:bosque_flutter/presentation/widgets/comisiones/tab_grupos.dart';
-import 'package:bosque_flutter/presentation/widgets/comisiones/tab_pendientes.dart';
-import 'package:bosque_flutter/presentation/widgets/comisiones/tab_politica.dart';
-import 'package:bosque_flutter/presentation/widgets/comisiones/tab_preliminar.dart';
-import 'package:bosque_flutter/presentation/widgets/comisiones/tab_rangos.dart';
-import 'package:bosque_flutter/presentation/widgets/comisiones/tab_vendedores.dart';
 
-void main() => runApp(const _App());
-
-/// La barra de reportes hace `ref.read(comisionesRepositoryProvider)` en su
-/// build: sin un doble, la pestaña ni se dibuja. Solo se lee, los métodos se
-/// llaman al apretar un botón y aquí no se aprieta ninguno.
-class _RepoFalso implements ComisionesRepository {
+/// Doble del repositorio: la barra de reportes lo lee en su `build` y sin él la
+/// pestaña no dibuja. Sus métodos no se llaman (nadie aprieta botones aquí).
+class RepoComisionesFalso implements ComisionesRepository {
   @override
   dynamic noSuchMethod(Invocation i) =>
       throw UnimplementedError('La vista previa no llama a ${i.memberName}');
 }
-
-// ── Datos ──────────────────────────────────────────────────────────────────
 
 final _vendedores = <VendedorComisionEntity>[
   VendedorComisionEntity(
@@ -372,9 +342,9 @@ final _descuentos = <DescuentoDetalleEntity>[
   ),
 ];
 
-// Lo congelado al ejecutar el pago. Dos de las tres lineas estan excluidas, y
-// esa proporcion es la real -15 de cada 19 en la tabla medida-: con una sola
-// linea excluida la previa mentiria sobre como se ve la pantalla llena.
+// Lo congelado al ejecutar el pago. Dos de tres líneas van excluidas: es la
+// proporción real (15 de 19 en la tabla medida) y con menos, la previa mentiría
+// sobre cómo se ve la pantalla llena.
 final _itemsPagados = <PagadoItemEntity>[
   PagadoItemEntity(
     idPagadoItem: 1,
@@ -463,184 +433,42 @@ final _corteItems = PagadoItemCorteEntity(
   lectura: 'Con detalle',
 );
 
-// ── Armado ─────────────────────────────────────────────────────────────────
-
-class _App extends StatelessWidget {
-  const _App();
-
-  @override
-  Widget build(BuildContext context) => ProviderScope(
-    overrides: [
-      comisionesRepositoryProvider.overrideWithValue(_RepoFalso()),
-      vendedoresComisionProvider.overrideWith((ref) async => _vendedores),
-      gruposComisionProvider.overrideWith((ref) async => _grupos),
-      asignacionesVigentesProvider.overrideWith((ref) async => _asignaciones),
-      notasPendientesProvider.overrideWith((ref) async => _pendientes),
-      rangosComisionProvider.overrideWith((ref) async => _rangos),
-      preliminarProvider.overrideWith((ref, f) async => _preliminar),
-      descuentoDetalleProvider.overrideWith((ref, f) async => _descuentos),
-      // El SP filtra por nota (@docNum + @origen); «solo lo excluido» lo
-      // resuelve el dialogo sobre lo que ya tiene en memoria, asi que aca
-      // solo hay que respetar el filtro de nota.
-      itemsPagadosProvider.overrideWith(
-        (ref, f) async =>
-            f.docNum == null
-                ? _itemsPagados
-                : _itemsPagados
-                    .where(
-                      (i) =>
-                          i.docNum == f.docNum &&
-                          (f.origen == null || i.origen == f.origen),
-                    )
-                    .toList(),
-      ),
-      resumenItemsPagadosProvider.overrideWith((ref, f) async => _resumenItems),
-      corteItemsPagadosProvider.overrideWith((ref, c) async => _corteItems),
-      politicaFamiliasProvider.overrideWith((ref) async => const []),
-      vendedoresExentosProvider.overrideWith((ref) async => const []),
-      clientesExcluidosProvider.overrideWith((ref) async => const []),
-      familiasSapDisponiblesProvider.overrideWith((ref) async => const []),
-      tipoCambioSugeridoProvider.overrideWith(
-        (ref) async => TipoCambioComisionEntity(
-          fecha: DateTime(2026, 8, 23),
-          tipoCambio: 11.5,
-          origen: 'SAP',
-          diasDeAntiguedad: 0,
-        ),
-      ),
-    ],
-    child: MaterialApp(
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData(useMaterial3: true, colorSchemeSeed: Colors.green),
-      darkTheme: ThemeData(
-        useMaterial3: true,
-        colorSchemeSeed: Colors.green,
-        brightness: Brightness.dark,
-      ),
-      // Los mismos breakpoints que monta main.dart. Sin esto, todo lo que
-      // pregunte si esta en movil revienta, que es justo lo que hay que mirar.
-      builder:
-          (context, child) => ResponsiveBreakpoints.builder(
-            child: child!,
-            breakpoints: ResponsiveUtilsBosque.breakpoints,
-          ),
-      home: const _Modulo(),
+/// Providers de la pantalla, alimentados con los datos de arriba.
+List<Override> overridesComisiones() => [
+  comisionesRepositoryProvider.overrideWithValue(RepoComisionesFalso()),
+  vendedoresComisionProvider.overrideWith((ref) async => _vendedores),
+  gruposComisionProvider.overrideWith((ref) async => _grupos),
+  asignacionesVigentesProvider.overrideWith((ref) async => _asignaciones),
+  notasPendientesProvider.overrideWith((ref) async => _pendientes),
+  rangosComisionProvider.overrideWith((ref) async => _rangos),
+  preliminarProvider.overrideWith((ref, f) async => _preliminar),
+  descuentoDetalleProvider.overrideWith((ref, f) async => _descuentos),
+  // El SP filtra por nota (@docNum + @origen); «solo lo excluido» lo resuelve
+  // el diálogo en memoria, así que aquí basta con respetar el filtro de nota.
+  itemsPagadosProvider.overrideWith(
+    (ref, f) async =>
+        f.docNum == null
+            ? _itemsPagados
+            : _itemsPagados
+                .where(
+                  (i) =>
+                      i.docNum == f.docNum &&
+                      (f.origen == null || i.origen == f.origen),
+                )
+                .toList(),
+  ),
+  resumenItemsPagadosProvider.overrideWith((ref, f) async => _resumenItems),
+  corteItemsPagadosProvider.overrideWith((ref, c) async => _corteItems),
+  politicaFamiliasProvider.overrideWith((ref) async => const []),
+  vendedoresExentosProvider.overrideWith((ref) async => const []),
+  clientesExcluidosProvider.overrideWith((ref) async => const []),
+  familiasSapDisponiblesProvider.overrideWith((ref) async => const []),
+  tipoCambioSugeridoProvider.overrideWith(
+    (ref) async => TipoCambioComisionEntity(
+      fecha: DateTime(2026, 8, 23),
+      tipoCambio: 11.5,
+      origen: 'SAP',
+      diasDeAntiguedad: 0,
     ),
-  );
-}
-
-class _Pestana {
-  const _Pestana(this.titulo, this.icono, this.contenido);
-  final String titulo;
-  final IconData icono;
-  final Widget contenido;
-}
-
-class _Modulo extends StatelessWidget {
-  const _Modulo();
-
-  @override
-  Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    final tt = Theme.of(context).textTheme;
-    final padding = ResponsiveUtilsBosque.getHorizontalPadding(context);
-
-    // El mismo orden y las mismas pestanias de comisiones_screen.dart. Falta
-    // Ejecutar: depende de un StateNotifier que habla con el backend y no se
-    // puede falsear sin reescribirlo.
-    final pestanas = <_Pestana>[
-      const _Pestana('Vendedores', Icons.badge_outlined, TabVendedores()),
-      const _Pestana('Grupos', Icons.folder_outlined, TabGrupos()),
-      const _Pestana('Asignaciones', Icons.link_outlined, TabAsignaciones()),
-      const _Pestana('Escala por dias', Icons.timeline_outlined, TabRangos()),
-      const _Pestana('Politica', Icons.rule_outlined, TabPolitica()),
-      _Pestana(
-        'Preliminar',
-        Icons.calculate_outlined,
-        TabPreliminar(modalidades: ModalidadPreliminar.values),
-      ),
-      const _Pestana(
-        'Pendientes',
-        Icons.pending_actions_outlined,
-        TabPendientes(),
-      ),
-      // No es una pestania de la aplicacion: es el dialogo del detalle
-      // congelado, montado como pestania para poder mirarlo. En la aplicacion
-      // se abre desde Ejecutar y desde el Preliminar de un periodo ya pagado,
-      // y esos dos caminos exigen un backend que confirme que el periodo se
-      // ejecuto, o sea que la previa no lo alcanzaria nunca.
-      const _Pestana(
-        'Detalle congelado',
-        Icons.rule_folder_outlined,
-        DialogoItemsPagados(
-          filtro: FiltroItemsPagados(mes: 8, anio: 2026, esInterno: 1),
-        ),
-      ),
+  ),
     ];
-
-    return Theme(
-      data: ComisionesTema.temaModulo(context),
-      // Builder, igual que comisiones_screen.dart: sin el, el Scaffold pinta
-      // con el cs de AFUERA del Theme y la pagina sale con el verde de la app
-      // mientras el resto del modulo usa la escala neutra. La previa mentiria.
-      child: Builder(
-        builder: (context) {
-          final csMod = Theme.of(context).colorScheme;
-          return Scaffold(
-            backgroundColor: csMod.surface,
-            body: SafeArea(
-              child: DefaultTabController(
-                length: pestanas.length,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Padding(
-                      padding: EdgeInsets.fromLTRB(padding, 16, padding, 12),
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.baseline,
-                        textBaseline: TextBaseline.alphabetic,
-                        children: [
-                          Text('Comisiones', style: tt.headlineSmall),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Text(
-                              'Configure vendedores y escalas, revise el preliminar '
-                              'y ejecute el mes.',
-                              style: tt.bodySmall?.copyWith(
-                                color: cs.onSurfaceVariant,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    BarraPestanas(
-                      items: [
-                        for (final p in pestanas)
-                          ItemPestana(p.titulo, p.icono),
-                      ],
-                    ),
-                    const Divider(height: 1),
-                    Expanded(
-                      child: Align(
-                        alignment: Alignment.topCenter,
-                        child: ConstrainedBox(
-                          constraints: const BoxConstraints(
-                            maxWidth: ComisionesTema.anchoMaximo,
-                          ),
-                          child: TabBarView(
-                            children: [for (final p in pestanas) p.contenido],
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          );
-        },
-      ),
-    );
-  }
-}

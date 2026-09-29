@@ -1,4 +1,3 @@
-// Destino final: lib/core/state/suc_x_mov_caja_provider.dart
 import 'package:bosque_flutter/data/repositories/suc_x_mov_caja_impl.dart';
 import 'package:bosque_flutter/domain/entities/suc_x_mov_caja_entity.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';

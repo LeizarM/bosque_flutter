@@ -1,4 +1,3 @@
-// Destino final: lib/core/state/monto_caja_chica_x_suc_provider.dart
 import 'package:bosque_flutter/data/repositories/monto_caja_chica_x_suc_impl.dart';
 import 'package:bosque_flutter/domain/entities/monto_caja_chica_x_suc_entity.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';

@@ -7,14 +7,10 @@ import 'package:bosque_flutter/core/ui/aviso.dart';
 import 'package:bosque_flutter/core/ui/tokens_bosque.dart';
 import 'package:bosque_flutter/domain/entities/clasificacion_precio_entity.dart';
 
-/// Una sucursal que puede llevar listas de precio.
-///
-/// El repositorio de precios (tpr) NO expone un catalogo de sucursales: la
-/// tabla vive en otro modulo y esta pantalla no puede pedirle datos a un
-/// repositorio ajeno. Asi que las opciones se arman con las sucursales que ya
-/// tienen alguna lista cargada, que es lo que devuelve
-/// `obtenerClasificacionesConSucursal()`. Para el caso raro de una sucursal
-/// todavia sin ninguna lista, el formulario deja escribir el codigo a mano.
+/// Una sucursal que puede llevar listas de precio. El repositorio de precios no
+/// expone un catálogo de sucursales (la tabla vive en otro módulo): se arman con
+/// las que ya tienen alguna lista (`obtenerClasificacionesConSucursal()`) y el
+/// formulario deja escribir el código de la que no tenga ninguna.
 class OpcionSucursal {
   const OpcionSucursal({required this.codSucursal, required this.nombre});
 
@@ -33,16 +29,11 @@ class OpcionSucursal {
 /// Valor centinela del combo: "la sucursal no esta en la lista, la escribo".
 final BigInt _otraSucursal = BigInt.from(-1);
 
-/// Alta y edicion de una lista de precios (tpr_clasificacionPrecio).
+/// Alta y edición de una lista de precios (tpr_clasificacionPrecio). Reemplaza a
+/// dlgClasi y dlgNClasi del sistema viejo (dos pantallas casi idénticas).
 ///
-/// Reemplaza a los dialogos dlgClasi y dlgNClasi del sistema viejo, que eran
-/// dos pantallas casi identicas: una para el alta y otra para la edicion. Aca
-/// es una sola y lo unico que cambia es el titulo y si [editar] viene con dato.
-///
-/// El vpp no puede repetirse. La verificacion se hace ANTES de mandar y el
-/// mensaje sale debajo del campo, no en un aviso despues del envio: si el
-/// usuario se entera del choque recien cuando el backend lo rechaza, ya perdio
-/// el resto de lo que escribio de vista.
+/// El vpp no puede repetirse: se verifica ANTES de enviar y el mensaje sale bajo
+/// el campo, para no perder lo escrito al enterarse por el rechazo del backend.
 class DialogoListaPrecio extends ConsumerStatefulWidget {
   const DialogoListaPrecio({
     super.key,
@@ -81,9 +72,8 @@ class _DialogoListaPrecioState extends ConsumerState<DialogoListaPrecio> {
   bool _activa = true;
   bool _guardando = false;
 
-  /// El vpp que el backend ya rechazo por repetido. Se guarda el numero y no
-  /// una bandera para que el error desaparezca solo en cuanto el usuario
-  /// escribe otro, sin tener que acordarse de limpiarlo.
+  /// El vpp que el backend ya rechazó por repetido. Se guarda el número y no una
+  /// bandera para que el error desaparezca solo al escribir otro.
   int? _vppRechazado;
 
   bool get _esAlta => widget.editar == null;
@@ -123,13 +113,9 @@ class _DialogoListaPrecioState extends ConsumerState<DialogoListaPrecio> {
     super.dispose();
   }
 
-  /// Los vpp que ya estan tomados, sin contar el de la fila en edicion.
-  ///
-  /// Sirve para avisar mientras el usuario escribe, sin esperar a la red. Se
-  /// refresca en cada dibujo, cuando llega la lista del backend; el validador
-  /// corre en respuesta a una tecla y no dentro de un build, asi que lee este
-  /// campo en vez de observar el provider. La palabra final igual la tiene el
-  /// backend en [_guardar].
+  /// Los vpp ya tomados, sin contar el de la fila en edición. Se refresca en cada
+  /// dibujo y el validador lo lee (corre por tecla, fuera de un build: no puede
+  /// observar el provider). La palabra final la tiene el backend en [_guardar].
   Set<int> _vppsTomados = const <int>{};
 
   String? _validarVpp(String? valor) {
@@ -164,9 +150,8 @@ class _DialogoListaPrecioState extends ConsumerState<DialogoListaPrecio> {
     final repo = contenedor.read(preciosRepositoryProvider);
 
     try {
-      // La verificacion de choque va antes del alta y contra el backend: la
-      // lista local de vpp puede tener minutos de atraso si otro usuario dio
-      // de alta una lista mientras este formulario estaba abierto.
+      // Se verifica contra el backend antes del alta: la lista local de vpp puede
+      // tener minutos de atraso si otro usuario creó una lista mientras tanto.
       final repetido = await repo.existeVpp(
         vpp: vpp,
         idClasificacion: widget.editar?.idClasificacion,
@@ -197,9 +182,8 @@ class _DialogoListaPrecioState extends ConsumerState<DialogoListaPrecio> {
 
       await repo.registrarClasificacionPrecio(entidad);
 
-      // Las lecturas que esta escritura deja viejas. La grilla de la pantalla
-      // se cuelga de estas, asi que se refresca sola. Van antes del mounted:
-      // lo grabado tiene que aparecer aunque el formulario ya no este.
+      // Lecturas que esta escritura deja viejas (la grilla se refresca sola). Van
+      // antes del mounted: lo grabado debe aparecer aunque el formulario ya no esté.
       contenedor.invalidate(clasificacionesConSucursalProvider);
       contenedor.invalidate(clasificacionesPrecioProvider);
       contenedor.invalidate(vppsUsadosProvider);
@@ -266,10 +250,9 @@ class _DialogoListaPrecioState extends ConsumerState<DialogoListaPrecio> {
     final tt = Theme.of(context).textTheme;
     final escribeCodigo = _codSucursal == _otraSucursal;
 
-    // valueOrNull y no value: con la lectura en error, `value` relanza la
-    // excepcion en pleno build y el dialogo entero se vuelve la pantalla roja.
-    // Sin la lista de usados el formulario igual funciona: el servidor rechaza
-    // un vpp repetido al guardar.
+    // valueOrNull y no value: con la lectura en error, `value` relanza en pleno
+    // build y el diálogo se vuelve pantalla roja. Sin la lista de usados el
+    // formulario funciona igual: el servidor rechaza un vpp repetido al guardar.
     final usados = ref.watch(vppsUsadosProvider).valueOrNull ?? const <int>[];
     _vppsTomados = usados.where((v) => v != _vppPropio).toSet();
 
@@ -319,7 +302,7 @@ class _DialogoListaPrecioState extends ConsumerState<DialogoListaPrecio> {
                   ),
                 const SizedBox(height: Esp.l),
 
-                // ---------------- Sucursal ----------------
+                // Sucursal
                 DropdownButtonFormField<BigInt>(
                   value: _codSucursal,
                   isExpanded: true,
@@ -372,13 +355,13 @@ class _DialogoListaPrecioState extends ConsumerState<DialogoListaPrecio> {
                 ],
                 const SizedBox(height: Esp.m),
 
-                // ---------------- Nombre ----------------
+                // Nombre
                 TextFormField(
                   controller: _nombreCtrl,
                   enabled: !_guardando,
                   textCapitalization: TextCapitalization.sentences,
-                  // La columna admite 100 caracteres: cortar aca evita que el
-                  // procedimiento trunque sin avisar.
+                  // La columna admite 100 caracteres: cortar aquí evita que el procedimiento
+                  // trunque sin avisar.
                   maxLength: 100,
                   decoration: const InputDecoration(
                     labelText: 'Nombre de la lista',
@@ -392,9 +375,8 @@ class _DialogoListaPrecioState extends ConsumerState<DialogoListaPrecio> {
                 ),
                 const SizedBox(height: Esp.xs),
 
-                // ---------------- VPP y lista SAP ----------------
-                // Lado a lado: son los dos numeros que identifican la lista, uno
-                // en Bosque y el otro en SAP, y se revisan juntos.
+                // VPP y lista SAP, lado a lado: son los dos números que identifican la lista
+                // (Bosque y SAP) y se revisan juntos.
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -405,7 +387,7 @@ class _DialogoListaPrecioState extends ConsumerState<DialogoListaPrecio> {
                 ),
                 const SizedBox(height: Esp.s),
 
-                // ---------------- Estado ----------------
+                // Estado
                 SwitchListTile.adaptive(
                   contentPadding: EdgeInsets.zero,
                   value: _activa,
@@ -423,7 +405,7 @@ class _DialogoListaPrecioState extends ConsumerState<DialogoListaPrecio> {
                 ),
                 const SizedBox(height: Esp.l),
 
-                // ---------------- Acciones ----------------
+                // Acciones
                 Row(
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [

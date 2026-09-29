@@ -1,9 +1,7 @@
-/// Los PDF del modulo de precios: la propuesta, los precios por tonelada y el
-/// catalogo de familias activas. Los arma Jasper en el backend
-/// (`ReportesPreciosService`); aca solo se piden y se muestran.
-///
-/// Reemplazan a los reportes del JSF (rptPropuArt, RptArtPropuPorArticulo,
-/// RptPrecioActFam, RptTodoPrecioFam y RptFamiliasActivas).
+/// Los PDF de precios: propuesta, precios por tonelada y catálogo de familias
+/// activas. Los arma Jasper en el backend (`ReportesPreciosService`); aquí solo
+/// se piden y se muestran. Reemplazan a los reportes del JSF (rptPropuArt,
+/// RptArtPropuPorArticulo, RptPrecioActFam, RptTodoPrecioFam, RptFamiliasActivas).
 library;
 
 import 'dart:typed_data';

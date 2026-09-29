@@ -1,11 +1,7 @@
-/// "Generar" una propuesta aprobada: el archivo CambioDePrecios-N.xlsx (N, el numero) con el
-/// precio unitario de cada articulo en cada lista de precios de SAP, para
-/// cargarlo en las empresas. Es el dialogo "GEN. PROPUESTA" del sistema
-/// anterior, que bajaba la grilla a Excel y registraba quien la exporto.
-///
-/// El servidor arma el archivo y en la misma llamada deja la constancia
-/// (`GeneracionPropuestaService`): aca solo se pide, se guarda y se avisa.
-/// Solo lo ve quien tiene el boton btnGen, y el servidor lo vuelve a exigir.
+/// "Generar" una propuesta aprobada: CambioDePrecios-N.xlsx (N = número) con el
+/// precio unitario de cada artículo en cada lista de precios de SAP. El servidor
+/// arma el archivo y deja la constancia en la misma llamada
+/// (`GeneracionPropuestaService`). Solo con btnGen (el servidor lo vuelve a exigir).
 library;
 
 import 'dart:io' as io;
@@ -77,12 +73,11 @@ Future<void> generarPropuesta(
   );
 }
 
-/// Guarda el .xlsx donde la persona elija. Devuelve `false` si no se guardo.
+/// Guarda el .xlsx donde la persona elija. Devuelve `false` si no se guardó.
 ///
-/// En escritorio `file_picker` solo abre el dialogo y devuelve la ruta —no
-/// escribe—, asi que el archivo se escribe aca. En web y en el telefono lo
-/// resuelve [descargarBytes], que en Windows no sirve: su dialogo nativo es
-/// de Android e iOS.
+/// En escritorio `file_picker` solo devuelve la ruta (no escribe), así que se
+/// escribe aquí; en web y teléfono lo resuelve [descargarBytes], que en Windows
+/// no sirve (su diálogo nativo es de Android e iOS).
 Future<bool> guardarXlsx(Uint8List bytes, String nombre) async {
   final esEscritorio =
       !kIsWeb &&

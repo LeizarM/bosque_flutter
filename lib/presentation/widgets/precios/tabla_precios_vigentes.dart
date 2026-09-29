@@ -1,26 +1,8 @@
-/// La planilla de precios vigentes de una familia, una fila por lista de
-/// precios y un encabezado por sucursal.
-///
-/// **Por que no usa `BosqueFlatTable`.** Ese componente reparte las columnas
-/// por flex dentro de un `Row`, sin ancho minimo: sirve hasta unas siete
-/// columnas y despues las aplasta hasta que los importes se cortan. Esta tabla
-/// pide un ancho por columna y reparte lo que sobra en proporcion, asi que los
-/// importes nunca se cortan y la planilla ocupa todo el cajon.
-///
-/// **Es un sliver.** Va adentro del `CustomScrollView` de la pantalla, debajo
-/// de la ficha de la familia: la ficha se va con el scroll y deja la pantalla
-/// para las filas, mientras la cabecera de columnas queda fija arriba.
-///
-/// **Lo que se ve de un vistazo:**
-///
-/// - **El precio en cero dice "Sin precio".** Un cuarto de tpr_precio esta en
-///   cero y eso significa que la lista no tiene precio cargado, no que el
-///   producto valga cero.
-/// - **Cada sucursal abre su bloque** con un encabezado que dice cuantas
-///   listas tiene, entre que valores se mueve su precio y cuantas estan sin
-///   precio, cada dato debajo de su columna. La franja de color la sigue por
-///   todas sus filas.
-/// - **El pie resume la familia** con los mismos datos.
+/// La planilla de precios vigentes de una familia: una fila por lista y un
+/// encabezado por sucursal (nº de listas, rango de precio y listas sin precio).
+/// No usa `BosqueFlatTable`, que corta los importes. Es un sliver dentro del
+/// `CustomScrollView`: la ficha se va con el scroll y la cabecera queda fija. El
+/// precio en cero dice "Sin precio": un cuarto de tpr_precio está en cero.
 library;
 
 import 'package:flutter/material.dart';
@@ -126,9 +108,7 @@ class TablaPreciosVigentes extends StatelessWidget {
   }
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// COLUMNAS
-// ═══════════════════════════════════════════════════════════════════════════
+// Columnas
 
 enum _Clave { lista, vpp, listaSap, porcentaje, precio, idPrecio, estado }
 
@@ -256,11 +236,9 @@ class _Col {
   final Alignment alinear;
 }
 
-/// Las columnas con el ancho que les toca.
-///
-/// Lo que sobra se reparte en proporcion y no se lo lleva la ultima columna:
-/// con la vista corta en una pantalla ancha, una columna de estado de 900 px
-/// deja los precios pegados a la izquierda y un hueco que no dice nada.
+/// Las columnas con el ancho que les toca. Lo que sobra se reparte en proporción
+/// y no se lo lleva la última: con la vista corta en pantalla ancha, una columna
+/// de estado de 900 px deja los precios pegados a la izquierda.
 class _Trazado {
   const _Trazado(this.cols, this.anchos);
 
@@ -275,9 +253,8 @@ class _Trazado {
 
   int indiceDe(_Clave clave) => cols.indexWhere((c) => c.clave == clave);
 
-  /// Una fila de celdas, cada una con el ancho de su columna. La ultima es
-  /// `Expanded` y absorbe el redondeo, para que la suma nunca se pase del
-  /// ancho del cajon por una fraccion de pixel.
+  /// Una fila de celdas, cada una con el ancho de su columna. La última es `Expanded`
+  /// y absorbe el redondeo, para no pasarse del cajón por una fracción de píxel.
   Widget fila(
     List<Widget?> celdas, {
     Color? franja,
@@ -303,12 +280,8 @@ class _Trazado {
   );
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// RENGLONES
-//
-// Se aplanan en una sola lista para que el `SliverList.builder` siga
+// Renglones: se aplanan en una sola lista para que el `SliverList.builder` siga
 // construyendo solo lo que se ve.
-// ═══════════════════════════════════════════════════════════════════════════
 
 sealed class _Renglon {
   const _Renglon();
@@ -340,9 +313,7 @@ List<_Renglon> _aplanar(List<GrupoSucursal> grupos) => [
 Color _colorDeGrupo(ColorScheme cs, GrupoSucursal g) =>
     colorDeCatalogo(cs, g.indice).fondo;
 
-// ═══════════════════════════════════════════════════════════════════════════
-// PIEZAS
-// ═══════════════════════════════════════════════════════════════════════════
+// Piezas
 
 /// La banda y los rotulos de columna. Quedan fijos arriba mientras se recorren
 /// las filas.

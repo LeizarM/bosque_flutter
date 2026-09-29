@@ -1,16 +1,10 @@
-/// Paso 2 del asistente, para una propuesta por articulos: elegir familias,
-/// marcar sus articulos y agregarlos.
+/// Paso 2 del asistente (propuesta por artículos): elegir familias, marcar sus
+/// artículos y agregarlos de una vez, en una transacción. Reemplaza a `dlgProd`
+/// + `dlgArtD` (un viaje por artículo; el primero creaba la propuesta).
 ///
-/// Reemplaza a `dlgProd` + `dlgArtD`, donde cada articulo se agregaba con su
-/// propio boton -un viaje al servidor por articulo- y el primero creaba la
-/// propuesta. Aca se marcan todos los que hagan falta y se agregan de una vez,
-/// en una transaccion.
-///
-/// **La actualizacion desde SAP es un boton.** El sistema anterior la corria
-/// cada vez que alguien abria "Nueva Propuesta", aunque fuera por familias y
-/// no la necesitara. Es lo que trae a `tpr_articulo` la mercaderia recien
-/// creada en SAP, y puede tardar varios minutos: se corre cuando falta un
-/// articulo, no siempre.
+/// La actualización desde SAP es un botón: trae a `tpr_articulo` la mercadería
+/// recién creada en SAP y puede tardar minutos; el sistema anterior la corría en
+/// cada "Nueva Propuesta". Se corre cuando falta un artículo.
 library;
 
 import 'package:flutter/material.dart';
@@ -284,9 +278,7 @@ class _Recuadro extends StatelessWidget {
   }
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// FAMILIAS
-// ═══════════════════════════════════════════════════════════════════════════
+// Familias
 
 class _PanelFamilias extends ConsumerWidget {
   const _PanelFamilias({
@@ -391,9 +383,7 @@ class _PanelFamilias extends ConsumerWidget {
   }
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// ARTICULOS PARA AGREGAR
-// ═══════════════════════════════════════════════════════════════════════════
+// Artículos para agregar
 
 class _PanelArticulos extends ConsumerWidget {
   const _PanelArticulos({
@@ -625,9 +615,7 @@ class _FilaArticulo extends StatelessWidget {
   }
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// ARTICULOS YA EN LA PROPUESTA
-// ═══════════════════════════════════════════════════════════════════════════
+// Artículos ya en la propuesta
 
 class _PanelEnPropuesta extends StatelessWidget {
   const _PanelEnPropuesta({

@@ -8,13 +8,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// Barra de filtros de la grilla: mes y buscador de personas.
 ///
-/// **No es sólo comodidad, es lo que hace que la vista rinda.** Un rol de 87
-/// personas × 52 sábados son 4.524 cruces; con el mes puesto son unos 400. El
-/// filtro arranca en el mes actual justamente por eso: dibujar el año entero de
-/// entrada es pedirle al navegador diez veces más de lo que nadie va a mirar.
-///
-/// El año no tiene selector propio porque **el rol ya es de un año** — cambiarlo
-/// es cambiar de rol, y para eso está el combo de al lado.
+/// Es lo que hace que la vista rinda: un rol de 87 personas × 52 sábados son
+/// 4.524 cruces; con el mes puesto, unos 400. Por eso arranca en el mes actual.
+/// No hay selector de año: el rol ya es de un año (cambiarlo es cambiar de rol).
 class FiltrosGrilla extends ConsumerWidget {
   const FiltrosGrilla({super.key, required this.grilla});
 
@@ -58,8 +54,7 @@ class _SelectorMes extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // Cuántos sábados tiene cada mes en ESTE rol: se muestra al lado del nombre
-    // para que se entienda qué se va a dibujar antes de elegirlo.
+    // Sábados por mes en ESTE rol: se muestra junto al nombre del mes.
     final porMes = <int, int>{};
     for (final s in grilla.sabados) {
       final m = s.fecha?.month ?? 0;
@@ -125,8 +120,8 @@ class _BuscadorState extends ConsumerState<_Buscador> {
       controller: _texto,
       decoration: InputDecoration(
         hintText: 'Buscar persona…',
-        // El contador dice cuánto quedó: sin él, una búsqueda sin resultados se
-        // confunde con una grilla que no cargó.
+        // El contador evita confundir una búsqueda sin resultados con una grilla que
+        // no cargó.
         labelText:
             busqueda.isEmpty
                 ? '$total personas'
@@ -151,9 +146,7 @@ class _BuscadorState extends ConsumerState<_Buscador> {
   }
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// LOS FILTROS EN SÍ
-// ═══════════════════════════════════════════════════════════════════════════
+// Los filtros en sí
 
 /// Los sábados del mes elegido. `mes` 0 devuelve todos.
 List<SabadoEntity> filtrarSabados(List<SabadoEntity> sabados, int mes) {

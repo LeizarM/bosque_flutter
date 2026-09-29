@@ -1,20 +1,10 @@
 /// El padrón de RR.HH.: quiénes pueden corregir CUALQUIER celda.
 ///
-/// **Por qué existe esta pantalla.** Escribir una celda a mano —el editor que se
-/// abre al tocar la grilla— no tenía dueño: alcanzaba con estar logueado, así
-/// que cualquiera de los usuarios `ROLE_LIM` podía cambiarle el sábado a
-/// cualquier persona, con cualquier letra, y firmarlo con el `audUsuario` que
-/// quisiera. Era la puerta de atrás del control de jefes.
-///
-/// El rol de usuario no servía para taparlo: `ROLE_ADM` son los de Sistemas y
-/// `ROLE_LIM` son todos los demás. La gente que de verdad carga vacaciones y
-/// bajas no se distingue por su rol, así que hay que nombrarla — y esta pantalla
-/// es donde se la nombra.
-///
-/// **Vive aparte de `programadores_admin.dart`** aunque las dos sean ABM de
-/// permisos, porque son permisos distintos y confundirlos es caro: un jefe
-/// programador alcanza sólo a su gente y sólo decide si viene o no viene; quien
-/// está aquí no tiene límite de árbol, de sucursal ni de letra.
+/// Editar una celda a mano no tenía dueño: bastaba estar logueado (`ROLE_LIM`)
+/// para cambiarle el sábado a cualquiera. El rol no distingue (`ROLE_ADM` es
+/// Sistemas, `ROLE_LIM` todos los demás), así que aquí se nombra a quien carga
+/// vacaciones y bajas, sin límite de árbol, sucursal ni letra (a diferencia de
+/// `programadores_admin.dart`).
 library;
 
 import 'package:bosque_flutter/core/state/rol_sabados_provider.dart';
@@ -26,7 +16,7 @@ import 'package:bosque_flutter/presentation/widgets/rol-sabados/rol_sabados_comu
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-/// Abre el padrón. Igual que el de programadores: hoja modal topeada en 720 px.
+/// Abre el padrón: hoja modal topeada en 720 px, igual que el de programadores.
 Future<void> mostrarAdminRrhh(BuildContext context) =>
     showModalBottomSheet<void>(
       context: context,
@@ -44,8 +34,7 @@ class _PanelRrhh extends ConsumerWidget {
     final padron = ref.watch(rrhhSabadosProvider);
 
     return SizedBox(
-      // Alto fijo por el mismo motivo que el otro panel: una hoja que salta de
-      // tamaño con cada alta se lee como un error.
+      // Alto fijo: una hoja que salta de tamaño con cada alta se lee como un error.
       height: MediaQuery.sizeOf(context).height * 0.85,
       child: Column(
         children: [
@@ -157,9 +146,8 @@ class _Fila extends ConsumerWidget {
       ),
       trailing:
           baja
-              // Un dado de baja no se borra: se vuelve a agregar, y el SP
-              // reactiva la misma fila. Por eso aquí no hay botón de alta —
-              // se usa «Agregar» de arriba y se elige a la misma persona.
+              // Un dado de baja no se borra: se vuelve a agregar y el SP reactiva la misma
+              // fila. Por eso no hay botón de alta aquí; se usa «Agregar» de arriba.
               ? null
               : IconButton(
                 tooltip: 'Sacar de RR.HH.',

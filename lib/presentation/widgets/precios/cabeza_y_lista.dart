@@ -1,18 +1,8 @@
-/// Encabezados arriba, una lista que ocupa el resto y, opcionalmente, una barra
-/// abajo: la forma de casi todas las pantallas del modulo.
-///
-/// **El problema que resuelve.** Con alto de sobra eso es un `Column` con la
-/// lista en `Expanded`. En un telefono con el teclado abierto -se abre justo al
-/// tocar el buscador de arriba- al contenido le quedan 100 o 150 px, menos que
-/// los encabezados solos, y el `Column` se desborda.
-///
-/// Cuando el alto no alcanza, los encabezados pasan a una franja con scroll
-/// propio de a lo sumo el 40 % del alto (y la barra de abajo, del 30 %), y la
-/// lista se queda con el resto.
-///
-/// **El arbol es el mismo en los dos modos**: solo cambian los topes. Si
-/// cambiara, el buscador se reconstruiria al abrirse el teclado, perderia el
-/// foco, el teclado se cerraria y la pantalla volveria al modo normal.
+/// Encabezados arriba, lista que ocupa el resto y, opcionalmente, una barra
+/// abajo. Si el alto no alcanza (teclado abierto: 100-150 px), encabezados y
+/// barra pasan a franjas con scroll de a lo sumo 40 % y 30 % del alto. El árbol
+/// es el mismo en ambos modos: si cambiara, el buscador perdería el foco al
+/// abrirse el teclado y este se cerraría.
 library;
 
 import 'package:flutter/material.dart';

@@ -1,15 +1,9 @@
-/// El estado del asistente "Nueva propuesta" del modulo de precios (tpr).
+/// Estado del asistente "Nueva propuesta" del módulo de precios (tpr).
 ///
-/// Vive en su propio archivo y no en `precios_provider.dart` porque es estado
-/// de UNA pantalla: lo que se va escribiendo en el asistente -titulo,
-/// observaciones, fletes- antes de que exista la propuesta. Es autoDispose:
-/// cerrar el asistente lo tira, y abrirlo de nuevo arranca de cero.
-///
-/// **Cuando nace la propuesta.** Igual que en el sistema anterior, con la
-/// primera familia (o el primer articulo) que se guarda. Hasta ese momento
-/// nada viaja a la base: la cabecera y los fletes se mandan junto con esa
-/// primera escritura y el servidor los graba en la misma transaccion. Asi un
-/// formulario abandonado no deja una propuesta vacia en el listado.
+/// Va aparte de `precios_provider.dart` porque es estado de UNA pantalla y es
+/// autoDispose. **La propuesta nace con la primera familia (o artículo) que se
+/// guarda**: hasta entonces nada viaja, y la cabecera y los fletes van en esa
+/// misma escritura y transacción, para no dejar propuestas vacías en el listado.
 library;
 
 import 'package:flutter/foundation.dart';
@@ -26,7 +20,7 @@ enum TipoArmado {
   /// Reprecio de familias por tonelada: costo, porcentajes, IVA, IT y flete.
   porFamilia(1, 'Por familias'),
 
-  /// Articulos puntuales, tipicamente mercaderia nueva que hay que dar de alta
+  /// Artículos puntuales, típicamente mercadería nueva que hay que dar de alta
   /// en SAP con el precio de su familia.
   porArticulo(2, 'Por artículos');
 
@@ -77,13 +71,13 @@ class EstadoArmado {
   final String titulo;
   final String obs;
 
-  /// Los fletes tal como estan en pantalla.
+  /// Los fletes tal como están en pantalla.
   final List<FleteArmadoEntity> fletes;
 
-  /// Los que estan grabados. En un alta, vacia hasta la primera familia.
+  /// Los que están grabados. En un alta, vacía hasta la primera familia.
   final List<FleteArmadoEntity> fletesGuardados;
 
-  /// De que propuesta se copiaron los fletes sugeridos de un alta.
+  /// De qué propuesta se copiaron los fletes sugeridos de un alta.
   final BigInt? referenciaFletes;
 
   final bool cargandoFletes;
@@ -112,17 +106,17 @@ class EstadoArmado {
     return false;
   }
 
-  /// Hay algo escrito que se perderia al salir: en un alta todo lo del primer
+  /// Hay algo escrito que se perdería al salir: en un alta todo lo del primer
   /// paso, en una existente los fletes sin guardar.
   bool get hayCambiosSinGuardar =>
       existe
           ? fletesModificados
           : titulo.trim().isNotEmpty || obs.trim().isNotEmpty;
 
-  /// Que le falta al primer paso para poder seguir. Null si esta completo.
+  /// Qué le falta al primer paso para poder seguir. Null si está completo.
   ///
-  /// Son las mismas reglas que valida el servidor: se repiten aca para que el
-  /// boton diga que falta antes de viajar, no para reemplazarlas.
+  /// Repite las reglas que valida el servidor, solo para que el botón diga qué
+  /// falta antes de viajar; no las reemplaza.
   String? get faltaEnDatos {
     if (existe) return null;
     if (titulo.trim().isEmpty) return 'Escriba el título de la propuesta.';
@@ -174,7 +168,7 @@ class EstadoArmado {
 }
 
 /// El resultado de una escritura, para que la pantalla avise sin tener que
-/// atrapar excepciones: o salio, o trae el mensaje listo para mostrar.
+/// atrapar excepciones: o salió, o trae el mensaje listo para mostrar.
 @immutable
 class Resultado<T> {
   const Resultado.ok(T this.valor) : error = null;
@@ -193,16 +187,16 @@ class ArmadoNotifier extends StateNotifier<EstadoArmado> {
 
   PreciosRepository get _repo => _ref.read(preciosRepositoryProvider);
 
-  // ---------- Arranque ----------
+  // Arranque
 
-  /// Un alta: los fletes arrancan con los de la ultima propuesta por familia.
+  /// Un alta: los fletes arrancan con los de la última propuesta por familia.
   Future<void> iniciarNueva() async {
     state = const EstadoArmado(cargandoFletes: true);
     await _cargarFletes();
   }
 
   /// Una propuesta pendiente que se sigue armando. Arranca en el paso de
-  /// contenido: los datos ya estan y lo que se viene a hacer es cargar.
+  /// contenido: los datos ya están y lo que se viene a hacer es cargar.
   Future<void> abrirExistente({
     required BigInt idPropuesta,
     required TipoArmado tipo,
@@ -240,7 +234,7 @@ class ArmadoNotifier extends StateNotifier<EstadoArmado> {
     }
   }
 
-  // ---------- Paso de datos ----------
+  // Paso de datos
 
   /// El tipo solo se elige en un alta: una propuesta existente no cambia de
   /// tipo, porque cada uno escribe en tablas distintas.
@@ -267,9 +261,9 @@ class ArmadoNotifier extends StateNotifier<EstadoArmado> {
 
   void irA(PasoArmado paso) => state = state.copyWith(paso: paso);
 
-  // ---------- Familias ----------
+  // Familias
 
-  /// La vista previa de una familia. No escribe: se puede llamar cuantas veces
+  /// La vista previa de una familia. No escribe: se puede llamar cuántas veces
   /// haga falta mientras el usuario prueba costos.
   Future<Resultado<CalculoFamiliaEntity>> calcularFamilia(
     int codigoFamilia, {
@@ -290,9 +284,9 @@ class ArmadoNotifier extends StateNotifier<EstadoArmado> {
     }
   }
 
-  /// Carga la familia en la propuesta. Si es la primera, la propuesta nace aca
+  /// Carga la familia en la propuesta. Si es la primera, la propuesta nace aquí
   /// con su cabecera y sus fletes. Los [porcentajes] cambiados en el editor
-  /// quedan registrados para la familia en la misma transaccion.
+  /// quedan registrados para la familia en la misma transacción.
   Future<Resultado<CalculoFamiliaEntity>> guardarFamilia(
     int codigoFamilia,
     double costo, {
@@ -309,7 +303,7 @@ class ArmadoNotifier extends StateNotifier<EstadoArmado> {
       porcentajes: porcentajes,
     );
     // Los porcentajes quedaron registrados en tpr_porcentaje: lo que la
-    // pantalla «Porcentajes» tenga leido de la familia ya es viejo.
+    // pantalla «Porcentajes» tenga leído de la familia ya es viejo.
     if (r.porcentajesCambiados > 0) {
       _ref.invalidate(porcentajesPorFamiliaProvider(codigoFamilia));
       _ref.invalidate(porcentajesFaltantesProvider(codigoFamilia));
@@ -324,11 +318,11 @@ class ArmadoNotifier extends StateNotifier<EstadoArmado> {
     return r;
   });
 
-  /// Cuantas familias viajan por pedido en la carga en lote: pocas como para
+  /// Cuántas familias viajan por pedido en la carga en lote: pocas como para
   /// que cada tanda tarde unos segundos y el avance se vea moverse.
   static const int familiasPorTanda = 20;
 
-  /// Vista previa de varias familias, en tandas. [alAvanzar] recibe cuantas
+  /// Vista previa de varias familias, en tandas. [alAvanzar] recibe cuántas
   /// van calculadas. No escribe.
   Future<Resultado<List<CalculoFamiliaEntity>>> calcularFamilias(
     Map<int, double> costos, {
@@ -354,9 +348,9 @@ class ArmadoNotifier extends StateNotifier<EstadoArmado> {
     }
   }
 
-  /// Guarda varias familias en tandas. Cada tanda es una transaccion: si falla
+  /// Guarda varias familias en tandas. Cada tanda es una transacción: si falla
   /// una, las anteriores ya quedaron en la propuesta -que sigue pendiente y se
-  /// puede corregir- y el mensaje dice cuantas entraron. Si la propuesta no
+  /// puede corregir- y el mensaje dice cuántas entraron. Si la propuesta no
   /// existe, nace con la primera tanda.
   Future<Resultado<ResultadoArmadoEntity>> guardarFamilias(
     Map<int, double> costos, {
@@ -364,10 +358,10 @@ class ArmadoNotifier extends StateNotifier<EstadoArmado> {
   }) async {
     final todas = costos.entries.toList();
     state = state.copyWith(ocupado: true);
-    // Lo que manda cada tanda se toma aca, una vez, y el id que devuelve la
-    // primera se guarda en una variable: si el asistente se cerrara a mitad,
-    // `state` ya no se puede leer y las tandas siguientes irian sin id, cada
-    // una creando otra propuesta.
+    // Lo que manda cada tanda se toma aquí, una vez, y el id de la primera se
+    // guarda en una variable: si el asistente se cerrara a mitad, `state` ya no
+    // se puede leer y las tandas siguientes irían sin id, cada una creando otra
+    // propuesta.
     var id = state.idPropuesta;
     final titulo = state.titulo.trim();
     final obs = state.obs.trim();
@@ -419,7 +413,7 @@ class ArmadoNotifier extends StateNotifier<EstadoArmado> {
   }
 
   /// Graba los fletes de una propuesta existente; el servidor recalcula todas
-  /// sus familias en la misma transaccion.
+  /// sus familias en la misma transacción.
   Future<Resultado<ResultadoArmadoEntity>> guardarFletes() =>
       _escribir(() async {
         final r = await _repo.guardarFletesArmado(
@@ -430,7 +424,7 @@ class ArmadoNotifier extends StateNotifier<EstadoArmado> {
         return r;
       });
 
-  // ---------- Articulos ----------
+  // Artículos
 
   Future<Resultado<ResultadoArmadoEntity>> agregarArticulos(
     List<String> codigos,
@@ -457,17 +451,17 @@ class ArmadoNotifier extends StateNotifier<EstadoArmado> {
     ),
   );
 
-  /// Trae de SAP los articulos nuevos. Puede tardar varios minutos.
+  /// Trae de SAP los artículos nuevos. Puede tardar varios minutos.
   Future<Resultado<void>> sincronizarArticulosSap() => _escribir(() async {
     await _repo.sincronizarArticulosSap();
     _ref.invalidate(articulosPorFamiliasProvider);
   });
 
-  // ---------- Apoyo ----------
+  // Apoyo
 
   /// Una escritura a la vez: marca ocupado, ejecuta y refresca lo que la
-  /// escritura dejo viejo. El listado de propuestas se invalida siempre: una
-  /// propuesta recien nacida tiene que aparecer al volver.
+  /// escritura dejó viejo. El listado de propuestas se invalida siempre: una
+  /// propuesta recién nacida tiene que aparecer al volver.
   Future<Resultado<T>> _escribir<T>(Future<T> Function() accion) async {
     state = state.copyWith(ocupado: true);
     try {
@@ -481,8 +475,8 @@ class ArmadoNotifier extends StateNotifier<EstadoArmado> {
     }
   }
 
-  /// Recibe el id y no lo lee de `state`: se llama tambien cuando el
-  /// asistente ya se cerro.
+  /// Recibe el id y no lo lee de `state`: se llama también cuando el
+  /// asistente ya se cerró.
   void _refrescar(BigInt? id) {
     _ref.invalidate(propuestasParaAutorizarProvider);
     _ref.invalidate(vistaPropuestaProvider);
@@ -506,7 +500,7 @@ final familiasArmadasProvider = FutureProvider.autoDispose
           .obtenerFamiliasArmadas(idPropuesta);
     });
 
-/// Los articulos de una propuesta por articulo.
+/// Los artículos de una propuesta por artículo.
 final articulosArmadosProvider = FutureProvider.autoDispose
     .family<List<ArticuloPropuestoEntity>, BigInt>((ref, idPropuesta) {
       return ref

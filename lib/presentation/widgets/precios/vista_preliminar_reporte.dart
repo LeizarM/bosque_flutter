@@ -1,21 +1,15 @@
-/// La vista preliminar de una propuesta con las filas de su PDF (rptPropuArt
-/// por familia, RptArtPropuPorArticulo por articulo), sus rotulos, sus colores
-/// y el formato de sus numeros (1,714.26).
+/// La vista preliminar de una propuesta con las filas de su PDF (rptPropuArt por
+/// familia, RptArtPropuPorArticulo por artículo), rótulos, colores y formato de
+/// números (1,714.26). Los datos salen de `/price/vistaPropuesta`, armado con los
+/// mismos procedimientos que el reporte y el Excel de la generación.
 ///
-/// Los datos salen de `/price/vistaPropuesta`, que el backend arma con los
-/// mismos procedimientos que el reporte y que el Excel de la generacion: si la
-/// pantalla, el papel y el archivo no coinciden, el error esta en un solo
-/// lugar.
-///
-/// * **Por tonelada:** por familia, cada articulo con tres filas, como en el
-///   PDF -el porcentaje de cada lista, el precio actual y el propuesto, verde
-///   si sube y rojo si baja-. Una propuesta ya aprobada no trae precio actual:
-///   quedan dos filas, sin colores. Por articulo, una fila con el precio que
-///   toma de su familia.
-/// * **Por unidad** (Bs, USD, Bs Productiva): una fila por articulo con el
-///   precio por unidad de cada lista, y en la fila de la familia el precio por
-///   tonelada del que sale. Bs y Bs Productiva son las dos columnas de precio
-///   del Excel de la generacion.
+/// * **Por tonelada:** por familia, tres filas por artículo (porcentaje, precio
+///   actual y propuesto; verde si sube, rojo si baja; una aprobada no trae
+///   actual: dos filas, sin colores); por artículo, una fila con el precio de su
+///   familia.
+/// * **Por unidad** (Bs, USD, Bs Productiva): una fila por artículo con el precio
+///   por unidad de cada lista y, en la familia, el precio por tonelada del que
+///   sale.
 library;
 
 import 'package:flutter/material.dart';
@@ -205,9 +199,7 @@ class LeyendaComparacion extends StatelessWidget {
   }
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// ESCRITORIO
-// ═══════════════════════════════════════════════════════════════════════════
+// Escritorio
 
 const double _anchoArticulo = 280;
 const double _anchoUtm = 100;
@@ -289,10 +281,9 @@ List<_Renglon> _renglones(
   return r;
 }
 
-/// La tabla con el articulo fijo a la izquierda: dos paneles con su propia
-/// lista vertical que se mueven juntos. Doce listas no entran en un portatil,
-/// y si el articulo se fuera con el desplazamiento quedaria una grilla de
-/// numeros sin nombre.
+/// La tabla con el artículo fijo a la izquierda: dos paneles con su propia lista
+/// vertical que se mueven juntos (doce listas no entran en un portátil y sin el
+/// nombre fijo quedaría una grilla de números sin nombre).
 class TablaReportePropuesta extends StatefulWidget {
   const TablaReportePropuesta({
     super.key,
@@ -344,9 +335,9 @@ class _TablaReportePropuestaState extends State<TablaReportePropuesta> {
     final v = widget.vista;
     final medida = widget.medida;
     final renglones = _renglones(v, medida, widget.texto);
-    // Por familia y por tonelada son tres filas cortas por articulo, con el
-    // codigo en la primera y la descripcion en la segunda, como las celdas
-    // combinadas del PDF. Lo demas es una fila por articulo, de dos renglones.
+    // Por familia y por tonelada: tres filas cortas por artículo (código y luego
+    // descripción, como las celdas combinadas del PDF). Lo demás: una fila de dos
+    // renglones.
     final conDetalle = !medida.porUnidad && !v.porArticulo;
     final alto = conDetalle ? 30.0 : 44.0;
 
@@ -869,9 +860,7 @@ class _Celda extends StatelessWidget {
   );
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// TELEFONO: una sucursal por vez, un articulo por tarjeta
-// ═══════════════════════════════════════════════════════════════════════════
+// Teléfono: una sucursal por vez, un artículo por tarjeta
 
 /// La vista angosta: cada articulo en una tarjeta con las cuatro listas de
 /// la sucursal elegida, sin scroll lateral.

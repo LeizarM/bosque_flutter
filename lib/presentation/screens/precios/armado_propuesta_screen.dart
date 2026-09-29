@@ -1,23 +1,11 @@
 /// El asistente para armar una propuesta de precios: "Nueva propuesta" y el
-/// "Editar" de una propuesta pendiente.
+/// "Editar" de una pendiente. Reemplaza los diálogos de Autorizacion.xhtml
+/// (`dlgNuevo`, `dlgProd`, `dlgVista`, `dlgArtD`, `dlgPropEditar`).
 ///
-/// Reemplaza a la cadena de dialogos de Autorizacion.xhtml -`dlgNuevo`,
-/// `dlgProd`, `dlgVista`, `dlgArtD` y el "Agregar Mas Familias" de
-/// `dlgPropEditar`-, que se abrian uno encima del otro sobre el mismo
-/// ManagedBean y obligaban a recordar lo cargado en el anterior.
-///
-/// Son tres pasos, en el orden en que se piensa una propuesta:
-///
-/// 1. **Datos**: el tipo, el titulo, las observaciones y, si es por familias,
-///    el flete de cada sucursal.
-/// 2. **Contenido**: las familias con su costo -el precio de cada lista lo
-///    calcula el servidor- o los articulos.
-/// 3. **Revision**: lo que quedo armado y el envio a autorizar.
-///
-/// **No es una ruta del router.** Se abre encima del listado con
-/// `Navigator.push`, igual que el detalle de una propuesta: no tiene sentido
-/// entrar a un asistente a medio armar desde el menu ni desde una URL, y asi no
-/// hace falta una fila en tb_vista para una pantalla que no es de menu.
+/// Pasos: **Datos** (tipo, título, observaciones, flete por sucursal),
+/// **Contenido** (familias con su costo, cuyo precio por lista calcula el
+/// servidor, o artículos) y **Revisión** con el envío a autorizar. No es una
+/// ruta del router: se abre con `Navigator.push` (no hay fila en tb_vista).
 library;
 
 import 'package:flutter/material.dart';
@@ -58,10 +46,9 @@ class ArmadoPropuestaScreen extends ConsumerStatefulWidget {
 }
 
 class _ArmadoPropuestaScreenState extends ConsumerState<ArmadoPropuestaScreen> {
-  /// El notifier se inicia despues del primer cuadro -no se puede tocar
-  /// durante la construccion del arbol-. Hasta entonces se muestra la espera,
-  /// para no dibujar un cuadro con el estado de una propuesta nueva cuando se
-  /// abrio una existente.
+  /// El notifier se inicia después del primer cuadro (no se puede tocar durante la
+  /// construcción del árbol); hasta entonces se muestra la espera, para no dibujar
+  /// el estado de una propuesta nueva cuando se abrió una existente.
   bool _iniciado = false;
 
   @override
@@ -176,9 +163,7 @@ String _etiquetaPaso(PasoArmado paso, EstadoArmado estado) =>
         ? (estado.esPorFamilia ? 'Familias' : 'Artículos')
         : paso.etiqueta;
 
-// ═══════════════════════════════════════════════════════════════════════════
-// ENCABEZADO
-// ═══════════════════════════════════════════════════════════════════════════
+// Encabezado
 
 class _Encabezado extends StatelessWidget {
   const _Encabezado({
@@ -252,9 +237,7 @@ class _Encabezado extends StatelessWidget {
   }
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// PASOS
-// ═══════════════════════════════════════════════════════════════════════════
+// Pasos
 
 /// Que se hace en cada paso, en una linea: el rotulo solo ("Datos") no lo dice.
 String _detallePaso(PasoArmado paso, EstadoArmado estado) => switch (paso) {
@@ -271,13 +254,9 @@ IconData _iconoPaso(PasoArmado paso, EstadoArmado estado) => switch (paso) {
   PasoArmado.revision => Icons.fact_check_outlined,
 };
 
-/// Donde se esta y cuanto falta.
-///
-/// En pantallas anchas son tres tarjetas centradas sobre el contenido -no tres
-/// circulos en los extremos de una linea que cruzaba la ventana entera-: cada una
-/// dice el numero, el nombre y que se hace en el paso. En el telefono, una barra
-/// de progreso en tres tramos con el paso actual escrito debajo: tres tarjetas no
-/// entran en 360 px.
+/// Dónde se está y cuánto falta. En pantallas anchas, tres tarjetas centradas
+/// (número, nombre y qué se hace en el paso); en teléfono, una barra de progreso
+/// en tres tramos con el paso actual debajo: tres tarjetas no entran en 360 px.
 class _IndicadorPasos extends ConsumerWidget {
   const _IndicadorPasos({required this.aire, required this.estado});
 
@@ -563,14 +542,11 @@ class _PasosCompactos extends StatelessWidget {
   }
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// BARRA DE ACCIONES
-// ═══════════════════════════════════════════════════════════════════════════
+// Barra de acciones
 
-/// Atras, adelante y, a la izquierda, por que no se puede avanzar.
-///
-/// El motivo va escrito y no en un tooltip: en el telefono no hay hover, y un
-/// boton apagado sin explicacion se lee como una falla.
+/// Atrás, adelante y, a la izquierda, por qué no se puede avanzar. El motivo va
+/// escrito y no en un tooltip: en teléfono no hay hover y un botón apagado sin
+/// explicación se lee como una falla.
 class _BarraAcciones extends ConsumerWidget {
   const _BarraAcciones({
     required this.aire,

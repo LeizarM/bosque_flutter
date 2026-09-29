@@ -1,15 +1,8 @@
-/// La familia de producto vista desde un telefono.
-///
-/// **Por que una tarjeta y no la tabla achicada.** Las nueve columnas de la
-/// planilla no entran en 360 px: meterlas igual obliga a un scroll horizontal
-/// que en un telefono pelea con el scroll vertical de la lista y termina con el
-/// dedo arrastrando la pagina entera de costado. Aca se muestran las tres cosas
-/// por las que se reconoce una familia —el codigo, la descripcion compuesta y el
-/// estado— y el resto queda a un toque, en el formulario.
-///
-/// Las acciones van en un menu contextual y no como botones sueltos: dos
-/// iconos por tarjeta multiplicados por veinte tarjetas son cuarenta blancos de
-/// toque compitiendo con el gesto de scroll.
+/// La familia de producto vista desde un teléfono. Tarjeta y no tabla achicada:
+/// las nueve columnas no entran en 360 px y el scroll horizontal pelearía con el
+/// vertical. Muestra código, descripción compuesta y estado; el resto queda a un
+/// toque, en la ficha. Las acciones van en un menú contextual: dos iconos por
+/// tarjeta serían 40 blancos de toque compitiendo con el scroll.
 library;
 
 import 'package:flutter/material.dart';
@@ -60,9 +53,8 @@ class TarjetaFamilia extends StatelessWidget {
                   children: [
                     Row(
                       children: [
-                        // El codigo es la llave con la que la gente habla de una
-                        // familia ("la 1204"), asi que va primero y en cifras
-                        // tabulares.
+                        // El código es la llave con la que la gente habla de una familia ("la 1204"): va
+                        // primero y en cifras tabulares.
                         Text(
                           '#${familia.codigoLegible}',
                           style: context.numero(fuerte: true),

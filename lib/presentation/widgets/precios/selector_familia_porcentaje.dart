@@ -1,16 +1,10 @@
 /// El buscador de familias de la pantalla de porcentajes.
 ///
-/// **Por que no un `DropdownMenu` ni un `ComboBuscable`.** El catalogo de
-/// familias es la tabla mas grande del modulo y el desplegable de Material
-/// construye TODAS sus entradas al abrirse: con cientos de familias, el menu
-/// tarda y encima se dibuja sobre el campo, asi que en un telefono tapa lo que
-/// se esta escribiendo. Aca la lista se construye perezosa
-/// (`ListView.builder`), el filtro corre sobre texto ya normalizado y el
-/// resultado se muestra en la superficie que corresponde a cada tamanio: un
-/// dialogo acotado en escritorio, una hoja inferior en el telefono.
-///
-/// Busca por codigo y por descripcion a la vez: quien conoce la familia escribe
-/// "212" y quien no, escribe "bond".
+/// No usa `DropdownMenu` ni `ComboBuscable`: el catálogo de familias es la tabla
+/// más grande del módulo y el desplegable de Material construye TODAS sus
+/// entradas al abrirse (y en teléfono se dibuja sobre el campo). Aquí la lista es
+/// perezosa (`ListView.builder`), en diálogo acotado (escritorio) u hoja inferior
+/// (teléfono). Busca por código y descripción a la vez ("212" o "bond").
 library;
 
 import 'package:flutter/material.dart';
@@ -19,13 +13,11 @@ import 'package:bosque_flutter/core/ui/piezas_bosque.dart';
 import 'package:bosque_flutter/core/ui/tokens_bosque.dart';
 import 'package:bosque_flutter/presentation/widgets/precios/familia_vista.dart';
 
-/// Abre el buscador y devuelve la familia elegida, o null si se cerro sin
-/// elegir.
+/// Abre el buscador y devuelve la familia elegida, o null si se cerró sin elegir.
 ///
-/// [compacto] llega desde el LayoutBuilder de la pantalla -el ancho del cajon,
-/// no el de la ventana- y decide la superficie: hoja inferior, que es lo que se
-/// alcanza con el pulgar, o dialogo centrado, porque una hoja estirada de punta
-/// a punta de un monitor de 1920 px es ilegible.
+/// [compacto] llega del LayoutBuilder de la pantalla (ancho del cajón, no de la
+/// ventana): hoja inferior (alcanzable con el pulgar) o diálogo centrado, porque
+/// una hoja de punta a punta en un monitor de 1920 px es ilegible.
 Future<FamiliaVista?> elegirFamiliaPorcentaje(
   BuildContext context, {
   required List<FamiliaVista> familias,
@@ -139,8 +131,7 @@ class _BuscadorFamiliasState extends State<_BuscadorFamilias> {
                         'familias ya traídas del servidor.',
                   )
                   : ListView.builder(
-                    // Perezosa a proposito: el catalogo de familias es largo y
-                    // construirlo entero al abrir el buscador se nota.
+                    // Perezosa a propósito: el catálogo de familias es largo.
                     itemCount: visibles.length,
                     itemBuilder: (context, i) {
                       final f = visibles[i];
@@ -157,9 +148,8 @@ class _BuscadorFamiliasState extends State<_BuscadorFamilias> {
                           FamiliaVista.oGuion(f.proveedorSap),
                           overflow: TextOverflow.ellipsis,
                         ),
-                        // La familia inactiva se puede elegir igual: sigue
-                        // teniendo precios y porcentajes cargados, y esconderla
-                        // haria creer que no existen.
+                        // La familia inactiva se puede elegir igual: sigue teniendo precios y
+                        // porcentajes cargados, y esconderla haría creer que no existen.
                         trailing:
                             f.esActiva
                                 ? null

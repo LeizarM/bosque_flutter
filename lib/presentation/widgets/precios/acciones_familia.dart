@@ -73,11 +73,9 @@ class _Item extends StatelessWidget {
   }
 }
 
-/// Copia el codigo de familia al portapapeles y lo avisa.
-///
-/// El codigo es lo que se pega despues en SAP y en el buscador de articulos;
-/// transcribirlo a mano de una planilla de nueve columnas es justo donde se
-/// cambia un digito.
+/// Copia el código de familia al portapapeles y lo avisa (se pega después en SAP
+/// y en el buscador de artículos; transcribirlo a mano es donde se cambia un
+/// dígito).
 Future<void> copiarCodigo(BuildContext context, FamiliaVista familia) async {
   await Clipboard.setData(ClipboardData(text: familia.codigoLegible));
   if (!context.mounted) return;

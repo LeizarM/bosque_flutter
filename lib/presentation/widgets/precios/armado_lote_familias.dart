@@ -1,23 +1,8 @@
-/// Las piezas de la carga en lote del paso de familias: el estado de cada
-/// fila, la celda con el resultado, el campo que pone un costo a todas las
-/// marcadas y la barra con Calcular y Guardar.
-///
-/// **Para que existe.** Lo pidio el usuario para el trabajo operativo: con un
-/// costo nuevo de importacion hay que repreciar decenas de familias, y abrir el
-/// editor de cada una para escribir un numero era lo que mas tiempo llevaba.
-/// En lote se marcan las familias, se escribe UN costo y se pone a todas las
-/// marcadas (y se calculan en el acto); tambien se puede escribir fila por
-/// fila. "Guardar" graba las que estan bien.
-///
-/// Hubo una version con un dialogo de tres modos (mismo costo, porcentaje
-/// sobre el actual o sobre el propuesto) y otra con "Pegar desde Excel": el
-/// usuario pidio solo esto, un costo para las marcadas.
-///
-/// **Las listas y los porcentajes de cada familia se respetan.** El servidor
-/// calcula cada familia igual que en el editor: sus listas activas, el
-/// porcentaje de cada lista, IVA, IT y el flete de cada sucursal. Lo unico que
-/// cambia es que el costo se escribe en la tabla. Para cambiar un porcentaje
-/// hay que abrir la familia en el editor.
+/// Piezas de la carga en lote del paso de familias: estado de cada fila, celda
+/// de resultado, campo que pone un costo a todas las marcadas y barra con
+/// Calcular y Guardar. El servidor calcula cada familia igual que en el editor
+/// (listas activas, porcentajes, IVA, IT y flete): para cambiar un porcentaje
+/// hay que abrir el editor.
 library;
 
 import 'package:flutter/material.dart';
@@ -95,9 +80,7 @@ Color colorVariacion(ColorScheme cs, double v) {
   return v > 0 ? cs.error : cs.primary;
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// CAMPO Y RESULTADO
-// ═══════════════════════════════════════════════════════════════════════════
+// Campo y resultado
 
 /// El costo de una familia, escrito en la misma fila.
 class CampoCostoLote extends StatelessWidget {
@@ -293,9 +276,7 @@ String motivoDelProblema(CalculoFamiliaEntity? previa) {
   return 'No hay nada que guardar con ese costo.';
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// UN COSTO PARA LAS MARCADAS
-// ═══════════════════════════════════════════════════════════════════════════
+// Un costo para las marcadas
 
 /// El costo que se pone a todas las familias marcadas, con su boton.
 ///
@@ -408,9 +389,7 @@ class _CostoParaMarcadasState extends State<CostoParaMarcadas> {
   }
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// BARRA DEL LOTE
-// ═══════════════════════════════════════════════════════════════════════════
+// Barra del lote
 
 /// Cuantas familias hay en cada estado, para la barra.
 @immutable

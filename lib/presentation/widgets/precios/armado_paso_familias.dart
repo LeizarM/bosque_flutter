@@ -1,22 +1,8 @@
 /// Paso 2 del asistente, para una propuesta por familias: elegir la familia y
-/// cargarle el costo.
+/// cargarle el costo. Reemplaza a `dlgProd`.
 ///
-/// Reemplaza a `dlgProd`, donde habia que elegir un "codigo de proveedor" que
-/// en realidad era un codigo de familia, despues un grupo, y recien ahi
-/// aparecian las familias. Aca es una sola lista de las familias activas, con
-/// buscador y filtro por grupo, que dice cuales ya estan en la propuesta, con
-/// que costo y a cuantos articulos alcanza cada una.
-///
-/// **Dos formas de cargar.** De a una: se toca la familia y se abre el editor,
-/// donde tambien se pueden cambiar los porcentajes. En lote (lo pidio el
-/// usuario para el trabajo operativo): se marcan las familias, se escribe un
-/// costo y se pone a todas las marcadas, que se calculan en el acto; tambien se
-/// puede escribir fila por fila. "Guardar" graba las que estan bien.
-/// Ver `armado_lote_familias.dart`.
-///
-/// Arriba, cuanto va armado en tres cifras -familias, listas y cuanto se mueve
-/// el costo-; antes de la primera familia, en su lugar, los tres pasos para
-/// armarla. En escritorio es una tabla; en el telefono, tarjetas.
+/// Se carga de a una (editor, donde también se cambian los porcentajes) o en lote
+/// (ver `armado_lote_familias.dart`).
 library;
 
 import 'package:flutter/material.dart';
@@ -117,7 +103,7 @@ class _ArmadoPasoFamiliasState extends ConsumerState<ArmadoPasoFamilias> {
   String? _grupo;
   _Vista _vista = _Vista.todas;
 
-  // ── Carga en lote ──────────────────────────────────────────────────────
+  // Carga en lote
   bool _enLote = false;
 
   /// Solo las familias a las que se les escribio un costo nuevo.
@@ -150,7 +136,7 @@ class _ArmadoPasoFamiliasState extends ConsumerState<ArmadoPasoFamilias> {
     super.dispose();
   }
 
-  // ── De a una ───────────────────────────────────────────────────────────
+  // De a una
 
   Future<void> _abrir(_FilaFamilia fila) async {
     final idAntes = ref.read(armadoProvider).idPropuesta;
@@ -207,7 +193,7 @@ class _ArmadoPasoFamiliasState extends ConsumerState<ArmadoPasoFamilias> {
     );
   }
 
-  // ── Lote ───────────────────────────────────────────────────────────────
+  // Lote
 
   TextEditingController _campo(_FilaFamilia f) => _costos.putIfAbsent(
     f.codigo,
@@ -219,10 +205,9 @@ class _ArmadoPasoFamiliasState extends ConsumerState<ArmadoPasoFamilias> {
   static String _textoGuardado(_FilaFamilia f) =>
       f.costoPropuesto == null ? '' : fmtMonto.format(f.costoPropuesto!);
 
-  /// **La casilla dice que entra en el lote.** Escribir un costo nuevo en una
-  /// fila la marca sola; desmarcarla descarta lo escrito ([_descartar]). Asi
-  /// "Guardar" guarda exactamente las marcadas: antes, una familia desmarcada
-  /// despues de ponerle el costo seguia contando.
+  /// **La casilla dice qué entra en el lote.** Escribir un costo nuevo en una fila
+  /// la marca sola; desmarcarla descarta lo escrito ([_descartar]). Así "Guardar"
+  /// guarda exactamente las marcadas.
   void _alEscribir(int codigo) {
     if (!mounted) return;
     final f = _filasPorCodigo[codigo];
@@ -342,8 +327,7 @@ class _ArmadoPasoFamiliasState extends ConsumerState<ArmadoPasoFamilias> {
     setState(() {});
   }
 
-  /// Pone el mismo costo a todas las marcadas y las calcula en el acto: es lo
-  /// que pidio el usuario, un costo para las seleccionadas.
+  /// Pone el mismo costo a todas las marcadas y las calcula en el acto.
   Future<void> _ponerAMarcadas(List<_FilaFamilia> filas, double costo) async {
     final marcadas = [
       for (final f in filas)
@@ -485,9 +469,8 @@ class _ArmadoPasoFamiliasState extends ConsumerState<ArmadoPasoFamilias> {
     if (!mounted) return;
     setState(() {
       _avance = null;
-      // Con un corte a mitad de camino no se sabe cuales entraron: se borran
-      // todas las vistas previas del lote y cada fila vuelve a decir lo que
-      // es -igual al guardado o sin calcular-.
+      // Con un corte a mitad de camino no se sabe cuáles entraron: se borran todas las
+      // vistas previas del lote y cada fila vuelve a decir lo que es (igual o sin calcular).
       for (final c in costos.keys) {
         _previas.remove(c);
       }
@@ -508,7 +491,7 @@ class _ArmadoPasoFamiliasState extends ConsumerState<ArmadoPasoFamilias> {
     );
   }
 
-  // ── Dibujo ─────────────────────────────────────────────────────────────
+  // Dibujo
 
   @override
   Widget build(BuildContext context) {
@@ -681,9 +664,8 @@ class _ArmadoPasoFamiliasState extends ConsumerState<ArmadoPasoFamilias> {
                   );
         }
 
-        // Con el teclado abierto en el telefono (el buscador, un costo del
-        // lote) los encabezados no dejan lugar a la lista: CabezaYLista los
-        // acota.
+        // Con el teclado abierto en teléfono (buscador, costo del lote) los encabezados no
+        // dejan lugar a la lista: CabezaYLista los acota.
         return CabezaYLista(
           cabeza: [
             // En el telefono, en lote, las cifras ceden su lugar a la tabla.
@@ -876,9 +858,7 @@ class _SinResultados extends StatelessWidget {
   }
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// RESUMEN Y MODO
-// ═══════════════════════════════════════════════════════════════════════════
+// Resumen y modo
 
 /// Antes de la primera familia no hay nada que contar: se dice como se arma.
 class _ComoSeArma extends StatelessWidget {
@@ -1302,9 +1282,7 @@ class _HerramientasLote extends StatelessWidget {
   }
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// CELDAS
-// ═══════════════════════════════════════════════════════════════════════════
+// Celdas
 
 /// "Cargar precios" en el tono principal y "Editar" en el ambar de editar de
 /// las propuestas: el mismo color hace lo mismo en todo el modulo.
@@ -1420,9 +1398,7 @@ class _CeldaFamilia extends StatelessWidget {
   }
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// DE A UNA
-// ═══════════════════════════════════════════════════════════════════════════
+// De a una
 
 class _Tabla extends StatelessWidget {
   const _Tabla({
@@ -1625,9 +1601,7 @@ class _Dato extends StatelessWidget {
   );
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// EN LOTE
-// ═══════════════════════════════════════════════════════════════════════════
+// En lote
 
 class _TablaLote extends StatelessWidget {
   const _TablaLote({

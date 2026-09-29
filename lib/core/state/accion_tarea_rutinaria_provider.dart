@@ -1,4 +1,3 @@
-// Destino final: lib/core/state/accion_tarea_rutinaria_provider.dart
 import 'package:bosque_flutter/data/repositories/accion_tarea_rutinaria_impl.dart';
 import 'package:bosque_flutter/domain/entities/accion_tarea_rutinaria_entity.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';

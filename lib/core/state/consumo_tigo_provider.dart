@@ -42,7 +42,7 @@ final subirExcelSociosTigoProvider =
       );
       return resultado;
     });
-//obtener excel de facturas tigo
+//obtener total por cuenta tigo
 final tigoTotalXCuenta =
     FutureProvider.family<List<TigoEjecutadoEntity>, String>((
       ref,
@@ -103,7 +103,7 @@ final jasperPdfFacturasTigoProvider = FutureProvider.family<Uint8List, String>((
   final repo = ConsumoTigoImpl();
   return await repo.descargarReporteFacturasTigo(
     periodoCobrado,
-  ); // Este método debe retornar Uint8List
+  );
 });
 //OBTENER grupos TIGO
 final obtenerGruposTigo = FutureProvider.family<List<SocioTigoEntity>, String>((
@@ -173,7 +173,7 @@ final rptCambiosTigo = FutureProvider.family<Uint8List, String>((
   final repo = ConsumoTigoImpl();
   return await repo.descargarRptCambiosTigo(
     periodoCobrado,
-  ); // Este método debe retornar Uint8List
+  );
 });
 // PARA ACTUALIZAR EMPRESA EN LOTES - tigo ejecutado
 final actualizarEmpresaLoteProvider =
@@ -195,7 +195,6 @@ final rptCorporativosPersonal = FutureProvider.family<Uint8List, String>((
   ref,
   periodo,
 ) async {
-  // Es mejor usar ref.watch para dependencias de otros providers
   final repo = ref.watch(consumoTigoRepositoryProvider);
   return await repo.descargarRptCorporativosPersonal(periodo);
 });
@@ -215,22 +214,12 @@ final tigoListarEmpresasProvider = FutureProvider<List<String>>((ref) async {
   final repo = ref.watch(consumoTigoRepositoryProvider);
   return await repo.listarEmpresasTigo();
 });
-// ───────────────────────────────────────────────────────────────────────
-// PROVIDER GLOBAL
-// ───────────────────────────────────────────────────────────────────────
 final chipTigoProvider =
     StateNotifierProvider.autoDispose<ChipTigoNotifier, ChipTigoState>((ref) {
       return ChipTigoNotifier(ref);
     });
 
-// ═══════════════════════════════════════════════════════════════════════
-// CAMBIOS DE LINEAS CORPORATIVAS TIGO
-// Pegar al final del archivo de providers de Tigo
-// ═══════════════════════════════════════════════════════════════════════
-
-// ───────────────────────────────────────────────────────────────────────
-// ESTADO
-// ───────────────────────────────────────────────────────────────────────
+// Cambios de líneas corporativas Tigo
 
 class CambiosTigoState {
   // Listas
@@ -254,7 +243,7 @@ class CambiosTigoState {
   final int paginaCambios;
   final int tamanoPaginaCambios;
 
-  // Loading por operacion
+  // Loading por operación
   final bool cargandoNumeros;
   final bool cargandoCambios;
   final bool cargandoDestinos;
@@ -365,20 +354,16 @@ class CambiosTigoState {
   }
 }
 
-// ───────────────────────────────────────────────────────────────────────
-// NOTIFIER
-// ───────────────────────────────────────────────────────────────────────
-
 class CambiosTigoNotifier extends StateNotifier<CambiosTigoState> {
   final Ref ref;
   final ConsumoTigoImpl _repo = ConsumoTigoImpl();
 
   CambiosTigoNotifier(this.ref) : super(CambiosTigoState()) {
-    // Cargar periodos disponibles automáticamente al inicializar para ser reactivos a invalidaciones
+    // Carga los periodos al iniciar para reaccionar a invalidaciones.
     cargarPeriodos('');
   }
 
-  // ── Filtros ──────────────────────────────────────────────────────────
+  // Filtros
 
   void setSearch(String? valor) {
     state = state.copyWith(
@@ -409,8 +394,7 @@ class CambiosTigoNotifier extends StateNotifier<CambiosTigoState> {
 
   void setPeriodoCobrado(String periodo) {
     state = state.copyWith(periodoCobrado: periodo);
-    // Al cambiar el periodo, invalidamos el reporte para que el
-    // próximo clic en el PDF sea obligatorio ir al servidor.
+    // Invalida el reporte para que el próximo clic en el PDF vaya al servidor.
     ref.invalidate(rptCambioLineaTigoProvider(periodo));
     cargarCambiosRegistrados();
   }
@@ -421,7 +405,6 @@ class CambiosTigoNotifier extends StateNotifier<CambiosTigoState> {
       clearEstado: valor == null,
       paginaCambios: 1,
     );
-    // Cada vez que cambia el estado, recargamos el historial
     cargarCambiosRegistrados();
   }
 
@@ -459,29 +442,27 @@ class CambiosTigoNotifier extends StateNotifier<CambiosTigoState> {
     ref.invalidate(obtenerTigoEjecutado);
     ref.invalidate(tigoArbolDetallado);
     ref.invalidate(tigoResumenDetallado);
-    ref.invalidate(tigoListarEmpresasProvider); // Refrescar lista de empresas
+    ref.invalidate(tigoListarEmpresasProvider);
     ref.invalidate(jasperPdfFacturasTigoProvider);
     ref.invalidate(
       periodosFacturaProvider,
-    ); // <-- NUEVO: Invalidar periodos disponibles
+    );
     if (state.periodoCobrado != null) {
       ref.invalidate(rptCambioLineaTigoProvider(state.periodoCobrado!));
     }
   }
 
-  // <--- NUEVO METODO PARA CARGAR PERIODOS --->
   Future<void> cargarPeriodos(String periodoPorDefecto) async {
     try {
       final listaDB = await _repo.obtenerPeriodosCambio();
 
-      // Siempre intentar usar periodoPorDefecto si existe en la lista nueva.
-      // Si no existe (periodo eliminado), caer al primero.
-      // Si la lista está vacía, usar 'TODOS'.
+      // Se usa periodoPorDefecto si sigue en la lista; si no (periodo eliminado),
+      // el primero (el más reciente); si la lista está vacía, null.
       final String? periodoInicial;
       if (listaDB.contains(periodoPorDefecto)) {
-        periodoInicial = periodoPorDefecto; // ← periodo preferido encontrado
+        periodoInicial = periodoPorDefecto;
       } else if (listaDB.isNotEmpty) {
-        periodoInicial = listaDB.first; // ← fallback al más reciente
+        periodoInicial = listaDB.first;
       } else {
         periodoInicial = null;
       }
@@ -497,7 +478,7 @@ class CambiosTigoNotifier extends StateNotifier<CambiosTigoState> {
     }
   }
 
-  // ── ACCION L: Lista unificada de numeros ──────────────────────────────
+  // ACCION L: Lista unificada de números
 
   Future<void> cargarNumerosAsignados() async {
     state = state.copyWith(cargandoNumeros: true, clearMensajeError: true);
@@ -524,7 +505,7 @@ class CambiosTigoNotifier extends StateNotifier<CambiosTigoState> {
     }
   }
 
-  // ── ACCION LC: Historial de cambios ───────────────────────────────────
+  // ACCION LC: Historial de cambios
 
   Future<void> cargarCambiosRegistrados() async {
     // Si el valor seleccionado es 'TODOS' o no hay nada, enviamos vacío ('') al SP
@@ -538,7 +519,7 @@ class CambiosTigoNotifier extends StateNotifier<CambiosTigoState> {
       final lista = await _repo.listarCambiosLinea(
         CambiosTigoEntity(
           periodoCobrado:
-              filtroPeriodo, // <--- Usamos el string vacío si es 'TODOS'
+              filtroPeriodo,
           estado:
               (state.estadoFiltro?.isNotEmpty == true)
                   ? state.estadoFiltro!
@@ -562,7 +543,7 @@ class CambiosTigoNotifier extends StateNotifier<CambiosTigoState> {
     }
   }
 
-  // ── ACCION D: Destinos para dropdown ─────────────────────────────────
+  // ACCION D: Destinos para dropdown
 
   Future<void> cargarDestinos({String? search, String? tipoSocio}) async {
     state = state.copyWith(cargandoDestinos: true);
@@ -586,7 +567,7 @@ class CambiosTigoNotifier extends StateNotifier<CambiosTigoState> {
     }
   }
 
-  // ── ACCION I/U: Registrar o actualizar cambio ─────────────────────────
+  // ACCION I/U: Registrar o actualizar cambio
 
   Future<bool> registrarCambio(CambiosTigoEntity entity, int audUsuario) async {
     state = state.copyWith(
@@ -601,17 +582,15 @@ class CambiosTigoNotifier extends StateNotifier<CambiosTigoState> {
 
       await cargarNumerosAsignados();
       if (!mounted) return false;
-      // ── FIX: si es INSERT, navegar al periodo del nuevo registro ──────
-      // Si es UPDATE, mantener el periodo que el usuario ya tenía seleccionado.
+      // INSERT: ir al periodo del nuevo registro. UPDATE: mantener el que el
+      // usuario ya tenía seleccionado.
       final periodoDestino =
           (entity.codCambio == 0)
               ? entity
-                  .periodoCobrado // INSERT → ir al nuevo periodo
+                  .periodoCobrado
               : (state.periodoCobrado ??
-                  entity.periodoCobrado); // UPDATE → mantener
-      // ─────────────────────────────────────────────────────────────────
+                  entity.periodoCobrado);
 
-      // Unificamos usando el método de clase para que la lógica sea la misma siempre
       await cargarPeriodos(periodoDestino);
       if (!mounted) return false;
       _invalidarResumen();
@@ -644,7 +623,7 @@ class CambiosTigoNotifier extends StateNotifier<CambiosTigoState> {
     }
   }
 
-  // ── ACCION D: Eliminar cambio pendiente ───────────────────────────────
+  // ACCION D: Eliminar cambio pendiente
 
   Future<bool> eliminarCambio(int codCambio, int audUsuario) async {
     state = state.copyWith(
@@ -656,12 +635,11 @@ class CambiosTigoNotifier extends StateNotifier<CambiosTigoState> {
       await _repo.eliminarCambioLinea(
         CambiosTigoEntity(codCambio: codCambio, audUsuario: audUsuario),
       );
-      // --- REFRESH DE DATOS ---
       await cargarNumerosAsignados();
       if (!mounted) return false;
       await cargarCambiosRegistrados();
       if (!mounted) return false;
-      // Refrescamos la lista de periodos (por si el mes eliminado ya no tiene registros)
+      // Por si el periodo eliminado ya no tiene registros.
       await cargarPeriodos(state.periodoCobrado ?? 'TODOS');
       if (!mounted) return false;
       _invalidarResumen();
@@ -683,11 +661,10 @@ class CambiosTigoNotifier extends StateNotifier<CambiosTigoState> {
     }
   }
 
-  // ── ACCION A: Aplicar cambios del periodo ─────────────────────────────
+  // ACCION A: Aplicar cambios del periodo
 
   Future<bool> aplicarCambios(String periodoCobrado, int audUsuario) async {
     if (periodoCobrado.isEmpty || periodoCobrado == 'TODOS') {
-      // <--- Validación de seguridad
       state = state.copyWith(
         mensajeError:
             'Debe seleccionar un periodo específico para aplicar cambios.',
@@ -709,14 +686,11 @@ class CambiosTigoNotifier extends StateNotifier<CambiosTigoState> {
       );
       if (!mounted) return false;
 
-      // Recargar listas
       await cargarNumerosAsignados();
       if (!mounted) return false;
-      //state = state.copyWith(periodoCobrado: periodoCobrado);
       await cargarCambiosRegistrados();
       if (!mounted) return false;
 
-      // ✅ INVALIDA AQUÍ - Después de aplicar exitosamente
       _invalidarResumen();
 
       state = state.copyWith(
@@ -772,21 +746,12 @@ class CambiosTigoNotifier extends StateNotifier<CambiosTigoState> {
   }
 }
 
-// ───────────────────────────────────────────────────────────────────────
-// PROVIDER
-// ───────────────────────────────────────────────────────────────────────
-
 final cambiosTigoProvider =
     StateNotifierProvider.autoDispose<CambiosTigoNotifier, CambiosTigoState>(
       (ref) => CambiosTigoNotifier(ref),
     );
-// ═══════════════════════════════════════════════════════════════════════
-// MÓDULO: CHIPS TIGO (PÉRDIDAS Y REPOSICIONES)
-// ═══════════════════════════════════════════════════════════════════════
+// Módulo: chips Tigo (pérdidas y reposiciones)
 
-// ───────────────────────────────────────────────────────────────────────
-// ESTADO (STATE)
-// ───────────────────────────────────────────────────────────────────────
 class ChipTigoState {
   // Lista principal (Acción L)
   final List<ChipTigoEntity> chipsPerdidos;
@@ -851,20 +816,16 @@ class ChipTigoState {
   }
 }
 
-// ───────────────────────────────────────────────────────────────────────
-// NOTIFIER (LÓGICA DE NEGOCIO Y CONEXIÓN CON IMPL)
-// ───────────────────────────────────────────────────────────────────────
 class ChipTigoNotifier extends StateNotifier<ChipTigoState> {
   final Ref ref;
   final ConsumoTigoImpl _repo = ConsumoTigoImpl();
 
   ChipTigoNotifier(this.ref) : super(ChipTigoState()) {
-    // Cargar la lista automáticamente al inicializar el provider
-    cargarPeriodos(); // Cargar periodos disponibles para el filtro
+    cargarPeriodos();
     cargarChipsPerdidos();
   }
 
-  // ── Filtros y Paginación ──────────────────────────────────────────────
+  // Filtros y Paginación
   void setSearch(String? valor) {
     state = state.copyWith(
       search: valor,
@@ -893,7 +854,7 @@ class ChipTigoNotifier extends StateNotifier<ChipTigoState> {
     cargarChipsPerdidos();
   }
 
-  // ── ACCIÓN L: Listar ──────────────────────────────────────────────────
+  // ACCIÓN L: Listar
   Future<void> cargarChipsPerdidos() async {
     state = state.copyWith(cargando: true, clearMensajeError: true);
     try {
@@ -928,7 +889,7 @@ class ChipTigoNotifier extends StateNotifier<ChipTigoState> {
     }
   }
 
-  // ── ACCIÓN I / U: Registrar o Actualizar ──────────────────────────────
+  // ACCIÓN I / U: Registrar o Actualizar
   Future<bool> registrarChip(ChipTigoEntity entity, int audUsuario) async {
     state = state.copyWith(
       guardando: true,
@@ -936,7 +897,7 @@ class ChipTigoNotifier extends StateNotifier<ChipTigoState> {
       clearMensajeExito: true,
     );
     try {
-      // Ahora recibimos el String con el texto "Registro insertado correctamente"
+      // El repo devuelve el texto del SP (p. ej. "Registro insertado correctamente").
       final msgExito = await _repo.registrarPerdidaChip(
         entity.copyWith(audUsuarioI: audUsuario),
       );
@@ -950,7 +911,7 @@ class ChipTigoNotifier extends StateNotifier<ChipTigoState> {
 
       state = state.copyWith(
         guardando: false,
-        mensajeExito: msgExito, // Asignamos el mensaje del SP al estado
+        mensajeExito: msgExito,
       );
       return true;
     } catch (e) {
@@ -964,7 +925,7 @@ class ChipTigoNotifier extends StateNotifier<ChipTigoState> {
     }
   }
 
-  // ── ACCIÓN D: Eliminar ────────────────────────────────────────────────
+  // ACCIÓN D: Eliminar
   Future<bool> eliminarChip(ChipTigoEntity entity) async {
     state = state.copyWith(
       guardando: true,
@@ -1003,7 +964,7 @@ class ChipTigoNotifier extends StateNotifier<ChipTigoState> {
       if (!mounted) return;
       state = state.copyWith(
         periodos: lista,
-        // Si el periodoFiltro es null, ponemos 'TODOS' (que debería ser el primero en la lista)
+        // Sin periodoFiltro previo: el primero de la lista, o 'TODOS' si está vacía.
         periodoFiltro:
             state.periodoFiltro ?? (lista.isNotEmpty ? lista.first : 'TODOS'),
       );
@@ -1013,7 +974,7 @@ class ChipTigoNotifier extends StateNotifier<ChipTigoState> {
   }
 }
 
-// 1. El Provider del Reporte que "observa" el periodo seleccionado
+// Reporte de pérdidas de líneas del periodo.
 final rptPerdidaLineasProvider = FutureProvider.family<Uint8List, String>((
   ref,
   periodo,
@@ -1029,15 +990,8 @@ final rptCambioLineaTigoProvider = FutureProvider.family<Uint8List, String>((
   final repo = ref.read(consumoTigoRepositoryProvider);
   return await repo.descargarRptCambiosLineaTigo(periodo);
 });
-// ─────────────────────────────────────────────────────────────────────────────
-// AGREGAR AL FINAL de consumo_tigo_provider.dart
-// StateNotifier para ResumenDetalladoScreen
-// Maneja: ejecutar periodo, filtros y estado de la pantalla
-// ─────────────────────────────────────────────────────────────────────────────
 
-// ═══════════════════════════════════════════════════════════════════════
-// ESTADO
-// ═══════════════════════════════════════════════════════════════════════
+// Estado de ResumenDetalladoScreen: ejecutar periodo, filtros y estado de la pantalla
 class ResumenDetalladoState {
   final bool ejecutando;
   final bool mostrarEjecutado; // false=preview(N), true=ejecutado(K)
@@ -1084,16 +1038,13 @@ class ResumenDetalladoState {
   }
 }
 
-// ═══════════════════════════════════════════════════════════════════════
-// NOTIFIER
-// ═══════════════════════════════════════════════════════════════════════
 class ResumenDetalladoNotifier extends StateNotifier<ResumenDetalladoState> {
   final Ref ref;
   final ConsumoTigoImpl _repo = ConsumoTigoImpl();
 
   ResumenDetalladoNotifier(this.ref) : super(const ResumenDetalladoState());
 
-  // ── Filtros ────────────────────────────────────────────────────────
+  // Filtros
   void setEmpresa(String? empresa) =>
       state = state.copyWith(
         empresaFiltro: empresa,
@@ -1109,10 +1060,9 @@ class ResumenDetalladoNotifier extends StateNotifier<ResumenDetalladoState> {
   void limpiarMensajes() =>
       state = state.copyWith(clearMensajeExito: true, clearMensajeError: true);
 
-  // ── Ejecutar periodo (ACCION='E') — toda la lógica en SQL ──────────
-  /// Llama al nuevo endpoint /ejecutarPeriodoTigo que unifica
-  /// generarAnticiposTigo (B) + registrarTigoEjecutado (G)
-  /// en una sola transacción con validaciones SQL.
+  // Ejecutar periodo (ACCION='E') — toda la lógica en SQL
+  /// Llama a /ejecutarPeriodoTigo, que unifica generarAnticiposTigo (B) +
+  /// registrarTigoEjecutado (G) en una sola transacción con validaciones SQL.
   Future<bool> ejecutarPeriodo(String periodoCobrado, int audUsuarioI) async {
     state = state.copyWith(
       ejecutando: true,
@@ -1148,9 +1098,9 @@ class ResumenDetalladoNotifier extends StateNotifier<ResumenDetalladoState> {
       ref.invalidate(obtenerTigoEjecutado((null, periodoCobrado, null)));
       ref.invalidate(tigoArbolDetallado((null, periodoCobrado, null)));
       ref.invalidate(tigoResumenDetallado(periodoCobrado));
-      ref.invalidate(tigoListarEmpresasProvider); // Refrescar lista de empresas
+      ref.invalidate(tigoListarEmpresasProvider);
 
-      // ── NUEVO: Invalidar providers que manejan periodos disponibles ──
+      // Providers que manejan periodos disponibles.
       ref.invalidate(cambiosTigoProvider);
       ref.invalidate(chipTigoProvider);
       ref.invalidate(periodosFacturaProvider);
@@ -1171,9 +1121,7 @@ class ResumenDetalladoNotifier extends StateNotifier<ResumenDetalladoState> {
   }
 }
 
-// ═══════════════════════════════════════════════════════════════════════
-// PROVIDER — con .family para que cada pantalla tenga su instancia
-// ═══════════════════════════════════════════════════════════════════════
+// Con .family para que cada pantalla tenga su instancia
 final resumenDetalladoProvider = StateNotifierProvider.autoDispose
     .family<ResumenDetalladoNotifier, ResumenDetalladoState, String>(
       (ref, periodoCobrado) => ResumenDetalladoNotifier(ref),

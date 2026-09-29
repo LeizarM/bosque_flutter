@@ -1,8 +1,6 @@
-/// Estado de la pantalla "Solicitud de corte".
-///
-/// El periodo por defecto es el anio en curso y no el mes, a diferencia de las
-/// otras dos pantallas del modulo: se generan pocas solicitudes —unas decenas
-/// por anio— y con un mes la pantalla abriria casi siempre vacia.
+/// Estado de la pantalla "Solicitud de corte". El periodo por defecto es el año
+/// en curso, no el mes: se generan pocas solicitudes (unas decenas por año) y
+/// con un mes la pantalla abriría casi siempre vacía.
 library;
 
 import 'package:bosque_flutter/data/repositories/solicitud_corte_impl.dart';
@@ -15,17 +13,13 @@ final solicitudCorteRepositoryProvider = Provider<SolicitudCorteRepository>(
   (ref) => SolicitudCorteImpl(),
 );
 
-/// Cuantos items tiene el catalogo SAP.
-///
-/// Solo para poder decir "entre 1.522 items" en el buscador. El catalogo en si
-/// ya no se descarga: la busqueda la resuelve el servidor.
+/// Cuántos items tiene el catálogo SAP; solo para decir "entre 1.522 items" en
+/// el buscador (el catálogo ya no se descarga: la búsqueda la resuelve el servidor).
 final totalItemsSapProvider = FutureProvider<int>(
   (ref) => ref.watch(solicitudCorteRepositoryProvider).totalItemsSap(),
 );
 
-// ═══════════════════════════════════════════════════════════════════════════
 // LISTADO
-// ═══════════════════════════════════════════════════════════════════════════
 
 class SolicitudesCorteState {
   final List<CcrSolicitudEntity> solicitudes;
@@ -138,9 +132,7 @@ final solicitudesCorteProvider = StateNotifierProvider.autoDispose<
       SolicitudesCorteNotifier(ref.watch(solicitudCorteRepositoryProvider)),
 );
 
-// ═══════════════════════════════════════════════════════════════════════════
 // DETALLE
-// ═══════════════════════════════════════════════════════════════════════════
 
 /// Los items de una solicitud. Es solo lectura, asi que alcanza un FutureProvider.
 final detalleSolicitudCorteProvider = FutureProvider.autoDispose

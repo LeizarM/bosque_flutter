@@ -21,14 +21,10 @@ import 'package:bosque_flutter/presentation/widgets/comisiones/dialogo_items_pag
 import 'package:bosque_flutter/presentation/widgets/comisiones/dialogo_notas_fila.dart';
 import 'package:bosque_flutter/presentation/widgets/comisiones/comisiones_tema.dart';
 
-/// Vista preliminar de comisiones antes de ejecutar el pago.
-///
-/// Las cuatro modalidades llaman al SP p_list_paraPagar heredado de Bosque v2,
-/// así que los importes coinciden con los del sistema anterior.
-///
-/// Se ofrece en dos lecturas. El gráfico responde "quién se lleva cuánto", que
-/// es lo que se mira primero; la tabla queda para cuando hay que verificar una
-/// fila concreta. La misma información, dos preguntas distintas.
+/// Vista preliminar de comisiones antes de ejecutar el pago. Las cuatro
+/// modalidades llaman al SP p_list_paraPagar heredado de Bosque v2, así que los
+/// importes coinciden con los del sistema anterior. El gráfico responde «quién
+/// se lleva cuánto»; la tabla sirve para verificar una fila concreta.
 class TabPreliminar extends ConsumerStatefulWidget {
   const TabPreliminar({super.key, required this.modalidades});
 
@@ -48,12 +44,9 @@ class _TabPreliminarState extends ConsumerState<TabPreliminar> {
   /// Despues manda lo que haya escrito el usuario.
   bool _tcSembrado = false;
 
-  /// Mientras se traen las notas de SAP no se muestra la tabla.
-  ///
-  /// Podria dejarse la tabla anterior visible y refrescarla al terminar, que es
-  /// mas suave, pero seria mostrar numeros viejos sin decirlo justo cuando
-  /// alguien entro a ver los de ahora. Peor: se leen, se anotan, y cambian
-  /// solos dos segundos despues.
+  /// Mientras se traen las notas de SAP no se muestra la tabla: dejar la anterior
+  /// y refrescarla luego mostraría números viejos sin avisar (se leen, se anotan y
+  /// cambian solos).
   bool _sincronizando = true;
 
   @override
@@ -62,17 +55,12 @@ class _TabPreliminarState extends ConsumerState<TabPreliminar> {
     _traerNotasDeSap();
   }
 
-  /// Le pide a SAP las notas nuevas al abrir la pestana, una sola vez.
-  ///
-  /// La carga real vive detras de p_abm_tcom_SincronizarNotas, que decide si
-  /// hace falta: si los datos tienen menos de diez minutos no toca nada, y si
-  /// ya hay otra carga en curso tampoco. Sin eso seria reescribir el 82 % de
-  /// tcom_noPagado cada vez que alguien entra, y el proc de carga no tiene
-  /// candado propio -su guardia contra duplicados es leer y despues insertar-.
-  ///
-  /// Si falla no se avisa ni se corta: la pestana igual muestra lo que haya en
-  /// la tabla, que es lo que mostraba antes de que esto existiera. Que no se
-  /// pueda hablar con SAP no es razon para dejar al vendedor sin su preliminar.
+  /// Le pide a SAP las notas nuevas al abrir la pestaña, una sola vez. La carga
+  /// vive tras p_abm_tcom_SincronizarNotas, que decide si hace falta (con datos
+  /// de menos de diez minutos, o con otra carga en curso, no toca nada): sin eso
+  /// se reescribiría el 82 % de tcom_noPagado en cada entrada, y el proc no tiene
+  /// candado propio (su guardia contra duplicados es leer y luego insertar). Si
+  /// falla no se avisa ni se corta: se muestra lo que haya en la tabla.
   Future<void> _traerNotasDeSap() async {
     try {
       final cargo =
@@ -138,12 +126,10 @@ class _TabPreliminarState extends ConsumerState<TabPreliminar> {
       children: [
         _BarraFiltros(padding: padding, modalidades: widget.modalidades),
         const Divider(height: 1),
-        // Los reportes de comisiones pagadas viven aca ademas de en
-        // Pendientes: esa pestania la abren solo los administradores, y el
-        // vendedor necesita poder contrastar el preliminar contra lo que ya
-        // se le pago. Arranca en el mismo periodo que esta mirando.
-        // Sin Mes/Ano propios: los toma de los de arriba. Tener dos combos
-        // iguales, uno debajo del otro y con el mismo valor, no se entiende.
+        // Reportes de pagadas: viven aquí además de en Pendientes (solo
+        // administradores) para que el vendedor contraste el preliminar contra lo
+        // ya pagado. Sin Mes/Año propios: toma los de arriba (dos combos iguales
+        // no se entienden).
         BarraReportesPagadas(
           padding: padding,
           alcance: AlcanceReportes.pagadas,
@@ -178,10 +164,9 @@ class _TabPreliminarState extends ConsumerState<TabPreliminar> {
                           filas.where((f) => !f.esTotal).toList()
                             ..sort((a, b) => b.bsAPagar.compareTo(a.bsAPagar));
 
-                      // Se mira `detalle` y no `filas`: el SP devuelve la fila
-                      // de total aunque no haya ni un vendedor, asi que
-                      // `filas.isEmpty` daba false y la pantalla pintaba un
-                      // resumen en cero con el grafico en blanco.
+                      // Se mira `detalle` y no `filas`: el SP devuelve la fila de
+                      // total aunque no haya un solo vendedor, y con
+                      // `filas.isEmpty` se pintaba un resumen en cero.
                       if (detalle.isEmpty) {
                         return yaEjecutado
                             ? _PeriodoYaEjecutado(
@@ -202,10 +187,9 @@ class _TabPreliminarState extends ConsumerState<TabPreliminar> {
 
                       return CustomScrollView(
                         slivers: [
-                          // Con filas Y el periodo pagado, lo que se ve son
-                          // notas posteriores al pago. Sin este aviso se lee
-                          // como el mes entero, y el numero no cuadra contra
-                          // la planilla que ya se firmo.
+                          // Con filas Y el período pagado, lo que se ve son notas
+                          // posteriores al pago: sin este aviso se lee como el mes
+                          // entero y no cuadra con la planilla ya firmada.
                           if (yaEjecutado)
                             SliverToBoxAdapter(
                               child: _AvisoYaEjecutado(
@@ -246,12 +230,10 @@ class _TabPreliminarState extends ConsumerState<TabPreliminar> {
   }
 }
 
-/// Lo que se ve al abrir el preliminar de un periodo que ya se pago.
-///
-/// No es un "no hay datos": es que el preliminar, por definicion, lista notas
-/// CERRADAS Y SIN PAGAR. Cuando el periodo se ejecuta, esas notas pasan a
-/// tcom_pagado y el preliminar queda -correctamente- en cero. Lo que se pago
-/// vive en el reporte, y a eso se manda.
+/// Lo que se ve al abrir el preliminar de un período ya pagado. No es un "no hay
+/// datos": el preliminar lista notas CERRADAS Y SIN PAGAR y al ejecutar el
+/// período pasan a tcom_pagado, así que queda en cero. Lo pagado vive en el
+/// reporte, y a eso se manda.
 class _PeriodoYaEjecutado extends StatelessWidget {
   const _PeriodoYaEjecutado({
     required this.periodo,
@@ -265,8 +247,8 @@ class _PeriodoYaEjecutado extends StatelessWidget {
   final DateTime? fecha;
   final ModalidadPreliminar modalidad;
 
-  /// El periodo en numeros. `periodo` ya es mm/aaaa, pero para pedirle algo al
-  /// backend hacen falta los dos enteros, no la cadena armada.
+  /// El período en números: `periodo` ya es mm/aaaa, pero para pedirle algo al
+  /// backend hacen falta los dos enteros.
   final int mes;
   final int anio;
 
@@ -284,10 +266,9 @@ class _PeriodoYaEjecutado extends StatelessWidget {
           'El preliminar solo muestra notas cerradas y sin pagar, y este '
           'período se pagó$cuando: por eso no queda nada aquí. Para ver lo que '
           'se pagó, use «${modalidad.reportePagadas}» en la barra de arriba.',
-      // El segundo camino, el que el reporte no da: el reporte imprime lo
-      // pagado, pero no dice que quedo FUERA del descuento ni por que. Esa
-      // pregunta se responde con el detalle congelado, y este vacio es donde
-      // la gente la hace: esta mirando un cero de un mes que si se pago.
+      // El segundo camino: el reporte imprime lo pagado pero no dice qué quedó
+      // FUERA del descuento ni por qué; eso lo responde el detalle congelado, y
+      // aquí (un cero de un mes ya pagado) es donde se pregunta.
       textoAccion: 'Ver qué quedó fuera del descuento',
       iconoAccion: Icons.rule_folder_outlined,
       alPulsarAccion:
@@ -362,8 +343,6 @@ class _AvisoYaEjecutado extends StatelessWidget {
   }
 }
 
-// ── Resumen ───────────────────────────────────────────────────────────
-
 class _Resumen extends StatelessWidget {
   const _Resumen({required this.detalle, required this.padding});
 
@@ -428,8 +407,6 @@ class _SelectorVista extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: EdgeInsets.fromLTRB(padding, 4, padding, 8),
-      // Wrap y no Row: en un teléfono el selector y el botón no entran en una
-      // línea, y un Row los recortaría sin avisar.
       child: Wrap(
         spacing: 12,
         runSpacing: 8,
@@ -513,8 +490,6 @@ class _BotonExportarState extends State<_BotonExportar> {
   }
 }
 
-// ── Gráfico ───────────────────────────────────────────────────────────
-
 class _Grafico extends StatelessWidget {
   const _Grafico({required this.detalle, required this.padding});
 
@@ -524,10 +499,8 @@ class _Grafico extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Antes habia una barra por FILA, asi que un vendedor con ventas en dos
-    // meses o en dos tramos aparecia varias veces y competia consigo mismo en
-    // el ranking. Se agrupa por vendedor: el puesto sale del total, que es la
-    // pregunta que responde el preliminar.
+    // Una barra por VENDEDOR, no por fila: uno con ventas en dos meses o tramos
+    // aparecería varias veces compitiendo consigo mismo. El puesto sale del total.
     final ranking = _agrupar(detalle);
     final maximo = ranking.isEmpty ? 0.0 : ranking.first.total;
     final total = ranking.fold<double>(0, (a, v) => a + v.total);
@@ -550,9 +523,9 @@ class _Grafico extends StatelessWidget {
     );
   }
 
-  /// Un elemento por vendedor, ordenado por total descendente. Adentro, una
-  /// linea por combinacion de tipo y tasa: los periodos se juntan ahi porque
-  /// dos meses con la misma tasa son el mismo concepto de pago.
+  /// Un elemento por vendedor, ordenado por total descendente. Adentro, una línea
+  /// por tipo y tasa: los períodos se juntan ahí porque dos meses con la misma
+  /// tasa son el mismo concepto de pago.
   static List<_VendedorAgregado> _agrupar(
     List<PreliminarComisionEntity> filas,
   ) {
@@ -630,9 +603,8 @@ class _FilaVendedor extends StatelessWidget {
     final tt = Theme.of(context).textTheme;
     final esMovil = ResponsiveUtilsBosque.isMobile(context);
 
-    // El desglose se muestra cuando agrega algo: varias combinaciones de tipo
-    // y tasa, o una sola pero repartida en mas de un mes. Con una combinacion
-    // y un mes solo repetiria el importe que ya esta arriba.
+    // El desglose se muestra cuando agrega algo: varias combinaciones de tipo y
+    // tasa, o una sola repartida en más de un mes; si no, repite el importe de arriba.
     final mostrarDesglose =
         vendedor.ordenadas.length > 1 ||
         (vendedor.ordenadas.isNotEmpty &&
@@ -806,8 +778,6 @@ class _LineaDesglose extends StatelessWidget {
     );
   }
 }
-
-// ── Filtros ───────────────────────────────────────────────────────────
 
 class _BarraFiltros extends ConsumerWidget {
   const _BarraFiltros({required this.padding, required this.modalidades});
@@ -1053,8 +1023,6 @@ class _CampoTipoCambioState extends ConsumerState<_CampoTipoCambio> {
   }
 }
 
-// ── Tabla ─────────────────────────────────────────────────────────────
-
 class _Tabla extends ConsumerWidget {
   const _Tabla({
     required this.filas,
@@ -1073,10 +1041,9 @@ class _Tabla extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final cs = Theme.of(context).colorScheme;
 
-    // Dos filas del mismo vendedor con el mismo tipo y el mismo periodo no son
-    // un duplicado: son tramos distintos de tcom_comisionPorRango, y lo unico
-    // que las separa es la tasa. La tasa sola no se lo explica a nadie, asi que
-    // se le agrega al lado los dias de cobro que la originan.
+    // Dos filas del mismo vendedor, tipo y período no son un duplicado: son tramos
+    // distintos de tcom_comisionPorRango y solo los separa la tasa, así que se
+    // agregan al lado los días de cobro que la originan.
     final etiquetaTramo = <String, String>{};
     ref.watch(rangosComisionProvider).whenData((lista) {
       final porTasa = <String, List<ComisionPorRangoEntity>>{};
@@ -1084,9 +1051,8 @@ class _Tabla extends ConsumerWidget {
         porTasa.putIfAbsent(_claveTasa(r.tipo, r.comision), () => []).add(r);
       }
       porTasa.forEach((clave, tramos) {
-        // Solo se etiqueta cuando la tasa identifica un unico tramo. En Contado
-        // el 0,8% cubre dos (0 a 4 dias y pago anticipado): ahi el dato no
-        // desambigua nada y mostrarlo seria afirmar algo que no se sabe.
+        // Solo se etiqueta cuando la tasa identifica un único tramo: en Contado
+        // el 0,8% cubre dos (0 a 4 días y pago anticipado) y el dato no desambigua.
         if (tramos.length == 1) {
           etiquetaTramo[clave] = tramos.first.rangoLegible;
         }
@@ -1098,10 +1064,9 @@ class _Tabla extends ConsumerWidget {
             ? null
             : etiquetaTramo[_claveTasa(f.etiqueta, f.comision)];
 
-    // Color por tasa y por periodo. El indice se calcula sobre los valores
-    // ORDENADOS, no sobre el orden de aparicion, para que un mismo porcentaje
-    // salga siempre del mismo color aunque cambie el mes consultado o el
-    // vendedor que encabeza la lista.
+    // Color por tasa y por período. El índice se calcula sobre los valores
+    // ORDENADOS, no sobre el orden de aparición, para que un porcentaje salga
+    // siempre del mismo color aunque cambie el mes o el vendedor que encabeza.
     final tasas =
         filas
             .where((f) => !f.esTotal && f.comision != 0)
@@ -1117,13 +1082,11 @@ class _Tabla extends ConsumerWidget {
             .toList()
           ..sort();
 
-    // Un grupo son las filas de detalle de un vendedor mas su total. El SP las
-    // entrega en ese orden, asi que el total cierra el grupo; si alguna rama
-    // viniera sin total, el cambio de vendedor tambien lo corta.
-    //
-    // Con el nombre repetido a color pleno en cada fila, cinco lineas del mismo
-    // vendedor se leian como el mismo registro cargado cinco veces. Se pinta el
-    // nombre una sola vez por grupo y se alterna el fondo entre grupos.
+    // Un grupo son las filas de detalle de un vendedor más su total; el SP las
+    // entrega en ese orden y, si una rama viniera sin total, el cambio de
+    // vendedor también corta. El nombre se pinta una vez por grupo y el fondo
+    // alterna: repetido, cinco líneas del mismo vendedor parecían un registro
+    // cargado cinco veces.
     final abreGrupo = <bool>[];
     final indiceGrupo = <int>[];
     var grupo = 0;
@@ -1140,15 +1103,11 @@ class _Tabla extends ConsumerWidget {
     }
 
     // El SP deja bsAPagar y usdAPagar en NULL en la fila TOTAL de la modalidad
-    // vigente —rama K: «Select 9999 as idv, ..., null, null, 3 as ord»— y por
-    // eso llegaba como 0,00. La suma se hace aca sin inventar nada: son las
-    // mismas filas de detalle que ya estan en pantalla.
-    //
-    // Suma SOLO el detalle de vendedores (ord 1). Las filas de supervision que
-    // el SP agrega despues (ord 4, «Gerente de Ventas» y los supervisores) se
-    // calculan sobre esa misma base y son otro concepto: sumarlas aca dejaria
-    // la fila incoherente con su propio monto base, que tambien es solo de
-    // vendedores.
+    // vigente (rama K: «Select 9999 as idv, ..., null, null, 3 as ord»): llegaba
+    // como 0,00. Aquí se suma el detalle de vendedores (ord 1), ya en pantalla.
+    // NO se suman las filas de supervisión (ord 4, «Gerente de Ventas» y
+    // supervisores): son otro concepto y dejarían la fila incoherente con su
+    // monto base, que también es solo de vendedores.
     var sumaBs = 0.0;
     var sumaUsd = 0.0;
     for (final f in filas) {
@@ -1158,9 +1117,9 @@ class _Tabla extends ConsumerWidget {
       }
     }
 
-    /// La fila TOTAL que el SP dejo sin sumar. 9999 es el idv literal que usa
-    /// la rama K para marcarla. Se exige ademas que venga en cero para que, si
-    /// algun dia el SP la calcula, mande el dato del servidor y no este parche.
+    /// La fila TOTAL que el SP dejó sin sumar: 9999 es el idv literal de la rama
+    /// K. Se exige que venga en cero para que, si el SP algún día la calcula,
+    /// mande el dato del servidor y no este parche.
     bool totalSinSumar(PreliminarComisionEntity f) =>
         f.esTotal && f.idVendedor == 9999 && f.bsAPagar == 0;
 
@@ -1213,11 +1172,10 @@ class _Tabla extends ConsumerWidget {
                     (context, limites) => SingleChildScrollView(
                       scrollDirection: Axis.horizontal,
                       child: ConstrainedBox(
-                        // La tabla ocupa todo el ancho disponible. Con un minimo fijo
-                        // quedaba una franja vacia a la derecha en pantallas anchas.
-                        // El ancho se mide FUERA del scroll horizontal: adentro
-                        // limites.maxWidth es infinito, math.max lo propaga y el
-                        // layout muere con "BoxConstraints forces an infinite width".
+                        // La tabla ocupa todo el ancho (un mínimo fijo dejaba una
+                        // franja vacía). El ancho se mide FUERA del scroll
+                        // horizontal: adentro maxWidth es infinito y math.max lo
+                        // propaga ("BoxConstraints forces an infinite width").
                         constraints: BoxConstraints(
                           minWidth: math.max(820, limites.maxWidth),
                         ),
@@ -1259,10 +1217,9 @@ class _Tabla extends ConsumerWidget {
                                       alpha: 0.28,
                                     );
                                   }
-                                  // El hover gana a la banda de grupo: la
-                                  // banda dice a que vendedor pertenece la
-                                  // fila -que no cambia-, el hover dice cual
-                                  // se esta mirando ahora.
+                                  // El hover gana a la banda de grupo: la banda dice
+                                  // a qué vendedor pertenece la fila (no cambia); el
+                                  // hover, cuál se mira ahora.
                                   if (estados.contains(WidgetState.hovered)) {
                                     return null;
                                   }
@@ -1277,17 +1234,16 @@ class _Tabla extends ConsumerWidget {
                                     Row(
                                       mainAxisSize: MainAxisSize.min,
                                       children: [
-                                        // Barra de acento: marca de un vistazo
-                                        // donde empieza y termina el bloque de un
-                                        // vendedor. Llena en la fila que lo abre y
-                                        // en el total, tenue en las del medio.
+                                        // Barra de acento: marca dónde empieza y
+                                        // termina el bloque de un vendedor. Llena en
+                                        // la fila que lo abre y en el total, tenue en
+                                        // las del medio.
                                         Container(
                                           width: 4,
                                           height: 26,
                                           decoration: BoxDecoration(
-                                            // Un color por vendedor: dos
-                                            // bloques seguidos nunca comparten
-                                            // barra.
+                                            // Un color por vendedor: dos bloques
+                                            // seguidos nunca comparten barra.
                                             color: _colorVendedor(
                                               indiceGrupo[i],
                                             ).withValues(
@@ -1302,11 +1258,10 @@ class _Tabla extends ConsumerWidget {
                                           ),
                                         ),
                                         const SizedBox(width: 12),
-                                        // El nombre se escribe UNA sola vez por
-                                        // bloque. Repetido en cada fila hacia que
-                                        // dos tramos del mismo vendedor, que solo
-                                        // difieren en el porcentaje, se leyeran
-                                        // como el mismo registro cargado dos veces.
+                                        // El nombre va UNA sola vez por bloque:
+                                        // repetido, dos tramos del mismo vendedor que
+                                        // solo difieren en el porcentaje se leían
+                                        // como un registro cargado dos veces.
                                         Text(
                                           f.esTotal || abreGrupo[i]
                                               ? (f.nombreVen.isEmpty
@@ -1356,10 +1311,9 @@ class _Tabla extends ConsumerWidget {
                                         : Row(
                                           mainAxisSize: MainAxisSize.min,
                                           children: [
-                                            // Punto por periodo: en las
-                                            // modalidades que arrastran meses
-                                            // anteriores distingue 06/2026 de
-                                            // 07/2026 sin leer el numero.
+                                            // Punto por período: distingue 06/2026
+                                            // de 07/2026 sin leer el número en las
+                                            // modalidades que arrastran meses.
                                             Container(
                                               width: 8,
                                               height: 8,
@@ -1506,16 +1460,11 @@ class _Numero extends StatelessWidget {
 String _claveTasa(String tipo, double comision) =>
     '${tipo.trim().toLowerCase()}|${comision.toStringAsFixed(6)}';
 
-// ── Paletas del preliminar ──────────────────────────────────────────────────
-//
-// Tres codificaciones distintas conviven en la misma fila, asi que cada una
-// usa su propia familia y su propia forma para que no se lean cruzadas:
-//   vendedor -> barra vertical a la izquierda
-//   periodo  -> punto redondo
-//   tasa     -> chip relleno
-// Los indices de vendedor y periodo se toman modulo el largo: si hay mas
-// vendedores que colores el ciclo se repite, pero nunca en bloques contiguos.
-// La tasa no usa lista de colores; ver _baseTasa.
+// Paletas del preliminar: tres codificaciones conviven en la misma fila y cada
+// una usa su familia y forma para no leerse cruzadas (vendedor -> barra vertical,
+// período -> punto redondo, tasa -> chip relleno). Los índices van módulo el
+// largo de la lista: el ciclo se repite, pero nunca en bloques contiguos. Tasa:
+// ver _baseTasa.
 
 /// Barra del bloque de cada vendedor.
 const _coloresVendedor = <Color>[
@@ -1539,18 +1488,12 @@ const _coloresPeriodo = <Color>[
   Color(0xFFFB8C00),
 ];
 
-/// Chip de la tasa: un solo color, y la magnitud viaja en el alpha.
-///
-/// La rampa anterior eran seis matices -indigo, teal, lima, amarillo, naranja,
-/// rojo- que recorrian 230 grados de tono. Se leia el orden, pero al costo de
-/// meter un semaforo donde no hay nada bueno ni malo: una tasa alta no es una
-/// alerta, y el rojo del modulo tiene que seguir queriendo decir "esto fallo".
-///
-/// Tampoco sirve reemplazarla por un mismo tono "de claro a oscuro". El chip
-/// fija la lightness del texto en un valor unico por tema y pinta el fondo con
-/// alpha, o sea descarta la lightness del color base: seis violetas de distinto
-/// brillo saldrian como seis chips identicos. Por eso lo que recorre la escala
-/// aca es el ALPHA del fondo, que es lo unico que sobrevive a esa cuenta.
+/// Chip de la tasa: un solo color, y la magnitud viaja en el alpha. Una rampa de
+/// matices (230 grados de tono) mete un semáforo donde nada es bueno ni malo y el
+/// rojo del módulo debe seguir diciendo "esto falló"; y un mismo tono de claro a
+/// oscuro no sirve: el chip fija la lightness del texto por tema y pinta el fondo
+/// con alpha, descartando la lightness del color base (seis violetas de distinto
+/// brillo saldrían idénticos). Por eso la escala recorre el ALPHA del fondo.
 const _baseTasa = Color(0xFF4527A0);
 
 Color _colorVendedor(int i) => _coloresVendedor[i % _coloresVendedor.length];

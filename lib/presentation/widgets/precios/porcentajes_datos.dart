@@ -1,20 +1,9 @@
-/// Las filas que dibuja la pantalla de porcentajes (tpr_porcentaje), ya
-/// traducidas desde los mapas que devuelve el backend.
-///
-/// **Por que hay una clase y no se usan los mapas directamente.** Las tres
-/// lecturas de porcentajes de `PreciosRepository` devuelven
-/// `Map<String, dynamic>` y no la entity, porque lo que se muestra es el cruce
-/// de tpr_porcentaje con tb_sucursal y tpr_clasificacionPrecio -nombre de la
-/// sucursal, nombre de la lista, vpp- y nada de eso es columna de la tabla.
-/// Ademas el margen llega en la clave `porcentaje` y en la tabla se llama
-/// `porcen`. Este archivo es el UNICO lugar de la pantalla donde se tocan esas
-/// claves: la tabla, las tarjetas y el guardado hablan con campos tipados.
-///
-/// El camino de vuelta tambien vive aca ([FilaPorcentaje.aMapa]), porque
-/// `PorcentajesNotifier.guardarGrilla` y `validarPorcentajesAscendentes`
-/// esperan exactamente esas mismas claves: si una se escribe mal, la validacion
-/// se queda sin sucursal o sin vpp y deja de validar en silencio, que es
-/// justamente el defecto que esta pantalla vino a no repetir.
+/// Las filas de la pantalla de porcentajes (tpr_porcentaje), traducidas desde los
+/// mapas del backend (cruzan tb_sucursal y tpr_clasificacionPrecio; el margen
+/// llega como `porcentaje` y en la tabla es `porcen`). Este archivo es el ÚNICO
+/// lugar que toca esas claves. [FilaPorcentaje.aMapa] hace el camino de vuelta:
+/// `guardarGrilla` y `validarPorcentajesAscendentes` esperan las mismas claves y,
+/// si una falla, la validación deja de validar en silencio.
 library;
 
 import 'package:flutter/foundation.dart';
@@ -33,10 +22,9 @@ class FilaPorcentaje {
     required this.porcen,
   });
 
-  /// PK de la fila de tpr_porcentaje. **Cero significa que la fila todavia no
-  /// existe** y el guardado tiene que ser un alta: el listado devuelve cero
-  /// -o null, por el LEFT JOIN- en las listas de precios que la familia aun no
-  /// tiene cargadas. No es un error.
+  /// PK de tpr_porcentaje. **Cero significa que la fila aún no existe** y el
+  /// guardado debe ser un alta: el listado devuelve cero (o null, por el LEFT
+  /// JOIN) en las listas que la familia todavía no tiene cargadas.
   final BigInt idPorcen;
 
   final BigInt idClasificacion;
@@ -70,46 +58,36 @@ class FilaPorcentaje {
   /// La fila no existe en la tabla: guardar es insertar.
   bool get esAlta => idPorcen == BigInt.zero;
 
-  /// Margen negativo: el precio quedaria por debajo del costo. Casi siempre es
-  /// un error de carga, asi que la pantalla lo resalta en vez de aceptarlo sin
-  /// decir nada.
+  /// Margen negativo: el precio quedaría por debajo del costo. Casi siempre es un
+  /// error de carga, así que la pantalla lo resalta.
   bool get esNegativo => porcen < 0;
 
   /// Como se nombra la lista en una linea: la sucursal manda, porque la regla
   /// ascendente se lee dentro de cada sucursal.
   String get destino => '$sucursal · $nombrePrecio';
 
-  /// Como se rotula la lista en la grilla. En la base casi todas se llaman
-  /// "Precio" a secas y lo que las distingue es el numero: "Precio 3". Si el
-  /// nombre ya trae un numero se deja como esta.
+  /// Cómo se rotula la lista en la grilla: en la base casi todas se llaman "Precio"
+  /// y las distingue el número ("Precio 3"). Si el nombre ya trae un número, se deja.
   String get etiquetaLista {
     final nombre = nombrePrecio.trim();
     if (nombre.isEmpty) return 'Lista $vpp';
     return RegExp(r'\d').hasMatch(nombre) ? nombre : '$nombre $vpp';
   }
 
-  /// Con que se reconoce esta fila dentro de la lista de choques que devuelve
-  /// `validarPorcentajesAscendentes`.
-  ///
-  /// Esa funcion informa el choque con el codigo de sucursal y el nombre de la
-  /// lista -no con el idClasificacion, que es lo que la pantalla usa de clave-,
-  /// asi que para pintar de rojo la fila culpable hay que volver a armar la
-  /// misma pareja. El nombre de la lista se repite entre sucursales, pero junto
-  /// con el codigo de sucursal identifica una sola fila de la grilla.
+  /// Con qué se reconoce esta fila en los choques de
+  /// `validarPorcentajesAscendentes`: esa función informa código de sucursal y
+  /// nombre de lista (no idClasificacion), así que se rearma la misma pareja. El
+  /// nombre se repite entre sucursales, pero con el código identifica una fila.
   String get claveConflicto => claveDeConflicto(codSucursal, nombrePrecio);
 
   /// La misma clave, armada desde los datos de un [ConflictoPorcentaje].
   static String claveDeConflicto(int codSucursal, String nombrePrecio) =>
       '$codSucursal|$nombrePrecio';
 
-  /// El mapa que esperan `validarPorcentajesAscendentes` y
-  /// `porcentajeDesdeFila`, con [porcentaje] en lugar del valor original.
-  ///
-  /// [idPorcenForzado] existe para la edicion masiva por grupo: ahi la grilla
-  /// de destinos NO trae idPorcen -el backend la devuelve sin esa columna- y
-  /// cada familia tiene el suyo, que la pantalla resuelve contra la tabla
-  /// cruda. Sin esto, todas las escrituras del grupo serian altas y se
-  /// duplicarian las filas que ya existen.
+  /// El mapa que esperan `validarPorcentajesAscendentes` y `porcentajeDesdeFila`,
+  /// con [porcentaje] en lugar del valor original. [idPorcenForzado] es para la
+  /// edición masiva: la grilla de destinos no trae idPorcen y sin él todas las
+  /// escrituras serían altas y duplicarían filas.
   Map<String, dynamic> aMapa(double porcentaje, {BigInt? idPorcenForzado}) => {
     'idPorcen': (idPorcenForzado ?? idPorcen).toInt(),
     'idClasificacion': idClasificacion.toInt(),
@@ -120,14 +98,10 @@ class FilaPorcentaje {
     'porcentaje': porcentaje,
   };
 
-  /// Orden de la grilla: primero la sucursal y dentro de ella por numero de
-  /// lista.
-  ///
-  /// **No es el orden del backend.** La rama de una familia ordena solo por
-  /// vpp y la de la edicion masiva no ordena nada. Se reordena aca a proposito:
-  /// la regla que la pantalla valida -que el margen no baje al subir el vpp
-  /// dentro de una misma sucursal- solo se puede leer si las listas de cada
-  /// sucursal estan juntas y en orden.
+  /// Orden de la grilla: sucursal y, dentro, número de lista. NO es el orden del
+  /// backend (una familia ordena solo por vpp; la edición masiva no ordena): la
+  /// regla de márgenes ascendentes por sucursal solo se lee con las listas de
+  /// cada sucursal juntas y en orden.
   static int comparar(FilaPorcentaje a, FilaPorcentaje b) {
     if (a.codSucursal != b.codSucursal) {
       return a.codSucursal.compareTo(b.codSucursal);
@@ -136,15 +110,10 @@ class FilaPorcentaje {
   }
 }
 
-/// Una familia alcanzada por la edicion masiva de un grupo de familia SAP, con
-/// lo que hoy tiene cargado.
-///
-/// `obtenerFamiliasPorGrupo` devuelve tres claves -codigoFamilia,
-/// proveedorExtSap y grpFam-, asi que el resto de lo que el dialogo viejo
-/// mostraba (presentacion, tipo, color, costo) no esta disponible en este
-/// contrato y no se inventa. Lo que si se puede decir, y es lo que importa
-/// antes de pisar 7.836 filas, es cuantas listas de precios tiene ya cargadas
-/// la familia y entre que valores se mueven: eso sale de la tabla cruda.
+/// Una familia alcanzada por la edición masiva de un grupo SAP, con lo que hoy
+/// tiene cargado. `obtenerFamiliasPorGrupo` solo devuelve codigoFamilia,
+/// proveedorExtSap y grpFam: cuántas listas tiene y entre qué valores se mueven
+/// sale de la tabla cruda.
 @immutable
 class FamiliaGrupoVista {
   FamiliaGrupoVista({
@@ -195,16 +164,11 @@ class FamiliaGrupoVista {
       valor.trim().isEmpty ? '—' : valor.trim();
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// Numeros en pantalla
-// ═══════════════════════════════════════════════════════════════════════════
+// Números en pantalla
 
 /// El margen listo para mostrar, siempre con dos decimales y coma decimal,
-/// como el resto de los importes del modulo.
-///
-/// El double nunca se muestra crudo: `porcen` viaja en double porque Dart no
-/// tiene BigDecimal, y crudo arrastra la basura binaria de la representacion
-/// (un 12,5 puede imprimirse como 12.499999999999998).
+/// como el resto de los importes del módulo. Nunca se muestra el double crudo:
+/// arrastra basura binaria (12,5 puede imprimirse como 12.499999999999998).
 String porcenTexto(double valor) => '${porcenEditable(valor)} %';
 
 /// El mismo numero pero sin el simbolo, que es lo que se edita en el campo.
@@ -212,13 +176,10 @@ String porcenTexto(double valor) => '${porcenEditable(valor)} %';
 String porcenEditable(double valor) =>
     valor.toStringAsFixed(2).replaceAll('.', ',');
 
-/// Lo que el usuario escribio, convertido a puntos porcentuales.
-///
-/// Acepta la coma decimal ademas del punto: en Bolivia se escribe 12,5 y un
-/// campo que solo entienda 12.5 obliga a cambiar de habito para cargar un
-/// numero. Devuelve null cuando el texto no es un numero, y eso es distinto de
-/// cero: cero es un margen valido -es el que traen las listas sin cargar- y
-/// tomarlo por "vacio" borraria datos sin querer.
+/// Lo que el usuario escribió, en puntos porcentuales. Acepta coma decimal (en
+/// Bolivia se escribe 12,5) además del punto. Devuelve null si no es un número,
+/// que es distinto de cero: cero es un margen válido (el de las listas sin
+/// cargar) y tomarlo por "vacío" borraría datos.
 double? porcenDesdeTexto(String texto) {
   final limpio = texto.trim().replaceAll('%', '').replaceAll(',', '.').trim();
   if (limpio.isEmpty) return null;
@@ -228,20 +189,14 @@ double? porcenDesdeTexto(String texto) {
   return v != null && v.isFinite ? v : null;
 }
 
-/// Dos margenes son el mismo valor si difieren en menos de medio centesimo.
-///
-/// Comparar dos double con == es una trampa conocida: el valor que vuelve del
-/// backend y el que se arma parseando el texto del campo pueden diferir en el
-/// ultimo bit y la pantalla creeria que hay un cambio donde no lo hay -y
-/// escribiria la fila igual-. La pantalla muestra dos decimales, asi que dos
-/// valores que se ven iguales tienen que contar como iguales.
+/// Dos márgenes son el mismo valor si difieren en menos de medio centésimo.
+/// Comparar double con == falla: el valor del backend y el parseado del campo
+/// pueden diferir en el último bit y la pantalla vería un cambio donde no lo hay.
 bool mismoPorcentaje(double a, double b) => (a - b).abs() < 0.005;
 
-// ── Lectura defensiva del mapa ─────────────────────────────────────────────
-//
-// El backend responde JSON: un bigint puede llegar como numero o como cadena
-// segun por donde pase, y las columnas que salen de un LEFT JOIN llegan en
-// null. Se lee todo con un valor por defecto en vez de confiar en el tipo.
+// Lectura defensiva del mapa: el backend responde JSON, un bigint puede llegar
+// como número o cadena y las columnas de un LEFT JOIN llegan en null. Se lee
+// todo con un valor por defecto en vez de confiar en el tipo.
 
 int entero(Object? valor) => switch (valor) {
   int v => v,

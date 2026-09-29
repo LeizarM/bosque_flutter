@@ -1,32 +1,12 @@
-/// La grilla editable de porcentajes: las listas de precio de cada sucursal,
-/// con el margen de cada una.
+/// La grilla editable de porcentajes: las listas de precio de cada sucursal, con
+/// el margen de cada una. La usan las pestañas "por familia" y "por grupo" (el
+/// margen que se aplica a TODAS las familias del grupo).
 ///
-/// La usan las dos pestanias de la pantalla, porque las dos editan lo mismo:
-///
-/// * **Por familia** — el margen que esa familia tiene en cada lista.
-/// * **Por grupo** — el margen que se va a aplicar a TODAS las familias del
-///   grupo.
-///
-/// **Un bloque por sucursal y no un renglon por lista.** La version anterior
-/// era una tabla de doce renglones que repetia el nombre de la sucursal cuatro
-/// veces y el de la lista -"Precio"- doce, con el numero de lista perdido en
-/// una columna angosta. Pero la regla que esta pantalla hace cumplir se lee
-/// DENTRO de cada sucursal: el margen no baja al subir el numero de lista. Asi
-/// que cada sucursal es un bloque con sus listas en orden, de izquierda a
-/// derecha, y el bloque dice el rango que quedo y si rompe el orden.
-///
-/// **No hay "quitar porcentaje".** Una lista sin margen es una lista en la que
-/// la familia no tiene precio; lo que se hace es corregir el valor.
-///
-/// **El diseno cambia con el ancho, no se escala.** Cada bloque mide su propio
-/// ancho con un LayoutBuilder, no el de la ventana: adentro del
-/// DashboardScreen el sidebar se come 260 px, y en la edicion por grupo la
-/// grilla vive en medio panel.
-///
-/// * Escritorio: la sucursal a la izquierda y sus listas en un renglon.
-/// * Intermedio: la sucursal arriba y sus listas debajo, en un renglon.
-/// * Movil: la sucursal arriba y sus listas de a dos. Ni un pixel de scroll
-///   horizontal.
+/// Un bloque por sucursal: la regla (el margen no baja al subir el número de
+/// lista) se lee DENTRO de cada sucursal; el bloque dice el rango y si rompe el
+/// orden. No hay "quitar porcentaje": una lista sin margen es una sin precio.
+/// El diseño cambia con el ancho del bloque (LayoutBuilder; el sidebar se come
+/// 260 px y por grupo la grilla vive en medio panel), sin scroll horizontal.
 library;
 
 import 'package:flutter/material.dart';
@@ -62,9 +42,8 @@ class TablaPorcentajes extends StatelessWidget {
   /// guardar.
   final Map<BigInt, double?> valores;
 
-  /// Avisa el valor nuevo de una fila. Null cuando el texto dejo de ser un
-  /// numero: la pantalla lo necesita para apagar el boton de guardar en vez de
-  /// escribir un cero que nadie escribio.
+  /// Avisa el valor nuevo de una fila. Null cuando el texto dejó de ser un número:
+  /// la pantalla apaga el botón de guardar en vez de escribir un cero.
   final void Function(BigInt idClasificacion, double? valor) onCambio;
 
   /// Las filas que rompen la regla de porcentajes ascendentes, por
@@ -393,10 +372,9 @@ class _CeldaLista extends StatelessWidget {
         ),
         const SizedBox(height: Esp.xs),
         CampoPorcentaje(
-          // La clave amarra el campo a SU lista de precios. Sin esto, Flutter
-          // reutiliza el estado del campo que estaba en esa posicion y, al
-          // cambiar de familia, el margen de una lista aparece en la de al
-          // lado.
+          // La clave amarra el campo a SU lista: sin ella Flutter reutiliza
+          // el estado de esa posición y, al cambiar de familia, el margen
+          // aparece en la lista de al lado.
           key: ValueKey(fila.idClasificacion),
           valor: valor,
           habilitado: habilitado,
@@ -419,16 +397,11 @@ class _CeldaLista extends StatelessWidget {
 
 /// El campo donde se escribe el margen.
 ///
-/// **Por que tiene estado propio.** El texto que se esta escribiendo no puede
-/// vivir en el mapa de la pantalla: mientras alguien borra el 12 para escribir
-/// 15 pasa por una cadena vacia y por "1", y reconstruir el campo desde el
-/// valor numerico en cada tecla le moveria el cursor al principio. Aca el
-/// controlador es del campo, y hacia afuera solo sale el numero.
-///
-/// Igual escucha lo que le mandan de afuera ([didUpdateWidget]): el boton de
-/// "igualar todas las listas" de la edicion por grupo cambia el valor sin que
-/// nadie toque el campo, y si el campo no se enterara seguiria mostrando el
-/// numero viejo mientras se guarda el nuevo.
+/// Tiene estado propio: el texto en curso no puede vivir en el mapa de la
+/// pantalla (al borrar el 12 para escribir 15 pasa por "" y "1"; reconstruir
+/// desde el valor numérico movería el cursor). Sí escucha lo de afuera
+/// ([didUpdateWidget]): "igualar todas las listas" cambia el valor sin tocar el
+/// campo.
 class CampoPorcentaje extends StatefulWidget {
   const CampoPorcentaje({
     super.key,
@@ -462,9 +435,8 @@ class _CampoPorcentajeState extends State<CampoPorcentaje> {
     text: widget.valor == null ? '' : porcenEditable(widget.valor!),
   );
 
-  /// Lo escrito no es un numero. Se guarda en el estado del campo y no se
-  /// deduce del texto en cada dibujo: el mensaje de error tiene que aparecer
-  /// aunque la pantalla de arriba no se reconstruya.
+  /// Lo escrito no es un número. Se guarda en el estado del campo y no se deduce
+  /// del texto: el error debe verse aunque la pantalla no se reconstruya.
   late bool _invalido = widget.valor == null;
 
   @override
@@ -473,9 +445,8 @@ class _CampoPorcentajeState extends State<CampoPorcentaje> {
     final valor = widget.valor;
     if (valor == null) return;
     final escrito = porcenDesdeTexto(_ctrl.text);
-    // Solo se pisa el texto cuando el valor de afuera es OTRO. Si coincide con
-    // lo escrito -el caso normal, porque ese valor salio de este campo- se deja
-    // el texto tal cual y el cursor donde estaba.
+    // Solo se pisa el texto cuando el valor de afuera es OTRO; si coincide (caso
+    // normal: salió de este campo) se deja el texto y el cursor donde estaban.
     if (escrito != null && mismoPorcentaje(escrito, valor)) return;
     _ctrl.text = porcenEditable(valor);
     _ctrl.selection = TextSelection.collapsed(offset: _ctrl.text.length);
@@ -497,9 +468,8 @@ class _CampoPorcentajeState extends State<CampoPorcentaje> {
       controller: _ctrl,
       enabled: widget.habilitado,
       textAlign: TextAlign.right,
-      // Decimal y con signo: un margen negativo es raro pero existe, y un
-      // teclado que no deja escribir el menos obliga a cargarlo desde otro
-      // lado.
+      // Decimal y con signo: un margen negativo es raro pero existe, y un teclado
+      // sin el menos obligaría a cargarlo desde otro lado.
       keyboardType: const TextInputType.numberWithOptions(
         decimal: true,
         signed: true,

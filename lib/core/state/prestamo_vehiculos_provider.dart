@@ -9,12 +9,10 @@ import 'package:bosque_flutter/domain/entities/entregas_entity.dart';
 
 enum FetchStatus { initial, loading, success, error }
 
-// Provider for the PrestamoVehiculos implementation
 final prestamoVehiculosProvider = Provider<PrestamoVehiculosImpl>((ref) {
   return PrestamoVehiculosImpl();
 });
 
-// Provider for the list of vehicle types (asynchronous)
 final tipoSolicitudesProvider = FutureProvider<List<TipoSolicitudEntity>>((
   ref,
 ) async {
@@ -22,7 +20,6 @@ final tipoSolicitudesProvider = FutureProvider<List<TipoSolicitudEntity>>((
   return await repository.lstTipoSolicitudes();
 });
 
-// Provider for the list of available cars (asynchronous)
 final cochesDisponiblesProvider = FutureProvider<List<SolicitudChoferEntity>>((
   ref,
 ) async {
@@ -81,7 +78,7 @@ class SolicitudesNotifier extends StateNotifier<SolicitudesState> {
         errorMessage: null,
       );
     } catch (e) {
-      // Verificar si es un error de "no hay datos" vs un error real
+      // Un error de "no hay datos" se trata como lista vacía; otro es un fallo real.
       final errorMessage = e.toString().toLowerCase();
       if (errorMessage.contains('no hay') ||
           errorMessage.contains('empty') ||
@@ -89,14 +86,12 @@ class SolicitudesNotifier extends StateNotifier<SolicitudesState> {
           errorMessage.contains('no encontrado') ||
           errorMessage.contains('no solicitudes') ||
           errorMessage.contains('obtain solicitudes')) {
-        // Tratar como éxito con lista vacía
         state = state.copyWith(
           status: FetchStatus.success,
           solicitudes: [],
           errorMessage: null,
         );
       } else {
-        // Error real
         state = state.copyWith(
           status: FetchStatus.error,
           errorMessage: e.toString(),
@@ -113,7 +108,6 @@ final solicitudesNotifierProvider =
       return SolicitudesNotifier(repository);
     });
 
-// Provider for registering a new vehicle request
 final registroSolicitudProvider =
     StateNotifierProvider<RegistroSolicitudNotifier, AsyncValue<bool>>((ref) {
       final repository = ref.watch(prestamoVehiculosProvider);
@@ -129,12 +123,12 @@ class RegistroSolicitudNotifier extends StateNotifier<AsyncValue<bool>> {
   Future<bool> registrarSolicitud(SolicitudChoferEntity solicitud) async {
     state = const AsyncValue.loading();
     try {
-      // Create a modified entity to send to backend
-      // We use DateTime.now() as a placeholder, but it will be ignored by backend
+      // fechaSolicitud es un marcador (el backend la ignora) y
+      // fechaSolicitudCad va vacía: la calcula el backend.
       final solicitudParaBackend = SolicitudChoferEntity(
         idSolicitud: solicitud.idSolicitud,
         fechaSolicitud:
-            DateTime.now(), // This will be ignored/calculated by backend
+            DateTime.now(),
         motivo: solicitud.motivo,
         codEmpSoli: solicitud.codEmpSoli,
         cargo: solicitud.cargo,
@@ -143,7 +137,7 @@ class RegistroSolicitudNotifier extends StateNotifier<AsyncValue<bool>> {
         idES: solicitud.idES,
         requiereChofer: solicitud.requiereChofer,
         audUsuario: solicitud.audUsuario,
-        fechaSolicitudCad: '', // Let the backend calculate this
+        fechaSolicitudCad: '',
         estadoCad: solicitud.estadoCad,
         codSucursal: solicitud.codSucursal,
         coche: solicitud.coche,
@@ -166,8 +160,8 @@ class SolicitudesPrestamosState {
   final FetchStatus status;
   final List<PrestamoChoferEntity> solicitudesPrestamos;
   final String? errorMessage;
-  final FetchStatus choferesStatus; // Nuevo estado para choferes
-  final List<EntregaEntity> choferes; // Lista de choferes
+  final FetchStatus choferesStatus;
+  final List<EntregaEntity> choferes;
 
   SolicitudesPrestamosState({
     required this.status,
@@ -228,20 +222,18 @@ class SolicitudesPrestamosNotifier
         errorMessage: null,
       );
     } catch (e) {
-      // Verificar si es un error de "no hay datos" vs un error real
+      // Un error de "no hay datos" se trata como lista vacía; otro es un fallo real.
       final errorMessage = e.toString().toLowerCase();
       if (errorMessage.contains('no hay') ||
           errorMessage.contains('empty') ||
           errorMessage.contains('sin datos') ||
           errorMessage.contains('no encontrado')) {
-        // Tratar como éxito con lista vacía
         state = state.copyWith(
           status: FetchStatus.success,
           solicitudesPrestamos: [],
           errorMessage: null,
         );
       } else {
-        // Error real
         state = state.copyWith(
           status: FetchStatus.error,
           errorMessage: e.toString(),
@@ -273,14 +265,15 @@ class SolicitudesPrestamosNotifier
     Map<String, dynamic> datosEntrega,
   ) async {
     try {
-      // Crear la entity desde los datos del diálogo
+      // fechaEntrega es un marcador (el backend la ignora) y
+      // estadoLateralesEntrega lo calcula el backend.
       final prestamoEntity = PrestamoChoferEntity(
         idPrestamo: datosEntrega["idPrestamo"] ?? 0,
         idCoche: datosEntrega["idCoche"] ?? 0,
         idSolicitud: datosEntrega["idSolicitud"] ?? 0,
         codSucursal: datosEntrega["codSucursal"] ?? 0,
         fechaEntrega:
-            DateTime.now(), // Placeholder - será ignorado por el backend
+            DateTime.now(),
         codEmpChoferSolicitado: datosEntrega["codEmpChoferSolicitado"] ?? 0,
         codEmpEntregadoPor: datosEntrega["codEmpEntregadoPor"] ?? 0,
         kilometrajeEntrega:
@@ -290,7 +283,7 @@ class SolicitudesPrestamosNotifier
         nivelCombustibleEntrega: datosEntrega["nivelCombustibleEntrega"] ?? 0,
         nivelCombustibleRecepcion:
             datosEntrega["nivelCombustibleRecepcion"] ?? 0,
-        estadoLateralesEntrega: 0, // Será calculado por el backend
+        estadoLateralesEntrega: 0,
         estadoInteriorEntrega: 0,
         estadoDelanteraEntrega: 0,
         estadoTraseraEntrega: 0,
@@ -308,7 +301,7 @@ class SolicitudesPrestamosNotifier
         coche: '',
         estadoDisponibilidad: '',
         requiereChofer: 0,
-        // Enviar los campos Aux con los estados como string para que el backend los procese
+        // Los estados viajan como string en los campos Aux, que es lo que procesa el backend.
         estadoLateralesEntregaAux:
             datosEntrega["estadoLateralesEntregaAux"] ?? '',
         estadoInteriorEntregaAux:
@@ -324,7 +317,6 @@ class SolicitudesPrestamosNotifier
         estadoCapoteRecepcionAux: '',
       );
 
-      // Registrar la entrega usando el método registerPrestamo del impl
       final result = await _repository.registerPrestamo(prestamoEntity);
 
       if (result) {
@@ -342,28 +334,29 @@ class SolicitudesPrestamosNotifier
     Map<String, dynamic> datosRecepcion,
   ) async {
     try {
-      // Crear la entity optimizada para recepción usando solo los campos necesarios
+      // Recepción: solo se llenan los campos de recepción; el resto va en 0. El
+      // backend ignora fechaEntrega y calcula estadoLateralRecepcion.
       final prestamoEntity = PrestamoChoferEntity(
         idPrestamo: datosRecepcion["idPrestamo"] ?? 0,
-        idCoche: 0, // No necesario para recepción
-        idSolicitud: 0, // No necesario para recepción
-        codSucursal: 0, // No necesario para recepción
+        idCoche: 0,
+        idSolicitud: 0,
+        codSucursal: 0,
         fechaEntrega:
-            DateTime.now(), // Placeholder - será ignorado por el backend
-        codEmpChoferSolicitado: 0, // No necesario para recepción
-        codEmpEntregadoPor: 0, // No necesario para recepción
-        kilometrajeEntrega: 0.0, // No necesario para recepción
+            DateTime.now(),
+        codEmpChoferSolicitado: 0,
+        codEmpEntregadoPor: 0,
+        kilometrajeEntrega: 0.0,
         kilometrajeRecepcion:
             datosRecepcion["kilometrajeRecepcion"]?.toDouble() ?? 0.0,
-        nivelCombustibleEntrega: 0, // No necesario para recepción
+        nivelCombustibleEntrega: 0,
         nivelCombustibleRecepcion:
             datosRecepcion["nivelCombustibleRecepcion"] ?? 0,
-        estadoLateralesEntrega: 0, // No necesario para recepción
+        estadoLateralesEntrega: 0,
         estadoInteriorEntrega: 0,
         estadoDelanteraEntrega: 0,
         estadoTraseraEntrega: 0,
         estadoCapoteEntrega: 0,
-        estadoLateralRecepcion: 0, // Será calculado por el backend
+        estadoLateralRecepcion: 0,
         estadoInteriorRecepcion: 0,
         estadoDelanteraRecepcion: 0,
         estadoTraseraRecepcion: 0,
@@ -376,13 +369,12 @@ class SolicitudesPrestamosNotifier
         coche: '',
         estadoDisponibilidad: '',
         requiereChofer: 0,
-        // Campos de entrega vacíos para recepción
         estadoLateralesEntregaAux: '',
         estadoInteriorEntregaAux: '',
         estadoDelanteraEntregaAux: '',
         estadoTraseraEntregaAux: '',
         estadoCapoteEntregaAux: '',
-        // Usar los campos Aux correctos para enviar los estados de recepción como string
+        // Estados de recepción como string, en los campos Aux.
         estadoLateralRecepcionAux:
             datosRecepcion["estadoLateralRecepcionAux"] ?? '',
         estadoInteriorRecepcionAux:
@@ -395,7 +387,6 @@ class SolicitudesPrestamosNotifier
             datosRecepcion["estadoCapoteRecepcionAux"] ?? '',
       );
 
-      // Usar el mismo método registerPrestamo para la recepción
       final result = await _repository.registerPrestamo(prestamoEntity);
 
       if (result) {
@@ -415,7 +406,6 @@ class SolicitudesPrestamosNotifier
       final userNotifier = UserStateNotifier();
       final audUsuario = await userNotifier.getCodUsuario();
 
-      // Crear entity con el estado aprobado (2) sin fecha
       final solicitudEntity = SolicitudChoferEntity(
         idSolicitud: idSolicitud,
         fechaSolicitud: DateTime.now(), // Será ignorado por el backend
@@ -452,7 +442,6 @@ class SolicitudesPrestamosNotifier
       final userNotifier = UserStateNotifier();
       final audUsuario = await userNotifier.getCodUsuario();
 
-      // Crear entity con el estado rechazado (3) sin fecha
       final solicitudEntity = SolicitudChoferEntity(
         idSolicitud: idSolicitud,
         fechaSolicitud: DateTime.now(), // Será ignorado por el backend

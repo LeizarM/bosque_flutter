@@ -2,18 +2,12 @@ import 'package:bosque_flutter/core/constants/app_constants.dart';
 import 'package:bosque_flutter/core/network/base_api_repository.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-/// Traspaso de tareas rutinarias cuando a alguien le cambian el cargo.
-///
-/// El generador toma SOLO el cargo más reciente del empleado
-/// (`WHERE ec.fechaInicio = MAX(fechaInicio)`), así que el día que RR.HH.
-/// carga el cargo nuevo la persona deja de recibir las tareas del anterior y
-/// nadie se entera. Medido contra la base: 26 empleados con un traspaso
-/// posible y 192 decisiones pendientes.
-///
-/// Lo que se decide aquí es a nivel CARGO, no persona: copiar una tarea al
-/// cargo destino se la asigna a TODA la gente de ese cargo. Por eso la fila
-/// trae [personasEnCargoNuevo] — la pantalla tiene que decir a cuántos les va
-/// a caer antes de que alguien toque "Copiar".
+/// Traspaso de tareas rutinarias al cambiar el cargo de alguien. El generador
+/// toma SOLO el cargo más reciente (`WHERE ec.fechaInicio = MAX(fechaInicio)`),
+/// así que la persona deja de recibir las del anterior sin aviso. La decisión es
+/// a nivel CARGO: copiar una tarea se la asigna a TODA la gente del cargo
+/// destino, por eso la fila trae [personasEnCargoNuevo] y la pantalla debe
+/// decir a cuántos les caerá antes de "Copiar".
 class TraspasoRepo extends BaseApiRepository {
   Future<List<Map<String, dynamic>>> pendientes({DateTime? desde}) {
     return postAndReturnList<Map<String, dynamic>>(
@@ -186,14 +180,10 @@ class TraspasosNotifier extends StateNotifier<TraspasosState> {
       });
   }
 
-  /// Copia una tarea al cargo nuevo.
-  ///
-  /// No revalida nada de su lado a propósito — las tres guardas están del lado
-  /// del servidor, que es el único que puede sostenerlas: el proc rechaza los
-  /// cargos sin gente activa (error 24) y no duplica si ya la tiene, y el
-  /// endpoint verifica contra la lista viva que el traspaso siga vigente
-  /// (409 si la persona volvió a cambiar de cargo mientras la pantalla estaba
-  /// abierta). Aquí alcanza con recargar y mostrar lo que responda.
+  /// Copia una tarea al cargo nuevo. No revalida nada de su lado a propósito: las
+  /// guardas están en el servidor (el proc rechaza cargos sin gente activa, error
+  /// 24, y no duplica; el endpoint da 409 si la persona volvió a cambiar de cargo
+  /// con la pantalla abierta). Aquí alcanza con recargar y mostrar la respuesta.
   Future<bool> traspasar({
     required int idTarRuti,
     required int codCargoDestino,

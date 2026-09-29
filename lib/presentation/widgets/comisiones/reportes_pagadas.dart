@@ -19,20 +19,15 @@ enum EmpresaReporte {
   final String archivo;
 }
 
-/// Qué reportes ofrece la barra.
-///
-/// El preliminar solo necesita los de comisiones pagadas: es la consulta que
-/// hace cualquier vendedor para contrastar contra lo que está viendo. Los de
-/// importación y notas pendientes son de operación y viven en su pestaña.
+/// Qué reportes ofrece la barra. El preliminar solo necesita los de comisiones
+/// pagadas (los que cualquier vendedor usa para contrastar); importación y notas
+/// pendientes son de operación y viven en su pestaña.
 enum AlcanceReportes { pagadas, todos }
 
-/// Barra de descarga de los reportes de comisiones pagadas.
-///
-/// Vive en un archivo propio porque la usan dos pestañas con permisos
-/// distintos: Pendientes, que en la práctica solo abren los administradores, y
-/// Preliminar, que abre cualquier vendedor. Duplicarla habría dejado dos
-/// combinaciones de mes/año/empresa que se desincronizan a la primera
-/// corrección.
+/// Barra de descarga de los reportes de comisiones pagadas. Archivo propio
+/// porque la usan dos pestañas con permisos distintos (Pendientes, en la
+/// práctica solo administradores, y Preliminar, cualquier vendedor); duplicarla
+/// desincronizaría mes/año/empresa.
 class BarraReportesPagadas extends ConsumerStatefulWidget {
   const BarraReportesPagadas({
     super.key,
@@ -50,13 +45,10 @@ class BarraReportesPagadas extends ConsumerStatefulWidget {
   final int? mesInicial;
   final int? anioInicial;
 
-  /// Si la barra dibuja sus propios selectores de mes y año.
-  ///
-  /// En Pendientes sí: es la única forma de elegir el período del reporte.
-  /// En Preliminar NO: esa pestaña ya tiene su propio Mes/Año arriba, y dos
-  /// combos idénticos uno debajo del otro, con el mismo valor, no se entienden
-  /// — quien mira no sabe cuál manda. Con esto la barra usa el período que le
-  /// pasan y muestra solo Empresa y los botones.
+  /// Si la barra dibuja sus propios selectores de mes y año. En Pendientes sí (es
+  /// la única forma de elegir el período). En Preliminar NO: esa pestaña ya tiene
+  /// su Mes/Año y dos combos idénticos no dejan claro cuál manda; la barra usa el
+  /// período recibido y muestra solo Empresa y botones.
   final bool periodoPropio;
 
   @override
@@ -114,8 +106,6 @@ class _BarraReportesPagadasState extends ConsumerState<BarraReportesPagadas> {
 
     return Padding(
       padding: EdgeInsets.fromLTRB(widget.padding, 12, widget.padding, 12),
-      // Wrap y no Row: en un teléfono los tres selectores y los botones no
-      // entran en una línea, y un Row los recortaría sin avisar.
       child: Wrap(
         spacing: 12,
         runSpacing: 12,

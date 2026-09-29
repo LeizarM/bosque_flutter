@@ -1,4 +1,3 @@
-// Destino final: lib/core/state/arqueo_caja_provider.dart
 import 'dart:typed_data';
 
 import 'package:bosque_flutter/data/repositories/arqueo_caja_impl.dart';
@@ -16,9 +15,8 @@ class ArqueoCajaState {
   final bool guardando;
   final String? mensajeError;
   final bool completado;
-  // idAC del arqueo recién creado — lo devuelve el servidor al registrar
-  // (idGenerado). Null hasta que `registrar()` tiene éxito; es lo único que
-  // necesita el botón "Ver PDF" (RptArqueoDeCaja) para pedir el reporte.
+  // idAC del arqueo recién creado (idGenerado del servidor); null hasta que
+  // `registrar()` tiene éxito. Lo usa el botón "Ver PDF" (RptArqueoDeCaja).
   final int? idAC;
 
   // Contexto real (no manual) — ver ACCIONes 'A'/'T'/'H' del backend.
@@ -26,9 +24,8 @@ class ArqueoCajaState {
   final List<Map<String, dynamic>> desgloseSap; // por caja: {bd, monto}
   final double?
   tcAyer; // null = no disponible (servidor enlazado caído, o simplemente no hay "ayer")
-  // Fechas crudas (ISO) de las filas "hoy"/"ayer" del backend — solo para
-  // mostrar la tabla de referencia Día/Fecha/T.C. que el legacy sí tiene
-  // (dlgArqCaja, tabla "TIPO DE CAMBIO"); no participan de ningún cálculo.
+  // Fechas ISO de las filas "hoy"/"ayer" del backend; solo para la tabla de
+  // referencia "TIPO DE CAMBIO" (dlgArqCaja), no entran en ningún cálculo.
   final String? fechaHoyTc;
   final String? fechaAyerTc;
   final Map<String, dynamic>?
@@ -97,11 +94,8 @@ class ArqueoCajaState {
       final cantidad = cantidadPorCorte[corte.idCorte] ?? 0;
       if (cantidad <= 0) continue;
       final valor = corte.corte ?? 0;
-      // tac_corte.tipoCorte guarda 'USD'/'BS' (confirmado en vivo,
-      // 2026-09-07) -- 'DOLARES' nunca matcheaba, así que ningún corte en
-      // dólares se convertía con el tipo de cambio (bug real desde que se
-      // construyó este flujo, presente también en el proc del servidor,
-      // corregido ahí en el mismo hallazgo).
+      // tac_corte.tipoCorte guarda 'USD'/'BS'; comparar con 'DOLARES' nunca
+      // coincidía y ningún corte en dólares se convertía con `tc`.
       final factor = corte.tipoCorte == 'USD' ? tc : 1;
       totalCortes += cantidad * valor * factor;
     }
@@ -136,12 +130,9 @@ class ArqueoCajaNotifier extends StateNotifier<ArqueoCajaState> {
   void setTc(double v) => state = state.copyWith(tc: v);
   void setObs(String v) => state = state.copyWith(obs: v);
 
-  /// Trae el contexto real del arqueo (desglose SAP por caja, tc hoy/ayer,
-  /// arqueo anterior) y AUTOCOMPLETA saldoMovSap/tc con lo que trae el
-  /// servidor — igual que el legacy, que arranca el formulario con estos
-  /// valores ya resueltos en vez de en blanco. Sigue siendo editable después
-  /// (no se bloquea el campo): si el desglose no cuadra con lo que el
-  /// usuario ve en el efectivo real, puede corregirlo antes de guardar.
+  /// Trae el contexto real del arqueo (desglose SAP por caja, tc hoy/ayer, arqueo
+  /// anterior) y autocompleta saldoMovSap/tc como el legacy. Siguen editables por
+  /// si el desglose no cuadra con el efectivo real.
   Future<void> cargarContexto(int idBitTarea) async {
     state = state.copyWith(cargandoContexto: true);
     try {
@@ -179,9 +170,8 @@ class ArqueoCajaNotifier extends StateNotifier<ArqueoCajaState> {
         anterior: anteriorLista.isNotEmpty ? anteriorLista.first : null,
       );
     } catch (e) {
-      // El contexto es una ayuda, no un bloqueo: si falla, el formulario
-      // sigue usable con entrada manual — mismo criterio que "0 traspasos
-      // hoy es válido" en otros flujos de este módulo.
+      // El contexto es una ayuda, no un bloqueo: si falla, el formulario sigue
+      // usable con entrada manual.
       state = state.copyWith(cargandoContexto: false);
     }
   }

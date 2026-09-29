@@ -1,5 +1,3 @@
-// lib/core/state/articulos_ciudad_provider.dart
-
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:bosque_flutter/data/repositories/articulos_ciudad_impl.dart';
 import 'package:bosque_flutter/domain/repositories/articulos_ciudad_repository.dart';

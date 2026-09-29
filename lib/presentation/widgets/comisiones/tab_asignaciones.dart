@@ -26,10 +26,7 @@ class TabAsignaciones extends ConsumerWidget {
     final busqueda = ref.watch(filtroBusquedaComisionProvider);
     final padding = ResponsiveUtilsBosque.getHorizontalPadding(context);
 
-    // Cuantas filas se estan viendo. Se calcula sobre la lista ya
-    // filtrada, que es lo que el usuario tiene delante; mientras carga
-    // o si falla queda en null y no se dibuja, en vez de mostrar un
-    // cero que no es cierto.
+    // Null mientras carga o si falla: mejor sin conteo que un cero falso.
     final conteo = asignaciones.whenOrNull(
       data: (l) {
         final n = _filtrar(l, busqueda).length;
