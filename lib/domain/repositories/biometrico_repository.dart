@@ -157,4 +157,16 @@ abstract class BiometricoRepository {
   /// semana (`RptBiometricoHorarioVigente.jrxml`). No es un reporte
   /// mensual — "ahora mismo", no toma `anio`/`mes`.
   Future<Uint8List> horarioVigentePorEmpleadoPdf();
+
+  /// El mismo `RptBiometricoDetallado.jrxml` de [reporteMensualPdf], pero de
+  /// UN empleado a lo largo de VARIOS meses seguidos en un solo PDF (un mes
+  /// por página) — para "todas las marcaciones de este empleado desde tal
+  /// mes hasta hoy" sin descargar un PDF por mes a mano.
+  Future<Uint8List> reporteDetalladoRangoPdf({
+    required BigInt codEmpleado,
+    required int anioDesde,
+    required int mesDesde,
+    required int anioHasta,
+    required int mesHasta,
+  });
 }

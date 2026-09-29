@@ -10,7 +10,7 @@
 /// Los campos `*Txt` los arma el backend (coma decimal, sin ceros a la derecha,
 /// sufijo « día»/« días»): el móvil pinta el texto y el escritorio usa el
 /// número para ordenar y para pintar en rojo un saldo negativo. No se reformatea
-/// acá, así que la app y el reporte dicen exactamente lo mismo.
+/// aquí, así que la app y el reporte dicen exactamente lo mismo.
 ///
 /// La ficha de saldo de un empleado: lo que RR.HH. contesta cuando alguien
 /// pregunta *"¿cuántos días tengo?"*.
@@ -48,7 +48,7 @@ class FichaSaldoEntity {
   // laboral actual, desde dd/mm/aaaa · N movimientos anteriores no incluidos».
   //
   // Si RR.HH. confirma que el saldo debe abarcar todas las relaciones, cambia el
-  // backend y estos campos se quedan como están: nada de acá se rehace.
+  // backend y estos campos se quedan como están: nada de aquí se rehace.
 
   /// La relación laboral cuya historia se está sumando.
   final int datoRelEmplEmprVigente;

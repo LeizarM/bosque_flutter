@@ -1,5 +1,6 @@
 import 'dart:typed_data';
 import 'package:bosque_flutter/domain/entities/solicitud_permiso_entity.dart';
+import 'package:bosque_flutter/domain/entities/horario_empleado_entity.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:bosque_flutter/data/repositories/permisos_vacacion_impl.dart';
 import 'package:bosque_flutter/domain/entities/permiso_entity.dart';
@@ -37,6 +38,18 @@ final vacacionResumenProvider = FutureProvider.family<PermisoEntity?, int>((
   final repo = ref.watch(permisosVacacionRepositoryProvider);
   return await repo.getResumenVacaciones(codEmpleado);
 });
+
+typedef HorarioParams = ({int codEmpleado, DateTime desde, DateTime hasta});
+
+/// Provider que obtiene el horario de un empleado en una fecha específica
+final horarioEmpleadoProvider =
+    FutureProvider.family<List<HorarioEmpleadoEntity>, HorarioParams>((
+      ref,
+      params,
+    ) async {
+      final repo = ref.watch(permisosVacacionRepositoryProvider);
+      return await repo.obtenerHorario(params.codEmpleado, params.desde, params.hasta);
+    });
 
 /// Provider que maneja la acción de envío de formulario para evitar múltiples clics
 final enviarSolicitudPermisoProvider =
@@ -168,7 +181,7 @@ final misSolicitudesProvider = FutureProvider.family.autoDispose<
         mes: filtro.mes,
       );
 
-  // **El orden se arregla acá y no en el SP.** El SP ordena por `audFechaI`
+  // **El orden se arregla aquí y no en el SP.** El SP ordena por `audFechaI`
   // —cuándo se pidió—, que no es el orden en que la lista se lee: alguien
   // pide en agosto la vacación de noviembre y en enero la de mayo. La
   // pantalla agrupa por año de `desde`, y con el orden de pedido el mismo

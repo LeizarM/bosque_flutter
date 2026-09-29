@@ -10,7 +10,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 ///
 /// Hasta 1000 px ocupa todo y al tocar una tarjeta se **empuja** el detalle; de
 /// ahí para arriba es el panel maestro de 400 px y el detalle vive al lado.
-/// Quien decide eso es la pantalla contenedora, que pasa [onElegir]: acá no se
+/// Quien decide eso es la pantalla contenedora, que pasa [onElegir]: aquí no se
 /// navega, se avisa quién fue elegido.
 class BuscadorDeEmpleados extends ConsumerStatefulWidget {
   const BuscadorDeEmpleados({super.key, required this.onElegir});
@@ -57,12 +57,12 @@ class _BuscadorDeEmpleadosState extends ConsumerState<BuscadorDeEmpleados> {
   /// **Es la regla del sistema viejo, pero al revés.** Allá el `<p:inputText>`
   /// tenía este mismo patrón y, cuando no validaba, **borraba lo tipeado sin
   /// decir nada**: quien escribía «PEREZ-GOMEZ» veía desaparecer el texto y
-  /// volvía a escribirlo igual. Acá el texto se queda y la pantalla dice qué
+  /// volvía a escribirlo igual. Aquí el texto se queda y la pantalla dice qué
   /// tiene de malo.
   static String? _queTieneDeMalo(String t) {
     if (t.length > 20) return 'Hasta 20 caracteres.';
     if (!RegExp(r'^[a-zA-ZñÑáÁéÉíÍóÓúÚ ]*$').hasMatch(t)) {
-      return 'Sólo letras y espacios: buscá por nombre o apellido.';
+      return 'Sólo letras y espacios: busca por nombre o apellido.';
     }
     return null;
   }
@@ -189,7 +189,7 @@ class _BuscadorDeEmpleadosState extends ConsumerState<BuscadorDeEmpleados> {
             detalle:
                 buscando
                     ? 'Pruebe con el apellido, o apague «Sólo activos» si la '
-                        'persona ya no trabaja acá.'
+                        'persona ya no trabaja aquí.'
                     : 'Si esperaba ver la nómina, avise a Sistemas: puede ser '
                         'un permiso que falta y no una lista vacía.',
           );

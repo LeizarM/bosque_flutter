@@ -24,7 +24,7 @@ class EntregasDesktopView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // El PaginatedDataTable que estaba acá reservaba 8 filas fijas (rowsPerPage)
+    // El PaginatedDataTable que estaba aquí reservaba 8 filas fijas (rowsPerPage)
     // aunque hubiera una sola entrega: eso eran las franjas vacias enormes.
     // EntregasTablaDesktop dibuja solo las filas que existen.
     return EntregasTablaDesktop(
@@ -52,7 +52,9 @@ class EntregasTabletView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final horizontalPadding = ResponsiveUtilsBosque.getHorizontalPadding(context);
+    final horizontalPadding = ResponsiveUtilsBosque.getHorizontalPadding(
+      context,
+    );
     final verticalPadding = ResponsiveUtilsBosque.getVerticalPadding(context);
 
     return Padding(
@@ -63,8 +65,10 @@ class EntregasTabletView extends StatelessWidget {
       child: GridView.builder(
         gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
           maxCrossAxisExtent: 400,
-          mainAxisSpacing: ResponsiveUtilsBosque.getGridDimensions(context).mainAxisSpacing,
-          crossAxisSpacing: ResponsiveUtilsBosque.getGridDimensions(context).crossAxisSpacing,
+          mainAxisSpacing:
+              ResponsiveUtilsBosque.getGridDimensions(context).mainAxisSpacing,
+          crossAxisSpacing:
+              ResponsiveUtilsBosque.getGridDimensions(context).crossAxisSpacing,
           childAspectRatio: 1,
         ),
         itemCount: entregasAgrupadas.length,
@@ -103,7 +107,9 @@ class EntregasMobileView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final horizontalPadding = ResponsiveUtilsBosque.getHorizontalPadding(context);
+    final horizontalPadding = ResponsiveUtilsBosque.getHorizontalPadding(
+      context,
+    );
     final verticalPadding = ResponsiveUtilsBosque.getVerticalPadding(context);
 
     return ListView.builder(

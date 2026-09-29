@@ -34,7 +34,9 @@ export 'package:bosque_flutter/presentation/screens/tareas-rutinarias/arqueo_caj
 export 'package:bosque_flutter/presentation/screens/tareas-rutinarias/caja_chica_screen.dart';
 export 'package:bosque_flutter/presentation/screens/tareas-rutinarias/caja_fuerte_screen.dart';
 export 'package:bosque_flutter/presentation/screens/tareas-rutinarias/cierre_operaciones_screen.dart';
-export 'package:bosque_flutter/presentation/screens/tareas-rutinarias/verificar_cierre_screen.dart';
+export 'package:bosque_flutter/presentation/screens/tareas-rutinarias/traspaso_entre_sistemas_screen.dart';
+export 'package:bosque_flutter/presentation/screens/tareas-rutinarias/traspaso_efectivo_tesbase_screen.dart';
+export 'package:bosque_flutter/presentation/screens/tareas-rutinarias/bitacora_tareas_screen.dart';
 export 'package:bosque_flutter/presentation/screens/tareas-rutinarias/coches_screen.dart';
 export 'package:bosque_flutter/presentation/screens/tareas-rutinarias/dependientes_jefe_screen.dart';
 export 'package:bosque_flutter/presentation/screens/tareas-rutinarias/mis_tareas_rutinarias_screen.dart';
@@ -55,6 +57,17 @@ export 'package:bosque_flutter/presentation/screens/bonos/bonos_screen.dart';
 export 'package:bosque_flutter/presentation/screens/planillas/planillas_screen.dart';
 export 'package:bosque_flutter/presentation/screens/rol-sabados/rol_sabados_screen.dart';
 export 'package:bosque_flutter/presentation/screens/permisos-rrhh/permisos_rrhh_screen.dart';
+// Modulo de precios (tpr): reemplaza a tprAutorizacion/Autorizacion.xhtml del
+// sistema anterior y suma seis pantallas nuevas del mismo modulo.
+export 'package:bosque_flutter/presentation/screens/precios/propuestas_screen.dart';
+export 'package:bosque_flutter/presentation/screens/precios/familias_screen.dart';
+export 'package:bosque_flutter/presentation/screens/precios/precios_screen.dart';
+export 'package:bosque_flutter/presentation/screens/precios/listas_precio_screen.dart';
+export 'package:bosque_flutter/presentation/screens/precios/catalogos_precios_screen.dart';
+export 'package:bosque_flutter/presentation/screens/precios/parametros_precios_screen.dart';
+export 'package:bosque_flutter/presentation/screens/precios/porcentajes_screen.dart';
+// Modulo de garantias de cobranza (tcbr): reemplaza a tcbrGarantia/garantia.xhtml.
+export 'package:bosque_flutter/presentation/screens/garantias/garantias_screen.dart';
 export 'package:bosque_flutter/presentation/screens/comisiones/comisiones_screen.dart';
 export 'package:bosque_flutter/presentation/screens/prestamos/prestamos_screen.dart';
 export 'package:bosque_flutter/presentation/screens/talonarios/talonarios_screen.dart';

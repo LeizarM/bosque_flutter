@@ -21,6 +21,7 @@ class UsuarioBloqueadoEntity {
       'audUsuario': audUsuario,
     };
   }
+
   //metodo copyWith
   UsuarioBloqueadoEntity copyWith({
     int? codUsuario,

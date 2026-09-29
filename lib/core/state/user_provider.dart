@@ -57,7 +57,7 @@ class UserStateNotifier extends StateNotifier<LoginEntity?> {
   /// en un widget test ese Timer queda pendiente cuando se desmonta el árbol:
   /// el framework lo denuncia como «A Timer is still pending» y da el caso por
   /// fallado. Como el problema lo hereda **cualquier** pantalla que observe
-  /// `userProvider`, la costura vive acá y no repetida en cada archivo de
+  /// `userProvider`, la costura vive aquí y no repetida en cada archivo de
   /// prueba. En producción nadie lo llama.
   UserStateNotifier.sinStorage(LoginEntity? inicial) : super(inicial);
 

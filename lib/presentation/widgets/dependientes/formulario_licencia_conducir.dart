@@ -46,9 +46,10 @@ class _FormularioLicenciaConducirState
     _selectedCategoria = widget.licenciaInicial?.categoria;
     _selectedFechaCaducidad = widget.licenciaInicial?.fechaCaducidad;
     _fechaCaducidadController = TextEditingController(
-      text: _selectedFechaCaducidad != null
-          ? FechaUtils.formatDate(_selectedFechaCaducidad!)
-          : '',
+      text:
+          _selectedFechaCaducidad != null
+              ? FechaUtils.formatDate(_selectedFechaCaducidad!)
+              : '',
     );
   }
 
@@ -85,8 +86,7 @@ class _FormularioLicenciaConducirState
 
   @override
   Widget build(BuildContext context) {
-    final tiposLicenciaAsync =
-        ref.watch(obtenerTipoLicenciaConducirProvider);
+    final tiposLicenciaAsync = ref.watch(obtenerTipoLicenciaConducirProvider);
 
     return SingleChildScrollView(
       child: Padding(
@@ -104,8 +104,8 @@ class _FormularioLicenciaConducirState
                   Text(
                     widget.title,
                     style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                   IconButton(
                     icon: const Icon(Icons.close),
@@ -117,30 +117,35 @@ class _FormularioLicenciaConducirState
 
               // Categoría
               tiposLicenciaAsync.when(
-                data: (tipos) => Padding(
-                  padding: const EdgeInsets.only(bottom: 16),
-                  child: CustomDropdown<TipoLicenciaEntity>(
-                    asyncValue: AsyncValue.data(tipos),
-                    label: 'Categoría *',
-                    currentValue: _selectedCategoria,
-                    onChanged: (newValue) {
-                      setState(() => _selectedCategoria = newValue);
-                    },
-                    getName: (e) => e.nombre,
-                    getCode: (e) => e.codTipos,
-                    validator: (val) => (val == null || val.isEmpty)
-                        ? 'Seleccione una categoría'
-                        : null,
-                  ),
-                ),
-                loading: () => const Padding(
-                  padding: EdgeInsets.only(bottom: 16),
-                  child: CircularProgressIndicator(),
-                ),
-                error: (error, _) => Padding(
-                  padding: const EdgeInsets.only(bottom: 16),
-                  child: Text('Error: $error'),
-                ),
+                data:
+                    (tipos) => Padding(
+                      padding: const EdgeInsets.only(bottom: 16),
+                      child: CustomDropdown<TipoLicenciaEntity>(
+                        asyncValue: AsyncValue.data(tipos),
+                        label: 'Categoría *',
+                        currentValue: _selectedCategoria,
+                        onChanged: (newValue) {
+                          setState(() => _selectedCategoria = newValue);
+                        },
+                        getName: (e) => e.nombre,
+                        getCode: (e) => e.codTipos,
+                        validator:
+                            (val) =>
+                                (val == null || val.isEmpty)
+                                    ? 'Seleccione una categoría'
+                                    : null,
+                      ),
+                    ),
+                loading:
+                    () => const Padding(
+                      padding: EdgeInsets.only(bottom: 16),
+                      child: CircularProgressIndicator(),
+                    ),
+                error:
+                    (error, _) => Padding(
+                      padding: const EdgeInsets.only(bottom: 16),
+                      child: Text('Error: $error'),
+                    ),
               ),
 
               // Fecha de Caducidad

@@ -29,30 +29,30 @@ class _DetalleTelefonoState extends ConsumerState<DetalleTelefono> {
   late int _audUsuario;
 
   @override
-void didUpdateWidget(covariant DetalleTelefono oldWidget) {
-  super.didUpdateWidget(oldWidget);
+  void didUpdateWidget(covariant DetalleTelefono oldWidget) {
+    super.didUpdateWidget(oldWidget);
 
-  // ✅ AGREGAR: Invalidar cuando cambia codPersona o modo
-  if (widget.mode == 'nuevo' && oldWidget.codPersona != widget.codPersona) {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
-      ref.read(tempTelefonoListProvider.notifier).state = [];
-      ref.invalidate(telefonoProvider(oldWidget.codPersona)); // ✅ NUEVO
-      ref.invalidate(telefonoProvider(widget.codPersona));    // ✅ NUEVO
-      _resetFormState();
-    });
+    // ✅ AGREGAR: Invalidar cuando cambia codPersona o modo
+    if (widget.mode == 'nuevo' && oldWidget.codPersona != widget.codPersona) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        ref.read(tempTelefonoListProvider.notifier).state = [];
+        ref.invalidate(telefonoProvider(oldWidget.codPersona)); // ✅ NUEVO
+        ref.invalidate(telefonoProvider(widget.codPersona)); // ✅ NUEVO
+        _resetFormState();
+      });
+    }
+
+    // ✅ AGREGAR: Si pasamos de "nuevo" a "edicion" (después de registro)
+    if (oldWidget.mode == 'nuevo' && widget.mode == 'edicion') {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        ref.invalidate(tempTelefonoListProvider);
+        ref.invalidate(telefonoProvider(widget.codPersona));
+        _resetFormState();
+      });
+    }
   }
-  
-  // ✅ AGREGAR: Si pasamos de "nuevo" a "edicion" (después de registro)
-  if (oldWidget.mode == 'nuevo' && widget.mode == 'edicion') {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
-      ref.invalidate(tempTelefonoListProvider);
-      ref.invalidate(telefonoProvider(widget.codPersona));
-      _resetFormState();
-    });
-  }
-}
 
   void _resetFormState() {
     setState(() {
@@ -66,7 +66,7 @@ void didUpdateWidget(covariant DetalleTelefono oldWidget) {
     final user = ref.watch(userProvider);
     _audUsuario = user?.codUsuario ?? 0;
 
-    return widget.mode == 'nuevo' 
+    return widget.mode == 'nuevo'
         ? _buildNuevoMode(context)
         : _buildEdicionMode(context);
   }
@@ -80,12 +80,12 @@ void didUpdateWidget(covariant DetalleTelefono oldWidget) {
 
     // Si tempTelefonoListProvider está vacío, cargar del servidor
     if (listaTelefonos.isEmpty) {
-      final telefonosDelServidorAsync =
-          ref.watch(telefonoProvider(widget.codPersona));
+      final telefonosDelServidorAsync = ref.watch(
+        telefonoProvider(widget.codPersona),
+      );
 
       return telefonosDelServidorAsync.when(
-        loading: () =>
-            const Center(child: CircularProgressIndicator()),
+        loading: () => const Center(child: CircularProgressIndicator()),
         error: (err, _) => Center(child: Text('Error: $err')),
         data: (telefonosDelServidor) {
           // IMPORTANTE: Cargar en tempTelefonoListProvider SOLO una vez
@@ -115,8 +115,9 @@ void didUpdateWidget(covariant DetalleTelefono oldWidget) {
     return telefonosAsync.when(
       loading: () => const Center(child: CircularProgressIndicator()),
       error: (err, _) => Center(child: Text('Error: $err')),
-      data: (listaTelefonos) =>
-          _buildUI(context, listaTelefonos, isEdition: true),
+      data:
+          (listaTelefonos) =>
+              _buildUI(context, listaTelefonos, isEdition: true),
     );
   }
 
@@ -124,8 +125,11 @@ void didUpdateWidget(covariant DetalleTelefono oldWidget) {
   // UI PRINCIPAL
   // ============================================================================
 
-  Widget _buildUI(BuildContext context, List<TelefonoEntity> lista,
-      {required bool isEdition}) {
+  Widget _buildUI(
+    BuildContext context,
+    List<TelefonoEntity> lista, {
+    required bool isEdition,
+  }) {
     final tiposAsync = ref.watch(tipoTelefonoProvider);
 
     return Column(
@@ -133,22 +137,29 @@ void didUpdateWidget(covariant DetalleTelefono oldWidget) {
       children: [
         _buildHeader(context),
         tiposAsync.when(
-          loading: () =>
-              const LinearProgressIndicator(minHeight: 2),
-          error: (err, _) => Center(
-            child: Text('Error cargando tipos: $err'),
-          ),
+          loading: () => const LinearProgressIndicator(minHeight: 2),
+          error: (err, _) => Center(child: Text('Error cargando tipos: $err')),
           data: (tiposDisponibles) {
             return Column(
               children: [
                 // Lista de teléfonos
                 ...List.generate(
                   lista.length,
-                  (idx) => _editingIndex == idx
-                      ? _buildEditForm(
-                          context, idx, lista, tiposDisponibles, isEdition)
-                      : _buildTelefonoCard(
-                          context, idx, lista[idx], isEdition),
+                  (idx) =>
+                      _editingIndex == idx
+                          ? _buildEditForm(
+                            context,
+                            idx,
+                            lista,
+                            tiposDisponibles,
+                            isEdition,
+                          )
+                          : _buildTelefonoCard(
+                            context,
+                            idx,
+                            lista[idx],
+                            isEdition,
+                          ),
                 ),
                 // Formulario nuevo si está activo
                 if (_isAddingNew)
@@ -156,8 +167,7 @@ void didUpdateWidget(covariant DetalleTelefono oldWidget) {
                 // Botón agregar
                 if (!_isAddingNew) _buildAddButton(context),
                 // Estado vacío
-                if (lista.isEmpty && !_isAddingNew)
-                  _buildEmptyState(context),
+                if (lista.isEmpty && !_isAddingNew) _buildEmptyState(context),
               ],
             );
           },
@@ -175,17 +185,11 @@ void didUpdateWidget(covariant DetalleTelefono oldWidget) {
       padding: EdgeInsets.only(bottom: context.smallSpacing),
       child: Row(
         children: [
-          Icon(
-            Icons.phone,
-            size: context.smallIconSize,
-            color: Colors.grey,
-          ),
+          Icon(Icons.phone, size: context.smallIconSize, color: Colors.grey),
           SizedBox(width: context.smallSpacing),
           Text(
             'Teléfonos',
-            style: context.subtitleStyle.copyWith(
-              fontWeight: FontWeight.bold,
-            ),
+            style: context.subtitleStyle.copyWith(fontWeight: FontWeight.bold),
           ),
         ],
       ),
@@ -196,8 +200,12 @@ void didUpdateWidget(covariant DetalleTelefono oldWidget) {
   // TARJETA DE TELÉFONO (LECTURA)
   // ============================================================================
 
-  Widget _buildTelefonoCard(BuildContext context, int index,
-      TelefonoEntity telefono, bool isEdition) {
+  Widget _buildTelefonoCard(
+    BuildContext context,
+    int index,
+    TelefonoEntity telefono,
+    bool isEdition,
+  ) {
     return Card(
       margin: EdgeInsets.symmetric(vertical: context.smallSpacing),
       elevation: 0,
@@ -206,11 +214,10 @@ void didUpdateWidget(covariant DetalleTelefono oldWidget) {
         borderRadius: context.borderRadius,
       ),
       child: ListTile(
-        contentPadding:
-            EdgeInsets.symmetric(
-              horizontal: context.spacing,
-              vertical: context.smallSpacing,
-            ),
+        contentPadding: EdgeInsets.symmetric(
+          horizontal: context.spacing,
+          vertical: context.smallSpacing,
+        ),
         leading: CircleAvatar(
           backgroundColor: Colors.blue.shade50,
           child: Icon(
@@ -226,27 +233,27 @@ void didUpdateWidget(covariant DetalleTelefono oldWidget) {
     );
   }
 
- Widget _buildTitle(BuildContext context, TelefonoEntity telefono) {
-  return Text(
-    telefono.telefono,
-    style: context.bodyStyle.copyWith(
-      fontWeight: FontWeight.bold,
-    ),
-    overflow: TextOverflow.ellipsis,
-  );
-}
+  Widget _buildTitle(BuildContext context, TelefonoEntity telefono) {
+    return Text(
+      telefono.telefono,
+      style: context.bodyStyle.copyWith(fontWeight: FontWeight.bold),
+      overflow: TextOverflow.ellipsis,
+    );
+  }
 
   Widget _buildSubtitle(BuildContext context, TelefonoEntity telefono) {
     return Text(
       'Tipo: ${telefono.tipo ?? 'Desconocido'}',
-      style: context.bodyLightStyle.copyWith(
-        fontSize: context.smallFontSize,
-      ),
+      style: context.bodyLightStyle.copyWith(fontSize: context.smallFontSize),
     );
   }
 
-  Widget _buildActions(BuildContext context, int index,
-      TelefonoEntity telefono, bool isEdition) {
+  Widget _buildActions(
+    BuildContext context,
+    int index,
+    TelefonoEntity telefono,
+    bool isEdition,
+  ) {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -265,9 +272,11 @@ void didUpdateWidget(covariant DetalleTelefono oldWidget) {
             size: context.smallIconSize,
             color: Colors.redAccent,
           ),
-          onPressed: () => isEdition
-              ? _deleteFromServer(telefono.codTelefono)
-              : _deleteFromList(index),
+          onPressed:
+              () =>
+                  isEdition
+                      ? _deleteFromServer(telefono.codTelefono)
+                      : _deleteFromList(index),
           tooltip: 'Eliminar',
         ),
       ],
@@ -278,18 +287,24 @@ void didUpdateWidget(covariant DetalleTelefono oldWidget) {
   // FORMULARIOS
   // ============================================================================
 
-  Widget _buildEditForm(BuildContext context, int index,
-      List<TelefonoEntity> lista, List<TipoTelefonoEntity> tipos,
-      bool isEdition) {
+  Widget _buildEditForm(
+    BuildContext context,
+    int index,
+    List<TelefonoEntity> lista,
+    List<TipoTelefonoEntity> tipos,
+    bool isEdition,
+  ) {
     return FormTelefono(
       key: ValueKey('edit_telefono_${lista[index].codTelefono}'),
       telefonoInicial: lista[index],
       tiposDisponibles: tipos,
       codPersona: widget.codPersona,
       audUsuario: _audUsuario,
-      onSave: (telefono) => isEdition
-          ? _saveToServer(telefono)
-          : _updateInList(telefono, index),
+      onSave:
+          (telefono) =>
+              isEdition
+                  ? _saveToServer(telefono)
+                  : _updateInList(telefono, index),
       onCancel: () {
         FocusManager.instance.primaryFocus?.unfocus();
         setState(() => _editingIndex = -1);
@@ -297,16 +312,20 @@ void didUpdateWidget(covariant DetalleTelefono oldWidget) {
     );
   }
 
-  Widget _buildNewForm(BuildContext context, List<TipoTelefonoEntity> tipos,
-      bool isEdition) {
+  Widget _buildNewForm(
+    BuildContext context,
+    List<TipoTelefonoEntity> tipos,
+    bool isEdition,
+  ) {
     return FormTelefono(
       key: ValueKey('new_telefono_${DateTime.now().millisecondsSinceEpoch}'),
       telefonoInicial: null,
       tiposDisponibles: tipos,
       codPersona: widget.codPersona,
       audUsuario: _audUsuario,
-      onSave: (telefono) =>
-          isEdition ? _saveToServer(telefono) : _addToList(telefono),
+      onSave:
+          (telefono) =>
+              isEdition ? _saveToServer(telefono) : _addToList(telefono),
       onCancel: () {
         FocusManager.instance.primaryFocus?.unfocus();
         setState(() => _isAddingNew = false);
@@ -357,28 +376,28 @@ void didUpdateWidget(covariant DetalleTelefono oldWidget) {
   }
 
   void _addToList(TelefonoEntity telefono) {
-  final list = List<TelefonoEntity>.from(ref.read(tempTelefonoListProvider));
-  list.add(telefono);
-  ref.read(tempTelefonoListProvider.notifier).state = list;
-  setState(() => _isAddingNew = false);
-  showSuccessMessage(context, 'Teléfono agregado');  // ✅ Directo
-}
+    final list = List<TelefonoEntity>.from(ref.read(tempTelefonoListProvider));
+    list.add(telefono);
+    ref.read(tempTelefonoListProvider.notifier).state = list;
+    setState(() => _isAddingNew = false);
+    showSuccessMessage(context, 'Teléfono agregado'); // ✅ Directo
+  }
 
-void _updateInList(TelefonoEntity telefono, int index) {
-  final list = List<TelefonoEntity>.from(ref.read(tempTelefonoListProvider));
-  list[index] = telefono;
-  ref.read(tempTelefonoListProvider.notifier).state = list;
-  setState(() => _editingIndex = -1);
-  showSuccessMessage(context, 'Teléfono actualizado');  // ✅ Directo
-}
+  void _updateInList(TelefonoEntity telefono, int index) {
+    final list = List<TelefonoEntity>.from(ref.read(tempTelefonoListProvider));
+    list[index] = telefono;
+    ref.read(tempTelefonoListProvider.notifier).state = list;
+    setState(() => _editingIndex = -1);
+    showSuccessMessage(context, 'Teléfono actualizado'); // ✅ Directo
+  }
 
-void _deleteFromList(int index) {
-  final list = List<TelefonoEntity>.from(ref.read(tempTelefonoListProvider));
-  list.removeAt(index);
-  ref.read(tempTelefonoListProvider.notifier).state = list;
-  _resetFormState();
-  showSuccessMessage(context, 'Teléfono eliminado');  // ✅ Directo
-}
+  void _deleteFromList(int index) {
+    final list = List<TelefonoEntity>.from(ref.read(tempTelefonoListProvider));
+    list.removeAt(index);
+    ref.read(tempTelefonoListProvider.notifier).state = list;
+    _resetFormState();
+    showSuccessMessage(context, 'Teléfono eliminado'); // ✅ Directo
+  }
 
   // ============================================================================
   // ACCIONES - MODO EDICION (SERVIDOR)
@@ -388,8 +407,7 @@ void _deleteFromList(int index) {
     await executeABM(
       ref: ref,
       context: context,
-      operation: () =>
-          ref.read(registrarTelefonoProvider(telefono).future),
+      operation: () => ref.read(registrarTelefonoProvider(telefono).future),
       providersToInvalidate: [telefonoProvider(widget.codPersona)],
       successMessage: 'Teléfono guardado',
     );
@@ -403,8 +421,7 @@ void _deleteFromList(int index) {
     final success = await executeABM(
       ref: ref,
       context: context,
-      operation: () =>
-          ref.read(eliminarTelefonoProvider(codTelefono).future),
+      operation: () => ref.read(eliminarTelefonoProvider(codTelefono).future),
       providersToInvalidate: [telefonoProvider(widget.codPersona)],
       successMessage: 'Teléfono eliminado correctamente',
       requireConfirmation: true,

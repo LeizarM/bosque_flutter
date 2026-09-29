@@ -85,9 +85,8 @@ class CocheModel {
       codSucursal: json["codSucursal"],
       estado: json["estado"],
       audUsuario: json["audUsuario"] ?? 0,
-      audFecha: json["audFecha"] != null
-          ? DateTime.tryParse(json["audFecha"])
-          : null,
+      audFecha:
+          json["audFecha"] != null ? DateTime.tryParse(json["audFecha"]) : null,
     );
   }
 

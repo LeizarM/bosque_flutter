@@ -21,10 +21,12 @@ class SeccionFotoDocsDropdown extends ConsumerStatefulWidget {
   });
 
   @override
-  ConsumerState<SeccionFotoDocsDropdown> createState() => _SeccionFotoDocsDropdownState();
+  ConsumerState<SeccionFotoDocsDropdown> createState() =>
+      _SeccionFotoDocsDropdownState();
 }
 
-class _SeccionFotoDocsDropdownState extends ConsumerState<SeccionFotoDocsDropdown> {
+class _SeccionFotoDocsDropdownState
+    extends ConsumerState<SeccionFotoDocsDropdown> {
   String? _bannerMessage;
   Color _bannerColor = Colors.red;
 
@@ -56,7 +58,11 @@ class _SeccionFotoDocsDropdownState extends ConsumerState<SeccionFotoDocsDropdow
     return platform == TargetPlatform.android || platform == TargetPlatform.iOS;
   }
 
-  Future<void> _pickImages(String doc, int cantidad, {bool fromCamera = false}) async {
+  Future<void> _pickImages(
+    String doc,
+    int cantidad, {
+    bool fromCamera = false,
+  }) async {
     List<XFile> images = [];
     final picker = ImagePicker();
 
@@ -84,7 +90,12 @@ class _SeccionFotoDocsDropdownState extends ConsumerState<SeccionFotoDocsDropdow
     }
   }
 
-  Future<bool> _subirImagen(XFile file, String doc, int index, {bool showSnackbar = true}) async {
+  Future<bool> _subirImagen(
+    XFile file,
+    String doc,
+    int index, {
+    bool showSnackbar = true,
+  }) async {
     final bytes = await file.readAsBytes();
     String tipoDocumento;
     if (doc == 'Carnet de Identidad') {
@@ -96,17 +107,26 @@ class _SeccionFotoDocsDropdownState extends ConsumerState<SeccionFotoDocsDropdow
     } else {
       tipoDocumento = doc.toUpperCase();
     }
-    String lado = (doc == 'Pasaporte') ? 'foto' : (index == 0 ? 'anverso' : 'reverso');
+    String lado =
+        (doc == 'Pasaporte') ? 'foto' : (index == 0 ? 'anverso' : 'reverso');
     try {
-      final result = await ref.read(subirFotoDocProvider(
-        (widget.codEmpleado, tipoDocumento, bytes, lado)
-      ).future);
+      final result = await ref.read(
+        subirFotoDocProvider((
+          widget.codEmpleado,
+          tipoDocumento,
+          bytes,
+          lado,
+        )).future,
+      );
       if (!mounted) return false;
       if (result) {
         ref.invalidate(todosLosDocumentosProvider(widget.codEmpleado));
         ref.invalidate(documentosPendientesProvider);
         if (showSnackbar) {
-          AppSnackbarCustom.showSuccess(context, 'Imagen de $tipoDocumento ($lado) subida. Espere confirmación.');
+          AppSnackbarCustom.showSuccess(
+            context,
+            'Imagen de $tipoDocumento ($lado) subida. Espere confirmación.',
+          );
         }
         return true;
       }
@@ -127,10 +147,16 @@ class _SeccionFotoDocsDropdownState extends ConsumerState<SeccionFotoDocsDropdow
       future: file.readAsBytes(),
       builder: (context, snapshot) {
         Widget imageWidget;
-        if (snapshot.connectionState == ConnectionState.done && snapshot.hasData) {
+        if (snapshot.connectionState == ConnectionState.done &&
+            snapshot.hasData) {
           imageWidget = ClipRRect(
             borderRadius: BorderRadius.circular(10),
-            child: Image.memory(snapshot.data!, width: double.infinity, height: imageHeight, fit: BoxFit.cover),
+            child: Image.memory(
+              snapshot.data!,
+              width: double.infinity,
+              height: imageHeight,
+              fit: BoxFit.cover,
+            ),
           );
         } else {
           imageWidget = Container(
@@ -142,7 +168,9 @@ class _SeccionFotoDocsDropdownState extends ConsumerState<SeccionFotoDocsDropdow
         }
         return Card(
           elevation: 4,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
           child: Stack(
             alignment: Alignment.topRight,
             children: [
@@ -180,7 +208,10 @@ class _SeccionFotoDocsDropdownState extends ConsumerState<SeccionFotoDocsDropdow
 
     return SingleChildScrollView(
       child: Padding(
-        padding: EdgeInsets.symmetric(horizontal: isMobile ? 8 : 24, vertical: isMobile ? 8 : 16),
+        padding: EdgeInsets.symmetric(
+          horizontal: isMobile ? 8 : 24,
+          vertical: isMobile ? 8 : 16,
+        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
@@ -193,13 +224,19 @@ class _SeccionFotoDocsDropdownState extends ConsumerState<SeccionFotoDocsDropdow
                   color: _bannerColor,
                   icon: Icons.warning,
                   onClose: () => setState(() => _bannerMessage = null),
-                  messageTextStyle: TextStyle(fontSize: isMobile ? 13 : 16, color: Colors.white, fontWeight: FontWeight.w600),
+                  messageTextStyle: TextStyle(
+                    fontSize: isMobile ? 13 : 16,
+                    color: Colors.white,
+                    fontWeight: FontWeight.w600,
+                  ),
                   maxLines: isMobile ? 6 : null,
                 ),
               ),
             Card(
               elevation: 2,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(isMobile ? 10 : 16)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(isMobile ? 10 : 16),
+              ),
               margin: EdgeInsets.zero,
               child: Padding(
                 padding: EdgeInsets.all(isMobile ? 10 : 16),
@@ -209,24 +246,53 @@ class _SeccionFotoDocsDropdownState extends ConsumerState<SeccionFotoDocsDropdow
                       DropdownButtonFormField<String>(
                         decoration: InputDecoration(
                           labelText: 'Tipo de documento',
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(isMobile ? 8 : 12)),
-                          contentPadding: EdgeInsets.symmetric(vertical: isMobile ? 10 : 16, horizontal: isMobile ? 10 : 16),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(
+                              isMobile ? 8 : 12,
+                            ),
+                          ),
+                          contentPadding: EdgeInsets.symmetric(
+                            vertical: isMobile ? 10 : 16,
+                            horizontal: isMobile ? 10 : 16,
+                          ),
                         ),
                         value: _documentoSeleccionado,
-                        items: _documentos.keys.map((tipo) => DropdownMenuItem(value: tipo, child: Text(tipo))).toList(),
-                        onChanged: widget.habilitarEdicion ? (tipo) => setState(() => _documentoSeleccionado = tipo) : null,
+                        items:
+                            _documentos.keys
+                                .map(
+                                  (tipo) => DropdownMenuItem(
+                                    value: tipo,
+                                    child: Text(tipo),
+                                  ),
+                                )
+                                .toList(),
+                        onChanged:
+                            widget.habilitarEdicion
+                                ? (tipo) => setState(
+                                  () => _documentoSeleccionado = tipo,
+                                )
+                                : null,
                       ),
                       const SizedBox(height: 10),
                     ],
                     if (doc != null) ...[
                       Row(
                         children: [
-                          Icon(Icons.info_outline, color: Colors.blue, size: 20),
+                          Icon(
+                            Icons.info_outline,
+                            color: Colors.blue,
+                            size: 20,
+                          ),
                           const SizedBox(width: 6),
                           Expanded(
                             child: Text(
-                              cantidad == 2 ? 'Debe seleccionar hasta 2 imágenes (anverso y reverso).' : 'Selecciona la imagen del documento.',
-                              style: TextStyle(fontSize: isMobile ? 12 : 13, color: Colors.blue),
+                              cantidad == 2
+                                  ? 'Debe seleccionar hasta 2 imágenes (anverso y reverso).'
+                                  : 'Selecciona la imagen del documento.',
+                              style: TextStyle(
+                                fontSize: isMobile ? 12 : 13,
+                                color: Colors.blue,
+                              ),
                             ),
                           ),
                         ],
@@ -237,12 +303,23 @@ class _SeccionFotoDocsDropdownState extends ConsumerState<SeccionFotoDocsDropdow
                           Expanded(
                             child: ElevatedButton.icon(
                               icon: const Icon(Icons.upload_file),
-                              label: Text('Subir ${cantidad == 2 ? "documento" : "foto"}'),
-                              style: ElevatedButton.styleFrom(
-                                minimumSize: Size.fromHeight(isMobile ? 40 : 48),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(isMobile ? 8 : 10)),
+                              label: Text(
+                                'Subir ${cantidad == 2 ? "documento" : "foto"}',
                               ),
-                              onPressed: widget.habilitarEdicion ? () => _pickImages(doc, cantidad) : null,
+                              style: ElevatedButton.styleFrom(
+                                minimumSize: Size.fromHeight(
+                                  isMobile ? 40 : 48,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(
+                                    isMobile ? 8 : 10,
+                                  ),
+                                ),
+                              ),
+                              onPressed:
+                                  widget.habilitarEdicion
+                                      ? () => _pickImages(doc, cantidad)
+                                      : null,
                             ),
                           ),
                           if (_isMobile) ...[
@@ -250,7 +327,14 @@ class _SeccionFotoDocsDropdownState extends ConsumerState<SeccionFotoDocsDropdow
                             IconButton(
                               icon: const Icon(Icons.camera_alt),
                               color: Theme.of(context).colorScheme.primary,
-                              onPressed: widget.habilitarEdicion ? () => _pickImages(doc, cantidad, fromCamera: true) : null,
+                              onPressed:
+                                  widget.habilitarEdicion
+                                      ? () => _pickImages(
+                                        doc,
+                                        cantidad,
+                                        fromCamera: true,
+                                      )
+                                      : null,
                               tooltip: 'Tomar foto',
                             ),
                           ],
@@ -269,7 +353,10 @@ class _SeccionFotoDocsDropdownState extends ConsumerState<SeccionFotoDocsDropdow
                 itemCount: imagenes.length,
                 separatorBuilder: (_, __) => const SizedBox(height: 12),
                 itemBuilder: (context, i) {
-                  final label = (cantidad == 2) ? (i == 0 ? 'Anverso' : 'Reverso') : 'Foto';
+                  final label =
+                      (cantidad == 2)
+                          ? (i == 0 ? 'Anverso' : 'Reverso')
+                          : 'Foto';
                   return _imagePreview(imagenes[i], label, doc, i);
                 },
               ),
@@ -282,26 +369,40 @@ class _SeccionFotoDocsDropdownState extends ConsumerState<SeccionFotoDocsDropdow
                     minimumSize: Size.fromHeight(isMobile ? 40 : 48),
                     backgroundColor: Colors.green[700],
                     foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(isMobile ? 8 : 10)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(isMobile ? 8 : 10),
+                    ),
                   ),
                   onPressed: () async {
                     if (cantidad > 1 && imagenes.length < cantidad) {
                       setState(() {
-                        _bannerMessage = 'Seleccione $cantidad imágenes para este documento';
+                        _bannerMessage =
+                            'Seleccione $cantidad imágenes para este documento';
                         _bannerColor = Colors.red;
                       });
                       return;
                     }
                     bool huboError = false;
                     for (int i = 0; i < imagenes.length; i++) {
-                      final result = await _subirImagen(imagenes[i], doc, i, showSnackbar: false);
+                      final result = await _subirImagen(
+                        imagenes[i],
+                        doc,
+                        i,
+                        showSnackbar: false,
+                      );
                       if (!result) huboError = true;
                     }
                     if (!mounted) return;
                     if (huboError) {
-                      AppSnackbarCustom.showError(context, 'Hubo un error al subir alguna imagen de $doc.');
+                      AppSnackbarCustom.showError(
+                        context,
+                        'Hubo un error al subir alguna imagen de $doc.',
+                      );
                     } else {
-                      AppSnackbarCustom.showSuccess(context, 'Imágenes de $doc subidas correctamente. Espere aprobación.');
+                      AppSnackbarCustom.showSuccess(
+                        context,
+                        'Imágenes de $doc subidas correctamente. Espere aprobación.',
+                      );
                     }
                     Navigator.of(context).pop();
                   },

@@ -39,16 +39,13 @@ final talonarioGruposProvider = FutureProvider<List<TalonarioGrupoEntity>>((
 });
 
 /// Tipos asignados a un grupo. Con null trae todas las asignaciones.
-final tiposPorGrupoProvider =
-    FutureProvider.family<List<TalonarioPorGrupoEntity>, BigInt?>((
-      ref,
-      codGrupo,
-    ) async {
-      ref.watch(talonariosRefreshProvider);
-      return ref.watch(talonariosRepositoryProvider).listarTiposPorGrupo(
-        codGrupo,
-      );
-    });
+final tiposPorGrupoProvider = FutureProvider.family<
+  List<TalonarioPorGrupoEntity>,
+  BigInt?
+>((ref, codGrupo) async {
+  ref.watch(talonariosRefreshProvider);
+  return ref.watch(talonariosRepositoryProvider).listarTiposPorGrupo(codGrupo);
+});
 
 /// Tipos que todavía NO están en el grupo, para el combo de agregar.
 final tiposDisponiblesParaGrupoProvider =
@@ -57,9 +54,9 @@ final tiposDisponiblesParaGrupoProvider =
       codGrupo,
     ) async {
       ref.watch(talonariosRefreshProvider);
-      return ref.watch(talonariosRepositoryProvider).listarTiposDisponibles(
-        codGrupo,
-      );
+      return ref
+          .watch(talonariosRepositoryProvider)
+          .listarTiposDisponibles(codGrupo);
     });
 
 // ==================== TALONARIOS ====================
@@ -103,15 +100,17 @@ final talonariosProvider =
       filtro,
     ) async {
       ref.watch(talonariosRefreshProvider);
-      return ref.watch(talonariosRepositoryProvider).listarTalonarios(
-        codTipoRecibo: filtro.codTipoRecibo,
-        codEmpresa: filtro.codEmpresa,
-        codGrupo: filtro.codGrupo,
-        codEstadoActual: filtro.codEstadoActual,
-        desde: filtro.desde,
-        hasta: filtro.hasta,
-        incluirCerrados: filtro.incluirCerrados,
-      );
+      return ref
+          .watch(talonariosRepositoryProvider)
+          .listarTalonarios(
+            codTipoRecibo: filtro.codTipoRecibo,
+            codEmpresa: filtro.codEmpresa,
+            codGrupo: filtro.codGrupo,
+            codEstadoActual: filtro.codEstadoActual,
+            desde: filtro.desde,
+            hasta: filtro.hasta,
+            incluirCerrados: filtro.incluirCerrados,
+          );
     });
 
 /// Listos para entregar o reentregar. Es lo que alimenta la grilla de la
@@ -122,9 +121,9 @@ final talonariosDisponiblesProvider =
       codGrupo,
     ) async {
       ref.watch(talonariosRefreshProvider);
-      return ref.watch(talonariosRepositoryProvider).listarDisponibles(
-        codGrupo: codGrupo,
-      );
+      return ref
+          .watch(talonariosRepositoryProvider)
+          .listarDisponibles(codGrupo: codGrupo);
     });
 
 /// Clave de [usoTipoEmpresaProvider].
@@ -139,38 +138,37 @@ typedef ComboTipoEmpresa = ({BigInt codTipoRecibo, BigInt codEmpresa});
 /// ate un tipo a una empresa, y el historial la contradiría: ER1 se usó en
 /// Esppapel y en Impexpap, y PR2 en Impexpap y en Papirus. Bloquear sería
 /// inventar una regla que el negocio no tiene.
-final usoTipoEmpresaProvider =
-    FutureProvider.family<int, ComboTipoEmpresa>((ref, combo) async {
-      if (combo.codTipoRecibo == BigInt.zero || combo.codEmpresa == BigInt.zero) {
-        return -1; // sin datos suficientes para opinar
-      }
-      final lista = await ref
-          .watch(talonariosRepositoryProvider)
-          .listarTalonarios(
-            codTipoRecibo: combo.codTipoRecibo,
-            codEmpresa: combo.codEmpresa,
-          );
-      return lista.length;
-    });
-
-final talonarioPorIdProvider =
-    FutureProvider.family<TalonarioEntity?, BigInt>((ref, codTalonario) async {
-      ref.watch(talonariosRefreshProvider);
-      return ref.watch(talonariosRepositoryProvider).obtenerTalonario(
-        codTalonario,
+final usoTipoEmpresaProvider = FutureProvider.family<int, ComboTipoEmpresa>((
+  ref,
+  combo,
+) async {
+  if (combo.codTipoRecibo == BigInt.zero || combo.codEmpresa == BigInt.zero) {
+    return -1; // sin datos suficientes para opinar
+  }
+  final lista = await ref
+      .watch(talonariosRepositoryProvider)
+      .listarTalonarios(
+        codTipoRecibo: combo.codTipoRecibo,
+        codEmpresa: combo.codEmpresa,
       );
-    });
+  return lista.length;
+});
+
+final talonarioPorIdProvider = FutureProvider.family<TalonarioEntity?, BigInt>((
+  ref,
+  codTalonario,
+) async {
+  ref.watch(talonariosRefreshProvider);
+  return ref.watch(talonariosRepositoryProvider).obtenerTalonario(codTalonario);
+});
 
 // ==================== EVENTOS ====================
 
 /// Historial de un talonario, del evento más viejo al más nuevo.
-final eventosTalonarioProvider =
-    FutureProvider.family<List<TalonarioDetalleEntity>, BigInt>((
-      ref,
-      codTalonario,
-    ) async {
-      ref.watch(talonariosRefreshProvider);
-      return ref.watch(talonariosRepositoryProvider).listarEventos(
-        codTalonario,
-      );
-    });
+final eventosTalonarioProvider = FutureProvider.family<
+  List<TalonarioDetalleEntity>,
+  BigInt
+>((ref, codTalonario) async {
+  ref.watch(talonariosRefreshProvider);
+  return ref.watch(talonariosRepositoryProvider).listarEventos(codTalonario);
+});

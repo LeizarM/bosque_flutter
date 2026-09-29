@@ -52,9 +52,10 @@ class TraspasoMovCajaNotifier extends StateNotifier<TraspasoMovCajaState> {
       await _repo.registrar(item);
       state = state.copyWith(
         cargando: false,
-        mensajeExito: item.idTrasp == 0
-            ? 'Traspaso de movimiento de caja agregado.'
-            : 'Traspaso de movimiento de caja actualizado.',
+        mensajeExito:
+            item.idTrasp == 0
+                ? 'Traspaso de movimiento de caja agregado.'
+                : 'Traspaso de movimiento de caja actualizado.',
       );
       await cargar();
       return true;
@@ -83,7 +84,7 @@ class TraspasoMovCajaNotifier extends StateNotifier<TraspasoMovCajaState> {
 
 final _traspasoMovCajaRepoProvider = Provider((ref) => TraspasoMovCajaImpl());
 
-final traspasoMovCajaProvider =
-    StateNotifierProvider.autoDispose<TraspasoMovCajaNotifier, TraspasoMovCajaState>(
-  (ref) => TraspasoMovCajaNotifier(ref.read(_traspasoMovCajaRepoProvider)),
-);
+final traspasoMovCajaProvider = StateNotifierProvider.autoDispose<
+  TraspasoMovCajaNotifier,
+  TraspasoMovCajaState
+>((ref) => TraspasoMovCajaNotifier(ref.read(_traspasoMovCajaRepoProvider)));

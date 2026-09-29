@@ -168,19 +168,20 @@ class RelacionLaboralSeccion extends ConsumerWidget {
                                 _datoConEtiqueta(
                                   icon: Icons.business_rounded,
                                   etiqueta: 'Tipo',
-                                  widget: DisplayValue<TipoRelacionLaboralEntity>(
-                                    code: relacionLaboral.tipoRel,
-                                    provider: getTipoRelacionLaboral,
-                                    getCode: (tipo) => tipo.codTipos,
-                                    getDescription: (tipo) => tipo.nombre,
-                                    fallback: relacionLaboral.tipoRel,
-                                    style: TextStyle(
-                                      fontSize: isDesktop ? 14 : 13,
-                                      color: textoPrincipal,
-                                      fontFamily: 'Montserrat',
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
+                                  widget:
+                                      DisplayValue<TipoRelacionLaboralEntity>(
+                                        code: relacionLaboral.tipoRel,
+                                        provider: getTipoRelacionLaboral,
+                                        getCode: (tipo) => tipo.codTipos,
+                                        getDescription: (tipo) => tipo.nombre,
+                                        fallback: relacionLaboral.tipoRel,
+                                        style: TextStyle(
+                                          fontSize: isDesktop ? 14 : 13,
+                                          color: textoPrincipal,
+                                          fontFamily: 'Montserrat',
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
                                   colorIcono: icono,
                                   textoSecundario: textoSecundario,
                                   isDesktop: isDesktop,

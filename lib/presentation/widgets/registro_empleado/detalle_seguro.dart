@@ -36,9 +36,7 @@ class _DetalleSeguroState extends ConsumerState<DetalleSeguro> {
       loading: () => const Center(child: CircularProgressIndicator()),
       error: (err, stack) {
         console('❌ Error al cargar seguros: $err');
-        return Center(
-          child: Text('Error al cargar seguros: $err'),
-        );
+        return Center(child: Text('Error al cargar seguros: $err'));
       },
       data: (seguros) {
         return _buildUI(context, seguros);
@@ -74,17 +72,11 @@ class _DetalleSeguroState extends ConsumerState<DetalleSeguro> {
       padding: EdgeInsets.only(bottom: context.smallSpacing),
       child: Row(
         children: [
-          Icon(
-            Icons.shield,
-            size: context.smallIconSize,
-            color: Colors.grey,
-          ),
+          Icon(Icons.shield, size: context.smallIconSize, color: Colors.grey),
           SizedBox(width: context.smallSpacing),
           Text(
             'Gestión de Seguros',
-            style: context.subtitleStyle.copyWith(
-              fontWeight: FontWeight.bold,
-            ),
+            style: context.subtitleStyle.copyWith(fontWeight: FontWeight.bold),
           ),
         ],
       ),
@@ -95,10 +87,7 @@ class _DetalleSeguroState extends ConsumerState<DetalleSeguro> {
   // LISTA DE SEGUROS
   // ============================================================================
 
-  Widget _buildSegurosList(
-    BuildContext context,
-    List<SeguroEntity> seguros,
-  ) {
+  Widget _buildSegurosList(BuildContext context, List<SeguroEntity> seguros) {
     return Column(
       children: [
         _buildAddButton(context),
@@ -143,27 +132,15 @@ class _DetalleSeguroState extends ConsumerState<DetalleSeguro> {
             SizedBox(height: context.spacing),
 
             // Número
-            _buildDetailRow(
-              context,
-              'Número:',
-              seguro.numero ,
-            ),
+            _buildDetailRow(context, 'Número:', seguro.numero),
             SizedBox(height: context.spacing),
 
             // Nombre Corto
-            _buildDetailRow(
-              context,
-              'Nombre Corto:',
-              seguro.nombreCorto,
-            ),
+            _buildDetailRow(context, 'Nombre Corto:', seguro.nombreCorto),
             SizedBox(height: context.spacing),
 
             // Descripción
-            _buildDetailRow(
-              context,
-              'Descripción:',
-              seguro.descripcion,
-            ),
+            _buildDetailRow(context, 'Descripción:', seguro.descripcion),
             SizedBox(height: context.spacing),
 
             // Botones de acción
@@ -174,11 +151,7 @@ class _DetalleSeguroState extends ConsumerState<DetalleSeguro> {
     );
   }
 
-  Widget _buildDetailRow(
-    BuildContext context,
-    String label,
-    String value,
-  ) {
+  Widget _buildDetailRow(BuildContext context, String label, String value) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -203,10 +176,7 @@ class _DetalleSeguroState extends ConsumerState<DetalleSeguro> {
     );
   }
 
-  Widget _buildActionButtons(
-    BuildContext context,
-    SeguroEntity seguro,
-  ) {
+  Widget _buildActionButtons(BuildContext context, SeguroEntity seguro) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.end,
       children: [
@@ -226,20 +196,21 @@ class _DetalleSeguroState extends ConsumerState<DetalleSeguro> {
           tooltip: 'Editar',
         ),
         PermissionWidget(
-        buttonName: 'btnEliminarSeguro',
-        placeholder: SizedBox(
-          width: 48, // Mantener el espacio del botón
-          height: 48,
-        ),child: IconButton(
-          icon: Icon(
-            Icons.delete_outline,
-            size: context.smallIconSize,
-            color: Colors.redAccent,
+          buttonName: 'btnEliminarSeguro',
+          placeholder: SizedBox(
+            width: 48, // Mantener el espacio del botón
+            height: 48,
           ),
-          onPressed: () => _eliminarSeguro(context, seguro.codSeguro),
-          tooltip: 'Eliminar',
+          child: IconButton(
+            icon: Icon(
+              Icons.delete_outline,
+              size: context.smallIconSize,
+              color: Colors.redAccent,
+            ),
+            onPressed: () => _eliminarSeguro(context, seguro.codSeguro),
+            tooltip: 'Eliminar',
+          ),
         ),
-      ),
       ],
     );
   }
@@ -322,23 +293,16 @@ class _DetalleSeguroState extends ConsumerState<DetalleSeguro> {
   // ACCIONES - ABM
   // ============================================================================
 
-  Future<void> _eliminarSeguro(
-    BuildContext context,
-    int codSeguro,
-  ) async {
+  Future<void> _eliminarSeguro(BuildContext context, int codSeguro) async {
     final success = await executeABM(
       ref: ref,
       context: context,
-      operation: () =>
-          ref.read(eliminarSeguro(codSeguro).future),
-      providersToInvalidate: [
-        obtenerSeguros,
-      ],
+      operation: () => ref.read(eliminarSeguro(codSeguro).future),
+      providersToInvalidate: [obtenerSeguros],
       successMessage: '✅ Seguro eliminado correctamente',
       requireConfirmation: true,
       confirmationTitle: 'Eliminar Seguro',
-      confirmationMessage:
-          '¿Está seguro de eliminar este seguro?',
+      confirmationMessage: '¿Está seguro de eliminar este seguro?',
     );
 
     if (success && mounted) {

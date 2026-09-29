@@ -15,10 +15,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 class DetalleAfiliacionSeguro extends ConsumerStatefulWidget {
   final int codEmpleado;
 
-  const DetalleAfiliacionSeguro({
-    Key? key,
-    required this.codEmpleado,
-  }) : super(key: key);
+  const DetalleAfiliacionSeguro({Key? key, required this.codEmpleado})
+    : super(key: key);
 
   @override
   ConsumerState<DetalleAfiliacionSeguro> createState() =>
@@ -37,16 +35,15 @@ class _DetalleAfiliacionSeguroState
 
     console('🔍 DetalleAfiliacionSeguro - codEmpleado: ${widget.codEmpleado}');
 
-    final afiliacionAsync =
-        ref.watch(obtenerAfiliacionSeguro(widget.codEmpleado));
+    final afiliacionAsync = ref.watch(
+      obtenerAfiliacionSeguro(widget.codEmpleado),
+    );
 
     return afiliacionAsync.when(
       loading: () => const Center(child: CircularProgressIndicator()),
       error: (err, stack) {
         console('❌ Error al cargar afiliación: $err');
-        return Center(
-          child: Text('Error al cargar afiliación: $err'),
-        );
+        return Center(child: Text('Error al cargar afiliación: $err'));
       },
       data: (afiliacion) {
         return _buildUI(context, afiliacion);
@@ -58,15 +55,13 @@ class _DetalleAfiliacionSeguroState
   // UI PRINCIPAL
   // ============================================================================
 
- Widget _buildUI(BuildContext context, AfiliacionSeguroEntity? afiliacion) {
+  Widget _buildUI(BuildContext context, AfiliacionSeguroEntity? afiliacion) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _buildHeader(context),
-        if (afiliacion == null && !_isEditing)
-          _buildEmptyState(context),
-        if (afiliacion == null && _isEditing)
-          _buildNewForm(context),
+        if (afiliacion == null && !_isEditing) _buildEmptyState(context),
+        if (afiliacion == null && _isEditing) _buildNewForm(context),
         if (afiliacion != null && !_isEditing)
           _buildAfiliacionCard(context, afiliacion),
         if (afiliacion != null && _isEditing)
@@ -84,17 +79,11 @@ class _DetalleAfiliacionSeguroState
       padding: EdgeInsets.only(bottom: context.smallSpacing),
       child: Row(
         children: [
-          Icon(
-            Icons.shield,
-            size: context.smallIconSize,
-            color: Colors.grey,
-          ),
+          Icon(Icons.shield, size: context.smallIconSize, color: Colors.grey),
           SizedBox(width: context.smallSpacing),
           Text(
             'Afiliación al Seguro',
-            style: context.subtitleStyle.copyWith(
-              fontWeight: FontWeight.bold,
-            ),
+            style: context.subtitleStyle.copyWith(fontWeight: FontWeight.bold),
           ),
         ],
       ),
@@ -184,11 +173,7 @@ class _DetalleAfiliacionSeguroState
     );
   }
 
-  Widget _buildDetailRow(
-    BuildContext context,
-    String label,
-    String value,
-  ) {
+  Widget _buildDetailRow(BuildContext context, String label, String value) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -238,7 +223,8 @@ class _DetalleAfiliacionSeguroState
             size: context.smallIconSize,
             color: Colors.redAccent,
           ),
-          onPressed: () => _eliminarAfiliacion(context, afiliacion.codAfiliacion),
+          onPressed:
+              () => _eliminarAfiliacion(context, afiliacion.codAfiliacion),
           tooltip: 'Eliminar',
         ),
       ],
@@ -292,7 +278,9 @@ class _DetalleAfiliacionSeguroState
       child: Padding(
         padding: EdgeInsets.all(context.spacing),
         child: FormAfiliacionSeguro(
-          key: ValueKey('new_afiliacion_${DateTime.now().millisecondsSinceEpoch}'),
+          key: ValueKey(
+            'new_afiliacion_${DateTime.now().millisecondsSinceEpoch}',
+          ),
           codEmpleado: widget.codEmpleado,
           afiliacionInicial: null,
           audUsuario: _audUsuario,
@@ -310,7 +298,7 @@ class _DetalleAfiliacionSeguroState
   // ESTADO VACÍO - SIN AFILIACIÓN
   // ============================================================================
 
- Widget _buildEmptyState(BuildContext context) {
+  Widget _buildEmptyState(BuildContext context) {
     return Column(
       children: [
         _buildAddButton(context),
@@ -349,11 +337,8 @@ class _DetalleAfiliacionSeguroState
     await executeABM(
       ref: ref,
       context: context,
-      operation: () =>
-          ref.read(registrarAfiliacionSeguro(afiliacion).future),
-      providersToInvalidate: [
-        obtenerAfiliacionSeguro(widget.codEmpleado),
-      ],
+      operation: () => ref.read(registrarAfiliacionSeguro(afiliacion).future),
+      providersToInvalidate: [obtenerAfiliacionSeguro(widget.codEmpleado)],
       successMessage: '✅ Afiliación guardada correctamente',
     );
 
@@ -369,11 +354,8 @@ class _DetalleAfiliacionSeguroState
     final success = await executeABM(
       ref: ref,
       context: context,
-      operation: () =>
-          ref.read(eliminarAfiliacionSeguro(codAfiliacion).future),
-      providersToInvalidate: [
-        obtenerAfiliacionSeguro(widget.codEmpleado),
-      ],
+      operation: () => ref.read(eliminarAfiliacionSeguro(codAfiliacion).future),
+      providersToInvalidate: [obtenerAfiliacionSeguro(widget.codEmpleado)],
       successMessage: '✅ Afiliación eliminada correctamente',
       requireConfirmation: true,
       confirmationTitle: 'Eliminar Afiliación',

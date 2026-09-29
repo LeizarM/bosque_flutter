@@ -25,8 +25,7 @@ void main() {
   /// Los colores del tema llevan opacidad; sobre el fondo real quedan en otro
   /// tono. Se aplana contra la superficie antes de medir, que es lo que el ojo
   /// ve de verdad.
-  Color aplanar(Color encima, Color debajo) =>
-      Color.alphaBlend(encima, debajo);
+  Color aplanar(Color encima, Color debajo) => Color.alphaBlend(encima, debajo);
 
   const letras = ['1', 'V', 'P', 'A', 'C', 'E', 'X', 'B', 'L'];
 
@@ -68,14 +67,20 @@ void main() {
   /// que se diferencian por el tono la comparten. Un verde claro y un cian claro
   /// dan contraste 1.00 y sin embargo se distinguen perfectamente.
   double distancia(Color a, Color b) {
-    final r1 = (a.r * 255).round(), g1 = (a.g * 255).round(), b1 = (a.b * 255).round();
-    final r2 = (b.r * 255).round(), g2 = (b.g * 255).round(), b2 = (b.b * 255).round();
+    final r1 = (a.r * 255).round(),
+        g1 = (a.g * 255).round(),
+        b1 = (a.b * 255).round();
+    final r2 = (b.r * 255).round(),
+        g2 = (b.g * 255).round(),
+        b2 = (b.b * 255).round();
     final rMedio = (r1 + r2) / 2;
     final dr = (r1 - r2).toDouble();
     final dg = (g1 - g2).toDouble();
     final db = (b1 - b2).toDouble();
     return math.sqrt(
-      (2 + rMedio / 256) * dr * dr + 4 * dg * dg + (2 + (255 - rMedio) / 256) * db * db,
+      (2 + rMedio / 256) * dr * dr +
+          4 * dg * dg +
+          (2 + (255 - rMedio) / 256) * db * db,
     );
   }
 
@@ -89,9 +94,10 @@ void main() {
     for (var semilla = 0; semilla < colorList.length; semilla++) {
       for (final oscuro in [false, true]) {
         final cs =
-            AppTheme(isDarkMode: oscuro, selectedColor: semilla)
-                .getTheme()
-                .colorScheme;
+            AppTheme(
+              isDarkMode: oscuro,
+              selectedColor: semilla,
+            ).getTheme().colorScheme;
         final vistos = <String, Color>{};
 
         for (final letra in ['1', 'V', 'C', 'X', 'B']) {

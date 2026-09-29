@@ -75,7 +75,10 @@ void main() {
   testWidgets('el boton esta y la fila nueva llega en blanco', (tester) async {
     await abrir(tester, ancho: 1400);
 
-    expect(find.text('2 bobinas  ·  200.00 kg  ·  balanza 198.00 kg'), findsOne);
+    expect(
+      find.text('2 bobinas  ·  200.00 kg  ·  balanza 198.00 kg'),
+      findsOne,
+    );
     expect(_botonAgregar, findsOne);
 
     await agregar(tester);
@@ -92,12 +95,18 @@ void main() {
 
     // La cuenta sube en el acto; los kilos no, porque la bobina no tiene peso.
     // Agregar una fila no inventa material.
-    expect(find.text('3 bobinas  ·  200.00 kg  ·  balanza 198.00 kg'), findsOne);
+    expect(
+      find.text('3 bobinas  ·  200.00 kg  ·  balanza 198.00 kg'),
+      findsOne,
+    );
 
     await tester.enterText(_pesoDeLaBobinaNueva, '150');
     await tester.pumpAndSettle();
 
-    expect(find.text('3 bobinas  ·  350.00 kg  ·  balanza 198.00 kg'), findsOne);
+    expect(
+      find.text('3 bobinas  ·  350.00 kg  ·  balanza 198.00 kg'),
+      findsOne,
+    );
     // Y la barra de balance de arriba mira los mismos kilos.
     expect(find.textContaining('350'), findsWidgets);
   });
@@ -107,7 +116,10 @@ void main() {
     await agregar(tester);
     await tester.enterText(_pesoDeLaBobinaNueva, '150');
     await tester.pumpAndSettle();
-    expect(find.text('3 bobinas  ·  350.00 kg  ·  balanza 198.00 kg'), findsOne);
+    expect(
+      find.text('3 bobinas  ·  350.00 kg  ·  balanza 198.00 kg'),
+      findsOne,
+    );
 
     // Solo la nueva trae papelera: las dos que ya estan en la base no se pueden
     // borrar porque el backend no tiene baja para el material de ingreso.
@@ -116,7 +128,10 @@ void main() {
     await tester.tap(find.byIcon(Icons.delete_outline));
     await tester.pumpAndSettle();
 
-    expect(find.text('2 bobinas  ·  200.00 kg  ·  balanza 198.00 kg'), findsOne);
+    expect(
+      find.text('2 bobinas  ·  200.00 kg  ·  balanza 198.00 kg'),
+      findsOne,
+    );
     expect(find.text('Bobina 3'), findsNothing);
   });
 
@@ -134,7 +149,10 @@ void main() {
 
     expect(_botonAgregar, findsOne);
     await agregar(tester);
-    expect(find.text('3 bobinas  ·  200.00 kg  ·  balanza 198.00 kg'), findsOne);
+    expect(
+      find.text('3 bobinas  ·  200.00 kg  ·  balanza 198.00 kg'),
+      findsOne,
+    );
   });
 
   testWidgets('en solo lectura no hay boton ni papelera', (tester) async {

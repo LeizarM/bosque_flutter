@@ -52,9 +52,10 @@ class CocheLlegadasNotifier extends StateNotifier<CocheLlegadasState> {
       await _repo.registrar(item);
       state = state.copyWith(
         cargando: false,
-        mensajeExito: item.idCo == 0
-            ? 'Llegada de coche agregada.'
-            : 'Llegada de coche actualizada.',
+        mensajeExito:
+            item.idCo == 0
+                ? 'Llegada de coche agregada.'
+                : 'Llegada de coche actualizada.',
       );
       await cargar();
       return true;

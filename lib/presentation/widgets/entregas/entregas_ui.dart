@@ -9,7 +9,7 @@ import 'package:bosque_flutter/core/utils/responsive_utils_bosque.dart';
 /// resultado era una pantalla con cuatro fondos de color distinto (rosa, lila,
 /// verde agua) peleándose por la atención sin que ninguno significara nada.
 ///
-/// La regla acá es: **superficies neutras, un solo acento**. El acento
+/// La regla aquí es: **superficies neutras, un solo acento**. El acento
 /// (`colorScheme.primary`) se reserva para dos cosas y nada más — el estado de
 /// ruta activa y la acción primaria. Todo lo demás son grises del tema y
 /// bordes de un pelo. El color vuelve a significar algo cuando se usa poco.
@@ -48,13 +48,13 @@ class EntregasUI {
 
   /// Ancho por debajo del cual no entra "texto largo + botón" en una fila.
   /// Se mide contra el ancho real y no contra el breakpoint TABLET porque lo
-  /// que importa acá es si la fila entra, no qué clase de dispositivo es.
-  static bool esAngosto(BuildContext c) =>
-      MediaQuery.of(c).size.width < 560;
+  /// que importa aquí es si la fila entra, no qué clase de dispositivo es.
+  static bool esAngosto(BuildContext c) => MediaQuery.of(c).size.width < 560;
 
   /// Borde de un pelo. Un divisor gris claro comunica separación sin gritar,
   /// que es lo que hacía el bloque de color de fondo.
-  static Color hairline(ColorScheme cs) => cs.outlineVariant.withValues(alpha: 0.5);
+  static Color hairline(ColorScheme cs) =>
+      cs.outlineVariant.withValues(alpha: 0.5);
 
   /// Fondo de una superficie elevada un escalón sobre el fondo de la página.
   static Color raised(ColorScheme cs) => cs.surfaceContainerLowest;
@@ -64,12 +64,17 @@ class EntregasUI {
 
   /// Cifras alineadas en columna. `tabularFigures` hace que el 1 ocupe lo mismo
   /// que el 8, así los números de factura no bailan de fila en fila.
-  static TextStyle numeric(BuildContext context, {FontWeight? weight, Color? color}) {
-    return (Theme.of(context).textTheme.bodyMedium ?? const TextStyle()).copyWith(
-      fontFeatures: const [FontFeature.tabularFigures()],
-      fontWeight: weight ?? FontWeight.w500,
-      color: color,
-    );
+  static TextStyle numeric(
+    BuildContext context, {
+    FontWeight? weight,
+    Color? color,
+  }) {
+    return (Theme.of(context).textTheme.bodyMedium ?? const TextStyle())
+        .copyWith(
+          fontFeatures: const [FontFeature.tabularFigures()],
+          fontWeight: weight ?? FontWeight.w500,
+          color: color,
+        );
   }
 
   /// Encabezado de columna: chico, en mayúsculas, con tracking abierto y en

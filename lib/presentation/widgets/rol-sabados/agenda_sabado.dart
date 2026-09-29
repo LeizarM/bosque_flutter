@@ -294,7 +294,7 @@ class _ChipFecha extends StatelessWidget {
 
 /// Qué sábado se está viendo, cómo viene de gente, y qué se puede hacer con él.
 ///
-/// **Acá el PDF sí es un botón visible**, al revés que en la matriz. Es la
+/// **Aquí el PDF sí es un botón visible**, al revés que en la matriz. Es la
 /// pantalla del teléfono, que es desde donde se comparte al grupo de WhatsApp:
 /// esconder la acción de la semana detrás de un menú, en el único lugar donde
 /// hay lugar de sobra para mostrarla, sería esconderla por gusto.
@@ -462,7 +462,7 @@ class _Seccion extends StatelessWidget {
 
 /// Una persona en el sábado elegido.
 ///
-/// Es un `ListTile` y no una celda de 32 px justamente porque acá sí hay lugar:
+/// Es un `ListTile` y no una celda de 32 px justamente porque aquí sí hay lugar:
 /// el objetivo táctil llega a los 48 px que pide Material, cosa que en la matriz
 /// es imposible.
 class _FilaPersona extends ConsumerWidget {
@@ -482,7 +482,7 @@ class _FilaPersona extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final cs = Theme.of(context).colorScheme;
 
-    // Acá el provider se observa por fila y no una vez arriba, al revés que en
+    // Aquí el provider se observa por fila y no una vez arriba, al revés que en
     // la matriz: son las personas de UN sábado, unas decenas, no 4.420 celdas.
     final puedeEditar = ref
         .watch(permisoDeCeldaProvider)
@@ -527,7 +527,7 @@ class _FilaPersona extends ConsumerWidget {
                 right: 0,
                 child: MarcaDeIntervencion(color: cs.primary, lado: 9),
               ),
-            // La misma esquina opuesta que en la matriz. Acá además hace de
+            // La misma esquina opuesta que en la matriz. Aquí además hace de
             // ancla: el renglón de abajo puede quedar cortado por el
             // `maxLines`, la marca no se corta nunca.
             if (celda?.hayCambio == true)

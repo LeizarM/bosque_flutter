@@ -7,7 +7,7 @@
 /// tabla tiene **una sola fila**: la pestaña la ven exactamente dos personas.
 ///
 /// **Lo que esta pantalla NO hace, a propósito.** No arma el equipo. El equipo
-/// lo devuelve el organigrama (`fn_trs_ProgramadorDependiente`) y acá sólo se
+/// lo devuelve el organigrama (`fn_trs_ProgramadorDependiente`) y aquí sólo se
 /// decide *quién es jefe* y *hasta dónde llega*: sus directos, o todo el árbol
 /// debajo suyo. Por eso la columna que más importa de la lista no es el nombre
 /// sino el contador de dependientes: es lo único que confirma que el permiso
@@ -479,7 +479,7 @@ class _AltaState extends ConsumerState<_AltaProgramadorSheet> {
 
   Widget _formulario(
     BuildContext context,
-    // Viene por parámetro y no se vuelve a leer del provider: acá arriba ya se
+    // Viene por parámetro y no se vuelve a leer del provider: aquí arriba ya se
     // comprobó que no es null, y volver a pedirlo obligaría a comprobarlo otra
     // vez o a poner un `!` que el día que cambie el flujo revienta en pantalla.
     int idRol,
@@ -525,7 +525,9 @@ class _AltaState extends ConsumerState<_AltaProgramadorSheet> {
           // Sin sucursal cargada no se puede elegir «sólo la suya»: no sabemos
           // cuál es. Con «Todas» sí se puede guardar, porque ahí la sucursal
           // deja de importar.
-          if (elegido != null && elegido.codSucursal == 0 && !_todasLasSucursales)
+          if (elegido != null &&
+              elegido.codSucursal == 0 &&
+              !_todasLasSucursales)
             _Aviso(
               'Esa persona no tiene sucursal en la foto de este rol, así que no '
               'se puede limitar el permiso a la suya. Elige «Todas» aquí abajo, o '
@@ -849,7 +851,7 @@ class _PreviaDependientes extends ConsumerWidget {
             // Alto acotado a propósito: un `ListView` suelto adentro del
             // `SingleChildScrollView` del formulario no tiene altura definida y
             // revienta. 168 px son cuatro filas — suficiente para ver que la
-            // lista es la esperada, y el resto se scrollea acá adentro sin
+            // lista es la esperada, y el resto se scrollea aquí adentro sin
             // empujar el botón de guardar fuera de la pantalla.
             Container(
               constraints: const BoxConstraints(maxHeight: 168),

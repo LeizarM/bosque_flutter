@@ -80,7 +80,9 @@ class SolicitudCorteImpl implements SolicitudCorteRepository {
         data: {'texto': texto, 'limite': limite},
       );
       final list = (response.data as List<dynamic>?) ?? const [];
-      return list.map((json) => ItemSapModel.fromJson(json).toEntity()).toList();
+      return list
+          .map((json) => ItemSapModel.fromJson(json).toEntity())
+          .toList();
     } on DioException {
       return [];
     } catch (_) {
@@ -113,9 +115,10 @@ class SolicitudCorteImpl implements SolicitudCorteRepository {
         AppConstants.registrarSolicitudCorte,
         data: {
           'solicitud': CcrSolicitudModel.fromEntity(solicitud).toJson(),
-          'detalle': detalle
-              .map((d) => CcrSolicitudDetalleModel.fromEntity(d).toJson())
-              .toList(),
+          'detalle':
+              detalle
+                  .map((d) => CcrSolicitudDetalleModel.fromEntity(d).toJson())
+                  .toList(),
         },
       );
       return (response.data?['idSolicitud'] ?? 0).toInt();

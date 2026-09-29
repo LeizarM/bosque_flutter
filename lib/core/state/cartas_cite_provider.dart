@@ -19,13 +19,15 @@ final cartasCiteRepositoryProvider = Provider<CartasCiteRepository>(
 
 final tiposDocumentoCiteProvider =
     FutureProvider<List<TipoDocumentoCiteEntity>>((ref) async {
-  return ref.read(cartasCiteRepositoryProvider).tiposDocumento();
-});
+      return ref.read(cartasCiteRepositoryProvider).tiposDocumento();
+    });
 
 /// Áreas de una empresa. Familia por `codEmpresa`: cada empresa tiene las
 /// suyas y el formulario cambia de empresa sin salir de la pantalla.
-final areasCiteProvider =
-    FutureProvider.family<List<AreaCiteEntity>, int>((ref, codEmpresa) async {
+final areasCiteProvider = FutureProvider.family<List<AreaCiteEntity>, int>((
+  ref,
+  codEmpresa,
+) async {
   if (codEmpresa <= 0) return [];
   return ref.read(cartasCiteRepositoryProvider).areas(codEmpresa);
 });
@@ -33,22 +35,24 @@ final areasCiteProvider =
 /// Empleados activos: sólo los pide el memorando y la comunicación interna.
 /// Es una consulta pesada de RRHH, así que se carga cuando hace falta y no al
 /// entrar al módulo.
-final empleadosCiteProvider =
-    FutureProvider<List<EmpleadoCiteEntity>>((ref) async {
+final empleadosCiteProvider = FutureProvider<List<EmpleadoCiteEntity>>((
+  ref,
+) async {
   return ref.read(cartasCiteRepositoryProvider).empleados();
 });
 
-final gestionesCiteProvider =
-    FutureProvider<List<GestionCiteEntity>>((ref) async {
+final gestionesCiteProvider = FutureProvider<List<GestionCiteEntity>>((
+  ref,
+) async {
   return ref.read(cartasCiteRepositoryProvider).gestiones();
 });
 
 /// Nombre y cargo del usuario logueado, para precargar el primer remitente.
 final firmaUsuarioCiteProvider =
     FutureProvider.family<EmpleadoCiteEntity?, int>((ref, codUsuario) async {
-  if (codUsuario <= 0) return null;
-  return ref.read(cartasCiteRepositoryProvider).firmaUsuario(codUsuario);
-});
+      if (codUsuario <= 0) return null;
+      return ref.read(cartasCiteRepositoryProvider).firmaUsuario(codUsuario);
+    });
 
 // ═══════════════════════════════════════════════════════════════════════════
 // LISTADO
@@ -112,22 +116,21 @@ class CartasCiteState {
     String? mensajeError,
     String? mensajeExito,
     bool limpiarMensajes = false,
-  }) =>
-      CartasCiteState(
-        items: items ?? this.items,
-        cargando: cargando ?? this.cargando,
-        procesando: procesando ?? this.procesando,
-        fechaDesde: fechaDesde ?? this.fechaDesde,
-        fechaHasta: fechaHasta ?? this.fechaHasta,
-        idTipoDoc: idTipoDoc ?? this.idTipoDoc,
-        codEmpresa: codEmpresa ?? this.codEmpresa,
-        buscar: buscar ?? this.buscar,
-        pagina: pagina ?? this.pagina,
-        tamanoPagina: tamanoPagina ?? this.tamanoPagina,
-        totalRegistros: totalRegistros ?? this.totalRegistros,
-        mensajeError: limpiarMensajes ? null : (mensajeError ?? this.mensajeError),
-        mensajeExito: limpiarMensajes ? null : (mensajeExito ?? this.mensajeExito),
-      );
+  }) => CartasCiteState(
+    items: items ?? this.items,
+    cargando: cargando ?? this.cargando,
+    procesando: procesando ?? this.procesando,
+    fechaDesde: fechaDesde ?? this.fechaDesde,
+    fechaHasta: fechaHasta ?? this.fechaHasta,
+    idTipoDoc: idTipoDoc ?? this.idTipoDoc,
+    codEmpresa: codEmpresa ?? this.codEmpresa,
+    buscar: buscar ?? this.buscar,
+    pagina: pagina ?? this.pagina,
+    tamanoPagina: tamanoPagina ?? this.tamanoPagina,
+    totalRegistros: totalRegistros ?? this.totalRegistros,
+    mensajeError: limpiarMensajes ? null : (mensajeError ?? this.mensajeError),
+    mensajeExito: limpiarMensajes ? null : (mensajeExito ?? this.mensajeExito),
+  );
 }
 
 class CartasCiteNotifier extends StateNotifier<CartasCiteState> {
@@ -135,13 +138,19 @@ class CartasCiteNotifier extends StateNotifier<CartasCiteState> {
   final int _codUsuario;
 
   CartasCiteNotifier(this._repo, this._codUsuario)
-      : super(CartasCiteState(
+    : super(
+        CartasCiteState(
           /// Tres meses hacia atrás y no "desde hoy" como el módulo viejo, que
           /// abría con la fecha actual y mostraba la grilla vacía: parecía que
           /// no había cartas cuando en realidad no había ninguna de hoy.
-          fechaDesde: DateTime(DateTime.now().year, DateTime.now().month - 3, 1),
+          fechaDesde: DateTime(
+            DateTime.now().year,
+            DateTime.now().month - 3,
+            1,
+          ),
           fechaHasta: DateTime.now(),
-        ));
+        ),
+      );
 
   /// Se llama al entrar al módulo. Deja activa la gestión del año en curso
   /// antes de cualquier otra cosa: el correlativo cuelga de ahí.
@@ -173,7 +182,11 @@ class CartasCiteNotifier extends StateNotifier<CartasCiteState> {
       /// dónde sacarlo y es cero.
       final total = items.isEmpty ? 0 : items.first.totalRegistros;
 
-      state = state.copyWith(items: items, totalRegistros: total, cargando: false);
+      state = state.copyWith(
+        items: items,
+        totalRegistros: total,
+        cargando: false,
+      );
     } catch (e) {
       state = state.copyWith(
         cargando: false,
@@ -205,7 +218,9 @@ class CartasCiteNotifier extends StateNotifier<CartasCiteState> {
   }
 
   Future<void> irAPagina(int pagina) async {
-    if (pagina < 1 || pagina > state.totalPaginas || pagina == state.pagina) return;
+    if (pagina < 1 || pagina > state.totalPaginas || pagina == state.pagina) {
+      return;
+    }
     state = state.copyWith(pagina: pagina);
     await cargar();
   }
@@ -263,7 +278,10 @@ class CartasCiteNotifier extends StateNotifier<CartasCiteState> {
 
 /// Familia por usuario: el `esAutor` de cada fila —y por lo tanto quién puede
 /// editar qué— depende de quién consulta.
-final cartasCiteProvider = StateNotifierProvider.family<CartasCiteNotifier,
-    CartasCiteState, int>((ref, codUsuario) {
+final cartasCiteProvider = StateNotifierProvider.family<
+  CartasCiteNotifier,
+  CartasCiteState,
+  int
+>((ref, codUsuario) {
   return CartasCiteNotifier(ref.read(cartasCiteRepositoryProvider), codUsuario);
 });

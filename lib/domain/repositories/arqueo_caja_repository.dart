@@ -1,8 +1,12 @@
 // Destino final: lib/domain/repositories/arqueo_caja_repository.dart
+import 'dart:typed_data';
+
 import 'package:bosque_flutter/domain/entities/vale_arqueo_entity.dart';
 
 abstract class ArqueoCajaRepository {
-  Future<void> registrar({
+  /// Devuelve el idAC del arqueo recién creado — lo necesita
+  /// [reportePdf] para poder generar el comprobante apenas se cierra.
+  Future<int> registrar({
     required int idTarRuti,
     required int idBitTarea,
     required double saldoMovSap,
@@ -12,4 +16,7 @@ abstract class ArqueoCajaRepository {
     required Map<int, double> montoPorDoc,
     required List<ValeArqueoEntity> vales,
   });
+
+  /// PDF de un arqueo ya registrado (RptArqueoDeCaja del legacy).
+  Future<Uint8List> reportePdf(int idAC);
 }

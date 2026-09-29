@@ -221,14 +221,13 @@ Future<void> _editarTipo(
   TipoReciboEntity? tipo,
 ) async {
   final esNuevo = tipo == null;
-  final permiso =
-      esNuevo ? TalonariosBotones.nuevo : TalonariosBotones.editar;
+  final permiso = esNuevo ? TalonariosBotones.nuevo : TalonariosBotones.editar;
   if (!tienePermisoDeBoton(ref, permiso)) {
     mostrarAviso(
       context,
       esNuevo
-          ? 'No tenés permiso para crear tipos de recibo.'
-          : 'No tenés permiso para editar tipos de recibo.',
+          ? 'No tienes permiso para crear tipos de recibo.'
+          : 'No tienes permiso para editar tipos de recibo.',
       tono: TonoAviso.aviso,
     );
     return;
@@ -342,7 +341,9 @@ class _FormularioTipoState extends ConsumerState<_FormularioTipo> {
 
   @override
   Widget build(BuildContext context) => AlertDialog(
-    title: Text(_esNuevo ? 'Nuevo tipo de recibo' : 'Editar ${widget.tipo!.sigla}'),
+    title: Text(
+      _esNuevo ? 'Nuevo tipo de recibo' : 'Editar ${widget.tipo!.sigla}',
+    ),
     content: SingleChildScrollView(
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 420),
@@ -364,7 +365,8 @@ class _FormularioTipoState extends ConsumerState<_FormularioTipo> {
                 textCapitalization: TextCapitalization.characters,
                 decoration: const InputDecoration(
                   labelText: 'Sigla *',
-                  helperText: 'Arma el prefijo del número de talonario (IR1001)',
+                  helperText:
+                      'Arma el prefijo del número de talonario (IR1001)',
                   helperMaxLines: 2,
                   border: OutlineInputBorder(),
                 ),
@@ -397,7 +399,8 @@ class _FormularioTipoState extends ConsumerState<_FormularioTipo> {
                 maxLines: 2,
                 decoration: const InputDecoration(
                   labelText: 'Detalle',
-                  helperText: 'Para qué empresa o uso es. Se muestra en el alta.',
+                  helperText:
+                      'Para qué empresa o uso es. Se muestra en el alta.',
                   helperMaxLines: 2,
                   border: OutlineInputBorder(),
                 ),
@@ -407,8 +410,7 @@ class _FormularioTipoState extends ConsumerState<_FormularioTipo> {
                 value: _activo,
                 title: const Text('Activo'),
                 subtitle: const Text('Los inactivos no aparecen en el alta'),
-                onChanged:
-                    _ocupado ? null : (v) => setState(() => _activo = v),
+                onChanged: _ocupado ? null : (v) => setState(() => _activo = v),
               ),
               if (!_esNuevo && widget.tipo!.cantTalonarios > 0)
                 NotaDelDato(
@@ -617,7 +619,12 @@ class _FilaGrupo extends ConsumerWidget {
                         ),
                       ),
                     Padding(
-                      padding: const EdgeInsets.fromLTRB(Esp.l, 0, Esp.l, Esp.m),
+                      padding: const EdgeInsets.fromLTRB(
+                        Esp.l,
+                        0,
+                        Esp.l,
+                        Esp.m,
+                      ),
                       child: Row(
                         children: [
                           PermissionWidget(
@@ -649,7 +656,7 @@ class _FilaGrupo extends ConsumerWidget {
                                     )
                                     : Tooltip(
                                       message:
-                                          'Quitá primero los '
+                                          'Quita primero los '
                                           '${grupo.cantTipos} tipos',
                                       child: Text(
                                         'No se puede eliminar',
@@ -679,7 +686,7 @@ Future<void> _editarGrupo(
   if (!tienePermisoDeBoton(ref, permiso)) {
     mostrarAviso(
       context,
-      'No tenés permiso para esta acción.',
+      'No tienes permiso para esta acción.',
       tono: TonoAviso.aviso,
     );
     return;
@@ -874,7 +881,9 @@ class _FormularioGrupo extends ConsumerStatefulWidget {
 class _FormularioGrupoState extends ConsumerState<_FormularioGrupo> {
   final _formKey = GlobalKey<FormState>();
   late final _nombre = TextEditingController(text: widget.grupo?.nombre ?? '');
-  late final _detalle = TextEditingController(text: widget.grupo?.detalle ?? '');
+  late final _detalle = TextEditingController(
+    text: widget.grupo?.detalle ?? '',
+  );
 
   bool _ocupado = false;
   Object? _error;

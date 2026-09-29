@@ -918,7 +918,8 @@ class FiltroItemsPagados {
           other.origen == origen;
 
   @override
-  int get hashCode => Object.hash(mes, anio, esInterno, idPagado, docNum, origen);
+  int get hashCode =>
+      Object.hash(mes, anio, esInterno, idPagado, docNum, origen);
 }
 
 /// Los items que quedaron congelados al ejecutar el pago.

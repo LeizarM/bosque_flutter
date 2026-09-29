@@ -47,7 +47,7 @@ class _MisSolicitudesWidgetState extends ConsumerState<MisSolicitudesWidget> {
 
     // SUPUESTO D4 — pendiente de confirmación de RR.HH. (ver plan §5).
     //
-    // Acá vivía un set hardcodeado de codEmpleado {2, 218, 21, 50, 47}: un ACL en
+    // Aquí vivía un set hardcodeado de codEmpleado {2, 218, 21, 50, 47}: un ACL en
     // código compitiendo con el de la base. Se reemplaza por el permiso real,
     // `btnReImprimirBoleta` de la vista 24, que es el que el backend empezó a
     // exigir en /vacacion/RptPermisoVacacion.
@@ -207,7 +207,7 @@ class _MisSolicitudesWidgetState extends ConsumerState<MisSolicitudesWidget> {
       ),
     ];
 
-    // A diferencia del kardex de RR.HH., acá el filtro busca solo al elegir: son
+    // A diferencia del kardex de RR.HH., aquí el filtro busca solo al elegir: son
     // dos combos y no cuatro selectores de fecha, así que no hay forma de pegarle
     // un viaje al servidor por cada toque mientras se decide.
     return aire.esChico
@@ -546,7 +546,7 @@ class _MisSolicitudesWidgetState extends ConsumerState<MisSolicitudesWidget> {
             ),
           // La boleta no lleva `PermissionWidget`: el backend la habilita por
           // identidad y por jerarquía además de por el botón del ACL, así que
-          // esconderla acá se la sacaría a quien sí puede bajar la suya.
+          // esconderla aquí se la sacaría a quien sí puede bajar la suya.
           if (s.estado == 2 && s.codPermiso != null)
             IconButton(
               tooltip: 'Bajar la boleta en PDF',
@@ -561,7 +561,7 @@ class _MisSolicitudesWidgetState extends ConsumerState<MisSolicitudesWidget> {
           // une las solicitudes con los permisos que RR.HH. cargó a mano, y a
           // esos les pone `0 AS codSolicitud` y `2 AS estado`. Sin esta guarda
           // el botón salía en esas filas y mandaba a anular «la solicitud 0»,
-          // que no existe. Venía de antes; se arregla acá porque es el único
+          // que no existe. Venía de antes; se arregla aquí porque es el único
           // lugar de la app que anula.
           if (s.estado == 2 && (s.codSolicitud ?? 0) > 0)
             PermissionWidget(

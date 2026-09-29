@@ -1,4 +1,5 @@
 import 'package:bosque_flutter/domain/entities/menu_entity.dart';
+
 class MenuItemModel {
   final int codVista;
   final int codVistaPadre;
@@ -50,11 +51,12 @@ class MenuItemModel {
       tieneHijo: json['tieneHijo'] ?? -1,
       routerLink: json['routerLink'],
       icon: json['icon'],
-      items: json['items'] != null
-          ? (json['items'] as List<dynamic>)
-              .map((item) => MenuItemModel.fromJson(item))
-              .toList()
-          : null,
+      items:
+          json['items'] != null
+              ? (json['items'] as List<dynamic>)
+                  .map((item) => MenuItemModel.fromJson(item))
+                  .toList()
+              : null,
     );
   }
 

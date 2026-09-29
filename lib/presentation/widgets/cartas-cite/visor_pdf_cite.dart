@@ -33,10 +33,15 @@ Future<void> mostrarPdfCite(
             mainAxisSize: MainAxisSize.min,
             children: [
               Container(
-                padding: EdgeInsets.symmetric(horizontal: Esp.l, vertical: Esp.m),
+                padding: EdgeInsets.symmetric(
+                  horizontal: Esp.l,
+                  vertical: Esp.m,
+                ),
                 decoration: BoxDecoration(
                   color: cs.primaryContainer,
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(4)),
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(4),
+                  ),
                 ),
                 child: Row(
                   children: [

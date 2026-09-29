@@ -1,7 +1,7 @@
 /// Piezas compartidas por las pestañas del módulo Biométrico.
 ///
 /// Mismo criterio que `permisos_rrhh_comunes.dart`: el color y el espaciado
-/// salen de `core/ui/`, acá sólo lo que es propio de este módulo.
+/// salen de `core/ui/`, aquí sólo lo que es propio de este módulo.
 library;
 
 import 'package:bosque_flutter/core/state/biometrico_provider.dart';
@@ -16,8 +16,18 @@ export 'package:bosque_flutter/core/ui/piezas_bosque.dart';
 export 'package:bosque_flutter/core/ui/tokens_bosque.dart';
 
 const nombresMeses = [
-  'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
-  'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre',
+  'Enero',
+  'Febrero',
+  'Marzo',
+  'Abril',
+  'Mayo',
+  'Junio',
+  'Julio',
+  'Agosto',
+  'Septiembre',
+  'Octubre',
+  'Noviembre',
+  'Diciembre',
 ];
 
 /// Estilo para los `IconButton` de acción (actualizar, descargar PDF,
@@ -25,7 +35,7 @@ const nombresMeses = [
 ///
 /// **Por qué no las variantes de Material 3 directas.** `.filledTonal` usa
 /// `secondaryContainer` — una de las dos familias que `colorDeAsistencia`
-/// (acá mismo, en `tokens_bosque.dart`) evita a propósito, porque no
+/// (aquí mismo, en `tokens_bosque.dart`) evita a propósito, porque no
 /// sobrevive bien a las nueve semillas de `colorList` (`app_theme.dart`) ni
 /// a los dos modos: con la semilla verde en oscuro sale un verde oliva
 /// apagado, casi sin contraste contra un fondo ya casi negro — "se ve
@@ -39,7 +49,10 @@ const nombresMeses = [
 /// pleno. Se adapta solo a claro/oscuro porque `cs.surface` ya lo hace.
 ButtonStyle estiloBotonAccion(BuildContext context) {
   final cs = Theme.of(context).colorScheme;
-  final fondo = Color.alphaBlend(cs.primary.withValues(alpha: 0.14), cs.surface);
+  final fondo = Color.alphaBlend(
+    cs.primary.withValues(alpha: 0.14),
+    cs.surface,
+  );
   return IconButton.styleFrom(
     backgroundColor: fondo,
     foregroundColor: cs.primary,
@@ -156,7 +169,10 @@ Future<void> registrarMarcacionOlvidada(
                     const SizedBox(height: Esp.m),
                     InkWell(
                       onTap: () async {
-                        final h = await showTimePicker(context: c, initialTime: hora);
+                        final h = await showTimePicker(
+                          context: c,
+                          initialTime: hora,
+                        );
                         if (h != null) setState(() => hora = h);
                       },
                       child: InputDecorator(
@@ -170,7 +186,8 @@ Future<void> registrarMarcacionOlvidada(
                       maxLines: 2,
                       decoration: const InputDecoration(
                         labelText: 'Motivo',
-                        hintText: 'Por qué se registra a mano — p.ej. "Olvidó marcar salida"',
+                        hintText:
+                            'Por qué se registra a mano — p.ej. "Olvidó marcar salida"',
                       ),
                     ),
                   ],
@@ -199,12 +216,18 @@ Future<void> registrarMarcacionOlvidada(
   );
 
   try {
-    await ref.read(biometricoRepositoryProvider).registrarMarcacionAdicional({
-      'USERID': userId,
-      'CHECKTIME': checkTime.toIso8601String(),
-      'CODEMPLEADO': codEmpleado,
-      'fechaString': fechaStringBiometrico(checkTime),
-    }, 'I', motivo: motivoCtrl.text);
+    await ref
+        .read(biometricoRepositoryProvider)
+        .registrarMarcacionAdicional(
+          {
+            'USERID': userId,
+            'CHECKTIME': checkTime.toIso8601String(),
+            'CODEMPLEADO': codEmpleado,
+            'fechaString': fechaStringBiometrico(checkTime),
+          },
+          'I',
+          motivo: motivoCtrl.text,
+        );
     ref.invalidate(bioCheckInOutAdicionalListProvider(userId));
     if (context.mounted) compartido.avisar(context, 'Marcación registrada.');
   } catch (e) {
@@ -281,7 +304,8 @@ class _HistorialBitacoraSheet extends ConsumerWidget {
                       return const MensajeVacio(
                         icono: Icons.history,
                         titulo: 'Sin historial',
-                        detalle: 'Todavía no hay cambios registrados para esto.',
+                        detalle:
+                            'Todavía no hay cambios registrados para esto.',
                       );
                     }
                     return ListView.separated(

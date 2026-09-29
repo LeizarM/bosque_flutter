@@ -13,23 +13,25 @@ class MenuRepositoryImpl implements MenuRepository {
     try {
       final response = await _dio.post(
         AppConstants.menuEndpoint, // Ajusta este endpoint según tu API
-        data: {
-          'codUsuario': codUsuario,
-        },
+        data: {'codUsuario': codUsuario},
       );
       if (response.statusCode == 200 && response.data != null) {
-        final menuModels = (response.data as List<dynamic>)
-            .map((json) => MenuItemModel.fromJson(json))
-            .toList();
+        final menuModels =
+            (response.data as List<dynamic>)
+                .map((json) => MenuItemModel.fromJson(json))
+                .toList();
         return menuModels.map((model) => model.toEntity()).toList();
       } else {
-        throw Exception('Error al obtener el menú: Código ${response.statusCode}');
+        throw Exception(
+          'Error al obtener el menú: Código ${response.statusCode}',
+        );
       }
     } on DioException catch (e) {
       // Manejar errores de red o del servidor
       String errorMessage = 'Error de conexión: ${e.message}';
       if (e.response != null && e.response!.data != null) {
-        errorMessage = 'Error del servidor: ${e.response!.statusCode} - ${e.response!.data.toString()}';
+        errorMessage =
+            'Error del servidor: ${e.response!.statusCode} - ${e.response!.data.toString()}';
       }
       throw Exception(errorMessage);
     } catch (e) {

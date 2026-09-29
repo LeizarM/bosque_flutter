@@ -27,7 +27,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   // `AppConstants.baseUrl` lee `dotenv.env`, que lanza si nadie cargó el
-  // archivo. En la app lo carga `main.dart`; acá alcanza con dejarlo vacío.
+  // archivo. En la app lo carga `main.dart`; aquí alcanza con dejarlo vacío.
   setUpAll(() => dotenv.testLoad(fileInput: ''));
 
   final anchos = <String, Size>{
@@ -122,7 +122,7 @@ void main() {
     tester,
   ) async {
     await _abrir(tester, tamano: const Size(1280, 800), boletas: _boletas);
-    expect(find.text('Cuándo'), findsOneWidget); // acá sí es tabla
+    expect(find.text('Cuándo'), findsOneWidget); // aquí sí es tabla
     // El motivo largo tiene que entrar en pocas líneas, no en una tira.
     // Se busca en minúscula porque `enOracion` baja el grito del sistema viejo.
     final motivo = tester.getSize(
@@ -409,7 +409,8 @@ void main() {
     await _verCronograma(tester);
 
     final filas = find.byWidgetPredicate(
-      (w) => w is Stack && w.children.isNotEmpty && w.children.first is Positioned,
+      (w) =>
+          w is Stack && w.children.isNotEmpty && w.children.first is Positioned,
     );
     expect(filas, findsWidgets);
     for (final e in filas.evaluate()) {
@@ -597,7 +598,7 @@ void _pruebasDeColor() {
     // 17 unidades de RGB es lo que da la peor pareja, medido. No es mucho: el
     // comentario de `colorDeTipoPermiso` explica que nueve categorías no entran
     // del todo en el canal color y por qué la leyenda y el tooltip no son
-    // opcionales. Este número está acá para que no EMPEORE sin que nadie note.
+    // opcionales. Este número está aquí para que no EMPEORE sin que nadie note.
     esquemas.forEach((nombre, cs) {
       final c = [for (var i = 0; i < 9; i++) colorDeTipoPermiso(cs, i).fondo];
       for (var i = 0; i < 9; i++) {
@@ -609,7 +610,8 @@ void _pruebasDeColor() {
           expect(
             d,
             greaterThanOrEqualTo(15),
-            reason: 'En $nombre los tipos $i y $j quedaron casi del mismo color.',
+            reason:
+                'En $nombre los tipos $i y $j quedaron casi del mismo color.',
           );
         }
       }

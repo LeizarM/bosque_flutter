@@ -5,7 +5,7 @@ class BannerCustom extends StatelessWidget {
   final Color color;
   final IconData icon;
   final VoidCallback? onClose;
-   final TextStyle? messageTextStyle;
+  final TextStyle? messageTextStyle;
   final int? maxLines;
 
   const BannerCustom({
@@ -49,18 +49,20 @@ class BannerCustom extends StatelessWidget {
             ),
             const SizedBox(width: 8),
             Expanded(
-      child: Text(
-        message,
-        style: messageTextStyle ?? const TextStyle(
-          color: Colors.white,
-          fontWeight: FontWeight.w600,
-          fontSize: 16,
-          letterSpacing: 0.2,
-        ),
-        maxLines: maxLines,
-        overflow: TextOverflow.ellipsis,
-      ),
-    ),
+              child: Text(
+                message,
+                style:
+                    messageTextStyle ??
+                    const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 16,
+                      letterSpacing: 0.2,
+                    ),
+                maxLines: maxLines,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
             if (onClose != null)
               IconButton(
                 icon: const Icon(Icons.close, color: Colors.white),

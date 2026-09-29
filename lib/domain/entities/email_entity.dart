@@ -17,6 +17,7 @@ class EmailEntity {
       'audUsuario': audUsuario,
     };
   }
+
   // Método copyWith
   EmailEntity copyWith({
     int? codEmail,

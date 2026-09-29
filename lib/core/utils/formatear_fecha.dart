@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 
 class DatePickerField extends StatelessWidget {
   final TextEditingController controller;
@@ -14,9 +15,10 @@ class DatePickerField extends StatelessWidget {
     this.permitirFechaFutura = false, // false por defecto
   });
 
-  String _formatDate(DateTime date) {
-    return "${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}";
-  }
+  // Misma regla que FormatearFecha.formatearFecha: se delega ahi en vez de
+  // duplicar el DateFormat, para no tener dos lugares con el mismo patron
+  // dd/MM/yyyy que puedan divergir con el tiempo.
+  String _formatDate(DateTime date) => FormatearFecha.formatearFecha(date);
 
   @override
   Widget build(BuildContext context) {
@@ -51,6 +53,32 @@ class DatePickerField extends StatelessWidget {
 }
 
 class FormatearFecha {
+  // DateFormat en vez de interpolar a mano: es la libreria estandar para esto
+  // (ya se usa en el modulo via NumberFormat, ver formato_moneda.dart) y evita
+  // reinventar el zero-padding.
+  //
+  // Sin locale explicito a proposito: los 3 patrones son puramente numericos
+  // (dd/MM/yyyy, HH:mm) y no tocan nombres de mes/dia ni AM/PM, asi que el
+  // locale no cambia un solo caracter del resultado. Pedir 'es' aca no suma
+  // nada y agrega un riesgo real: si alguna de estas static queda inicializada
+  // antes de que Flutter cargue los datos de 'es' (ver nota de
+  // initializeDateFormatting mas abajo), DateFormat('...', 'es') explota con
+  // LocaleDataException. Sin locale, intl cae siempre en su fallback interno
+  // 'en_US', que esta harcodeado en el propio paquete y nunca lanza esa
+  // excepcion — por eso el resultado es identico al de antes sin heredar ese
+  // riesgo.
+  //
+  // No hace falta un initializeDateFormatting() propio en main(): la app ya
+  // registra GlobalMaterialLocalizations.delegate (ver MaterialApp.router en
+  // main.dart), y ese delegate carga los datos de fecha de intl para todos
+  // los locales empaquetados -incluido 'es'- antes de construir cualquier
+  // pantalla (flutter_localizations, material_localizations.dart, delegate
+  // .load() -> util.loadDateIntlDataIfNotLoaded()). Agregar la llamada de
+  // nuevo aca seria redundante.
+  static final DateFormat _formatoFecha = DateFormat('dd/MM/yyyy');
+  static final DateFormat _formatoHora = DateFormat('HH:mm');
+  static final DateFormat _formatoFechaHora = DateFormat('dd/MM/yyyy HH:mm');
+
   static DateTime parseFecha(String fecha) {
     List<String> partes = fecha.split('/');
     return DateTime(
@@ -60,9 +88,15 @@ class FormatearFecha {
     );
   }
 
-  static String formatearFecha(DateTime fecha) {
-    return "${fecha.day.toString().padLeft(2, '0')}/${fecha.month.toString().padLeft(2, '0')}/${fecha.year}";
-  }
+  /// Fecha corta: dd/MM/yyyy.
+  static String formatearFecha(DateTime fecha) => _formatoFecha.format(fecha);
+
+  /// Hora corta: HH:mm.
+  static String formatearHora(DateTime fecha) => _formatoHora.format(fecha);
+
+  /// Fecha y hora: dd/MM/yyyy HH:mm.
+  static String formatearFechaHora(DateTime fecha) =>
+      _formatoFechaHora.format(fecha);
 
   static String? validarFecha(
     String? value, {

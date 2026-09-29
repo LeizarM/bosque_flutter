@@ -13,7 +13,7 @@ class EducacionEntity {
     required this.fecha,
     required this.audUsuario,
   });
-Map<String, dynamic> toJson() {
+  Map<String, dynamic> toJson() {
     return {
       'codEducacion': codEducacion,
       'codEmpleado': codEmpleado,
@@ -23,6 +23,7 @@ Map<String, dynamic> toJson() {
       'audUsuario': audUsuario,
     };
   }
+
   //metodo copyWith
   EducacionEntity copyWith({
     int? codEducacion,
@@ -41,6 +42,7 @@ Map<String, dynamic> toJson() {
       audUsuario: audUsuario ?? this.audUsuario,
     );
   }
+
   //metodo empty
   // ✅ Constructor nombrado empty()
   factory EducacionEntity.empty() {
@@ -53,6 +55,4 @@ Map<String, dynamic> toJson() {
       audUsuario: 0,
     );
   }
-
 }
-  

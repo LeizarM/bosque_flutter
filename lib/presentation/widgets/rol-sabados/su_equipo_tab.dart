@@ -6,7 +6,7 @@ import 'package:bosque_flutter/domain/entities/programador_dependiente_entity.da
 import 'package:bosque_flutter/domain/entities/sabado_entity.dart';
 import 'package:bosque_flutter/presentation/widgets/rol-sabados/estilo_modulo.dart';
 // Sólo por `filtrarSabados`: es una función pura y ya la importan así la matriz,
-// personal y cambios. Del provider de mes de la grilla acá no se depende.
+// personal y cambios. Del provider de mes de la grilla aquí no se depende.
 import 'package:bosque_flutter/presentation/widgets/rol-sabados/filtros_grilla.dart';
 import 'package:bosque_flutter/presentation/widgets/rol-sabados/mensajes_usuario.dart';
 import 'package:bosque_flutter/presentation/widgets/rol-sabados/rol_sabados_comunes.dart';
@@ -17,7 +17,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 /// «Su equipo»: el sábado visto desde el lado del jefe.
 ///
 /// **Es la misma grilla, pero con otra pregunta.** Las otras cuatro pestañas son
-/// de RR.HH.: miran el año entero y buscan desequilibrios. Acá la pregunta es
+/// de RR.HH.: miran el año entero y buscan desequilibrios. Aquí la pregunta es
 /// una sola y se contesta el jueves a la tarde —«¿quién de los míos viene este
 /// sábado?»— así que la vista arranca en el **próximo** sábado y no en enero, y
 /// muestra a la gente que el organigrama le da a quien está mirando, no a las 87
@@ -160,7 +160,7 @@ class _VistaState extends ConsumerState<_Vista> {
     void elegir(int idSabado) =>
         ref.read(sabadoElegidoProvider.notifier).state = idSabado;
 
-    // Se lee acá y no adentro del LayoutBuilder porque `ref.watch` va en el
+    // Se lee aquí y no adentro del LayoutBuilder porque `ref.watch` va en el
     // build; el ancho se le aplica después.
     final plegadoElegido = ref.watch(cabeceraEquipoPlegadaProvider);
 
@@ -168,7 +168,7 @@ class _VistaState extends ConsumerState<_Vista> {
       builder: (context, cajon) {
         // El ancho REAL del panel y no el de la pantalla: adentro del dashboard
         // hay un sidebar que se lleva su parte. Lo usan las tres decisiones de
-        // acá —panorama, default del plegado y forma del rótulo— y las tres
+        // aquí —panorama, default del plegado y forma del rótulo— y las tres
         // quieren lo mismo: cuánto lugar hay de verdad.
         final aire = Aire.de(cajon.maxWidth);
 
@@ -179,7 +179,7 @@ class _VistaState extends ConsumerState<_Vista> {
         // tiras de fichas y el resumen—. Sobran 42: media fila. Se entra a la
         // pantalla de «quién viene el sábado» sin ver a nadie, y una lista
         // cortada a la primera fila se lee como «esto está roto», no como «hay
-        // más abajo» (es el mismo modo de falla que ya se arregló una vez acá,
+        // más abajo» (es el mismo modo de falla que ya se arregló una vez aquí,
         // ver `isThreeLine`). Plegada la cabecera son ~72 px —~96 si el rol
         // viene corto— y entran cinco personas. Creció un renglón cuando las
         // cifras pasaron a decir de qué universo hablan; sigue costando menos de
@@ -305,7 +305,7 @@ class _VistaState extends ConsumerState<_Vista> {
                   return _FilaDependiente(
                     grilla: g,
                     fila: f,
-                    // El bloqueo se decide acá y se baja como onTap nulo: el
+                    // El bloqueo se decide aquí y se baja como onTap nulo: el
                     // widget de la fila no tiene por qué conocer las reglas.
                     onTap:
                         f.bloqueo != null
@@ -414,7 +414,7 @@ class _VistaState extends ConsumerState<_Vista> {
 ///
 /// Vive suelta porque la usan las dos vistas —la lista y el panorama— y son
 /// exactamente las mismas reglas que aplica `trs_sp_programar` del otro lado.
-/// Si acá dijeran algo distinto, el jefe se enteraría del rechazo al guardar.
+/// Si aquí dijeran algo distinto, el jefe se enteraría del rechazo al guardar.
 String? _bloqueoDelCruce({
   required GrillaRol grilla,
   required ParticipanteTurnoEntity? participante,
@@ -429,7 +429,7 @@ String? _bloqueoDelCruce({
   if (sabado.activo != 1) return 'sábado desactivado';
   if (_yaPaso(sabado, hoy)) return 'ese sábado ya pasó';
 
-  // Ojo con la 'P': acá es el CÓDIGO de la celda —un permiso de RR.HH.— y no el
+  // Ojo con la 'P': aquí es el CÓDIGO de la celda —un permiso de RR.HH.— y no el
   // ORIGEN 'P', que es justamente lo que escribe un jefe.
   return switch (celda?.codigoExcel) {
     'V' => 'está de vacaciones según RR.HH.',
@@ -569,8 +569,8 @@ bool _yaPaso(SabadoEntity s, DateTime hoy) =>
 /// habría que desplegar para saber si terminaste.
 ///
 /// **Cada cifra dice de qué universo habla, y por eso ninguna vive adentro del
-/// botón.** Acá conviven dos números de dos poblaciones distintas —las 14
-/// personas que programás y las 87 del rol entero— y antes se leían de corrido:
+/// botón.** Aquí conviven dos números de dos poblaciones distintas —las 14
+/// personas que programas y las 87 del rol entero— y antes se leían de corrido:
 /// «vienen 7 de 14 · falta 1». Ese «falta 1» es el faltante de cobertura de todo
 /// el rol, pero pegado al renglón anterior se lee «falta 1 de los tuyos», que es
 /// falso y termina con un jefe mandando a trabajar a alguien que no hacía falta.
@@ -582,14 +582,14 @@ bool _yaPaso(SabadoEntity s, DateTime hoy) =>
 /// puede leer de dos maneras.
 ///
 /// El botón se queda sólo con la fecha, que además es lo único que el botón
-/// cambia: lo que tocás y lo que leés dejaron de estar mezclados.
+/// cambia: lo que tocas y lo que lees dejaron de estar mezclados.
 ///
 /// **El asa es el rótulo, no un chevron suelto al costado.** Fue el desacuerdo
 /// entre las dos propuestas: una quería un `IconButton` con tooltip (invisible
 /// en un teléfono, que es justo donde el plegado es el default) y la otra un
 /// botón que dijera «Cambiar de sábado» con todas las letras (~140 px, que en
 /// 360 no conviven con las flechas). Poner el chevron pegado a la fecha resuelve
-/// las dos cosas: es el gesto universal de «acá se elige una fecha», cuesta
+/// las dos cosas: es el gesto universal de «aquí se elige una fecha», cuesta
 /// 18 px y ata el control al dato que cambia. No es «el asa entera es tappable»
 /// —eso sería un párrafo de datos que despliega 336 px bajo el dedo—: es un
 /// botón de un renglón, con su ripple y su tooltip.
@@ -686,7 +686,7 @@ class _BarraDelSabado extends StatelessWidget {
                     onPressed: onPlegar,
                     style: TextButton.styleFrom(
                       // El rótulo es el título de la pantalla: si tomara el
-                      // color del botón se leería como un estado, y acá el
+                      // color del botón se leería como un estado, y aquí el
                       // color codifica estado y nada más.
                       foregroundColor: cs.onSurface,
                       padding: const EdgeInsets.symmetric(horizontal: Esp.s),
@@ -715,7 +715,7 @@ class _BarraDelSabado extends StatelessWidget {
                   ),
                 ),
                 // La respuesta a la pregunta de la pestaña, con la población
-                // adelante: `de 14` es «de las 14 personas que programás», y
+                // adelante: `de 14` es «de las 14 personas que programas», y
                 // ese 14 se verifica de un vistazo contra las filas de abajo y
                 // contra la identidad. El rótulo va apagado y el dato en peso de
                 // título: el que se compara es el número, la palabra sólo dice
@@ -854,7 +854,7 @@ class _Identidad extends StatelessWidget {
             style: context.tituloSeccion(),
           ),
           const SizedBox(height: 2),
-          // «Podés decidir quién viene y quién no» se cayó: lo dice la propia
+          // «Puedes decidir quién viene y quién no» se cayó: lo dice la propia
           // hoja con sus dos botones. Lo que queda es lo que evita el ticket a
           // soporte —por qué hay celdas que no se dejan tocar—, y en 360 px son
           // dos renglones en vez de tres arriba de todo.
@@ -1080,7 +1080,7 @@ class _ChipSabado extends StatelessWidget {
 
 /// Cómo quedó mi equipo ese sábado, y cómo quedó el día en total.
 ///
-/// **La cobertura del rol va acá y no en la pestaña de RR.HH.** El dato ya está
+/// **La cobertura del rol va aquí y no en la pestaña de RR.HH.** El dato ya está
 /// en memoria, y es el único que le avisa a un jefe que el sábado se está
 /// quedando corto. Sin él, treinta jefes liberan a dos personas cada uno y nadie
 /// se entera hasta el sábado a la mañana.
@@ -1089,7 +1089,7 @@ class _ChipSabado extends StatelessWidget {
 /// «Sábado 01/08/2026 · tu equipo: vienen 7 de 14» era la respuesta a la
 /// pregunta de la pantalla y estaba primero y en peso de título; ahora sigue
 /// estando primero y además ya no se puede esconder. Si se hubiera quedado
-/// también acá, al desplegar aparecería dos veces con tres renglones de
+/// también aquí, al desplegar aparecería dos veces con tres renglones de
 /// distancia.
 ///
 /// **Son dos renglones y cada uno arranca nombrando su población.** Antes el
@@ -1130,20 +1130,20 @@ class _Resumen extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Todas estas cifras son de las personas que programás. El rótulo lo
+          // Todas estas cifras son de las personas que programas. El rótulo lo
           // dice de entrada porque el renglón de abajo habla de otra población y
           // los dos se leen juntos.
           Text('Tu equipo: ${partes.join(' · ')}', style: context.apagado()),
           const SizedBox(height: Esp.xs),
           // **Se pinta el número, no la frase.** El predicado es el del módulo
           // entero (matriz y hoja de decisión) y no se toca; lo que estaba mal
-          // era la superficie: la matriz pinta una cifra dentro de 42 px y acá
+          // era la superficie: la matriz pinta una cifra dentro de 42 px y aquí
           // se pintaba un renglón a todo el ancho. Mismo dato, diez veces más
           // rojo, y «42 de 43» parecía una alarma.
           //
           // **Por qué `vienen 42 · objetivo 43` y no `42 de 43`.** El renglón de
           // arriba usa el molde `vienen 7 de 14`, donde el segundo número es
-          // CUÁNTOS SON. Acá el segundo número es CUÁNTOS HACEN FALTA —el rol
+          // CUÁNTOS SON. Aquí el segundo número es CUÁNTOS HACEN FALTA —el rol
           // tiene 87 personas, no 43—, así que el mismo molde para dos
           // significados distintos hacía leer «vienen 42 de las 43 que hay».
           // Cada cifra rotulada aparte no se puede confundir.
@@ -1245,7 +1245,7 @@ class _FilaDependiente extends StatelessWidget {
                 right: 0,
                 child: MarcaDeIntervencion(color: cs.primary, lado: 9),
               ),
-            // La misma esquina que en la matriz y en la agenda. Acá importa
+            // La misma esquina que en la matriz y en la agenda. Aquí importa
             // especialmente: el jefe que aprueba un cambio desde «Cambios» es
             // el mismo que después mira este tab, y sin la marca la celda le
             // cuenta la mitad de lo que él mismo decidió.
@@ -1290,7 +1290,7 @@ class _FilaDependiente extends StatelessWidget {
             // quería cubrir.
             //
             // **Va última y en `Dato`, no en `Etiqueta`.** La sucursal es
-            // contexto, no estado: las pastillas de acá al lado codifican por
+            // contexto, no estado: las pastillas de aquí al lado codifican por
             // qué la fila no se toca, y una pastilla más las diluiría. Última
             // porque en 360 px el Wrap se parte en dos renglones cuando la
             // observación es larga, y lo que tiene que bajar es el dato menos
@@ -1406,7 +1406,7 @@ class _Panorama extends StatelessWidget {
           children: [
             Padding(
               padding: const EdgeInsets.fromLTRB(Esp.s, Esp.m, Esp.s, Esp.s),
-              // El mes va acá y no repetido debajo de cada uno de los cinco
+              // El mes va aquí y no repetido debajo de cada uno de los cinco
               // números: todas las columnas son del mismo mes desde que la
               // tabla es mensual. Mes 0 es el sábado sin fecha —la tabla vuelve
               // a mostrarlos todos— y ahí el título viejo sigue siendo el
@@ -1550,7 +1550,7 @@ class _CeldaPanorama extends StatelessWidget {
     final cs = Theme.of(context).colorScheme;
 
     // El cambio se suma al tooltip que ya existía en vez de pedir uno nuevo:
-    // acá la celda es todavía más chica que en la matriz y el texto es el único
+    // aquí la celda es todavía más chica que en la matriz y el texto es el único
     // lugar donde entra el nombre del otro.
     final cambio = celda?.hayCambio == true ? ' · ${celda!.cambioTexto}' : '';
 

@@ -32,7 +32,7 @@ class CeldaTurnoEntity {
   /// aprobado detrás, que es el caso de casi todas.
   ///
   /// **No sale de `trs_Asignacion` sino de `trs_Cambio`**, y por eso hasta
-  /// ahora no estaba: la celda guarda el resultado del cambio —una `C` acá, un
+  /// ahora no estaba: la celda guarda el resultado del cambio —una `C` aquí, un
   /// `1` allá— pero nunca guardó con quién.
   final String cambioCon;
 

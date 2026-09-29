@@ -16,7 +16,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 /// **Por qué sólo dos salidas.** El jefe no edita la grilla: decide sobre su
 /// gente. 'V', 'B', 'X' y 'P' los carga RR.HH. desde el legajo, y dejarlos a un
 /// tap de distancia sería invitar a que alguien "arregle" una vacación desde
-/// acá. Lo que no se puede tocar ya viene bloqueado desde la lista, así que si
+/// aquí. Lo que no se puede tocar ya viene bloqueado desde la lista, así que si
 /// esta hoja se abrió es porque la celda es programable.
 ///
 /// **Por qué no hay «Anular».** `trs_sp_programar` anula por (jefe, sábado):
@@ -123,7 +123,7 @@ class _DecisionDelJefeState extends ConsumerState<_DecisionDelJefe> {
             // Dice «todo el rol» y no «X de Y» a propósito: esta hoja se abre
             // desde una barra que arriba muestra «tu equipo: vienen 3 de 6», y
             // dos cifras de universos distintos con el mismo molde se leen como
-            // la misma. Acá el denominador tampoco es «cuántos hay» sino
+            // la misma. Aquí el denominador tampoco es «cuántos hay» sino
             // «cuántos hacen falta», que es otra cosa todavía.
             Text(
               objetivo > 0

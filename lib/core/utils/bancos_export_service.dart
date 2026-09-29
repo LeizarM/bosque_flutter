@@ -320,7 +320,7 @@ class BancosExportService extends BaseApiRepository {
   }
 
   // La descarga vive en `core/utils/descargar_archivo.dart`: la comparte con el
-  // reporte de boletas de RR.HH. Acá quedan sólo los dos nombres que usa el
+  // reporte de boletas de RR.HH. Aquí quedan sólo los dos nombres que usa el
   // resto de la clase.
   Future<void> _descargar(
     String contenido,

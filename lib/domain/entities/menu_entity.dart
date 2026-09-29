@@ -45,11 +45,12 @@ class MenuItemEntity {
       autorizar: json['autorizar'] ?? 0,
       audUsuarioI: json['audUsuarioI'] ?? 0,
       fila: json['fila'] ?? 0,
-      items: json['items'] != null
-          ? (json['items'] as List<dynamic>)
-              .map((item) => MenuItemEntity.fromJson(item))
-              .toList()
-          : null,
+      items:
+          json['items'] != null
+              ? (json['items'] as List<dynamic>)
+                  .map((item) => MenuItemEntity.fromJson(item))
+                  .toList()
+              : null,
       label: json['label'],
       tieneHijo: json['tieneHijo'] ?? -1,
       routerLink: json['routerLink'],

@@ -29,7 +29,8 @@ class MontoCajaChicaXSucState {
   );
 }
 
-class MontoCajaChicaXSucNotifier extends StateNotifier<MontoCajaChicaXSucState> {
+class MontoCajaChicaXSucNotifier
+    extends StateNotifier<MontoCajaChicaXSucState> {
   final MontoCajaChicaXSucImpl _repo;
 
   MontoCajaChicaXSucNotifier(this._repo)
@@ -53,9 +54,10 @@ class MontoCajaChicaXSucNotifier extends StateNotifier<MontoCajaChicaXSucState> 
       await _repo.registrar(item);
       state = state.copyWith(
         cargando: false,
-        mensajeExito: item.idCS == 0
-            ? 'Monto de caja chica por sucursal agregado.'
-            : 'Monto de caja chica por sucursal actualizado.',
+        mensajeExito:
+            item.idCS == 0
+                ? 'Monto de caja chica por sucursal agregado.'
+                : 'Monto de caja chica por sucursal actualizado.',
       );
       await cargar();
       return true;
@@ -89,4 +91,7 @@ final _montoCajaChicaXSucRepoProvider = Provider(
 final montoCajaChicaXSucProvider = StateNotifierProvider.autoDispose<
   MontoCajaChicaXSucNotifier,
   MontoCajaChicaXSucState
->((ref) => MontoCajaChicaXSucNotifier(ref.read(_montoCajaChicaXSucRepoProvider)));
+>(
+  (ref) =>
+      MontoCajaChicaXSucNotifier(ref.read(_montoCajaChicaXSucRepoProvider)),
+);

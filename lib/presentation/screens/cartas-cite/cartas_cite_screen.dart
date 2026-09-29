@@ -18,7 +18,7 @@ import 'package:intl/intl.dart';
 
 /// Cartas CITE — pantalla principal.
 ///
-/// Es la correspondencia numerada de la empresa: se redacta acá, se archiva
+/// Es la correspondencia numerada de la empresa: se redacta aquí, se archiva
 /// con su correlativo y se imprime con el mismo formato de siempre.
 ///
 /// Reemplaza `web/Bosque/tcrDocumento/Documento.xhtml` del sistema JSF. Dos
@@ -83,7 +83,9 @@ class _CartasCiteScreenState extends ConsumerState<CartasCiteScreen> {
     _debounce?.cancel();
     _buscarCtrl.clear();
     final rango = RangoCite.tresMeses.calcular();
-    await ref.read(cartasCiteProvider(_uid).notifier).filtrar(
+    await ref
+        .read(cartasCiteProvider(_uid).notifier)
+        .filtrar(
           buscar: '',
           idTipoDoc: 0,
           codEmpresa: _empresaDelUsuario,
@@ -101,29 +103,37 @@ class _CartasCiteScreenState extends ConsumerState<CartasCiteScreen> {
     final tipos = ref.read(tiposDocumentoCiteProvider).valueOrNull ?? [];
     final empresas = ref.read(empresasProvider).valueOrNull ?? [];
 
-    final doc = CartaCiteEntity.nuevo(
-      idTipoDoc: eleccion.idTipoDoc,
-      codEmpresa: eleccion.codEmpresa,
-      codUsuario: _uid,
-    )
-      ..tipo = tipos
-              .where((t) => t.idTipoDoc.toInt() == eleccion.idTipoDoc)
-              .map((t) => t.tipo)
-              .firstOrNull ??
-          ''
-      ..empresa = empresas
-              .where((e) => e.codEmpresa == eleccion.codEmpresa)
-              .map((e) => e.nombre)
-              .firstOrNull ??
-          '';
+    final doc =
+        CartaCiteEntity.nuevo(
+            idTipoDoc: eleccion.idTipoDoc,
+            codEmpresa: eleccion.codEmpresa,
+            codUsuario: _uid,
+          )
+          ..tipo =
+              tipos
+                  .where((t) => t.idTipoDoc.toInt() == eleccion.idTipoDoc)
+                  .map((t) => t.tipo)
+                  .firstOrNull ??
+              ''
+          ..empresa =
+              empresas
+                  .where((e) => e.codEmpresa == eleccion.codEmpresa)
+                  .map((e) => e.nombre)
+                  .firstOrNull ??
+              '';
 
     await _abrirEditor(doc);
   }
 
-  Future<void> _abrirEditor(CartaCiteEntity doc, {bool soloLectura = false}) async {
+  Future<void> _abrirEditor(
+    CartaCiteEntity doc, {
+    bool soloLectura = false,
+  }) async {
     final mensaje = await Navigator.of(context).push<String>(
       MaterialPageRoute(
-        builder: (_) => CartaCiteEditorScreen(original: doc, soloLectura: soloLectura),
+        builder:
+            (_) =>
+                CartaCiteEditorScreen(original: doc, soloLectura: soloLectura),
       ),
     );
     if (mensaje != null && mounted) {
@@ -137,13 +147,19 @@ class _CartasCiteScreenState extends ConsumerState<CartasCiteScreen> {
   /// cabecera, y el formulario necesita cuerpo, remitentes y destinatarios.
   Future<CartaCiteEntity?> _cargarCompleto(CartaCiteEntity fila) async {
     try {
-      return await ref.read(cartasCiteRepositoryProvider).obtener(fila.idDocumento);
+      return await ref
+          .read(cartasCiteRepositoryProvider)
+          .obtener(fila.idDocumento);
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text(e.toString().replaceFirst(RegExp(r'^Exception:\s*'), '')),
-          backgroundColor: Theme.of(context).colorScheme.error,
-        ));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              e.toString().replaceFirst(RegExp(r'^Exception:\s*'), ''),
+            ),
+            backgroundColor: Theme.of(context).colorScheme.error,
+          ),
+        );
       }
       return null;
     }
@@ -172,7 +188,9 @@ class _CartasCiteScreenState extends ConsumerState<CartasCiteScreen> {
 
     final cerrar = _mostrarCargando('Generando el PDF…');
     try {
-      final bytes = await ref.read(cartasCiteRepositoryProvider).generarPdf(
+      final bytes = await ref
+          .read(cartasCiteRepositoryProvider)
+          .generarPdf(
             idDocumento: fila.idDocumento,
             conLogo: conLogo,
             audUsuario: _uid,
@@ -190,10 +208,14 @@ class _CartasCiteScreenState extends ConsumerState<CartasCiteScreen> {
     } catch (e) {
       cerrar();
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text(e.toString().replaceFirst(RegExp(r'^Exception:\s*'), '')),
-        backgroundColor: Theme.of(context).colorScheme.error,
-      ));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            e.toString().replaceFirst(RegExp(r'^Exception:\s*'), ''),
+          ),
+          backgroundColor: Theme.of(context).colorScheme.error,
+        ),
+      );
     }
   }
 
@@ -214,7 +236,9 @@ class _CartasCiteScreenState extends ConsumerState<CartasCiteScreen> {
 
     final cerrar = _mostrarCargando('Generando el reporte…');
     try {
-      final bytes = await ref.read(cartasCiteRepositoryProvider).reporteMensual(
+      final bytes = await ref
+          .read(cartasCiteRepositoryProvider)
+          .reporteMensual(
             mes: params.mes,
             anio: params.anio,
             idTipoDoc: params.idTipoDoc,
@@ -231,10 +255,14 @@ class _CartasCiteScreenState extends ConsumerState<CartasCiteScreen> {
     } catch (e) {
       cerrar();
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text(e.toString().replaceFirst(RegExp(r'^Exception:\s*'), '')),
-        backgroundColor: Theme.of(context).colorScheme.error,
-      ));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            e.toString().replaceFirst(RegExp(r'^Exception:\s*'), ''),
+          ),
+          backgroundColor: Theme.of(context).colorScheme.error,
+        ),
+      );
     }
   }
 
@@ -242,16 +270,20 @@ class _CartasCiteScreenState extends ConsumerState<CartasCiteScreen> {
     showDialog<void>(
       context: context,
       barrierDismissible: false,
-      builder: (_) => AlertDialog(
-        content: Row(
-          children: [
-            const SizedBox(
-                width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)),
-            SizedBox(width: Esp.l),
-            Expanded(child: Text(texto)),
-          ],
-        ),
-      ),
+      builder:
+          (_) => AlertDialog(
+            content: Row(
+              children: [
+                const SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                ),
+                SizedBox(width: Esp.l),
+                Expanded(child: Text(texto)),
+              ],
+            ),
+          ),
     );
     var cerrado = false;
     return () {
@@ -271,15 +303,23 @@ class _CartasCiteScreenState extends ConsumerState<CartasCiteScreen> {
 
     ref.listen<CartasCiteState>(cartasCiteProvider(_uid), (prev, next) {
       if (!mounted) return;
-      if (next.mensajeExito != null && prev?.mensajeExito != next.mensajeExito) {
+      if (next.mensajeExito != null &&
+          prev?.mensajeExito != next.mensajeExito) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(next.mensajeExito!), backgroundColor: Colors.green),
+          SnackBar(
+            content: Text(next.mensajeExito!),
+            backgroundColor: Colors.green,
+          ),
         );
         notifier.limpiarMensajes();
       }
-      if (next.mensajeError != null && prev?.mensajeError != next.mensajeError) {
+      if (next.mensajeError != null &&
+          prev?.mensajeError != next.mensajeError) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(next.mensajeError!), backgroundColor: cs.error),
+          SnackBar(
+            content: Text(next.mensajeError!),
+            backgroundColor: cs.error,
+          ),
         );
         notifier.limpiarMensajes();
       }
@@ -325,13 +365,14 @@ class _CartasCiteScreenState extends ConsumerState<CartasCiteScreen> {
           );
         },
       ),
-      floatingActionButton: Aire.de(MediaQuery.of(context).size.width).esChico
-          ? FloatingActionButton.extended(
-              onPressed: _nuevo,
-              icon: const Icon(Icons.add),
-              label: const Text('Redactar'),
-            )
-          : null,
+      floatingActionButton:
+          Aire.de(MediaQuery.of(context).size.width).esChico
+              ? FloatingActionButton.extended(
+                onPressed: _nuevo,
+                icon: const Icon(Icons.add),
+                label: const Text('Redactar'),
+              )
+              : null,
     );
   }
 }
@@ -345,7 +386,11 @@ class _Cabecera extends StatelessWidget {
   final VoidCallback onNuevo;
   final VoidCallback onReporte;
 
-  const _Cabecera({required this.aire, required this.onNuevo, required this.onReporte});
+  const _Cabecera({
+    required this.aire,
+    required this.onNuevo,
+    required this.onReporte,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -367,20 +412,28 @@ class _Cabecera extends StatelessWidget {
               color: cs.primaryContainer,
               borderRadius: BorderRadius.circular(Esquina.chica),
             ),
-            child: Icon(Icons.mail_outline, size: 20, color: cs.onPrimaryContainer),
+            child: Icon(
+              Icons.mail_outline,
+              size: 20,
+              color: cs.onPrimaryContainer,
+            ),
           ),
           SizedBox(width: Esp.m),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Cartas CITE',
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          fontWeight: Peso.titulo,
-                        )),
+                Text(
+                  'Cartas CITE',
+                  style: Theme.of(
+                    context,
+                  ).textTheme.titleLarge?.copyWith(fontWeight: Peso.titulo),
+                ),
                 if (!aire.esChico)
-                  Text('Correspondencia numerada de la empresa',
-                      style: context.apagado()),
+                  Text(
+                    'Correspondencia numerada de la empresa',
+                    style: context.apagado(),
+                  ),
               ],
             ),
           ),
@@ -452,7 +505,8 @@ class _BarraFiltros extends ConsumerWidget {
     int? idTipoDoc,
     int? codEmpresa,
     String? buscar,
-  }) onFiltrar;
+  })
+  onFiltrar;
   final VoidCallback onLimpiar;
 
   const _BarraFiltros({
@@ -488,25 +542,27 @@ class _BarraFiltros extends ConsumerWidget {
       onChanged: onBuscar,
       textInputAction: TextInputAction.search,
       decoration: InputDecoration(
-        hintText: aire.esChico
-            ? 'Buscar documento…'
-            : 'Buscar por destinatario, referencia, asunto o Nº',
+        hintText:
+            aire.esChico
+                ? 'Buscar documento…'
+                : 'Buscar por destinatario, referencia, asunto o Nº',
         prefixIcon: const Icon(Icons.search, size: 20),
         isDense: true,
         filled: true,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(Esquina.chica),
         ),
-        suffixIcon: estado.hayFiltroTexto
-            ? IconButton(
-                icon: const Icon(Icons.clear, size: 18),
-                tooltip: 'Borrar la búsqueda',
-                onPressed: () {
-                  buscarCtrl.clear();
-                  onFiltrar(buscar: '');
-                },
-              )
-            : null,
+        suffixIcon:
+            estado.hayFiltroTexto
+                ? IconButton(
+                  icon: const Icon(Icons.clear, size: 18),
+                  tooltip: 'Borrar la búsqueda',
+                  onPressed: () {
+                    buscarCtrl.clear();
+                    onFiltrar(buscar: '');
+                  },
+                )
+                : null,
       ),
     );
 
@@ -533,7 +589,10 @@ class _BarraFiltros extends ConsumerWidget {
                   padding: EdgeInsets.only(right: Esp.xs),
                   child: ChoiceChip(
                     label: Text(r.etiqueta),
-                    selected: r.coincideCon(estado.fechaDesde, estado.fechaHasta),
+                    selected: r.coincideCon(
+                      estado.fechaDesde,
+                      estado.fechaHasta,
+                    ),
                     visualDensity: VisualDensity.compact,
                     onSelected: (_) {
                       final (d, h) = r.calcular();
@@ -561,10 +620,13 @@ class _BarraFiltros extends ConsumerWidget {
                     idTipoDoc: t.idTipoDoc.toInt(),
                     etiqueta: t.tipo,
                     seleccionado: estado.idTipoDoc == t.idTipoDoc.toInt(),
-                    onElegir: () => onFiltrar(
-                      idTipoDoc:
-                          estado.idTipoDoc == t.idTipoDoc.toInt() ? 0 : t.idTipoDoc.toInt(),
-                    ),
+                    onElegir:
+                        () => onFiltrar(
+                          idTipoDoc:
+                              estado.idTipoDoc == t.idTipoDoc.toInt()
+                                  ? 0
+                                  : t.idTipoDoc.toInt(),
+                        ),
                   ),
               ],
               if (_hayAlgoPuesto) ...[
@@ -618,16 +680,13 @@ class _Pastillas extends StatelessWidget {
         height: 40,
         child: ScrollConfiguration(
           behavior: const ArrastreLateral(),
-          child: ListView(
-            scrollDirection: Axis.horizontal,
-            children: children,
-          ),
+          child: ListView(scrollDirection: Axis.horizontal, children: children),
         ),
       );
     }
 
     // El aire entre pastillas ya lo pone cada una con su padding derecho, así
-    // que acá sólo hace falta separar las filas.
+    // que aquí sólo hace falta separar las filas.
     return Wrap(
       runSpacing: Esp.xs,
       crossAxisAlignment: WrapCrossAlignment.center,
@@ -651,7 +710,8 @@ class _ChipEmpresa extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final nombre = empresas
+    final nombre =
+        empresas
             .where((e) => e.codEmpresa == codEmpresa)
             .map((e) => e.nombre)
             .firstOrNull ??
@@ -663,15 +723,16 @@ class _ChipEmpresa extends StatelessWidget {
         tooltip: 'Filtrar por empresa',
         position: PopupMenuPosition.under,
         onSelected: onElegir,
-        itemBuilder: (_) => [
-          const PopupMenuItem(value: 0, child: Text('Todas las empresas')),
-          for (final e in empresas)
-            PopupMenuItem(value: e.codEmpresa, child: Text(e.nombre)),
-        ],
+        itemBuilder:
+            (_) => [
+              const PopupMenuItem(value: 0, child: Text('Todas las empresas')),
+              for (final e in empresas)
+                PopupMenuItem(value: e.codEmpresa, child: Text(e.nombre)),
+            ],
         child: Chip(
           avatar: const Icon(Icons.business_outlined, size: 16),
           // La flecha va adentro de la etiqueta y no en `deleteIcon`: ese sólo
-          // se dibuja si hay `onDeleted`, y acá no se borra nada, se despliega.
+          // se dibuja si hay `onDeleted`, y aquí no se borra nada, se despliega.
           label: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -704,16 +765,20 @@ class _ChipRangoPropio extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final esPropio =
-        !RangoCite.values.any((r) => r.coincideCon(estado.fechaDesde, estado.fechaHasta));
+        !RangoCite.values.any(
+          (r) => r.coincideCon(estado.fechaDesde, estado.fechaHasta),
+        );
     final fmt = DateFormat('dd/MM/yy');
 
     return Padding(
       padding: EdgeInsets.only(right: Esp.xs),
       child: ChoiceChip(
         avatar: const Icon(Icons.event_outlined, size: 16),
-        label: Text(esPropio
-            ? '${fmt.format(estado.fechaDesde)} a ${fmt.format(estado.fechaHasta)}'
-            : 'Otro período'),
+        label: Text(
+          esPropio
+              ? '${fmt.format(estado.fechaDesde)} a ${fmt.format(estado.fechaHasta)}'
+              : 'Otro período',
+        ),
         selected: esPropio,
         visualDensity: VisualDensity.compact,
         onSelected: (_) async {
@@ -723,7 +788,8 @@ class _ChipRangoPropio extends StatelessWidget {
           final rango = await pedirRangoDeFechas(
             context,
             titulo: 'Período a consultar',
-            explicacion: 'Se listan los documentos emitidos entre estas fechas.',
+            explicacion:
+                'Se listan los documentos emitidos entre estas fechas.',
             desde: estado.fechaDesde,
             hasta: estado.fechaHasta,
             minima: DateTime(2018),
@@ -742,7 +808,7 @@ class _ChipRangoPropio extends StatelessWidget {
 /// Un tipo de documento, con su ícono y su color.
 ///
 /// Estaba escondido en un combo: había que abrirlo para saber qué tipos
-/// existen. Acá los seis están a la vista y cada uno se pinta con el mismo
+/// existen. Aquí los seis están a la vista y cada uno se pinta con el mismo
 /// color que después va a tener en la grilla, así que filtrar y buscar usan la
 /// misma señal.
 class _ChipTipo extends StatelessWidget {
@@ -775,9 +841,10 @@ class _ChipTipo extends StatelessWidget {
         selected: seleccionado,
         showCheckmark: false,
         selectedColor: c.fondo,
-        labelStyle: seleccionado
-            ? TextStyle(color: c.texto, fontWeight: Peso.titulo)
-            : null,
+        labelStyle:
+            seleccionado
+                ? TextStyle(color: c.texto, fontWeight: Peso.titulo)
+                : null,
         visualDensity: VisualDensity.compact,
         onSelected: (_) => onElegir(),
       ),
@@ -790,17 +857,17 @@ class _SeparadorChips extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Padding(
-        padding: EdgeInsets.symmetric(horizontal: Esp.s),
-        child: Center(
-          child: SizedBox(
-            height: 20,
-            child: VerticalDivider(
-              width: 1,
-              color: Theme.of(context).colorScheme.outlineVariant,
-            ),
-          ),
+    padding: EdgeInsets.symmetric(horizontal: Esp.s),
+    child: Center(
+      child: SizedBox(
+        height: 20,
+        child: VerticalDivider(
+          width: 1,
+          color: Theme.of(context).colorScheme.outlineVariant,
         ),
-      );
+      ),
+    ),
+  );
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -825,9 +892,10 @@ class _Paginacion extends StatelessWidget {
     // «137 documentos» no dice cuáles se están viendo. El rango sí, y es lo
     // que hace falta para saber si hay que pasar de página o volver.
     final desde = (estado.pagina - 1) * estado.tamanoPagina + 1;
-    final hasta = (estado.pagina * estado.tamanoPagina) > estado.totalRegistros
-        ? estado.totalRegistros
-        : estado.pagina * estado.tamanoPagina;
+    final hasta =
+        (estado.pagina * estado.tamanoPagina) > estado.totalRegistros
+            ? estado.totalRegistros
+            : estado.pagina * estado.tamanoPagina;
 
     return Container(
       padding: EdgeInsets.symmetric(
@@ -842,19 +910,22 @@ class _Paginacion extends StatelessWidget {
         children: [
           Expanded(
             child: Text.rich(
-              TextSpan(children: [
-                TextSpan(
-                  text: '$desde-$hasta',
-                  style: context.numero(fuerte: true),
-                ),
-                TextSpan(
-                  text: aire.esChico
-                      ? ' de ${estado.totalRegistros}'
-                      : ' de ${estado.totalRegistros} documento'
-                          '${estado.totalRegistros == 1 ? "" : "s"}',
-                  style: context.apagado(),
-                ),
-              ]),
+              TextSpan(
+                children: [
+                  TextSpan(
+                    text: '$desde-$hasta',
+                    style: context.numero(fuerte: true),
+                  ),
+                  TextSpan(
+                    text:
+                        aire.esChico
+                            ? ' de ${estado.totalRegistros}'
+                            : ' de ${estado.totalRegistros} documento'
+                                '${estado.totalRegistros == 1 ? "" : "s"}',
+                    style: context.apagado(),
+                  ),
+                ],
+              ),
               overflow: TextOverflow.ellipsis,
             ),
           ),
@@ -862,16 +933,21 @@ class _Paginacion extends StatelessWidget {
             icon: const Icon(Icons.chevron_left),
             tooltip: 'Página anterior',
             onPressed:
-                estado.pagina > 1 ? () => notifier.irAPagina(estado.pagina - 1) : null,
+                estado.pagina > 1
+                    ? () => notifier.irAPagina(estado.pagina - 1)
+                    : null,
           ),
-          Text('${estado.pagina} / ${estado.totalPaginas}',
-              style: context.numero(fuerte: true)),
+          Text(
+            '${estado.pagina} / ${estado.totalPaginas}',
+            style: context.numero(fuerte: true),
+          ),
           IconButton(
             icon: const Icon(Icons.chevron_right),
             tooltip: 'Página siguiente',
-            onPressed: estado.pagina < estado.totalPaginas
-                ? () => notifier.irAPagina(estado.pagina + 1)
-                : null,
+            onPressed:
+                estado.pagina < estado.totalPaginas
+                    ? () => notifier.irAPagina(estado.pagina + 1)
+                    : null,
           ),
         ],
       ),

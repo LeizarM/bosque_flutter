@@ -18,6 +18,9 @@ final articulosCiudadProvider =
       ref,
       codCiudad,
     ) async {
+      // Sin esto el provider queda en caché para siempre y el botón
+      // "Actualizar" (que incrementa el contador) no vuelve a pedir precios.
+      ref.watch(articulosCiudadRefreshProvider);
       final repository = ref.watch(articulosCiudadRepositoryProvider);
 
       return repository.getArticulos(codCiudad);

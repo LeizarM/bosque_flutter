@@ -19,7 +19,7 @@ class TareasPorCargoImpl extends BaseApiRepository {
 
   /// Crea una tarea rutinaria y la asigna a uno o más cargos, sin
   /// restricción de subárbol (modo admin — el backend lo fuerza server-side,
-  /// esto NO es una bandera que viaje desde acá). [cargos]: mapas con
+  /// esto NO es una bandera que viaje desde aquí). [cargos]: mapas con
   /// codCargo (obligatorio) y opcionalmente codCargoSucursal/fechaInicio/fechaFin.
   Future<BigInt> registrarPorCargoAdmin({
     required String descripcion,

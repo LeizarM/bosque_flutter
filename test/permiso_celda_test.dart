@@ -31,10 +31,11 @@ void main() {
     test('un jefe, sólo con su gente', () {
       final jefe = PermisoDeCelda(
         todas: false,
-        miGente: MiEquipoEntity(
-          esProgramador: 1,
-          equipo: [_dep(223), _dep(245)],
-        ).codigosDeMiGente,
+        miGente:
+            MiEquipoEntity(
+              esProgramador: 1,
+              equipo: [_dep(223), _dep(245)],
+            ).codigosDeMiGente,
       );
       expect(jefe.puedeCon(223), isTrue);
       expect(jefe.puedeCon(245), isTrue);

@@ -41,13 +41,16 @@ class _FormExperienciaLaboralState
     super.initState();
     final initial = widget.experienciaInicial;
 
-    _empresaController =
-        TextEditingController(text: initial?.nombreEmpresa ?? '');
+    _empresaController = TextEditingController(
+      text: initial?.nombreEmpresa ?? '',
+    );
     _cargoController = TextEditingController(text: initial?.cargo ?? '');
-    _descripcionController =
-        TextEditingController(text: initial?.descripcion ?? '');
-    _nroReferenciaController =
-        TextEditingController(text: initial?.nroReferencia ?? '');
+    _descripcionController = TextEditingController(
+      text: initial?.descripcion ?? '',
+    );
+    _nroReferenciaController = TextEditingController(
+      text: initial?.nroReferencia ?? '',
+    );
 
     final initialDateIni = initial?.fechaInicio ?? DateTime.now();
     _fechaInicioController = TextEditingController(
@@ -129,9 +132,10 @@ class _FormExperienciaLaboralState
           borderRadius: context.borderRadius,
           border: Border.all(color: Colors.teal.withOpacity(0.5)),
         ),
-        child: context.isMobile
-            ? _buildMobileLayout(context)
-            : _buildWebLayout(context),
+        child:
+            context.isMobile
+                ? _buildMobileLayout(context)
+                : _buildWebLayout(context),
       ),
     );
   }
@@ -153,13 +157,9 @@ class _FormExperienciaLaboralState
         // Fila: Fechas en dos columnas
         Row(
           children: [
-            Expanded(
-              child: _buildDatePickerInicio(context),
-            ),
+            Expanded(child: _buildDatePickerInicio(context)),
             SizedBox(width: context.spacing),
-            Expanded(
-              child: _buildDatePickerFin(context),
-            ),
+            Expanded(child: _buildDatePickerFin(context)),
           ],
         ),
         SizedBox(height: context.spacing),
@@ -182,9 +182,7 @@ class _FormExperienciaLaboralState
         Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Expanded(
-              child: _buildInputEmpresa(context),
-            ),
+            Expanded(child: _buildInputEmpresa(context)),
             SizedBox(width: context.spacing),
             _buildActionButtonsWeb(context),
           ],
@@ -199,13 +197,9 @@ class _FormExperienciaLaboralState
         // Fila 4: Fechas en dos columnas
         Row(
           children: [
-            Expanded(
-              child: _buildDatePickerInicio(context),
-            ),
+            Expanded(child: _buildDatePickerInicio(context)),
             SizedBox(width: context.spacing),
-            Expanded(
-              child: _buildDatePickerFin(context),
-            ),
+            Expanded(child: _buildDatePickerFin(context)),
           ],
         ),
         SizedBox(height: context.spacing),
@@ -227,9 +221,7 @@ class _FormExperienciaLaboralState
         labelText: 'Nombre de la Empresa *',
         labelStyle: TextStyle(fontSize: context.bodyFontSize),
         hintStyle: context.bodyLightStyle,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(6),
-        ),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(6)),
         contentPadding: EdgeInsets.symmetric(
           horizontal: context.smallSpacing,
           vertical: context.spacing,
@@ -248,9 +240,7 @@ class _FormExperienciaLaboralState
         labelText: 'Cargo Desempeñado *',
         labelStyle: TextStyle(fontSize: context.bodyFontSize),
         hintStyle: context.bodyLightStyle,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(6),
-        ),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(6)),
         contentPadding: EdgeInsets.symmetric(
           horizontal: context.smallSpacing,
           vertical: context.spacing,
@@ -272,9 +262,7 @@ class _FormExperienciaLaboralState
         labelText: 'Descripción de funciones / logros *',
         labelStyle: TextStyle(fontSize: context.bodyFontSize),
         hintStyle: context.bodyLightStyle,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(6),
-        ),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(6)),
         contentPadding: EdgeInsets.symmetric(
           horizontal: context.smallSpacing,
           vertical: context.spacing,
@@ -313,9 +301,7 @@ class _FormExperienciaLaboralState
         labelText: 'Nro. Referencia (Opcional)',
         labelStyle: TextStyle(fontSize: context.bodyFontSize),
         hintStyle: context.bodyLightStyle,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(6),
-        ),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(6)),
         contentPadding: EdgeInsets.symmetric(
           horizontal: context.smallSpacing,
           vertical: context.spacing,

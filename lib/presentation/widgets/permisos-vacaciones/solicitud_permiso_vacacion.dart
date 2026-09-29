@@ -82,8 +82,8 @@ class _SolicitudPermisoFormState extends ConsumerState<SolicitudPermisoForm> {
   String _horaInicio = '08:00';
   String _horaFin = '16:30';
 
-  // 🌟 Se incorporan las franjas de 08:00, 13:00, 13:30, 14:00 e intermedia de salida.
-  final List<String> _horariosPermitidos = [
+  // 🌟 Horarios permitidos dinámicos en base al horario real del primer día
+  List<String> _horariosPermitidos = [
     '08:00',
     '08:30',
     '09:00',
@@ -109,6 +109,50 @@ class _SolicitudPermisoFormState extends ConsumerState<SolicitudPermisoForm> {
     '19:00',
   ];
 
+  // Variables para tope dinámico (por defecto a las 19:00 si falla)
+  String _topeIngresoActual = '';
+  String _topeSalidaActual = '19:00';
+
+  List<String> _generarHorariosPermitidos(String hrIngreso, String hrSalida) {
+    try {
+      final tIni = hrIngreso.split(':');
+      final tFin = hrSalida.split(':');
+      DateTime current = DateTime(
+        2000,
+        1,
+        1,
+        int.parse(tIni[0]),
+        int.parse(tIni[1]),
+      );
+      final end = DateTime(2000, 1, 1, int.parse(tFin[0]), int.parse(tFin[1]));
+
+      final List<String> result = [];
+      while (current.isBefore(end) || current.isAtSameMomentAs(end)) {
+        result.add(DateFormat('HH:mm').format(current));
+        current = current.add(const Duration(minutes: 30));
+      }
+
+      // Guardar el tope real formateado
+      final hrSalidaFmt = DateFormat('HH:mm').format(end);
+
+      // Schedules con inicio en minutos "impares" (ej: 07:45) generan una grilla
+      // que nunca coincide con el fin real (ej: 16:30). El último item puede ser
+      // 16:15 (si el paso siguiente sobrepasa el fin) o puede quedar correcto.
+      // Para garantizar que hrSalida siempre esté en la lista como último item:
+      if (result.isNotEmpty && result.last != hrSalidaFmt) {
+        // Si el último item supera el tope real, lo reemplazamos
+        // Si quedó corto (no debería pasar con el while), lo añadimos
+        result.last.compareTo(hrSalidaFmt) > 0
+            ? result[result.length - 1] = hrSalidaFmt
+            : result.add(hrSalidaFmt);
+      }
+
+      return result.isNotEmpty ? result : ['08:00', '17:30'];
+    } catch (e) {
+      return ['08:00', '17:30'];
+    }
+  }
+
   void _actualizarHoraFin(String nuevaHoraInicio) {
     setState(() {
       _horaInicio = nuevaHoraInicio;
@@ -127,17 +171,25 @@ class _SolicitudPermisoFormState extends ConsumerState<SolicitudPermisoForm> {
         const Duration(hours: 8, minutes: 30),
       );
 
-      // Si la hora de fin supera las 19:00, la limitamos a las 19:00
-      if (finDateTime.hour > 19 ||
-          (finDateTime.hour == 19 && finDateTime.minute > 0)) {
-        finDateTime = DateTime(2000, 1, 1, 19, 0);
+      // Si la hora de fin supera la salida real, la limitamos a la salida real
+      final tTope = _topeSalidaActual.split(':');
+      final topeDateTime = DateTime(
+        2000,
+        1,
+        1,
+        int.parse(tTope[0]),
+        int.parse(tTope[1]),
+      );
+
+      if (finDateTime.isAfter(topeDateTime)) {
+        finDateTime = topeDateTime;
       }
 
       String formattedFin = DateFormat('HH:mm').format(finDateTime);
       if (_horariosPermitidos.contains(formattedFin)) {
         _horaFin = formattedFin;
       } else {
-        _horaFin = '19:00';
+        _horaFin = _topeSalidaActual;
       }
     });
     _calcularOnTheFly();
@@ -193,6 +245,15 @@ class _SolicitudPermisoFormState extends ConsumerState<SolicitudPermisoForm> {
           _previewResult = null;
           _isLoadingPreview = false;
         });
+        // Mostrar Snackbar de error de previsualización (ej. Horario no generado)
+        final errMsg = e.toString().replaceAll("Exception: ", "");
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(errMsg),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 4),
+          ),
+        );
       }
     }
   }
@@ -377,7 +438,148 @@ class _SolicitudPermisoFormState extends ConsumerState<SolicitudPermisoForm> {
                 ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
                 textAlign: TextAlign.center,
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 10),
+
+              // TABLA DE HORARIOS DINÁMICOS
+              Consumer(
+                builder: (context, ref, child) {
+                  final asyncHorarios = ref.watch(
+                    horarioEmpleadoProvider((
+                      codEmpleado: widget.codEmpleado,
+                      desde: _fechaDesde,
+                      hasta: _fechaHasta,
+                    )),
+                  );
+
+                  return asyncHorarios.when(
+                    data: (horarios) {
+                      if (horarios.isEmpty) {
+                        return Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: Colors.red.shade100,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: const Text(
+                            '⚠️ Aún no se generó su horario para este periodo.',
+                            style: TextStyle(
+                              color: Colors.red,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        );
+                      }
+
+                      // Actualizar Dropdowns basados en el primer día
+                      WidgetsBinding.instance.addPostFrameCallback((_) {
+                        final hrIniReal =
+                            horarios.first.horaIngreso?.substring(0, 5) ??
+                            '08:00';
+                        final hrFinReal =
+                            horarios.last.horaSalida?.substring(0, 5) ??
+                            '17:30';
+                        if (_topeSalidaActual != hrFinReal ||
+                            _topeIngresoActual != hrIniReal) {
+                          final nuevosHorarios = _generarHorariosPermitidos(
+                            hrIniReal,
+                            hrFinReal,
+                          );
+                          setState(() {
+                            _topeSalidaActual = hrFinReal;
+                            _topeIngresoActual = hrIniReal;
+                            _horariosPermitidos = nuevosHorarios;
+                            // Siempre aplicamos el tope real del empleado
+                            // al detectar un horario diferente.
+                            _horaInicio = hrIniReal;
+                            _horaFin = hrFinReal;
+                          });
+                          _calcularOnTheFly();
+                        }
+                      });
+
+                      return Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.primaryContainer.withOpacity(0.4),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.primary.withOpacity(0.3),
+                          ),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'Horarios asignados:',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 12,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            ...horarios.map((h) {
+                              final hrIniStr =
+                                  h.horaIngreso?.substring(0, 5) ?? 'N/A';
+                              final hrFinStr =
+                                  h.horaSalida?.substring(0, 5) ?? 'N/A';
+                              return Text(
+                                '• ${h.nombreHorario} ($hrIniStr - $hrFinStr)',
+                                style: const TextStyle(fontSize: 12),
+                              );
+                            }),
+                            // if (horarios.any((h) => h.horaIngreso == null)) ...[
+                            //   const SizedBox(height: 8),
+                            //   Container(
+                            //     padding: const EdgeInsets.all(8),
+                            //     decoration: BoxDecoration(
+                            //       color: Colors.orange.withOpacity(0.1),
+                            //       borderRadius: BorderRadius.circular(4),
+                            //       border: Border.all(
+                            //         color: Colors.orange.withOpacity(0.5),
+                            //       ),
+                            //     ),
+                            //     child: Row(
+                            //       crossAxisAlignment: CrossAxisAlignment.start,
+                            //       children: [
+                            //         const Icon(
+                            //           Icons.warning_amber_rounded,
+                            //           color: Colors.orange,
+                            //           size: 16,
+                            //         ),
+                            //         const SizedBox(width: 8),
+                            //         Expanded(
+                            //           child: Text(
+                            //             'No tienes un horario asignado para uno o más días seleccionados.\nTu solicitud será enviada, pero RRHH deberá regularizar tu horario para el cálculo exacto.',
+                            //             style: TextStyle(
+                            //               fontSize: 11,
+                            //               color: Colors.orange.shade700,
+                            //               fontWeight: FontWeight.w500,
+                            //             ),
+                            //           ),
+                            //         ),
+                            //       ],
+                            //     ),
+                            //   ),
+                            // ],
+                          ],
+                        ),
+                      );
+                    },
+                    loading:
+                        () => const Center(child: CircularProgressIndicator()),
+                    error:
+                        (e, st) => Text(
+                          'Error: $e',
+                          style: const TextStyle(color: Colors.red),
+                        ),
+                  );
+                },
+              ),
+              const SizedBox(height: 10),
 
               // TIPO DE PERMISO
               CustomDropdown<TipoPermisoVacacionEntity>(

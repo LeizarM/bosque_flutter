@@ -149,7 +149,7 @@ class _ListaEmpleadosState extends ConsumerState<ListaEmpleados> {
   ///
   /// SUPUESTO D4 — pendiente de confirmación de RR.HH. (ver plan §5).
   /// `/rrhh/pdfRptPermVacTotal` y `/rrhh/excelRptPermVacTotal` no exigían nada y
-  /// ahora exigen este botón. Sin esconder las opciones acá, quien no lo tenga
+  /// ahora exigen este botón. Sin esconder las opciones aquí, quien no lo tenga
   /// las ve, las toca y recibe un 403.
   static const String _btnReportesPyv = 'btnReportesPYV';
 

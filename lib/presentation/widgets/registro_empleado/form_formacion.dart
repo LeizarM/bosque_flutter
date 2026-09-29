@@ -33,7 +33,7 @@ class _FormFormacionState extends ConsumerState<FormFormacion> {
   late TextEditingController _descripcionController;
   late TextEditingController _duracionController;
   late TextEditingController _fechaController;
-    late TextEditingController _institucionController; // ✅ AGREGAR
+  late TextEditingController _institucionController; // ✅ AGREGAR
 
   String? _selectedTipoFormacion;
   String? _selectedTipoDuracion;
@@ -55,13 +55,13 @@ class _FormFormacionState extends ConsumerState<FormFormacion> {
       text: (initial?.duracion ?? 0) > 0 ? initial!.duracion.toString() : '',
     );
 
-    _selectedTipoFormacion = initial?.tipoFormacion.isNotEmpty == true
-        ? initial!.tipoFormacion
-        : null;
+    _selectedTipoFormacion =
+        initial?.tipoFormacion.isNotEmpty == true
+            ? initial!.tipoFormacion
+            : null;
 
-    _selectedTipoDuracion = initial?.tipoDuracion.isNotEmpty == true
-        ? initial!.tipoDuracion
-        : null;
+    _selectedTipoDuracion =
+        initial?.tipoDuracion.isNotEmpty == true ? initial!.tipoDuracion : null;
 
     final initialDate = initial?.fechaFormacion ?? DateTime.now();
     _fechaController = TextEditingController(
@@ -71,7 +71,7 @@ class _FormFormacionState extends ConsumerState<FormFormacion> {
 
   @override
   void dispose() {
-        _institucionController.dispose(); // ✅ AGREGAR
+    _institucionController.dispose(); // ✅ AGREGAR
     _descripcionController.dispose();
     _duracionController.dispose();
     _fechaController.dispose();
@@ -118,9 +118,18 @@ class _FormFormacionState extends ConsumerState<FormFormacion> {
             color: Theme.of(context).primaryColor.withOpacity(0.3),
           ),
         ),
-        child: context.isMobile
-            ? _buildMobileLayout(context, tipoFormacionAsync, tipoDuracionAsync)
-            : _buildWebLayout(context, tipoFormacionAsync, tipoDuracionAsync),
+        child:
+            context.isMobile
+                ? _buildMobileLayout(
+                  context,
+                  tipoFormacionAsync,
+                  tipoDuracionAsync,
+                )
+                : _buildWebLayout(
+                  context,
+                  tipoFormacionAsync,
+                  tipoDuracionAsync,
+                ),
       ),
     );
   }
@@ -146,9 +155,7 @@ class _FormFormacionState extends ConsumerState<FormFormacion> {
         // Fila: Duración y Tipo de Duración en dos columnas
         Row(
           children: [
-            Expanded(
-              child: _buildInputDuracion(context),
-            ),
+            Expanded(child: _buildInputDuracion(context)),
             SizedBox(width: context.spacing),
             Expanded(
               child: _buildDropdownTipoDuracion(context, tipoDuracionAsync),
@@ -184,9 +191,7 @@ class _FormFormacionState extends ConsumerState<FormFormacion> {
               child: _buildDropdownTipoFormacion(context, tipoFormacionAsync),
             ),
             SizedBox(width: context.spacing),
-            Expanded(
-              child: _buildInputDuracion(context),
-            ),
+            Expanded(child: _buildInputDuracion(context)),
             SizedBox(width: context.spacing),
             Expanded(
               flex: 2,
@@ -229,7 +234,8 @@ class _FormFormacionState extends ConsumerState<FormFormacion> {
       validator: (v) => v?.isEmpty ?? true ? 'Requerido' : null,
     );
   }
-    // ✅ AGREGAR CAMPO INSTITUCIÓN
+
+  // ✅ AGREGAR CAMPO INSTITUCIÓN
   Widget _buildInputInstitucion(BuildContext context) {
     return TextFormField(
       controller: _institucionController,
@@ -240,9 +246,7 @@ class _FormFormacionState extends ConsumerState<FormFormacion> {
         labelStyle: TextStyle(fontSize: context.bodyFontSize),
         hintText: 'Ej: Universidad Mayor de San Andrés',
         hintStyle: context.bodyLightStyle,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(6),
-        ),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(6)),
         prefixIcon: const Icon(Icons.business),
         contentPadding: EdgeInsets.symmetric(
           horizontal: context.smallSpacing,
@@ -266,9 +270,7 @@ class _FormFormacionState extends ConsumerState<FormFormacion> {
         labelText: 'Duración *',
         labelStyle: TextStyle(fontSize: context.bodyFontSize),
         hintStyle: context.bodyLightStyle,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(6),
-        ),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(6)),
         contentPadding: EdgeInsets.symmetric(
           horizontal: context.smallSpacing,
           vertical: context.spacing,
@@ -321,9 +323,7 @@ class _FormFormacionState extends ConsumerState<FormFormacion> {
         labelText: 'Descripción / Nombre del Curso *',
         labelStyle: TextStyle(fontSize: context.bodyFontSize),
         hintStyle: context.bodyLightStyle,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(6),
-        ),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(6)),
         contentPadding: EdgeInsets.symmetric(
           horizontal: context.smallSpacing,
           vertical: context.spacing,

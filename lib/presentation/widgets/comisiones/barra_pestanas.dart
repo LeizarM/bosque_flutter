@@ -14,7 +14,7 @@ class ItemPestana {
 /// Vive fuera de la pantalla por dos razones. La primera es que eran cuarenta
 /// líneas de estilo incrustadas en medio del árbol de la pantalla. La segunda
 /// es que la pantalla necesita sesión, permisos y providers para levantarse, y
-/// eso hacía imposible mirar la barra sin backend; acá la vista previa monta
+/// eso hacía imposible mirar la barra sin backend; aquí la vista previa monta
 /// esta misma clase, no una copia parecida que después se desincroniza.
 class BarraPestanas extends StatelessWidget {
   const BarraPestanas({super.key, required this.items});

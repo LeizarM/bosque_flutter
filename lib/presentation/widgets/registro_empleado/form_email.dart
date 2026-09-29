@@ -83,14 +83,12 @@ class _FormEmailState extends ConsumerState<FormEmail> {
         decoration: BoxDecoration(
           color: Colors.red.withOpacity(0.02),
           borderRadius: context.borderRadius,
-          border: Border.all(
-            color: Colors.grey.shade300,
-            width: 1,
-          ),
+          border: Border.all(color: Colors.grey.shade300, width: 1),
         ),
-        child: context.isMobile
-            ? _buildMobileLayout(context)
-            : _buildWebLayout(context),
+        child:
+            context.isMobile
+                ? _buildMobileLayout(context)
+                : _buildWebLayout(context),
       ),
     );
   }
@@ -116,9 +114,7 @@ class _FormEmailState extends ConsumerState<FormEmail> {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Expanded(
-          child: _buildInputEmail(context),
-        ),
+        Expanded(child: _buildInputEmail(context)),
         SizedBox(width: context.spacing),
         _buildActionButtons(context),
       ],
@@ -139,21 +135,14 @@ class _FormEmailState extends ConsumerState<FormEmail> {
         labelStyle: TextStyle(fontSize: context.bodyFontSize),
         hintText: 'nombre@ejemplo.com',
         hintStyle: context.bodyLightStyle,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(6),
-        ),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(6)),
         contentPadding: EdgeInsets.symmetric(
           horizontal: context.smallSpacing,
           vertical: context.spacing,
         ),
         isDense: true,
-        prefixIcon: Icon(
-          Icons.email_outlined,
-          size: context.smallIconSize,
-        ),
-        prefixIconConstraints: BoxConstraints(
-          minWidth: context.spacing * 3,
-        ),
+        prefixIcon: Icon(Icons.email_outlined, size: context.smallIconSize),
+        prefixIconConstraints: BoxConstraints(minWidth: context.spacing * 3),
       ),
       validator: _validateEmail,
     );

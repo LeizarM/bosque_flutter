@@ -79,7 +79,7 @@ class GuardiaDeSalida extends StatelessWidget {
     super.key,
     required this.hayCambios,
     required this.child,
-    this.mensaje = 'Si salís ahora se pierde lo que cargaste.',
+    this.mensaje = 'Si sales ahora se pierde lo que cargaste.',
   });
 
   final bool hayCambios;

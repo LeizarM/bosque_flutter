@@ -39,7 +39,7 @@ import 'package:bosque_flutter/presentation/widgets/comisiones/estado_vista.dart
 /// estar perfecto —ninguna nota cayó dentro de la vigencia de la política—, o
 /// puede tenerlos en cero porque el congelado nunca corrió. Son dos cosas
 /// opuestas que se ven igual. El corte (`tcom_pagadoItemCorte`) las separa y
-/// además redacta la explicación en su campo `lectura`, así que acá el vacío
+/// además redacta la explicación en su campo `lectura`, así que aquí el vacío
 /// muestra el corte y no un contador en cero. Y cuando el corte no se pudo
 /// leer, se dice que no se pudo leer: acusar a la base de no haber congelado
 /// nada por un error de red es el mismo fallo que este diálogo corrige, dado
@@ -348,7 +348,7 @@ class _CuerpoState extends State<_Cuerpo> {
   Widget build(BuildContext context) {
     final items = widget.items;
 
-    // «Solo lo excluido» se resuelve acá y no en el SP: es un where sobre un
+    // «Solo lo excluido» se resuelve aquí y no en el SP: es un where sobre un
     // campo que ya viene en cada fila. Con el filtro en la clave del provider,
     // tildar el chip destruía la entrada del cache —es autoDispose— y
     // destildarlo volvía a bajar el mes entero.
@@ -358,7 +358,7 @@ class _CuerpoState extends State<_Cuerpo> {
             : items;
 
     // Si la nota elegida ya no está entre las del período —el índice se
-    // recargó— se cae a «todas» al dibujar. No se toca el estado acá:
+    // recargó— se cae a «todas» al dibujar. No se toca el estado aquí:
     // cambiarlo durante el build es un bucle de rebuilds.
     final notaValida =
         widget.notaElegida != null && widget.notas.contains(widget.notaElegida)
@@ -392,7 +392,7 @@ class _CuerpoState extends State<_Cuerpo> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             // El resumen va ARRIBA de la lista: la pregunta que trae a alguien
-            // acá es «¿cuánto quedó afuera y por qué?», y esa se responde con
+            // aquí es «¿cuánto quedó afuera y por qué?», y esa se responde con
             // el reparto por motivo, no leyendo doscientas líneas.
             _ZonaResumen(
               resumen: widget.resumen,
@@ -488,7 +488,7 @@ class _ZonaResumen extends StatelessWidget {
     } else if (filas == null || filas.isEmpty) {
       // Cargando, o período sin nada que repartir. En los dos casos el que
       // habla es lo de abajo —el esqueleto o la lectura del corte—, y un
-      // bloque a medio llenar acá arriba solo agregaría ruido.
+      // bloque a medio llenar aquí arriba solo agregaría ruido.
       contenido = null;
     } else {
       contenido = _ResumenPorMotivo(resumen: filas, esMovil: esMovil);
@@ -582,7 +582,7 @@ class _ResumenPorMotivo extends StatelessWidget {
           //
           // Cuando NO hay exclusiones el titular se da vuelta en vez de
           // anunciar «0 de 1 ítems no descontaron»: un cero al lado de un uno
-          // se lee como un problema, y acá es exactamente lo contrario.
+          // se lee como un problema, y aquí es exactamente lo contrario.
           Text(
             _titular(total, excluidos),
             style: tt.titleSmall?.copyWith(fontWeight: FontWeight.w700),
@@ -769,7 +769,7 @@ class _BarraFiltros extends StatelessWidget {
   final ValueChanged<bool> alCambiarExcluidos;
   final ValueChanged<_NotaPagada?> alCambiarNota;
 
-  /// Tope del selector. Con `isExpanded` el rótulo se recorta acá adentro en
+  /// Tope del selector. Con `isExpanded` el rótulo se recorta aquí adentro en
   /// vez de estirar el desplegable hasta sacarlo de un teléfono de 320.
   static const double _anchoSelector = 240;
 
@@ -801,7 +801,7 @@ class _BarraFiltros extends StatelessWidget {
         crossAxisAlignment: WrapCrossAlignment.center,
         children: [
           // Sin contador en cero: cuando la lista está vacía el que habla es
-          // el estado de abajo, que dice POR QUÉ. Un «0 líneas» acá arriba lo
+          // el estado de abajo, que dice POR QUÉ. Un «0 líneas» aquí arriba lo
           // contradiría con un número que no explica nada.
           if (cantidad > 0)
             Text(
@@ -935,7 +935,7 @@ class _SinItems extends StatelessWidget {
     // (2) Con una nota elegida y sin líneas, el que está vacío es el filtro de
     //     nota. El corte es del período entero y no explica esto.
     if (notaElegida != null) {
-      // El botón va acá y el texto ya no manda a tocar el desplegable: con la
+      // El botón va aquí y el texto ya no manda a tocar el desplegable: con la
       // lista vacía la barra de filtros no se dibuja, así que ese control NO
       // está en pantalla. Y era la única forma de volver: sin esto había que
       // cerrar el diálogo y abrirlo de nuevo.
@@ -953,7 +953,7 @@ class _SinItems extends StatelessWidget {
       );
     }
 
-    // (3) De acá en adelante la lista está vacía porque el período no trajo
+    // (3) De aquí en adelante la lista está vacía porque el período no trajo
     //     nada, y el único que puede explicarlo es el corte.
 
     // Un error de red NO es una respuesta de la base. Se dice, con reintento,
@@ -983,7 +983,7 @@ class _SinItems extends StatelessWidget {
         titulo: 'Este período no tiene corte',
         indicacion:
             'No quedó registro de que el detalle por ítem se haya congelado '
-            'acá. Puede ser un período pagado antes de que existiera el '
+            'aquí. Puede ser un período pagado antes de que existiera el '
             'congelado, o una ejecución en la que ese paso falló. No es lo '
             'mismo que «no había nada que congelar».',
       );
@@ -1170,7 +1170,7 @@ class _Dato extends StatelessWidget {
 
 /// Una columna de la tabla de escritorio.
 ///
-/// Las columnas se declaran UNA vez y de acá salen el encabezado, cada fila y
+/// Las columnas se declaran UNA vez y de aquí salen el encabezado, cada fila y
 /// el ancho mínimo. Antes eran tres cosas separadas —los DataColumn, las
 /// DataCell y un 1340 sumado a mano en un comentario— y el comentario contaba
 /// ocho columnas donde la tabla declaraba nueve.

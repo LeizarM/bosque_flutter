@@ -12,7 +12,7 @@
 /// modales incluidos.
 ///
 /// Nació en el módulo del Rol de Sábados, pasó por
-/// `presentation/widgets/shared/` y vive acá desde que se vio que el problema
+/// `presentation/widgets/shared/` y vive aquí desde que se vio que el problema
 /// no era de ese módulo: era de la app. El archivo viejo quedó como re-export
 /// —lo importan 29 pantallas— así que **el código no cambió, sólo la carpeta**.
 ///
@@ -45,7 +45,7 @@ enum TonoAviso {
 
 /// Muestra [mensaje] arriba de todo, por encima de diálogos y hojas modales.
 ///
-/// El texto se muestra **tal cual**: acá no se traduce ni se limpia nada. Quien
+/// El texto se muestra **tal cual**: aquí no se traduce ni se limpia nada. Quien
 /// tenga que reescribir lo que devuelve el backend lo hace antes de llamar (ver
 /// `mensajes_usuario.dart` del módulo de sábados, que hace justamente eso).
 ///
@@ -290,7 +290,7 @@ class _AvisoState extends State<_Aviso> with SingleTickerProviderStateMixin {
             ).animate(_curva),
             // La Row centra la tarjeta y la deja encoger: un «Listo.» es una
             // pastilla corta y un mensaje largo llega hasta el tope y ahí
-            // envuelve. `Positioned` da alto libre, así que un `Center` acá
+            // envuelve. `Positioned` da alto libre, así que un `Center` aquí
             // pediría alto infinito.
             //
             // El `Flexible` no es decorativo: una Row le ofrece ancho INFINITO

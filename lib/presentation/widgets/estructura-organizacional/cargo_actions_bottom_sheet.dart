@@ -1,8 +1,10 @@
 import 'package:bosque_flutter/domain/entities/cargo_entity.dart';
+import 'package:bosque_flutter/presentation/widgets/shared/permission_widget.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// Bottom sheet con las acciones disponibles para un cargo
-class CargoActionsBottomSheet extends StatelessWidget {
+class CargoActionsBottomSheet extends ConsumerWidget {
   final CargoEntity cargo;
   final VoidCallback onViewDetails;
   final VoidCallback onEdit;
@@ -21,13 +23,13 @@ class CargoActionsBottomSheet extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     // Alto máximo explícito + SingleChildScrollView: con isScrollControlled
     // la hoja puede crecer hasta ocupar toda la pantalla, pero si el
     // contenido igual no entra (viewport bajo — browser achicado, celular
     // en horizontal, teclado abierto) necesita poder scrollear en vez de
     // desbordar. ClampingScrollPhysics: es una lista corta de acciones, no
-    // hace falta el rebote de iOS acá.
+    // hace falta el rebote de iOS aquí.
     final altoDisponible = MediaQuery.sizeOf(context).height;
     return ConstrainedBox(
       constraints: BoxConstraints(maxHeight: altoDisponible * 0.85),
@@ -164,21 +166,37 @@ class CargoActionsBottomSheet extends StatelessWidget {
                 ),
               ),
 
-              const Divider(height: 8),
-
-              // Tareas rutinarias por cargo (reemplaza dlgTarFunXCargo del legacy)
-              ListTile(
-                leading: const Icon(
-                  Icons.assignment_outlined,
-                  color: Colors.deepPurple,
+              // Tareas rutinarias por cargo (reemplaza dlgTarFunXCargo del
+              // legacy) -- gateado por el botón real btnTareasRutXCargo
+              // (tb_vistaBtn/tb_usuarioBtn, vista 12) en vez de un chequeo
+              // de rol hardcodeado (2026-09-07, a pedido de Marcelo: "los
+              // permisos por botones se basan en tb_vistaBtn/tb_vistaUsuario,
+              // toma en cuenta el nombre del botón"). Sin este gate, los
+              // ~130 de 134 usuarios ROLE_LIM veían el tile andar al lado de
+              // acciones que sí les funcionan y solo se enteraban al
+              // tocarlo (excepción cruda). Se oculta (PermissionWidget),
+              // el backend lo rechaza igual (AccesoModuloHelper.exigirBoton)
+              // — esconder en el cliente no alcanza.
+              PermissionWidget(
+                buttonName: 'btnTareasRutXCargo',
+                child: Column(
+                  children: [
+                    const Divider(height: 8),
+                    ListTile(
+                      leading: const Icon(
+                        Icons.assignment_outlined,
+                        color: Colors.deepPurple,
+                      ),
+                      title: const Text('Tareas rutinarias'),
+                      subtitle: const Text(
+                        'Ver, agregar, copiar o editar las tareas asignadas a este cargo',
+                        style: TextStyle(fontSize: 11),
+                      ),
+                      trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+                      onTap: onTareasRutinarias,
+                    ),
+                  ],
                 ),
-                title: const Text('Tareas rutinarias'),
-                subtitle: const Text(
-                  'Ver, agregar, copiar o editar las tareas asignadas a este cargo',
-                  style: TextStyle(fontSize: 11),
-                ),
-                trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-                onTap: onTareasRutinarias,
               ),
 
               const Divider(height: 8),

@@ -1,4 +1,6 @@
 // Destino final: lib/core/state/arqueo_caja_provider.dart
+import 'dart:typed_data';
+
 import 'package:bosque_flutter/data/repositories/arqueo_caja_impl.dart';
 import 'package:bosque_flutter/domain/entities/corte_entity.dart';
 import 'package:bosque_flutter/domain/entities/vale_arqueo_entity.dart';
@@ -14,12 +16,21 @@ class ArqueoCajaState {
   final bool guardando;
   final String? mensajeError;
   final bool completado;
+  // idAC del arqueo recién creado — lo devuelve el servidor al registrar
+  // (idGenerado). Null hasta que `registrar()` tiene éxito; es lo único que
+  // necesita el botón "Ver PDF" (RptArqueoDeCaja) para pedir el reporte.
+  final int? idAC;
 
   // Contexto real (no manual) — ver ACCIONes 'A'/'T'/'H' del backend.
   final bool cargandoContexto;
   final List<Map<String, dynamic>> desgloseSap; // por caja: {bd, monto}
   final double?
   tcAyer; // null = no disponible (servidor enlazado caído, o simplemente no hay "ayer")
+  // Fechas crudas (ISO) de las filas "hoy"/"ayer" del backend — solo para
+  // mostrar la tabla de referencia Día/Fecha/T.C. que el legacy sí tiene
+  // (dlgArqCaja, tabla "TIPO DE CAMBIO"); no participan de ningún cálculo.
+  final String? fechaHoyTc;
+  final String? fechaAyerTc;
   final Map<String, dynamic>?
   anterior; // el arqueo anterior de esta sucursal, o null si es el primero
 
@@ -33,9 +44,12 @@ class ArqueoCajaState {
     this.guardando = false,
     this.mensajeError,
     this.completado = false,
+    this.idAC,
     this.cargandoContexto = false,
     this.desgloseSap = const [],
     this.tcAyer,
+    this.fechaHoyTc,
+    this.fechaAyerTc,
     this.anterior,
   });
 
@@ -49,9 +63,12 @@ class ArqueoCajaState {
     bool? guardando,
     String? mensajeError,
     bool? completado,
+    int? idAC,
     bool? cargandoContexto,
     List<Map<String, dynamic>>? desgloseSap,
     double? tcAyer,
+    String? fechaHoyTc,
+    String? fechaAyerTc,
     Map<String, dynamic>? anterior,
   }) => ArqueoCajaState(
     cantidadPorCorte: cantidadPorCorte ?? this.cantidadPorCorte,
@@ -63,9 +80,12 @@ class ArqueoCajaState {
     guardando: guardando ?? this.guardando,
     mensajeError: mensajeError,
     completado: completado ?? this.completado,
+    idAC: idAC ?? this.idAC,
     cargandoContexto: cargandoContexto ?? this.cargandoContexto,
     desgloseSap: desgloseSap ?? this.desgloseSap,
     tcAyer: tcAyer ?? this.tcAyer,
+    fechaHoyTc: fechaHoyTc ?? this.fechaHoyTc,
+    fechaAyerTc: fechaAyerTc ?? this.fechaAyerTc,
     anterior: anterior ?? this.anterior,
   );
 
@@ -77,7 +97,12 @@ class ArqueoCajaState {
       final cantidad = cantidadPorCorte[corte.idCorte] ?? 0;
       if (cantidad <= 0) continue;
       final valor = corte.corte ?? 0;
-      final factor = corte.tipoCorte == 'DOLARES' ? tc : 1;
+      // tac_corte.tipoCorte guarda 'USD'/'BS' (confirmado en vivo,
+      // 2026-09-07) -- 'DOLARES' nunca matcheaba, así que ningún corte en
+      // dólares se convertía con el tipo de cambio (bug real desde que se
+      // construyó este flujo, presente también en el proc del servidor,
+      // corregido ahí en el mismo hallazgo).
+      final factor = corte.tipoCorte == 'USD' ? tc : 1;
       totalCortes += cantidad * valor * factor;
     }
     final totalDocs = montoPorDoc.values.fold<double>(0, (a, b) => a + b);
@@ -149,6 +174,8 @@ class ArqueoCajaNotifier extends StateNotifier<ArqueoCajaState> {
         saldoMovSap: desglose.isNotEmpty ? totalSap : state.saldoMovSap,
         tc: tcHoy ?? state.tc,
         tcAyer: (filaAyer['tipoCambio'] as num?)?.toDouble(),
+        fechaHoyTc: filaHoy['fecha'] as String?,
+        fechaAyerTc: filaAyer['fecha'] as String?,
         anterior: anteriorLista.isNotEmpty ? anteriorLista.first : null,
       );
     } catch (e) {
@@ -186,7 +213,7 @@ class ArqueoCajaNotifier extends StateNotifier<ArqueoCajaState> {
   }) async {
     state = state.copyWith(guardando: true);
     try {
-      await _repo.registrar(
+      final idAC = await _repo.registrar(
         idTarRuti: idTarRuti,
         idBitTarea: idBitTarea,
         saldoMovSap: state.saldoMovSap,
@@ -196,13 +223,17 @@ class ArqueoCajaNotifier extends StateNotifier<ArqueoCajaState> {
         montoPorDoc: state.montoPorDoc,
         vales: state.vales,
       );
-      state = state.copyWith(guardando: false, completado: true);
+      state = state.copyWith(guardando: false, completado: true, idAC: idAC);
       return true;
     } catch (e) {
       state = state.copyWith(guardando: false, mensajeError: e.toString());
       return false;
     }
   }
+
+  /// PDF del arqueo recién registrado (RptArqueoDeCaja) — no toca el
+  /// estado, es una consulta de solo lectura sobre un arqueo que ya existe.
+  Future<Uint8List> reportePdf(int idAC) => _repo.reportePdf(idAC);
 }
 
 final _arqueoCajaRepoProvider = Provider((ref) => ArqueoCajaImpl());

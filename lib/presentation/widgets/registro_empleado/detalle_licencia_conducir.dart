@@ -18,10 +18,8 @@ import 'form_licencia_conducir.dart';
 class DetalleLicenciaConducir extends ConsumerStatefulWidget {
   final int codPersona;
 
-  const DetalleLicenciaConducir({
-    Key? key,
-    required this.codPersona,
-  }) : super(key: key);
+  const DetalleLicenciaConducir({Key? key, required this.codPersona})
+    : super(key: key);
 
   @override
   ConsumerState<DetalleLicenciaConducir> createState() =>
@@ -46,8 +44,9 @@ class _DetalleLicenciaConducirState
     final user = ref.watch(userProvider);
     _audUsuario = user?.codUsuario ?? 0;
 
-    final licenciasAsync =
-        ref.watch(obtenerLicenciasConducirProvider(widget.codPersona));
+    final licenciasAsync = ref.watch(
+      obtenerLicenciasConducirProvider(widget.codPersona),
+    );
 
     return licenciasAsync.when(
       loading: () => const Center(child: CircularProgressIndicator()),
@@ -70,14 +69,14 @@ class _DetalleLicenciaConducirState
           SizedBox(height: context.smallSpacing),
           ...List.generate(
             lista.length,
-            (idx) => _editingIndex == idx
-                ? _buildEditForm(context, idx, lista)
-                : _buildLicenciaCard(context, idx, lista[idx]),
+            (idx) =>
+                _editingIndex == idx
+                    ? _buildEditForm(context, idx, lista)
+                    : _buildLicenciaCard(context, idx, lista[idx]),
           ),
           if (_isAddingNew) _buildNewForm(context),
           if (!_isAddingNew) _buildAddButton(context),
-          if (lista.isEmpty && !_isAddingNew)
-              _buildEmptyState(context),
+          if (lista.isEmpty && !_isAddingNew) _buildEmptyState(context),
         ],
       ),
     );
@@ -114,19 +113,19 @@ class _DetalleLicenciaConducirState
   // TARJETA DE LICENCIA
   // ============================================================================
 
-  Widget _buildLicenciaCard(BuildContext context, int index,
-      LicenciaConducirEntity licencia) {
-    final estaVencida =
-        licencia.fechaCaducidad.isBefore(DateTime.now());
+  Widget _buildLicenciaCard(
+    BuildContext context,
+    int index,
+    LicenciaConducirEntity licencia,
+  ) {
+    final estaVencida = licencia.fechaCaducidad.isBefore(DateTime.now());
 
     return Card(
       margin: EdgeInsets.symmetric(vertical: context.smallSpacing),
       elevation: 0,
       shape: RoundedRectangleBorder(
         side: BorderSide(
-          color: estaVencida
-              ? Colors.red.shade300
-              : Colors.grey.shade300,
+          color: estaVencida ? Colors.red.shade300 : Colors.grey.shade300,
         ),
         borderRadius: context.borderRadius,
       ),
@@ -141,9 +140,7 @@ class _DetalleLicenciaConducirState
           child: Icon(
             Icons.card_giftcard,
             size: context.smallIconSize,
-            color: estaVencida
-                ? Colors.red.shade700
-                : Colors.blue.shade700,
+            color: estaVencida ? Colors.red.shade700 : Colors.blue.shade700,
           ),
         ),
         title: _buildTitle(context, licencia, estaVencida),
@@ -167,9 +164,7 @@ class _DetalleLicenciaConducirState
             getCode: (tipo) => tipo.codTipos,
             getDescription: (tipo) => tipo.nombre,
             fallback: licencia.categoria,
-            style: context.bodyStyle.copyWith(
-              fontWeight: FontWeight.w600,
-            ),
+            style: context.bodyStyle.copyWith(fontWeight: FontWeight.w600),
           ),
         ),
         if (estaVencida)
@@ -178,10 +173,7 @@ class _DetalleLicenciaConducirState
             child: Chip(
               label: const Text(
                 'Vencida',
-                style: TextStyle(
-                  fontSize: 10,
-                  color: Colors.white,
-                ),
+                style: TextStyle(fontSize: 10, color: Colors.white),
               ),
               backgroundColor: Colors.redAccent,
               padding: EdgeInsets.zero,
@@ -199,9 +191,7 @@ class _DetalleLicenciaConducirState
     return Text(
       'Vence: ${FechaUtils.formatDate(licencia.fechaCaducidad)}',
       style: context.bodyLightStyle.copyWith(
-        color: estaVencida
-            ? Colors.red.shade600
-            : Colors.grey.shade600,
+        color: estaVencida ? Colors.red.shade600 : Colors.grey.shade600,
       ),
     );
   }
@@ -229,8 +219,7 @@ class _DetalleLicenciaConducirState
             size: context.iconSize,
             color: Colors.redAccent,
           ),
-          onPressed: () =>
-              _deleteFromServer(licencia.codLicencia),
+          onPressed: () => _deleteFromServer(licencia.codLicencia),
           tooltip: 'Eliminar',
         ),
       ],
@@ -327,15 +316,15 @@ class _DetalleLicenciaConducirState
     await executeABM(
       ref: ref,
       context: context,
-      operation: () => ref.read(
-        registrarLicenciaConducirProvider(licencia).future,
-      ),
+      operation:
+          () => ref.read(registrarLicenciaConducirProvider(licencia).future),
       providersToInvalidate: [
         obtenerLicenciasConducirProvider(widget.codPersona),
       ],
-      successMessage: licencia.codLicencia == 0
-          ? 'Licencia registrada correctamente'
-          : 'Licencia actualizada correctamente',
+      successMessage:
+          licencia.codLicencia == 0
+              ? 'Licencia registrada correctamente'
+              : 'Licencia actualizada correctamente',
     );
 
     if (mounted) {
@@ -347,9 +336,8 @@ class _DetalleLicenciaConducirState
     final success = await executeABM(
       ref: ref,
       context: context,
-      operation: () => ref.read(
-        eliminarLicenciaConducirProvider(codLicencia).future,
-      ),
+      operation:
+          () => ref.read(eliminarLicenciaConducirProvider(codLicencia).future),
       providersToInvalidate: [
         obtenerLicenciasConducirProvider(widget.codPersona),
       ],

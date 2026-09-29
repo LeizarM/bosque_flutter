@@ -5,11 +5,20 @@ import 'package:bosque_flutter/core/state/tarea_rutinaria_provider.dart';
 import 'package:bosque_flutter/core/state/tareas_por_cargo_provider.dart';
 import 'package:bosque_flutter/core/state/user_provider.dart';
 import 'package:bosque_flutter/core/theme/tareas_colors.dart';
+import 'package:bosque_flutter/core/constants/tareas_breakpoints.dart';
+import 'package:bosque_flutter/core/utils/formatear_fecha.dart';
 import 'package:bosque_flutter/domain/entities/accion_tarea_rutinaria_entity.dart';
 import 'package:bosque_flutter/domain/entities/cargo_entity.dart';
 import 'package:bosque_flutter/domain/entities/tarea_rutinaria_entity.dart';
 import 'package:bosque_flutter/presentation/widgets/shared/aviso.dart';
+import 'package:bosque_flutter/presentation/widgets/tareas-rutinarias/tabla_modulo.dart';
 import 'package:bosque_flutter/presentation/widgets/tareas-rutinarias/copiar_a_cargos_dialog.dart';
+import 'package:bosque_flutter/presentation/widgets/tareas-rutinarias/elegir_tarea_del_catalogo_dialog.dart';
+import 'package:bosque_flutter/presentation/widgets/tareas-rutinarias/crear_tarea_por_cargo_sheet.dart';
+import 'package:bosque_flutter/core/theme/tareas_tema.dart';
+import 'package:bosque_flutter/core/ui/tokens_bosque.dart';
+import 'package:bosque_flutter/presentation/widgets/tareas-rutinarias/franja_acento.dart';
+import 'package:bosque_flutter/presentation/widgets/tareas-rutinarias/pagina_tareas.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -20,17 +29,25 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 /// relación con tac_*, y queda fuera de este alcance a pedido de Marcelo.
 ///
 /// Admin/RRHH-only (mismo gate que registrar-tar-ru-x-cargo): a diferencia
-/// de "Programar tarea a mi equipo" (jefe, subárbol propio), acá se puede
+/// de "Programar tarea a mi equipo" (jefe, subárbol propio), aquí se puede
 /// asignar/editar/copiar para CUALQUIER cargo de la empresa.
+/// Filtro por frecuencia. `null` = todas.
+///
+/// Vive en un provider y no en un StatefulWidget para no convertir toda la
+/// pantalla: es estado de interfaz, se descarta al salir, y va por cargo
+/// porque abrir otro cargo no deberia heredar el filtro del anterior.
+final filtroFrecuenciaPorCargo =
+    StateProvider.autoDispose.family<int?, int>((ref, codCargo) => null);
+
+/// Filtro por estado. `null` = todas, `true` solo activas, `false` solo
+/// inactivas.
+final filtroActivoPorCargo =
+    StateProvider.autoDispose.family<bool?, int>((ref, codCargo) => null);
+
 class TareasRutinariasPorCargoScreen extends ConsumerWidget {
   final CargoEntity cargo;
 
   const TareasRutinariasPorCargoScreen({super.key, required this.cargo});
-
-  String _dateFmt(DateTime? d) {
-    if (d == null) return '—';
-    return '${d.day.toString().padLeft(2, '0')}/${d.month.toString().padLeft(2, '0')}/${d.year}';
-  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -51,37 +68,56 @@ class TareasRutinariasPorCargoScreen extends ConsumerWidget {
       }
     });
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          'Tareas rutinarias — ${cargo.descripcion}',
-          style: const TextStyle(fontSize: 16),
+    return TareasScope(
+      child: Scaffold(
+        appBar: AppBarTareas(
+          titulo: cargo.descripcion,
+          subtitulo:
+              state.items.isEmpty
+                  ? 'Tareas rutinarias del cargo'
+                  : 'Tareas rutinarias del cargo · '
+                      '${state.items.where((f) => ((f['estado'] as num?)?.toInt() ?? 1) == 1).length} activas',
+          insignia: InsigniaTarea.modulo(context, Icons.badge_outlined),
+          acciones: [
+            IconButton(
+              icon: const Icon(Icons.category_outlined),
+              tooltip: 'Acciones de tarea rutinaria (catálogo)',
+              onPressed: () => _abrirAccionesCatalogo(context),
+            ),
+            IconButton(
+              tooltip: 'Actualizar',
+              icon: const Icon(Icons.refresh),
+              onPressed: notifier.cargar,
+            ),
+          ],
+          bottom:
+              state.items.isEmpty
+                  ? null
+                  : PreferredSize(
+                    preferredSize: const Size.fromHeight(50),
+                    child: _BarraFiltros(codCargo: cargo.codCargo, items: state.items),
+                  ),
         ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.rule_folder_outlined),
-            tooltip: 'Acciones de tarea rutinaria (catálogo)',
-            onPressed: () => _abrirAccionesCatalogo(context),
+        floatingActionButton: FloatingActionButton.extended(
+          onPressed: () {
+            HapticFeedback.selectionClick();
+            _elegirComoAgregar(context, ref);
+          },
+          icon: const Icon(Icons.add),
+          label: const Text('Agregar tarea rutinaria'),
+        ),
+        body: AnimatedSwitcher(
+          duration: const Duration(milliseconds: 220),
+          switchInCurve: Curves.easeOut,
+          switchOutCurve: Curves.easeIn,
+          // El ancho del cajón y no el de la ventana: el sidebar del
+          // dashboard se come 260 px.
+          child: LayoutBuilder(
+            builder:
+                (context, cajon) =>
+                    _buildBody(context, ref, state, notifier, cajon.maxWidth),
           ),
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: notifier.cargar,
-          ),
-        ],
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {
-          HapticFeedback.selectionClick();
-          _abrirCrearTarea(context, ref);
-        },
-        icon: const Icon(Icons.add),
-        label: const Text('Agregar tarea rutinaria'),
-      ),
-      body: AnimatedSwitcher(
-        duration: const Duration(milliseconds: 220),
-        switchInCurve: Curves.easeOut,
-        switchOutCurve: Curves.easeIn,
-        child: _buildBody(context, ref, state, notifier),
+        ),
       ),
     );
   }
@@ -91,6 +127,7 @@ class TareasRutinariasPorCargoScreen extends ConsumerWidget {
     WidgetRef ref,
     TareasPorCargoState state,
     TareasPorCargoNotifier notifier,
+    double anchoDisponible,
   ) {
     if (state.cargando && state.items.isEmpty) {
       return const Center(
@@ -100,75 +137,111 @@ class TareasRutinariasPorCargoScreen extends ConsumerWidget {
     }
 
     if (state.mensajeError != null && state.items.isEmpty) {
-      return Center(
+      return EstadoTareas.error(
         key: const ValueKey('error'),
-        child: Padding(
-          padding: const EdgeInsets.all(32),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                Icons.error_outline,
-                size: 56,
-                color: Theme.of(context).colorScheme.error,
-              ),
-              const SizedBox(height: 16),
-              const Text('No se pudieron cargar las tareas de este cargo.'),
-              const SizedBox(height: 16),
-              FilledButton.tonalIcon(
-                onPressed: notifier.cargar,
-                icon: const Icon(Icons.refresh),
-                label: const Text('Reintentar'),
-              ),
-            ],
-          ),
-        ),
+        titulo: 'No se pudieron cargar las tareas de este cargo',
+        error: state.mensajeError,
+        onReintentar: notifier.cargar,
       );
     }
 
     if (state.items.isEmpty) {
-      return Center(
+      return EstadoTareas(
         key: const ValueKey('vacio'),
-        child: Padding(
-          padding: const EdgeInsets.all(32),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                Icons.assignment_outlined,
-                size: 56,
-                color: Theme.of(context).colorScheme.outline,
-              ),
-              const SizedBox(height: 16),
-              const Text(
-                'Este cargo todavía no tiene tareas rutinarias asignadas.',
-              ),
-              const SizedBox(height: 16),
-              FilledButton.icon(
-                onPressed: () => _abrirCrearTarea(context, ref),
-                icon: const Icon(Icons.add),
-                label: const Text('Agregar la primera'),
-              ),
-            ],
-          ),
+        icono: Icons.assignment_outlined,
+        titulo: 'Este cargo todavía no tiene tareas rutinarias asignadas',
+        accion: FilledButton.icon(
+          onPressed: () => _abrirCrearTarea(context, ref),
+          icon: const Icon(Icons.add),
+          label: const Text('Agregar la primera'),
         ),
       );
     }
 
-    final anchoDisponible = MediaQuery.sizeOf(context).width;
-    final esAncho = anchoDisponible >= 900;
+    // La tabla pide mas aire que las tarjetas: por debajo de esto las seis
+    // columnas se pisan y se lee peor que una lista.
+    final enTabla = anchoDisponible >= TareasBreakpoints.wideMax;
+
+    final filas = _aplicarFiltros(ref, state.items);
+
+    if (filas.isEmpty) {
+      // Se distingue de "este cargo no tiene tareas": aqui SI tiene, y lo que
+      // falta es sacar un filtro. Decir lo mismo en los dos casos manda a
+      // buscar un problema que no existe.
+      return EstadoTareas(
+        key: const ValueKey('sinCoincidencias'),
+        icono: Icons.filter_alt_off_outlined,
+        titulo:
+            'Ninguna de las ${state.items.length} tareas de este cargo '
+            'coincide con los filtros',
+        accion: TextButton.icon(
+          onPressed: () {
+            ref.read(filtroFrecuenciaPorCargo(cargo.codCargo).notifier).state =
+                null;
+            ref.read(filtroActivoPorCargo(cargo.codCargo).notifier).state =
+                null;
+          },
+          icon: const Icon(Icons.clear_all),
+          label: const Text('Quitar filtros'),
+        ),
+      );
+    }
+
+    if (enTabla) {
+      return RefreshIndicator(
+        key: const ValueKey('tabla'),
+        onRefresh: notifier.cargar,
+        child: Padding(
+          // Abajo, el alto del FAB "Agregar tarea rutinaria": tapaba el
+          // menú de la última fila.
+          padding: const EdgeInsets.fromLTRB(Esp.l, Esp.m, Esp.l, aireBajoFab),
+          child: MarcoTabla(
+            child: Column(
+              children: [
+                const EncabezadoTabla(
+                  anchos: _anchosCargo,
+                  titulos: [
+                    'Activa',
+                    'Tarea',
+                    'Frecuencia',
+                    'Asignada desde',
+                    'Hasta',
+                    '',
+                  ],
+                ),
+                Expanded(
+                  child: ListView.builder(
+                    itemCount: filas.length,
+                    itemBuilder:
+                        (context, i) => _FilaTablaTarea(
+                          fila: filas[i],
+                          guardando: state.guardando,
+                          onToggle: () {
+                            HapticFeedback.selectionClick();
+                            notifier.toggleEstado(filas[i]);
+                          },
+                          onEditar:
+                              () => _abrirEditarTarea(context, ref, filas[i]),
+                          onCopiar:
+                              () => _abrirCopiarACargos(context, ref, filas[i]),
+                        ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
 
     return RefreshIndicator(
       key: const ValueKey('contenido'),
       onRefresh: notifier.cargar,
       child: ListView.builder(
-        padding: EdgeInsets.symmetric(
-          vertical: 12,
-          horizontal: esAncho ? (anchoDisponible - 900) / 2 + 12 : 12,
-        ),
-        itemCount: state.items.length,
+        padding: const EdgeInsets.fromLTRB(Esp.m, Esp.m, Esp.m, aireBajoFab),
+        itemCount: filas.length,
         itemBuilder: (context, i) {
-          final fila = state.items[i];
+          final fila = filas[i];
           final idFrec = (fila['idFrec'] as num?)?.toInt();
           final estadoActivo = ((fila['estado'] as num?)?.toInt() ?? 1) == 1;
           return TweenAnimationBuilder<double>(
@@ -184,28 +257,18 @@ class TareasRutinariasPorCargoScreen extends ConsumerWidget {
                     child: child,
                   ),
                 ),
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 200),
+            // La franja con FranjaAcento y no con un Border de un solo lado:
+            // un Border que no es uniforme junto con borderRadius lanza al
+            // pintarse (ver arqueo_caja_screen.dart), y en un teléfono la
+            // tarjeta quedaba sin dibujar.
+            child: Card(
               margin: const EdgeInsets.only(bottom: 8),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(12),
-                border: Border(
-                  left: BorderSide(
-                    width: 4,
-                    color:
-                        estadoActivo
-                            ? TareasColors.realizado(context)
-                            : Theme.of(context).colorScheme.outlineVariant,
-                  ),
-                ),
-              ),
-              child: Card(
-                margin: EdgeInsets.zero,
-                shape: const RoundedRectangleBorder(
-                  borderRadius: BorderRadius.horizontal(
-                    right: Radius.circular(12),
-                  ),
-                ),
+              clipBehavior: Clip.antiAlias,
+              child: FranjaAcento(
+                color:
+                    estadoActivo
+                        ? TareasColors.realizadoTexto(context)
+                        : Theme.of(context).colorScheme.outlineVariant,
                 child: ListTile(
                   title: Text(
                     (fila['descripcion'] as String?) ?? 'Sin descripción',
@@ -222,28 +285,14 @@ class TareasRutinariasPorCargoScreen extends ConsumerWidget {
                       crossAxisAlignment: WrapCrossAlignment.center,
                       children: [
                         if (idFrec != null)
-                          Chip(
-                            label: Text(
-                              (fila['descripcionFrecuencia'] as String?) ??
-                                  'Frecuencia $idFrec',
-                            ),
-                            backgroundColor: TareasColors.frecuencia(
-                              context,
-                              idFrec,
-                            ),
-                            labelStyle: TextStyle(
-                              fontSize: 11,
-                              color: TareasColors.frecuenciaTexto(
-                                context,
-                                idFrec,
-                              ),
-                            ),
-                            visualDensity: VisualDensity.compact,
-                            materialTapTargetSize:
-                                MaterialTapTargetSize.shrinkWrap,
+                          PildoraTareas.frecuencia(
+                            context,
+                            idFrec,
+                            (fila['descripcionFrecuencia'] as String?) ??
+                                'Frecuencia $idFrec',
                           ),
                         Text(
-                          'Desde: ${_dateFmt(DateTime.tryParse((fila['fechaPartida'] ?? '').toString()))}',
+                          textoVigenciaAsignacion(fila),
                           style: Theme.of(context).textTheme.bodySmall,
                         ),
                       ],
@@ -295,12 +344,136 @@ class TareasRutinariasPorCargoScreen extends ConsumerWidget {
     );
   }
 
-  void _abrirCrearTarea(BuildContext context, WidgetRef ref) {
-    showModalBottomSheet(
+  /// Aplica los dos filtros de la barra.
+  List<Map<String, dynamic>> _aplicarFiltros(
+    WidgetRef ref,
+    List<Map<String, dynamic>> items,
+  ) {
+    final frec = ref.watch(filtroFrecuenciaPorCargo(cargo.codCargo));
+    final activo = ref.watch(filtroActivoPorCargo(cargo.codCargo));
+    return items.where((f) {
+      if (frec != null && (f['idFrec'] as num?)?.toInt() != frec) return false;
+      if (activo != null) {
+        final esActiva = ((f['estado'] as num?)?.toInt() ?? 1) == 1;
+        if (esActiva != activo) return false;
+      }
+      return true;
+    }).toList();
+  }
+
+  /// Pregunta si la tarea sale del catálogo o es nueva.
+  ///
+  /// Antes este botón creaba siempre una tarea NUEVA, y no había forma de
+  /// enganchar una existente desde el lado del cargo. El resultado se ve en
+  /// los datos: 7 descripciones repetidas en el catálogo, y una tarea
+  /// asignada dos veces al mismo cargo por dos `idTarRuti` distintos — que el
+  /// índice único no puede impedir, porque para la base son dos tareas.
+  ///
+  /// "Elegir del catálogo" va primero a propósito: reusar es lo correcto casi
+  /// siempre, y crear una nueva debería costar un toque más que reusar, no al
+  /// revés.
+  Future<void> _elegirComoAgregar(BuildContext context, WidgetRef ref) async {
+    final delCatalogo = await showModalBottomSheet<bool>(
+      context: context,
+      builder:
+          (ctx) => SafeArea(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                ListTile(
+                  leading: const Icon(Icons.playlist_add_check),
+                  title: const Text('Elegir del catálogo'),
+                  subtitle: const Text(
+                    'Reusa una tarea que ya existe. No se ofrecen las que '
+                    'este cargo ya tiene.',
+                  ),
+                  onTap: () => Navigator.of(ctx).pop(true),
+                ),
+                ListTile(
+                  leading: const Icon(Icons.note_add_outlined),
+                  title: const Text('Crear una tarea nueva'),
+                  subtitle: const Text(
+                    'Solo si de verdad no existe todavía.',
+                  ),
+                  onTap: () => Navigator.of(ctx).pop(false),
+                ),
+              ],
+            ),
+          ),
+    );
+    if (delCatalogo == null || !context.mounted) return;
+    if (delCatalogo) {
+      await _abrirCatalogo(context, ref);
+    } else {
+      await _abrirCrearTarea(context, ref);
+    }
+  }
+
+  /// El selector de tareas ya existentes.
+  Future<void> _abrirCatalogo(BuildContext context, WidgetRef ref) async {
+    final notifier = ref.read(
+      tareasRutinariasPorCargoProvider(cargo.codCargo).notifier,
+    );
+    // Se manda el ESTADO de cada asignación, no solo los ids: una tarea
+    // inactiva tampoco se puede volver a insertar (quedarían dos filas para
+    // el mismo par tarea/cargo, porque el índice único solo mira las
+    // activas), pero el motivo es distinto y el diálogo lo dice.
+    final yaAsignadas = <int, bool>{
+      for (final f in ref.read(tareasRutinariasPorCargoProvider(cargo.codCargo)).items)
+        if ((f['idTarRuti'] as num?) != null)
+          (f['idTarRuti'] as num).toInt():
+              ((f['estado'] as num?)?.toInt() ?? 1) == 1,
+    };
+
+    await showDialog<void>(
+      context: context,
+      builder:
+          (ctx) => ElegirTareaDelCatalogoDialog(
+            yaAsignadas: yaAsignadas,
+            nombreCargo: cargo.descripcion,
+            onElegidas: (ids, desde) =>
+                notifier.asignarExistentes(ids, desde: desde),
+            // La misma operación que el interruptor de la lista: toggleEstado
+            // invierte el estado de la fila, y aquí solo se le pasan filas
+            // inactivas.
+            onReactivar: (idTarRuti) async {
+              final filas =
+                  ref.read(tareasRutinariasPorCargoProvider(cargo.codCargo)).items;
+              for (final f in filas) {
+                if ((f['idTarRuti'] as num?)?.toInt() == idTarRuti &&
+                    ((f['estado'] as num?)?.toInt() ?? 1) != 1) {
+                  return notifier.toggleEstado(f);
+                }
+              }
+              return false;
+            },
+          ),
+    );
+  }
+
+  /// Abre la hoja compartida ([CrearTareaPorCargoSheet]) con la lista de un
+  /// único elemento -- el cargo de esta pantalla -- para no cambiar en nada
+  /// el flujo de "Agregar tarea rutinaria" que ya existía aquí. Lo único que
+  /// se mueve es de dónde sale el aviso de éxito: la hoja, al ser
+  /// reutilizable desde el catálogo (que no tiene un `codCargo` propio para
+  /// escuchar), ya no toca el estado de [tareasRutinariasPorCargoProvider]
+  /// -- ver el porqué en su propio doc comment --, así que este método
+  /// dispara el mismo aviso/haptic/refresco que antes disparaba el
+  /// `ref.listen` de arriba al ver `mensajeExito`.
+  Future<void> _abrirCrearTarea(BuildContext context, WidgetRef ref) async {
+    final creada = await showModalBottomSheet<bool>(
       context: context,
       isScrollControlled: true,
-      builder: (context) => _CrearTareaPorCargoSheet(codCargo: cargo.codCargo),
+      builder:
+          (context) => CrearTareaPorCargoSheet(codCargos: [cargo.codCargo]),
     );
+    if (creada == true && context.mounted) {
+      HapticFeedback.mediumImpact();
+      mostrarAviso(context, 'Tarea creada y asignada a este cargo.');
+      ref
+          .read(tareasRutinariasPorCargoProvider(cargo.codCargo).notifier)
+          .cargar();
+    }
   }
 
   void _abrirEditarTarea(
@@ -353,193 +526,6 @@ class TareasRutinariasPorCargoScreen extends ConsumerWidget {
     showDialog(
       context: context,
       builder: (context) => const _AccionesTareaRutinariaDialog(),
-    );
-  }
-}
-
-// ============================================================================
-// Hoja "Agregar Tarea Rutinaria" — crea la tarea y la asigna a ESTE cargo.
-// ============================================================================
-class _CrearTareaPorCargoSheet extends ConsumerStatefulWidget {
-  final int codCargo;
-
-  const _CrearTareaPorCargoSheet({required this.codCargo});
-
-  @override
-  ConsumerState<_CrearTareaPorCargoSheet> createState() =>
-      _CrearTareaPorCargoSheetState();
-}
-
-class _CrearTareaPorCargoSheetState
-    extends ConsumerState<_CrearTareaPorCargoSheet> {
-  final _formKey = GlobalKey<FormState>();
-  final _descripcionCtrl = TextEditingController();
-  int? _idFrec;
-  DateTime _fechaPartida = DateTime.now();
-
-  @override
-  void dispose() {
-    _descripcionCtrl.dispose();
-    super.dispose();
-  }
-
-  String _dateFmt(DateTime d) =>
-      '${d.day.toString().padLeft(2, '0')}/${d.month.toString().padLeft(2, '0')}/${d.year}';
-
-  @override
-  Widget build(BuildContext context) {
-    final frecuenciaState = ref.watch(frecuenciaProvider);
-    final estado = ref.watch(tareasRutinariasPorCargoProvider(widget.codCargo));
-
-    return Padding(
-      padding: EdgeInsets.only(
-        left: 20,
-        right: 20,
-        top: 20,
-        bottom: MediaQuery.of(context).viewInsets.bottom + 20,
-      ),
-      child: Form(
-        key: _formKey,
-        child: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Row(
-                children: [
-                  Icon(
-                    Icons.assignment_add,
-                    color: Theme.of(context).colorScheme.primary,
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    'Nueva tarea rutinaria',
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 20),
-              TextFormField(
-                controller: _descripcionCtrl,
-                maxLength: 500,
-                maxLines: 2,
-                decoration: const InputDecoration(
-                  labelText: 'Qué hay que hacer',
-                  border: OutlineInputBorder(),
-                ),
-                validator:
-                    (v) =>
-                        (v == null || v.trim().isEmpty)
-                            ? 'Describe la tarea.'
-                            : null,
-              ),
-              const SizedBox(height: 16),
-              Text(
-                'Con qué frecuencia',
-                style: Theme.of(context).textTheme.labelLarge,
-              ),
-              const SizedBox(height: 8),
-              if (frecuenciaState.cargando)
-                const LinearProgressIndicator()
-              else
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children:
-                      frecuenciaState.items.map((f) {
-                        final elegido = _idFrec == f.idFrec;
-                        return ChoiceChip(
-                          selected: elegido,
-                          onSelected: (_) => setState(() => _idFrec = f.idFrec),
-                          label: Text(f.descripcion ?? 'Sin nombre'),
-                          backgroundColor: TareasColors.frecuencia(
-                            context,
-                            f.idFrec,
-                          ),
-                          selectedColor: TareasColors.frecuencia(
-                            context,
-                            f.idFrec,
-                          ),
-                          labelStyle: TextStyle(
-                            color: TareasColors.frecuenciaTexto(
-                              context,
-                              f.idFrec,
-                            ),
-                            fontWeight:
-                                elegido ? FontWeight.w700 : FontWeight.w500,
-                          ),
-                        );
-                      }).toList(),
-                ),
-              const SizedBox(height: 16),
-              Text(
-                'Empieza a repetirse desde',
-                style: Theme.of(context).textTheme.labelLarge,
-              ),
-              const SizedBox(height: 8),
-              OutlinedButton.icon(
-                onPressed: () async {
-                  final elegida = await showDatePicker(
-                    context: context,
-                    initialDate: _fechaPartida,
-                    firstDate: DateTime(2020),
-                    lastDate: DateTime(2100),
-                  );
-                  if (elegida != null) setState(() => _fechaPartida = elegida);
-                },
-                icon: const Icon(Icons.event_outlined),
-                label: Text(_dateFmt(_fechaPartida)),
-              ),
-              const SizedBox(height: 24),
-              SizedBox(
-                width: double.infinity,
-                child: FilledButton.icon(
-                  onPressed:
-                      estado.guardando
-                          ? null
-                          : () async {
-                            if (!_formKey.currentState!.validate()) return;
-                            if (_idFrec == null) {
-                              HapticFeedback.lightImpact();
-                              mostrarAviso(
-                                context,
-                                'Elige una frecuencia.',
-                                tono: TonoAviso.aviso,
-                              );
-                              return;
-                            }
-                            final ok = await ref
-                                .read(
-                                  tareasRutinariasPorCargoProvider(
-                                    widget.codCargo,
-                                  ).notifier,
-                                )
-                                .crearTarea(
-                                  descripcion: _descripcionCtrl.text.trim(),
-                                  idFrec: _idFrec!,
-                                  fechaPartida: _fechaPartida,
-                                );
-                            if (ok && context.mounted) {
-                              Navigator.of(context).pop();
-                            }
-                          },
-                  icon:
-                      estado.guardando
-                          ? const SizedBox(
-                            width: 16,
-                            height: 16,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                          : const Icon(Icons.check),
-                  label: Text(estado.guardando ? 'Guardando…' : 'Crear tarea'),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
     );
   }
 }
@@ -612,6 +598,25 @@ class _EditarTareaDialogState extends ConsumerState<_EditarTareaDialog> {
                       label: Text(f.descripcion ?? '—'),
                     );
                   }).toList(),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Fecha de partida',
+              style: Theme.of(context).textTheme.labelLarge,
+            ),
+            const SizedBox(height: 8),
+            OutlinedButton.icon(
+              onPressed: () async {
+                final elegida = await showDatePicker(
+                  context: context,
+                  initialDate: _fechaPartida,
+                  firstDate: DateTime(2020),
+                  lastDate: DateTime(2100),
+                );
+                if (elegida != null) setState(() => _fechaPartida = elegida);
+              },
+              icon: const Icon(Icons.event_outlined),
+              label: Text(FormatearFecha.formatearFecha(_fechaPartida)),
             ),
           ],
         ),
@@ -781,6 +786,211 @@ class _AccionesTareaRutinariaDialogState
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
           child: const Text('Cerrar'),
+        ),
+      ],
+    );
+  }
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// Cuando empieza y termina la ASIGNACION de esta tarea a este cargo.
+///
+/// Lee `fechaInicio`/`fechaFin` de tac_tarRuXCargo, no `fechaPartida` de la
+/// tarea. La pantalla mostraba lo segundo bajo el rotulo "Desde:", y son cosas
+/// distintas: `fechaPartida` es desde cuando existe la TAREA, `fechaInicio` es
+/// desde cuando la tiene ESTE cargo. Medido el 2026-09-10: difieren en 534 de
+/// las 541 asignaciones, asi que el rotulo estaba equivocado casi siempre —
+/// para el cargo de la captura decia 2020 cuando la asignacion es de 2026.
+String textoVigenciaAsignacion(Map<String, dynamic> fila) {
+  String fmt(Object? v) {
+    final d = DateTime.tryParse((v ?? '').toString());
+    if (d == null) return '—';
+    return '${d.day.toString().padLeft(2, '0')}/'
+        '${d.month.toString().padLeft(2, '0')}/${d.year}';
+  }
+
+  final desde = fmt(fila['fechaInicio']);
+  final hasta = fila['fechaFin'] == null ? null : fmt(fila['fechaFin']);
+  return hasta == null ? 'Desde: $desde' : 'Del $desde al $hasta';
+}
+
+/// Los filtros. Solo ofrecen frecuencias que este cargo REALMENTE tiene: un
+/// chip "Bimestral (0)" es una promesa vacia.
+class _BarraFiltros extends ConsumerWidget {
+  final int codCargo;
+  final List<Map<String, dynamic>> items;
+
+  const _BarraFiltros({required this.codCargo, required this.items});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final frecSel = ref.watch(filtroFrecuenciaPorCargo(codCargo));
+    final activoSel = ref.watch(filtroActivoPorCargo(codCargo));
+
+    final porFrecuencia = <int, ({String nombre, int cuantas})>{};
+    var activas = 0;
+    for (final f in items) {
+      final id = (f['idFrec'] as num?)?.toInt();
+      if (id != null) {
+        final actual = porFrecuencia[id];
+        porFrecuencia[id] = (
+          nombre:
+              (f['descripcionFrecuencia'] as String?) ?? 'Frecuencia $id',
+          cuantas: (actual?.cuantas ?? 0) + 1,
+        );
+      }
+      if (((f['estado'] as num?)?.toInt() ?? 1) == 1) activas++;
+    }
+    final inactivas = items.length - activas;
+
+    return SizedBox(
+      height: 50,
+      child: ListView(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 12),
+        children: [
+          Center(
+            child: FilterChip(
+              label: Text('Activas ($activas)'),
+              selected: activoSel == true,
+              showCheckmark: false,
+              avatar: const Icon(Icons.toggle_on_outlined, size: 18),
+              onSelected: (v) =>
+                  ref.read(filtroActivoPorCargo(codCargo).notifier).state =
+                      v ? true : null,
+            ),
+          ),
+          const SizedBox(width: 8),
+          Center(
+            child: FilterChip(
+              label: Text('Inactivas ($inactivas)'),
+              selected: activoSel == false,
+              showCheckmark: false,
+              avatar: const Icon(Icons.toggle_off_outlined, size: 18),
+              onSelected: (v) =>
+                  ref.read(filtroActivoPorCargo(codCargo).notifier).state =
+                      v ? false : null,
+            ),
+          ),
+          if (porFrecuencia.length > 1) ...[
+            const SizedBox(width: 12),
+            const Center(child: SizedBox(height: 24, child: VerticalDivider())),
+            const SizedBox(width: 12),
+            for (final e in porFrecuencia.entries) ...[
+              Center(
+                child: FilterChip(
+                  label: Text('${e.value.nombre} (${e.value.cuantas})'),
+                  selected: frecSel == e.key,
+                  showCheckmark: false,
+                  backgroundColor: TareasColors.frecuencia(context, e.key),
+                  onSelected: (v) => ref
+                      .read(filtroFrecuenciaPorCargo(codCargo).notifier)
+                      .state = v ? e.key : null,
+                ),
+              ),
+              const SizedBox(width: 8),
+            ],
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+const _anchosCargo = <AnchoCol>[
+  AnchoCol.fijo(70), // activa
+  AnchoCol.flexible(3), // tarea
+  AnchoCol.fijo(120), // frecuencia
+  AnchoCol.fijo(130), // asignada desde
+  AnchoCol.fijo(110), // hasta
+  AnchoCol.fijo(48), // acciones
+];
+
+class _FilaTablaTarea extends StatelessWidget {
+  final Map<String, dynamic> fila;
+  final bool guardando;
+  final VoidCallback onToggle;
+  final VoidCallback onEditar;
+  final VoidCallback onCopiar;
+
+  const _FilaTablaTarea({
+    required this.fila,
+    required this.guardando,
+    required this.onToggle,
+    required this.onEditar,
+    required this.onCopiar,
+  });
+
+  String _fmt(Object? v) {
+    final d = DateTime.tryParse((v ?? '').toString());
+    if (d == null) return '—';
+    return '${d.day.toString().padLeft(2, '0')}/'
+        '${d.month.toString().padLeft(2, '0')}/${d.year}';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final idFrec = (fila['idFrec'] as num?)?.toInt();
+    final activa = ((fila['estado'] as num?)?.toInt() ?? 1) == 1;
+
+    return FilaTabla(
+      anchos: _anchosCargo,
+      celdas: [
+        Switch(
+          value: activa,
+          onChanged: guardando ? null : (_) => onToggle(),
+        ),
+        Text(
+          (fila['descripcion'] as String?) ?? 'Sin descripción',
+          // Tachada cuando esta inactiva: en una tabla, el interruptor de la
+          // primera columna se pierde de vista al leer la fila entera.
+          style: TextStyle(
+            decoration: activa ? null : TextDecoration.lineThrough,
+            color:
+                activa ? null : Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
+          overflow: TextOverflow.ellipsis,
+          maxLines: 2,
+        ),
+        if (idFrec == null)
+          const Text('—')
+        else
+          Align(
+            alignment: Alignment.centerLeft,
+            child: PildoraTareas.frecuencia(
+              context,
+              idFrec,
+              (fila['descripcionFrecuencia'] as String?) ?? 'Frec. $idFrec',
+            ),
+          ),
+        Text(_fmt(fila['fechaInicio'])),
+        Text(
+          fila['fechaFin'] == null ? 'Permanente' : _fmt(fila['fechaFin']),
+          style: fila['fechaFin'] == null
+              ? TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant)
+              : null,
+        ),
+        PopupMenuButton<String>(
+          tooltip: 'Más acciones',
+          onSelected: (o) => o == 'editar' ? onEditar() : onCopiar(),
+          itemBuilder: (context) => const [
+            PopupMenuItem(
+              value: 'editar',
+              child: ListTile(
+                leading: Icon(Icons.edit_outlined),
+                title: Text('Editar'),
+              ),
+            ),
+            PopupMenuItem(
+              value: 'copiar',
+              child: ListTile(
+                leading: Icon(Icons.copy_all_outlined),
+                title: Text('Copiar a otros cargos'),
+              ),
+            ),
+          ],
         ),
       ],
     );

@@ -548,7 +548,7 @@ class _FacturasEjecutadasViewState
       // ignore: avoid_web_libraries_in_flutter
 
       final uploadInput = html.FileUploadInputElement();
-      uploadInput.accept = '.xlsx,.xlsm';
+      uploadInput.accept = '.xlsx,.xls,.xlsm';
       uploadInput.click();
       uploadInput.onChange.listen((e) {
         final file = uploadInput.files?.first;
@@ -565,14 +565,16 @@ class _FacturasEjecutadasViewState
 
       final params = OpenFileDialogParams(
         dialogType: OpenFileDialogType.document,
-        //allowedExtensions: ['xlsx', 'xlsm'],
+        //allowedExtensions: ['xlsx', 'xls', 'xlsm'],
       );
       final filePath = await FlutterFileDialog.pickFile(params: params);
       if (filePath != null) {
         final file = io.File(filePath);
         final bytes = await file.readAsBytes();
         final fileName = file.uri.pathSegments.last;
-        if (fileName.endsWith('.xlsx') || fileName.endsWith('.xlsm')) {
+        if (fileName.endsWith('.xlsx') ||
+            fileName.endsWith('.xls') ||
+            fileName.endsWith('.xlsm')) {
           onSelected(bytes, fileName);
         } else {
           // Opcional: muestra un mensaje de error

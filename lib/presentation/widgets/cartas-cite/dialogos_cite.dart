@@ -23,7 +23,7 @@ class EleccionNuevoCite {
 ///
 /// Son las dos cosas que **no se pueden cambiar después**: de ellas depende el
 /// correlativo, y una vez emitido el número no se mueve de tipo ni de empresa.
-/// Por eso se preguntan acá y no adentro del formulario, donde parecerían dos
+/// Por eso se preguntan aquí y no adentro del formulario, donde parecerían dos
 /// campos más entre veinte.
 ///
 /// ## Por qué dejó de ser un combo
@@ -31,7 +31,7 @@ class EleccionNuevoCite {
 /// El tipo decide qué campos va a tener el formulario: si lleva ciudad, si el
 /// destinatario se escribe o se elige de la planilla, si lleva «Vía:». Elegirlo
 /// de una lista desplegable obligaba a saberse esas reglas de memoria —o a
-/// entrar, mirar y volver—. Acá cada tipo es una tarjeta que dice para qué
+/// entrar, mirar y volver—. Aquí cada tipo es una tarjeta que dice para qué
 /// sirve, con el mismo ícono y el mismo color que va a tener después en la
 /// grilla.
 Future<EleccionNuevoCite?> mostrarDialogoNuevoCite(
@@ -76,10 +76,7 @@ class _DialogoNuevoCiteState extends State<_DialogoNuevoCite> {
     return Dialog(
       insetPadding: EdgeInsets.all(angosto ? Esp.m : Esp.xl),
       child: ConstrainedBox(
-        constraints: BoxConstraints(
-          maxWidth: 640,
-          maxHeight: tam.height * 0.9,
-        ),
+        constraints: BoxConstraints(maxWidth: 640, maxHeight: tam.height * 0.9),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -91,10 +88,9 @@ class _DialogoNuevoCiteState extends State<_DialogoNuevoCite> {
                 children: [
                   Text(
                     'Nuevo documento',
-                    style: Theme.of(context)
-                        .textTheme
-                        .titleLarge
-                        ?.copyWith(fontWeight: Peso.titulo),
+                    style: Theme.of(
+                      context,
+                    ).textTheme.titleLarge?.copyWith(fontWeight: Peso.titulo),
                   ),
                   SizedBox(height: Esp.xs),
                   Text('¿Qué vas a redactar?', style: context.apagado()),
@@ -108,43 +104,54 @@ class _DialogoNuevoCiteState extends State<_DialogoNuevoCite> {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     tipos.when(
-                      loading: () => const Padding(
-                        padding: EdgeInsets.symmetric(vertical: Esp.xl),
-                        child: Center(child: CircularProgressIndicator()),
-                      ),
-                      error: (e, _) => _AvisoError(
-                        mensaje: 'No se pudieron cargar los tipos de documento.',
-                        detalle: '$e',
-                      ),
-                      data: (lista) => _GrillaTipos(
-                        tipos: lista,
-                        seleccionado: _tipo,
-                        angosto: angosto,
-                        onElegir: (v) => setState(() => _tipo = v),
-                      ),
+                      loading:
+                          () => const Padding(
+                            padding: EdgeInsets.symmetric(vertical: Esp.xl),
+                            child: Center(child: CircularProgressIndicator()),
+                          ),
+                      error:
+                          (e, _) => _AvisoError(
+                            mensaje:
+                                'No se pudieron cargar los tipos de documento.',
+                            detalle: '$e',
+                          ),
+                      data:
+                          (lista) => _GrillaTipos(
+                            tipos: lista,
+                            seleccionado: _tipo,
+                            angosto: angosto,
+                            onElegir: (v) => setState(() => _tipo = v),
+                          ),
                     ),
                     SizedBox(height: Esp.l),
-                    Text('¿De qué empresa sale?', style: context.tituloSeccion()),
+                    Text(
+                      '¿De qué empresa sale?',
+                      style: context.tituloSeccion(),
+                    ),
                     SizedBox(height: Esp.s),
                     empresas.when(
                       loading: () => const LinearProgressIndicator(),
-                      error: (e, _) => _AvisoError(
-                        mensaje: 'No se pudieron cargar las empresas.',
-                        detalle: '$e',
-                      ),
-                      data: (lista) => Wrap(
-                        spacing: Esp.s,
-                        runSpacing: Esp.s,
-                        children: [
-                          for (final e in lista)
-                            ChoiceChip(
-                              label: Text(e.nombre),
-                              selected: _empresa == e.codEmpresa,
-                              onSelected: (_) =>
-                                  setState(() => _empresa = e.codEmpresa),
-                            ),
-                        ],
-                      ),
+                      error:
+                          (e, _) => _AvisoError(
+                            mensaje: 'No se pudieron cargar las empresas.',
+                            detalle: '$e',
+                          ),
+                      data:
+                          (lista) => Wrap(
+                            spacing: Esp.s,
+                            runSpacing: Esp.s,
+                            children: [
+                              for (final e in lista)
+                                ChoiceChip(
+                                  label: Text(e.nombre),
+                                  selected: _empresa == e.codEmpresa,
+                                  onSelected:
+                                      (_) => setState(
+                                        () => _empresa = e.codEmpresa,
+                                      ),
+                                ),
+                            ],
+                          ),
                     ),
                     SizedBox(height: Esp.l),
                     Container(
@@ -156,8 +163,11 @@ class _DialogoNuevoCiteState extends State<_DialogoNuevoCite> {
                       child: Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Icon(Icons.info_outline,
-                              size: 16, color: cs.onSurfaceVariant),
+                          Icon(
+                            Icons.info_outline,
+                            size: 16,
+                            color: cs.onSurfaceVariant,
+                          ),
                           SizedBox(width: Esp.s),
                           Expanded(
                             child: Text(
@@ -186,15 +196,16 @@ class _DialogoNuevoCiteState extends State<_DialogoNuevoCite> {
                   FilledButton.icon(
                     icon: const Icon(Icons.edit_outlined, size: 18),
                     label: const Text('Redactar'),
-                    onPressed: (_tipo != null && (_empresa ?? 0) > 0)
-                        ? () => Navigator.pop(
+                    onPressed:
+                        (_tipo != null && (_empresa ?? 0) > 0)
+                            ? () => Navigator.pop(
                               context,
                               EleccionNuevoCite(
                                 idTipoDoc: _tipo!,
                                 codEmpresa: _empresa!,
                               ),
                             )
-                        : null,
+                            : null,
                   ),
                 ],
               ),
@@ -309,18 +320,19 @@ class _TarjetaTipo extends StatelessWidget {
                     Text(
                       nombre,
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            fontWeight: Peso.titulo,
-                            color: seleccionado ? cs.onPrimaryContainer : null,
-                          ),
+                        fontWeight: Peso.titulo,
+                        color: seleccionado ? cs.onPrimaryContainer : null,
+                      ),
                     ),
                     SizedBox(height: 2),
                     Text(
                       id.paraQue,
                       style: context.apagado()?.copyWith(
-                            color: seleccionado
+                        color:
+                            seleccionado
                                 ? cs.onPrimaryContainer.withValues(alpha: 0.85)
                                 : null,
-                          ),
+                      ),
                     ),
                   ],
                 ),
@@ -364,8 +376,8 @@ class _AvisoError extends StatelessWidget {
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: cs.onErrorContainer.withValues(alpha: 0.8),
-                      ),
+                    color: cs.onErrorContainer.withValues(alpha: 0.8),
+                  ),
                 ),
               ],
             ),
@@ -400,42 +412,42 @@ Future<bool?> mostrarDialogoLogo(BuildContext context) {
         required String titulo,
         required String detalle,
         required bool valor,
-      }) =>
-          Material(
-            color: cs.surfaceContainerLowest,
-            borderRadius: BorderRadius.circular(Esquina.media),
-            child: InkWell(
-              onTap: () => Navigator.pop(ctx, valor),
+      }) => Material(
+        color: cs.surfaceContainerLowest,
+        borderRadius: BorderRadius.circular(Esquina.media),
+        child: InkWell(
+          onTap: () => Navigator.pop(ctx, valor),
+          borderRadius: BorderRadius.circular(Esquina.media),
+          child: Container(
+            decoration: BoxDecoration(
+              border: Border.all(color: cs.outlineVariant),
               borderRadius: BorderRadius.circular(Esquina.media),
-              child: Container(
-                decoration: BoxDecoration(
-                  border: Border.all(color: cs.outlineVariant),
-                  borderRadius: BorderRadius.circular(Esquina.media),
-                ),
-                padding: EdgeInsets.all(Esp.m),
-                child: Row(
-                  children: [
-                    Icon(icono, size: 24, color: cs.primary),
-                    SizedBox(width: Esp.m),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(titulo,
-                              style: Theme.of(ctx)
-                                  .textTheme
-                                  .bodyLarge
-                                  ?.copyWith(fontWeight: Peso.titulo)),
-                          Text(detalle, style: ctx.apagado()),
-                        ],
-                      ),
-                    ),
-                    Icon(Icons.chevron_right, color: cs.onSurfaceVariant),
-                  ],
-                ),
-              ),
             ),
-          );
+            padding: EdgeInsets.all(Esp.m),
+            child: Row(
+              children: [
+                Icon(icono, size: 24, color: cs.primary),
+                SizedBox(width: Esp.m),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        titulo,
+                        style: Theme.of(ctx).textTheme.bodyLarge?.copyWith(
+                          fontWeight: Peso.titulo,
+                        ),
+                      ),
+                      Text(detalle, style: ctx.apagado()),
+                    ],
+                  ),
+                ),
+                Icon(Icons.chevron_right, color: cs.onSurfaceVariant),
+              ],
+            ),
+          ),
+        ),
+      );
 
       return AlertDialog(
         title: const Text('¿Cómo se imprime?'),
@@ -478,7 +490,7 @@ Future<bool?> mostrarDialogoLogo(BuildContext context) {
 /// Confirma la anulación y pide el motivo. Devuelve el motivo, o `null` si se
 /// canceló.
 ///
-/// **El motivo es obligatorio acá aunque la columna acepte NULL.** Anular
+/// **El motivo es obligatorio aquí aunque la columna acepte NULL.** Anular
 /// consume un número de CITE para siempre y el documento pudo haber salido en
 /// papel; dentro de un año, "quién lo anuló y cuándo" sin el "por qué" no
 /// alcanza para reconstruir qué pasó. Es una acción rara, así que el costo de
@@ -537,14 +549,20 @@ class _DialogoAnularState extends State<_DialogoAnular> {
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Icon(Icons.warning_amber_rounded,
-                      size: 18, color: cs.onErrorContainer),
+                  Icon(
+                    Icons.warning_amber_rounded,
+                    size: 18,
+                    color: cs.onErrorContainer,
+                  ),
                   SizedBox(width: Esp.s),
                   Expanded(
                     child: Text(
                       'El número de CITE queda consumido y no se reutiliza. '
                       'Esta acción no se deshace desde la aplicación.',
-                      style: TextStyle(color: cs.onErrorContainer, fontSize: 12),
+                      style: TextStyle(
+                        color: cs.onErrorContainer,
+                        fontSize: 12,
+                      ),
                     ),
                   ),
                 ],
@@ -567,9 +585,10 @@ class _DialogoAnularState extends State<_DialogoAnular> {
                 counterText: '',
                 // El botón deshabilitado sin explicación es la forma más común
                 // de dejar a alguien golpeando una puerta cerrada.
-                helperText: valido
-                    ? 'Listo para anular.'
-                    : 'Escribí al menos 5 caracteres.',
+                helperText:
+                    valido
+                        ? 'Listo para anular.'
+                        : 'Escribe al menos 5 caracteres.',
               ),
             ),
           ],
@@ -620,8 +639,18 @@ Future<ParametrosReporteCite?> mostrarDialogoReporteMensual(
 }
 
 const _meses = [
-  'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
-  'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre',
+  'Enero',
+  'Febrero',
+  'Marzo',
+  'Abril',
+  'Mayo',
+  'Junio',
+  'Julio',
+  'Agosto',
+  'Septiembre',
+  'Octubre',
+  'Noviembre',
+  'Diciembre',
 ];
 
 class _DialogoReporteMensual extends StatefulWidget {
@@ -647,13 +676,15 @@ class _DialogoReporteMensualState extends State<_DialogoReporteMensual> {
 
   @override
   Widget build(BuildContext context) {
-    final tipos = widget.ref.watch(tiposDocumentoCiteProvider).valueOrNull ?? [];
+    final tipos =
+        widget.ref.watch(tiposDocumentoCiteProvider).valueOrNull ?? [];
     final empresas = widget.ref.watch(empresasProvider).valueOrNull ?? [];
     final gestiones = widget.ref.watch(gestionesCiteProvider).valueOrNull ?? [];
 
     // La gestión activa por defecto; si el catálogo todavía no llegó, el año
     // en curso.
-    _anio ??= gestiones.where((g) => g.esActiva).map((g) => g.gestion).firstOrNull ??
+    _anio ??=
+        gestiones.where((g) => g.esActiva).map((g) => g.gestion).firstOrNull ??
         DateTime.now().year;
 
     final completo = _anio != null && _tipo != null && (_empresa ?? 0) > 0;
@@ -681,12 +712,18 @@ class _DialogoReporteMensualState extends State<_DialogoReporteMensual> {
                   border: OutlineInputBorder(),
                   prefixIcon: Icon(Icons.business_outlined, size: 18),
                 ),
-                items: empresas
-                    .map((e) => DropdownMenuItem(
-                          value: e.codEmpresa,
-                          child: Text(e.nombre, overflow: TextOverflow.ellipsis),
-                        ))
-                    .toList(),
+                items:
+                    empresas
+                        .map(
+                          (e) => DropdownMenuItem(
+                            value: e.codEmpresa,
+                            child: Text(
+                              e.nombre,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        )
+                        .toList(),
                 onChanged: (v) => setState(() => _empresa = v),
               ),
               SizedBox(height: Esp.m),
@@ -698,12 +735,15 @@ class _DialogoReporteMensualState extends State<_DialogoReporteMensual> {
                   border: OutlineInputBorder(),
                   prefixIcon: Icon(Icons.description_outlined, size: 18),
                 ),
-                items: tipos
-                    .map((t) => DropdownMenuItem(
-                          value: t.idTipoDoc.toInt(),
-                          child: Text(t.tipo),
-                        ))
-                    .toList(),
+                items:
+                    tipos
+                        .map(
+                          (t) => DropdownMenuItem(
+                            value: t.idTipoDoc.toInt(),
+                            child: Text(t.tipo),
+                          ),
+                        )
+                        .toList(),
                 onChanged: (v) => setState(() => _tipo = v),
               ),
               SizedBox(height: Esp.m),
@@ -714,13 +754,20 @@ class _DialogoReporteMensualState extends State<_DialogoReporteMensual> {
                       value: _anio,
                       isExpanded: true,
                       decoration: const InputDecoration(
-                        labelText: 'Gestión *', border: OutlineInputBorder(),
+                        labelText: 'Gestión *',
+                        border: OutlineInputBorder(),
                       ),
-                      items: (gestiones.isEmpty
-                              ? [DateTime.now().year]
-                              : gestiones.map((g) => g.gestion).toList())
-                          .map((a) => DropdownMenuItem(value: a, child: Text('$a')))
-                          .toList(),
+                      items:
+                          (gestiones.isEmpty
+                                  ? [DateTime.now().year]
+                                  : gestiones.map((g) => g.gestion).toList())
+                              .map(
+                                (a) => DropdownMenuItem(
+                                  value: a,
+                                  child: Text('$a'),
+                                ),
+                              )
+                              .toList(),
                       onChanged: (v) => setState(() => _anio = v),
                     ),
                   ),
@@ -730,14 +777,21 @@ class _DialogoReporteMensualState extends State<_DialogoReporteMensual> {
                       value: _mes,
                       isExpanded: true,
                       decoration: const InputDecoration(
-                        labelText: 'Mes', border: OutlineInputBorder(),
+                        labelText: 'Mes',
+                        border: OutlineInputBorder(),
                       ),
                       items: [
                         // 0 = toda la gestión: es lo que el SP entiende cuando
                         // el mes no viene.
-                        const DropdownMenuItem(value: 0, child: Text('Todo el año')),
+                        const DropdownMenuItem(
+                          value: 0,
+                          child: Text('Todo el año'),
+                        ),
                         for (var i = 1; i <= 12; i++)
-                          DropdownMenuItem(value: i, child: Text(_meses[i - 1])),
+                          DropdownMenuItem(
+                            value: i,
+                            child: Text(_meses[i - 1]),
+                          ),
                       ],
                       onChanged: (v) => setState(() => _mes = v ?? 0),
                     ),
@@ -756,8 +810,9 @@ class _DialogoReporteMensualState extends State<_DialogoReporteMensual> {
         FilledButton.icon(
           icon: const Icon(Icons.picture_as_pdf_outlined, size: 18),
           label: const Text('Generar'),
-          onPressed: completo
-              ? () => Navigator.pop(
+          onPressed:
+              completo
+                  ? () => Navigator.pop(
                     context,
                     ParametrosReporteCite(
                       mes: _mes,
@@ -766,7 +821,7 @@ class _DialogoReporteMensualState extends State<_DialogoReporteMensual> {
                       codEmpresa: _empresa!,
                     ),
                   )
-              : null,
+                  : null,
         ),
       ],
     );

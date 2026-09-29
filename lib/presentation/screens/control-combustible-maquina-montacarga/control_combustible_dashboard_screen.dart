@@ -84,7 +84,7 @@ class _ControlCombustibleDashboardScreenState
     'gasolina particular': 3,
   };
 
-  // Umbrales de saldo bajo. Son reglas de negocio: ajustar acá, no disperso.
+  // Umbrales de saldo bajo. Son reglas de negocio: ajustar aquí, no disperso.
   static const double _umbralBajoLitros = 20;
   static const double _umbralBajoUnidades = 2;
 

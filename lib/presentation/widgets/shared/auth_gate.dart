@@ -49,20 +49,21 @@ class AuthGate extends ConsumerWidget {
     final userEnMemoria = ref.watch(userProvider);
 
     return asyncUser.when(
-      loading: () => const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      ),
-      error: (e, _) => const Scaffold(
-        body: Center(
-          child: Padding(
-            padding: EdgeInsets.all(24),
-            child: Text(
-              'No se pudo validar tu sesión. Inicia sesión nuevamente.',
-              textAlign: TextAlign.center,
+      loading:
+          () =>
+              const Scaffold(body: Center(child: CircularProgressIndicator())),
+      error:
+          (e, _) => const Scaffold(
+            body: Center(
+              child: Padding(
+                padding: EdgeInsets.all(24),
+                child: Text(
+                  'No se pudo validar tu sesión. Inicia sesión nuevamente.',
+                  textAlign: TextAlign.center,
+                ),
+              ),
             ),
           ),
-        ),
-      ),
       data: (user) {
         // El de memoria manda cuando el del storage viene vacío: ese `null`
         // puede ser el residuo del cierre de sesión anterior.

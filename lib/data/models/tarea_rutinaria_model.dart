@@ -55,7 +55,7 @@ class TareaRutinariaModel {
   int? idFrec;
   int? idArea;
   DateTime? fechaPartida;
-  int? IniFin;
+  int? iniFin;
   int? idATR;
   String descripcion;
   int audUsuario;
@@ -66,7 +66,7 @@ class TareaRutinariaModel {
     this.idFrec,
     this.idArea,
     this.fechaPartida,
-    this.IniFin,
+    this.iniFin,
     this.idATR,
     required this.descripcion,
     required this.audUsuario,
@@ -78,16 +78,16 @@ class TareaRutinariaModel {
       idTarRuti: json["idTarRuti"] ?? 0,
       idFrec: json["idFrec"],
       idArea: json["idArea"],
-      fechaPartida: json["fechaPartida"] != null
-          ? DateTime.tryParse(json["fechaPartida"])
-          : null,
-      IniFin: json["IniFin"],
+      fechaPartida:
+          json["fechaPartida"] != null
+              ? DateTime.tryParse(json["fechaPartida"])
+              : null,
+      iniFin: json["iniFin"],
       idATR: json["idATR"],
       descripcion: json["descripcion"] ?? '',
       audUsuario: json["audUsuario"] ?? 0,
-      audFecha: json["audFecha"] != null
-          ? DateTime.tryParse(json["audFecha"])
-          : null,
+      audFecha:
+          json["audFecha"] != null ? DateTime.tryParse(json["audFecha"]) : null,
     );
   }
 
@@ -96,7 +96,7 @@ class TareaRutinariaModel {
     "idFrec": idFrec,
     "idArea": idArea,
     "fechaPartida": fechaPartida?.toIso8601String(),
-    "IniFin": IniFin,
+    "iniFin": iniFin,
     "idATR": idATR,
     "descripcion": descripcion,
     "audUsuario": audUsuario,
@@ -109,7 +109,7 @@ class TareaRutinariaModel {
       idFrec: idFrec,
       idArea: idArea,
       fechaPartida: fechaPartida,
-      IniFin: IniFin,
+      iniFin: iniFin,
       idATR: idATR,
       descripcion: descripcion,
       audUsuario: audUsuario,
@@ -123,7 +123,7 @@ class TareaRutinariaModel {
       idFrec: entity.idFrec,
       idArea: entity.idArea,
       fechaPartida: entity.fechaPartida,
-      IniFin: entity.IniFin,
+      iniFin: entity.iniFin,
       idATR: entity.idATR,
       descripcion: entity.descripcion,
       audUsuario: entity.audUsuario,

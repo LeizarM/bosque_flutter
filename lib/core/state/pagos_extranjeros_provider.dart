@@ -32,16 +32,16 @@ class DetalleFormItem {
   final String numeroDocumento;
   final int facturaProvSap;
   final String codigoImportacion;
-  final int numeroCuota;              // 1, 2, 3... permite varias cuotas del mismo doc SAP
+  final int numeroCuota; // 1, 2, 3... permite varias cuotas del mismo doc SAP
   final double montoFacturaUsd;
   final double montoAmortizadoUsd;
-  final double montoAPagarUsd;        // monto de esta cuota
-  final double montoTotalDocumento;   // total del documento SAP (DocTotal)
+  final double montoAPagarUsd; // monto de esta cuota
+  final double montoTotalDocumento; // total del documento SAP (DocTotal)
   final DateTime fechaFactura;
   final DateTime fechaVencimiento;
   final String concepto;
   final String obs;
-  final int esAprobado;               // 0/1 — aprobación por cuota
+  final int esAprobado; // 0/1 — aprobación por cuota
 
   DetalleFormItem({
     this.idDetalle = 0,
@@ -127,8 +127,7 @@ class ProveedorFormItem {
       detalles.fold(0.0, (sum, d) => sum + d.montoAmortizadoUsd);
   double get totalAPagarUsd =>
       detalles.fold(0.0, (sum, d) => sum + d.montoAPagarUsd);
-  int get cuotasAprobadas =>
-      detalles.where((d) => d.esAprobado == 1).length;
+  int get cuotasAprobadas => detalles.where((d) => d.esAprobado == 1).length;
   bool get todasCuotasAprobadas =>
       detalles.isNotEmpty && cuotasAprobadas == detalles.length;
 
@@ -1335,9 +1334,10 @@ class TransaccionFormState {
       comisionExportadora: comisionExportadora ?? this.comisionExportadora,
       metodoExportadora: metodoExportadora ?? this.metodoExportadora,
       observaciones: observaciones ?? this.observaciones,
-      idTransaccionOrigen: clearIdTransaccionOrigen
-          ? null
-          : (idTransaccionOrigen ?? this.idTransaccionOrigen),
+      idTransaccionOrigen:
+          clearIdTransaccionOrigen
+              ? null
+              : (idTransaccionOrigen ?? this.idTransaccionOrigen),
       cargos: cargos ?? this.cargos,
       cargando: cargando ?? this.cargando,
       cargandoTcRef: cargandoTcRef ?? this.cargandoTcRef,
@@ -1462,10 +1462,11 @@ class TransaccionNotifier extends StateNotifier<TransaccionFormState> {
         // así los tipos no-forward no quedan con fechas espurias).
         fechaPactado:
             requiereForward ? (state.fechaPactado ?? DateTime.now()) : null,
-        fechaVencimiento: requiereForward
-            ? (state.fechaVencimiento ??
-                DateTime.now().add(const Duration(days: 90)))
-            : null,
+        fechaVencimiento:
+            requiereForward
+                ? (state.fechaVencimiento ??
+                    DateTime.now().add(const Duration(days: 90)))
+                : null,
       );
   void setCodBanco(int id) => state = state.copyWith(codBanco: id);
   void setIdCanal(int id) => state = state.copyWith(idCanal: id);
@@ -1500,9 +1501,11 @@ class TransaccionNotifier extends StateNotifier<TransaccionFormState> {
   void setTipoCambioReferencia(double v) =>
       state = state.copyWith(tipoCambioReferencia: v);
   // Devolución (tipo DEVOLUCION): vincula la transacción que se está devolviendo.
-  void setIdTransaccionOrigen(BigInt? v) => state = v == null
-      ? state.copyWith(clearIdTransaccionOrigen: true)
-      : state.copyWith(idTransaccionOrigen: v);
+  void setIdTransaccionOrigen(BigInt? v) =>
+      state =
+          v == null
+              ? state.copyWith(clearIdTransaccionOrigen: true)
+              : state.copyWith(idTransaccionOrigen: v);
 
   // ── Gestión de cargos ──────────────────────────────────────────────
 
@@ -1639,9 +1642,10 @@ class TransaccionNotifier extends StateNotifier<TransaccionFormState> {
                     'valorFijo': c.esPorcentaje ? 0.0 : c.valorFijo,
                     // baseCalculo debe ser > 0 incluso para cargos fijos (validación del SP);
                     // para fijos se usa el propio valorFijo como base nominal.
-                    'baseCalculo': c.esPorcentaje
-                        ? c.baseCalculo
-                        : (c.baseCalculo > 0 ? c.baseCalculo : c.valorFijo),
+                    'baseCalculo':
+                        c.esPorcentaje
+                            ? c.baseCalculo
+                            : (c.baseCalculo > 0 ? c.baseCalculo : c.valorFijo),
                     'idMoneda': c.idMoneda,
                     'descripcion': c.descripcion,
                   },
@@ -1678,7 +1682,8 @@ class TransaccionNotifier extends StateNotifier<TransaccionFormState> {
   Future<bool> guardarOperacionTesoreria(int audUsuario) async {
     if (state.idTipoTransaccion == BigInt.zero) {
       state = state.copyWith(
-          mensajeError: 'Debe seleccionar un tipo de operación.');
+        mensajeError: 'Debe seleccionar un tipo de operación.',
+      );
       return false;
     }
     if (state.codEmpresa <= 0) {
@@ -1687,12 +1692,14 @@ class TransaccionNotifier extends StateNotifier<TransaccionFormState> {
     }
     if (state.montoOrigen <= 0) {
       state = state.copyWith(
-          mensajeError: 'El monto origen debe ser mayor a 0.');
+        mensajeError: 'El monto origen debe ser mayor a 0.',
+      );
       return false;
     }
     if (state.idMonedaOrigen <= 0 || state.idMonedaDestino <= 0) {
       state = state.copyWith(
-          mensajeError: 'Debe seleccionar las monedas de origen y destino.');
+        mensajeError: 'Debe seleccionar las monedas de origen y destino.',
+      );
       return false;
     }
     if (state.tipoCambioAplicado <= 0) {
@@ -1701,7 +1708,10 @@ class TransaccionNotifier extends StateNotifier<TransaccionFormState> {
     }
 
     state = state.copyWith(
-        cargando: true, clearMensajeError: true, clearMensajeExito: true);
+      cargando: true,
+      clearMensajeError: true,
+      clearMensajeExito: true,
+    );
 
     try {
       String fmtDate(DateTime d) =>
@@ -1736,18 +1746,22 @@ class TransaccionNotifier extends StateNotifier<TransaccionFormState> {
             state.idTransaccionOrigen! > BigInt.zero)
           'idTransaccionOrigen': state.idTransaccionOrigen!.toInt(),
         'audUsuario': audUsuario,
-        'cargos': state.cargos
-            .map((c) => {
-                  'idTipoCargo': c.idTipoCargo.toInt(),
-                  'porcentaje': c.esPorcentaje ? c.porcentaje : 0.0,
-                  'valorFijo': c.esPorcentaje ? 0.0 : c.valorFijo,
-                  'baseCalculo': c.esPorcentaje
-                      ? c.baseCalculo
-                      : (c.baseCalculo > 0 ? c.baseCalculo : c.valorFijo),
-                  'idMoneda': c.idMoneda,
-                  'descripcion': c.descripcion,
-                })
-            .toList(),
+        'cargos':
+            state.cargos
+                .map(
+                  (c) => {
+                    'idTipoCargo': c.idTipoCargo.toInt(),
+                    'porcentaje': c.esPorcentaje ? c.porcentaje : 0.0,
+                    'valorFijo': c.esPorcentaje ? 0.0 : c.valorFijo,
+                    'baseCalculo':
+                        c.esPorcentaje
+                            ? c.baseCalculo
+                            : (c.baseCalculo > 0 ? c.baseCalculo : c.valorFijo),
+                    'idMoneda': c.idMoneda,
+                    'descripcion': c.descripcion,
+                  },
+                )
+                .toList(),
       };
 
       final idTransaccion = await _repo.guardarTransaccionCompleta(payload);
@@ -2089,10 +2103,7 @@ final participantesTransaccionProvider = FutureProvider.autoDispose
 
 /// Resumen de cuadre del split de una transacción (ACCION="V").
 final cuadreParticipantesProvider = FutureProvider.autoDispose
-    .family<TransaccionParticipanteEntity?, BigInt>((
-      ref,
-      idTransaccion,
-    ) async {
+    .family<TransaccionParticipanteEntity?, BigInt>((ref, idTransaccion) async {
       if (idTransaccion == BigInt.zero) return null;
       final repo = PagosExtranjerosImpl();
       return repo.validarCuadreParticipantes(idTransaccion);
@@ -2153,9 +2164,10 @@ final reporteTransaccionesFechasProvider = FutureProvider.autoDispose.family<
 
 /// Último tipo de cambio vigente del BCB (codBanco=null) para USD→BOB.
 /// idMonedaOrigen=3 (USD), idMonedaDestino=4 (BOB)
-final tcVigenteRefProvider = FutureProvider.autoDispose
-    .family<TiposCambioEntity?, ({int? codBanco, int idMonedaOrigen, int idMonedaDestino})>(
-        (ref, params) async {
+final tcVigenteRefProvider = FutureProvider.autoDispose.family<
+  TiposCambioEntity?,
+  ({int? codBanco, int idMonedaOrigen, int idMonedaDestino})
+>((ref, params) async {
   final repo = PagosExtranjerosImpl();
   return repo.getTCVigenteRef(
     codBanco: params.codBanco,

@@ -10,7 +10,7 @@ import 'package:bosque_flutter/domain/entities/mi_equipo_entity.dart';
 /// `p_list_trs_Programador` @E (quien soy yo para este modulo, resuelto por el
 /// login) con @D (mi gente).
 ///
-/// Siempre responde 200, nunca 204: si no sos programador viene
+/// Siempre responde 200, nunca 204: si no eres programador viene
 /// `esProgramador=0` con el equipo vacio, que es una respuesta valida.
 ///
 /// Los `fromJson` toleran null porque el backend manda wrapper (`Long`,
@@ -36,13 +36,16 @@ class MiEquipoModel {
       sucursal: rsStr(json['sucursal']),
       cantidadDependientes: rsInt(json['cantidadDependientes']),
       // Cuando el que pregunta no es programador el backend puede mandar la
-      // lista en null en vez de vacía; acá da lo mismo, arriba no.
-      equipo: ((json['equipo'] as List?) ?? const [])
-          .map(
-            (e) =>
-                ProgramadorDependienteModel.fromJson(e as Map<String, dynamic>).toEntity(),
-          )
-          .toList(),
+      // lista en null en vez de vacía; aquí da lo mismo, arriba no.
+      equipo:
+          ((json['equipo'] as List?) ?? const [])
+              .map(
+                (e) =>
+                    ProgramadorDependienteModel.fromJson(
+                      e as Map<String, dynamic>,
+                    ).toEntity(),
+              )
+              .toList(),
     ),
   );
 

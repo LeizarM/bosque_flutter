@@ -11,8 +11,13 @@ class LlegadaCajaFuerteEntity {
   // 'chq' | 'efect' — EXACTAMENTE los valores reales del legacy (Tareas.xhtml),
   // no 'CHEQUE'/'EFECTIVO': ambos sistemas escriben la misma columna
   // tac_llegada.tipo, así que un valor distinto sería un dato inconsistente
-  // para cualquier reporte/consulta legacy que filtre por tipo. Obligatorio
-  // para poder enviar.
+  // para cualquier reporte/consulta legacy que filtre por tipo.
+  //
+  // Arranca en 'efect' (Marcelo, 2026-09-08). Sigue siendo obligatorio para el
+  // backend, pero ya nunca llega vacío, así que el aviso de "Obligatorio" dejó
+  // de tener sentido y se sacó. El precio de un valor por defecto es que un
+  // cheque cargado sin tocar este campo se guarda como efectivo: si eso llega a
+  // pasar seguido, la salida es arrancar sin selección de nuevo, no validar más.
   final String? tipo;
   final String destino;
   final String obs;
@@ -22,12 +27,13 @@ class LlegadaCajaFuerteEntity {
     this.cliente = '',
     this.moneda = 'BS',
     this.importe,
-    this.tipo,
+    this.tipo = 'efect',
     this.destino = '',
     this.obs = '',
   });
 
-  bool get esValida => cliente.trim().isNotEmpty && (importe ?? 0) > 0 && tipo != null;
+  bool get esValida =>
+      cliente.trim().isNotEmpty && (importe ?? 0) > 0 && tipo != null;
 
   LlegadaCajaFuerteEntity copyWith({
     String? cliente,

@@ -3,10 +3,15 @@ import 'package:bosque_flutter/data/models/feriado_model.dart';
 import 'package:bosque_flutter/domain/entities/permiso_entity.dart';
 import 'package:bosque_flutter/domain/entities/solicitud_permiso_entity.dart';
 import 'package:bosque_flutter/domain/entities/tipo_permiso_vacacion_entity.dart';
+import 'package:bosque_flutter/domain/entities/horario_empleado_entity.dart';
 
 abstract class PermisosVacacionRepository {
   /// Obtiene los días disponibles y el resumen de vacaciones para un empleado.
   Future<PermisoEntity?> getResumenVacaciones(int codEmpleado);
+  
+  /// Obtiene el horario de un empleado en una fecha o rango
+  Future<List<HorarioEmpleadoEntity>> obtenerHorario(int codEmpleado, DateTime desde, DateTime hasta);
+  
   // En domain/repositories/permisos_vacacion_repository.dart agregar:
   Future<String> crearSolicitudPermiso(SolicitudPermisoEntity solicitud);
   Future<String> aprobarSolicitud(int codSolicitud, int audUsuarioI);
@@ -21,6 +26,7 @@ abstract class PermisosVacacionRepository {
     String motivoAnulacion,
   );
   Future<List<SolicitudPermisoEntity>> listarPendientes(int codUsuarioLogueado);
+
   /// El kardex de solicitudes y permisos de una persona.
   ///
   /// [anio] y [mes] en `null` son «no filtres»: el SP los recibe como NULL y
@@ -31,11 +37,16 @@ abstract class PermisosVacacionRepository {
     int? anio,
     int? mes,
   });
-  Future<List<TipoPermisoVacacionEntity>> getTiposPermisosVacaciones(int codEmpleado, int codUsuarioLogueado);
+  Future<List<TipoPermisoVacacionEntity>> getTiposPermisosVacaciones(
+    int codEmpleado,
+    int codUsuarioLogueado,
+  );
   Future<Uint8List> descargarRptPermisoVacacion(int codPermiso);
   Future<List<FeriadoModel>> getFeriados(int codEmpleado);
   Future<SolicitudPermisoEntity?> previsualizarSaldo(
     SolicitudPermisoEntity filtro,
   );
-  Future<List<SolicitudPermisoEntity>> obtenerPermisosProximosDashboard(int audUsuarioI);
+  Future<List<SolicitudPermisoEntity>> obtenerPermisosProximosDashboard(
+    int audUsuarioI,
+  );
 }

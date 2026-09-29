@@ -19,10 +19,10 @@ import 'package:bosque_flutter/domain/entities/talonario_entity.dart';
 /// **No es `Colors.orange`.** El usuario elige entre nueve semillas y hay modo
 /// oscuro: un color fijo se ve de otra app en ocho de ellas, y en oscuro pide
 /// letra negra que nadie le pone. [colorDeCatalogo] arma el par midiendo el
-/// contraste, que es exactamente el problema que hay que resolver acá.
+/// contraste, que es exactamente el problema que hay que resolver aquí.
 ColorDeEstado colorDeEstadoTalonario(ColorScheme cs, int codEstado) =>
-    // El índice del catálogo es 0-based; los estados van de 1 a 4.
-    colorDeCatalogo(cs, (codEstado - 1).clamp(0, 3));
+// El índice del catálogo es 0-based; los estados van de 1 a 4.
+colorDeCatalogo(cs, (codEstado - 1).clamp(0, 3));
 
 /// El icono de cada estado, para que el color no sea la única señal.
 ///
@@ -130,11 +130,12 @@ class TarjetaTalonario extends StatelessWidget {
                             t.nroTalonario,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: Theme.of(context).textTheme.titleSmall
-                                ?.copyWith(
-                                  fontWeight: Peso.dato,
-                                  fontFeatures: cifrasTabulares,
-                                ),
+                            style: Theme.of(
+                              context,
+                            ).textTheme.titleSmall?.copyWith(
+                              fontWeight: Peso.dato,
+                              fontFeatures: cifrasTabulares,
+                            ),
                           ),
                         ),
                         const SizedBox(width: Esp.s),
@@ -215,10 +216,7 @@ class CabeceraTablaTalonarios extends StatelessWidget {
     );
 
     return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: Esp.l,
-        vertical: Esp.s,
-      ),
+      padding: const EdgeInsets.symmetric(horizontal: Esp.l, vertical: Esp.s),
       color: context.cs.surfaceContainerHighest,
       child: Row(
         children: [
@@ -265,7 +263,8 @@ class FilaTablaTalonario extends StatelessWidget {
     return InkWell(
       onTap: onTap,
       child: Container(
-        color: par ? null : context.cs.surfaceContainerLow.withValues(alpha: 0.5),
+        color:
+            par ? null : context.cs.surfaceContainerLow.withValues(alpha: 0.5),
         // Solo horizontal: el alto lo fija el `itemExtent` de la lista, y el
         // `Row` centra. Con padding vertical, el `PopupMenuButton` de acciones
         // —que mide 48 por el mínimo táctil— más 24 de padding se pasaba del
@@ -323,10 +322,7 @@ class FilaTablaTalonario extends StatelessWidget {
                 t.datoDestinatario.isEmpty ? '—' : t.datoDestinatario,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style:
-                    t.datoDestinatario.isEmpty
-                        ? context.apagado()
-                        : null,
+                style: t.datoDestinatario.isEmpty ? context.apagado() : null,
               ),
             ),
             SizedBox(
@@ -461,6 +457,4 @@ class _CampoFechaState extends State<CampoFecha> {
 
 /// Apellidos y nombre, sin los espacios de más que deja la base.
 String nombreEmpleado(String apPaterno, String apMaterno, String nombres) =>
-    '$apPaterno $apMaterno $nombres'
-        .replaceAll(RegExp(r'\s+'), ' ')
-        .trim();
+    '$apPaterno $apMaterno $nombres'.replaceAll(RegExp(r'\s+'), ' ').trim();

@@ -77,9 +77,8 @@ class SucXMovCajaModel {
       nombre: json["nombre"],
       bd: json["bd"],
       audUsuario: json["audUsuario"] ?? 0,
-      audFecha: json["audFecha"] != null
-          ? DateTime.tryParse(json["audFecha"])
-          : null,
+      audFecha:
+          json["audFecha"] != null ? DateTime.tryParse(json["audFecha"]) : null,
     );
   }
 

@@ -9,12 +9,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 /// Los días libres que se le acreditaron a alguien por fuera de la vacación. Es
 /// la pestaña «Abonos».
 ///
-/// **Acá el alta sí es un botón suelto**, al revés que en la vacación asignada:
+/// **Aquí el alta sí es un botón suelto**, al revés que en la vacación asignada:
 /// un abono no cuelga de ningún aniversario, se carga el día que se decide.
 ///
 /// El total lo manda el backend con la lista (`totalDias` del subreporte) y es
 /// el mismo número que la ficha muestra como «Días abonados»: si los dos no
-/// coinciden, el que está mal es el de acá —esta lista es de una relación
+/// coinciden, el que está mal es el de aquí —esta lista es de una relación
 /// laboral y la ficha también—.
 class AbonoDiasTab extends ConsumerWidget {
   const AbonoDiasTab({super.key, required this.codEmpleado});
@@ -177,7 +177,7 @@ class _Fila extends ConsumerWidget {
           if (a.esAlta)
             Text(
               'Este abono llegó sin identificador, así que no se puede editar '
-              'ni borrar desde acá. Avisá a Sistemas.',
+              'ni borrar desde aquí. Avisa a Sistemas.',
               style: Theme.of(
                 context,
               ).textTheme.bodySmall?.copyWith(color: context.cs.error),
@@ -222,7 +222,7 @@ class _Fila extends ConsumerWidget {
   ///
   /// **No es lo que hace el legacy**: allá `eliminarAbonDia()` llama a
   /// `registrar()`, que con id distinto de cero manda una `'U'` con todo en
-  /// NULL — código que parece que borra y no borra. Acá borra, y el trigger
+  /// NULL — código que parece que borra y no borra. Aquí borra, y el trigger
   /// `dad_abonoDias` archiva la fila en `trh_abonoDiasEliminado`.
   Future<void> _eliminar(BuildContext context, WidgetRef ref) async {
     final quien = datoEmpleado.isEmpty ? 'este empleado' : datoEmpleado;
@@ -257,7 +257,7 @@ class _Fila extends ConsumerWidget {
 
 /// El total de lo que se está mostrando.
 ///
-/// **Se suma acá porque el servidor no lo manda.** La versión anterior leía
+/// **Se suma aquí porque el servidor no lo manda.** La versión anterior leía
 /// `totalDias` de la primera fila, dando por hecho que el backend repetía el
 /// acumulado en cada una. No lo hace: `p_list_AbonoDias 'L'` devuelve ocho
 /// columnas y ninguna es un total, y `AbonoDiasDao.decorar` sólo agrega
@@ -266,7 +266,7 @@ class _Fila extends ConsumerWidget {
 /// empleados, no para uno.
 ///
 /// Se prefiere sumar sobre pedirle la columna al SP: lo que hay que mostrar es
-/// el total de las filas que se están viendo, y ésas ya están acá. Un total que
+/// el total de las filas que se están viendo, y ésas ya están aquí. Un total que
 /// venga por otro camino puede discrepar de la lista que tiene encima, que es
 /// exactamente el problema que se acaba de arreglar.
 class _Total extends StatelessWidget {

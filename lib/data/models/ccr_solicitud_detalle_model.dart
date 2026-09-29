@@ -97,9 +97,8 @@ class CcrSolicitudDetalleModel {
       'empaqueSAPSalida': e.empaqueSAPSalida,
       'cantPaquetesSolicitados': e.cantPaquetesSolicitados,
       'cantToneladasSolicitados': e.cantToneladasSolicitados,
-      'fechaEntrega': e.fechaEntrega == null
-          ? null
-          : fmt.format(e.fechaEntrega!),
+      'fechaEntrega':
+          e.fechaEntrega == null ? null : fmt.format(e.fechaEntrega!),
       'anchoSalidaEsp': e.anchoSalidaEsp,
       'largoSalidaEsp': e.largoSalidaEsp,
       'cantHojasSalidaEsp': e.cantHojasSalidaEsp,

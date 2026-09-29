@@ -453,7 +453,7 @@ class _ControlCombustibleReportesScreenState
         icono: Icons.filter_list_off,
         titulo: 'No se encontraron movimientos',
         detalle:
-            'Probá con otro rango de fechas, otra sucursal '
+            'Prueba con otro rango de fechas, otra sucursal '
             'u otro tipo de combustible.',
       );
     }

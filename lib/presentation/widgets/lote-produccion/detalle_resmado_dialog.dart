@@ -23,8 +23,8 @@ Future<void> abrirDetalleResmado(
   required int audUsuario,
 }) => showDialog<void>(
   context: context,
-  builder: (_) =>
-      DetalleResmadoDialog(resmado: resmado, audUsuario: audUsuario),
+  builder:
+      (_) => DetalleResmadoDialog(resmado: resmado, audUsuario: audUsuario),
 );
 
 class DetalleResmadoDialog extends ConsumerStatefulWidget {
@@ -44,13 +44,13 @@ class DetalleResmadoDialog extends ConsumerStatefulWidget {
 
 class _DetalleResmadoDialogState extends ConsumerState<DetalleResmadoDialog> {
   late final TextEditingController _ordenCtrl = TextEditingController(
-    text: widget.resmado.docNumOrdFab == 0
-        ? ''
-        : widget.resmado.docNumOrdFab.toString(),
+    text:
+        widget.resmado.docNumOrdFab == 0
+            ? ''
+            : widget.resmado.docNumOrdFab.toString(),
   );
-  late int? _codEmpresa = widget.resmado.codEmpresa == 0
-      ? null
-      : widget.resmado.codEmpresa;
+  late int? _codEmpresa =
+      widget.resmado.codEmpresa == 0 ? null : widget.resmado.codEmpresa;
 
   bool _guardando = false;
 
@@ -64,8 +64,11 @@ class _DetalleResmadoDialogState extends ConsumerState<DetalleResmadoDialog> {
     final orden = int.tryParse(_ordenCtrl.text.trim()) ?? 0;
 
     if (orden <= 0) {
-      avisar(context, 'Ingrese el numero de orden de fabricacion.',
-          esError: true);
+      avisar(
+        context,
+        'Ingrese el numero de orden de fabricacion.',
+        esError: true,
+      );
       return;
     }
     if (_codEmpresa == null) {
@@ -126,7 +129,9 @@ class _DetalleResmadoDialogState extends ConsumerState<DetalleResmadoDialog> {
                             Text('Resmado', style: context.apagado()),
                             SizedBox(height: Esp.xs),
                             Text(
-                              r.descripcion.isEmpty ? 'Sin grupo' : r.descripcion,
+                              r.descripcion.isEmpty
+                                  ? 'Sin grupo'
+                                  : r.descripcion,
                               style: Theme.of(context).textTheme.titleLarge
                                   ?.copyWith(fontWeight: Peso.titulo),
                             ),
@@ -154,10 +159,7 @@ class _DetalleResmadoDialogState extends ConsumerState<DetalleResmadoDialog> {
                       SizedBox(height: Esp.xl),
 
                       // ── Lo unico editable ─────────────────────────────
-                      Text(
-                        'Imputacion a SAP',
-                        style: context.tituloSeccion(),
-                      ),
+                      Text('Imputacion a SAP', style: context.tituloSeccion()),
                       SizedBox(height: Esp.xs),
                       Text(
                         'Es lo unico que se corrige desde aqui. El resto del '
@@ -183,10 +185,10 @@ class _DetalleResmadoDialogState extends ConsumerState<DetalleResmadoDialog> {
                         empresa: DropdownButtonFormField<int>(
                           value:
                               estado.empresas.any(
-                                (e) => e.codEmpresa == _codEmpresa,
-                              )
-                              ? _codEmpresa
-                              : null,
+                                    (e) => e.codEmpresa == _codEmpresa,
+                                  )
+                                  ? _codEmpresa
+                                  : null,
                           decoration: const InputDecoration(
                             labelText: 'Empresa',
                             border: OutlineInputBorder(),
@@ -206,77 +208,88 @@ class _DetalleResmadoDialogState extends ConsumerState<DetalleResmadoDialog> {
                       SizedBox(height: Esp.xl),
 
                       // ── Que se resmo ──────────────────────────────────
-                      Text('Articulos resmados', style: context.tituloSeccion()),
+                      Text(
+                        'Articulos resmados',
+                        style: context.tituloSeccion(),
+                      ),
                       SizedBox(height: Esp.m),
                       detalle.when(
-                        loading: () => const Padding(
-                          padding: EdgeInsets.symmetric(vertical: 32),
-                          child: Center(child: CircularProgressIndicator()),
-                        ),
-                        error: (_, _) => Text(
-                          'No se pudo cargar el detalle del resmado.',
-                          style: context.apagado(),
-                        ),
-                        data: (lista) => lista.isEmpty
-                            ? Text(
-                                'Este resmado no tiene articulos cargados.',
-                                style: context.apagado(),
-                              )
-                            : Container(
-                                decoration: BoxDecoration(
-                                  border: Border.all(color: cs.outlineVariant),
-                                  borderRadius: BorderRadius.circular(
-                                    Esquina.chica,
-                                  ),
-                                ),
-                                clipBehavior: Clip.antiAlias,
-                                child: Column(
-                                  children: [
-                                    for (var i = 0; i < lista.length; i++)
-                                      Container(
-                                        color: i.isEven
-                                            ? null
-                                            : cs.surfaceContainerLow,
-                                        padding: EdgeInsets.symmetric(
-                                          horizontal: Esp.m,
-                                          vertical: Esp.s,
+                        loading:
+                            () => const Padding(
+                              padding: EdgeInsets.symmetric(vertical: 32),
+                              child: Center(child: CircularProgressIndicator()),
+                            ),
+                        error:
+                            (_, _) => Text(
+                              'No se pudo cargar el detalle del resmado.',
+                              style: context.apagado(),
+                            ),
+                        data:
+                            (lista) =>
+                                lista.isEmpty
+                                    ? Text(
+                                      'Este resmado no tiene articulos cargados.',
+                                      style: context.apagado(),
+                                    )
+                                    : Container(
+                                      decoration: BoxDecoration(
+                                        border: Border.all(
+                                          color: cs.outlineVariant,
                                         ),
-                                        child: Row(
-                                          children: [
-                                            SizedBox(
-                                              width: 92,
-                                              child: Text(
-                                                lista[i].codArticulo,
-                                                style: context.numero(),
-                                                overflow:
-                                                    TextOverflow.ellipsis,
-                                              ),
-                                            ),
-                                            Expanded(
-                                              child: Text(
-                                                lista[i].descripcion,
-                                                style: Theme.of(context)
-                                                    .textTheme
-                                                    .bodySmall,
-                                                overflow:
-                                                    TextOverflow.ellipsis,
-                                              ),
-                                            ),
-                                            SizedBox(width: Esp.m),
-                                            Text(
-                                              fmtEntero.format(
-                                                lista[i].cantResma,
-                                              ),
-                                              style: context.numero(
-                                                fuerte: true,
-                                              ),
-                                            ),
-                                          ],
+                                        borderRadius: BorderRadius.circular(
+                                          Esquina.chica,
                                         ),
                                       ),
-                                  ],
-                                ),
-                              ),
+                                      clipBehavior: Clip.antiAlias,
+                                      child: Column(
+                                        children: [
+                                          for (var i = 0; i < lista.length; i++)
+                                            Container(
+                                              color:
+                                                  i.isEven
+                                                      ? null
+                                                      : cs.surfaceContainerLow,
+                                              padding: EdgeInsets.symmetric(
+                                                horizontal: Esp.m,
+                                                vertical: Esp.s,
+                                              ),
+                                              child: Row(
+                                                children: [
+                                                  SizedBox(
+                                                    width: 92,
+                                                    child: Text(
+                                                      lista[i].codArticulo,
+                                                      style: context.numero(),
+                                                      overflow:
+                                                          TextOverflow.ellipsis,
+                                                    ),
+                                                  ),
+                                                  Expanded(
+                                                    child: Text(
+                                                      lista[i].descripcion,
+                                                      style:
+                                                          Theme.of(
+                                                            context,
+                                                          ).textTheme.bodySmall,
+                                                      overflow:
+                                                          TextOverflow.ellipsis,
+                                                    ),
+                                                  ),
+                                                  SizedBox(width: Esp.m),
+                                                  Text(
+                                                    fmtEntero.format(
+                                                      lista[i].cantResma,
+                                                    ),
+                                                    style: context.numero(
+                                                      fuerte: true,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                        ],
+                                      ),
+                                    ),
                       ),
                     ],
                   ),
@@ -294,23 +307,23 @@ class _DetalleResmadoDialogState extends ConsumerState<DetalleResmadoDialog> {
                     mainAxisAlignment: MainAxisAlignment.end,
                     children: [
                       TextButton(
-                        onPressed: _guardando
-                            ? null
-                            : () => Navigator.pop(context),
+                        onPressed:
+                            _guardando ? null : () => Navigator.pop(context),
                         child: const Text('Cancelar'),
                       ),
                       SizedBox(width: Esp.s),
                       FilledButton.icon(
                         onPressed: _guardando ? null : _guardar,
-                        icon: _guardando
-                            ? const SizedBox(
-                                width: 16,
-                                height: 16,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                ),
-                              )
-                            : const Icon(Icons.save_outlined, size: 18),
+                        icon:
+                            _guardando
+                                ? const SizedBox(
+                                  width: 16,
+                                  height: 16,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                  ),
+                                )
+                                : const Icon(Icons.save_outlined, size: 18),
                         label: Text(
                           _guardando ? 'Guardando…' : 'Guardar cambios',
                         ),
@@ -340,15 +353,16 @@ class _CamposImputacion extends StatelessWidget {
   final Widget empresa;
 
   @override
-  Widget build(BuildContext context) => aire.esChico
-      ? Column(children: [orden, SizedBox(height: Esp.m), empresa])
-      : Row(
-          children: [
-            Expanded(child: orden),
-            SizedBox(width: Esp.m),
-            Expanded(child: empresa),
-          ],
-        );
+  Widget build(BuildContext context) =>
+      aire.esChico
+          ? Column(children: [orden, SizedBox(height: Esp.m), empresa])
+          : Row(
+            children: [
+              Expanded(child: orden),
+              SizedBox(width: Esp.m),
+              Expanded(child: empresa),
+            ],
+          );
 }
 
 /// Los datos que se registraron en planta: se muestran, no se editan.

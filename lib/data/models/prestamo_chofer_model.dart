@@ -101,14 +101,15 @@ class PrestamoChoferModel {
         idCoche: json["idCoche"] ?? 0,
         idSolicitud: json["idSolicitud"] ?? 0,
         codSucursal: json["codSucursal"] ?? 0,
-        fechaEntrega: json["fechaEntrega"] != null && json["fechaEntrega"] != '' 
-            ? DateTime.tryParse(json["fechaEntrega"]) ?? DateTime(2000) 
-            : DateTime(2000),
+        fechaEntrega:
+            json["fechaEntrega"] != null && json["fechaEntrega"] != ''
+                ? DateTime.tryParse(json["fechaEntrega"]) ?? DateTime(2000)
+                : DateTime(2000),
         codEmpChoferSolicitado: json["codEmpChoferSolicitado"] ?? 0,
         codEmpEntregadoPor: json["codEmpEntregadoPor"] ?? 0,
         kilometrajeEntrega: json["kilometrajeEntrega"]?.toDouble() ?? 0.0,
         kilometrajeRecepcion: json["kilometrajeRecepcion"]?.toDouble() ?? 0.0,
-        nivelCombustibleEntrega: json["nivelCombustibleEntrega"] ?? 0, 
+        nivelCombustibleEntrega: json["nivelCombustibleEntrega"] ?? 0,
         nivelCombustibleRecepcion: json["nivelCombustibleRecepcion"] ?? 0,
         estadoLateralesEntrega: json["estadoLateralesEntrega"] ?? 0,
         estadoInteriorEntrega: json["estadoInteriorEntrega"] ?? 0,

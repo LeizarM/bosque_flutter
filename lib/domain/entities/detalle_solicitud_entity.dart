@@ -5,7 +5,8 @@ class DetalleSolicitudEntity {
   String numeroDocumento;
   int facturaProvSap;
   String codigoImportacion;
-  int numeroCuota; // 1, 2, 3... permite múltiples cuotas por mismo facturaProvSap
+  int
+  numeroCuota; // 1, 2, 3... permite múltiples cuotas por mismo facturaProvSap
   double montoFacturaUsd;
   double montoAmortizadoUsd;
   double montoAPagarUsd; // monto de esta cuota

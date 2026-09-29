@@ -71,7 +71,10 @@ class _EntregasPorChoferContentState
           setState(() {
             isLoading = false;
           });
-          mostrarAviso(context, 'Error al cargar los datos: ${error.toString()}');
+          mostrarAviso(
+            context,
+            'Error al cargar los datos: ${error.toString()}',
+          );
         });
   }
 

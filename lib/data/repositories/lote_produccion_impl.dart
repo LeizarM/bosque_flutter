@@ -241,9 +241,7 @@ class LoteProduccionImpl implements LoteProduccionRepository {
         data: {'idLp': idLp},
       );
       final list = (response.data as List<dynamic>?) ?? const [];
-      return list
-          .map((json) => MermaModel.fromJson(json).toEntity())
-          .toList();
+      return list.map((json) => MermaModel.fromJson(json).toEntity()).toList();
     } on DioException {
       return [];
     } catch (_) {

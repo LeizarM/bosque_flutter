@@ -4,7 +4,7 @@ class TareaRutinariaEntity {
   final int? idFrec;
   final int? idArea;
   final DateTime? fechaPartida;
-  final int? IniFin;
+  final int? iniFin;
   final int? idATR;
   final String descripcion;
   final int audUsuario;
@@ -15,7 +15,7 @@ class TareaRutinariaEntity {
     this.idFrec,
     this.idArea,
     this.fechaPartida,
-    this.IniFin,
+    this.iniFin,
     this.idATR,
     required this.descripcion,
     required this.audUsuario,
@@ -27,7 +27,7 @@ class TareaRutinariaEntity {
     int? idFrec,
     int? idArea,
     DateTime? fechaPartida,
-    int? IniFin,
+    int? iniFin,
     int? idATR,
     String? descripcion,
     int? audUsuario,
@@ -38,7 +38,7 @@ class TareaRutinariaEntity {
       idFrec: idFrec ?? this.idFrec,
       idArea: idArea ?? this.idArea,
       fechaPartida: fechaPartida ?? this.fechaPartida,
-      IniFin: IniFin ?? this.IniFin,
+      iniFin: iniFin ?? this.iniFin,
       idATR: idATR ?? this.idATR,
       descripcion: descripcion ?? this.descripcion,
       audUsuario: audUsuario ?? this.audUsuario,

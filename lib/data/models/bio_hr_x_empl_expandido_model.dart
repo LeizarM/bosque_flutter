@@ -23,43 +23,37 @@ class BioHrXEmplExpandidoModel {
     this.audFecha,
   });
 
-  factory BioHrXEmplExpandidoModel.fromJson(Map<String, dynamic> json) =>
-      BioHrXEmplExpandidoModel(
-        idHrEmpleado:
-            json['idHrEmpleado'] != null
-                ? BigInt.from(json['idHrEmpleado'])
-                : BigInt.zero,
-        idHrs: json['idHrs'] != null ? BigInt.from(json['idHrs']) : BigInt.zero,
-        jornada:
-            json['jornada'] != null ? DateTime.tryParse(json['jornada']) : null,
-        dia: json['dia'] ?? 0,
-        hrIngreso:
-            json['hrIngreso'] != null
-                ? DateTime.tryParse(json['hrIngreso'])
-                : null,
-        hrSalida:
-            json['hrSalida'] != null
-                ? DateTime.tryParse(json['hrSalida'])
-                : null,
-        audUsuario: json['audUsuario'] ?? 0,
-        audFecha:
-            json['audFecha'] != null
-                ? DateTime.tryParse(json['audFecha'])
-                : null,
-      );
-
-  factory BioHrXEmplExpandidoModel.fromEntity(
-    BioHrXEmplExpandidoEntity e,
+  factory BioHrXEmplExpandidoModel.fromJson(
+    Map<String, dynamic> json,
   ) => BioHrXEmplExpandidoModel(
-    idHrEmpleado: e.idHrEmpleado,
-    idHrs: e.idHrs,
-    jornada: e.jornada,
-    dia: e.dia,
-    hrIngreso: e.hrIngreso,
-    hrSalida: e.hrSalida,
-    audUsuario: e.audUsuario,
-    audFecha: e.audFecha,
+    idHrEmpleado:
+        json['idHrEmpleado'] != null
+            ? BigInt.from(json['idHrEmpleado'])
+            : BigInt.zero,
+    idHrs: json['idHrs'] != null ? BigInt.from(json['idHrs']) : BigInt.zero,
+    jornada:
+        json['jornada'] != null ? DateTime.tryParse(json['jornada']) : null,
+    dia: json['dia'] ?? 0,
+    hrIngreso:
+        json['hrIngreso'] != null ? DateTime.tryParse(json['hrIngreso']) : null,
+    hrSalida:
+        json['hrSalida'] != null ? DateTime.tryParse(json['hrSalida']) : null,
+    audUsuario: json['audUsuario'] ?? 0,
+    audFecha:
+        json['audFecha'] != null ? DateTime.tryParse(json['audFecha']) : null,
   );
+
+  factory BioHrXEmplExpandidoModel.fromEntity(BioHrXEmplExpandidoEntity e) =>
+      BioHrXEmplExpandidoModel(
+        idHrEmpleado: e.idHrEmpleado,
+        idHrs: e.idHrs,
+        jornada: e.jornada,
+        dia: e.dia,
+        hrIngreso: e.hrIngreso,
+        hrSalida: e.hrSalida,
+        audUsuario: e.audUsuario,
+        audFecha: e.audFecha,
+      );
 
   Map<String, dynamic> toJson() => {
     'idHrEmpleado': idHrEmpleado.toInt(),

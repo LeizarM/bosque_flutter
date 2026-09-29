@@ -106,7 +106,7 @@ class DesgloseTab extends ConsumerWidget {
 /// rango que termina antes de la fecha de inicio de beneficio. Y ese número
 /// entra en el total.
 ///
-/// Así que **acá no se pintan los cinco tramos**: se muestran los tres números
+/// Así que **aquí no se pintan los cinco tramos**: se muestran los tres números
 /// que sí son defendibles. Mostrar la cifra igual sería publicar un total que
 /// nadie puede sostener frente a un reclamo, y la etiqueta «-1º» convierte un
 /// error del sistema viejo en un error de este.
@@ -220,7 +220,7 @@ class _Tramos extends StatelessWidget {
   );
 
   /// Qué significa cada color. Un código cromático sin leyenda obliga a
-  /// adivinar, y acá lo que se adivina es si un número suma o resta.
+  /// adivinar, y aquí lo que se adivina es si un número suma o resta.
   Widget _leyenda(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     return Wrap(
@@ -308,22 +308,23 @@ class _Tramos extends StatelessWidget {
     return t.suma ? cs.primary : cs.tertiary;
   }
 
-  Widget _verDetalle(BuildContext context, TramoSaldoEntity t) => TextButton.icon(
-    onPressed:
-        () => mostrarDetalleTramo(
-          context,
-          codEmpleado: desglose.codEmpleado,
-          tramo: t,
+  Widget _verDetalle(BuildContext context, TramoSaldoEntity t) =>
+      TextButton.icon(
+        onPressed:
+            () => mostrarDetalleTramo(
+              context,
+              codEmpleado: desglose.codEmpleado,
+              tramo: t,
+            ),
+        icon: const Icon(Icons.unfold_more, size: 16),
+        label: const Text('Ver detalle'),
+        style: TextButton.styleFrom(
+          padding: const EdgeInsets.symmetric(horizontal: Esp.s),
+          minimumSize: const Size(0, 32),
+          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+          visualDensity: VisualDensity.compact,
         ),
-    icon: const Icon(Icons.unfold_more, size: 16),
-    label: const Text('Ver detalle'),
-    style: TextButton.styleFrom(
-      padding: const EdgeInsets.symmetric(horizontal: Esp.s),
-      minimumSize: const Size(0, 32),
-      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-      visualDensity: VisualDensity.compact,
-    ),
-  );
+      );
 
   Widget _tabla(BuildContext context) => Table(
     // La etiqueta se queda con todo el ancho sobrante y el número pide sólo lo

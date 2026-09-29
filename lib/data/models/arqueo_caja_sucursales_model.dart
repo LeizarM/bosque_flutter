@@ -2,12 +2,10 @@
 import 'dart:convert';
 import 'package:bosque_flutter/domain/entities/arqueo_caja_sucursales_entity.dart';
 
-ArqueoCajaSucursalesResponse arqueoCajaSucursalesResponseFromJson(
-  String str,
-) => ArqueoCajaSucursalesResponse.fromJson(json.decode(str));
-String arqueoCajaSucursalesResponseToJson(
-  ArqueoCajaSucursalesResponse data,
-) => json.encode(data.toJson());
+ArqueoCajaSucursalesResponse arqueoCajaSucursalesResponseFromJson(String str) =>
+    ArqueoCajaSucursalesResponse.fromJson(json.decode(str));
+String arqueoCajaSucursalesResponseToJson(ArqueoCajaSucursalesResponse data) =>
+    json.encode(data.toJson());
 
 class ArqueoCajaSucursalesResponse {
   String message;
@@ -103,13 +101,13 @@ class ArqueoCajaSucursalesModel {
       diferencia: json["diferencia"],
       tc: json["tc"],
       idBitTarea: json["idBitTarea"],
-      fechaRevisado: json["fechaRevisado"] != null
-          ? DateTime.tryParse(json["fechaRevisado"])
-          : null,
+      fechaRevisado:
+          json["fechaRevisado"] != null
+              ? DateTime.tryParse(json["fechaRevisado"])
+              : null,
       audUsuario: json["audUsuario"] ?? 0,
-      audFecha: json["audFecha"] != null
-          ? DateTime.tryParse(json["audFecha"])
-          : null,
+      audFecha:
+          json["audFecha"] != null ? DateTime.tryParse(json["audFecha"]) : null,
     );
   }
 

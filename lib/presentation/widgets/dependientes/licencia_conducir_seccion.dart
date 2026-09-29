@@ -69,8 +69,9 @@ class _LicenciaConducirSeccionState
 
   @override
   Widget build(BuildContext context) {
-    final licenciasAsync =
-        ref.watch(obtenerLicenciasConducirProvider(widget.codPersona));
+    final licenciasAsync = ref.watch(
+      obtenerLicenciasConducirProvider(widget.codPersona),
+    );
     final isDesktop = ResponsiveUtilsBosque.isDesktop(context);
 
     final theme = Theme.of(context);
@@ -144,33 +145,36 @@ class _LicenciaConducirSeccionState
                 );
               }
               return Column(
-                children: licencias
-                    .map(
-                      (licencia) => Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 8),
-                        child: _buildLicenciaCard(
-                          context,
-                          licencia,
-                          icono,
-                          textoPrincipal,
-                          textoSecundario,
-                        ),
-                      ),
-                    )
-                    .toList(),
+                children:
+                    licencias
+                        .map(
+                          (licencia) => Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 8),
+                            child: _buildLicenciaCard(
+                              context,
+                              licencia,
+                              icono,
+                              textoPrincipal,
+                              textoSecundario,
+                            ),
+                          ),
+                        )
+                        .toList(),
               );
             },
-            loading: () => const Padding(
-              padding: EdgeInsets.all(16),
-              child: Center(child: CircularProgressIndicator()),
-            ),
-            error: (error, _) => Padding(
-              padding: const EdgeInsets.all(16),
-              child: Text(
-                'Error al cargar las licencias: $error',
-                style: const TextStyle(color: Colors.red),
-              ),
-            ),
+            loading:
+                () => const Padding(
+                  padding: EdgeInsets.all(16),
+                  child: Center(child: CircularProgressIndicator()),
+                ),
+            error:
+                (error, _) => Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Text(
+                    'Error al cargar las licencias: $error',
+                    style: const TextStyle(color: Colors.red),
+                  ),
+                ),
           ),
         ],
       ),
@@ -231,10 +235,7 @@ class _LicenciaConducirSeccionState
                         child: Chip(
                           label: const Text(
                             'Vencida',
-                            style: TextStyle(
-                              fontSize: 10,
-                              color: Colors.white,
-                            ),
+                            style: TextStyle(fontSize: 10, color: Colors.white),
                           ),
                           backgroundColor: Colors.redAccent,
                           padding: EdgeInsets.zero,
@@ -246,9 +247,7 @@ class _LicenciaConducirSeccionState
                   'Vence: ${FechaUtils.formatDate(licencia.fechaCaducidad)}',
                   style: TextStyle(
                     fontSize: isDesktop ? 14 : 13,
-                    color: estaVencida
-                        ? Colors.red.shade600
-                        : textoSecundario,
+                    color: estaVencida ? Colors.red.shade600 : textoSecundario,
                   ),
                 ),
               ],
@@ -259,40 +258,40 @@ class _LicenciaConducirSeccionState
               IconButton(
                 icon: Icon(Icons.edit, color: icono),
                 tooltip: 'Editar',
-                onPressed: () => _mostrarDialogoEditarLicencia(
-                  context,
-                  licencia,
-                ),
+                onPressed:
+                    () => _mostrarDialogoEditarLicencia(context, licencia),
               ),
             if (widget.selectedOperation['licenciaConducir'] == 'eliminar')
               IconButton(
                 icon: const Icon(Icons.delete, color: Colors.red),
                 tooltip: 'Eliminar',
-                onPressed: () => ConfirmDialog.show(
-                  context,
-                  title: 'Eliminar Licencia',
-                  content:
-                      '¿Está seguro que desea eliminar esta licencia de conducir?',
-                  confirmText: 'Eliminar',
-                  cancelText: 'Cancelar',
-                  confirmColor: Colors.red,
-                ).then((confirmed) async {
-                  if (confirmed == true && context.mounted) {
-                    await executeABM(
-                      ref: ref,
-                      context: context,
-                      operation: () => ref.read(
-                        eliminarLicenciaConducirProvider(
-                          licencia.codLicencia,
-                        ).future,
-                      ),
-                      providersToInvalidate: [
-                        obtenerLicenciasConducirProvider(widget.codPersona),
-                      ],
-                      successMessage: 'Licencia eliminada correctamente',
-                    );
-                  }
-                }),
+                onPressed:
+                    () => ConfirmDialog.show(
+                      context,
+                      title: 'Eliminar Licencia',
+                      content:
+                          '¿Está seguro que desea eliminar esta licencia de conducir?',
+                      confirmText: 'Eliminar',
+                      cancelText: 'Cancelar',
+                      confirmColor: Colors.red,
+                    ).then((confirmed) async {
+                      if (confirmed == true && context.mounted) {
+                        await executeABM(
+                          ref: ref,
+                          context: context,
+                          operation:
+                              () => ref.read(
+                                eliminarLicenciaConducirProvider(
+                                  licencia.codLicencia,
+                                ).future,
+                              ),
+                          providersToInvalidate: [
+                            obtenerLicenciasConducirProvider(widget.codPersona),
+                          ],
+                          successMessage: 'Licencia eliminada correctamente',
+                        );
+                      }
+                    }),
               ),
           ],
         ],
@@ -301,78 +300,82 @@ class _LicenciaConducirSeccionState
   }
 
   void _mostrarDialogoAgregarLicencia(BuildContext context) {
-  final user = ref.read(userProvider);
-  showDialog(
-    context: context,
-    barrierDismissible: false,
-    builder: (context) => Dialog(
-      child: FormularioLicenciaConducir(
-        title: 'Agregar Licencia de Conducir',
-        codPersona: widget.codPersona,
-        audUsuario: user?.codUsuario ?? 0,
-        isEditing: false,
-        onSave: (licencia) async {
-          await executeABM(
-            ref: ref,
-            context: context,
-            operation: () => ref.read(
-              registrarLicenciaConducirProvider(licencia).future,
+    final user = ref.read(userProvider);
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder:
+          (context) => Dialog(
+            child: FormularioLicenciaConducir(
+              title: 'Agregar Licencia de Conducir',
+              codPersona: widget.codPersona,
+              audUsuario: user?.codUsuario ?? 0,
+              isEditing: false,
+              onSave: (licencia) async {
+                await executeABM(
+                  ref: ref,
+                  context: context,
+                  operation:
+                      () => ref.read(
+                        registrarLicenciaConducirProvider(licencia).future,
+                      ),
+                  providersToInvalidate: [
+                    obtenerLicenciasConducirProvider(widget.codPersona),
+                  ],
+                  successMessage: 'Licencia registrada correctamente',
+                );
+                // ✅ Cerrar diálogo después de guardar exitosamente
+                if (context.mounted) {
+                  Navigator.of(context).pop();
+                }
+              },
+              onCancel: () {
+                // No hacer nada aquí
+              },
             ),
-            providersToInvalidate: [
-              obtenerLicenciasConducirProvider(widget.codPersona),
-            ],
-            successMessage: 'Licencia registrada correctamente',
-          );
-          // ✅ Cerrar diálogo después de guardar exitosamente
-          if (context.mounted) {
-            Navigator.of(context).pop();
-          }
-        },
-        onCancel: () {
-          // No hacer nada aquí
-        },
-      ),
-    ),
-  );
-}
+          ),
+    );
+  }
 
-void _mostrarDialogoEditarLicencia(
-  BuildContext context,
-  LicenciaConducirEntity licencia,
-) {
-  final user = ref.read(userProvider);
-  showDialog(
-    context: context,
-    barrierDismissible: false,
-    builder: (context) => Dialog(
-      child: FormularioLicenciaConducir(
-        title: 'Editar Licencia de Conducir',
-        licenciaInicial: licencia,
-        codPersona: widget.codPersona,
-        audUsuario: user?.codUsuario ?? 0,
-        isEditing: true,
-        onSave: (licencia) async {
-          await executeABM(
-            ref: ref,
-            context: context,
-            operation: () => ref.read(
-              registrarLicenciaConducirProvider(licencia).future,
+  void _mostrarDialogoEditarLicencia(
+    BuildContext context,
+    LicenciaConducirEntity licencia,
+  ) {
+    final user = ref.read(userProvider);
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder:
+          (context) => Dialog(
+            child: FormularioLicenciaConducir(
+              title: 'Editar Licencia de Conducir',
+              licenciaInicial: licencia,
+              codPersona: widget.codPersona,
+              audUsuario: user?.codUsuario ?? 0,
+              isEditing: true,
+              onSave: (licencia) async {
+                await executeABM(
+                  ref: ref,
+                  context: context,
+                  operation:
+                      () => ref.read(
+                        registrarLicenciaConducirProvider(licencia).future,
+                      ),
+                  providersToInvalidate: [
+                    obtenerLicenciasConducirProvider(widget.codPersona),
+                  ],
+                  successMessage: 'Licencia actualizada correctamente',
+                );
+                // ✅ Cerrar diálogo después de guardar exitosamente
+                if (context.mounted) {
+                  Navigator.of(context).pop();
+                }
+              },
+              onCancel: () {
+                // No hacer nada aquí
+              },
             ),
-            providersToInvalidate: [
-              obtenerLicenciasConducirProvider(widget.codPersona),
-            ],
-            successMessage: 'Licencia actualizada correctamente',
-          );
-          // ✅ Cerrar diálogo después de guardar exitosamente
-          if (context.mounted) {
-            Navigator.of(context).pop();
-          }
-        },
-        onCancel: () {
-          // No hacer nada aquí
-        },
-      ),
-    ),
-  );
-}
+          ),
+    );
+  }
 }

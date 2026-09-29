@@ -230,9 +230,10 @@ class _PintorCorte extends CustomPainter {
 
     // La hoja base, a escala y centrada, conservando su proporcion real: si el
     // papel es apaisado el dibujo tambien lo es.
-    final escala = (size.width / anchoBase) < (size.height / largoBase)
-        ? size.width / anchoBase
-        : size.height / largoBase;
+    final escala =
+        (size.width / anchoBase) < (size.height / largoBase)
+            ? size.width / anchoBase
+            : size.height / largoBase;
     final w = anchoBase * escala;
     final h = largoBase * escala;
     final origen = Offset((size.width - w) / 2, (size.height - h) / 2);
@@ -259,10 +260,11 @@ class _PintorCorte extends CustomPainter {
 
       // Las lineas de corte, solo si se van a distinguir.
       if (ap.total <= _maxCeldas && cw > 2 && ch > 2) {
-        final trazo = Paint()
-          ..color = linea
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 0.7;
+        final trazo =
+            Paint()
+              ..color = linea
+              ..style = PaintingStyle.stroke
+              ..strokeWidth = 0.7;
         for (var c = 1; c < ap.columnas; c++) {
           final x = origen.dx + cw * c;
           canvas.drawLine(
@@ -310,11 +312,12 @@ enum Urgencia { vencida, estaSemana, masAdelante }
 Urgencia urgenciaDe(DateTime? entrega) {
   if (entrega == null) return Urgencia.masAdelante;
   final hoy = DateTime.now();
-  final dias = DateTime(
-    entrega.year,
-    entrega.month,
-    entrega.day,
-  ).difference(DateTime(hoy.year, hoy.month, hoy.day)).inDays;
+  final dias =
+      DateTime(
+        entrega.year,
+        entrega.month,
+        entrega.day,
+      ).difference(DateTime(hoy.year, hoy.month, hoy.day)).inDays;
   if (dias < 0) return Urgencia.vencida;
   if (dias <= 7) return Urgencia.estaSemana;
   return Urgencia.masAdelante;

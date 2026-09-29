@@ -32,8 +32,7 @@ class DialogoDiaNoLaborable extends ConsumerStatefulWidget {
       _DialogoDiaNoLaborableState();
 }
 
-class _DialogoDiaNoLaborableState
-    extends ConsumerState<DialogoDiaNoLaborable> {
+class _DialogoDiaNoLaborableState extends ConsumerState<DialogoDiaNoLaborable> {
   final _formKey = GlobalKey<FormState>();
   final _motivoCtrl = TextEditingController();
   late DateTime _fecha;
@@ -76,9 +75,10 @@ class _DialogoDiaNoLaborableState
     final seleccionadas =
         _seleccion?.entries.where((e) => e.value).map((e) => e.key).toList() ??
         [];
-    final sucursalesCsv = seleccionadas.isEmpty
-        ? null
-        : seleccionadas.map((id) => id.toInt()).join(',');
+    final sucursalesCsv =
+        seleccionadas.isEmpty
+            ? null
+            : seleccionadas.map((id) => id.toInt()).join(',');
 
     final payload = <String, dynamic>{
       'idDiaNoLaborable': _idEditar.toInt(),
@@ -178,9 +178,11 @@ class _DialogoDiaNoLaborableState
                 border: OutlineInputBorder(),
                 isDense: true,
               ),
-              validator: (v) => (v == null || v.trim().isEmpty)
-                  ? 'El motivo es requerido'
-                  : null,
+              validator:
+                  (v) =>
+                      (v == null || v.trim().isEmpty)
+                          ? 'El motivo es requerido'
+                          : null,
             ),
             const SizedBox(height: 6),
 
@@ -194,25 +196,27 @@ class _DialogoDiaNoLaborableState
               ),
             ),
             Text(
-              'Si no marcás ninguna sucursal, el feriado aplica a TODA la empresa.',
+              'Si no marcas ninguna sucursal, el feriado aplica a TODA la empresa.',
               style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant),
             ),
             const SizedBox(height: 6),
             asyncSucursales.when(
-              loading: () => const Padding(
-                padding: EdgeInsets.symmetric(vertical: 20),
-                child: Center(
-                  child: SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2),
+              loading:
+                  () => const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 20),
+                    child: Center(
+                      child: SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      ),
+                    ),
                   ),
-                ),
-              ),
-              error: (e, _) => Text(
-                'Error cargando sucursales: $e',
-                style: TextStyle(color: cs.error, fontSize: 12),
-              ),
+              error:
+                  (e, _) => Text(
+                    'Error cargando sucursales: $e',
+                    style: TextStyle(color: cs.error, fontSize: 12),
+                  ),
               data: (sucursales) {
                 _seleccion ??= {
                   for (final s in sucursales) s.codSucursal: s.seleccionado,
@@ -229,15 +233,17 @@ class _DialogoDiaNoLaborableState
                       Row(
                         children: [
                           TextButton(
-                            onPressed: () => setState(() {
-                              _seleccion!.updateAll((_, __) => true);
-                            }),
+                            onPressed:
+                                () => setState(() {
+                                  _seleccion!.updateAll((_, __) => true);
+                                }),
                             child: const Text('Marcar todas'),
                           ),
                           TextButton(
-                            onPressed: () => setState(() {
-                              _seleccion!.updateAll((_, __) => false);
-                            }),
+                            onPressed:
+                                () => setState(() {
+                                  _seleccion!.updateAll((_, __) => false);
+                                }),
                             child: const Text('Ninguna (global)'),
                           ),
                         ],
@@ -246,22 +252,26 @@ class _DialogoDiaNoLaborableState
                       Flexible(
                         child: ListView(
                           shrinkWrap: true,
-                          children: sucursales
-                              .map(
-                                (s) => CheckboxListTile(
-                                  dense: true,
-                                  visualDensity: VisualDensity.compact,
-                                  title: Text(
-                                    s.nombreSucEmpresa,
-                                    style: const TextStyle(fontSize: 13),
-                                  ),
-                                  value: _seleccion![s.codSucursal] ?? false,
-                                  onChanged: (v) => setState(() {
-                                    _seleccion![s.codSucursal] = v ?? false;
-                                  }),
-                                ),
-                              )
-                              .toList(),
+                          children:
+                              sucursales
+                                  .map(
+                                    (s) => CheckboxListTile(
+                                      dense: true,
+                                      visualDensity: VisualDensity.compact,
+                                      title: Text(
+                                        s.nombreSucEmpresa,
+                                        style: const TextStyle(fontSize: 13),
+                                      ),
+                                      value:
+                                          _seleccion![s.codSucursal] ?? false,
+                                      onChanged:
+                                          (v) => setState(() {
+                                            _seleccion![s.codSucursal] =
+                                                v ?? false;
+                                          }),
+                                    ),
+                                  )
+                                  .toList(),
                         ),
                       ),
                     ],
@@ -275,9 +285,8 @@ class _DialogoDiaNoLaborableState
               children: [
                 Expanded(
                   child: OutlinedButton(
-                    onPressed: _cargando
-                        ? null
-                        : () => Navigator.of(context).pop(),
+                    onPressed:
+                        _cargando ? null : () => Navigator.of(context).pop(),
                     child: const Text('Cancelar'),
                   ),
                 ),
@@ -285,13 +294,14 @@ class _DialogoDiaNoLaborableState
                 Expanded(
                   child: FilledButton(
                     onPressed: _cargando ? null : _guardar,
-                    child: _cargando
-                        ? const SizedBox(
-                            width: 18,
-                            height: 18,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                        : const Text('Guardar'),
+                    child:
+                        _cargando
+                            ? const SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                            : const Text('Guardar'),
                   ),
                 ),
               ],

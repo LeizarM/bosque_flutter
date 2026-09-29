@@ -4,10 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 class OperacionesTigoWidget extends ConsumerWidget {
   final List<Widget> accionesExtra;
 
-  const OperacionesTigoWidget({
-    super.key,
-    required this.accionesExtra,
-  });
+  const OperacionesTigoWidget({super.key, required this.accionesExtra});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {

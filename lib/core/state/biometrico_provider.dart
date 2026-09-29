@@ -24,38 +24,39 @@ final biometricoRepositoryProvider = Provider<BiometricoRepository>(
 /// se filtra en el cliente con [ComboBuscable] — no hace falta un buscador
 /// con rebote como el de `permisos-rrhh`, que sí busca contra miles de
 /// empleados en el servidor.
-final empleadosBiometricoProvider = FutureProvider<List<BioEmplBosqEmplEntity>>((
-  ref,
-) async {
-  final repo = ref.watch(biometricoRepositoryProvider);
-  // soloActivos: true — el backend cruza contra el padrón activo de Bosque y
-  // ya excluye a quien dejó la empresa (no es un filtro que se pueda aplicar
-  // acá: BioEmplBosqEmplEntity no trae el estado activo/inactivo, sólo el
-  // backend lo sabe). Se recalcula en cada carga, así que si el empleado
-  // vuelve a estar activo reaparece solo, sin nada que tocar acá.
-  final lista = await repo.listarEmpleados({'soloActivos': true});
-  // Sólo los enlazados: elegir a alguien sin idEmpleadBio garantiza el 400
-  // "El empleado no está enlazado..." del reporte. Mejor no ofrecerlo.
-  final enlazados = lista.where((e) => e.enlazado).toList()
-    ..sort((a, b) => a.datoNombreBosq.compareTo(b.datoNombreBosq));
-  // Un empleado enlazado a DOS usuarios del biométrico (dos filas de
-  // tbio_bioEmplBosqEmpl con el mismo idEmpleado — el mismo caso real que
-  // hacía aparecer duplicado en el Resumen mensual) aparecería dos veces acá
-  // también. El backend ya dedupea el reporte; acá se hace lo mismo por
-  // idEmpleado para que el buscador no muestre a la misma persona dos veces
-  // — cuál de los dos enlaces quede no importa, `calcularReporte` en el
-  // backend resuelve el enlace vigente por su cuenta igual.
-  final vistos = <BigInt>{};
-  final sinDuplicar = [
-    for (final e in enlazados)
-      if (vistos.add(e.idEmpleado)) e,
-  ];
-  return sinDuplicar;
-});
+final empleadosBiometricoProvider = FutureProvider<List<BioEmplBosqEmplEntity>>(
+  (ref) async {
+    final repo = ref.watch(biometricoRepositoryProvider);
+    // soloActivos: true — el backend cruza contra el padrón activo de Bosque y
+    // ya excluye a quien dejó la empresa (no es un filtro que se pueda aplicar
+    // aquí: BioEmplBosqEmplEntity no trae el estado activo/inactivo, sólo el
+    // backend lo sabe). Se recalcula en cada carga, así que si el empleado
+    // vuelve a estar activo reaparece solo, sin nada que tocar aquí.
+    final lista = await repo.listarEmpleados({'soloActivos': true});
+    // Sólo los enlazados: elegir a alguien sin idEmpleadBio garantiza el 400
+    // "El empleado no está enlazado..." del reporte. Mejor no ofrecerlo.
+    final enlazados =
+        lista.where((e) => e.enlazado).toList()
+          ..sort((a, b) => a.datoNombreBosq.compareTo(b.datoNombreBosq));
+    // Un empleado enlazado a DOS usuarios del biométrico (dos filas de
+    // tbio_bioEmplBosqEmpl con el mismo idEmpleado — el mismo caso real que
+    // hacía aparecer duplicado en el Resumen mensual) aparecería dos veces aquí
+    // también. El backend ya dedupea el reporte; aquí se hace lo mismo por
+    // idEmpleado para que el buscador no muestre a la misma persona dos veces
+    // — cuál de los dos enlaces quede no importa, `calcularReporte` en el
+    // backend resuelve el enlace vigente por su cuenta igual.
+    final vistos = <BigInt>{};
+    final sinDuplicar = [
+      for (final e in enlazados)
+        if (vistos.add(e.idEmpleado)) e,
+    ];
+    return sinDuplicar;
+  },
+);
 
 /// El padrón COMPLETO del cruce (enlazados y no enlazados) — para la pestaña
 /// de Verificación de Empleados. `empleadosBiometricoProvider` de arriba
-/// filtra a propósito para el reporte; acá hace falta ver a quién le falta
+/// filtra a propósito para el reporte; aquí hace falta ver a quién le falta
 /// enlazar.
 final todosLosEmpleadosBiometricoProvider =
     FutureProvider<List<BioEmplBosqEmplEntity>>((ref) async {
@@ -92,20 +93,21 @@ final bioHrSemanalListProvider = FutureProvider<List<BioHrSemanalEntity>>((
 });
 
 /// El detalle (7 días) de UN horario semanal.
-final bioHrSemanalDetalleProvider = FutureProvider.family<
-  List<BioHrSemanalDetalleEntity>,
-  BigInt
->((ref, idHrSemanal) async {
-  final repo = ref.watch(biometricoRepositoryProvider);
-  final lista = await repo.listarHorariosSemanalesDetalle({
-    'idHrSemanal': idHrSemanal.toInt(),
-  });
-  lista.sort((a, b) => a.dia.compareTo(b.dia));
-  return lista;
-});
+final bioHrSemanalDetalleProvider =
+    FutureProvider.family<List<BioHrSemanalDetalleEntity>, BigInt>((
+      ref,
+      idHrSemanal,
+    ) async {
+      final repo = ref.watch(biometricoRepositoryProvider);
+      final lista = await repo.listarHorariosSemanalesDetalle({
+        'idHrSemanal': idHrSemanal.toInt(),
+      });
+      lista.sort((a, b) => a.dia.compareTo(b.dia));
+      return lista;
+    });
 
 /// Las asignaciones de horario (`tbio_bioHrEmpleado`) de UN empleado —
-/// "Programación Mensual por Empleado" del legacy: acá se ve por qué un
+/// "Programación Mensual por Empleado" del legacy: aquí se ve por qué un
 /// empleado puede tener N horarios en el mes (varias filas, cada una con su
 /// `inicio`).
 final bioHrEmpleadoListProvider =
@@ -138,7 +140,10 @@ typedef BitacoraDeRegistro = ({String tabla, String idRegistro});
 final bitacoraBiometricoProvider = FutureProvider.autoDispose
     .family<List<BitacoraEntity>, BitacoraDeRegistro>((ref, p) {
       final repo = ref.watch(biometricoRepositoryProvider);
-      return repo.listarBitacora({'tabla': p.tabla, 'idRegistro': p.idRegistro});
+      return repo.listarBitacora({
+        'tabla': p.tabla,
+        'idRegistro': p.idRegistro,
+      });
     });
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -153,9 +158,7 @@ final bioCheckInOutAdicionalListProvider =
       userId,
     ) async {
       final repo = ref.watch(biometricoRepositoryProvider);
-      final lista = await repo.listarMarcacionesAdicionales({
-        'USERID': userId,
-      });
+      final lista = await repo.listarMarcacionesAdicionales({'USERID': userId});
       lista.sort((a, b) {
         final at = a.checkTime, bt = b.checkTime;
         if (at == null || bt == null) return 0;
@@ -196,17 +199,18 @@ class ReporteBiometricoParams {
 /// El reporte mensual de asistencia ya corregido (ver `BiometricoController`
 /// en el backend): un feriado o un sábado que no le tocaba ya NO sale como
 /// falta.
-final reporteBiometricoProvider = FutureProvider.family<
-  List<AsistenciaDiaEntity>,
-  ReporteBiometricoParams
->((ref, params) async {
-  final repo = ref.watch(biometricoRepositoryProvider);
-  return repo.reporteMensual(
-    codEmpleado: params.codEmpleado,
-    anio: params.anio,
-    mes: params.mes,
-  );
-});
+final reporteBiometricoProvider =
+    FutureProvider.family<List<AsistenciaDiaEntity>, ReporteBiometricoParams>((
+      ref,
+      params,
+    ) async {
+      final repo = ref.watch(biometricoRepositoryProvider);
+      return repo.reporteMensual(
+        codEmpleado: params.codEmpleado,
+        anio: params.anio,
+        mes: params.mes,
+      );
+    });
 
 /// El resumen mensual de todos los empleados enlazados — una fila por
 /// persona, con los totales. Puede tardar (recorre a todos, ver el javadoc

@@ -112,7 +112,7 @@ class _NominaPermisosTabState extends ConsumerState<NominaPermisosTab> {
 
     // **Este aviso NO se guía por el cajón.** Quién decide si se ofrecen las
     // cargas colectivas es `permisos_rrhh_screen.dart`, con el ancho del cajón
-    // de la pantalla; acá el cajón es el panel de detalle, que a 1280 px mide
+    // de la pantalla; aquí el cajón es el panel de detalle, que a 1280 px mide
     // 879 y no se distingue de una tablet a pantalla completa (800). Con el
     // cajón, en escritorio salían las dos cosas a la vez: los botones arriba y
     // el cartel diciendo que no están.
@@ -159,7 +159,7 @@ class _NominaPermisosTabState extends ConsumerState<NominaPermisosTab> {
   /// detrás de un mismo nombre le concedería a una persona una atribución que
   /// hoy no tiene. Esconder no es autorizar —el gate de verdad está en el
   /// backend—, esto sólo evita ofrecer un botón que va a devolver 403.
-  /// Las colectivas no están acá: viven en la barra de arriba y sólo aparecen
+  /// Las colectivas no están aquí: viven en la barra de arriba y sólo aparecen
   /// con pantalla ancha (ver `permisos_rrhh_screen.dart`). Un botón que falta
   /// sin decir por qué se lee como que el sistema está roto, así que el motivo
   /// se muestra al lado de las altas que sí están —y sólo cuando falta—.
@@ -406,8 +406,8 @@ class _NominaPermisosTabState extends ConsumerState<NominaPermisosTab> {
     return Bloque(
       icono: Icons.event_note_outlined,
       titulo: 'Nómina de permisos',
-      // Acá es donde alguien va a buscar el botón de editar o borrar, así que
-      // acá se dice que no existe. Antes estaba en una cabecera fija arriba de
+      // Aquí es donde alguien va a buscar el botón de editar o borrar, así que
+      // aquí se dice que no existe. Antes estaba en una cabecera fija arriba de
       // todo, que se lee una vez y después ocupa tres renglones para siempre.
       explicacion:
           'Todo lo que tiene cargado en el kardex, del más reciente al más '
@@ -431,7 +431,7 @@ class _NominaPermisosTabState extends ConsumerState<NominaPermisosTab> {
                   'Pruebe quitando alguno.',
             );
           }
-          // El SP ordena por `tp.desde ASC` y se invierte acá, no en el DAO:
+          // El SP ordena por `tp.desde ASC` y se invierte aquí, no en el DAO:
           // `releerUltimo` recorre esa misma lista para encontrar la fila que
           // acaba de grabarse y depende del orden que devuelve el servidor.
           // Lo que cambia es cómo se lee la nómina, no cómo se consulta.
@@ -548,7 +548,7 @@ class _NominaPermisosTabState extends ConsumerState<NominaPermisosTab> {
   /// veces —0,5 días *son* 4 horas— y ponía el tipo, que casi siempre dice
   /// «Vacación», en la columna que más se escanea.
   ///
-  /// Acá cada columna hace un solo trabajo: el riel de la izquierda dice en
+  /// Aquí cada columna hace un solo trabajo: el riel de la izquierda dice en
   /// qué año estás parado, «Cuándo» junta fecha y horario en una sola
   /// expresión, «Duración» pone los días al frente y las horas como respaldo,
   /// y «Detalle» es la columna humana. El tipo aparece sólo cuando **no** es
@@ -689,7 +689,7 @@ class _NominaPermisosTabState extends ConsumerState<NominaPermisosTab> {
   /// La barra ocupa el renglón entero y el motivo va encima.
   ///
   /// Con la barra en una columna angosta sobraba media fila vacía a la derecha
-  /// y la magnitud quedaba dibujada en 88 px. Acá la barra **es** el renglón:
+  /// y la magnitud quedaba dibujada en 88 px. Aquí la barra **es** el renglón:
   /// crece sobre todo el ancho disponible, el texto la monta y el espacio
   /// muerto desaparece. El día completo o más va en el tono pleno y la
   /// fracción de jornada apagada: «faltó» y «salió un rato» se distinguen

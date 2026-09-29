@@ -75,9 +75,10 @@ class _VerLoteProduccionScreenState
 
   Future<void> _reporteDelLote(LoteProduccionEntity lote) => mostrarReportePdf(
     context: context,
-    downloadFunction: () => ref
-        .read(loteProduccionRepositoryProvider)
-        .reporteLotePdf(lote.idLp),
+    downloadFunction:
+        () => ref
+            .read(loteProduccionRepositoryProvider)
+            .reporteLotePdf(lote.idLp),
     filename: 'lote_produccion_${lote.numLote}_${lote.anio}.pdf',
   );
 
@@ -94,7 +95,9 @@ class _VerLoteProduccionScreenState
       iconoAceptar: Icons.filter_alt_outlined,
     );
     if (rango == null || !mounted) return;
-    await ref.read(verLotesProvider.notifier).setRango(rango.desde, rango.hasta);
+    await ref
+        .read(verLotesProvider.notifier)
+        .setRango(rango.desde, rango.hasta);
   }
 
   Future<void> _reporteProduccion() async {
@@ -108,9 +111,10 @@ class _VerLoteProduccionScreenState
 
     await mostrarReportePdf(
       context: context,
-      downloadFunction: () => ref
-          .read(loteProduccionRepositoryProvider)
-          .reporteResumenProduccionPdf(rango.desde, rango.hasta),
+      downloadFunction:
+          () => ref
+              .read(loteProduccionRepositoryProvider)
+              .reporteResumenProduccionPdf(rango.desde, rango.hasta),
       filename:
           'resumen_produccion_${fechaArchivo(rango.desde)}_'
           '${fechaArchivo(rango.hasta)}.pdf',
@@ -127,9 +131,10 @@ class _VerLoteProduccionScreenState
 
     await mostrarReportePdf(
       context: context,
-      downloadFunction: () => ref
-          .read(loteProduccionRepositoryProvider)
-          .reporteResmadoPdf(rango.desde, rango.hasta),
+      downloadFunction:
+          () => ref
+              .read(loteProduccionRepositoryProvider)
+              .reporteResmadoPdf(rango.desde, rango.hasta),
       filename:
           'resmado_${fechaArchivo(rango.desde)}_'
           '${fechaArchivo(rango.hasta)}.pdf',
@@ -146,9 +151,10 @@ class _VerLoteProduccionScreenState
 
     await mostrarReportePdf(
       context: context,
-      downloadFunction: () => ref
-          .read(loteProduccionRepositoryProvider)
-          .reporteConsolidadoCortePdf(rango.desde, rango.hasta),
+      downloadFunction:
+          () => ref
+              .read(loteProduccionRepositoryProvider)
+              .reporteConsolidadoCortePdf(rango.desde, rango.hasta),
       filename:
           'consolidado_corte_${fechaArchivo(rango.desde)}_'
           '${fechaArchivo(rango.hasta)}.pdf',
@@ -168,9 +174,10 @@ class _VerLoteProduccionScreenState
     final puedeReabrir = ref
         .watch(buttonPermissionsProvider)
         .maybeWhen(
-          data: (_) => ref
-              .read(buttonPermissionsProvider.notifier)
-              .tienePermiso(_btnVer),
+          data:
+              (_) => ref
+                  .read(buttonPermissionsProvider.notifier)
+                  .tienePermiso(_btnVer),
           orElse: () => false,
         );
 
@@ -205,9 +212,10 @@ class _VerLoteProduccionScreenState
               ),
               SizedBox(
                 height: 2,
-                child: estado.cargando
-                    ? const LinearProgressIndicator(minHeight: 2)
-                    : null,
+                child:
+                    estado.cargando
+                        ? const LinearProgressIndicator(minHeight: 2)
+                        : null,
               ),
               Expanded(
                 child: _Listado(
@@ -296,22 +304,23 @@ class _Cabecera extends StatelessWidget {
         Esp.m,
       ),
       color: cs.surfaceContainerLow,
-      child: aire.esChico
-          ? Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _Titulo(cantidad: cantidad),
-                SizedBox(height: Esp.m),
-                Wrap(spacing: Esp.s, runSpacing: Esp.s, children: acciones),
-              ],
-            )
-          : Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(child: _Titulo(cantidad: cantidad)),
-                Wrap(spacing: Esp.s, runSpacing: Esp.s, children: acciones),
-              ],
-            ),
+      child:
+          aire.esChico
+              ? Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _Titulo(cantidad: cantidad),
+                  SizedBox(height: Esp.m),
+                  Wrap(spacing: Esp.s, runSpacing: Esp.s, children: acciones),
+                ],
+              )
+              : Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(child: _Titulo(cantidad: cantidad)),
+                  Wrap(spacing: Esp.s, runSpacing: Esp.s, children: acciones),
+                ],
+              ),
     );
   }
 }
@@ -335,7 +344,9 @@ class _Titulo extends StatelessWidget {
       // No se repite el periodo: esta en el boton de abajo, que es donde se
       // cambia.
       Text(
-        cantidad == 1 ? '1 lote en el periodo' : '$cantidad lotes en el periodo',
+        cantidad == 1
+            ? '1 lote en el periodo'
+            : '$cantidad lotes en el periodo',
         style: context.apagado(),
       ),
     ],
@@ -377,15 +388,16 @@ class _BarraFiltros extends StatelessWidget {
         prefixIcon: const Icon(Icons.search, size: 20),
         border: const OutlineInputBorder(),
         isDense: true,
-        suffixIcon: buscarCtrl.text.isEmpty
-            ? null
-            : IconButton(
-                icon: const Icon(Icons.close, size: 18),
-                onPressed: () {
-                  buscarCtrl.clear();
-                  onBuscar('');
-                },
-              ),
+        suffixIcon:
+            buscarCtrl.text.isEmpty
+                ? null
+                : IconButton(
+                  icon: const Icon(Icons.close, size: 18),
+                  onPressed: () {
+                    buscarCtrl.clear();
+                    onBuscar('');
+                  },
+                ),
       ),
     );
 
@@ -429,9 +441,10 @@ class _BarraFiltros extends StatelessWidget {
             value: v,
             icon: Icon(v.icono, size: 18),
             label: aire == Aire.amplio ? Text(v.rotulo) : null,
-            tooltip: v == VistaLotes.completa
-                ? 'Todas las columnas del sistema anterior'
-                : 'Solo lo esencial de cada lote',
+            tooltip:
+                v == VistaLotes.completa
+                    ? 'Todas las columnas del sistema anterior'
+                    : 'Solo lo esencial de cada lote',
           ),
       ],
       selected: {vista},
@@ -450,44 +463,45 @@ class _BarraFiltros extends StatelessWidget {
         aire.esChico ? Esp.m : Esp.xl,
         Esp.m,
       ),
-      child: aire.esChico
-          ? Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                periodo,
-                SizedBox(height: Esp.s),
-                buscador,
-                SizedBox(height: Esp.s),
-                maquinas,
-                SizedBox(height: Esp.s),
-                Align(alignment: Alignment.centerLeft, child: conmutador),
-              ],
-            )
-          : Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    periodo,
-                    SizedBox(width: Esp.m),
-                    Expanded(flex: 3, child: buscador),
-                    SizedBox(width: Esp.m),
-                    Expanded(child: maquinas),
-                    // Debajo de los 1000 px el conmutador va en su propio
-                    // renglon: sumado al periodo dejaba el combo de maquina en
-                    // sesenta pixeles.
-                    if (aire == Aire.amplio) ...[
-                      SizedBox(width: Esp.m),
-                      conmutador,
-                    ],
-                  ],
-                ),
-                if (aire != Aire.amplio) ...[
+      child:
+          aire.esChico
+              ? Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  periodo,
                   SizedBox(height: Esp.s),
-                  conmutador,
+                  buscador,
+                  SizedBox(height: Esp.s),
+                  maquinas,
+                  SizedBox(height: Esp.s),
+                  Align(alignment: Alignment.centerLeft, child: conmutador),
                 ],
-              ],
-            ),
+              )
+              : Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      periodo,
+                      SizedBox(width: Esp.m),
+                      Expanded(flex: 3, child: buscador),
+                      SizedBox(width: Esp.m),
+                      Expanded(child: maquinas),
+                      // Debajo de los 1000 px el conmutador va en su propio
+                      // renglon: sumado al periodo dejaba el combo de maquina en
+                      // sesenta pixeles.
+                      if (aire == Aire.amplio) ...[
+                        SizedBox(width: Esp.m),
+                        conmutador,
+                      ],
+                    ],
+                  ),
+                  if (aire != Aire.amplio) ...[
+                    SizedBox(height: Esp.s),
+                    conmutador,
+                  ],
+                ],
+              ),
     );
   }
 }
@@ -537,18 +551,19 @@ class _Listado extends StatelessWidget {
         children: [
           Expanded(
             child: MensajeVacio(
-              icono: hayFiltro
-                  ? Icons.filter_alt_off
-                  : Icons.event_busy_outlined,
-              titulo: hayFiltro
-                  ? 'Ningun lote coincide con el filtro'
-                  : 'No hay lotes cortados en este periodo',
-              detalle: hayFiltro
-                  ? 'Hay lotes en el periodo $periodo, pero ninguno coincide '
-                        'con lo que busca. Pruebe con otro numero de lote o '
-                        'quite el filtro de maquina.'
-                  : 'El periodo consultado es $periodo. Amplielo para ver '
-                        'lotes de meses anteriores.',
+              icono:
+                  hayFiltro ? Icons.filter_alt_off : Icons.event_busy_outlined,
+              titulo:
+                  hayFiltro
+                      ? 'Ningun lote coincide con el filtro'
+                      : 'No hay lotes cortados en este periodo',
+              detalle:
+                  hayFiltro
+                      ? 'Hay lotes en el periodo $periodo, pero ninguno coincide '
+                          'con lo que busca. Pruebe con otro numero de lote o '
+                          'quite el filtro de maquina.'
+                      : 'El periodo consultado es $periodo. Amplielo para ver '
+                          'lotes de meses anteriores.',
             ),
           ),
           Padding(
@@ -585,13 +600,14 @@ class _Listado extends StatelessWidget {
       padding: padding.copyWith(top: Esp.xs, bottom: Esp.xxl),
       itemCount: lotes.length,
       separatorBuilder: (_, _) => SizedBox(height: Esp.s),
-      itemBuilder: (context, i) => _Tarjeta(
-        lote: lotes[i],
-        vista: vista,
-        puedeReabrir: puedeReabrir,
-        onAbrir: () => onAbrir(lotes[i]),
-        onReporte: () => onReporte(lotes[i]),
-      ),
+      itemBuilder:
+          (context, i) => _Tarjeta(
+            lote: lotes[i],
+            vista: vista,
+            puedeReabrir: puedeReabrir,
+            onAbrir: () => onAbrir(lotes[i]),
+            onReporte: () => onReporte(lotes[i]),
+          ),
     );
   }
 }
@@ -645,11 +661,12 @@ class _Tarjeta extends StatelessWidget {
                       children: [
                         Text(
                           'Lote ${lote.numLote}/${lote.anio}',
-                          style: Theme.of(context).textTheme.titleMedium
-                              ?.copyWith(
-                                fontWeight: Peso.dato,
-                                fontFeatures: cifrasTabulares,
-                              ),
+                          style: Theme.of(
+                            context,
+                          ).textTheme.titleMedium?.copyWith(
+                            fontWeight: Peso.dato,
+                            fontFeatures: cifrasTabulares,
+                          ),
                         ),
                         Text(
                           '${fechaCorta(lote.fecha)}  ·  '
@@ -665,10 +682,7 @@ class _Tarjeta extends StatelessWidget {
                   ),
                 ],
               ),
-              if (completa) ...[
-                SizedBox(height: Esp.s),
-                _Horario(lote: lote),
-              ],
+              if (completa) ...[SizedBox(height: Esp.s), _Horario(lote: lote)],
               SizedBox(height: Esp.m),
               if (completa)
                 Wrap(
@@ -742,7 +756,9 @@ List<(String, String)> _datosDelLote(LoteProduccionEntity lote) => [
   ('Dif. resmas', fmtNumero.format(lote.diferenciaProdResma)),
   (
     'Resmas est.',
-    lote.cantEstimadaResma <= 0 ? '--' : fmtNumero.format(lote.cantEstimadaResma),
+    lote.cantEstimadaResma <= 0
+        ? '--'
+        : fmtNumero.format(lote.cantEstimadaResma),
   ),
   ('Kg balanza', fmtNumero.format(lote.pesoBalanzaTotal)),
   ('Orden', lote.docNumOrdFab == 0 ? '--' : lote.docNumOrdFab.toString()),
@@ -756,9 +772,8 @@ class _Horario extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final inicioCorte = lote.hraInicioCorte.isEmpty
-        ? '--'
-        : lote.hraInicioCorte;
+    final inicioCorte =
+        lote.hraInicioCorte.isEmpty ? '--' : lote.hraInicioCorte;
     final inicio = lote.hraInicio.isEmpty ? '--' : lote.hraInicio;
     final fin = lote.hraFin.isEmpty ? '--' : lote.hraFin;
 

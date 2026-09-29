@@ -104,9 +104,8 @@ class CajaChicaModel {
       codSucursal: json["codSucursal"],
       lote: json["lote"],
       audUsuario: json["audUsuario"] ?? 0,
-      audFecha: json["audFecha"] != null
-          ? DateTime.tryParse(json["audFecha"])
-          : null,
+      audFecha:
+          json["audFecha"] != null ? DateTime.tryParse(json["audFecha"]) : null,
     );
   }
 

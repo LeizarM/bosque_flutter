@@ -7,9 +7,9 @@
 /// **Los días abonados son días libres que se cobran igual**: son un *haber*
 /// que se le acredita a alguien por fuera de la vacación (una compensación, una
 /// regularización). En 10 años hay 184 filas, 9 en 2025 y ninguna en 2026: cada
-/// alta acá es un hecho raro, y por eso se confirma.
+/// alta aquí es un hecho raro, y por eso se confirma.
 ///
-/// **A diferencia de la vacación asignada, acá el cero no existe**: el umbral
+/// **A diferencia de la vacación asignada, aquí el cero no existe**: el umbral
 /// del legacy es `> 0` estricto y el mínimo real medido en la tabla es 0,5.
 class AbonoDiasEntity {
   /// `0` = alta. `> 0` = edición. Lo decide el id, no un flag: es la misma
@@ -77,13 +77,14 @@ class AbonoDiasEntity {
   /// los dos es el error fácil de este módulo.
   String? get problema {
     if (codEmpleado <= 0) return 'No se eligió al empleado.';
-    if (diasAbonados <= 0) return 'Los días abonados tienen que ser mayores a 0.';
+    if (diasAbonados <= 0)
+      return 'Los días abonados tienen que ser mayores a 0.';
     if (codRelEmplEmpr <= 0) {
       return 'No se pudo determinar la relación laboral del empleado.';
     }
-    if (fecha == null) return 'Elegí la fecha del abono.';
+    if (fecha == null) return 'Elige la fecha del abono.';
     final m = motivo.trim();
-    if (m.length < 2) return 'Escribí el motivo del abono.';
+    if (m.length < 2) return 'Escribe el motivo del abono.';
     if (m.length > motivoMaximo) {
       return 'El motivo no puede pasar de $motivoMaximo caracteres '
           '(tiene ${m.length}).';

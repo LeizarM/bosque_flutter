@@ -34,7 +34,7 @@ import 'package:bosque_flutter/presentation/widgets/rol-sabados/su_equipo_tab.da
 /// respuesta — de ahí el `TickerProviderStateMixin` en plural y el `late` sin
 /// `final`.
 ///
-/// Los controladores de scroll se crean acá y no en la matriz porque hay que
+/// Los controladores de scroll se crean aquí y no en la matriz porque hay que
 /// **atarlos entre sí**: son cuatro ejes —dos horizontales y dos verticales— y
 /// si el encabezado se despega de las celdas, la grilla miente. Además tienen
 /// que sobrevivir a que la pestaña se reconstruya.
@@ -89,11 +89,7 @@ class _RolSabadosScreenState extends ConsumerState<RolSabadosScreen>
     final viejo = _tabs;
     // Se conserva la pestaña donde estaba parado, salvo que ya no exista.
     final indice = viejo.index >= cantidad ? cantidad - 1 : viejo.index;
-    _tabs = TabController(
-      length: cantidad,
-      initialIndex: indice,
-      vsync: this,
-    );
+    _tabs = TabController(length: cantidad, initialIndex: indice, vsync: this);
     WidgetsBinding.instance.addPostFrameCallback((_) => viejo.dispose());
   }
 

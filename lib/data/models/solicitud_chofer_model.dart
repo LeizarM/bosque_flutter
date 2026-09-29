@@ -48,9 +48,10 @@ class SolicitudChoferModel {
   factory SolicitudChoferModel.fromJson(Map<String, dynamic> json) =>
       SolicitudChoferModel(
         idSolicitud: json["idSolicitud"] ?? 0,
-        fechaSolicitud: json["fechaSolicitud"] != null 
-            ? DateTime.parse(json["fechaSolicitud"]) 
-            : DateTime.now(),
+        fechaSolicitud:
+            json["fechaSolicitud"] != null
+                ? DateTime.parse(json["fechaSolicitud"])
+                : DateTime.now(),
         motivo: json["motivo"] ?? '',
         codEmpSoli: json["codEmpSoli"] ?? 0,
         cargo: json["cargo"] ?? '',
@@ -118,8 +119,4 @@ class SolicitudChoferModel {
         codSucursal: entity.codSucursal,
         coche: entity.coche,
       );
-  
-  
-
-
 }

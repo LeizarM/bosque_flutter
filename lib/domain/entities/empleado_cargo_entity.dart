@@ -11,7 +11,6 @@ class EmpleadoCargoEntity {
   final int? existe;
   final DateTime? fechaInicioOriginal;
 
-
   EmpleadoCargoEntity({
     required this.codEmpleado,
     required this.codCargoSucursal,
@@ -35,6 +34,7 @@ class EmpleadoCargoEntity {
       'fechaInicioOriginal': fechaInicioOriginal?.toIso8601String(),
     };
   }
+
   //metodo copywith
   EmpleadoCargoEntity copyWith({
     int? codEmpleado,

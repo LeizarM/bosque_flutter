@@ -6,12 +6,10 @@
 import 'dart:convert';
 import 'package:bosque_flutter/domain/entities/accion_tarea_rutinaria_entity.dart';
 
-AccionTareaRutinariaResponse accionTareaRutinariaResponseFromJson(
-  String str,
-) => AccionTareaRutinariaResponse.fromJson(json.decode(str));
-String accionTareaRutinariaResponseToJson(
-  AccionTareaRutinariaResponse data,
-) => json.encode(data.toJson());
+AccionTareaRutinariaResponse accionTareaRutinariaResponseFromJson(String str) =>
+    AccionTareaRutinariaResponse.fromJson(json.decode(str));
+String accionTareaRutinariaResponseToJson(AccionTareaRutinariaResponse data) =>
+    json.encode(data.toJson());
 
 class AccionTareaRutinariaResponse {
   String message;
@@ -79,9 +77,8 @@ class AccionTareaRutinariaModel {
       descripcionAccion: json["descripcionAccion"] ?? '',
       estado: json["estado"],
       audUsuario: json["audUsuario"] ?? 0,
-      audFecha: json["audFecha"] != null
-          ? DateTime.tryParse(json["audFecha"])
-          : null,
+      audFecha:
+          json["audFecha"] != null ? DateTime.tryParse(json["audFecha"]) : null,
     );
   }
 

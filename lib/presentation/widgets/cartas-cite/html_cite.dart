@@ -41,18 +41,20 @@ List<InlineSpan> spansDeHtml(String html, TextStyle base, Color colorEnlace) {
 
   void volcar() {
     if (buffer.isEmpty) return;
-    spans.add(TextSpan(
-      text: buffer.toString(),
-      style: base.copyWith(
-        fontWeight: negrita > 0 ? FontWeight.w700 : null,
-        fontStyle: cursiva > 0 ? FontStyle.italic : null,
-        decoration: TextDecoration.combine([
-          if (subrayado > 0 || enlace > 0) TextDecoration.underline,
-          if (tachado > 0) TextDecoration.lineThrough,
-        ]),
-        color: enlace > 0 ? colorEnlace : null,
+    spans.add(
+      TextSpan(
+        text: buffer.toString(),
+        style: base.copyWith(
+          fontWeight: negrita > 0 ? FontWeight.w700 : null,
+          fontStyle: cursiva > 0 ? FontStyle.italic : null,
+          decoration: TextDecoration.combine([
+            if (subrayado > 0 || enlace > 0) TextDecoration.underline,
+            if (tachado > 0) TextDecoration.lineThrough,
+          ]),
+          color: enlace > 0 ? colorEnlace : null,
+        ),
       ),
-    ));
+    );
     buffer.clear();
   }
 
@@ -225,7 +227,8 @@ class VistaHtmlCite extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    final base = estilo ??
+    final base =
+        estilo ??
         Theme.of(context).textTheme.bodyMedium!.copyWith(height: 1.45);
 
     if (html.trim().isEmpty) {

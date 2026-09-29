@@ -1,4 +1,3 @@
-
 import 'package:bosque_flutter/core/state/user_provider.dart';
 import 'package:bosque_flutter/core/utils/responsive_utils_bosque.dart';
 import 'package:bosque_flutter/core/utils/validators.dart';
@@ -28,17 +27,16 @@ class FormularioEmail extends ConsumerStatefulWidget {
   @override
   FormularioEmailState createState() => FormularioEmailState();
 }
+
 class FormularioEmailState extends ConsumerState<FormularioEmail> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
- 
 
   @override
   void initState() {
     super.initState();
     if (widget.isEditing && widget.email != null) {
       _emailController.text = widget.email!.email;
-      
     }
   }
 
@@ -55,62 +53,62 @@ class FormularioEmailState extends ConsumerState<FormularioEmail> {
   void _handleSubmit() async {
     if (_formKey.currentState?.validate() ?? false) {
       try {
-        final email = widget.isEditing && widget.email != null
-            ? widget.email!.copyWith(
-                codEmail: widget.email!.codEmail,
-                codPersona: widget.codPersona,
-                email: _emailController.text,
-                audUsuario: await getCodUsuario(),
-                
-              )
-            : EmailEntity(
-                codEmail: 0, // Asignar un valor por defecto o manejarlo según tu lógica
-                codPersona: widget.codPersona,
-                email: _emailController.text,
-                audUsuario: await getCodUsuario(),
-              );
+        final email =
+            widget.isEditing && widget.email != null
+                ? widget.email!.copyWith(
+                  codEmail: widget.email!.codEmail,
+                  codPersona: widget.codPersona,
+                  email: _emailController.text,
+                  audUsuario: await getCodUsuario(),
+                )
+                : EmailEntity(
+                  codEmail:
+                      0, // Asignar un valor por defecto o manejarlo según tu lógica
+                  codPersona: widget.codPersona,
+                  email: _emailController.text,
+                  audUsuario: await getCodUsuario(),
+                );
 
         widget.onSave(email);
-         // Usar los nuevos SnackBars personalizados
-      if (context.mounted) {
-        if (widget.isEditing) {
-          AppSnackbarCustom.showEdit(
-            context, 
-            'Email actualizado correctamente'
-          );
-        } else {
-          AppSnackbarCustom.showAdd(
-            context, 
-            'Email agregado correctamente'
-          );
+        // Usar los nuevos SnackBars personalizados
+        if (context.mounted) {
+          if (widget.isEditing) {
+            AppSnackbarCustom.showEdit(
+              context,
+              'Email actualizado correctamente',
+            );
+          } else {
+            AppSnackbarCustom.showAdd(context, 'Email agregado correctamente');
+          }
+          Navigator.of(context).pop();
         }
-        Navigator.of(context).pop();
-      }
-
-        
       } catch (e) {
         // Mostrar SnackBar de error
-      if (context.mounted) {
-        AppSnackbar.showError(
-          context, 
-          'Error al ${widget.isEditing ? 'actualizar' : 'agregar'} el email'
-        );
-      }
+        if (context.mounted) {
+          AppSnackbar.showError(
+            context,
+            'Error al ${widget.isEditing ? 'actualizar' : 'agregar'} el email',
+          );
+        }
       }
     }
   }
 
- @override
+  @override
   Widget build(BuildContext context) {
     final isDesktop = ResponsiveUtilsBosque.isDesktop(context);
     final screenWidth = MediaQuery.of(context).size.width;
-    final horizontalPadding = ResponsiveUtilsBosque.getHorizontalPadding(context);
+    final horizontalPadding = ResponsiveUtilsBosque.getHorizontalPadding(
+      context,
+    );
     final verticalPadding = ResponsiveUtilsBosque.getVerticalPadding(context);
 
     return Container(
-      width: isDesktop 
-          ? screenWidth * 0.4  // 40% del ancho en desktop
-          : screenWidth * 0.9, // 90% del ancho en móvil
+      width:
+          isDesktop
+              ? screenWidth *
+                  0.4 // 40% del ancho en desktop
+              : screenWidth * 0.9, // 90% del ancho en móvil
       padding: EdgeInsets.symmetric(
         horizontal: horizontalPadding,
         vertical: verticalPadding,
@@ -166,8 +164,9 @@ class FormularioEmailState extends ConsumerState<FormularioEmail> {
 
   Widget _buildButtons(BuildContext context) {
     final isDesktop = ResponsiveUtilsBosque.isDesktop(context);
-    final buttonSpacing = ResponsiveUtilsBosque.getHorizontalPadding(context) / 2;
-    
+    final buttonSpacing =
+        ResponsiveUtilsBosque.getHorizontalPadding(context) / 2;
+
     return Row(
       mainAxisAlignment: MainAxisAlignment.end,
       children: [
@@ -178,10 +177,7 @@ class FormularioEmailState extends ConsumerState<FormularioEmail> {
               horizontal: buttonSpacing,
               vertical: 12,
             ),
-            minimumSize: Size(
-              isDesktop ? 120 : 100,
-              isDesktop ? 48 : 40,
-            ),
+            minimumSize: Size(isDesktop ? 120 : 100, isDesktop ? 48 : 40),
           ),
           child: const Text('Cancelar'),
         ),
@@ -193,10 +189,7 @@ class FormularioEmailState extends ConsumerState<FormularioEmail> {
               horizontal: buttonSpacing,
               vertical: 12,
             ),
-            minimumSize: Size(
-              isDesktop ? 120 : 100,
-              isDesktop ? 48 : 40,
-            ),
+            minimumSize: Size(isDesktop ? 120 : 100, isDesktop ? 48 : 40),
           ),
           child: const Text('Guardar'),
         ),

@@ -1,10 +1,11 @@
 import 'dart:convert';
 import 'package:bosque_flutter/domain/entities/chofer_entity.dart';
 
-List<ChoferModel> choferModelFromJson(String str) => 
-    List<ChoferModel>.from(json.decode(str).map((x) => ChoferModel.fromJson(x)));
+List<ChoferModel> choferModelFromJson(String str) => List<ChoferModel>.from(
+  json.decode(str).map((x) => ChoferModel.fromJson(x)),
+);
 
-String choferModelToJson(List<ChoferModel> data) => 
+String choferModelToJson(List<ChoferModel> data) =>
     json.encode(List<dynamic>.from(data.map((x) => x.toJson())));
 
 class ChoferModel {
@@ -36,7 +37,7 @@ class ChoferModel {
     nombreCompleto: nombreCompleto,
     cargo: cargo,
   );
-  
+
   // Convertir entidad a modelo
   factory ChoferModel.fromEntity(ChoferEntity entity) => ChoferModel(
     codEmpleado: entity.codEmpleado,

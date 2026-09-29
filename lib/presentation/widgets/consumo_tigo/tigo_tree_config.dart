@@ -31,15 +31,17 @@ class TigoTreeConfig {
     final sinAsignar = esSinAsignar(e);
     final esHijo = nivel > 0;
     return BoxDecoration(
-      color: sinAsignar
-          ? Colors.red[100]
-          : esHijo
+      color:
+          sinAsignar
+              ? Colors.red[100]
+              : esHijo
               ? Colors.blue[50]
               : (index % 2 == 0 ? Colors.white : Colors.grey[200]),
       border: Border(
-        left: (esHijo && !sinAsignar)
-            ? BorderSide(color: Colors.blue[300]!, width: 4)
-            : BorderSide.none,
+        left:
+            (esHijo && !sinAsignar)
+                ? BorderSide(color: Colors.blue[300]!, width: 4)
+                : BorderSide.none,
         bottom: const BorderSide(color: Colors.grey, width: 0.5),
       ),
     );
@@ -53,12 +55,11 @@ class TigoTreeConfig {
       BosqueTreeColumn(
         label: 'TELÉFONO',
         flex: 2,
-        cellBuilder: (e, nivel) => Text(
-          e.corporativo ?? '',
-          style: TextStyle(
-            color: esSinAsignar(e) ? Colors.red[700] : null,
-          ),
-        ),
+        cellBuilder:
+            (e, nivel) => Text(
+              e.corporativo ?? '',
+              style: TextStyle(color: esSinAsignar(e) ? Colors.red[700] : null),
+            ),
       ),
       BosqueTreeColumn(
         label: 'NOMBRE',
@@ -88,67 +89,73 @@ class TigoTreeConfig {
       BosqueTreeColumn(
         label: 'DESCRIPCIÓN',
         flex: 3,
-        cellBuilder: (e, nivel) => Text(
-          e.descripcion,
-          style: TextStyle(
-            fontWeight: nivel == 0 ? FontWeight.bold : FontWeight.normal,
-            color: esSinAsignar(e) ? Colors.red[700] : Colors.black,
-          ),
-        ),
+        cellBuilder:
+            (e, nivel) => Text(
+              e.descripcion,
+              style: TextStyle(
+                fontWeight: nivel == 0 ? FontWeight.bold : FontWeight.normal,
+                color: esSinAsignar(e) ? Colors.red[700] : Colors.black,
+              ),
+            ),
       ),
       BosqueTreeColumn(
         label: 'EMPRESA',
         flex: 2,
-        cellBuilder: (e, nivel) => Text(
-          e.empresa ?? '',
-          style: TextStyle(
-            color: esSinAsignar(e) ? Colors.red[700] : Colors.black,
-          ),
-        ),
+        cellBuilder:
+            (e, nivel) => Text(
+              e.empresa ?? '',
+              style: TextStyle(
+                color: esSinAsignar(e) ? Colors.red[700] : Colors.black,
+              ),
+            ),
       ),
       if (mostrarEstado)
         BosqueTreeColumn(
           label: 'ESTADO',
           flex: 2,
-          cellBuilder: (e, nivel) => Text(
-            e.estado,
-            style: TextStyle(
-              color: esSinAsignar(e) ? Colors.red[700] : Colors.black,
-            ),
-          ),
+          cellBuilder:
+              (e, nivel) => Text(
+                e.estado,
+                style: TextStyle(
+                  color: esSinAsignar(e) ? Colors.red[700] : Colors.black,
+                ),
+              ),
         ),
       BosqueTreeColumn(
         label: 'TOTAL',
         flex: 2,
         alignment: Alignment.centerRight,
-        cellBuilder: (e, nivel) => Text(
-          e.totalCobradoXCuenta.toStringAsFixed(2),
-          style: TextStyle(
-            color: esSinAsignar(e) ? Colors.red[700] : Colors.black,
-          ),
-        ),
+        cellBuilder:
+            (e, nivel) => Text(
+              e.totalCobradoXCuenta.toStringAsFixed(2),
+              style: TextStyle(
+                color: esSinAsignar(e) ? Colors.red[700] : Colors.black,
+              ),
+            ),
       ),
       BosqueTreeColumn(
         label: 'MONTO EMPRESA',
         flex: 2,
         alignment: Alignment.centerRight,
-        cellBuilder: (e, nivel) => Text(
-          e.montoCubiertoXEmpresa.toStringAsFixed(2),
-          style: TextStyle(
-            color: esSinAsignar(e) ? Colors.red[700] : Colors.black,
-          ),
-        ),
+        cellBuilder:
+            (e, nivel) => Text(
+              e.montoCubiertoXEmpresa.toStringAsFixed(2),
+              style: TextStyle(
+                color: esSinAsignar(e) ? Colors.red[700] : Colors.black,
+              ),
+            ),
       ),
       BosqueTreeColumn(
         label: 'MONTO EMPLEADO',
         flex: 2,
         alignment: Alignment.centerRight,
-        cellBuilder: (e, nivel) => Text(
-          e.montoEmpleado.toStringAsFixed(2),
-          style: TextStyle(
-            color: esSinAsignar(e) ? Colors.red[700] : Colors.black,
-          ),
-        ),
+        cellBuilder:
+            (e, nivel) => Text(
+              e.montoEmpleado.toStringAsFixed(2),
+              style: TextStyle(
+                color: esSinAsignar(e) ? Colors.red[700] : Colors.black,
+              ),
+            ),
       ),
     ];
   }
@@ -179,9 +186,10 @@ class TigoTreeConfig {
       style: TextStyle(
         fontSize: 13,
         fontWeight: FontWeight.w600,
-        color: nodo.estado.toUpperCase() == 'EJECUTADO'
-            ? Colors.green[700]
-            : Colors.orange[800],
+        color:
+            nodo.estado.toUpperCase() == 'EJECUTADO'
+                ? Colors.green[700]
+                : Colors.orange[800],
       ),
     );
   }

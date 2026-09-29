@@ -19,9 +19,9 @@ class DependienteEntity {
     required this.nombreCompleto,
     required this.descripcion,
     required this.edad,
-     this.empActivo,
+    this.empActivo,
   });
-   Map<String, dynamic> toJson() {
+  Map<String, dynamic> toJson() {
     return {
       'codEmpleado': codEmpleado,
       'codDependiente': codDependiente,
@@ -29,13 +29,13 @@ class DependienteEntity {
       'parentesco': parentesco,
       'esActivo': esActivo,
       'nombreCompleto': nombreCompleto,
-      'audUsuario': audUsuario, 
+      'audUsuario': audUsuario,
       'descripcion': descripcion,
       'edad': edad,
       'empActivo': empActivo,
     };
   }
-  
+
   //metodo copywith
   DependienteEntity copyWith({
     int? codDependiente,
@@ -62,5 +62,4 @@ class DependienteEntity {
       empActivo: empActivo ?? this.empActivo,
     );
   }
-  
 }

@@ -86,7 +86,7 @@ class VacacionAsignadaEntity {
   ///
   /// Esto **no autoriza nada**: la validación que cuenta es la de Java, porque
   /// el SP no valida absolutamente nada. Esto es para no viajar al servidor a
-  /// buscar un error que ya se ve desde acá.
+  /// buscar un error que ya se ve desde aquí.
   String? get problema {
     if (codEmpleado <= 0) return 'No se eligió al empleado.';
     // `>= 0` y no `> 0`: cero es válido y se usa de verdad.
@@ -95,7 +95,7 @@ class VacacionAsignadaEntity {
       return 'No se pudo determinar la relación laboral del empleado.';
     }
     final m = motivo.trim();
-    if (m.length < 2) return 'Escribí el motivo de la asignación.';
+    if (m.length < 2) return 'Escribe el motivo de la asignación.';
     if (m.length > motivoMaximo) {
       return 'El motivo no puede pasar de $motivoMaximo caracteres '
           '(tiene ${m.length}).';

@@ -20,20 +20,17 @@ class TipoPrestamoModel {
   }
 
   Map<String, dynamic> toJson() {
-    return {
-      'codTipos': codTipos,
-      'nombre': nombre,
-      'codGrupo': codGrupo,
-    };
+    return {'codTipos': codTipos, 'nombre': nombre, 'codGrupo': codGrupo};
   }
 
   TipoPrestamoEntity toEntity() => TipoPrestamoEntity(
-        codTipos: codTipos,
-        nombre: nombre,
-        codGrupo: codGrupo,
-      );
+    codTipos: codTipos,
+    nombre: nombre,
+    codGrupo: codGrupo,
+  );
 
-  factory TipoPrestamoModel.fromEntity(TipoPrestamoEntity entity) => TipoPrestamoModel(
+  factory TipoPrestamoModel.fromEntity(TipoPrestamoEntity entity) =>
+      TipoPrestamoModel(
         codTipos: entity.codTipos,
         nombre: entity.nombre,
         codGrupo: entity.codGrupo,

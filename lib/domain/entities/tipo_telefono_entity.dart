@@ -1,5 +1,5 @@
 class TipoTelefonoEntity {
-  final int codTipoTel ;
+  final int codTipoTel;
   final String tipo;
   final int audUsuario;
   TipoTelefonoEntity({
@@ -7,5 +7,4 @@ class TipoTelefonoEntity {
     required this.tipo,
     required this.audUsuario,
   });
-  
 }

@@ -114,14 +114,15 @@ class _TabEmpleadosState extends ConsumerState<TabEmpleados> {
     final ok = await confirmar(
       context,
       titulo: 'Importar empleados nuevos',
-      mensaje: 'Se van a traer los usuarios nuevos que haya en el dispositivo biométrico.',
+      mensaje:
+          'Se van a traer los usuarios nuevos que haya en el dispositivo biométrico.',
       accion: 'Importar',
     );
     if (!ok || !context.mounted) return;
     try {
       // Desde el fix de sql/06_fix_p_abm_BioEmplBosqEmpl_ACCION_A.sql este
       // ACCION devuelve la CANTIDAD de empleados nuevos importados (antes
-      // siempre 0 — @idGenerado nunca se tocaba en esa rama de la SP, y acá
+      // siempre 0 — @idGenerado nunca se tocaba en esa rama de la SP, y aquí
       // se mostraba un "Importación completada." fijo sin decir si de
       // verdad pasó algo). Si el script todavía no corrió contra la BD, el
       // backend sigue devolviendo 0 igual que antes — no rompe nada, sólo
@@ -185,19 +186,21 @@ class _Fila extends ConsumerWidget {
   Future<void> _enlazar(BuildContext context, WidgetRef ref) async {
     final elegido = await showDialog<EmpleadoEntity>(
       context: context,
-      builder: (c) => _BuscadorEmpleadoBosque(nombreBiometrico: item.datoNombreBiom),
+      builder:
+          (c) => _BuscadorEmpleadoBosque(nombreBiometrico: item.datoNombreBiom),
     );
     if (elegido == null || !context.mounted) return;
 
-    // Acá es donde nace el bug real que hacía que el Resumen mensual y el
+    // Aquí es donde nace el bug real que hacía que el Resumen mensual y el
     // Detallado-todos mostraran a alguien duplicado, número por número
     // idéntico: un empleado de Bosque enlazado a DOS usuarios del
     // biométrico a la vez (típicamente porque lo volvieron a enrolar en el
     // reloj y quedó un idEmpleadBio viejo sin desenlazar). En vez de dejar
     // que conviertan los dos enlaces, si el empleado elegido ya tiene otro,
     // se ofrece reemplazarlo — desenlazar el viejo en el mismo paso que se
-    // crea el nuevo — para que la relación 1 a 1 nunca se rompa desde acá.
-    final padron = ref.read(todosLosEmpleadosBiometricoProvider).valueOrNull ?? [];
+    // crea el nuevo — para que la relación 1 a 1 nunca se rompa desde aquí.
+    final padron =
+        ref.read(todosLosEmpleadosBiometricoProvider).valueOrNull ?? [];
     final otroEnlace =
         padron
             .where(
@@ -280,7 +283,7 @@ class _Fila extends ConsumerWidget {
   ///
   /// `p_abm_BioEmplBosqEmpl ACCION='D'` ya soporta esto — no hizo falta SQL
   /// nuevo, sólo faltaba el botón. Esta SP es una de las que quedó fuera de
-  /// `tbio_bioBitacora` (ver CLAUDE.md), así que un borrado acá no deja
+  /// `tbio_bioBitacora` (ver CLAUDE.md), así que un borrado aquí no deja
   /// historial de quién ni por qué — el diálogo de confirmación lo dice.
   Future<void> _eliminar(BuildContext context, WidgetRef ref) async {
     final ok = await confirmar(
@@ -292,7 +295,7 @@ class _Fila extends ConsumerWidget {
           'A diferencia de "Desenlazar", esto borra la fila entera — no '
           'queda historial de este cambio (esta tabla no tiene bitácora). '
           'Usalo para limpiar un enlace duplicado o cargado por error, no '
-          'para dar de baja a alguien que sigue trabajando acá.',
+          'para dar de baja a alguien que sigue trabajando aquí.',
       accion: 'Eliminar',
       destructiva: true,
     );
@@ -318,7 +321,8 @@ class _BuscadorEmpleadoBosque extends StatefulWidget {
   final String nombreBiometrico;
 
   @override
-  State<_BuscadorEmpleadoBosque> createState() => _BuscadorEmpleadoBosqueState();
+  State<_BuscadorEmpleadoBosque> createState() =>
+      _BuscadorEmpleadoBosqueState();
 }
 
 class _BuscadorEmpleadoBosqueState extends State<_BuscadorEmpleadoBosque> {
@@ -401,12 +405,15 @@ class _BuscadorEmpleadoBosqueState extends State<_BuscadorEmpleadoBosque> {
                           child: Text(
                             _error ??
                                 (_texto.text.trim().length < 2
-                                    ? 'Escribí al menos 2 letras.'
+                                    ? 'Escribe al menos 2 letras.'
                                     : 'Sin resultados.'),
                             textAlign: TextAlign.center,
                             style:
                                 _error != null
-                                    ? TextStyle(color: Theme.of(context).colorScheme.error)
+                                    ? TextStyle(
+                                      color:
+                                          Theme.of(context).colorScheme.error,
+                                    )
                                     : context.apagado(),
                           ),
                         ),
@@ -423,7 +430,9 @@ class _BuscadorEmpleadoBosqueState extends State<_BuscadorEmpleadoBosque> {
                           final nombre = e.persona.datoPersona ?? '';
                           return ListTile(
                             title: Text(
-                              nombre.isNotEmpty ? nombre : 'Empleado #${e.codEmpleado}',
+                              nombre.isNotEmpty
+                                  ? nombre
+                                  : 'Empleado #${e.codEmpleado}',
                             ),
                             onTap: () => Navigator.pop(context, e),
                           );

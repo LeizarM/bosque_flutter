@@ -16,6 +16,11 @@ class CocheDelDiaModel {
   final String? color;
   final int? anio;
 
+  // Archivo SQL 45: la marca que hizo OTRA persona sobre el mismo coche hoy.
+  final int? otroLlego;
+  final String? otroQuien;
+  final DateTime? otroCuando;
+
   const CocheDelDiaModel({
     required this.idCo,
     this.idTarRuti,
@@ -30,6 +35,9 @@ class CocheDelDiaModel {
     this.placa,
     this.color,
     this.anio,
+    this.otroLlego,
+    this.otroQuien,
+    this.otroCuando,
   });
 
   factory CocheDelDiaModel.fromJson(Map<String, dynamic> json) {
@@ -47,6 +55,14 @@ class CocheDelDiaModel {
       placa: json['placa'],
       color: json['color'],
       anio: json['anio'],
+      otroLlego: json['otroLlego'],
+      otroQuien: json['otroQuien'],
+      // Llega null mientras no se corra el archivo 45: la pantalla
+      // simplemente no muestra la linea de "ya lo marco fulano".
+      otroCuando:
+          json['otroCuando'] != null
+              ? DateTime.tryParse(json['otroCuando'])
+              : null,
     );
   }
 
@@ -65,6 +81,9 @@ class CocheDelDiaModel {
       placa: placa,
       color: color,
       anio: anio,
+      otroLlego: otroLlego,
+      otroQuien: otroQuien,
+      otroCuando: otroCuando,
     );
   }
 }

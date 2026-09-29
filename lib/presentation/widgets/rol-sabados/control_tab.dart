@@ -514,7 +514,10 @@ class _ExcusasHorarioState extends ConsumerState<_ExcusasHorario> {
                     '${d.aplicado ? ' · aplicado' : ''}'
                     '${d.error.isEmpty ? '' : ' · ${d.error}'}',
                   ),
-                  trailing: const Etiqueta(texto: 'E', tono: TonoEtiqueta.aviso),
+                  trailing: const Etiqueta(
+                    texto: 'E',
+                    tono: TonoEtiqueta.aviso,
+                  ),
                 ),
               if (lista.length > 25)
                 Padding(

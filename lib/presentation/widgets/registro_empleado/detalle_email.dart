@@ -12,11 +12,8 @@ class DetalleEmail extends ConsumerStatefulWidget {
   final int codPersona;
   final String mode;
 
-  const DetalleEmail({
-    Key? key,
-    required this.codPersona,
-    this.mode = 'nuevo',
-  }) : super(key: key);
+  const DetalleEmail({Key? key, required this.codPersona, this.mode = 'nuevo'})
+    : super(key: key);
 
   @override
   ConsumerState<DetalleEmail> createState() => _DetalleEmailState();
@@ -27,31 +24,31 @@ class _DetalleEmailState extends ConsumerState<DetalleEmail> {
   bool _isAddingNew = false;
   late int _audUsuario;
 
- @override
-void didUpdateWidget(covariant DetalleEmail oldWidget) {
-  super.didUpdateWidget(oldWidget);
+  @override
+  void didUpdateWidget(covariant DetalleEmail oldWidget) {
+    super.didUpdateWidget(oldWidget);
 
-  // ✅ AGREGAR: Invalidar cuando cambia codPersona o modo
-  if (widget.mode == 'nuevo' && oldWidget.codPersona != widget.codPersona) {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
-      ref.read(tempEmailListProvider.notifier).state = [];
-      ref.invalidate(emailProvider(oldWidget.codPersona)); // ✅ NUEVO
-      ref.invalidate(emailProvider(widget.codPersona));    // ✅ NUEVO
-      _resetFormState();
-    });
+    // ✅ AGREGAR: Invalidar cuando cambia codPersona o modo
+    if (widget.mode == 'nuevo' && oldWidget.codPersona != widget.codPersona) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        ref.read(tempEmailListProvider.notifier).state = [];
+        ref.invalidate(emailProvider(oldWidget.codPersona)); // ✅ NUEVO
+        ref.invalidate(emailProvider(widget.codPersona)); // ✅ NUEVO
+        _resetFormState();
+      });
+    }
+
+    // ✅ AGREGAR: Si pasamos de "nuevo" a "edicion"
+    if (oldWidget.mode == 'nuevo' && widget.mode == 'edicion') {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        ref.invalidate(tempEmailListProvider);
+        ref.invalidate(emailProvider(widget.codPersona));
+        _resetFormState();
+      });
+    }
   }
-  
-  // ✅ AGREGAR: Si pasamos de "nuevo" a "edicion"
-  if (oldWidget.mode == 'nuevo' && widget.mode == 'edicion') {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
-      ref.invalidate(tempEmailListProvider);
-      ref.invalidate(emailProvider(widget.codPersona));
-      _resetFormState();
-    });
-  }
-}
 
   void _resetFormState() {
     setState(() {
@@ -79,12 +76,12 @@ void didUpdateWidget(covariant DetalleEmail oldWidget) {
 
     // Si tempEmailListProvider está vacío, cargar del servidor
     if (listaEmails.isEmpty) {
-      final emailsDelServidorAsync =
-          ref.watch(emailProvider(widget.codPersona));
+      final emailsDelServidorAsync = ref.watch(
+        emailProvider(widget.codPersona),
+      );
 
       return emailsDelServidorAsync.when(
-        loading: () =>
-            const Center(child: CircularProgressIndicator()),
+        loading: () => const Center(child: CircularProgressIndicator()),
         error: (err, _) => Center(child: Text('Error: $err')),
         data: (emailsDelServidor) {
           // IMPORTANTE: Cargar en tempEmailListProvider SOLO una vez
@@ -114,8 +111,7 @@ void didUpdateWidget(covariant DetalleEmail oldWidget) {
     return emailsAsync.when(
       loading: () => const Center(child: CircularProgressIndicator()),
       error: (err, _) => Center(child: Text('Error: $err')),
-      data: (listaEmails) =>
-          _buildUI(context, listaEmails, isEdition: true),
+      data: (listaEmails) => _buildUI(context, listaEmails, isEdition: true),
     );
   }
 
@@ -123,8 +119,11 @@ void didUpdateWidget(covariant DetalleEmail oldWidget) {
   // UI PRINCIPAL
   // ============================================================================
 
-  Widget _buildUI(BuildContext context, List<EmailEntity> lista,
-      {required bool isEdition}) {
+  Widget _buildUI(
+    BuildContext context,
+    List<EmailEntity> lista, {
+    required bool isEdition,
+  }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -134,17 +133,17 @@ void didUpdateWidget(covariant DetalleEmail oldWidget) {
             // Lista de emails
             ...List.generate(
               lista.length,
-              (idx) => _editingIndex == idx
-                  ? _buildEditForm(context, idx, lista, isEdition)
-                  : _buildEmailCard(context, idx, lista[idx], isEdition),
+              (idx) =>
+                  _editingIndex == idx
+                      ? _buildEditForm(context, idx, lista, isEdition)
+                      : _buildEmailCard(context, idx, lista[idx], isEdition),
             ),
             // Formulario nuevo si está activo
             if (_isAddingNew) _buildNewForm(context, isEdition),
             // Botón agregar
             if (!_isAddingNew) _buildAddButton(context),
             // Estado vacío
-            if (lista.isEmpty && !_isAddingNew)
-              _buildEmptyState(context),
+            if (lista.isEmpty && !_isAddingNew) _buildEmptyState(context),
           ],
         ),
       ],
@@ -160,17 +159,11 @@ void didUpdateWidget(covariant DetalleEmail oldWidget) {
       padding: EdgeInsets.only(bottom: context.smallSpacing),
       child: Row(
         children: [
-          Icon(
-            Icons.email,
-            size: context.smallIconSize,
-            color: Colors.grey,
-          ),
+          Icon(Icons.email, size: context.smallIconSize, color: Colors.grey),
           SizedBox(width: context.smallSpacing),
           Text(
             'Correos Electrónicos',
-            style: context.subtitleStyle.copyWith(
-              fontWeight: FontWeight.bold,
-            ),
+            style: context.subtitleStyle.copyWith(fontWeight: FontWeight.bold),
           ),
         ],
       ),
@@ -181,8 +174,12 @@ void didUpdateWidget(covariant DetalleEmail oldWidget) {
   // TARJETA DE EMAIL (LECTURA)
   // ============================================================================
 
-  Widget _buildEmailCard(BuildContext context, int index,
-      EmailEntity email, bool isEdition) {
+  Widget _buildEmailCard(
+    BuildContext context,
+    int index,
+    EmailEntity email,
+    bool isEdition,
+  ) {
     return Card(
       margin: EdgeInsets.symmetric(vertical: context.smallSpacing),
       elevation: 0,
@@ -212,15 +209,17 @@ void didUpdateWidget(covariant DetalleEmail oldWidget) {
   Widget _buildTitle(BuildContext context, EmailEntity email) {
     return Text(
       email.email,
-      style: context.bodyStyle.copyWith(
-        fontWeight: FontWeight.bold,
-      ),
+      style: context.bodyStyle.copyWith(fontWeight: FontWeight.bold),
       overflow: TextOverflow.ellipsis,
     );
   }
 
-  Widget _buildActions(BuildContext context, int index,
-      EmailEntity email, bool isEdition) {
+  Widget _buildActions(
+    BuildContext context,
+    int index,
+    EmailEntity email,
+    bool isEdition,
+  ) {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -239,9 +238,11 @@ void didUpdateWidget(covariant DetalleEmail oldWidget) {
             size: context.smallIconSize,
             color: Colors.redAccent,
           ),
-          onPressed: () => isEdition
-              ? _deleteFromServer(email.codEmail)
-              : _deleteFromList(index),
+          onPressed:
+              () =>
+                  isEdition
+                      ? _deleteFromServer(email.codEmail)
+                      : _deleteFromList(index),
           tooltip: 'Eliminar',
         ),
       ],
@@ -252,16 +253,20 @@ void didUpdateWidget(covariant DetalleEmail oldWidget) {
   // FORMULARIOS
   // ============================================================================
 
-  Widget _buildEditForm(BuildContext context, int index,
-      List<EmailEntity> lista, bool isEdition) {
+  Widget _buildEditForm(
+    BuildContext context,
+    int index,
+    List<EmailEntity> lista,
+    bool isEdition,
+  ) {
     return FormEmail(
       key: ValueKey('edit_email_${lista[index].codEmail}'),
       emailInicial: lista[index],
       codPersona: widget.codPersona,
       audUsuario: _audUsuario,
-      onSave: (email) => isEdition
-          ? _saveToServer(email)
-          : _updateInList(email, index),
+      onSave:
+          (email) =>
+              isEdition ? _saveToServer(email) : _updateInList(email, index),
       onCancel: () {
         FocusManager.instance.primaryFocus?.unfocus();
         setState(() => _editingIndex = -1);
@@ -275,8 +280,7 @@ void didUpdateWidget(covariant DetalleEmail oldWidget) {
       emailInicial: null,
       codPersona: widget.codPersona,
       audUsuario: _audUsuario,
-      onSave: (email) =>
-          isEdition ? _saveToServer(email) : _addToList(email),
+      onSave: (email) => isEdition ? _saveToServer(email) : _addToList(email),
       onCancel: () {
         FocusManager.instance.primaryFocus?.unfocus();
         setState(() => _isAddingNew = false);
@@ -327,8 +331,7 @@ void didUpdateWidget(covariant DetalleEmail oldWidget) {
   }
 
   void _addToList(EmailEntity email) {
-    final list = List<EmailEntity>.from(
-        ref.read(tempEmailListProvider));
+    final list = List<EmailEntity>.from(ref.read(tempEmailListProvider));
     list.add(email);
     ref.read(tempEmailListProvider.notifier).state = list;
     setState(() => _isAddingNew = false);
@@ -336,8 +339,7 @@ void didUpdateWidget(covariant DetalleEmail oldWidget) {
   }
 
   void _updateInList(EmailEntity email, int index) {
-    final list = List<EmailEntity>.from(
-        ref.read(tempEmailListProvider));
+    final list = List<EmailEntity>.from(ref.read(tempEmailListProvider));
     list[index] = email;
     ref.read(tempEmailListProvider.notifier).state = list;
     setState(() => _editingIndex = -1);
@@ -345,8 +347,7 @@ void didUpdateWidget(covariant DetalleEmail oldWidget) {
   }
 
   void _deleteFromList(int index) {
-    final list = List<EmailEntity>.from(
-        ref.read(tempEmailListProvider));
+    final list = List<EmailEntity>.from(ref.read(tempEmailListProvider));
     list.removeAt(index);
     ref.read(tempEmailListProvider.notifier).state = list;
     _resetFormState();
@@ -361,8 +362,7 @@ void didUpdateWidget(covariant DetalleEmail oldWidget) {
     await executeABM(
       ref: ref,
       context: context,
-      operation: () =>
-          ref.read(registrarEmailProvider(email).future),
+      operation: () => ref.read(registrarEmailProvider(email).future),
       providersToInvalidate: [emailProvider(widget.codPersona)],
       successMessage: '✅ Correo guardado: ${email.email}',
     );
@@ -376,8 +376,7 @@ void didUpdateWidget(covariant DetalleEmail oldWidget) {
     final success = await executeABM(
       ref: ref,
       context: context,
-      operation: () =>
-          ref.read(eliminarEmailProvider(codEmail).future),
+      operation: () => ref.read(eliminarEmailProvider(codEmail).future),
       providersToInvalidate: [emailProvider(widget.codPersona)],
       successMessage: 'Correo eliminado correctamente',
       requireConfirmation: true,

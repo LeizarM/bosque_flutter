@@ -16,7 +16,7 @@ export 'package:bosque_flutter/core/ui/tokens_bosque.dart' show Aire;
 
 // `MensajeVacio`, `Etiqueta`, `TonoEtiqueta`, `ComboBuscable` y `fechaCorta` se
 // mudaron a `core/ui/piezas_bosque.dart` —sin cambiar una línea— cuando el
-// segundo módulo las necesitó igual. Se re-exportan desde acá para que los
+// segundo módulo las necesitó igual. Se re-exportan desde aquí para que los
 // widgets de sábados, que las toman de este archivo, no se enteren.
 export 'package:bosque_flutter/core/ui/piezas_bosque.dart';
 
@@ -44,7 +44,7 @@ Color? colorDesdeHex(String hex) {
 /// Muestra el resultado de una acción, ya traducido al idioma de quien usa la
 /// app (ver [humanizar]).
 ///
-/// Los mensajes de éxito de los SPs explican el siguiente paso —«corré
+/// Los mensajes de éxito de los SPs explican el siguiente paso —«ejecuta
 /// REGENERAR», «quedó sin sucursal»— y por eso se muestran en lugar de un
 /// «Guardado» genérico. Los de error se reescriben, y si son técnicos se
 /// reemplazan por un aviso corto y el detalle va a la consola.
@@ -52,8 +52,8 @@ Color? colorDesdeHex(String hex) {
 /// **Lo único que agrega este envoltorio es [humanizar].** El dibujo —la
 /// tarjeta arriba de todo, en el Overlay raíz, por encima de los diálogos y de
 /// sus velos— lo pone `shared/aviso.dart`, que es de toda la app: el problema
-/// que resolvía este archivo resultó no ser de este módulo. Acá queda la
-/// traducción, que sí es de acá: está escrita mirando los `RAISERROR` de los
+/// que resolvía este archivo resultó no ser de este módulo. Aquí queda la
+/// traducción, que sí es de aquí: está escrita mirando los `RAISERROR` de los
 /// `trs_sp_`, y aplicársela a los textos que el resto de la app ya tiene
 /// escritos en castellano los reescribiría sin motivo.
 ///
@@ -87,7 +87,7 @@ Future<bool> ejecutarAccion(
 
 // `Aire` se mudó a `core/ui/tokens_bosque.dart` —sin cambiar los cortes de 600
 // y 1000— porque el segundo módulo que decide su layout por el ancho del cajón
-// lo necesitaba igual. Se re-exporta desde acá para que los widgets del módulo,
+// lo necesitaba igual. Se re-exporta desde aquí para que los widgets del módulo,
 // que lo toman de este archivo, no se enteren.
 
 /// Medidas de la matriz. Se calculan del ancho real disponible, no del tamaño
@@ -134,7 +134,7 @@ class MedidasGrilla {
   /// El sobrante se gasta **en orden de lo que cada pixel compra para leer**:
   ///
   /// 1. la columna de nombres, hasta [idealNombre] —lo que necesita el apellido
-  ///    más largo, medido por [anchoParaNombres]—. Cada pixel acá borra unos
+  ///    más largo, medido por [anchoParaNombres]—. Cada pixel aquí borra unos
   ///    puntos suspensivos, que es la pérdida de información más cara de la
   ///    grilla: dos personas distintas se ven iguales.
   /// 2. las celdas, hasta [anchoCeldaMax]: aire alrededor de la letra y las
@@ -262,7 +262,7 @@ String mesLargo(int mes) {
 /// de texto, pero es el MISMO número: los sábados que le tocan en Todo el rol,
 /// que es de un año. Con dos textos sueltos ya se estaba escribiendo de dos
 /// formas, y es la clase de diferencia que nadie reporta y todos notan — el
-/// mismo motivo por el que [mesCorto] vive acá.
+/// mismo motivo por el que [mesCorto] vive aquí.
 ///
 /// **«en todo el año» no es relleno.** La grilla arranca filtrada por mes: se
 /// ven las cinco columnas de agosto y al lado un 26. Sin esas cuatro palabras el
@@ -320,7 +320,7 @@ Color? fondoDeCelda(BuildContext context, CeldaTurnoEntity? celda) =>
 
 /// La letra de la celda. Sólo la letra.
 ///
-/// La marca de intervención NO va acá: ver [MarcaDeIntervencion].
+/// La marca de intervención NO va aquí: ver [MarcaDeIntervencion].
 class LetraDeCelda extends StatelessWidget {
   const LetraDeCelda({super.key, required this.celda, this.estiloTexto});
 
@@ -437,12 +437,12 @@ class Dato extends StatelessWidget {
 
 /// Las personas en orden alfabético, listas para un [ComboBuscable].
 ///
-/// **El orden llega hecho y acá no se rehace.** `p_list_trs_Participante`
+/// **El orden llega hecho y aquí no se rehace.** `p_list_trs_Participante`
 /// —`@ACCION='L'`, el mismo listado que dibuja la grilla— ya viene por apellido
-/// desde el script `17`, y ordena mejor de lo que se puede ordenar acá: la base
+/// desde el script `17`, y ordena mejor de lo que se puede ordenar aquí: la base
 /// es `Modern_Spanish_CI_AS`, así que CÁCERES cae entre BUITRAGO y CALLANCHO y
 /// la Ñ va después de la N. El `compareTo` de Dart compara code units: con él
-/// —que es lo que había acá— CÁCERES, LECOÑA y SIÑANI caían después de la Z, y
+/// —que es lo que había aquí— CÁCERES, LECOÑA y SIÑANI caían después de la Z, y
 /// el combo terminaba ordenado distinto que la grilla que tiene al lado.
 ///
 /// Todas las listas que llegan son `grilla.participantes` o un `where` sobre

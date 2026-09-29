@@ -33,7 +33,7 @@ bool _tieneCuotaAprobada(SolicitudPagoEntity sol) {
 
 /// Descripción legible del canal de pago. Los nombres del catálogo
 /// (`tpex_CanalesPago`) son códigos técnicos (SWIFT, TRANSFERENCIA_LOCAL…);
-/// acá los traducimos a algo entendible para el usuario del formulario.
+/// aquí los traducimos a algo entendible para el usuario del formulario.
 String _canalDescripcion(String nombre) {
   switch (nombre.toUpperCase()) {
     case 'TRANSFERENCIA_LOCAL':
@@ -365,10 +365,7 @@ class _PagosAlExtranjerosViewScreenState
         transacciones
             .where((t) => t.estado.toUpperCase() == 'CONFIRMADO')
             .toList();
-    final pagadoUsd = confirmadas.fold<double>(
-      0,
-      (s, t) => s + t.montoOrigen,
-    );
+    final pagadoUsd = confirmadas.fold<double>(0, (s, t) => s + t.montoOrigen);
     if (confirmadas.isNotEmpty && pagadoUsd >= aprobadoUsd - 0.01) {
       if (!mounted) return;
       final accion = await showDialog<String>(
@@ -1415,7 +1412,8 @@ class _FacturaRow extends StatelessWidget {
                   style: TextStyle(
                     fontWeight: FontWeight.w700,
                     fontSize: 13,
-                    color: aprobada ? Colors.green.shade700 : cs.onSurfaceVariant,
+                    color:
+                        aprobada ? Colors.green.shade700 : cs.onSurfaceVariant,
                   ),
                 ),
               ],
@@ -2391,24 +2389,29 @@ class _DialogoTransaccionState extends ConsumerState<_DialogoTransaccion> {
       required String hint,
       required void Function(String) onChanged,
       bool number = false,
-    }) =>
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildLabel(label),
-            TextFormField(
-              controller: ctrl,
-              decoration: _inputDeco(hint, colorScheme),
-              keyboardType: number
+    }) => Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildLabel(label),
+        TextFormField(
+          controller: ctrl,
+          decoration: _inputDeco(hint, colorScheme),
+          keyboardType:
+              number
                   ? const TextInputType.numberWithOptions(decimal: true)
                   : null,
-              inputFormatters: number
-                  ? [FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d{0,6}'))]
+          inputFormatters:
+              number
+                  ? [
+                    FilteringTextInputFormatter.allow(
+                      RegExp(r'^\d*\.?\d{0,6}'),
+                    ),
+                  ]
                   : null,
-              onChanged: onChanged,
-            ),
-          ],
-        );
+          onChanged: onChanged,
+        ),
+      ],
+    );
 
     final nombre = field(
       label: 'Nombre Exportadora *',
@@ -2421,16 +2424,16 @@ class _DialogoTransaccionState extends ConsumerState<_DialogoTransaccion> {
       ctrl: _tcNegExpCtrl,
       hint: 'Ej: 6.9600',
       number: true,
-      onChanged: (v) =>
-          notifier.setTcNegociadoExportadora(double.tryParse(v) ?? 0.0),
+      onChanged:
+          (v) => notifier.setTcNegociadoExportadora(double.tryParse(v) ?? 0.0),
     );
     final comision = field(
       label: 'Comisión (opcional)',
       ctrl: _comisionExpCtrl,
       hint: 'Ej: 150.00',
       number: true,
-      onChanged: (v) =>
-          notifier.setComisionExportadora(double.tryParse(v) ?? 0.0),
+      onChanged:
+          (v) => notifier.setComisionExportadora(double.tryParse(v) ?? 0.0),
     );
     final metodo = field(
       label: 'Método (opcional)',
@@ -2969,7 +2972,10 @@ class _DialogoTransaccionState extends ConsumerState<_DialogoTransaccion> {
                               );
                               ref
                                   .read(transaccionFormProvider.notifier)
-                                  .setIdTipoTransaccion(v, requiereForward: reqFwd);
+                                  .setIdTipoTransaccion(
+                                    v,
+                                    requiereForward: reqFwd,
+                                  );
                             },
                           ),
                     ),
@@ -4513,10 +4519,7 @@ class _DialogoCotizacionState extends ConsumerState<_DialogoCotizacion> {
                   if (cuotasAprobadas.isEmpty)
                     Text(
                       'No hay cuotas aprobadas. Apruebe al menos una en Gerencia.',
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: colorScheme.error,
-                      ),
+                      style: TextStyle(fontSize: 11, color: colorScheme.error),
                     )
                   else
                     ...cuotasAprobadas.map(

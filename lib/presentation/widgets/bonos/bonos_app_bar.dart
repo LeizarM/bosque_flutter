@@ -5,11 +5,7 @@ class BonosAppBar extends StatelessWidget implements PreferredSizeWidget {
   final BonoState st;
   final BonoNotifier ntf;
 
-  const BonosAppBar({
-    super.key,
-    required this.st,
-    required this.ntf,
-  });
+  const BonosAppBar({super.key, required this.st, required this.ntf});
 
   @override
   Size get preferredSize => const Size.fromHeight(kToolbarHeight);

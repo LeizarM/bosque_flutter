@@ -73,7 +73,7 @@ abstract class RolSabadosRepository {
   });
 
   /// Corrige UNA celda. Se guarda con `origen='M'`, y por eso sobrevive a una
-  /// regeneración. `codigoExcel` vacío o 'L' no va acá: para eso está
+  /// regeneración. `codigoExcel` vacío o 'L' no va aquí: para eso está
   /// [liberarCelda].
   Future<void> corregirCelda({
     required int idParticipante,
@@ -120,7 +120,7 @@ abstract class RolSabadosRepository {
   ///    eventos, convocatorias, cambios y los dos refrescos— sigue igual.
   ///  - `CERRADO` congela el rol entero, y **es de ida**: el SP rechaza
   ///    cualquier UPDATE sobre un rol cerrado *antes* de mirar el estado que le
-  ///    mandás, así que desde acá no hay vuelta. Ver [cambiarEstadoRol] en la
+  ///    mandas, así que desde aquí no hay vuelta. Ver [cambiarEstadoRol] en la
   ///    implementación.
   ///
   /// **[aplicaAsuetoCumple] no es opcional y no es un descuido.** El endpoint
@@ -263,7 +263,7 @@ abstract class RolSabadosRepository {
   ///
   /// **No lleva audUsuario a propósito**: el servidor resuelve la identidad con
   /// el token y no con lo que mande el cliente, así que no hay forma de pedir
-  /// «el equipo de otro». Si le agregás un parámetro de usuario, lo rompés.
+  /// «el equipo de otro». Si le agregas un parámetro de usuario, lo rompés.
   ///
   /// Nunca devuelve null: si no soy programador viene [MiEquipoEntity.vacio].
   Future<MiEquipoEntity> getMiEquipo();
@@ -313,7 +313,7 @@ abstract class RolSabadosRepository {
   /// A quiénes le quedaría a cargo ese permiso **antes** de darlo de alta.
   ///
   /// Sale del mismo árbol del organigrama con el que `trs_sp_programar` valida
-  /// después, así que lo que se muestra acá es exactamente lo que el sistema va
+  /// después, así que lo que se muestra aquí es exactamente lo que el sistema va
   /// a aceptar. Si fueran dos recorridos distintos, la pantalla prometería un
   /// equipo y el sistema aceptaría otro.
   ///

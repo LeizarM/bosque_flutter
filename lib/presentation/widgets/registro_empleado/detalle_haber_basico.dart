@@ -11,14 +11,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 class DetalleHaberBasico extends ConsumerStatefulWidget {
   final int codEmpleado;
 
-  const DetalleHaberBasico({
-    Key? key,
-    required this.codEmpleado,
-  }) : super(key: key);
+  const DetalleHaberBasico({Key? key, required this.codEmpleado})
+    : super(key: key);
 
   @override
-  ConsumerState<DetalleHaberBasico> createState() =>
-      _DetalleHaberBasicoState();
+  ConsumerState<DetalleHaberBasico> createState() => _DetalleHaberBasicoState();
 }
 
 class _DetalleHaberBasicoState extends ConsumerState<DetalleHaberBasico> {
@@ -47,15 +44,15 @@ class _DetalleHaberBasicoState extends ConsumerState<DetalleHaberBasico> {
 
     console('🔍 DetalleHaberBasico - codEmpleado: ${widget.codEmpleado}');
 
-    final empleadoAsync = ref.watch(detalleEmpleadoProvider(widget.codEmpleado));
+    final empleadoAsync = ref.watch(
+      detalleEmpleadoProvider(widget.codEmpleado),
+    );
 
     return empleadoAsync.when(
       loading: () => const Center(child: CircularProgressIndicator()),
       error: (err, stack) {
         console('❌ Error al cargar empleado: $err');
-        return Center(
-          child: Text('Error al cargar empleado: $err'),
-        );
+        return Center(child: Text('Error al cargar empleado: $err'));
       },
       data: (empleado) {
         return _buildUI(context, empleado);
@@ -112,10 +109,7 @@ class _DetalleHaberBasicoState extends ConsumerState<DetalleHaberBasico> {
   // TARJETA DE HABER BÁSICO (LECTURA)
   // ============================================================================
 
-  Widget _buildHaberBasicoCard(
-    BuildContext context,
-    EmpleadoEntity empleado,
-  ) {
+  Widget _buildHaberBasicoCard(BuildContext context, EmpleadoEntity empleado) {
     return Card(
       margin: EdgeInsets.zero,
       elevation: 0,
@@ -129,11 +123,7 @@ class _DetalleHaberBasicoState extends ConsumerState<DetalleHaberBasico> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Haber Básico con mejor layout
-            _buildDetailRow(
-              context,
-              'Haber Básico:',
-              empleado.haberBasico,
-            ),
+            _buildDetailRow(context, 'Haber Básico:', empleado.haberBasico),
             SizedBox(height: context.largeSpacing),
 
             // Botón editar mejorado
@@ -144,11 +134,7 @@ class _DetalleHaberBasicoState extends ConsumerState<DetalleHaberBasico> {
     );
   }
 
-  Widget _buildDetailRow(
-    BuildContext context,
-    String label,
-    double? value,
-  ) {
+  Widget _buildDetailRow(BuildContext context, String label, double? value) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
@@ -177,10 +163,7 @@ class _DetalleHaberBasicoState extends ConsumerState<DetalleHaberBasico> {
     );
   }
 
-  Widget _buildActionButton(
-    BuildContext context,
-    EmpleadoEntity empleado,
-  ) {
+  Widget _buildActionButton(BuildContext context, EmpleadoEntity empleado) {
     return Align(
       alignment: Alignment.bottomRight,
       child: Material(
@@ -188,7 +171,8 @@ class _DetalleHaberBasicoState extends ConsumerState<DetalleHaberBasico> {
         child: InkWell(
           onTap: () {
             console('🔧 Btn editar haber básico presionado');
-            _haberBasicoCtrl.text = empleado.haberBasico?.toStringAsFixed(2) ?? '';
+            _haberBasicoCtrl.text =
+                empleado.haberBasico?.toStringAsFixed(2) ?? '';
             setState(() => _isEditing = true);
           },
           borderRadius: BorderRadius.circular(4),
@@ -200,11 +184,7 @@ class _DetalleHaberBasicoState extends ConsumerState<DetalleHaberBasico> {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(
-                  Icons.edit_outlined,
-                  size: 18,
-                  color: Colors.green,
-                ),
+                Icon(Icons.edit_outlined, size: 18, color: Colors.green),
                 SizedBox(width: context.smallSpacing / 2),
                 Text(
                   'Editar',
@@ -268,9 +248,7 @@ class _DetalleHaberBasicoState extends ConsumerState<DetalleHaberBasico> {
       decoration: InputDecoration(
         labelText: 'Haber Básico *',
         hintText: 'Ingrese el haber básico',
-        border: OutlineInputBorder(
-          borderRadius: context.borderRadius,
-        ),
+        border: OutlineInputBorder(borderRadius: context.borderRadius),
         prefixIcon: const Icon(Icons.attach_money),
       ),
       keyboardType: const TextInputType.numberWithOptions(decimal: true),
@@ -340,11 +318,9 @@ class _DetalleHaberBasicoState extends ConsumerState<DetalleHaberBasico> {
     final success = await executeABM(
       ref: ref,
       context: context,
-      operation: () =>
-          ref.read(registrarEmpleadoProvider(empleadoActualizado).future),
-      providersToInvalidate: [
-        detalleEmpleadoProvider(widget.codEmpleado),
-      ],
+      operation:
+          () => ref.read(registrarEmpleadoProvider(empleadoActualizado).future),
+      providersToInvalidate: [detalleEmpleadoProvider(widget.codEmpleado)],
       successMessage: '✅ Haber básico actualizado correctamente',
     );
 

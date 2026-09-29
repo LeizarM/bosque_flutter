@@ -22,9 +22,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 ///
 /// El empleado elegido (`empleadoSeleccionadoBiometricoProvider`) es
 /// compartido entre Reporte, Horarios→Por empleado y Marcaciones olvidadas
-/// a propósito: es el mismo criterio del wizard legacy — elegís una vez,
-/// trabajás sobre esa persona en cualquier pestaña. "Resumen mensual" toca
-/// ese mismo provider cuando tocás "ver detalle" de una fila, y salta a la
+/// a propósito: es el mismo criterio del wizard legacy — eliges una vez,
+/// trabajas sobre esa persona en cualquier pestaña. "Resumen mensual" toca
+/// ese mismo provider cuando tocas "ver detalle" de una fila, y salta a la
 /// pestaña Reporte (índice 0) con ese empleado ya elegido.
 ///
 /// ## Permisos — `tb_vistaBtn` de `codVista=106`, replicados tal cual
@@ -32,7 +32,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 /// Cuatro botones (`verEmp`/`defHrs`/`marBio`/`marOlv`), verificados contra
 /// la base el 2026-09-01 (`nombreBtn` es el string real, no `codBtn`):
 ///
-/// | `nombreBtn` | Detalle                | Dónde queda acá                       |
+/// | `nombreBtn` | Detalle                | Dónde queda aquí                       |
 /// |---|---|---|
 /// | `verEmp`    | Ver Empleado            | pestaña Empleados                     |
 /// | `defHrs`    | Definir Horarios        | pestaña Horarios                      |
@@ -41,7 +41,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 ///
 /// Reporte y Resumen mensual **no tienen botón propio** — quedan cubiertos
 /// por el acceso a la vista en sí (`tb_vistaUsuario`, ya resuelto por el
-/// menú lateral antes de poder llegar acá), igual que en el legacy: los
+/// menú lateral antes de poder llegar aquí), igual que en el legacy: los
 /// cuatro botones gatean acciones administrativas puntuales, no la lectura
 /// del reporte.
 ///
@@ -51,7 +51,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 /// `Tab` en un widget que a veces se reduce a `SizedBox.shrink()` deja el
 /// `TabBar` con 5 pestañas contadas pero menos widgets reales — el mismo bug
 /// real que tuvo Comisiones, ya documentado en el comentario de
-/// `tienePermisoDeBoton` (`permission_widget.dart`). Acá se resuelven los
+/// `tienePermisoDeBoton` (`permission_widget.dart`). Aquí se resuelven los
 /// tres booleanos UNA sola vez y se usan igual en `TabBar` y `TabBarView`,
 /// así el largo nunca puede desincronizarse entre las dos.
 class BiometricoScreen extends ConsumerWidget {

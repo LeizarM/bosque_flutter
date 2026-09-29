@@ -91,12 +91,14 @@ class RepositorioLoteProduccion implements LoteProduccionRepository {
   List<MaterialIngresoEntity>? ingresosGuardados;
 
   @override
-  Future<List<MaterialIngresoEntity>> obtenerMaterialIngresoXLote(int idLp) async =>
-      ingresos;
+  Future<List<MaterialIngresoEntity>> obtenerMaterialIngresoXLote(
+    int idLp,
+  ) async => ingresos;
 
   @override
-  Future<List<MaterialSalidaEntity>> obtenerMaterialSalidaXLote(int idLp) async =>
-      const [];
+  Future<List<MaterialSalidaEntity>> obtenerMaterialSalidaXLote(
+    int idLp,
+  ) async => const [];
 
   @override
   Future<List<MermaEntity>> obtenerMermaXLote(int idLp) async => const [];

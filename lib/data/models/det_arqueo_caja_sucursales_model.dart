@@ -81,9 +81,8 @@ class DetArqueoCajaSucursalesModel {
       cantidad: json["cantidad"],
       subTotal: (json["subTotal"] as num?)?.toDouble(),
       audUsuario: json["audUsuario"] ?? 0,
-      audFecha: json["audFecha"] != null
-          ? DateTime.tryParse(json["audFecha"])
-          : null,
+      audFecha:
+          json["audFecha"] != null ? DateTime.tryParse(json["audFecha"]) : null,
     );
   }
 

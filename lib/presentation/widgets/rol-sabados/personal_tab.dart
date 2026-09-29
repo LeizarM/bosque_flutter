@@ -22,7 +22,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 /// asigna grupo únicamente a quien entra por primera vez — a los que ya están no
 /// los toca nunca. Así que esto se hace una vez y queda.
 ///
-/// **Acá también se decide quién hace sábados y desde cuándo.** Alguien puede
+/// **Aquí también se decide quién hace sábados y desde cuándo.** Alguien puede
 /// tener otro horario y no venir nunca, o dejar de venir a mitad de año, o
 /// volver en octubre. Eso NO es dar de baja al empleado: es cerrar y abrir su
 /// ventana de participación. Lo que ya trabajó queda escrito en la grilla — el
@@ -148,7 +148,7 @@ List<SabadoEntity> sabadosQueVienen(GrillaRol g) {
 /// filtro de la lista de abajo.
 ///
 /// **Los contadores SON el filtro, y no hay un control aparte.** Las pastillas
-/// «Grupo A · 43» y «Grupo B · 42» ya estaban acá arriba de sólo lectura;
+/// «Grupo A · 43» y «Grupo B · 42» ya estaban aquí arriba de sólo lectura;
 /// agregar un selector nuevo habría puesto los mismos tres números dos veces en
 /// la misma pantalla, y encima obligaría a mirar uno para saber cuántos hay y
 /// tocar el otro para verlos. Un contador que además filtra se lee solo: el
@@ -496,7 +496,7 @@ class _FilaPersonaState extends ConsumerState<_FilaPersona> {
 
     return ListTile(
       // El nombre y su estado en el mismo renglón: quien recorre 85 filas mira
-      // los nombres, no el tercer renglón en gris. Sin la etiqueta acá, «sale el
+      // los nombres, no el tercer renglón en gris. Sin la etiqueta aquí, «sale el
       // 7» sólo se ve entrando al filtro «Sin sábados», o sea justo cuando ya
       // sabías que lo buscabas.
       //
@@ -560,7 +560,7 @@ class _FilaPersonaState extends ConsumerState<_FilaPersona> {
             ),
           // El contador sale de la misma función que el de la grilla: es el
           // mismo dato y con dos textos sueltos ya se decía distinto en cada
-          // pantalla. Lo único que cambió acá es que ahora dice «en todo el
+          // pantalla. Lo único que cambió aquí es que ahora dice «en todo el
           // año» — esta lista no se filtra por mes, pero la grilla sí, y el
           // dato tiene que llamarse igual en las dos o no es el mismo dato.
           Text(
@@ -576,9 +576,9 @@ class _FilaPersonaState extends ConsumerState<_FilaPersona> {
           // Son dos situaciones distintas —«RR.HH. lo sacó de los sábados» y
           // «ya no figura en la relación laboral»— y confundirlas es
           // exactamente el error que este cambio vino a arreglar: una se
-          // deshace con un toque acá y la otra la reconcilia la regeneración.
+          // deshace con un toque aquí y la otra la reconcilia la regeneración.
           // También para la salida agendada: la etiqueta de arriba dice «SALE
-          // 07/08» recortado, y acá va la fecha entera. Sin esto, quien todavía
+          // 07/08» recortado, y aquí va la fecha entera. Sin esto, quien todavía
           // viene no tendría dónde leer desde cuándo deja de venir.
           if (decidido || fuera)
             Text(
@@ -774,7 +774,8 @@ class _FilaPersonaState extends ConsumerState<_FilaPersona> {
   // El rojo se reserva para lo que ya rige y saca a alguien de la grilla.
   if (p.fueraDeLaEmpresa) return ('FUERA DE LA EMPRESA', TonoEtiqueta.error);
   if (p.sinSabados) return ('SIN SÁBADOS', TonoEtiqueta.error);
-  if (p.saleDespues) return ('SALE ${corta(p.fechaSituacion)}', TonoEtiqueta.aviso);
+  if (p.saleDespues)
+    return ('SALE ${corta(p.fechaSituacion)}', TonoEtiqueta.aviso);
   if (p.vuelveDespues) {
     return ('VUELVE ${corta(p.fechaSituacion)}', TonoEtiqueta.aviso);
   }
@@ -787,7 +788,7 @@ String _porQueNoViene(ParticipanteTurnoEntity p) {
   if (p.vuelveDespues) {
     return 'Vuelve a los sábados el ${fechaCorta(p.fechaSituacion)}';
   }
-  // Ya está sacado aunque la fecha no haya llegado: sus sábados de acá en
+  // Ya está sacado aunque la fecha no haya llegado: sus sábados de aquí en
   // adelante ya se liberaron. Se dice en futuro porque todavía puede venir el
   // sábado que viene, y se dice la fecha porque es lo primero que se pregunta
   // quien lo ve en la lista de afuera.

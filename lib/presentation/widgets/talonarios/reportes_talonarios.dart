@@ -22,7 +22,7 @@ import 'package:bosque_flutter/domain/entities/talonario_entity.dart';
 /// estructurales. Ninguno de los cuatro tenía una sola `<variable>`: cero
 /// sumas y cero conteos, con los pies de grupo vacíos.
 ///
-/// Acá quedan cuatro preguntas distintas, cada una con sus totales.
+/// Aquí quedan cuatro preguntas distintas, cada una con sus totales.
 enum _Reporte {
   inventario(
     'Inventario',
@@ -88,6 +88,7 @@ class _PanelReportesState extends ConsumerState<_PanelReportes> {
   int? _codEmpresa;
   BigInt? _codGrupo;
   int? _codEstadoActual;
+
   /// Dos rangos y no uno: en «Conciliados» el período es la fecha de alta del
   /// talonario en el Bosque y en «Sin talonario» es la del documento en SAP.
   /// Son universos distintos; arrastrar un rango de uno al otro da un
@@ -122,9 +123,7 @@ class _PanelReportesState extends ConsumerState<_PanelReportes> {
 
   Future<void> _generar() async {
     if (_elegido == _Reporte.ficha && _codTalonario == null) {
-      setState(
-        () => _error = 'Elija el talonario del que quiere la ficha.',
-      );
+      setState(() => _error = 'Elija el talonario del que quiere la ficha.');
       return;
     }
 
@@ -174,8 +173,7 @@ class _PanelReportesState extends ConsumerState<_PanelReportes> {
           bytes = await repo.reporteConciliacionSap(
             origen: _origenSap,
             accionSap: _accionSap,
-            codEmpresa:
-                _codEmpresa == null ? null : BigInt.from(_codEmpresa!),
+            codEmpresa: _codEmpresa == null ? null : BigInt.from(_codEmpresa!),
             codTipoRecibo: _esSinTalonario ? null : _codTipoRecibo,
             desde: _periodoActivo?.start,
             hasta: _periodoActivo?.end,
@@ -227,10 +225,7 @@ class _PanelReportesState extends ConsumerState<_PanelReportes> {
     return Dialog(
       insetPadding: EdgeInsets.all(tam.width < 600 ? Esp.s : Esp.xl),
       child: ConstrainedBox(
-        constraints: BoxConstraints(
-          maxWidth: 720,
-          maxHeight: tam.height * 0.9,
-        ),
+        constraints: BoxConstraints(maxWidth: 720, maxHeight: tam.height * 0.9),
         child: LayoutBuilder(
           builder: (context, caja) {
             // El aire se mide sobre la caja del diálogo y no sobre la ventana:
@@ -273,10 +268,7 @@ class _PanelReportesState extends ConsumerState<_PanelReportes> {
   Widget _cabecera() {
     final cs = context.cs;
     return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: Esp.l,
-        vertical: Esp.m,
-      ),
+      padding: const EdgeInsets.symmetric(horizontal: Esp.l, vertical: Esp.m),
       decoration: BoxDecoration(
         color: cs.primaryContainer,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(4)),
@@ -387,9 +379,8 @@ class _PanelReportesState extends ConsumerState<_PanelReportes> {
         onSelectionChanged:
             _ocupado
                 ? null
-                : (v) => setState(
-                  () => _tipoDest = v.first == 'T' ? null : v.first,
-                ),
+                : (v) =>
+                    setState(() => _tipoDest = v.first == 'T' ? null : v.first),
       ),
       const SizedBox(height: Esp.m),
       // El corte por antigüedad es lo que vuelve accionable el reporte: hoy
@@ -505,7 +496,7 @@ class _PanelReportesState extends ConsumerState<_PanelReportes> {
         const NotaDelDato(
           texto:
               'Lee SAP en vivo y recorre folio por folio, así que sin acotar no '
-              'termina. Filtrá por empresa, tipo o fechas: se admiten hasta 80 '
+              'termina. Filtra por empresa, tipo o fechas: se admiten hasta 80 '
               'talonarios por reporte.',
           tono: TonoNota.aviso,
         ),
@@ -546,9 +537,7 @@ class _PanelReportesState extends ConsumerState<_PanelReportes> {
                     )
                     .toList(),
             onElegir:
-                _ocupado
-                    ? (_) {}
-                    : (v) => setState(() => _codTipoRecibo = v),
+                _ocupado ? (_) {} : (v) => setState(() => _codTipoRecibo = v),
           ),
     );
   }
@@ -601,14 +590,11 @@ class _PanelReportesState extends ConsumerState<_PanelReportes> {
             opciones:
                 lista
                     .map(
-                      (g) => DropdownMenuEntry(
-                        value: g.codGrupo,
-                        label: g.nombre,
-                      ),
+                      (g) =>
+                          DropdownMenuEntry(value: g.codGrupo, label: g.nombre),
                     )
                     .toList(),
-            onElegir:
-                _ocupado ? (_) {} : (v) => setState(() => _codGrupo = v),
+            onElegir: _ocupado ? (_) {} : (v) => setState(() => _codGrupo = v),
           ),
     );
   }
@@ -623,8 +609,7 @@ class _PanelReportesState extends ConsumerState<_PanelReportes> {
       DropdownMenuEntry(value: 3, label: 'Devuelto'),
       DropdownMenuEntry(value: 4, label: 'Cerrado'),
     ],
-    onElegir:
-        _ocupado ? (_) {} : (v) => setState(() => _codEstadoActual = v),
+    onElegir: _ocupado ? (_) {} : (v) => setState(() => _codEstadoActual = v),
   );
 
   Widget _selectorPeriodo(String ayuda) {
@@ -677,9 +662,7 @@ class _PanelReportesState extends ConsumerState<_PanelReportes> {
                         iconoAceptar: Icons.filter_alt_outlined,
                       );
                       if (r != null && mounted) {
-                        guardar(
-                          DateTimeRange(start: r.desde, end: r.hasta),
-                        );
+                        guardar(DateTimeRange(start: r.desde, end: r.hasta));
                       }
                     },
           ),
@@ -710,7 +693,7 @@ class _PanelReportesState extends ConsumerState<_PanelReportes> {
 }
 
 /// Una opción del selector. Card plano a propósito: la sombra de elevación por
-/// tarjeta es cara en Flutter Web y acá hay cuatro siempre visibles.
+/// tarjeta es cara en Flutter Web y aquí hay cuatro siempre visibles.
 class _TarjetaReporte extends StatelessWidget {
   const _TarjetaReporte({
     required this.reporte,
@@ -740,18 +723,14 @@ class _TarjetaReporte extends StatelessWidget {
             // Sin borde cuando no está elegido, en vez de uno transparente: el
             // proyecto no usa Colors.* en ningún lado para que los nueve
             // colores de marca y el modo oscuro sigan mandando.
-            border:
-                elegido
-                    ? Border.all(color: cs.primary, width: 1.5)
-                    : null,
+            border: elegido ? Border.all(color: cs.primary, width: 1.5) : null,
           ),
           child: Row(
             children: [
               Icon(
                 reporte.icono,
                 size: 20,
-                color:
-                    elegido ? cs.onSecondaryContainer : cs.onSurfaceVariant,
+                color: elegido ? cs.onSecondaryContainer : cs.onSurfaceVariant,
               ),
               const SizedBox(width: Esp.m),
               Expanded(
@@ -762,10 +741,7 @@ class _TarjetaReporte extends StatelessWidget {
                       reporte.titulo,
                       style: TextStyle(
                         fontWeight: elegido ? Peso.dato : Peso.titulo,
-                        color:
-                            elegido
-                                ? cs.onSecondaryContainer
-                                : cs.onSurface,
+                        color: elegido ? cs.onSecondaryContainer : cs.onSurface,
                       ),
                     ),
                     if (!compacto) ...[

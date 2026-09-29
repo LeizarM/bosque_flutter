@@ -52,9 +52,8 @@ class CajaChicaNotifier extends StateNotifier<CajaChicaState> {
       await _repo.registrar(item);
       state = state.copyWith(
         cargando: false,
-        mensajeExito: item.idCC == 0
-            ? 'Caja chica agregada.'
-            : 'Caja chica actualizada.',
+        mensajeExito:
+            item.idCC == 0 ? 'Caja chica agregada.' : 'Caja chica actualizada.',
       );
       await cargar();
       return true;
@@ -68,7 +67,10 @@ class CajaChicaNotifier extends StateNotifier<CajaChicaState> {
     state = state.copyWith(cargando: true);
     try {
       await _repo.eliminar(idCC, audUsuario);
-      state = state.copyWith(cargando: false, mensajeExito: 'Caja chica eliminada.');
+      state = state.copyWith(
+        cargando: false,
+        mensajeExito: 'Caja chica eliminada.',
+      );
       await cargar();
       return true;
     } catch (e) {
@@ -82,5 +84,5 @@ final _cajaChicaRepoProvider = Provider((ref) => CajaChicaImpl());
 
 final cajaChicaProvider =
     StateNotifierProvider.autoDispose<CajaChicaNotifier, CajaChicaState>(
-  (ref) => CajaChicaNotifier(ref.read(_cajaChicaRepoProvider)),
-);
+      (ref) => CajaChicaNotifier(ref.read(_cajaChicaRepoProvider)),
+    );

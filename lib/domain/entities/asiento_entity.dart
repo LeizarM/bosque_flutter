@@ -2,7 +2,7 @@ class AsientoEntity {
   BigInt idAsiento;
   BigInt idTransaccion;
   int numero;
-  String tipoAsiento;      // PR / PE / MP
+  String tipoAsiento; // PR / PE / MP
   int codBancoRef;
   String banco;
   String cuentaDebe;
@@ -21,7 +21,7 @@ class AsientoEntity {
   double totalDebitoBs;
   double totalCreditoBs;
   double diferenciaBs;
-  String estadoCuadre;     // "CUADRADO" / "DESCUADRADO"
+  String estadoCuadre; // "CUADRADO" / "DESCUADRADO"
   int audUsuario;
   DateTime? audFecha;
 

@@ -63,13 +63,15 @@ class _NuevaSolicitudDialogState extends ConsumerState<NuevaSolicitudDialog> {
   Future<void> _agregarItem() async {
     final nuevo = await showDialog<CcrSolicitudDetalleEntity>(
       context: context,
-      builder: (_) => _ItemDialog(
-        buscar: (texto) => ref
-            .read(solicitudCorteRepositoryProvider)
-            .buscarItemsSap(texto: texto),
-        totalCatalogo: ref.read(totalItemsSapProvider).valueOrNull ?? 0,
-        yaElegidos: _items.map((i) => i.codigoSAPBase).toSet(),
-      ),
+      builder:
+          (_) => _ItemDialog(
+            buscar:
+                (texto) => ref
+                    .read(solicitudCorteRepositoryProvider)
+                    .buscarItemsSap(texto: texto),
+            totalCatalogo: ref.read(totalItemsSapProvider).valueOrNull ?? 0,
+            yaElegidos: _items.map((i) => i.codigoSAPBase).toSet(),
+          ),
     );
     if (nuevo != null) setState(() => _items.add(nuevo));
   }
@@ -167,9 +169,10 @@ class _NuevaSolicitudDialogState extends ConsumerState<NuevaSolicitudDialog> {
                       IconButton(
                         icon: const Icon(Icons.close),
                         tooltip: 'Cerrar',
-                        onPressed: _guardando
-                            ? null
-                            : () => Navigator.pop(context, false),
+                        onPressed:
+                            _guardando
+                                ? null
+                                : () => Navigator.pop(context, false),
                       ),
                     ],
                   ),
@@ -232,9 +235,10 @@ class _NuevaSolicitudDialogState extends ConsumerState<NuevaSolicitudDialog> {
                         for (var i = 0; i < _items.length; i++)
                           _FilaItem(
                             item: _items[i],
-                            onQuitar: _guardando
-                                ? null
-                                : () => setState(() => _items.removeAt(i)),
+                            onQuitar:
+                                _guardando
+                                    ? null
+                                    : () => setState(() => _items.removeAt(i)),
                           ),
 
                       if (_items.isNotEmpty) ...[
@@ -242,14 +246,18 @@ class _NuevaSolicitudDialogState extends ConsumerState<NuevaSolicitudDialog> {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.end,
                           children: [
-                            Text('Total solicitado  ', style: context.apagado()),
+                            Text(
+                              'Total solicitado  ',
+                              style: context.apagado(),
+                            ),
                             Text(
                               '${fmtNumero.format(_total)} kg',
-                              style: Theme.of(context).textTheme.titleMedium
-                                  ?.copyWith(
-                                    fontWeight: Peso.dato,
-                                    fontFeatures: cifrasTabulares,
-                                  ),
+                              style: Theme.of(
+                                context,
+                              ).textTheme.titleMedium?.copyWith(
+                                fontWeight: Peso.dato,
+                                fontFeatures: cifrasTabulares,
+                              ),
                             ),
                           ],
                         ),
@@ -269,23 +277,25 @@ class _NuevaSolicitudDialogState extends ConsumerState<NuevaSolicitudDialog> {
                     mainAxisAlignment: MainAxisAlignment.end,
                     children: [
                       TextButton(
-                        onPressed: _guardando
-                            ? null
-                            : () => Navigator.pop(context, false),
+                        onPressed:
+                            _guardando
+                                ? null
+                                : () => Navigator.pop(context, false),
                         child: const Text('Cancelar'),
                       ),
                       SizedBox(width: Esp.s),
                       FilledButton.icon(
                         onPressed: _guardando ? null : _guardar,
-                        icon: _guardando
-                            ? const SizedBox(
-                                width: 16,
-                                height: 16,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                ),
-                              )
-                            : const Icon(Icons.save_outlined, size: 18),
+                        icon:
+                            _guardando
+                                ? const SizedBox(
+                                  width: 16,
+                                  height: 16,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                  ),
+                                )
+                                : const Icon(Icons.save_outlined, size: 18),
                         label: Text(
                           _guardando ? 'Guardando…' : 'Registrar solicitud',
                         ),
@@ -496,15 +506,16 @@ class _ItemDialogState extends State<_ItemDialog> {
 
   /// Los paquetes que salen, en vivo: es el numero que el solicitante quiere
   /// ver antes de confirmar.
-  double get _paquetes => _item == null
-      ? 0
-      : CcrSolicitudDetalleEntity.calcularPaquetes(
-          cantidad: _n0,
-          gramaje: _item!.gramaje,
-          ancho: _ancho,
-          largo: _largo,
-          cantHojas: _hojas.toDouble(),
-        );
+  double get _paquetes =>
+      _item == null
+          ? 0
+          : CcrSolicitudDetalleEntity.calcularPaquetes(
+            cantidad: _n0,
+            gramaje: _item!.gramaje,
+            ancho: _ancho,
+            largo: _largo,
+            cantHojas: _hojas.toDouble(),
+          );
 
   /// La validacion del sistema anterior, en el mismo orden.
   String? get _problema {
@@ -568,32 +579,37 @@ class _ItemDialogState extends State<_ItemDialog> {
                 optionsMaxHeight: 300,
                 optionsBuilder: _buscarConFreno,
                 onSelected: (i) => setState(() => _item = i),
-                fieldViewBuilder: (ctx, control, foco, _) => TextField(
-                  controller: control,
-                  focusNode: foco,
-                  autofocus: true,
-                  decoration: InputDecoration(
-                    labelText: 'Papel a cortar',
-                    helperText: widget.totalCatalogo > 0
-                        ? 'Escriba codigo o descripcion. '
-                              '${fmtEntero.format(widget.totalCatalogo)} items '
-                              'en el catalogo.'
-                        : 'Escriba codigo o descripcion.',
-                    border: const OutlineInputBorder(),
-                    isDense: true,
-                    prefixIcon: const Icon(Icons.search, size: 18),
-                    suffixIcon: _buscando
-                        ? const Padding(
-                            padding: EdgeInsets.all(12),
-                            child: SizedBox(
-                              width: 16,
-                              height: 16,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            ),
-                          )
-                        : null,
-                  ),
-                ),
+                fieldViewBuilder:
+                    (ctx, control, foco, _) => TextField(
+                      controller: control,
+                      focusNode: foco,
+                      autofocus: true,
+                      decoration: InputDecoration(
+                        labelText: 'Papel a cortar',
+                        helperText:
+                            widget.totalCatalogo > 0
+                                ? 'Escriba codigo o descripcion. '
+                                    '${fmtEntero.format(widget.totalCatalogo)} items '
+                                    'en el catalogo.'
+                                : 'Escriba codigo o descripcion.',
+                        border: const OutlineInputBorder(),
+                        isDense: true,
+                        prefixIcon: const Icon(Icons.search, size: 18),
+                        suffixIcon:
+                            _buscando
+                                ? const Padding(
+                                  padding: EdgeInsets.all(12),
+                                  child: SizedBox(
+                                    width: 16,
+                                    height: 16,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                    ),
+                                  ),
+                                )
+                                : null,
+                      ),
+                    ),
               ),
               if (_item != null) ...[
                 SizedBox(height: Esp.s),
@@ -756,7 +772,11 @@ class _Calculado extends StatelessWidget {
       ),
       child: Row(
         children: [
-          Icon(Icons.calculate_outlined, size: 18, color: cs.onPrimaryContainer),
+          Icon(
+            Icons.calculate_outlined,
+            size: 18,
+            color: cs.onPrimaryContainer,
+          ),
           SizedBox(width: Esp.s),
           Text(
             'Salen ${fmtNumero.format(paquetes)} paquetes',

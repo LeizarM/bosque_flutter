@@ -1,16 +1,20 @@
 import 'dart:async';
 
+import 'package:bosque_flutter/core/constants/app_constants.dart';
+import 'package:bosque_flutter/core/constants/tareas_a_requerimiento.dart';
 import 'package:bosque_flutter/core/network/dio_client.dart';
 import 'package:bosque_flutter/core/state/button_permissions_provider.dart';
 import 'package:bosque_flutter/core/state/rol_sabados_provider.dart';
 import 'package:bosque_flutter/core/state/user_provider.dart';
 import 'package:bosque_flutter/core/utils/console_log.dart';
 import 'package:bosque_flutter/core/utils/secure_storage.dart';
+import 'package:bosque_flutter/domain/entities/cierre_operaciones_entity.dart';
 import 'package:bosque_flutter/domain/entities/login_entity.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:bosque_flutter/presentation/screens/screens.dart';
+import 'package:bosque_flutter/presentation/widgets/tareas-rutinarias/apertura_flujo.dart';
 
 // Controlador global para forzar redirecciones
 final GlobalKey<NavigatorState> _rootNavigatorKey = GlobalKey<NavigatorState>();
@@ -20,6 +24,35 @@ final authStateProvider = StateProvider<bool>((ref) => false);
 
 // Referencia global para el router
 GoRouter? _router;
+
+/// Envuelve una pantalla para que la pestaña del navegador muestre un
+/// título real en vez de quedarse siempre en "bosque_flutter" (el fijo de
+/// web/index.html, que nunca cambiaba al navegar).
+///
+/// [Title] resuelve esto sola: llama a
+/// `SystemChrome.setApplicationSwitcherDescription`, que en Flutter Web
+/// actualiza `document.title` (en la app nativa, en cambio, es la tarjeta
+/// del selector de apps de Android). `color` tiene que ser opaco — el
+/// primary de un ColorScheme armado con `ColorScheme.fromSeed` siempre lo
+/// es, así que se pasa directo sin reprocesarlo.
+///
+/// Por qué aquí y no en cada pantalla: go_router arma cada ruta como un
+/// `MaterialPage` a partir de este `builder`, así que ruta y título quedan
+/// juntos en un solo lugar en vez de duplicar el mapeo ruta→título en cada
+/// archivo de pantalla.
+///
+/// Cobertura: por ahora sólo el módulo Tareas Rutinarias (el que originó
+/// este hallazgo). Extenderlo a las demás ~50 rutas de este archivo es
+/// mecánico — repetir este mismo wrapper en cada builder — pero se dejó
+/// afuera de este cambio para no tocar cada ruta existente en un ajuste
+/// pensado como theme-level.
+Widget _pantallaConTitulo(BuildContext context, String titulo, Widget child) {
+  return Title(
+    title: titulo,
+    color: Theme.of(context).colorScheme.primary,
+    child: child,
+  );
+}
 
 // Proveedor para el router que se crea una sola vez
 final routerProvider = Provider<GoRouter>((ref) {
@@ -201,7 +234,7 @@ final routerProvider = Provider<GoRouter>((ref) {
             // La ruta es '/dashboard/' + tb_vista.direccion LITERAL: el menú se
             // arma desde la BD y navega con ese valor, así que no se puede
             // inventar. El JSF viejo usa la misma columna para su navegación,
-            // por eso no se toca en la BD y se adapta la ruta acá.
+            // por eso no se toca en la BD y se adapta la ruta aquí.
             GoRoute(
               path: '/dashboard/tmtoTalonario/talonario',
               name: 'tmtoTalonario',
@@ -353,6 +386,114 @@ final routerProvider = Provider<GoRouter>((ref) {
               name: 'tcrDocumento',
               builder: (context, state) => const CartasCiteScreen(),
             ),
+
+            // MODULO DE PRECIOS (tpr).
+            // Misma regla que Cartas CITE y Biometrico: la ruta es
+            // EXACTAMENTE '/dashboard/' + tb_vista.direccion, porque el
+            // sidebar arma el destino con '/' + direccion y cae en el
+            // redirect de primer nivel de mas abajo. Las direcciones viven en
+            // AppConstants para no repetirlas entre el router y el SQL de
+            // alta.
+            //
+            // Propuestas reemplaza al modulo JSF legacy (codVista 66,
+            // 'tprAutorizacion/Autorizacion', bajo el padre 65 'Cambio de
+            // Precios'): conserva la direccion tal cual, asi el item de menu y
+            // los permisos que los usuarios ya tienen siguen funcionando sin
+            // tocar tb_vista ni tb_vistaUsuario.
+            GoRoute(
+              path: '/dashboard/${AppConstants.rutaPreciosPropuestas}',
+              name: 'tprAutorizacion',
+              builder:
+                  (context, state) => _pantallaConTitulo(
+                    context,
+                    'Bosque - Propuestas de Precio',
+                    const PropuestasScreen(),
+                  ),
+            ),
+            // Repreciacion por familia: el arbol de grupo/familia con su
+            // precio por tonelada.
+            GoRoute(
+              path: '/dashboard/${AppConstants.rutaPreciosFamilias}',
+              name: 'tprFamilias',
+              builder:
+                  (context, state) => _pantallaConTitulo(
+                    context,
+                    'Bosque - Familias de Precio',
+                    const FamiliasScreen(),
+                  ),
+            ),
+            // Consulta de precios vigentes por articulo, sucursal y lista.
+            GoRoute(
+              path: '/dashboard/${AppConstants.rutaPreciosPrecios}',
+              name: 'tprPrecios',
+              builder:
+                  (context, state) => _pantallaConTitulo(
+                    context,
+                    'Bosque - Precios Vigentes',
+                    const PreciosScreen(),
+                  ),
+            ),
+            // Listas de precio: clasificaciones y sus porcentajes.
+            GoRoute(
+              path: '/dashboard/${AppConstants.rutaPreciosListas}',
+              name: 'tprListasPrecio',
+              builder:
+                  (context, state) => _pantallaConTitulo(
+                    context,
+                    'Bosque - Listas de Precio',
+                    const ListasPrecioScreen(),
+                  ),
+            ),
+            // ABM de los catalogos del modulo: colores, tipos,
+            // presentaciones, rangos de gramaje, grupos y proveedores SAP.
+            GoRoute(
+              path: '/dashboard/${AppConstants.rutaPreciosCatalogos}',
+              name: 'tprCatalogos',
+              builder:
+                  (context, state) => _pantallaConTitulo(
+                    context,
+                    'Bosque - Catalogos de Precios',
+                    const CatalogosPreciosScreen(),
+                  ),
+            ),
+            // Parametros del calculo: impuestos, gramaje y ancla del tipo de
+            // cambio.
+            GoRoute(
+              path: '/dashboard/${AppConstants.rutaPreciosParametros}',
+              name: 'tprParametros',
+              builder:
+                  (context, state) => _pantallaConTitulo(
+                    context,
+                    'Bosque - Parametros de Precios',
+                    const ParametrosPreciosScreen(),
+                  ),
+            ),
+            // Porcentajes por familia y lista de precios: el margen sobre el
+            // costo. Reemplaza a los dialogos dlgPorcen y dlgPorcGrupo.
+            GoRoute(
+              path: '/dashboard/${AppConstants.rutaPreciosPorcentajes}',
+              name: 'tprPorcentajes',
+              builder:
+                  (context, state) => _pantallaConTitulo(
+                    context,
+                    'Bosque - Porcentajes de Precios',
+                    const PorcentajesScreen(),
+                  ),
+            ),
+            // MODULO DE GARANTIAS DE COBRANZA (tcbr). Reemplaza al JSF legacy
+            // (codVista 45, 'tcbrGarantia/garantia', padre 44 'Cobranza') con
+            // la direccion tal cual: el item de menu y los permisos que los
+            // usuarios ya tienen siguen sirviendo sin tocar tb_vista.
+            GoRoute(
+              path: '/dashboard/${AppConstants.rutaGarantias}',
+              name: 'tcbrGarantia',
+              builder:
+                  (context, state) => _pantallaConTitulo(
+                    context,
+                    'Bosque - Garantías de Cobranza',
+                    const GarantiasScreen(),
+                  ),
+            ),
             // Tareas Rutinarias — reutiliza la vista legacy 78
             // ('tacTareas/Tareas'), misma regla de siempre: la ruta es
             // EXACTAMENTE tb_vista.direccion. Los 134 usuarios que ya
@@ -361,31 +502,57 @@ final routerProvider = Provider<GoRouter>((ref) {
             GoRoute(
               path: '/dashboard/tacTareas/Tareas',
               name: 'tacTareasMisTareas',
-              builder: (context, state) => const MisTareasRutinariasScreen(),
+              builder:
+                  (context, state) => _pantallaConTitulo(
+                    context,
+                    'Bosque - Mis Tareas',
+                    const MisTareasRutinariasScreen(),
+                  ),
             ),
             // Programar tarea a mi equipo (jefe → dependientes) — capacidad
-            // nueva, sin pantalla equivalente en el JSF viejo. La fila de
-            // tb_vista ('tacTareas/Dependientes') se da de alta con
-            // sql/2026-09-02_tac_tareaRutinaria_13_vista_dependientesJefe.sql;
-            // hasta entonces la pantalla es alcanzable por el FAB de "Mis
-            // tareas rutinarias" aunque no aparezca todavía en el sidebar.
+            // nueva, sin pantalla equivalente en el JSF viejo. Desde el
+            // archivo SQL 59 no está en el menú: se abre con el botón "Mi
+            // equipo" de "Mis tareas rutinarias", que solo aparece si el cargo
+            // vigente tiene codNivel <= nivelMaximoJefe.
             GoRoute(
               path: '/dashboard/tacTareas/Dependientes',
               name: 'tacTareasDependientes',
-              builder: (context, state) => const DependientesJefeScreen(),
+              builder:
+                  (context, state) => _pantallaConTitulo(
+                    context,
+                    'Bosque - Tareas de mi Equipo',
+                    const DependientesJefeScreen(),
+                  ),
             ),
-            // Coches (idATR=6) y Caja Fuerte (idATR=4) — ninguna tiene fila
-            // propia en tb_vista, se llega por navegación directa desde
-            // "Mis tareas rutinarias" (push), no desde el sidebar.
+            // Coches (41) y Caja Fuerte (40) — desde el archivo SQL 40/41 son
+            // submódulos con fila propia en tb_vista bajo la 87, así que se
+            // llega por el sidebar y NO desde "Mis tareas rutinarias" (el Job
+            // dejó de generarlas). Cuando se entra por el menú no viene ningún
+            // `extra`, así que AperturaFlujo pide al backend la ocurrencia del
+            // día antes de construir la pantalla.
             GoRoute(
               path: '/dashboard/tacTareas/Coches',
               name: 'tacTareasCoches',
               builder: (context, state) {
                 final extra = state.extra as Map<String, dynamic>? ?? {};
-                return CochesScreen(
-                  idTarRuti: (extra['idTarRuti'] as int?) ?? 0,
-                  idBitTarea: (extra['idBitTarea'] as int?) ?? 0,
-                  nombreTarea: (extra['nombreTarea'] as String?) ?? 'Coches',
+                final nombreTarea =
+                    (extra['nombreTarea'] as String?) ?? 'Revisión de Autos';
+                return _pantallaConTitulo(
+                  context,
+                  'Bosque - $nombreTarea',
+                  AperturaFlujo(
+                    idTarRuti: TareasARequerimiento.coches,
+                    nombreFlujo: nombreTarea,
+                    idBitTareaExistente: extra['idBitTarea'] as int?,
+                    construir:
+                        (idBitTarea) => CochesScreen(
+                          idTarRuti:
+                              (extra['idTarRuti'] as int?) ??
+                              TareasARequerimiento.coches,
+                          idBitTarea: idBitTarea,
+                          nombreTarea: nombreTarea,
+                        ),
+                  ),
                 );
               },
             ),
@@ -394,10 +561,24 @@ final routerProvider = Provider<GoRouter>((ref) {
               name: 'tacTareasCajaFuerte',
               builder: (context, state) {
                 final extra = state.extra as Map<String, dynamic>? ?? {};
-                return CajaFuerteScreen(
-                  idTarRuti: (extra['idTarRuti'] as int?) ?? 0,
-                  idBitTarea: (extra['idBitTarea'] as int?) ?? 0,
-                  nombreTarea: (extra['nombreTarea'] as String?) ?? 'Caja Fuerte',
+                final nombreTarea =
+                    (extra['nombreTarea'] as String?) ?? 'Caja Fuerte';
+                return _pantallaConTitulo(
+                  context,
+                  'Bosque - $nombreTarea',
+                  AperturaFlujo(
+                    idTarRuti: TareasARequerimiento.cajaFuerte,
+                    nombreFlujo: nombreTarea,
+                    idBitTareaExistente: extra['idBitTarea'] as int?,
+                    construir:
+                        (idBitTarea) => CajaFuerteScreen(
+                          idTarRuti:
+                              (extra['idTarRuti'] as int?) ??
+                              TareasARequerimiento.cajaFuerte,
+                          idBitTarea: idBitTarea,
+                          nombreTarea: nombreTarea,
+                        ),
+                  ),
                 );
               },
             ),
@@ -406,10 +587,16 @@ final routerProvider = Provider<GoRouter>((ref) {
               name: 'tacTareasArqueoCaja',
               builder: (context, state) {
                 final extra = state.extra as Map<String, dynamic>? ?? {};
-                return ArqueoCajaScreen(
-                  idTarRuti: (extra['idTarRuti'] as int?) ?? 0,
-                  idBitTarea: (extra['idBitTarea'] as int?) ?? 0,
-                  nombreTarea: (extra['nombreTarea'] as String?) ?? 'Arqueo de Caja',
+                final nombreTarea =
+                    (extra['nombreTarea'] as String?) ?? 'Arqueo de Caja';
+                return _pantallaConTitulo(
+                  context,
+                  'Bosque - $nombreTarea',
+                  ArqueoCajaScreen(
+                    idTarRuti: (extra['idTarRuti'] as int?) ?? 0,
+                    idBitTarea: (extra['idBitTarea'] as int?) ?? 0,
+                    nombreTarea: nombreTarea,
+                  ),
                 );
               },
             ),
@@ -418,31 +605,176 @@ final routerProvider = Provider<GoRouter>((ref) {
               name: 'tacTareasCajaChica',
               builder: (context, state) {
                 final extra = state.extra as Map<String, dynamic>? ?? {};
-                return CajaChicaScreen(
-                  idBitTarea: (extra['idBitTarea'] as int?) ?? 0,
-                  nombreTarea: (extra['nombreTarea'] as String?) ?? 'Caja Chica',
+                final nombreTarea =
+                    (extra['nombreTarea'] as String?) ?? 'Caja Chica';
+                return _pantallaConTitulo(
+                  context,
+                  'Bosque - $nombreTarea',
+                  AperturaFlujo(
+                    idTarRuti: TareasARequerimiento.cajaChica,
+                    nombreFlujo: nombreTarea,
+                    idBitTareaExistente: extra['idBitTarea'] as int?,
+                    construir:
+                        (idBitTarea) => CajaChicaScreen(
+                          idBitTarea: idBitTarea,
+                          nombreTarea: nombreTarea,
+                        ),
+                  ),
                 );
               },
             ),
+            // Cierre de Operaciones ya no tiene ruta propia (archivo SQL 63):
+            // su pantalla es la revisión del día y vive en la ruta de
+            // "Verificar Cierre de Operaciones", más abajo.
+            // Tarea 295 - "Verificar traspaso Caja AXA contra movimiento de
+            // caja" (idATR 12). NO usa AperturaFlujo, a diferencia de los
+            // submodulos de la vista 87: esta tarea es automatica, la genera
+            // el Job todos los dias, asi que la ocurrencia YA existe y su
+            // idBitTarea llega desde la tarjeta de "Mis tareas rutinarias".
+            // Abrir una a demanda duplicaria la del dia.
             GoRoute(
-              path: '/dashboard/tacTareas/CierreOperaciones',
-              name: 'tacTareasCierreOperaciones',
+              path: '/dashboard/tacTareas/TraspasoCajaAxa',
+              name: 'tacTareasTraspasoCajaAxa',
               builder: (context, state) {
                 final extra = state.extra as Map<String, dynamic>? ?? {};
-                return CierreOperacionesScreen(
-                  idBitTarea: (extra['idBitTarea'] as int?) ?? 0,
-                  nombreTarea: (extra['nombreTarea'] as String?) ?? 'Cierre de Operaciones',
+                final nombreTarea =
+                    (extra['nombreTarea'] as String?) ??
+                    'Verificar traspaso Caja AXA';
+                final idBitTarea = extra['idBitTarea'] as int?;
+                if (idBitTarea == null) {
+                  // Sin ocurrencia no hay contra que registrar. Pasa si
+                  // alguien entra por URL en vez de por la tarjeta.
+                  return _pantallaConTitulo(
+                    context,
+                    'Bosque - $nombreTarea',
+                    const Scaffold(
+                      body: Center(
+                        child: Padding(
+                          padding: EdgeInsets.all(24),
+                          child: Text(
+                            'Esta tarea se abre desde "Mis tareas rutinarias", '
+                            'tocando la tarea del dia.',
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                      ),
+                    ),
+                  );
+                }
+                return _pantallaConTitulo(
+                  context,
+                  'Bosque - $nombreTarea',
+                  TraspasoEntreSistemasScreen(
+                    idBitTarea: idBitTarea,
+                    nombreTarea: nombreTarea,
+                    fecha: (extra['fecha'] as DateTime?) ?? DateTime.now(),
+                  ),
                 );
               },
             ),
+            // Bitacoras de tareas rutinarias (archivo SQL 55): la fila de
+            // tb_vista es 'tacTareas/Bitacora', bajo la 87, con los mismos
+            // permisos que esa vista.
+            GoRoute(
+              path: '/dashboard/tacTareas/Bitacora',
+              name: 'tacTareasBitacora',
+              builder:
+                  (context, state) => _pantallaConTitulo(
+                    context,
+                    'Bosque - Bitácora de Tareas',
+                    const BitacoraTareasScreen(),
+                  ),
+            ),
+            // Tarea 289 - "Verificar Traspaso de Efectivo Entre Sistemas"
+            // (idATR 11, TesBase). Igual que Caja AXA: la genera el Job, asi
+            // que la ocurrencia ya existe y llega desde la tarjeta.
+            GoRoute(
+              path: '/dashboard/tacTareas/TraspasoEfectivoTesBase',
+              name: 'tacTareasTraspasoEfectivoTesBase',
+              builder: (context, state) {
+                final extra = state.extra as Map<String, dynamic>? ?? {};
+                final nombreTarea =
+                    (extra['nombreTarea'] as String?) ??
+                    'Verificar traspaso de efectivo entre sistemas';
+                final idBitTarea = extra['idBitTarea'] as int?;
+                if (idBitTarea == null) {
+                  return _pantallaConTitulo(
+                    context,
+                    'Bosque - $nombreTarea',
+                    const Scaffold(
+                      body: Center(
+                        child: Padding(
+                          padding: EdgeInsets.all(24),
+                          child: Text(
+                            'Esta tarea se abre desde "Mis tareas rutinarias", '
+                            'tocando la tarea del dia.',
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                      ),
+                    ),
+                  );
+                }
+                return _pantallaConTitulo(
+                  context,
+                  'Bosque - $nombreTarea',
+                  TraspasoEfectivoTesBaseScreen(
+                    idBitTarea: idBitTarea,
+                    nombreTarea: nombreTarea,
+                    fecha: (extra['fecha'] as DateTime?) ?? DateTime.now(),
+                  ),
+                );
+              },
+            ),
+            // La revisión del día, y su única dirección. La contiene la tarea
+            // 39 "Verificar Cierre de Operaciones" (idATR 5), que genera el
+            // Job; por aquí entran también las de idATR 3 ("Verficar Arqueo de
+            // Caja" y las ocurrencias viejas de Cierre de Operaciones), que
+            // usan la misma pantalla —como el diálogo del sistema anterior— y
+            // solo se diferencian en cómo cierran.
             GoRoute(
               path: '/dashboard/tacTareas/VerificarCierre',
               name: 'tacTareasVerificarCierre',
               builder: (context, state) {
                 final extra = state.extra as Map<String, dynamic>? ?? {};
-                return VerificarCierreScreen(
-                  idBitTarea: (extra['idBitTarea'] as int?) ?? 0,
-                  nombreTarea: (extra['nombreTarea'] as String?) ?? 'Verificar Cierre de Operaciones',
+                final nombreTarea =
+                    (extra['nombreTarea'] as String?) ??
+                    'Verificar Cierre de Operaciones';
+                // 'cierre' cierra SU ocurrencia; el modo por defecto, el de la
+                // 39, cierra las de todos ese día.
+                final modo =
+                    extra['modo'] == 'cierre'
+                        ? ModoCierre.cierre
+                        : ModoCierre.verificacion;
+                final idBitTarea = extra['idBitTarea'] as int?;
+                if (idBitTarea == null) {
+                  // La genera el Job: sin ocurrencia no hay nada que cerrar.
+                  return _pantallaConTitulo(
+                    context,
+                    'Bosque - $nombreTarea',
+                    const Scaffold(
+                      body: Center(
+                        child: Padding(
+                          padding: EdgeInsets.all(24),
+                          child: Text(
+                            'Esta tarea se abre desde "Mis tareas rutinarias", '
+                            'tocando la tarea del dia.',
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                      ),
+                    ),
+                  );
+                }
+                return _pantallaConTitulo(
+                  context,
+                  'Bosque - $nombreTarea',
+                  CierreOperacionesScreen(
+                    idBitTarea: idBitTarea,
+                    nombreTarea: nombreTarea,
+                    modo: modo,
+                    fecha: extra['fecha'] as DateTime?,
+                  ),
                 );
               },
             ),
@@ -600,7 +932,8 @@ final routerProvider = Provider<GoRouter>((ref) {
         // Dias No Laborables
         GoRoute(
           path: '/tbDiaNoLaborable/diaNoLaborable',
-          redirect: (context, state) => '/dashboard/tbDiaNoLaborable/diaNoLaborable',
+          redirect:
+              (context, state) => '/dashboard/tbDiaNoLaborable/diaNoLaborable',
         ),
         // Lote de producción
         GoRoute(
@@ -671,6 +1004,58 @@ final routerProvider = Provider<GoRouter>((ref) {
           path: '/tbioBiometrico/biometrico',
           redirect: (context, state) => '/dashboard/tbioBiometrico/biometrico',
         ),
+        // MODULO DE PRECIOS (tpr) - sin estas entradas el item del menu no
+        // llega a ninguna parte: el sidebar navega a '/' + tb_vista.direccion,
+        // sin el prefijo /dashboard.
+        GoRoute(
+          path: '/${AppConstants.rutaPreciosPropuestas}',
+          redirect:
+              (context, state) =>
+                  '/dashboard/${AppConstants.rutaPreciosPropuestas}',
+        ),
+        GoRoute(
+          path: '/${AppConstants.rutaPreciosFamilias}',
+          redirect:
+              (context, state) =>
+                  '/dashboard/${AppConstants.rutaPreciosFamilias}',
+        ),
+        GoRoute(
+          path: '/${AppConstants.rutaPreciosPrecios}',
+          redirect:
+              (context, state) =>
+                  '/dashboard/${AppConstants.rutaPreciosPrecios}',
+        ),
+        GoRoute(
+          path: '/${AppConstants.rutaPreciosListas}',
+          redirect:
+              (context, state) =>
+                  '/dashboard/${AppConstants.rutaPreciosListas}',
+        ),
+        GoRoute(
+          path: '/${AppConstants.rutaPreciosCatalogos}',
+          redirect:
+              (context, state) =>
+                  '/dashboard/${AppConstants.rutaPreciosCatalogos}',
+        ),
+        GoRoute(
+          path: '/${AppConstants.rutaPreciosParametros}',
+          redirect:
+              (context, state) =>
+                  '/dashboard/${AppConstants.rutaPreciosParametros}',
+        ),
+        GoRoute(
+          path: '/${AppConstants.rutaPreciosPorcentajes}',
+          redirect:
+              (context, state) =>
+                  '/dashboard/${AppConstants.rutaPreciosPorcentajes}',
+        ),
+        // MODULO DE GARANTIAS DE COBRANZA (tcbr): el sidebar navega a
+        // '/' + tb_vista.direccion, sin /dashboard.
+        GoRoute(
+          path: '/${AppConstants.rutaGarantias}',
+          redirect:
+              (context, state) => '/dashboard/${AppConstants.rutaGarantias}',
+        ),
         // TAREAS RUTINARIAS
         GoRoute(
           path: '/tacTareas/Tareas',
@@ -679,6 +1064,28 @@ final routerProvider = Provider<GoRouter>((ref) {
         GoRoute(
           path: '/tacTareas/Dependientes',
           redirect: (context, state) => '/dashboard/tacTareas/Dependientes',
+        ),
+        // Los cuatro submódulos a requerimiento (archivos SQL 40/41). Sus filas
+        // de tb_vista cuelgan de la 87 y su `direccion` es exactamente estas
+        // rutas, así que sin estos redirects el ítem del menú no llega a
+        // ninguna parte.
+        GoRoute(
+          path: '/tacTareas/CajaFuerte',
+          redirect: (context, state) => '/dashboard/tacTareas/CajaFuerte',
+        ),
+        GoRoute(
+          path: '/tacTareas/Coches',
+          redirect: (context, state) => '/dashboard/tacTareas/Coches',
+        ),
+        GoRoute(
+          path: '/tacTareas/CajaChica',
+          redirect: (context, state) => '/dashboard/tacTareas/CajaChica',
+        ),
+        // Bitácora de tareas (vista 164 bajo la 87, archivo SQL 55). Salió sin
+        // esta entrada y el ítem del menú caía en «Página no encontrada».
+        GoRoute(
+          path: '/tacTareas/Bitacora',
+          redirect: (context, state) => '/dashboard/tacTareas/Bitacora',
         ),
 
         GoRoute(

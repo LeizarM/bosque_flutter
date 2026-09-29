@@ -8,6 +8,8 @@ class ValeArqueoEntity {
   final int? numVale;
   final String nombre;
   final double? monto;
+  final DateTime? fecha;
+  final int? codEmpresa;
   final String obs;
 
   const ValeArqueoEntity({
@@ -15,17 +17,28 @@ class ValeArqueoEntity {
     this.numVale,
     this.nombre = '',
     this.monto,
+    this.fecha,
+    this.codEmpresa,
     this.obs = '',
   });
 
   bool get esValido => (monto ?? 0) > 0;
 
-  ValeArqueoEntity copyWith({int? numVale, String? nombre, double? monto, String? obs}) {
+  ValeArqueoEntity copyWith({
+    int? numVale,
+    String? nombre,
+    double? monto,
+    DateTime? fecha,
+    int? codEmpresa,
+    String? obs,
+  }) {
     return ValeArqueoEntity(
       id: id,
       numVale: numVale ?? this.numVale,
       nombre: nombre ?? this.nombre,
       monto: monto ?? this.monto,
+      fecha: fecha ?? this.fecha,
+      codEmpresa: codEmpresa ?? this.codEmpresa,
       obs: obs ?? this.obs,
     );
   }

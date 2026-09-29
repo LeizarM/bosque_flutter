@@ -12,20 +12,21 @@ import 'package:bosque_flutter/domain/entities/tipo_solicitud_entity.dart';
 import 'package:bosque_flutter/domain/repositories/prestamo_vehiculos_repository.dart';
 
 class PrestamoVehiculosImpl implements PrestamoVehiculosRepository {
-  
-  
-   final Dio _dio = DioClient.getInstance();
-  
+  final Dio _dio = DioClient.getInstance();
+
   @override
-  Future<bool> actualizarSolicitud( SolicitudChoferEntity mb ) async {
-   
+  Future<bool> actualizarSolicitud(SolicitudChoferEntity mb) async {
     final model = SolicitudChoferModel.fromEntity(mb);
 
     // Crear JSON sin la fecha para que el backend no la procese
     final Map<String, dynamic> requestData = model.toJson();
-    requestData.remove('fechaSolicitud'); // Remover para que el backend no la modifique
-    requestData.remove('fechaSolicitudCad'); // Remover también la cadena formateada
-  
+    requestData.remove(
+      'fechaSolicitud',
+    ); // Remover para que el backend no la modifique
+    requestData.remove(
+      'fechaSolicitudCad',
+    ); // Remover también la cadena formateada
+
     try {
       final response = await _dio.post(
         AppConstants.preActualizarSolicitud,
@@ -34,19 +35,17 @@ class PrestamoVehiculosImpl implements PrestamoVehiculosRepository {
 
       return response.statusCode == 200 || response.statusCode == 201;
     } on DioException catch (e) {
-        // Manejar errores de red o del servidor
-        String errorMessage = 'Error de conexión: ${e.message}';
-        if (e.response != null && e.response!.data != null) {
-          errorMessage =
-              'Error del servidor: ${e.response!.statusCode} - ${e.response!.data.toString()}';
-        }
-        throw Exception(errorMessage);
-      } catch (e) {
-        throw Exception('Error desconocido actualizarSolicitud: ${e.toString()}');
+      // Manejar errores de red o del servidor
+      String errorMessage = 'Error de conexión: ${e.message}';
+      if (e.response != null && e.response!.data != null) {
+        errorMessage =
+            'Error del servidor: ${e.response!.statusCode} - ${e.response!.data.toString()}';
       }
+      throw Exception(errorMessage);
+    } catch (e) {
+      throw Exception('Error desconocido actualizarSolicitud: ${e.toString()}');
     }
-
-  
+  }
 
   @override
   Future<List<EstadoChoferEntity>> lstEstados() async {
@@ -78,24 +77,29 @@ class PrestamoVehiculosImpl implements PrestamoVehiculosRepository {
   }
 
   @override
-  Future<List<PrestamoChoferEntity>> lstSolicitudesPretamos(int codSucursal, int codEmpEntregadoPor) async {
-    
+  Future<List<PrestamoChoferEntity>> lstSolicitudesPretamos(
+    int codSucursal,
+    int codEmpEntregadoPor,
+  ) async {
     final data = {
       'codSucursal': codSucursal,
       'codEmpEntregadoPor': codEmpEntregadoPor,
     };
-    
+
     try {
-      final response = await _dio.post(AppConstants.preListarSolicitudesPrestamos, data: data);
+      final response = await _dio.post(
+        AppConstants.preListarSolicitudesPrestamos,
+        data: data,
+      );
 
       if (response.statusCode == 200 && response.data != null) {
         final data = response.data['data'] ?? [];
-        
+
         // Si no hay datos, retornar lista vacía en lugar de error
         if (data is List && data.isEmpty) {
           return [];
         }
-        
+
         final items =
             (data as List<dynamic>)
                 .map((json) => PrestamoChoferModel.fromJson(json))
@@ -115,16 +119,19 @@ class PrestamoVehiculosImpl implements PrestamoVehiculosRepository {
       }
       throw Exception(errorMessage);
     } catch (e) {
-      throw Exception('Error desconocido lstSolicitudesPretamos: ${e.toString()}');
+      throw Exception(
+        'Error desconocido lstSolicitudesPretamos: ${e.toString()}',
+      );
     }
-
   }
 
   @override
   Future<List<TipoSolicitudEntity>> lstTipoSolicitudes() async {
-    
     try {
-      final response = await _dio.post(AppConstants.preTipoSolicitudes, data: {});
+      final response = await _dio.post(
+        AppConstants.preTipoSolicitudes,
+        data: {},
+      );
 
       if (response.statusCode == 200 && response.data != null) {
         final data = response.data['data'] ?? [];
@@ -148,19 +155,13 @@ class PrestamoVehiculosImpl implements PrestamoVehiculosRepository {
     } catch (e) {
       throw Exception('Error desconocido lstTipoSolicitudes: ${e.toString()}');
     }
-
-
-
   }
 
   @override
   Future<List<SolicitudChoferEntity>> obtainCoches() async {
-   
-
     try {
       final response = await _dio.post(AppConstants.preCoches, data: {});
 
-      
       if (response.statusCode == 200 && response.data != null) {
         final data = response.data['data'] ?? [];
         final items =
@@ -183,29 +184,24 @@ class PrestamoVehiculosImpl implements PrestamoVehiculosRepository {
     } catch (e) {
       throw Exception('Error desconocido obtainCoches: ${e.toString()}');
     }
-
-
-
   }
 
   @override
-  Future<List<SolicitudChoferEntity>> obtainSolicitudes( int codEmpleado ) async {
-    
-     try {
-      final response = await _dio.post(AppConstants.preSolicitudesXEmp
-      ,data: {
-        'codEmpSoli': codEmpleado,
-      });
+  Future<List<SolicitudChoferEntity>> obtainSolicitudes(int codEmpleado) async {
+    try {
+      final response = await _dio.post(
+        AppConstants.preSolicitudesXEmp,
+        data: {'codEmpSoli': codEmpleado},
+      );
 
-      
       if (response.statusCode == 200 && response.data != null) {
         final data = response.data['data'] ?? [];
-        
+
         // Si no hay datos, retornar lista vacía en lugar de error
         if (data is List && data.isEmpty) {
           return [];
         }
-        
+
         final items =
             (data as List<dynamic>)
                 .map((json) => SolicitudChoferModel.fromJson(json))
@@ -227,7 +223,6 @@ class PrestamoVehiculosImpl implements PrestamoVehiculosRepository {
     } catch (e) {
       throw Exception('Error desconocido obtainSolicitudes: ${e.toString()}');
     }
-
   }
 
   @override
@@ -237,7 +232,9 @@ class PrestamoVehiculosImpl implements PrestamoVehiculosRepository {
     try {
       // Crear JSON sin la fecha de entrega para que el backend la calcule
       final Map<String, dynamic> requestData = model.toJson();
-      requestData.remove('fechaEntrega'); // Remover para que el backend la calcule
+      requestData.remove(
+        'fechaEntrega',
+      ); // Remover para que el backend la calcule
 
       final response = await _dio.post(
         AppConstants.preRegistrarPrestamo,
@@ -246,37 +243,6 @@ class PrestamoVehiculosImpl implements PrestamoVehiculosRepository {
 
       return response.statusCode == 200 || response.statusCode == 201;
     } on DioException catch (e) {
-        // Manejar errores de red o del servidor
-        String errorMessage = 'Error de conexión: ${e.message}';
-        if (e.response != null && e.response!.data != null) {
-          errorMessage =
-              'Error del servidor: ${e.response!.statusCode} - ${e.response!.data.toString()}';
-        }
-        throw Exception(errorMessage);
-      } catch (e) {
-        throw Exception('Error desconocido registerPrestamo: ${e.toString()}');
-      }
-  }
-
-  
-
-  @override
-  Future<bool> registerSolicitudChofer(SolicitudChoferEntity mb) async {
-  final model = SolicitudChoferModel.fromEntity(mb);
-  
-  // Create a modified JSON without the fechaSolicitud field
-  final Map<String, dynamic> requestData = model.toJson();
-  requestData.remove('fechaSolicitud'); // Remove the field so backend calculates it
-  requestData.remove('fechaSolicitudCad'); // Remove formatted date string too
-  
-  try {
-    final response = await _dio.post(
-      AppConstants.preRegister,
-      data: requestData,
-    );
-
-    return response.statusCode == 200 || response.statusCode == 201;
-  } on DioException catch (e) {
       // Manejar errores de red o del servidor
       String errorMessage = 'Error de conexión: ${e.message}';
       if (e.response != null && e.response!.data != null) {
@@ -285,7 +251,40 @@ class PrestamoVehiculosImpl implements PrestamoVehiculosRepository {
       }
       throw Exception(errorMessage);
     } catch (e) {
-      throw Exception('Error desconocido registerSolicitudChofer: ${e.toString()}');
+      throw Exception('Error desconocido registerPrestamo: ${e.toString()}');
+    }
+  }
+
+  @override
+  Future<bool> registerSolicitudChofer(SolicitudChoferEntity mb) async {
+    final model = SolicitudChoferModel.fromEntity(mb);
+
+    // Create a modified JSON without the fechaSolicitud field
+    final Map<String, dynamic> requestData = model.toJson();
+    requestData.remove(
+      'fechaSolicitud',
+    ); // Remove the field so backend calculates it
+    requestData.remove('fechaSolicitudCad'); // Remove formatted date string too
+
+    try {
+      final response = await _dio.post(
+        AppConstants.preRegister,
+        data: requestData,
+      );
+
+      return response.statusCode == 200 || response.statusCode == 201;
+    } on DioException catch (e) {
+      // Manejar errores de red o del servidor
+      String errorMessage = 'Error de conexión: ${e.message}';
+      if (e.response != null && e.response!.data != null) {
+        errorMessage =
+            'Error del servidor: ${e.response!.statusCode} - ${e.response!.data.toString()}';
+      }
+      throw Exception(errorMessage);
+    } catch (e) {
+      throw Exception(
+        'Error desconocido registerSolicitudChofer: ${e.toString()}',
+      );
     }
   }
 }

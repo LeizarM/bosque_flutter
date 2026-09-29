@@ -10,17 +10,17 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 /// regularización. Es el abono **individual**.
 ///
 /// **No es una vacación asignada, aunque las dos sumen al saldo.** Los umbrales
-/// son distintos y confundirlos es el error fácil de este módulo: acá los días
+/// son distintos y confundirlos es el error fácil de este módulo: aquí los días
 /// tienen que ser **mayores a cero** (allá el cero es válido y se usa) y el
 /// motivo entra en `varchar(50)`, no en 300 — «Compensación por inventario del
 /// 21 de septiembre» ya son 54 caracteres y el SP lo cortaría, o reventaría con
 /// «String or binary data would be truncated».
 ///
 /// **La fecha sólo se elige en el alta.** En la edición el modal legacy la deja
-/// `disabled` y acá también: mover la fecha de un abono ya cargado lo cambia de
+/// `disabled` y aquí también: mover la fecha de un abono ya cargado lo cambia de
 /// año laboral y con eso cambia de tramo en el desglose.
 ///
-/// En diez años hay 184 filas —9 en 2025, ninguna en 2026—: cada alta acá es un
+/// En diez años hay 184 filas —9 en 2025, ninguna en 2026—: cada alta aquí es un
 /// hecho raro, y por eso se confirma.
 Future<void> mostrarAbonoDiasSheet({
   required BuildContext context,
@@ -46,8 +46,7 @@ class _AbonoDiasSheet extends ConsumerStatefulWidget {
 
 class _AbonoDiasSheetState extends ConsumerState<_AbonoDiasSheet> {
   late final _dias = TextEditingController(
-    text:
-        widget.abono.esAlta ? '' : numeroDeDias(widget.abono.diasAbonados),
+    text: widget.abono.esAlta ? '' : numeroDeDias(widget.abono.diasAbonados),
   );
   late final _motivo = TextEditingController(text: widget.abono.motivo);
   late DateTime? _fecha = widget.abono.fecha;
@@ -129,7 +128,7 @@ class _AbonoDiasSheetState extends ConsumerState<_AbonoDiasSheet> {
                 labelText: 'Días abonados',
                 border: OutlineInputBorder(),
                 isDense: true,
-                // El umbral del legacy es estricto, y acá el cero de verdad no
+                // El umbral del legacy es estricto, y aquí el cero de verdad no
                 // existe: el mínimo medido en diez años es medio día.
                 helperText: 'Tiene que ser mayor a cero. Se admite medio día.',
               ),
@@ -151,7 +150,7 @@ class _AbonoDiasSheetState extends ConsumerState<_AbonoDiasSheet> {
             const SizedBox(height: Esp.m),
             TextField(
               controller: _motivo,
-              // El límite de la columna, contado acá: pasarse no da un error de
+              // El límite de la columna, contado aquí: pasarse no da un error de
               // negocio, revienta el SP con un mensaje de motor.
               maxLength: AbonoDiasEntity.motivoMaximo,
               maxLines: 2,
@@ -248,7 +247,7 @@ class _AbonoDiasSheetState extends ConsumerState<_AbonoDiasSheet> {
             : 'El abono del ${fechaCorta(guardado.fecha)} quedó en $dias.',
       );
     } on RequiereConfirmacion catch (d) {
-      // **Lo inusual se pregunta; el doble toque no.** Acá el backend contesta
+      // **Lo inusual se pregunta; el doble toque no.** Aquí el backend contesta
       // 400 con `confirmable` por un monto fuera del rango histórico o por otro
       // abono del mismo día con distinto monto —los dos son legítimos y pasan—,
       // y 409 seco por una fila idéntica cargada hace segundos, que es un doble

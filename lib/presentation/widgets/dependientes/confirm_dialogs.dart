@@ -26,13 +26,14 @@ class ConfirmDialog extends StatelessWidget {
   }) {
     return showDialog<bool>(
       context: context,
-      builder: (context) => ConfirmDialog(
-        title: title,
-        content: content,
-        confirmText: confirmText,
-        cancelText: cancelText,
-        confirmColor: confirmColor,
-      ),
+      builder:
+          (context) => ConfirmDialog(
+            title: title,
+            content: content,
+            confirmText: confirmText,
+            cancelText: cancelText,
+            confirmColor: confirmColor,
+          ),
     );
   }
 
@@ -56,6 +57,7 @@ class ConfirmDialog extends StatelessWidget {
       ],
     );
   }
+
   // Agregar este nuevo método estático
   static Future<void> showConfirmDelete({
     required BuildContext context,
@@ -74,40 +76,39 @@ class ConfirmDialog extends StatelessWidget {
     );
 
     if (confirmed == true && context.mounted) {
-    try {
-      await onConfirm();
-      if (context.mounted) {
-        AppSnackbarCustom.showDelete(context, 'Registro eliminado correctamente');
-      }
-    } catch (e) {
-      if (context.mounted) {
-        AppSnackbar.showError(context, 'Error al eliminar el registro');
+      try {
+        await onConfirm();
+        if (context.mounted) {
+          AppSnackbarCustom.showDelete(
+            context,
+            'Registro eliminado correctamente',
+          );
+        }
+      } catch (e) {
+        if (context.mounted) {
+          AppSnackbar.showError(context, 'Error al eliminar el registro');
+        }
       }
     }
   }
-  }
-
 }
+
 class AppSnackbar {
   static void showSuccess(BuildContext context, String message) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('✅ $message'),
-        backgroundColor: Colors.green,
-      ),
+      SnackBar(content: Text('✅ $message'), backgroundColor: Colors.green),
     );
   }
 
   static void showError(BuildContext context, String message) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('❌ $message'),
-        backgroundColor: Colors.red,
-      ),
+      SnackBar(content: Text('❌ $message'), backgroundColor: Colors.red),
     );
   }
 }
+
 enum SnackBarType { success, error, warning, info, add, edit, delete }
+
 enum SnackBarPosition { top, bottom }
 
 class AppSnackbarCustom {
@@ -153,12 +154,11 @@ class AppSnackbarCustom {
       backgroundColor: _getBackgroundColor(type),
       duration: duration,
       elevation: 6,
-      margin: position == SnackBarPosition.top
-          ? const EdgeInsets.only(top: 24, left: 40, right: 40)
-          : const EdgeInsets.only(bottom: 24, left: 40, right: 40),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
+      margin:
+          position == SnackBarPosition.top
+              ? const EdgeInsets.only(top: 24, left: 40, right: 40)
+              : const EdgeInsets.only(bottom: 24, left: 40, right: 40),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       dismissDirection: DismissDirection.none,
     );
 
@@ -166,130 +166,115 @@ class AppSnackbarCustom {
     messenger.hideCurrentSnackBar();
     messenger.showSnackBar(snackBar);
   }
-  static void showTop({
-  required BuildContext context,
-  required String message,
-  SnackBarType type = SnackBarType.info,
-  Duration duration = const Duration(seconds: 3),
-  bool showCloseIcon = false,
-  VoidCallback? onClose,
-}) {
-  _currentOverlay?.remove();
 
-  final overlay = OverlayEntry(
-    builder: (context) => Positioned(
-      top: 40,
-      left: 24,
-      right: 24,
-      child: Material(
-        color: Colors.transparent,
-        child: Center(
-          child: Container(
-            constraints: const BoxConstraints(maxWidth: 500),
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-            decoration: BoxDecoration(
-              color: _getBackgroundColor(type),
-              borderRadius: BorderRadius.circular(12),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black26,
-                  blurRadius: 8,
-                  offset: Offset(0, 4),
-                ),
-              ],
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                _getIcon(type),
-                const SizedBox(width: 12),
-                Flexible(
-                  child: Text(
-                    message,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w500,
-                    ),
-                    textAlign: TextAlign.center,
+  static void showTop({
+    required BuildContext context,
+    required String message,
+    SnackBarType type = SnackBarType.info,
+    Duration duration = const Duration(seconds: 3),
+    bool showCloseIcon = false,
+    VoidCallback? onClose,
+  }) {
+    _currentOverlay?.remove();
+
+    final overlay = OverlayEntry(
+      builder:
+          (context) => Positioned(
+            top: 40,
+            left: 24,
+            right: 24,
+            child: Material(
+              color: Colors.transparent,
+              child: Center(
+                child: Container(
+                  constraints: const BoxConstraints(maxWidth: 500),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 24,
+                    vertical: 16,
+                  ),
+                  decoration: BoxDecoration(
+                    color: _getBackgroundColor(type),
+                    borderRadius: BorderRadius.circular(12),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black26,
+                        blurRadius: 8,
+                        offset: Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      _getIcon(type),
+                      const SizedBox(width: 12),
+                      Flexible(
+                        child: Text(
+                          message,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w500,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                      if (showCloseIcon)
+                        IconButton(
+                          icon: const Icon(Icons.close, color: Colors.white),
+                          onPressed: () {
+                            _currentOverlay?.remove();
+                            _currentOverlay = null;
+                            if (onClose != null) onClose();
+                          },
+                        ),
+                    ],
                   ),
                 ),
-                if (showCloseIcon)
-                  IconButton(
-                    icon: const Icon(Icons.close, color: Colors.white),
-                    onPressed: () {
-                      _currentOverlay?.remove();
-                      _currentOverlay = null;
-                      if (onClose != null) onClose();
-                    },
-                  ),
-              ],
+              ),
             ),
           ),
-        ),
-      ),
-    ),
-  );
+    );
 
-  Overlay.of(context, rootOverlay: true).insert(overlay);
-  _currentOverlay = overlay;
+    Overlay.of(context, rootOverlay: true).insert(overlay);
+    _currentOverlay = overlay;
 
-  if (!showCloseIcon) {
-    Future.delayed(duration, () {
-      _currentOverlay?.remove();
-      _currentOverlay = null;
-      if (onClose != null) onClose();
-    });
+    if (!showCloseIcon) {
+      Future.delayed(duration, () {
+        _currentOverlay?.remove();
+        _currentOverlay = null;
+        if (onClose != null) onClose();
+      });
+    }
   }
-}
 
   static void showAdd(BuildContext context, String message) {
-    show(
-      context: context,
-      message: message,
-      type: SnackBarType.add,
-    );
+    show(context: context, message: message, type: SnackBarType.add);
   }
 
   static void showEdit(BuildContext context, String message) {
-    show(
-      context: context,
-      message: message,
-      type: SnackBarType.edit,
-    );
+    show(context: context, message: message, type: SnackBarType.edit);
   }
 
   static void showDelete(BuildContext context, String message) {
-    show(
-      context: context,
-      message: message,
-      type: SnackBarType.delete,
-    );
+    show(context: context, message: message, type: SnackBarType.delete);
   }
 
   // MÉTODOS QUE FALTABAN:
   static void showSuccess(BuildContext context, String message) {
-    show(
-      context: context,
-      message: message,
-      type: SnackBarType.success,
-    );
+    show(context: context, message: message, type: SnackBarType.success);
   }
 
   static void showError(BuildContext context, String message) {
-    show(
-      context: context,
-      message: message,
-      type: SnackBarType.error,
-    );
+    show(context: context, message: message, type: SnackBarType.error);
   }
+
   static void showWarning(BuildContext context, String message) {
     show(
       context: context,
       message: message,
       type: SnackBarType.warning,
       position: SnackBarPosition.bottom,
-
     );
   }
 

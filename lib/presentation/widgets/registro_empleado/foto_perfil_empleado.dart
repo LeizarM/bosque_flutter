@@ -72,7 +72,8 @@ class _SeccionFotoEmpleadoState extends ConsumerState<SeccionFotoEmpleado> {
 
     try {
       final success = await ref.read(
-          subirFotoProvider((widget.codEmpleado, _imageBytes!)).future);
+        subirFotoProvider((widget.codEmpleado, _imageBytes!)).future,
+      );
 
       if (!success) {
         showErrorMessage(context, 'Error al subir la imagen');
@@ -145,17 +146,19 @@ class _SeccionFotoEmpleadoState extends ConsumerState<SeccionFotoEmpleado> {
   void _showFullImage(String url, Uint8List? bytes) {
     showDialog(
       context: context,
-      builder: (_) => Dialog(
-        backgroundColor: Colors.transparent,
-        child: InteractiveViewer(
-          child: Hero(
-            tag: 'empleado-imagen-${widget.codEmpleado}',
-            child: bytes != null
-                ? Image.memory(bytes, fit: BoxFit.contain)
-                : Image.network(url, fit: BoxFit.contain),
+      builder:
+          (_) => Dialog(
+            backgroundColor: Colors.transparent,
+            child: InteractiveViewer(
+              child: Hero(
+                tag: 'empleado-imagen-${widget.codEmpleado}',
+                child:
+                    bytes != null
+                        ? Image.memory(bytes, fit: BoxFit.contain)
+                        : Image.network(url, fit: BoxFit.contain),
+              ),
+            ),
           ),
-        ),
-      ),
     );
   }
 
@@ -192,50 +195,51 @@ class _SeccionFotoEmpleadoState extends ConsumerState<SeccionFotoEmpleado> {
       children: [
         Text(
           'Foto de Perfil',
-          style: context.subtitleStyle.copyWith(
-            fontWeight: FontWeight.bold,
-          ),
+          style: context.subtitleStyle.copyWith(fontWeight: FontWeight.bold),
         ),
         PopupMenuButton<String>(
-          icon: Icon(
-            Icons.more_vert,
-            size: context.smallIconSize,
-          ),
-          itemBuilder: (BuildContext context) => [
-            PopupMenuItem<String>(
-              value: 'gallery',
-              child: Row(
-                children: [
-                  Icon(Icons.photo_library, size: context.smallIconSize),
-                  SizedBox(width: context.smallSpacing),
-                  const Text('Seleccionar'),
-                ],
-              ),
-            ),
-            if (context.isMobile)
-              PopupMenuItem<String>(
-                value: 'camera',
-                child: Row(
-                  children: [
-                    Icon(Icons.camera_alt, size: context.smallIconSize),
-                    SizedBox(width: context.smallSpacing),
-                    const Text('Tomar foto'),
-                  ],
+          icon: Icon(Icons.more_vert, size: context.smallIconSize),
+          itemBuilder:
+              (BuildContext context) => [
+                PopupMenuItem<String>(
+                  value: 'gallery',
+                  child: Row(
+                    children: [
+                      Icon(Icons.photo_library, size: context.smallIconSize),
+                      SizedBox(width: context.smallSpacing),
+                      const Text('Seleccionar'),
+                    ],
+                  ),
                 ),
-              ),
-            PopupMenuItem<String>(
-              value: 'delete',
-              child: Row(
-                children: [
-                  Icon(Icons.delete_outline,
-                      size: context.smallIconSize, color: Colors.red),
-                  SizedBox(width: context.smallSpacing),
-                  const Text('Eliminar',
-                      style: TextStyle(color: Colors.red)),
-                ],
-              ),
-            ),
-          ],
+                if (context.isMobile)
+                  PopupMenuItem<String>(
+                    value: 'camera',
+                    child: Row(
+                      children: [
+                        Icon(Icons.camera_alt, size: context.smallIconSize),
+                        SizedBox(width: context.smallSpacing),
+                        const Text('Tomar foto'),
+                      ],
+                    ),
+                  ),
+                PopupMenuItem<String>(
+                  value: 'delete',
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.delete_outline,
+                        size: context.smallIconSize,
+                        color: Colors.red,
+                      ),
+                      SizedBox(width: context.smallSpacing),
+                      const Text(
+                        'Eliminar',
+                        style: TextStyle(color: Colors.red),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
           onSelected: (String value) {
             switch (value) {
               case 'gallery':
@@ -264,9 +268,7 @@ class _SeccionFotoEmpleadoState extends ConsumerState<SeccionFotoEmpleado> {
       child: Hero(
         tag: 'empleado-imagen-${widget.codEmpleado}',
         child: Container(
-          constraints: BoxConstraints(
-            maxHeight: context.isMobile ? 200 : 280,
-          ),
+          constraints: BoxConstraints(maxHeight: context.isMobile ? 200 : 280),
           decoration: BoxDecoration(
             shape: BoxShape.circle,
             boxShadow: [
@@ -296,9 +298,7 @@ class _SeccionFotoEmpleadoState extends ConsumerState<SeccionFotoEmpleado> {
       child: Hero(
         tag: 'empleado-imagen-${widget.codEmpleado}',
         child: Container(
-          constraints: BoxConstraints(
-            maxHeight: context.isMobile ? 200 : 280,
-          ),
+          constraints: BoxConstraints(maxHeight: context.isMobile ? 200 : 280),
           decoration: BoxDecoration(
             shape: BoxShape.circle,
             boxShadow: [
@@ -332,17 +332,17 @@ class _SeccionFotoEmpleadoState extends ConsumerState<SeccionFotoEmpleado> {
       children: [
         ElevatedButton.icon(
           onPressed: _isUploading ? null : _uploadImage,
-          icon: _isUploading
-              ? SizedBox(
-                  width: context.smallIconSize,
-                  height: context.smallIconSize,
-                  child: const CircularProgressIndicator(
-                    strokeWidth: 2,
-                    valueColor:
-                        AlwaysStoppedAnimation<Color>(Colors.white),
-                  ),
-                )
-              : Icon(Icons.check, size: context.smallIconSize),
+          icon:
+              _isUploading
+                  ? SizedBox(
+                    width: context.smallIconSize,
+                    height: context.smallIconSize,
+                    child: const CircularProgressIndicator(
+                      strokeWidth: 2,
+                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                    ),
+                  )
+                  : Icon(Icons.check, size: context.smallIconSize),
           label: const Text('Guardar'),
           style: ElevatedButton.styleFrom(
             backgroundColor: Colors.green.shade600,

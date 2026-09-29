@@ -36,7 +36,7 @@
 /// Vuelve el día que exista el módulo de reposición —el que llena
 /// `trh_repper`—, que el plan dejó fuera de esta migración.
 class NominaPermisoEntity {
-  /// La clave de la fila. **No sirve para dar de baja desde acá**: el alta no
+  /// La clave de la fila. **No sirve para dar de baja desde aquí**: el alta no
   /// devuelve el id generado (`p_abm_Permiso` no tiene `SCOPE_IDENTITY`) y esta
   /// pantalla es de lectura.
   final int codPermiso;

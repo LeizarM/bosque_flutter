@@ -3,10 +3,10 @@ import 'package:flutter_test/flutter_test.dart';
 
 /// Los textos de entrada están copiados **literalmente** de los procedimientos
 /// almacenados (`06_sp_abmList_trs.sql`, `02_sp_generarRol.sql`). Si mañana
-/// alguien cambia un mensaje en SQL y acá deja de coincidir, este test lo
+/// alguien cambia un mensaje en SQL y aquí deja de coincidir, este test lo
 /// señala antes que un usuario.
 ///
-/// **Lo que más se prueba acá es el envoltorio del `CATCH`.** Los `p_abm_`
+/// **Lo que más se prueba aquí es el envoltorio del `CATCH`.** Los `p_abm_`
 /// devuelven `'Error al programar: ' + ERROR_MESSAGE() + ' | Linea: 991'` sin
 /// mirar qué falló, así que por ese mismo caño salen las dos cosas: el error
 /// del motor —que no es culpa de nadie que esté usando la app— y el rechazo
@@ -77,32 +77,40 @@ void main() {
   group('los rechazos del negocio se leen aunque vengan envueltos', () {
     // ANTES ESTO NO PASABA: `| Linea:` alcanzaba para declararlo fallo técnico,
     // así que un jefe al que el organigrama le rebotaba una programación leía
-    // «problema del sistema, avisá a Sistemas» y llamaba a la persona
+    // «problema del sistema, avisa a Sistemas» y llamaba a la persona
     // equivocada. El envoltorio se pela antes de clasificar; el rechazo es el
     // mismo con o sin disfraz.
     final casos = <String, String>{
       'Error al programar: El empleado 54 no es dependiente del programador. '
-          '| Linea: 991': 'a tu cargo',
+              '| Linea: 991':
+          'a tu cargo',
       'Error al programar: El dependiente no es participante activo del rol. '
-          '| Linea: 991': 'rol de este año',
+              '| Linea: 991':
+          'rol de este año',
       'Error al programar: Sabado inexistente. | Linea: 991':
           'ya no está en el rol',
       'Error al programar: Ese sabado ya paso; no se programa hacia atras. '
-          '| Linea: 991': 'ya pasó',
+              '| Linea: 991':
+          'ya pasó',
       'Error al programar: Ese sabado esta desactivado (activo=0). '
-          '| Linea: 991': 'desactivado',
+              '| Linea: 991':
+          'desactivado',
       'Error al programar: Esa celda la hizo otro jefe. | Linea: 991':
           'otro jefe',
       'Error al programar: RR.HH. ya cargo una vacacion para esa persona ese '
-          'dia; la celda no se pisa. | Linea: 991': 'RR.HH.',
+              'dia; la celda no se pisa. | Linea: 991':
+          'RR.HH.',
       'Error al programar: Solo se puede marcar 1 (viene) o L (no viene). '
-          '| Linea: 991': 'viene',
+              '| Linea: 991':
+          'viene',
       'Error al programar: El empleado 65 no es programador activo ni '
-          'reemplazo. | Linea: 991': 'programar a otros',
+              'reemplazo. | Linea: 991':
+          'programar a otros',
       // No es del circuito de Su Equipo, pero sale por el mismo caño: la
       // corrección de una celda también delega en un trs_sp_ adentro de un TRY.
       'Error al escribir la celda: El rol esta CERRADO; no admite '
-          'correcciones. | Linea: 2038': 'cerrado',
+              'correcciones. | Linea: 2038':
+          'cerrado',
     };
 
     casos.forEach((crudo, esperado) {
@@ -134,7 +142,8 @@ void main() {
           'sábado que se le devuelve',
       'Ya existe el rol 2026 para ese alcance.': 'Regenerar',
       'El empleado 65 no esta registrado como programador activo, asi que no '
-          'se puede expandir su subarbol.': 'no tiene permiso para programar',
+              'se puede expandir su subarbol.':
+          'no tiene permiso para programar',
     };
 
     casos.forEach((crudo, esperado) {
@@ -191,22 +200,22 @@ void main() {
     test('el código de un empleado no es un código HTTP', () {
       // Los mensajes del SQL nombran a la gente por su codEmpleado. Cuando el
       // 403 era cualquier «403» en el texto, al empleado 403 le contestaban
-      // «no tenés permiso para hacer este cambio».
+      // «no tienes permiso para hacer este cambio».
       final m = humanizar('El empleado 403 no es dependiente del programador.');
       expect(m.texto, contains('a tu cargo'));
-      expect(m.texto, isNot(contains('No tenés permiso')));
+      expect(m.texto, isNot(contains('No tienes permiso')));
     });
 
     test('la palabra "permisos" no convierte todo en un rechazo de acceso', () {
       // El módulo tiene una acción que se llama «refrescar permisos» y un
-      // estado 'P' de permiso de RR.HH.: hablar de permisos acá es hablar de
+      // estado 'P' de permiso de RR.HH.: hablar de permisos aquí es hablar de
       // vacaciones, no de accesos.
       final m = humanizar(
         'Permisos aplicados. Celdas marcadas: 12 | devueltas a trabajar: 3.',
       );
       expect(m.esFalloTecnico, isFalse);
       expect(m.texto, contains('Permisos aplicados'));
-      expect(m.texto, isNot(contains('No tenés permiso')));
+      expect(m.texto, isNot(contains('No tienes permiso')));
     });
   });
 

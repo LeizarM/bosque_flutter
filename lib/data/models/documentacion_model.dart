@@ -68,9 +68,8 @@ class DocumentacionModel {
       idDoc: json["idDoc"] ?? 0,
       nombre: json["nombre"] ?? '',
       audUsuario: json["audUsuario"] ?? 0,
-      audFecha: json["audFecha"] != null
-          ? DateTime.tryParse(json["audFecha"])
-          : null,
+      audFecha:
+          json["audFecha"] != null ? DateTime.tryParse(json["audFecha"]) : null,
     );
   }
 

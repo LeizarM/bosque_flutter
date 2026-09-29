@@ -27,7 +27,8 @@ class BioHrsModel {
   factory BioHrsModel.fromJson(Map<String, dynamic> json) => BioHrsModel(
     idHrs: json['idHrs'] != null ? BigInt.from(json['idHrs']) : BigInt.zero,
     nombre: json['nombre'] ?? '',
-    ingreso: json['ingreso'] != null ? DateTime.tryParse(json['ingreso']) : null,
+    ingreso:
+        json['ingreso'] != null ? DateTime.tryParse(json['ingreso']) : null,
     salida: json['salida'] != null ? DateTime.tryParse(json['salida']) : null,
     cantDias: (json['cantDias'] ?? 0).toDouble(),
     cantMinutos: (json['cantMinutos'] ?? 0).toDouble(),

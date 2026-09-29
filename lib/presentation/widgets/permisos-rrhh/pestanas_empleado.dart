@@ -13,7 +13,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 /// **La pestaña «Permisos» está apagada.** No se usa por ahora.
 ///
 /// Para volver a encenderla: poner esto en `true` y listo. **Es lo único que hay
-/// que tocar**: de acá salen el largo del `TabController`, la pestaña, su
+/// que tocar**: de aquí salen el largo del `TabController`, la pestaña, su
 /// contenido y —lo importante— el índice de la calculadora.
 ///
 /// **Por qué un interruptor y no el bloque comentado.** El índice de una pestaña

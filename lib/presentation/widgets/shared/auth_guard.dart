@@ -5,13 +5,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'dart:convert';
 
-
 /// Widget que verifica si el usuario está autenticado antes de mostrar contenido protegido
 /// Útil para rutas o widgets que requieren autenticación pero no son parte del árbol principal
 class AuthGuard extends ConsumerStatefulWidget {
   final Widget child;
   final String redirectRoute;
-  
+
   const AuthGuard({
     super.key,
     required this.child,
@@ -54,7 +53,7 @@ class _AuthGuardState extends ConsumerState<AuthGuard> {
         _isAuthenticated = !isTokenExpired && isVersionValid;
         _isLoading = false;
       });
-      
+
       // Si el token expiró o la versión es inválida, redirigir al login
       if ((!_isAuthenticated) && mounted) {
         // Small delay to let the UI render first
@@ -85,7 +84,7 @@ class _AuthGuardState extends ConsumerState<AuthGuard> {
         ),
       );
     }
-    
+
     // Si no está autenticado, mostrar mensaje de redirección
     if (!_isAuthenticated) {
       return Scaffold(
@@ -109,7 +108,7 @@ class _AuthGuardState extends ConsumerState<AuthGuard> {
         ),
       );
     }
-    
+
     // Si está autenticado, mostrar el contenido protegido
     return widget.child;
   }

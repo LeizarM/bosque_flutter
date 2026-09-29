@@ -119,11 +119,12 @@ class _TablaLotesState extends State<TablaLotes> {
         (c, l) => _CeldaLote(lote: l),
         alinear: Alignment.centerLeft,
         enResumen: true,
-        pie: (c, lotes) => _cifra(
-          c,
-          lotes.length == 1 ? '1 lote' : '${lotes.length} lotes',
-          fuerte: true,
-        ),
+        pie:
+            (c, lotes) => _cifra(
+              c,
+              lotes.length == 1 ? '1 lote' : '${lotes.length} lotes',
+              fuerte: true,
+            ),
       ),
       _Col('', 92, _acciones, alinear: Alignment.centerLeft, enResumen: true),
       _Col(
@@ -348,9 +349,10 @@ class _TablaLotesState extends State<TablaLotes> {
         ),
         _BotonFila(
           icono: editable ? Icons.edit_outlined : Icons.visibility_outlined,
-          ayuda: editable
-              ? 'Abrir el lote'
-              : 'Ver el lote. No tiene permiso para reabrirlo.',
+          ayuda:
+              editable
+                  ? 'Abrir el lote'
+                  : 'Ver el lote. No tiene permiso para reabrirlo.',
           onPressed: () => widget.onAbrir(lote),
         ),
       ],
@@ -402,7 +404,8 @@ class _TablaLotesState extends State<TablaLotes> {
                             padding: EdgeInsets.zero,
                             itemExtent: _altoFila,
                             itemCount: widget.lotes.length,
-                            itemBuilder: (context, i) => _fila(i, cols, estirar),
+                            itemBuilder:
+                                (context, i) => _fila(i, cols, estirar),
                           ),
                         ),
                         _totales(cols, estirar),
@@ -439,9 +442,10 @@ class _TablaLotesState extends State<TablaLotes> {
                 color: cs.surfaceContainerHigh,
                 border: Border(
                   bottom: BorderSide(
-                    color: g.nombre.isEmpty
-                        ? Colors.transparent
-                        : colorDeCatalogo(cs, i).fondo,
+                    color:
+                        g.nombre.isEmpty
+                            ? Colors.transparent
+                            : colorDeCatalogo(cs, i).fondo,
                     width: 3,
                   ),
                 ),
@@ -475,23 +479,24 @@ class _TablaLotesState extends State<TablaLotes> {
             _celda(
               col,
               estirar: i == cols.length - 1 ? estirar : 0,
-              hijo: col.ayuda == null
-                  ? _rotulo(col.titulo)
-                  : Tooltip(
-                      message: col.ayuda!,
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Flexible(child: _rotulo(col.titulo)),
-                          SizedBox(width: Esp.xs),
-                          Icon(
-                            Icons.info_outline,
-                            size: 12,
-                            color: Theme.of(context).hintColor,
-                          ),
-                        ],
+              hijo:
+                  col.ayuda == null
+                      ? _rotulo(col.titulo)
+                      : Tooltip(
+                        message: col.ayuda!,
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Flexible(child: _rotulo(col.titulo)),
+                            SizedBox(width: Esp.xs),
+                            Icon(
+                              Icons.info_outline,
+                              size: 12,
+                              color: Theme.of(context).hintColor,
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
             ),
         ],
       ),
@@ -729,8 +734,9 @@ Widget Function(BuildContext, List<LoteProduccionEntity>) _suma(
 
 Widget Function(BuildContext, List<LoteProduccionEntity>) _sumaEntera(
   int Function(LoteProduccionEntity) valor,
-) => (context, lotes) => _cifra(
-  context,
-  fmtEntero.format(lotes.fold(0, (s, l) => s + valor(l))),
-  fuerte: true,
-);
+) =>
+    (context, lotes) => _cifra(
+      context,
+      fmtEntero.format(lotes.fold(0, (s, l) => s + valor(l))),
+      fuerte: true,
+    );

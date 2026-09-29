@@ -46,15 +46,12 @@ class LoginEntity {
   });
 
   factory LoginEntity.fromJson(Map<String, dynamic> json) {
-    // Mapeo seguro para cargo anidado
-    String cargo = '';
-    try {
-      cargo =
-          json['empleado']?['empleadoCargo']?['cargoSucursal']?['cargo']?['descripcion'] ??
-          '';
-    } catch (_) {
-      cargo = '';
-    }
+    // El backend (Jwt.java) manda "cargo" como campo plano en la raíz del
+    // login, ya resuelto server-side — no viene anidado bajo empleado/
+    // empleadoCargo/cargoSucursal/cargo/descripcion (esa ruta nunca existió
+    // en esta respuesta, por eso "Cargo" salía siempre en blanco en pantallas
+    // como Arqueo de Caja).
+    final cargo = json['cargo']?.toString() ?? '';
 
     return LoginEntity(
       token: json['token'] ?? '',

@@ -30,34 +30,39 @@ class VerificarDocsAdminWidget extends StatelessWidget {
         child: DropdownButton<Map<String, dynamic>>(
           icon: const Icon(Icons.notifications),
           hint: const Text('Pendientes'),
-          items: imagenesPendientes.map((item) {
-            return DropdownMenuItem<Map<String, dynamic>>(
-              value: item,
-              child: ListTile(
-                leading: CircleAvatar(
-                  backgroundImage: item['imagen'],
-                  radius: 18,
-                ),
-                title: Text(item['nombreEmpleado'] ?? ''),
-                subtitle: Text(item['documento'] ?? ''),
-                trailing: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    IconButton(
-                      icon: const Icon(Icons.check, color: Colors.green),
-                      tooltip: 'Aprobar',
-                      onPressed: onAprobar != null ? () => onAprobar!(item) : null,
+          items:
+              imagenesPendientes.map((item) {
+                return DropdownMenuItem<Map<String, dynamic>>(
+                  value: item,
+                  child: ListTile(
+                    leading: CircleAvatar(
+                      backgroundImage: item['imagen'],
+                      radius: 18,
                     ),
-                    IconButton(
-                      icon: const Icon(Icons.close, color: Colors.red),
-                      tooltip: 'Rechazar',
-                      onPressed: onRechazar != null ? () => onRechazar!(item) : null,
+                    title: Text(item['nombreEmpleado'] ?? ''),
+                    subtitle: Text(item['documento'] ?? ''),
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        IconButton(
+                          icon: const Icon(Icons.check, color: Colors.green),
+                          tooltip: 'Aprobar',
+                          onPressed:
+                              onAprobar != null ? () => onAprobar!(item) : null,
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.close, color: Colors.red),
+                          tooltip: 'Rechazar',
+                          onPressed:
+                              onRechazar != null
+                                  ? () => onRechazar!(item)
+                                  : null,
+                        ),
+                      ],
                     ),
-                  ],
-                ),
-              ),
-            );
-          }).toList(),
+                  ),
+                );
+              }).toList(),
           onChanged: (_) {},
         ),
       );
@@ -67,68 +72,88 @@ class VerificarDocsAdminWidget extends StatelessWidget {
   void _showPendientesDialog(BuildContext context) {
     showDialog(
       context: context,
-      builder: (context) => Dialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        child: Container(
-          width: 350,
-          constraints: const BoxConstraints(maxHeight: 500),
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Text(
-                'Imágenes pendientes de aprobación',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
-              ),
-              const SizedBox(height: 12),
-              
-              Expanded(
-                child: imagenesPendientes.isEmpty
-                    ? const Center(child: Text('No hay imágenes pendientes.'))
-                    : ListView.builder(
-                        itemCount: imagenesPendientes.length,
-                        itemBuilder: (context, index) {
-                          final item = imagenesPendientes[index];
-                          return Card(
-                            margin: const EdgeInsets.symmetric(vertical: 8),
-                            child: ListTile(
-                              leading: CircleAvatar(
-                                backgroundImage: item['imagen'],
-                                radius: 24,
-                              ),
-                              title: Text(item['nombreEmpleado'] ?? ''),
-                              subtitle: Text(item['documento'] ?? ''),
-                              trailing: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  IconButton(
-                                    icon: const Icon(Icons.check, color: Colors.green),
-                                    tooltip: 'Aprobar',
-                                    onPressed: onAprobar != null ? () => onAprobar!(item) : null,
+      builder:
+          (context) => Dialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Container(
+              width: 350,
+              constraints: const BoxConstraints(maxHeight: 500),
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text(
+                    'Imágenes pendientes de aprobación',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+                  ),
+                  const SizedBox(height: 12),
+
+                  Expanded(
+                    child:
+                        imagenesPendientes.isEmpty
+                            ? const Center(
+                              child: Text('No hay imágenes pendientes.'),
+                            )
+                            : ListView.builder(
+                              itemCount: imagenesPendientes.length,
+                              itemBuilder: (context, index) {
+                                final item = imagenesPendientes[index];
+                                return Card(
+                                  margin: const EdgeInsets.symmetric(
+                                    vertical: 8,
                                   ),
-                                  IconButton(
-                                    icon: const Icon(Icons.close, color: Colors.red),
-                                    tooltip: 'Rechazar',
-                                    onPressed: onRechazar != null ? () => onRechazar!(item) : null,
+                                  child: ListTile(
+                                    leading: CircleAvatar(
+                                      backgroundImage: item['imagen'],
+                                      radius: 24,
+                                    ),
+                                    title: Text(item['nombreEmpleado'] ?? ''),
+                                    subtitle: Text(item['documento'] ?? ''),
+                                    trailing: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        IconButton(
+                                          icon: const Icon(
+                                            Icons.check,
+                                            color: Colors.green,
+                                          ),
+                                          tooltip: 'Aprobar',
+                                          onPressed:
+                                              onAprobar != null
+                                                  ? () => onAprobar!(item)
+                                                  : null,
+                                        ),
+                                        IconButton(
+                                          icon: const Icon(
+                                            Icons.close,
+                                            color: Colors.red,
+                                          ),
+                                          tooltip: 'Rechazar',
+                                          onPressed:
+                                              onRechazar != null
+                                                  ? () => onRechazar!(item)
+                                                  : null,
+                                        ),
+                                      ],
+                                    ),
                                   ),
-                                ],
-                              ),
+                                );
+                              },
                             ),
-                          );
-                        },
-                      ),
+                  ),
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: TextButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      child: const Text('Cerrar'),
+                    ),
+                  ),
+                ],
               ),
-              Align(
-                alignment: Alignment.centerRight,
-                child: TextButton(
-                  onPressed: () => Navigator.of(context).pop(),
-                  child: const Text('Cerrar'),
-                ),
-              ),
-            ],
+            ),
           ),
-        ),
-      ),
     );
   }
 }

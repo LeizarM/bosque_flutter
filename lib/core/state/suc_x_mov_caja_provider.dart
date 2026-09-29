@@ -52,9 +52,10 @@ class SucXMovCajaNotifier extends StateNotifier<SucXMovCajaState> {
       await _repo.registrar(item);
       state = state.copyWith(
         cargando: false,
-        mensajeExito: item.idSxMC == 0
-            ? 'Sucursal por movimiento de caja agregada.'
-            : 'Sucursal por movimiento de caja actualizada.',
+        mensajeExito:
+            item.idSxMC == 0
+                ? 'Sucursal por movimiento de caja agregada.'
+                : 'Sucursal por movimiento de caja actualizada.',
       );
       await cargar();
       return true;
@@ -68,7 +69,10 @@ class SucXMovCajaNotifier extends StateNotifier<SucXMovCajaState> {
     state = state.copyWith(cargando: true);
     try {
       await _repo.eliminar(idSxMC, audUsuario);
-      state = state.copyWith(cargando: false, mensajeExito: 'Sucursal por movimiento de caja eliminada.');
+      state = state.copyWith(
+        cargando: false,
+        mensajeExito: 'Sucursal por movimiento de caja eliminada.',
+      );
       await cargar();
       return true;
     } catch (e) {
@@ -82,5 +86,5 @@ final _sucXMovCajaRepoProvider = Provider((ref) => SucXMovCajaImpl());
 
 final sucXMovCajaProvider =
     StateNotifierProvider.autoDispose<SucXMovCajaNotifier, SucXMovCajaState>(
-  (ref) => SucXMovCajaNotifier(ref.read(_sucXMovCajaRepoProvider)),
-);
+      (ref) => SucXMovCajaNotifier(ref.read(_sucXMovCajaRepoProvider)),
+    );

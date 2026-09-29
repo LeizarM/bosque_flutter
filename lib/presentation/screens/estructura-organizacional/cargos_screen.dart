@@ -12,6 +12,7 @@ import 'package:bosque_flutter/presentation/widgets/estructura-organizacional/ed
 import 'package:bosque_flutter/presentation/widgets/estructura-organizacional/form_area.dart';
 import 'package:bosque_flutter/presentation/widgets/registro_empleado/registro_empleado_utils.dart';
 import 'package:bosque_flutter/presentation/widgets/shared/aviso.dart';
+import 'package:bosque_flutter/presentation/widgets/shared/permission_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -244,18 +245,26 @@ class _CargosScreenState extends ConsumerState<CargosScreen> {
           // Catálogo global de tareas rutinarias — buscar CUALQUIER tarea
           // (no solo las de un cargo puntual) para copiarla a uno o varios
           // cargos, sin tener que saber de antemano en qué cargo vive hoy.
-          IconButton(
-            icon: const Icon(Icons.assignment_outlined),
-            tooltip: 'Catálogo de tareas rutinarias',
-            onPressed:
-                () => Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder:
-                        (_) => TareasRutinariasCatalogoScreen(
-                          codEmpresa: widget.codEmpresa,
-                        ),
+          // Gateado por el botón real btnTareasRutXCargo (pega a los mismos
+          // endpoints que el tile del bottom sheet, mismo botón — 2026-09-07,
+          // convertido del chequeo de rol hardcodeado a tb_vistaBtn/
+          // tb_usuarioBtn a pedido de Marcelo) — oculto para quien no tenga
+          // el botón, en vez de dejarlo tocar y recibir una excepción cruda.
+          PermissionWidget(
+            buttonName: 'btnTareasRutXCargo',
+            child: IconButton(
+              icon: const Icon(Icons.assignment_outlined),
+              tooltip: 'Catálogo de tareas rutinarias',
+              onPressed:
+                  () => Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder:
+                          (_) => TareasRutinariasCatalogoScreen(
+                            codEmpresa: widget.codEmpresa,
+                          ),
+                    ),
                   ),
-                ),
+            ),
           ),
           // Botón para crear nuevo cargo
           IconButton(

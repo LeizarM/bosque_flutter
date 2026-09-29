@@ -109,7 +109,7 @@ class EditorDeCeldaState extends ConsumerState<EditorDeCelda> {
           // respuesta a «¿por qué esta celda dice lo que dice?», así que se
           // lee ANTES de tocar los chips y no después. El motivo del cambio ya
           // está en el campo Motivo —`trs_sp_corregirCelda` lo copia—, así que
-          // acá va sólo lo que faltaba: con quién.
+          // aquí va sólo lo que faltaba: con quién.
           if (widget.celda?.hayCambio == true) ...[
             const SizedBox(height: Esp.s),
             Row(
@@ -227,7 +227,7 @@ class EditorDeCeldaState extends ConsumerState<EditorDeCelda> {
   /// Guarda, cierra la hoja y avisa.
   ///
   /// **Antes esto tenía su propio `try/catch` con dos `ScaffoldMessenger`**, o
-  /// sea que el módulo avisaba de dos maneras distintas: por acá y por
+  /// sea que el módulo avisaba de dos maneras distintas: por aquí y por
   /// [ejecutarAccion]. Cuando los avisos pasaron a dibujarse por encima de los
   /// diálogos, estos dos se habrían quedado abajo —justo los que salen desde una
   /// hoja modal, que es donde peor se ve—. Un solo camino para avisar es lo que

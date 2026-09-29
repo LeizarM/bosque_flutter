@@ -39,7 +39,7 @@ class AsistenciaDiaEntity {
       estado == 'SIN_HORARIO';
 
   /// Falta, o trabajó pero con atraso — la marca que se ve en el calendario
-  /// (pedido explícito del usuario 2026-09-01: "poné una marca a las celdas
+  /// (pedido explícito del usuario 2026-09-01: "pon una marca a las celdas
   /// que hay atraso/falta o que tengan problemas").
   bool get tieneProblema => esFalta || minutosAtraso > 0;
 }

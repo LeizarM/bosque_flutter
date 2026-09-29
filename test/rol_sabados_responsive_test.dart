@@ -9,6 +9,7 @@ import 'package:bosque_flutter/domain/entities/celda_turno_entity.dart';
 import 'package:bosque_flutter/domain/entities/convocatoria_entity.dart';
 import 'package:bosque_flutter/domain/entities/cumple_sabado_entity.dart';
 import 'package:bosque_flutter/domain/entities/estado_turno_entity.dart';
+import 'package:bosque_flutter/domain/entities/excusa_horario_entity.dart';
 import 'package:bosque_flutter/domain/entities/intervencion_entity.dart';
 import 'package:bosque_flutter/domain/entities/mi_equipo_entity.dart';
 import 'package:bosque_flutter/domain/entities/participante_turno_entity.dart';
@@ -59,8 +60,19 @@ void main() {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
-            userProvider.overrideWith((ref) => UserStateNotifier.sinStorage(null)),
+            userProvider.overrideWith(
+              (ref) => UserStateNotifier.sinStorage(null),
+            ),
             rolSabadosRepositoryProvider.overrideWithValue(_RepoFalso()),
+            // aplicarExcusasHorarioAlEntrarProvider se dispara SOLO al
+            // construir la pantalla y termina leyendo SecureStorage, que en
+            // test deja un timer de 3 s colgado y hace fallar la prueba con
+            // "Pending timers" — sin que el fallo tenga nada que ver con lo
+            // que cada prueba mide. Se neutraliza aquí, en el scope, y no
+            // borrando las pruebas.
+            aplicarExcusasHorarioAlEntrarProvider.overrideWith(
+              (ref, idRol) async {},
+            ),
             rolSeleccionadoProvider.overrideWith((ref) => 1),
           ],
           child: const MaterialApp(home: RolSabadosScreen()),
@@ -119,6 +131,15 @@ void main() {
               (ref) => UserStateNotifier.sinStorage(_admin),
             ),
             rolSabadosRepositoryProvider.overrideWithValue(_RepoFalso()),
+            // aplicarExcusasHorarioAlEntrarProvider se dispara SOLO al
+            // construir la pantalla y termina leyendo SecureStorage, que en
+            // test deja un timer de 3 s colgado y hace fallar la prueba con
+            // "Pending timers" — sin que el fallo tenga nada que ver con lo
+            // que cada prueba mide. Se neutraliza aquí, en el scope, y no
+            // borrando las pruebas.
+            aplicarExcusasHorarioAlEntrarProvider.overrideWith(
+              (ref, idRol) async {},
+            ),
             rolSeleccionadoProvider.overrideWith((ref) => 1),
           ],
           child: const MaterialApp(home: RolSabadosScreen()),
@@ -136,7 +157,7 @@ void main() {
       await tester.tap(find.text('Cancelar'));
       await tester.pumpAndSettle();
 
-      // El diálogo de generar: un SegmentedButton y párrafos largos. Vive acá
+      // El diálogo de generar: un SegmentedButton y párrafos largos. Vive aquí
       // desde que la varita dejó de verse para todos — con el usuario sin tipo
       // del recorrido de arriba ya no hay botón que apretar.
       await tester.tap(find.byIcon(Icons.auto_fix_high));
@@ -172,8 +193,19 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
-          userProvider.overrideWith((ref) => UserStateNotifier.sinStorage(null)),
+          userProvider.overrideWith(
+            (ref) => UserStateNotifier.sinStorage(null),
+          ),
           rolSabadosRepositoryProvider.overrideWithValue(_RepoFalso()),
+          // aplicarExcusasHorarioAlEntrarProvider se dispara SOLO al
+          // construir la pantalla y termina leyendo SecureStorage, que en
+          // test deja un timer de 3 s colgado y hace fallar la prueba con
+          // "Pending timers" — sin que el fallo tenga nada que ver con lo
+          // que cada prueba mide. Se neutraliza aquí, en el scope, y no
+          // borrando las pruebas.
+          aplicarExcusasHorarioAlEntrarProvider.overrideWith(
+            (ref, idRol) async {},
+          ),
           rolSeleccionadoProvider.overrideWith((ref) => 1),
         ],
         child: const MaterialApp(home: RolSabadosScreen()),
@@ -214,8 +246,19 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
-          userProvider.overrideWith((ref) => UserStateNotifier.sinStorage(null)),
+          userProvider.overrideWith(
+            (ref) => UserStateNotifier.sinStorage(null),
+          ),
           rolSabadosRepositoryProvider.overrideWithValue(_RepoFalso()),
+          // aplicarExcusasHorarioAlEntrarProvider se dispara SOLO al
+          // construir la pantalla y termina leyendo SecureStorage, que en
+          // test deja un timer de 3 s colgado y hace fallar la prueba con
+          // "Pending timers" — sin que el fallo tenga nada que ver con lo
+          // que cada prueba mide. Se neutraliza aquí, en el scope, y no
+          // borrando las pruebas.
+          aplicarExcusasHorarioAlEntrarProvider.overrideWith(
+            (ref, idRol) async {},
+          ),
           rolSeleccionadoProvider.overrideWith((ref) => 1),
         ],
         child: const MaterialApp(home: RolSabadosScreen()),
@@ -226,8 +269,18 @@ void main() {
     // El combo arranca en el mes de hoy, no en "Todo el año": es lo que evita
     // dibujar los 52 sábados de entrada.
     const meses = [
-      'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
-      'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre',
+      'Enero',
+      'Febrero',
+      'Marzo',
+      'Abril',
+      'Mayo',
+      'Junio',
+      'Julio',
+      'Agosto',
+      'Septiembre',
+      'Octubre',
+      'Noviembre',
+      'Diciembre',
     ];
     final mesDeHoy = meses[DateTime.now().month - 1];
     expect(find.textContaining(mesDeHoy), findsWidgets);
@@ -259,8 +312,19 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
-          userProvider.overrideWith((ref) => UserStateNotifier.sinStorage(null)),
+          userProvider.overrideWith(
+            (ref) => UserStateNotifier.sinStorage(null),
+          ),
           rolSabadosRepositoryProvider.overrideWithValue(_RepoFalso()),
+          // aplicarExcusasHorarioAlEntrarProvider se dispara SOLO al
+          // construir la pantalla y termina leyendo SecureStorage, que en
+          // test deja un timer de 3 s colgado y hace fallar la prueba con
+          // "Pending timers" — sin que el fallo tenga nada que ver con lo
+          // que cada prueba mide. Se neutraliza aquí, en el scope, y no
+          // borrando las pruebas.
+          aplicarExcusasHorarioAlEntrarProvider.overrideWith(
+            (ref, idRol) async {},
+          ),
           rolSeleccionadoProvider.overrideWith((ref) => 1),
           // Enero fijo: si dependiera de la fecha de hoy, el test cambiaria de
           // resultado cada mes.
@@ -278,10 +342,7 @@ void main() {
 
     // Sin sabado elegido no se puede elegir gente: quien puede pedir el cambio
     // depende de a quien le tocaba ese dia.
-    expect(
-      find.textContaining('Elige el sábado primero'),
-      findsOneWidget,
-    );
+    expect(find.textContaining('Elige el sábado primero'), findsOneWidget);
 
     // Elegir el primer sabado de enero (indice 1, impar -> rota el grupo A).
     await tester.tap(find.text('Sábado a cubrir'));
@@ -319,8 +380,19 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
-          userProvider.overrideWith((ref) => UserStateNotifier.sinStorage(null)),
+          userProvider.overrideWith(
+            (ref) => UserStateNotifier.sinStorage(null),
+          ),
           rolSabadosRepositoryProvider.overrideWithValue(_RepoFalso()),
+          // aplicarExcusasHorarioAlEntrarProvider se dispara SOLO al
+          // construir la pantalla y termina leyendo SecureStorage, que en
+          // test deja un timer de 3 s colgado y hace fallar la prueba con
+          // "Pending timers" — sin que el fallo tenga nada que ver con lo
+          // que cada prueba mide. Se neutraliza aquí, en el scope, y no
+          // borrando las pruebas.
+          aplicarExcusasHorarioAlEntrarProvider.overrideWith(
+            (ref, idRol) async {},
+          ),
           rolSeleccionadoProvider.overrideWith((ref) => 1),
           // Enero: 5 sábados de 1600 px. Sobra muchísimo.
           filtroMesProvider.overrideWith((ref) => 1),
@@ -380,8 +452,19 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
-          userProvider.overrideWith((ref) => UserStateNotifier.sinStorage(null)),
+          userProvider.overrideWith(
+            (ref) => UserStateNotifier.sinStorage(null),
+          ),
           rolSabadosRepositoryProvider.overrideWithValue(_RepoFalso()),
+          // aplicarExcusasHorarioAlEntrarProvider se dispara SOLO al
+          // construir la pantalla y termina leyendo SecureStorage, que en
+          // test deja un timer de 3 s colgado y hace fallar la prueba con
+          // "Pending timers" — sin que el fallo tenga nada que ver con lo
+          // que cada prueba mide. Se neutraliza aquí, en el scope, y no
+          // borrando las pruebas.
+          aplicarExcusasHorarioAlEntrarProvider.overrideWith(
+            (ref, idRol) async {},
+          ),
           rolSeleccionadoProvider.overrideWith((ref) => 1),
         ],
         child: const MaterialApp(home: RolSabadosScreen()),
@@ -415,8 +498,19 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
-          userProvider.overrideWith((ref) => UserStateNotifier.sinStorage(null)),
+          userProvider.overrideWith(
+            (ref) => UserStateNotifier.sinStorage(null),
+          ),
           rolSabadosRepositoryProvider.overrideWithValue(_RepoFalso()),
+          // aplicarExcusasHorarioAlEntrarProvider se dispara SOLO al
+          // construir la pantalla y termina leyendo SecureStorage, que en
+          // test deja un timer de 3 s colgado y hace fallar la prueba con
+          // "Pending timers" — sin que el fallo tenga nada que ver con lo
+          // que cada prueba mide. Se neutraliza aquí, en el scope, y no
+          // borrando las pruebas.
+          aplicarExcusasHorarioAlEntrarProvider.overrideWith(
+            (ref, idRol) async {},
+          ),
           rolSeleccionadoProvider.overrideWith((ref) => 1),
         ],
         child: const MaterialApp(home: RolSabadosScreen()),
@@ -424,7 +518,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    // Acá no se esconde en un menú: es la pantalla desde la que se comparte.
+    // Aquí no se esconde en un menú: es la pantalla desde la que se comparte.
     expect(
       find.byTooltip('Compartir el PDF de este sábado'),
       findsOneWidget,
@@ -441,8 +535,19 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
-          userProvider.overrideWith((ref) => UserStateNotifier.sinStorage(null)),
+          userProvider.overrideWith(
+            (ref) => UserStateNotifier.sinStorage(null),
+          ),
           rolSabadosRepositoryProvider.overrideWithValue(_RepoFalso()),
+          // aplicarExcusasHorarioAlEntrarProvider se dispara SOLO al
+          // construir la pantalla y termina leyendo SecureStorage, que en
+          // test deja un timer de 3 s colgado y hace fallar la prueba con
+          // "Pending timers" — sin que el fallo tenga nada que ver con lo
+          // que cada prueba mide. Se neutraliza aquí, en el scope, y no
+          // borrando las pruebas.
+          aplicarExcusasHorarioAlEntrarProvider.overrideWith(
+            (ref, idRol) async {},
+          ),
           rolSeleccionadoProvider.overrideWith((ref) => 1),
           filtroMesProvider.overrideWith((ref) => 1),
         ],
@@ -474,8 +579,19 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
-          userProvider.overrideWith((ref) => UserStateNotifier.sinStorage(null)),
+          userProvider.overrideWith(
+            (ref) => UserStateNotifier.sinStorage(null),
+          ),
           rolSabadosRepositoryProvider.overrideWithValue(_RepoFalso()),
+          // aplicarExcusasHorarioAlEntrarProvider se dispara SOLO al
+          // construir la pantalla y termina leyendo SecureStorage, que en
+          // test deja un timer de 3 s colgado y hace fallar la prueba con
+          // "Pending timers" — sin que el fallo tenga nada que ver con lo
+          // que cada prueba mide. Se neutraliza aquí, en el scope, y no
+          // borrando las pruebas.
+          aplicarExcusasHorarioAlEntrarProvider.overrideWith(
+            (ref, idRol) async {},
+          ),
           rolSeleccionadoProvider.overrideWith((ref) => 1),
           filtroMesProvider.overrideWith((ref) => 1),
         ],
@@ -496,10 +612,7 @@ void main() {
     );
 
     // Y su último elemento tiene que estar dibujado, no recortado.
-    expect(
-      find.textContaining('regenerar no la pisa'),
-      findsOneWidget,
-    );
+    expect(find.textContaining('regenerar no la pisa'), findsOneWidget);
   });
 
   testWidgets('la columna de nombres se estira cuando sobra ancho', (
@@ -515,8 +628,19 @@ void main() {
           // anterior: la medición saldría dos veces la misma.
           key: ValueKey('mes-$mes'),
           overrides: [
-            userProvider.overrideWith((ref) => UserStateNotifier.sinStorage(null)),
+            userProvider.overrideWith(
+              (ref) => UserStateNotifier.sinStorage(null),
+            ),
             rolSabadosRepositoryProvider.overrideWithValue(_RepoFalso()),
+            // aplicarExcusasHorarioAlEntrarProvider se dispara SOLO al
+            // construir la pantalla y termina leyendo SecureStorage, que en
+            // test deja un timer de 3 s colgado y hace fallar la prueba con
+            // "Pending timers" — sin que el fallo tenga nada que ver con lo
+            // que cada prueba mide. Se neutraliza aquí, en el scope, y no
+            // borrando las pruebas.
+            aplicarExcusasHorarioAlEntrarProvider.overrideWith(
+              (ref, idRol) async {},
+            ),
             rolSeleccionadoProvider.overrideWith((ref) => 1),
             filtroMesProvider.overrideWith((ref) => mes),
           ],
@@ -567,8 +691,15 @@ void main() {
           // la respuesta del montaje anterior.
           key: ValueKey(clave),
           overrides: [
-            userProvider.overrideWith((ref) => UserStateNotifier.sinStorage(null)),
+            userProvider.overrideWith(
+              (ref) => UserStateNotifier.sinStorage(null),
+            ),
             rolSabadosRepositoryProvider.overrideWithValue(repo),
+            // Mismo motivo que en los demás scopes: el provider que aplica
+            // excusas al entrar lee SecureStorage y deja un timer colgado.
+            aplicarExcusasHorarioAlEntrarProvider.overrideWith(
+              (ref, idRol) async {},
+            ),
             rolSeleccionadoProvider.overrideWith((ref) => 1),
           ],
           child: const MaterialApp(home: RolSabadosScreen()),
@@ -612,6 +743,11 @@ void main() {
             ),
             rolSabadosRepositoryProvider.overrideWithValue(
               _RepoFalso(miEquipo: equipo),
+            ),
+            // Mismo motivo que en los demás scopes: el provider que aplica
+            // excusas al entrar lee SecureStorage y deja un timer colgado.
+            aplicarExcusasHorarioAlEntrarProvider.overrideWith(
+              (ref, idRol) async {},
             ),
             rolSeleccionadoProvider.overrideWith((ref) => 1),
           ],
@@ -674,8 +810,19 @@ void main() {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
-            userProvider.overrideWith((ref) => UserStateNotifier.sinStorage(null)),
+            userProvider.overrideWith(
+              (ref) => UserStateNotifier.sinStorage(null),
+            ),
             rolSabadosRepositoryProvider.overrideWithValue(_RepoFalso()),
+            // aplicarExcusasHorarioAlEntrarProvider se dispara SOLO al
+            // construir la pantalla y termina leyendo SecureStorage, que en
+            // test deja un timer de 3 s colgado y hace fallar la prueba con
+            // "Pending timers" — sin que el fallo tenga nada que ver con lo
+            // que cada prueba mide. Se neutraliza aquí, en el scope, y no
+            // borrando las pruebas.
+            aplicarExcusasHorarioAlEntrarProvider.overrideWith(
+              (ref, idRol) async {},
+            ),
             rolSeleccionadoProvider.overrideWith((ref) => 1),
           ],
           child: const MaterialApp(home: RolSabadosScreen()),
@@ -716,6 +863,11 @@ void main() {
               (ref) => UserStateNotifier.sinStorage(admin ? _admin : null),
             ),
             rolSabadosRepositoryProvider.overrideWithValue(repo),
+            // Mismo motivo que en los demás scopes: el provider que aplica
+            // excusas al entrar lee SecureStorage y deja un timer colgado.
+            aplicarExcusasHorarioAlEntrarProvider.overrideWith(
+              (ref, idRol) async {},
+            ),
             rolSeleccionadoProvider.overrideWith((ref) => 1),
           ],
           child: const MaterialApp(home: RolSabadosScreen()),
@@ -744,7 +896,10 @@ void main() {
     // cartel.
     await tester.tap(find.text('Cerrar el año'));
     await tester.pumpAndSettle();
-    expect(find.textContaining('no se deshace desde la aplicación'), findsOneWidget);
+    expect(
+      find.textContaining('no se deshace desde la aplicación'),
+      findsOneWidget,
+    );
     await tester.tap(find.text('Cancelar'));
     await tester.pumpAndSettle();
 
@@ -781,7 +936,11 @@ void main() {
     await montar(
       'rrhh-del-padron',
       _RepoFalso(
-        miEquipo: const MiEquipoEntity(codUsuario: 15, codEmpleado: 2, esRrhh: 1),
+        miEquipo: const MiEquipoEntity(
+          codUsuario: 15,
+          codEmpleado: 2,
+          esRrhh: 1,
+        ),
       ),
     );
     await tester.pumpAndSettle();
@@ -803,6 +962,11 @@ void main() {
             (ref) => UserStateNotifier.sinStorage(_admin),
           ),
           rolSabadosRepositoryProvider.overrideWithValue(repo),
+          // Mismo motivo que en los demás scopes: el provider que aplica
+          // excusas al entrar lee SecureStorage y deja un timer colgado.
+          aplicarExcusasHorarioAlEntrarProvider.overrideWith(
+            (ref, idRol) async {},
+          ),
           rolSeleccionadoProvider.overrideWith((ref) => 1),
         ],
         child: const MaterialApp(home: RolSabadosScreen()),
@@ -958,7 +1122,10 @@ void main() {
     await tester.tap(find.text('Devolver a los sábados…'));
     await tester.pumpAndSettle();
     _sinDesborde(tester, 'diálogo de devolver a los sábados');
-    expect(find.textContaining('Entra de nuevo en la rotación'), findsOneWidget);
+    expect(
+      find.textContaining('Entra de nuevo en la rotación'),
+      findsOneWidget,
+    );
     await tester.tap(find.widgetWithText(FilledButton, 'Devolver'));
     await tester.pumpAndSettle();
     expect(repo.ventanasPedidas.single, startsWith('R:7:'));
@@ -1047,7 +1214,7 @@ const _equipoDeMentira = MiEquipoEntity(
 /// Repositorio de mentira con un rol del tamaño real.
 class _RepoFalso implements RolSabadosRepository {
   /// Quién dice el servidor que soy. Se puede cambiar para probar el otro lado
-  /// del portón: [MiEquipoEntity.vacio] es «no sos programador».
+  /// del portón: [MiEquipoEntity.vacio] es «no eres programador».
   ///
   /// Sin `const` a propósito: con un constructor constante, los siete
   /// `_RepoFalso()` de arriba se llenarían de avisos de `prefer_const_
@@ -1274,7 +1441,10 @@ class _RepoFalso implements RolSabadosRepository {
   Future<Uint8List> getReporteSabadoPdf(int idSabado) async => Uint8List(0);
 
   @override
-  Future<List<CambioEntity>> getCambios(int idRol, {String estado = ''}) async => [
+  Future<List<CambioEntity>> getCambios(
+    int idRol, {
+    String estado = '',
+  }) async => [
     CambioEntity(
       idCambio: 1,
       idRol: 1,
@@ -1471,6 +1641,17 @@ class _RepoFalso implements RolSabadosRepository {
     required int audUsuario,
   }) async {}
 
+  // Lista vacía, igual que getDesfasesPermiso y el resto de las lecturas de
+  // este fake: estas pruebas son de layout responsivo, no del refresco de
+  // excusas — lo que importa es que la pantalla construya, no qué devuelve
+  // este método.
+  @override
+  Future<List<ExcusaHorarioEntity>> refrescarExcusasHorario({
+    required int idRol,
+    bool soloInformar = false,
+    required int audUsuario,
+  }) async => [];
+
   @override
   Future<void> convocar({
     required int idSabado,
@@ -1484,7 +1665,7 @@ class _RepoFalso implements RolSabadosRepository {
 
   // ── su equipo ─────────────────────────────────────────────────────────
   // Ninguna de las dos primeras lleva audUsuario: el servidor saca la
-  // identidad del token. Si algún día aparece acá un parámetro de usuario, es
+  // identidad del token. Si algún día aparece aquí un parámetro de usuario, es
   // que alguien "arregló" el contrato y abrió la puerta a programar como otro.
 
   @override
@@ -1578,7 +1759,8 @@ class _RepoFalso implements RolSabadosRepository {
   /// decidido por `esAdmin` y por el equipo del jefe. Es el caso que importa
   /// probar — el de RR.HH. abre todo y no distingue nada.
   @override
-  Future<List<RrhhSabadosEntity>> getRrhh({String estado = ''}) async => const [];
+  Future<List<RrhhSabadosEntity>> getRrhh({String estado = ''}) async =>
+      const [];
 
   @override
   Future<void> registrarRrhh({

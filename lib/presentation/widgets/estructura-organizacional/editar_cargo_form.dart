@@ -1562,11 +1562,7 @@ class _EditarCargoFormState extends ConsumerState<EditarCargoForm>
       return false;
     } catch (e) {
       if (mounted) {
-        mostrarAviso(
-          context,
-          'Error al actualizar: $e',
-          tono: TonoAviso.error,
-        );
+        mostrarAviso(context, 'Error al actualizar: $e', tono: TonoAviso.error);
       }
       return false;
     }

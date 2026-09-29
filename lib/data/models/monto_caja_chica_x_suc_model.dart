@@ -73,9 +73,8 @@ class MontoCajaChicaXSucModel {
       codSucursal: json["codSucursal"],
       montoIng: json["montoIng"],
       audUsuario: json["audUsuario"] ?? 0,
-      audFecha: json["audFecha"] != null
-          ? DateTime.tryParse(json["audFecha"])
-          : null,
+      audFecha:
+          json["audFecha"] != null ? DateTime.tryParse(json["audFecha"]) : null,
     );
   }
 

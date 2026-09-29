@@ -105,13 +105,12 @@ class _FormInformacionBancariaState
         decoration: BoxDecoration(
           color: Colors.teal.withOpacity(0.05),
           borderRadius: context.borderRadius,
-          border: Border.all(
-            color: Colors.teal.withOpacity(0.5),
-          ),
+          border: Border.all(color: Colors.teal.withOpacity(0.5)),
         ),
-        child: context.isMobile
-            ? _buildMobileLayout(context, bancosAsync)
-            : _buildWebLayout(context, bancosAsync),
+        child:
+            context.isMobile
+                ? _buildMobileLayout(context, bancosAsync)
+                : _buildWebLayout(context, bancosAsync),
       ),
     );
   }
@@ -153,15 +152,9 @@ class _FormInformacionBancariaState
         Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Expanded(
-              flex: 2,
-              child: _buildInputNroCuenta(context),
-            ),
+            Expanded(flex: 2, child: _buildInputNroCuenta(context)),
             SizedBox(width: context.spacing),
-            Expanded(
-              flex: 2,
-              child: _buildDropdownBanco(context, bancosAsync),
-            ),
+            Expanded(flex: 2, child: _buildDropdownBanco(context, bancosAsync)),
             SizedBox(width: context.spacing),
             _buildActionButtonsWeb(context),
           ],
@@ -170,10 +163,7 @@ class _FormInformacionBancariaState
         // Fila 2: Estado
         Row(
           children: [
-            Expanded(
-              flex: 2,
-              child: _buildDropdownEstado(context),
-            ),
+            Expanded(flex: 2, child: _buildDropdownEstado(context)),
             SizedBox(width: context.spacing * 2),
             SizedBox(width: 60), // Compensar botones
           ],
@@ -195,16 +185,14 @@ class _FormInformacionBancariaState
         labelText: 'Número de Cuenta *',
         labelStyle: TextStyle(fontSize: context.bodyFontSize),
         hintStyle: context.bodyLightStyle,
-        border: OutlineInputBorder(
-          borderRadius: context.borderRadius,
-        ),
+        border: OutlineInputBorder(borderRadius: context.borderRadius),
         contentPadding: EdgeInsets.symmetric(
           horizontal: context.smallSpacing,
           vertical: context.spacing,
         ),
         isDense: true,
       ),
-      validator: (val) =>validarNroCuenta(val) 
+      validator: (val) => validarNroCuenta(val),
     );
   }
 
@@ -234,9 +222,7 @@ class _FormInformacionBancariaState
         labelText: 'Estado *',
         labelStyle: TextStyle(fontSize: context.bodyFontSize),
         hintStyle: context.bodyLightStyle,
-        border: OutlineInputBorder(
-          borderRadius: context.borderRadius,
-        ),
+        border: OutlineInputBorder(borderRadius: context.borderRadius),
         contentPadding: EdgeInsets.symmetric(
           horizontal: context.smallSpacing,
           vertical: context.spacing,
@@ -244,14 +230,8 @@ class _FormInformacionBancariaState
         isDense: true,
       ),
       items: const [
-        DropdownMenuItem<int>(
-          value: 1,
-          child: Text('Activa'),
-        ),
-        DropdownMenuItem<int>(
-          value: 0,
-          child: Text('Inactiva'),
-        ),
+        DropdownMenuItem<int>(value: 1, child: Text('Activa')),
+        DropdownMenuItem<int>(value: 0, child: Text('Inactiva')),
       ],
       onChanged: (val) {
         setState(() => _selectedEstado = val);

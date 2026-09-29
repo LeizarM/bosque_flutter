@@ -65,12 +65,11 @@ class PagosExtranjerosImpl extends BaseApiRepository
   // ─── Aprobación granular ────────────────────────────────────────────
 
   @override
-  Future<BigInt> aprobarCuota(Map<String, dynamic> payload) =>
-      postAndReturnId(
-        endpoint: AppConstants.tpexAprobarCuota,
-        data: payload,
-        errorMessage: 'Error al aprobar la cuota',
-      );
+  Future<BigInt> aprobarCuota(Map<String, dynamic> payload) => postAndReturnId(
+    endpoint: AppConstants.tpexAprobarCuota,
+    data: payload,
+    errorMessage: 'Error al aprobar la cuota',
+  );
 
   @override
   Future<BigInt> revertirAprobacionCuota(Map<String, dynamic> payload) =>

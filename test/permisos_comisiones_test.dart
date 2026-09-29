@@ -30,7 +30,7 @@ void main() {
 
   group('los cuatro usuarios que hoy tienen algo autorizado', () {
     // aaguilar: tabPreliminarExt + tabPreliminarComDinamicaNew.
-    // En el XHTML veía dos pestañas de preliminar y ninguna más. Acá las dos
+    // En el XHTML veía dos pestañas de preliminar y ninguna más. Aquí las dos
     // son modalidades de una sola pestaña: una pestaña, dos modalidades.
     test('aaguilar ve solo preliminar, con sus dos modalidades', () {
       final tiene = con({'tabPreliminarExt', 'tabPreliminarComDinamicaNew'});
@@ -114,7 +114,7 @@ void main() {
 
   group('el mapeo con Comisiones.xhtml', () {
     // Cada `esAutorizado(...)` del XHTML tiene que seguir abriendo lo mismo.
-    // Si alguien renombra un permiso, acá se cae.
+    // Si alguien renombra un permiso, aquí se cae.
     const delLegacy = {'TabEjecutar': 'Ejecutar', 'btnGrpVen': 'Asignaciones'};
 
     for (final entrada in delLegacy.entries) {
@@ -123,7 +123,7 @@ void main() {
       });
     }
 
-    // Los cuatro preliminares del XHTML son cuatro tabs de primer nivel; acá
+    // Los cuatro preliminares del XHTML son cuatro tabs de primer nivel; aquí
     // son modalidades. Lo que se conserva es cuál abre cuál.
     const preliminares = {
       'tabPreliminar': 'Internos',
@@ -141,7 +141,7 @@ void main() {
     }
 
     // btnGrpVen abría dlgGrpVen, y ese diálogo traía TAMBIÉN el alta de
-    // vendedores y la de grupos. Acá se partió en tres permisos: quien otorgue
+    // vendedores y la de grupos. Aquí se partió en tres permisos: quien otorgue
     // btnGrpVen esperando lo de antes recibe un tercio. Queda fijado para que
     // sea una decisión y no una sorpresa.
     test('btnGrpVen solo no administra vendedores ni grupos', () {
@@ -150,7 +150,7 @@ void main() {
         isNot(contains('Vendedores')),
         reason:
             'btnGrpVen volvió a arrastrar el alta de vendedores. Si es a '
-            'propósito, hay que decirlo acá y en superficiesComision().',
+            'propósito, hay que decirlo aquí y en superficiesComision().',
       );
       expect(ve(con({'btnGrpVen'})), isNot(contains('Grupos')));
       expect(ve(con({'btnGrpVen', 'btnComVendedores', 'btnComGrupos'})), [

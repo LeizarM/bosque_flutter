@@ -46,27 +46,22 @@ Future<bool> executeABM({
     if (!confirmed) return false;
   }
 
-
   try {
     await operation();
-
 
     for (final provider in providersToInvalidate) {
       ref.invalidate(provider);
     }
 
-
     if (!context.mounted) return true;
     showSuccessMessage(context, successMessage);
     return true;
   } catch (e) {
-
     if (!context.mounted) return false;
     showErrorMessage(context, e);
     return false;
   }
 }
-
 
 Future<bool> _showConfirmationDialog({
   required BuildContext context,
@@ -78,29 +73,31 @@ Future<bool> _showConfirmationDialog({
 }) async {
   final result = await showDialog<bool>(
     context: context,
-    builder: (context) => AlertDialog(
-      title: Text(title),
-      content: Text(message),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(false),
-          child: Text(cancelButtonText),
+    builder:
+        (context) => AlertDialog(
+          title: Text(title),
+          content: Text(message),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: Text(cancelButtonText),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              style: FilledButton.styleFrom(
+                backgroundColor: confirmButtonColor,
+              ),
+              child: Text(
+                confirmButtonText,
+                style: const TextStyle(color: Colors.white),
+              ),
+            ),
+          ],
         ),
-        FilledButton(
-          onPressed: () => Navigator.of(context).pop(true),
-          style: FilledButton.styleFrom(backgroundColor: confirmButtonColor),
-          child: Text(
-            confirmButtonText,
-            style: const TextStyle(color: Colors.white),
-          ),
-        ),
-      ],
-    ),
   );
 
   return result ?? false;
 }
-
 
 void showSuccessMessage(BuildContext context, String message) {
   if (!context.mounted) return;
@@ -144,7 +141,9 @@ void showErrorMessage(BuildContext context, dynamic error) {
       ),
       backgroundColor: Colors.red.shade800,
       behavior: SnackBarBehavior.floating,
-      duration: const Duration(seconds: 4), // Un poco más de tiempo para leer errores largos
+      duration: const Duration(
+        seconds: 4,
+      ), // Un poco más de tiempo para leer errores largos
     ),
   );
 }

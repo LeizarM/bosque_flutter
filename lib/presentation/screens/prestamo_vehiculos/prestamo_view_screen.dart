@@ -913,10 +913,10 @@ class _PrestamoViewScreenState extends ConsumerState<PrestamoViewScreen> {
       default:
         chipColor = colorScheme.primary;
     }
-    final onChip = ThemeData.estimateBrightnessForColor(chipColor) ==
-            Brightness.light
-        ? Colors.black
-        : Colors.white;
+    final onChip =
+        ThemeData.estimateBrightnessForColor(chipColor) == Brightness.light
+            ? Colors.black
+            : Colors.white;
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
@@ -1036,10 +1036,10 @@ class _PrestamoViewScreenState extends ConsumerState<PrestamoViewScreen> {
         chipColor = colorScheme.primary;
         icon = Icons.help_outline;
     }
-    final onChip = ThemeData.estimateBrightnessForColor(chipColor) ==
-            Brightness.light
-        ? Colors.black
-        : Colors.white;
+    final onChip =
+        ThemeData.estimateBrightnessForColor(chipColor) == Brightness.light
+            ? Colors.black
+            : Colors.white;
 
     return Container(
       constraints: const BoxConstraints(maxWidth: 120),

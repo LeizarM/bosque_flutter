@@ -33,8 +33,7 @@ class FormLicenciaConducir extends ConsumerStatefulWidget {
       _FormLicenciaConducirState();
 }
 
-class _FormLicenciaConducirState
-    extends ConsumerState<FormLicenciaConducir> {
+class _FormLicenciaConducirState extends ConsumerState<FormLicenciaConducir> {
   final _formKey = GlobalKey<FormState>();
   late TextEditingController _fechaCaducidadController;
   String? _selectedCategoria;
@@ -48,9 +47,10 @@ class _FormLicenciaConducirState
 
     _selectedFechaCaducidad = widget.licenciaInicial?.fechaCaducidad;
     _fechaCaducidadController = TextEditingController(
-      text: _selectedFechaCaducidad != null
-          ? FechaUtils.formatDate(_selectedFechaCaducidad!)
-          : '',
+      text:
+          _selectedFechaCaducidad != null
+              ? FechaUtils.formatDate(_selectedFechaCaducidad!)
+              : '',
     );
   }
 
@@ -81,8 +81,7 @@ class _FormLicenciaConducirState
 
   @override
   Widget build(BuildContext context) {
-    final tiposLicenciaAsync =
-        ref.watch(obtenerTipoLicenciaConducirProvider);
+    final tiposLicenciaAsync = ref.watch(obtenerTipoLicenciaConducirProvider);
 
     return Form(
       key: _formKey,
@@ -92,14 +91,12 @@ class _FormLicenciaConducirState
         decoration: BoxDecoration(
           color: Colors.blue.withOpacity(0.02),
           borderRadius: context.borderRadius,
-          border: Border.all(
-            color: Colors.grey.shade300,
-            width: 1,
-          ),
+          border: Border.all(color: Colors.grey.shade300, width: 1),
         ),
-        child: context.isMobile
-            ? _buildMobileLayout(context, tiposLicenciaAsync)
-            : _buildWebLayout(context, tiposLicenciaAsync),
+        child:
+            context.isMobile
+                ? _buildMobileLayout(context, tiposLicenciaAsync)
+                : _buildWebLayout(context, tiposLicenciaAsync),
       ),
     );
   }
@@ -143,10 +140,7 @@ class _FormLicenciaConducirState
               child: _buildFieldCategoria(context, tiposLicenciaAsync),
             ),
             SizedBox(width: context.spacing),
-            Expanded(
-              flex: 1,
-              child: _buildFieldFechaCaducidad(context),
-            ),
+            Expanded(flex: 1, child: _buildFieldFechaCaducidad(context)),
           ],
         ),
         SizedBox(height: context.spacing),
@@ -175,8 +169,7 @@ class _FormLicenciaConducirState
       },
       getName: (e) => e.nombre,
       getCode: (e) => e.codTipos,
-      validator: (val) =>
-          (val == null || val.isEmpty) ? 'Requerido' : null,
+      validator: (val) => (val == null || val.isEmpty) ? 'Requerido' : null,
     );
   }
 

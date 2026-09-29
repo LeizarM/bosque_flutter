@@ -94,9 +94,10 @@ class LlegadaModel {
       idRp: json["idRp"] ?? 0,
       idTarRuti: json["idTarRuti"],
       fecha: json["fecha"] != null ? DateTime.tryParse(json["fecha"]) : null,
-      horallegada: json["horallegada"] != null
-          ? DateTime.tryParse(json["horallegada"])
-          : null,
+      horallegada:
+          json["horallegada"] != null
+              ? DateTime.tryParse(json["horallegada"])
+              : null,
       persona: json["persona"],
       cliente: json["cliente"],
       moneda: json["moneda"],
@@ -109,9 +110,8 @@ class LlegadaModel {
       codEmpVerificado: json["codEmpVerificado"],
       codSucursal: json["codSucursal"],
       audUsuario: json["audUsuario"] ?? 0,
-      audFecha: json["audFecha"] != null
-          ? DateTime.tryParse(json["audFecha"])
-          : null,
+      audFecha:
+          json["audFecha"] != null ? DateTime.tryParse(json["audFecha"]) : null,
     );
   }
 

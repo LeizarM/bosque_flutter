@@ -23,8 +23,7 @@ Future<void> mostrarDetalleTramo(
   context: context,
   isScrollControlled: true,
   showDragHandle: true,
-  builder:
-      (_) => _DetalleTramoSheet(codEmpleado: codEmpleado, tramo: tramo),
+  builder: (_) => _DetalleTramoSheet(codEmpleado: codEmpleado, tramo: tramo),
 );
 
 class _DetalleTramoSheet extends ConsumerWidget {
@@ -50,7 +49,7 @@ class _DetalleTramoSheet extends ConsumerWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               // La etiqueta literal del SP, la misma que se tocó para llegar
-              // acá: si dijera otra cosa, parecería otro dato.
+              // aquí: si dijera otra cosa, parecería otro dato.
               Text(tramo.etiqueta, style: context.tituloSeccion()),
               const SizedBox(height: Esp.xs),
               Text(
@@ -133,9 +132,9 @@ class _DetalleTramoSheet extends ConsumerWidget {
           children: [
             Text(
               '${fechaCorta(p.desde)} → ${fechaCorta(p.hasta)}',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                fontFeatures: cifrasTabulares,
-              ),
+              style: Theme.of(
+                context,
+              ).textTheme.bodyMedium?.copyWith(fontFeatures: cifrasTabulares),
             ),
             if (p.motivo.trim().isNotEmpty)
               Text(p.motivo, style: context.apagado()),

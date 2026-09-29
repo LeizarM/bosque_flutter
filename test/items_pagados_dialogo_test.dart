@@ -15,7 +15,7 @@ import 'package:bosque_flutter/presentation/widgets/comisiones/dialogo_items_pag
 
 /// El detalle por ítem de lo que ya se pagó.
 ///
-/// Lo que se prueba acá, y nada de esto es decorativo:
+/// Lo que se prueba aquí, y nada de esto es decorativo:
 ///
 ///   1. Que el CERO nunca salga pelado. Un período sin ítems congelados puede
 ///      estar perfecto —ninguna nota cayó dentro de la vigencia de la
@@ -233,7 +233,7 @@ void main() {
           comisionesRepositoryProvider.overrideWithValue(_RepoFalso()),
           // El filtro de nota SÍ es del SP (@docNum + @origen) y el override
           // tiene que respetarlo; «solo lo excluido» ya no lo es, así que
-          // respetarlo acá sería probar un parámetro que no existe.
+          // respetarlo aquí sería probar un parámetro que no existe.
           itemsPagadosProvider.overrideWith((ref, f) async {
             pedidosLista?.add(f);
             return f.docNum == null
@@ -273,7 +273,7 @@ void main() {
                   data: ComisionesTema.temaModulo(context),
                   child: const Scaffold(
                     // El diálogo montado directo: showDialog necesitaría un
-                    // tap y acá lo que se mide es el diálogo, no el camino
+                    // tap y aquí lo que se mide es el diálogo, no el camino
                     // hasta él. Los dos puntos de entrada reales
                     // -tab_ejecutar y tab_preliminar- lo abren con showDialog.
                     body: DialogoItemsPagados(filtro: filtro),
@@ -341,7 +341,7 @@ void main() {
       find.textContaining('2 de 3 ítems no descontaron'),
       findsOneWidget,
       reason:
-          'La pregunta que trae a alguien acá es cuánto quedó afuera. Sin el '
+          'La pregunta que trae a alguien aquí es cuánto quedó afuera. Sin el '
           'titular hay que sumar las filas del resumen para saberlo.',
     );
     // Y el porqué de cada motivo, no solo su nombre: «Fuera de vigencia» sin
@@ -532,7 +532,10 @@ void main() {
           'Afirmar que no lo tiene es acusar a la base de un error de red, y '
           'es exactamente el fallo que este diálogo dice corregir.',
     );
-    expect(find.textContaining('No se pudieron cargar los datos'), findsWidgets);
+    expect(
+      find.textContaining('No se pudieron cargar los datos'),
+      findsWidgets,
+    );
     expect(
       find.text('Reintentar'),
       findsOneWidget,
@@ -559,7 +562,7 @@ void main() {
       find.text('Solo lo excluido'),
       findsOneWidget,
       reason:
-          'Acá la lista la vacía el filtro, no el período: el interruptor tiene '
+          'Aquí la lista la vacía el filtro, no el período: el interruptor tiene '
           'que seguir a la vista para poder apagarlo.',
     );
   });
@@ -577,7 +580,7 @@ void main() {
       find.textContaining('0 de 1'),
       findsNothing,
       reason:
-          'Un cero al lado de un uno se lee como un problema, y acá es lo '
+          'Un cero al lado de un uno se lee como un problema, y aquí es lo '
           'contrario: la única línea del período descontó.',
     );
     expect(
@@ -677,7 +680,7 @@ void main() {
     );
 
     // Cada fila lleva exactamente un ChipEstado con su motivo; el encabezado
-    // del diálogo aporta dos más. Si la tabla no virtualizara, acá habría más
+    // del diálogo aporta dos más. Si la tabla no virtualizara, aquí habría más
     // de dos mil.
     final chips = find.byType(ChipEstado).evaluate().length;
     expect(

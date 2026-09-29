@@ -463,7 +463,7 @@ final sidebarMenuProvider = Provider<List<SidebarMenuItem>>((ref) {
     }
 
     // Comisiones: tb_vista guarda la dirección del JSF viejo, sin el prefijo
-    // dashboard. Se mapea acá y no en la base porque esa fila la sigue usando
+    // dashboard. Se mapea aquí y no en la base porque esa fila la sigue usando
     // Bosque v2 para armar su propio menú.
     if (originalRoute.startsWith('/tcomComisiones/Comisiones')) {
       return '/dashboard/tcomComisiones/Comisiones';
@@ -476,7 +476,7 @@ final sidebarMenuProvider = Provider<List<SidebarMenuItem>>((ref) {
     // /tfmFacturasManuales/talonario): NO es lo mismo. Esa opera sobre
     // tfm_facturaManual vía p_abm_FacturaManual — son talonarios de FACTURAS,
     // con NIT y nro de autorización. El bean legacy lo dice: `codTalonario`
-    // "es el codFacturaManual". No mapearla acá.
+    // "es el codFacturaManual". No mapearla aquí.
     if (originalRoute.startsWith('/tmtoTalonario/talonario')) {
       return '/dashboard/tmtoTalonario/talonario';
     }

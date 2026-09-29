@@ -8,7 +8,7 @@
 /// **Por qué no `showDateRangePicker`.** El de Material se abre a pantalla
 /// completa y despliega los meses uno abajo del otro: en un monitor ancho son
 /// 1900 px para elegir dos fechas, con el resto de la pantalla vacío y sin
-/// contexto de lo que se estaba filtrando. Acá son dos campos en un diálogo de
+/// contexto de lo que se estaba filtrando. Aquí son dos campos en un diálogo de
 /// 380 px.
 library;
 
@@ -87,7 +87,7 @@ class _RangoFechasDialogState extends State<_RangoFechasDialog> {
   late DateTime _maxima;
 
   /// Lo que se está tipeando y todavía no es una fecha válida. Mientras haya
-  /// algo acá, Aplicar queda bloqueado: aceptar con un campo a medio escribir
+  /// algo aquí, Aplicar queda bloqueado: aceptar con un campo a medio escribir
   /// guardaría la última fecha buena y no la que la persona ve.
   String? _errorDesde;
   String? _errorHasta;

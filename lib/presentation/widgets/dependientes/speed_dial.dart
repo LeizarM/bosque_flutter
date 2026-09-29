@@ -46,7 +46,7 @@ class CustomSpeedDial extends StatelessWidget {
       icon: mainIcon,
       activeIcon: Icons.close,
       spacing: 3,
-      
+
       spaceBetweenChildren: 4,
       children: [
         if (operacionHabilitada.contains('agregar'))
@@ -68,9 +68,11 @@ class CustomSpeedDial extends StatelessWidget {
             label: showLabels ? 'Editar' : null,
             onTap: () {
               if (updateOperation != null) {
-                updateOperation!(selectedOperation?[nombreSeccion] == 'editar' 
-                    ? null 
-                    : 'editar');
+                updateOperation!(
+                  selectedOperation?[nombreSeccion] == 'editar'
+                      ? null
+                      : 'editar',
+                );
               }
               if (onEditar != null) onEditar!();
             },
@@ -82,9 +84,11 @@ class CustomSpeedDial extends StatelessWidget {
             label: showLabels ? 'Eliminar' : null,
             onTap: () {
               if (updateOperation != null) {
-                updateOperation!(selectedOperation?[nombreSeccion] == 'eliminar' 
-                    ? null 
-                    : 'eliminar');
+                updateOperation!(
+                  selectedOperation?[nombreSeccion] == 'eliminar'
+                      ? null
+                      : 'eliminar',
+                );
               }
               if (onEliminar != null) onEliminar!();
             },
@@ -93,8 +97,9 @@ class CustomSpeedDial extends StatelessWidget {
       //child: _buildRotatingIcon(),
     );
   }
-//para controlar la animación del icono principal
- /* Widget _buildRotatingIcon() {
+
+  //para controlar la animación del icono principal
+  /* Widget _buildRotatingIcon() {
     return TweenAnimationBuilder<double>(
       tween: Tween<double>(begin: 0, end: 1),
       duration: const Duration(milliseconds: 500),

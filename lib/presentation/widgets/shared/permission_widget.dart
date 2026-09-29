@@ -27,11 +27,15 @@ bool tienePermisoDeBoton(WidgetRef ref, String nombreBtn) {
   // viejo, y no depende de una respuesta que puede no llegar.
   if (user.tipoUsuario == 'ROLE_ADM') return true;
 
-  return ref.watch(buttonPermissionsProvider).maybeWhen(
-    data: (_) =>
-        ref.read(buttonPermissionsProvider.notifier).tienePermiso(nombreBtn),
-    orElse: () => false,
-  );
+  return ref
+      .watch(buttonPermissionsProvider)
+      .maybeWhen(
+        data:
+            (_) => ref
+                .read(buttonPermissionsProvider.notifier)
+                .tienePermiso(nombreBtn),
+        orElse: () => false,
+      );
 }
 
 /// Un widget que muestra su hijo solo si el usuario tiene permiso para el nombre de botón dado.

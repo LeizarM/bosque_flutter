@@ -19,7 +19,7 @@ export 'package:bosque_flutter/core/ui/tokens_bosque.dart' show Esquina;
 /// ## De dónde sale el color
 ///
 /// De la misma rampa medida que usa el cronograma de permisos: familia + tono,
-/// y sólo las familias que se separan con las nueve semillas del tema. Acá no
+/// y sólo las familias que se separan con las nueve semillas del tema. Aquí no
 /// hay ningún hex propio a propósito — un violeta elegido a mano se vería roto
 /// en cuanto alguien ponga el tema en rojo.
 ///
@@ -27,11 +27,11 @@ export 'package:bosque_flutter/core/ui/tokens_bosque.dart' show Esquina;
 ///
 /// Los ids de `tcr_tipoDocumento` son 1, 2, 6, 7, 8 y 9. Usarlos como posición
 /// en la rampa dejaría tres escalones muertos y haría que dos tipos cayeran en
-/// el mismo color. La posición de acá es el orden en que se muestran: estable,
+/// el mismo color. La posición de aquí es el orden en que se muestran: estable,
 /// y sobre todo **disponible sin el catálogo**. Una fila de la grilla sabe su
 /// color mirando su `idTipoDoc`, sin esperar a que llegue `tiposDocumento`.
 ///
-/// El texto del tipo, en cambio, **siempre viene de la base**: acá no se copia
+/// El texto del tipo, en cambio, **siempre viene de la base**: aquí no se copia
 /// ningún nombre. Si mañana renombran «COM. CI», la pantalla se entera sola.
 class IdentidadCite {
   final IconData icono;
@@ -50,7 +50,7 @@ class IdentidadCite {
 
 const _sinIdentidad = IdentidadCite._(
   Icons.description_outlined,
-  'Tipo de documento nuevo, todavía sin ficha acá.',
+  'Tipo de documento nuevo, todavía sin ficha aquí.',
   -1,
 );
 
@@ -58,7 +58,7 @@ const _identidades = <int, IdentidadCite>{
   TipoCite.carta: IdentidadCite._(
     Icons.mail_outline,
     'Va a alguien de afuera. Lleva ciudad y referencia, y se puede imprimir '
-        'con membrete o sin él.',
+    'con membrete o sin él.',
     0,
   ),
   TipoCite.memorando: IdentidadCite._(
@@ -69,7 +69,7 @@ const _identidades = <int, IdentidadCite>{
   TipoCite.certificadoTrabajo: IdentidadCite._(
     Icons.workspace_premium_outlined,
     'Acredita la relación laboral. No lleva destinatario y el área la fija el '
-        'sistema.',
+    'sistema.',
     2,
   ),
   TipoCite.comunicacionInterna: IdentidadCite._(
@@ -92,7 +92,7 @@ const _identidades = <int, IdentidadCite>{
 IdentidadCite identidadCite(int idTipoDoc) =>
     _identidades[idTipoDoc] ?? _sinIdentidad;
 
-/// La rampa de [colorDeTipoPermiso], con el nombre que corresponde acá.
+/// La rampa de [colorDeTipoPermiso], con el nombre que corresponde aquí.
 ///
 /// Aquella función quedó bautizada por el módulo donde nació, pero lo que hace
 /// es genérico: «dame el color número N de una escala que aguanta las nueve
@@ -176,22 +176,23 @@ class EstadoImpresionCite extends StatelessWidget {
     final color = impreso ? cs.primary : cs.onSurfaceVariant;
 
     return Tooltip(
-      message: impreso
-          ? 'Ya se generó el PDF de este documento'
-          : 'Todavía no se generó el PDF',
+      message:
+          impreso
+              ? 'Ya se generó el PDF de este documento'
+              : 'Todavía no se generó el PDF',
       child: Container(
         padding: EdgeInsets.symmetric(
           horizontal: soloIcono ? Esp.xs : Esp.s,
           vertical: 3,
         ),
         decoration: BoxDecoration(
-          color: impreso
-              ? cs.primary.withValues(alpha: 0.10)
-              : Colors.transparent,
+          color:
+              impreso ? cs.primary.withValues(alpha: 0.10) : Colors.transparent,
           border: Border.all(
-            color: impreso
-                ? cs.primary.withValues(alpha: 0.35)
-                : cs.outlineVariant,
+            color:
+                impreso
+                    ? cs.primary.withValues(alpha: 0.35)
+                    : cs.outlineVariant,
           ),
           borderRadius: BorderRadius.circular(Esquina.pastilla),
         ),
@@ -203,10 +204,10 @@ class EstadoImpresionCite extends StatelessWidget {
               const SizedBox(width: 4),
               Text(
                 texto,
-                style: Theme.of(context)
-                    .textTheme
-                    .labelSmall
-                    ?.copyWith(color: color, fontWeight: Peso.titulo),
+                style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                  color: color,
+                  fontWeight: Peso.titulo,
+                ),
               ),
             ],
           ],
@@ -247,9 +248,9 @@ class DatoCite extends StatelessWidget {
             texto,
             overflow: TextOverflow.ellipsis,
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: color,
-                  fontWeight: destacado ? Peso.titulo : Peso.normal,
-                ),
+              color: color,
+              fontWeight: destacado ? Peso.titulo : Peso.normal,
+            ),
           ),
         ),
       ],

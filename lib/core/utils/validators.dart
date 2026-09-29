@@ -1,4 +1,3 @@
-
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -8,10 +7,10 @@ import 'package:intl/intl.dart';
 String? validarTextoOpcional(String? value, {bool esObligatorio = false}) {
   final trimmed = (value ?? "").trim();
 
-  if(esObligatorio && trimmed.isEmpty){
+  if (esObligatorio && trimmed.isEmpty) {
     return 'Este campo es obligatorio'; // No acepta el campo vacío
   }
-  if(trimmed.isNotEmpty){
+  if (trimmed.isNotEmpty) {
     if (trimmed.length < 2) {
       return 'Debe tener al menos 2 caracteres';
     } else if (trimmed.length > 50) {
@@ -32,23 +31,22 @@ List<TextInputFormatter> bloquearTodosLosEspacios = [
   FilteringTextInputFormatter.deny(RegExp(r'\s')),
 ];
 //validar campos solo para NUMEROS
-String? validarSoloNumeros(String? value,{bool esObligatorio = false}) {
+String? validarSoloNumeros(String? value, {bool esObligatorio = false}) {
   final trimmed = (value ?? "").trim(); // Elimina espacios antes de validar
 
-  if(esObligatorio && trimmed.isEmpty){
+  if (esObligatorio && trimmed.isEmpty) {
     return 'Este campo es obligatorio'; // No acepta el campo vacío
   }
 
-  if(trimmed.isNotEmpty){
-    if (!RegExp(r'^[0-9]+$').hasMatch(trimmed)) {  
-    return 'Solo se permiten números';
-  }
-  if (trimmed.length < 7) {
-    return 'Debe tener al menos 7 caracteres';
-  }else if (trimmed.length > 8) {
-    return 'Debe tener menos de 8 caracteres';
-  }
-
+  if (trimmed.isNotEmpty) {
+    if (!RegExp(r'^[0-9]+$').hasMatch(trimmed)) {
+      return 'Solo se permiten números';
+    }
+    if (trimmed.length < 7) {
+      return 'Debe tener al menos 7 caracteres';
+    } else if (trimmed.length > 8) {
+      return 'Debe tener menos de 8 caracteres';
+    }
   }
 
   return null;
@@ -67,7 +65,9 @@ String? validarTextoMixto(String? value, {bool esObligatorio = false}) {
       return 'Debe tener al menos 2 caracteres';
     } else if (trimmed.length > 200) {
       return 'Debe tener menos de 200 caracteres';
-    } else if (!RegExp(r'^[a-zA-ZÁÉÍÓÚÜÑáéíóúüñ0-9.,°#/\-()& ]+$').hasMatch(trimmed)) {
+    } else if (!RegExp(
+      r'^[a-zA-ZÁÉÍÓÚÜÑáéíóúüñ0-9.,°#/\-()& ]+$',
+    ).hasMatch(trimmed)) {
       return 'Solo se permiten letras, números y símbolos comunes como . , ° # / - ( ) &';
     } else if (RegExp(r'[.,°#/\-()&]{2,}').hasMatch(trimmed)) {
       return 'No se permiten símbolos repetidos consecutivamente';
@@ -77,16 +77,17 @@ String? validarTextoMixto(String? value, {bool esObligatorio = false}) {
   return null;
 }
 
-
 //validar correo electronico
-String? validarEmail(String? value,{bool esObligatorio = false}) {
+String? validarEmail(String? value, {bool esObligatorio = false}) {
   final trimmed = (value ?? "").trim(); // Elimina espacios antes de validar
 
   if (trimmed.isEmpty) {
     return 'Este campo es obligatorio'; // No acepta el campo vacío
   }
 
-  if (!RegExp(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$').hasMatch(trimmed)) {
+  if (!RegExp(
+    r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$',
+  ).hasMatch(trimmed)) {
     return 'Formato de correo electrónico inválido';
   }
 
@@ -122,14 +123,18 @@ String? validarNumerosCortos(String? value) {
 
   if (trimmed.length < 2) {
     return 'Debe tener al menos 2 caracteres';
-  }else if (!RegExp(r'^[0-9]+$').hasMatch(trimmed)) {
+  } else if (!RegExp(r'^[0-9]+$').hasMatch(trimmed)) {
     return 'Solo se pe rmiten números';
   }
   return null;
 }
 
 //validar duracion de formacion
-String? validarDuracion(String? value, String unidadSeleccionada, {bool esObligatorio = false}) {
+String? validarDuracion(
+  String? value,
+  String unidadSeleccionada, {
+  bool esObligatorio = false,
+}) {
   final trimmed = (value ?? "").trim();
 
   if (esObligatorio && trimmed.isEmpty) {
@@ -137,7 +142,7 @@ String? validarDuracion(String? value, String unidadSeleccionada, {bool esObliga
   }
 
   if (trimmed.isNotEmpty) {
-    if (!RegExp(r'^[0-9]+$').hasMatch(trimmed)) {  
+    if (!RegExp(r'^[0-9]+$').hasMatch(trimmed)) {
       return 'Solo se permiten números';
     }
 
@@ -146,26 +151,27 @@ String? validarDuracion(String? value, String unidadSeleccionada, {bool esObliga
 
     // Definir límites máximos según la unidad seleccionada
     final Map<String, int> limitesDuracion = {
-      'hrs': 2400,   // Máximo 2400 horas
-      'dia': 30,      // Máximo 30 días
-      'mes': 12,    // Máximo 4 meses
-      'sem': 4,     // Máximo 12 semanas
-      'ani': 10,      // Máximo 10 años
+      'hrs': 2400, // Máximo 2400 horas
+      'dia': 30, // Máximo 30 días
+      'mes': 12, // Máximo 4 meses
+      'sem': 4, // Máximo 12 semanas
+      'ani': 10, // Máximo 10 años
     };
 
     // Definir la cantidad de dígitos permitidos
     final Map<String, int> limitesDigitos = {
-      'hrs': 4,  
-      'dia': 2,  
-      'sem': 1,  
-      'mes': 2,  
-      'ani': 2,  
+      'hrs': 4,
+      'dia': 2,
+      'sem': 1,
+      'mes': 2,
+      'ani': 2,
     };
 
     final int? limiteMaximo = limitesDuracion[unidadSeleccionada];
     final int? limiteDigitos = limitesDigitos[unidadSeleccionada];
 
-    if (limiteMaximo == null || limiteDigitos == null) return 'Unidad de duración no válida';
+    if (limiteMaximo == null || limiteDigitos == null)
+      return 'Unidad de duración no válida';
 
     if (duracion > limiteMaximo) {
       return 'La duración máxima para $unidadSeleccionada es $limiteMaximo';
@@ -178,6 +184,7 @@ String? validarDuracion(String? value, String unidadSeleccionada, {bool esObliga
 
   return null;
 }
+
 //validar dropdowns
 String? validarDropdown(String? value, String nombreCampo) {
   if (value == null || value.isEmpty) {
@@ -185,6 +192,7 @@ String? validarDropdown(String? value, String nombreCampo) {
   }
   return null;
 }
+
 //validar fechas
 String? validarFecha(String? value) {
   if (value == null || value.isEmpty) {
@@ -203,10 +211,10 @@ String? validarFecha(String? value) {
     // Validar que la fecha esté dentro de un rango específico
     DateTime fechaMinima = DateTime(2000);
     DateTime fechaMaxima = DateTime(2100);
-    if (fechaIngresada.isBefore(fechaMinima) || fechaIngresada.isAfter(fechaMaxima)) {
+    if (fechaIngresada.isBefore(fechaMinima) ||
+        fechaIngresada.isAfter(fechaMaxima)) {
       return 'La fecha debe estar entre ${DateFormat('dd-MM-yyyy').format(fechaMinima)} y ${DateFormat('dd-MM-yyyy').format(fechaMaxima)}';
     }
-
   } catch (e) {
     return 'Formato de fecha incorrecto';
   }
@@ -220,7 +228,6 @@ String? validarSeleccionDropdownSearch(dynamic value) {
   return value == null ? 'Seleccione una opción válida' : null;
 }
 
-
 /// onFieldSubmitted: (value) => validarYEnviarEnWeb(_formKey, _guardarFuncion),
 void validarYEnviarEnWeb(GlobalKey<FormState> formKey, VoidCallback onSave) {
   if (kIsWeb) {
@@ -229,6 +236,7 @@ void validarYEnviarEnWeb(GlobalKey<FormState> formKey, VoidCallback onSave) {
     }
   }
 }
+
 // Validador exclusivo para C.I.: permite solo letras y números (sin caracteres especiales),
 // sin espacios, longitud mínima 7 y máxima 8.
 String? validarCI(String? value, {bool esObligatorio = false}) {
@@ -258,11 +266,3 @@ String? validarCI(String? value, {bool esObligatorio = false}) {
 
   return null;
 }
-
-
-
-
-
-
-
-

@@ -69,7 +69,8 @@ class PrestamoModel {
   double? saldoPendiente;
   double? numCuotas;
   double? cuotaReferencia;
-  double? montoCuota; // Calculado por SQL: MONTO_FIJO => monto/nCuotas, CUOTAS => nCuotas
+  double?
+  montoCuota; // Calculado por SQL: MONTO_FIJO => monto/nCuotas, CUOTAS => nCuotas
   String? fecIniPago;
   String? tipoPago;
   String? tipoCalculo;

@@ -1129,7 +1129,8 @@ class _ControlCombustibleViewScreenState
                                                       backgroundColor:
                                                           colorScheme.secondary,
                                                       foregroundColor:
-                                                          colorScheme.onSecondary,
+                                                          colorScheme
+                                                              .onSecondary,
                                                       padding:
                                                           const EdgeInsets.symmetric(
                                                             horizontal: 8,

@@ -11,14 +11,15 @@ import 'package:intl/intl.dart';
 
 class FechaUtils {
   /// Formatea DateTime a String en formato dd/MM/yyyy
-  static String formatDate(DateTime? date) {  // ← Cambiar a DateTime?
-    if (date == null) return '';  // ← Agregar esta línea
+  static String formatDate(DateTime? date) {
+    // ← Cambiar a DateTime?
+    if (date == null) return ''; // ← Agregar esta línea
     return DateFormat('dd/MM/yyyy').format(date);
   }
 
   /// Parsea String (dd/MM/yyyy) a DateTime
   static DateTime? parseDate(String dateString) {
-    if (dateString.isEmpty) return null;  // ← Agregar null check
+    if (dateString.isEmpty) return null; // ← Agregar null check
     try {
       return DateFormat('dd/MM/yyyy').parse(dateString);
     } catch (e) {
@@ -43,7 +44,7 @@ class CustomDatePicker extends StatelessWidget {
   final DateTime? lastDate;
   final Function(DateTime)? onDateSelected;
   // Al ponerlo aquí, lo hacemos disponible
-  final bool enabled; 
+  final bool enabled;
 
   const CustomDatePicker({
     super.key,
@@ -53,9 +54,9 @@ class CustomDatePicker extends StatelessWidget {
     this.firstDate,
     this.lastDate,
     this.onDateSelected,
-    // Al asignarle true aquí, CUALQUIER otro archivo que use 
+    // Al asignarle true aquí, CUALQUIER otro archivo que use
     // CustomDatePicker seguirá funcionando igual que antes sin pedir cambios.
-    this.enabled = true, 
+    this.enabled = true,
   });
 
   @override
@@ -64,56 +65,59 @@ class CustomDatePicker extends StatelessWidget {
       controller: controller,
       readOnly: true,
       // Usamos el valor de enabled
-      enabled: enabled, 
+      enabled: enabled,
       style: const TextStyle(fontSize: 13),
       decoration: InputDecoration(
         labelText: label,
         labelStyle: const TextStyle(fontSize: 11),
         border: const OutlineInputBorder(),
-        isDense: true, 
+        isDense: true,
         contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
         filled: true,
         // Si está deshabilitado, le damos un tono gris suave
         fillColor: enabled ? Colors.white : Colors.grey.shade100,
         suffixIcon: Icon(
-          Icons.calendar_today, 
-          size: 18, 
-          color: enabled ? Colors.grey.shade600 : Colors.grey.shade400
+          Icons.calendar_today,
+          size: 18,
+          color: enabled ? Colors.grey.shade600 : Colors.grey.shade400,
         ),
       ),
       validator: validator,
       // Solo permite el tap si enabled es true
-      onTap: enabled ? () async {
-        // ✅ Desenfoca primero para evitar error en Flutter Web
-        FocusManager.instance.primaryFocus?.unfocus();
-  final resolvedFirstDate = firstDate ?? DateTime(1900);
-  final resolvedLastDate = lastDate ?? DateTime(2100);
-  
-  DateTime initialDate = DateTime.now();
-  if (controller.text.isNotEmpty) {
-    final parsed = FechaUtils.parseDate(controller.text);
-    if (parsed != null) initialDate = parsed;
-  }
+      onTap:
+          enabled
+              ? () async {
+                // ✅ Desenfoca primero para evitar error en Flutter Web
+                FocusManager.instance.primaryFocus?.unfocus();
+                final resolvedFirstDate = firstDate ?? DateTime(1900);
+                final resolvedLastDate = lastDate ?? DateTime(2100);
 
-  // Clamp initialDate to [firstDate, lastDate] range
-  if (initialDate.isBefore(resolvedFirstDate)) {
-    initialDate = resolvedFirstDate;
-  } else if (initialDate.isAfter(resolvedLastDate)) {
-    initialDate = resolvedLastDate;
-  }
+                DateTime initialDate = DateTime.now();
+                if (controller.text.isNotEmpty) {
+                  final parsed = FechaUtils.parseDate(controller.text);
+                  if (parsed != null) initialDate = parsed;
+                }
 
-  final DateTime? pickedDate = await showDatePicker(
-    context: context,
-    initialDate: initialDate,
-    firstDate: resolvedFirstDate,
-    lastDate: resolvedLastDate,
-  );
+                // Clamp initialDate to [firstDate, lastDate] range
+                if (initialDate.isBefore(resolvedFirstDate)) {
+                  initialDate = resolvedFirstDate;
+                } else if (initialDate.isAfter(resolvedLastDate)) {
+                  initialDate = resolvedLastDate;
+                }
 
-  if (pickedDate != null) {
-    controller.text = FechaUtils.formatDate(pickedDate);
-    onDateSelected?.call(pickedDate);
-  }
-} : null,
+                final DateTime? pickedDate = await showDatePicker(
+                  context: context,
+                  initialDate: initialDate,
+                  firstDate: resolvedFirstDate,
+                  lastDate: resolvedLastDate,
+                );
+
+                if (pickedDate != null) {
+                  controller.text = FechaUtils.formatDate(pickedDate);
+                  onDateSelected?.call(pickedDate);
+                }
+              }
+              : null,
     );
   }
 }
@@ -125,10 +129,8 @@ class CustomDatePicker extends StatelessWidget {
 class EmployeeImageCell extends ConsumerWidget {
   final int codEmpleado;
 
-  const EmployeeImageCell({
-    Key? key,
-    required this.codEmpleado,
-  }) : super(key: key);
+  const EmployeeImageCell({Key? key, required this.codEmpleado})
+    : super(key: key);
 
   String _getImageUrl(int codEmpleado, int version) {
     return '${AppConstants.baseUrl}${AppConstants.getImageUrl}/$codEmpleado.jpg?v=$version';
@@ -147,7 +149,10 @@ class EmployeeImageCell extends ConsumerWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               ConstrainedBox(
-                constraints: const BoxConstraints(maxHeight: 400, maxWidth: 400),
+                constraints: const BoxConstraints(
+                  maxHeight: 400,
+                  maxWidth: 400,
+                ),
                 child: Image.network(
                   imageUrl,
                   fit: BoxFit.contain,
@@ -209,7 +214,7 @@ class EmployeeImageCell extends ConsumerWidget {
 // ============================================
 
 /// Widget genérico para dropdowns que muestran un nombre pero guardan un código
-/// 
+///
 /// Parámetros:
 /// - asyncValue: AsyncValue con la lista de items
 /// - label: Etiqueta del dropdown
@@ -244,27 +249,29 @@ class CustomDropdown<T extends Object> extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return asyncValue.when(
-      loading: () => const Center(
-        child: CircularProgressIndicator(strokeWidth: 2),
-      ),
-      error: (err, stack) => const Center(
-        child: Text('Error cargando datos'),
-      ),
+      loading:
+          () => const Center(child: CircularProgressIndicator(strokeWidth: 2)),
+      error: (err, stack) => const Center(child: Text('Error cargando datos')),
       data: (items) {
         // Crear dropdown items con código como value, nombre como display
-        final dropdownItems = items.map((item) {
-          final codigo = getCode(item);
-          final nombre = getName(item);
-          return DropdownMenuItem<String>(
-            value: codigo, // Guardar el código
-            child: Text(nombre, overflow: TextOverflow.ellipsis), // Mostrar nombre
-          );
-        }).toList();
+        final dropdownItems =
+            items.map((item) {
+              final codigo = getCode(item);
+              final nombre = getName(item);
+              return DropdownMenuItem<String>(
+                value: codigo, // Guardar el código
+                child: Text(
+                  nombre,
+                  overflow: TextOverflow.ellipsis,
+                ), // Mostrar nombre
+              );
+            }).toList();
 
         // Verificar que el código actual está en la lista disponible
-        final validValue = dropdownItems.any((i) => i.value == currentValue)
-            ? currentValue
-            : null;
+        final validValue =
+            dropdownItems.any((i) => i.value == currentValue)
+                ? currentValue
+                : null;
 
         return DropdownButtonFormField<String>(
           value: validValue,
@@ -280,14 +287,16 @@ class CustomDropdown<T extends Object> extends StatelessWidget {
           menuMaxHeight: maxHeight,
           items: dropdownItems,
           onChanged: onChanged,
-          validator: validator ?? (val) => (val == null || val.isEmpty) ? 'Requerido' : null,
+          validator:
+              validator ??
+              (val) => (val == null || val.isEmpty) ? 'Requerido' : null,
         );
       },
     );
   }
 }
 // ============================================
-// WIDGET PARA MOSTRAR DESCRIPCIÓN EN LUGAR DE CÓDIGO 
+// WIDGET PARA MOSTRAR DESCRIPCIÓN EN LUGAR DE CÓDIGO
 // ver ejemplo en detalle_educacion.dart
 // ============================================
 
@@ -322,35 +331,39 @@ class DisplayValue<T> extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return ref.watch(provider).when(
-      data: (items) {
-        try {
-          final item = items.firstWhere((item) => getCode(item) == code);
-          return Text(
-            getDescription(item),
-            style: style ?? const TextStyle( fontSize: 12),
-            overflow: TextOverflow.ellipsis,
-            maxLines: 2,
-          );
-        } catch (_) {
-          return Text(
-            fallback ?? code,
-            style: style ?? const TextStyle( fontSize: 12),
-            overflow: TextOverflow.ellipsis,
-            maxLines: 2,
-          );
-        }
-      },
-      loading: () => const SizedBox(
-        width: 16,
-        height: 16,
-        child: CircularProgressIndicator(strokeWidth: 2),
-      ),
-      error: (_, __) => Text(
-        fallback ?? code,
-        style: style ?? const TextStyle(fontSize: 12),
-        overflow: TextOverflow.ellipsis,
-      ),
-    );
+    return ref
+        .watch(provider)
+        .when(
+          data: (items) {
+            try {
+              final item = items.firstWhere((item) => getCode(item) == code);
+              return Text(
+                getDescription(item),
+                style: style ?? const TextStyle(fontSize: 12),
+                overflow: TextOverflow.ellipsis,
+                maxLines: 2,
+              );
+            } catch (_) {
+              return Text(
+                fallback ?? code,
+                style: style ?? const TextStyle(fontSize: 12),
+                overflow: TextOverflow.ellipsis,
+                maxLines: 2,
+              );
+            }
+          },
+          loading:
+              () => const SizedBox(
+                width: 16,
+                height: 16,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              ),
+          error:
+              (_, __) => Text(
+                fallback ?? code,
+                style: style ?? const TextStyle(fontSize: 12),
+                overflow: TextOverflow.ellipsis,
+              ),
+        );
   }
 }

@@ -4,8 +4,7 @@ import 'package:bosque_flutter/domain/entities/corte_entity.dart';
 
 CorteResponse corteResponseFromJson(String str) =>
     CorteResponse.fromJson(json.decode(str));
-String corteResponseToJson(CorteResponse data) =>
-    json.encode(data.toJson());
+String corteResponseToJson(CorteResponse data) => json.encode(data.toJson());
 
 class CorteResponse {
   String message;
@@ -74,9 +73,8 @@ class CorteModel {
       corte: json["corte"],
       tipoCorte: json["tipoCorte"],
       audUsuario: json["audUsuario"] ?? 0,
-      audFecha: json["audFecha"] != null
-          ? DateTime.tryParse(json["audFecha"])
-          : null,
+      audFecha:
+          json["audFecha"] != null ? DateTime.tryParse(json["audFecha"]) : null,
     );
   }
 

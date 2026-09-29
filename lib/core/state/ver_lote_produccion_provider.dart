@@ -37,8 +37,8 @@ final loteProduccionRepositoryProvider = Provider<LoteProduccionRepository>(
 final articulosProduccionProvider = FutureProvider<List<LoteProduccionEntity>>((
   ref,
 ) async {
-  final lista = await ref.watch(loteProduccionRepositoryProvider)
-      .obtenerArticulos();
+  final lista =
+      await ref.watch(loteProduccionRepositoryProvider).obtenerArticulos();
   lista.sort((a, b) => a.articulo.compareTo(b.articulo));
   return lista;
 });
@@ -47,9 +47,10 @@ final empresasProduccionProvider = FutureProvider<List<EmpresaEntity>>(
   (ref) => ref.watch(loteProduccionRepositoryProvider).obtenerEmpresas(),
 );
 
-final maquinasProduccionProvider = FutureProvider<List<MaquinaProduccionEntity>>(
-  (ref) => ref.watch(loteProduccionRepositoryProvider).obtenerMaquinas(),
-);
+final maquinasProduccionProvider =
+    FutureProvider<List<MaquinaProduccionEntity>>(
+      (ref) => ref.watch(loteProduccionRepositoryProvider).obtenerMaquinas(),
+    );
 
 // ═══════════════════════════════════════════════════════════════════════════
 // LISTADO
@@ -146,11 +147,7 @@ class VerLotesNotifier extends StateNotifier<VerLotesState> {
       // Ver la nota en DetalleLoteNotifier: un catalogo vacio es una red caida,
       // no un catalogo sin datos, y no debe quedarse en la cache.
       if (maquinas.isEmpty) _ref.invalidate(maquinasProduccionProvider);
-      state = state.copyWith(
-        lotes: lotes,
-        maquinas: maquinas,
-        cargando: false,
-      );
+      state = state.copyWith(lotes: lotes, maquinas: maquinas, cargando: false);
     } catch (e) {
       state = state.copyWith(cargando: false, error: e.toString());
     }
@@ -158,10 +155,11 @@ class VerLotesNotifier extends StateNotifier<VerLotesState> {
 
   void setBusqueda(String valor) => state = state.copyWith(busqueda: valor);
 
-  void setMaquina(int? idMa) => state =
-      idMa == null
-          ? state.copyWith(todasLasMaquinas: true)
-          : state.copyWith(idMaquina: idMa);
+  void setMaquina(int? idMa) =>
+      state =
+          idMa == null
+              ? state.copyWith(todasLasMaquinas: true)
+              : state.copyWith(idMaquina: idMa);
 
   /// Cambiar el rango vuelve a consultar: el recorte lo hace el SP, no la app.
   Future<void> setRango(DateTime desde, DateTime hasta) async {
@@ -170,11 +168,10 @@ class VerLotesNotifier extends StateNotifier<VerLotesState> {
   }
 }
 
-final verLotesProvider =
-    StateNotifierProvider.autoDispose<VerLotesNotifier, VerLotesState>(
-      (ref) =>
-          VerLotesNotifier(ref, ref.watch(loteProduccionRepositoryProvider)),
-    );
+final verLotesProvider = StateNotifierProvider.autoDispose<
+  VerLotesNotifier,
+  VerLotesState
+>((ref) => VerLotesNotifier(ref, ref.watch(loteProduccionRepositoryProvider)));
 
 // ═══════════════════════════════════════════════════════════════════════════
 // DETALLE
@@ -219,8 +216,7 @@ class DetalleLoteState {
 
   // ── Totales: se recalculan desde el detalle, nunca se editan a mano ──────
 
-  double get totalPesoIngreso =>
-      ingresos.fold(0.0, (s, e) => s + e.pesoKilos);
+  double get totalPesoIngreso => ingresos.fold(0.0, (s, e) => s + e.pesoKilos);
   double get totalBalanza => ingresos.fold(0.0, (s, e) => s + e.balanza);
   double get totalPesoResma => salidas.fold(0.0, (s, e) => s + e.pesoResma);
   double get totalPesoPaleta => salidas.fold(0.0, (s, e) => s + e.pesoPaleta);

@@ -57,7 +57,7 @@ class ParticipanteTurnoEntity {
   /// `VIGENTE` · `SALE EL dd/mm/aaaa` · `SIN SABADOS` · `VUELVE EL dd/mm/aaaa` ·
   /// `FUERA DE LA EMPRESA`.
   ///
-  /// Sale de un CASE del listado y no de una cuenta acá: son cinco
+  /// Sale de un CASE del listado y no de una cuenta aquí: son cinco
   /// combinaciones de `activo` con la ventana `[fechaAlta, fechaBaja]`, y
   /// calcularlas en el cliente sería hacerlo contra el reloj del teléfono y con
   /// una idea propia de cada pantalla.
@@ -107,8 +107,7 @@ class ParticipanteTurnoEntity {
   int get diferencia => turnosTrabaja - turnosObjetivo;
 
   /// Cargo y sucursal en una línea, saltando lo que no vino.
-  String get puesto =>
-      [cargo, sucursal].where((x) => x.isNotEmpty).join(' · ');
+  String get puesto => [cargo, sucursal].where((x) => x.isNotEmpty).join(' · ');
 
   /// RR.HH. le cerró la ventana: hoy no le toca ningún sábado.
   bool get sinSabados => situacion == 'SIN SABADOS';
@@ -116,7 +115,7 @@ class ParticipanteTurnoEntity {
   /// Está afuera hoy pero tiene fecha de vuelta.
   bool get vuelveDespues => situacion.startsWith('VUELVE');
 
-  /// Ya no figura en la relación laboral. **No se reincorpora desde acá**: eso
+  /// Ya no figura en la relación laboral. **No se reincorpora desde aquí**: eso
   /// lo reconcilia la regeneración, que es la única que escribe [activo].
   bool get fueraDeLaEmpresa => situacion == 'FUERA DE LA EMPRESA';
 
@@ -132,8 +131,8 @@ class ParticipanteTurnoEntity {
   /// **Hoy le tocan sábados**, así que cuenta para el reparto A/B y va en la
   /// lista de vigentes.
   ///
-  /// [saleDespues] NO cuenta acá, y es deliberado: una salida programada para
-  /// diciembre deja intactos los sábados de acá hasta esa fecha —el borrado
+  /// [saleDespues] NO cuenta aquí, y es deliberado: una salida programada para
+  /// diciembre deja intactos los sábados de aquí hasta esa fecha —el borrado
   /// sólo alcanza a los posteriores—, así que esa persona sigue viniendo. Si
   /// contara, el contador diría «sin sábados» de alguien que trabaja el sábado
   /// que viene.
@@ -149,7 +148,7 @@ class ParticipanteTurnoEntity {
   /// persona sigue viniendo pero la decisión ya existe. Sin esto, deshacerla
   /// era imposible justo en esa ventana — que es cuando uno se arrepiente.
   ///
-  /// [fueraDeLaEmpresa] no entra: eso no lo decidió RR.HH. acá y no se deshace
+  /// [fueraDeLaEmpresa] no entra: eso no lo decidió RR.HH. aquí y no se deshace
   /// desde esta pantalla, lo reconcilia la regeneración.
   bool get salidaDecidida => saleDespues || sinSabados;
 }

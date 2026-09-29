@@ -34,20 +34,27 @@ class CajaFuerteNotifier extends StateNotifier<CajaFuerteState> {
   int _contador = 0;
 
   CajaFuerteNotifier(this._repo)
-      : super(CajaFuerteState(filas: [LlegadaCajaFuerteEntity(id: '0')])) {
+    : super(CajaFuerteState(filas: [LlegadaCajaFuerteEntity(id: '0')])) {
     _contador = 1;
   }
 
   void agregarFila() {
-    state = state.copyWith(filas: [...state.filas, LlegadaCajaFuerteEntity(id: '${_contador++}')]);
+    state = state.copyWith(
+      filas: [...state.filas, LlegadaCajaFuerteEntity(id: '${_contador++}')],
+    );
   }
 
   void quitarFila(String id) {
     if (state.filas.length <= 1) return;
-    state = state.copyWith(filas: state.filas.where((f) => f.id != id).toList());
+    state = state.copyWith(
+      filas: state.filas.where((f) => f.id != id).toList(),
+    );
   }
 
-  void actualizarFila(String id, LlegadaCajaFuerteEntity Function(LlegadaCajaFuerteEntity) actualizar) {
+  void actualizarFila(
+    String id,
+    LlegadaCajaFuerteEntity Function(LlegadaCajaFuerteEntity) actualizar,
+  ) {
     state = state.copyWith(
       filas: state.filas.map((f) => f.id == id ? actualizar(f) : f).toList(),
     );
@@ -63,19 +70,35 @@ class CajaFuerteNotifier extends StateNotifier<CajaFuerteState> {
     // llegada(s) registrada(s)" sin saber que faltó una. Ahora: si hay
     // alguna fila con contenido pero incompleta, se bloquea el guardado en
     // vez de descartarla.
-    final conContenido = state.filas
-        .where((f) => f.cliente.trim().isNotEmpty || (f.importe ?? 0) > 0 || f.tipo != null)
-        .toList();
+    // "Con contenido" = el usuario EMPEZO a llenarla. Ojo con el tipo: desde
+    // que arranca en 'efect' (2026-09-08) ya no sirve como senal de intencion
+    // — esta puesto en TODAS las filas, incluidas las recien agregadas y
+    // vacias. Mientras estuvo en la lista, tocar "Agregar Registro" seis veces
+    // y guardar daba "Hay 6 filas incompletas" sin haber escrito nada.
+    final conContenido =
+        state.filas
+            .where(
+              (f) =>
+                  f.cliente.trim().isNotEmpty ||
+                  (f.importe ?? 0) > 0 ||
+                  f.destino.trim().isNotEmpty ||
+                  f.obs.trim().isNotEmpty,
+            )
+            .toList();
     if (conContenido.isEmpty) {
-      state = state.copyWith(mensajeError: 'Completa al menos una llegada (cliente, importe y tipo).');
+      state = state.copyWith(
+        mensajeError:
+            'Completa al menos una llegada: cliente e importe.',
+      );
       return false;
     }
     final incompletas = conContenido.where((f) => !f.esValida).length;
     if (incompletas > 0) {
       state = state.copyWith(
-        mensajeError: incompletas == 1
-            ? 'Hay una fila incompleta — revisa que tenga cliente, importe y tipo.'
-            : 'Hay $incompletas filas incompletas — revisa que cada una tenga cliente, importe y tipo.',
+        mensajeError:
+            incompletas == 1
+                ? 'Hay una fila incompleta — le falta el cliente o el importe.'
+                : 'Hay $incompletas filas incompletas — a cada una le falta el cliente o el importe.',
       );
       return false;
     }
@@ -98,6 +121,7 @@ class CajaFuerteNotifier extends StateNotifier<CajaFuerteState> {
 
 final _cajaFuerteRepoProvider = Provider((ref) => CajaFuerteImpl());
 
-final cajaFuerteProvider = StateNotifierProvider.autoDispose<CajaFuerteNotifier, CajaFuerteState>(
-  (ref) => CajaFuerteNotifier(ref.read(_cajaFuerteRepoProvider)),
-);
+final cajaFuerteProvider =
+    StateNotifierProvider.autoDispose<CajaFuerteNotifier, CajaFuerteState>(
+      (ref) => CajaFuerteNotifier(ref.read(_cajaFuerteRepoProvider)),
+    );

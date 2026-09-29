@@ -140,10 +140,7 @@ class ResmadoImpl implements ResmadoRepository {
       final fmt = DateFormat("yyyy-MM-dd'T'00:00:00.000");
       final response = await _dio.post(
         AppConstants.listaResmados,
-        data: {
-          'fechaIni': fmt.format(desde),
-          'fechaFin': fmt.format(hasta),
-        },
+        data: {'fechaIni': fmt.format(desde), 'fechaFin': fmt.format(hasta)},
       );
       final list = (response.data as List<dynamic>?) ?? const [];
       return list

@@ -52,9 +52,10 @@ class DocumentacionNotifier extends StateNotifier<DocumentacionState> {
       await _repo.registrar(item);
       state = state.copyWith(
         cargando: false,
-        mensajeExito: item.idDoc == 0
-            ? 'Documentación agregada.'
-            : 'Documentación actualizada.',
+        mensajeExito:
+            item.idDoc == 0
+                ? 'Documentación agregada.'
+                : 'Documentación actualizada.',
       );
       await cargar();
       return true;
@@ -68,7 +69,10 @@ class DocumentacionNotifier extends StateNotifier<DocumentacionState> {
     state = state.copyWith(cargando: true);
     try {
       await _repo.eliminar(idDoc, audUsuario);
-      state = state.copyWith(cargando: false, mensajeExito: 'Documentación eliminada.');
+      state = state.copyWith(
+        cargando: false,
+        mensajeExito: 'Documentación eliminada.',
+      );
       await cargar();
       return true;
     } catch (e) {
@@ -80,7 +84,7 @@ class DocumentacionNotifier extends StateNotifier<DocumentacionState> {
 
 final _documentacionRepoProvider = Provider((ref) => DocumentacionImpl());
 
-final documentacionProvider =
-    StateNotifierProvider.autoDispose<DocumentacionNotifier, DocumentacionState>(
-  (ref) => DocumentacionNotifier(ref.read(_documentacionRepoProvider)),
-);
+final documentacionProvider = StateNotifierProvider.autoDispose<
+  DocumentacionNotifier,
+  DocumentacionState
+>((ref) => DocumentacionNotifier(ref.read(_documentacionRepoProvider)));

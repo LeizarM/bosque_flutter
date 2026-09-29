@@ -83,7 +83,7 @@ class _TalonariosEntregaLoteScreenState
     return GuardiaDeSalida(
       hayCambios: _hayTrabajo && !_ocupado,
       mensaje:
-          'Tenés ${_seleccionados.length} talonarios tildados. Si salís ahora '
+          'Tienes ${_seleccionados.length} talonarios seleccionados. Si sales ahora '
           'se pierde la selección.',
       child: LayoutBuilder(
         builder: (context, cajon) {
@@ -158,12 +158,12 @@ class _TalonariosEntregaLoteScreenState
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    nombre.isEmpty ? 'Elegí un destinatario' : nombre,
+                    nombre.isEmpty ? 'Elige un destinatario' : nombre,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      fontWeight: Peso.titulo,
-                    ),
+                    style: Theme.of(
+                      context,
+                    ).textTheme.bodyMedium?.copyWith(fontWeight: Peso.titulo),
                   ),
                   Text(
                     DateFormat('dd/MM/yyyy').format(_fechaEvento),
@@ -244,7 +244,7 @@ class _TalonariosEntregaLoteScreenState
             maxLines: 2,
             decoration: const InputDecoration(
               labelText: 'Observación',
-              helperText: 'Opcional. Se aplica a todos los tildados.',
+              helperText: 'Opcional. Se aplica a todos los seleccionados.',
               border: OutlineInputBorder(),
             ),
           ),
@@ -333,7 +333,7 @@ class _TalonariosEntregaLoteScreenState
             titulo: 'No hay talonarios disponibles',
             detalle:
                 'Solo aparecen los que nunca se cerraron y no están en poder '
-                'de nadie. Devolvé alguno para poder entregarlo de nuevo.',
+                'de nadie. Devuelve alguno para poder entregarlo de nuevo.',
           );
         }
 
@@ -378,13 +378,16 @@ class _TalonariosEntregaLoteScreenState
               ),
             ),
             CheckboxListTile(
-              value: _seleccionados.isEmpty ? false : (todosTildados ? true : null),
+              value:
+                  _seleccionados.isEmpty
+                      ? false
+                      : (todosTildados ? true : null),
               // Tristate: con selección parcial el checkbox se ve a medias en
               // vez de mentir diciendo "ninguno".
               tristate: true,
               title: Text(
                 '${lista.length} disponibles'
-                '${_seleccionados.isEmpty ? '' : '  ·  ${_seleccionados.length} tildados'}',
+                '${_seleccionados.isEmpty ? '' : '  ·  ${_seleccionados.length} seleccionados'}',
                 style: Theme.of(
                   context,
                 ).textTheme.bodyMedium?.copyWith(fontWeight: Peso.titulo),
@@ -463,8 +466,8 @@ class _TalonariosEntregaLoteScreenState
   Widget _barraInferior(Aire aire) {
     final falta =
         _seleccionados.isEmpty
-            ? 'Tildá al menos un talonario'
-            : (!_hayDestinatario ? 'Elegí un destinatario' : null);
+            ? 'Selecciona al menos un talonario'
+            : (!_hayDestinatario ? 'Elige un destinatario' : null);
 
     return SafeArea(
       child: Padding(
@@ -487,7 +490,7 @@ class _TalonariosEntregaLoteScreenState
             PermissionWidget(
               buttonName: TalonariosBotones.editar,
               placeholder: Text(
-                'No tenés permiso para asignar talonarios.',
+                'No tienes permiso para asignar talonarios.',
                 textAlign: TextAlign.center,
                 style: context.apagado(),
               ),

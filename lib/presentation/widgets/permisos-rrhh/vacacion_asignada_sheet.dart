@@ -17,7 +17,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 ///
 /// **La fecha no se tipea nunca.** Es el aniversario que armó
 /// `p_list_vacacionAsignada 'B'` recorriendo la relación laboral año por año; en
-/// el modal viejo el campo va `disabled="true"` y acá también. Un alta con otra
+/// el modal viejo el campo va `disabled="true"` y aquí también. Un alta con otra
 /// fecha sería una asignación que ningún tramo del desglose va a encontrar.
 ///
 /// **Y el empleado y la relación laboral tampoco se tocan**: el `UPDATE` del SP
@@ -34,8 +34,10 @@ Future<void> mostrarVacacionAsignadaSheet({
   showDragHandle: true,
   constraints: const BoxConstraints(maxWidth: 640),
   builder:
-      (_) =>
-          _VacacionAsignadaSheet(vacacion: vacacion, datoEmpleado: datoEmpleado),
+      (_) => _VacacionAsignadaSheet(
+        vacacion: vacacion,
+        datoEmpleado: datoEmpleado,
+      ),
 );
 
 class _VacacionAsignadaSheet extends ConsumerStatefulWidget {
@@ -141,17 +143,17 @@ class _VacacionAsignadaSheetState
               onChanged: (_) => setState(() {}),
             ),
 
-            if (dias != null && dias > VacacionAsignadaEntity.diasSospechosos)
-              ...[
-                const SizedBox(height: Esp.s),
-                AvisoDelDato(
-                  icono: Icons.warning_amber_rounded,
-                  texto:
-                      'En diez años no hay ninguna asignación de más de '
-                      '${numeroDeDias(VacacionAsignadaEntity.diasSospechosos)} '
-                      'días. Se puede guardar igual, pero revise el número.',
-                ),
-              ],
+            if (dias != null &&
+                dias > VacacionAsignadaEntity.diasSospechosos) ...[
+              const SizedBox(height: Esp.s),
+              AvisoDelDato(
+                icono: Icons.warning_amber_rounded,
+                texto:
+                    'En diez años no hay ninguna asignación de más de '
+                    '${numeroDeDias(VacacionAsignadaEntity.diasSospechosos)} '
+                    'días. Se puede guardar igual, pero revise el número.',
+              ),
+            ],
 
             const SizedBox(height: Esp.m),
             TextField(
@@ -163,7 +165,8 @@ class _VacacionAsignadaSheetState
                 labelText: 'Motivo',
                 border: OutlineInputBorder(),
                 isDense: true,
-                helperText: 'Queda en la fila y en la bitácora. Es obligatorio.',
+                helperText:
+                    'Queda en la fila y en la bitácora. Es obligatorio.',
               ),
               onChanged: (_) => setState(() {}),
             ),
@@ -224,7 +227,8 @@ class _VacacionAsignadaSheetState
   }
 
   String _queVaAPasar(VacacionAsignadaEntity v) {
-    final quien = widget.datoEmpleado.isEmpty ? 'este empleado' : widget.datoEmpleado;
+    final quien =
+        widget.datoEmpleado.isEmpty ? 'este empleado' : widget.datoEmpleado;
     final cuantos = numeroDeDias(v.diasAsignados);
     final base =
         _esAlta
@@ -270,7 +274,7 @@ class _VacacionAsignadaSheetState
       // que escribe el día 1 de cada mes. Bloquear rechazaría datos que el ERP
       // ya da por buenos.
       //
-      // **El 409 no llega acá y es a propósito**: aquél es un doble toque o una
+      // **El 409 no llega aquí y es a propósito**: aquél es un doble toque o una
       // carrera con otra persona, y reintentar manda exactamente el mismo
       // cuerpo —confirmación incluida— para que lo rechacen otra vez. Cae en el
       // `catch` de abajo, que avisa y relee.

@@ -282,7 +282,7 @@ class _PeriodoYaEjecutado extends StatelessWidget {
       titulo: 'El período $periodo ya fue ejecutado',
       indicacion:
           'El preliminar solo muestra notas cerradas y sin pagar, y este '
-          'período se pagó$cuando: por eso no queda nada acá. Para ver lo que '
+          'período se pagó$cuando: por eso no queda nada aquí. Para ver lo que '
           'se pagó, use «${modalidad.reportePagadas}» en la barra de arriba.',
       // El segundo camino, el que el reporte no da: el reporte imprime lo
       // pagado, pero no dice que quedo FUERA del descuento ni por que. Esa

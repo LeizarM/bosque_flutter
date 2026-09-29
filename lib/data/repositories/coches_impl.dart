@@ -13,10 +13,7 @@ class CochesImpl extends BaseApiRepository implements CochesRepository {
   }) async {
     final modelos = await postAndReturnList<CocheDelDiaModel>(
       endpoint: AppConstants.tarCochesListarDelDia,
-      data: {
-        'idTarRuti': idTarRuti,
-        'idBitTarea': idBitTarea,
-      },
+      data: {'idTarRuti': idTarRuti, 'idBitTarea': idBitTarea},
       fromJson: (json) => CocheDelDiaModel.fromJson(json),
     );
     return modelos.map((e) => e.toEntity()).toList();

@@ -7,7 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 /// **Qué días del rango no se descuentan, uno por uno.**
 ///
 /// El total ya lo decía el bloque de arriba, pero un número solo no se puede
-/// verificar: «13 días corridos, se descuentan 8» obliga a confiar. Acá está la
+/// verificar: «13 días corridos, se descuentan 8» obliga a confiar. Aquí está la
 /// resta escrita, con el motivo de cada día que se saltea.
 ///
 /// Nace de un caso real: la función de cálculo cobraba medio día por sábados
@@ -74,9 +74,11 @@ class DesgloseDiasNoHabiles extends ConsumerWidget {
 
   Widget _cuerpo(BuildContext context, List<DiaNoHabilEntity> dias) {
     final corridos =
-        DateTime(hasta.year, hasta.month, hasta.day)
-            .difference(DateTime(desde.year, desde.month, desde.day))
-            .inDays +
+        DateTime(
+          hasta.year,
+          hasta.month,
+          hasta.day,
+        ).difference(DateTime(desde.year, desde.month, desde.day)).inDays +
         1;
 
     if (dias.isEmpty) {

@@ -18,7 +18,7 @@ enum TipoCargaColectiva {
   /// Los mismos días acreditados a varias personas. Uno solo para todos —pero
   /// **a quiénes** les entra lo decide el servidor: quien no tenga relación
   /// laboral activa, tenga más de una o ya haya cobrado un abono ese día queda
-  /// afuera, y eso no se sabe desde acá. Por eso el paso 2 también simula.
+  /// afuera, y eso no se sabe desde aquí. Por eso el paso 2 también simula.
   abonoDias,
 
   /// Un rango de fechas cargado como vacación gozada. **Los días NO son un
@@ -31,14 +31,14 @@ enum TipoCargaColectiva {
 /// El asistente de dos pasos: elegir y confirmar.
 ///
 /// **Los dos pasos son la única barrera que hay hoy antes de escribir N filas**
-/// —el legacy también los tiene (`subVista = 1` y `= 2`)— y acá valen todavía
+/// —el legacy también los tiene (`subVista = 1` y `= 2`)— y aquí valen todavía
 /// más, porque del otro lado la carga va en una sola transacción: si algo falla,
 /// no se guarda ninguna.
 ///
 /// **No se ofrece en pantalla chica.** El motivo no es el ancho: es que en un
-/// teléfono la selección múltiple se dispara de un roce, y acá cada roce es una
+/// teléfono la selección múltiple se dispara de un roce, y aquí cada roce es una
 /// persona más cobrando días. El legacy tenía además un «invertir selección» que
-/// en móvil es una trampa; acá no está ni en escritorio: marcar y desmarcar son
+/// en móvil es una trampa; aquí no está ni en escritorio: marcar y desmarcar son
 /// dos botones distintos, cada uno diciendo a cuántos alcanza.
 Future<void> mostrarCargaColectivaSheet({
   required BuildContext context,
@@ -126,7 +126,9 @@ class _CargaColectivaSheetState extends ConsumerState<_CargaColectivaSheet> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Text(
-              _esAbono ? 'Abono de días a varias personas' : 'Vacación colectiva',
+              _esAbono
+                  ? 'Abono de días a varias personas'
+                  : 'Vacación colectiva',
               style: Theme.of(context).textTheme.titleMedium,
             ),
             Text(
@@ -146,8 +148,9 @@ class _CargaColectivaSheetState extends ConsumerState<_CargaColectivaSheet> {
                     (e, _) => ErrorDelDato(
                       error: e,
                       onReintentar:
-                          () =>
-                              ref.invalidate(empleadosColectivaProvider(empresa)),
+                          () => ref.invalidate(
+                            empleadosColectivaProvider(empresa),
+                          ),
                     ),
                 data:
                     (gente) =>
@@ -215,15 +218,15 @@ class _CargaColectivaSheetState extends ConsumerState<_CargaColectivaSheet> {
                   visibles.isEmpty
                       ? null
                       : () => setState(
-                        () => _marcados.addAll(visibles.map((e) => e.codEmpleado)),
+                        () => _marcados.addAll(
+                          visibles.map((e) => e.codEmpleado),
+                        ),
                       ),
               child: Text('Marcar los ${visibles.length} de la lista'),
             ),
             TextButton(
               onPressed:
-                  _marcados.isEmpty
-                      ? null
-                      : () => setState(_marcados.clear),
+                  _marcados.isEmpty ? null : () => setState(_marcados.clear),
               child: const Text('Quitar todos'),
             ),
           ],
@@ -474,7 +477,7 @@ class _CargaColectivaSheetState extends ConsumerState<_CargaColectivaSheet> {
       }
     }
     if (_motivo.text.trim().length < 2) return 'Indique el motivo de la carga.';
-    if (_marcados.isEmpty) return 'Marcá por lo menos a una persona.';
+    if (_marcados.isEmpty) return 'Marca por lo menos a una persona.';
     return null;
   }
 
@@ -600,7 +603,9 @@ class _CargaColectivaSheetState extends ConsumerState<_CargaColectivaSheet> {
           children: [
             OutlinedButton.icon(
               onPressed:
-                  _aplicando ? null : () => setState(() => _confirmando = false),
+                  _aplicando
+                      ? null
+                      : () => setState(() => _confirmando = false),
               icon: const Icon(Icons.arrow_back),
               label: const Text('Volver'),
             ),
@@ -612,7 +617,9 @@ class _CargaColectivaSheetState extends ConsumerState<_CargaColectivaSheet> {
                 // la llamada está en vuelo, que es lo único que el cliente
                 // puede aportar contra el doble toque.
                 onPressed:
-                    (_aplicando || entran.isEmpty) ? null : () => _aplicar(entran),
+                    (_aplicando || entran.isEmpty)
+                        ? null
+                        : () => _aplicar(entran),
                 icon:
                     _aplicando
                         ? const SizedBox(
@@ -638,7 +645,7 @@ class _CargaColectivaSheetState extends ConsumerState<_CargaColectivaSheet> {
 
   Future<void> _aplicar(List<SimulacionColectivaEntity> entran) async {
     final dias = diasDeTexto(_dias.text) ?? 0;
-    // **Los números que se dicen acá son los del servidor**, no los de la
+    // **Los números que se dicen aquí son los del servidor**, no los de la
     // selección: `entran` sale de la simulación, así que la cuenta es la de
     // quienes de verdad van a quedar cargados.
     final queVaAPasar =
@@ -653,7 +660,8 @@ class _CargaColectivaSheetState extends ConsumerState<_CargaColectivaSheet> {
                 'A cada uno se le descuentan de su saldo.';
     final ok = await confirmar(
       context,
-      titulo: _esAbono ? '¿Abonar a ${entran.length}?' : '¿Declarar la vacación?',
+      titulo:
+          _esAbono ? '¿Abonar a ${entran.length}?' : '¿Declarar la vacación?',
       mensaje:
           '$queVaAPasar\n\nMotivo: ${_motivo.text.trim()}\n\n'
           'Se guarda todo o no se guarda nada. Para revertirlo hay que borrar '
@@ -697,7 +705,7 @@ class _CargaColectivaSheetState extends ConsumerState<_CargaColectivaSheet> {
   }
 
   /// Los que coinciden con la búsqueda. Sin rebote: es un filtro en memoria
-  /// sobre una lista que ya está acá, no una consulta.
+  /// sobre una lista que ya está aquí, no una consulta.
   List<SimulacionColectivaEntity> _visibles(
     List<SimulacionColectivaEntity> gente,
   ) {

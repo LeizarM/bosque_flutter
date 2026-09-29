@@ -3,10 +3,7 @@ import 'package:flutter/material.dart';
 class DireccionDialog extends StatefulWidget {
   final String direccionInicial;
 
-  const DireccionDialog({
-    super.key,
-    required this.direccionInicial,
-  });
+  const DireccionDialog({super.key, required this.direccionInicial});
 
   @override
   State<DireccionDialog> createState() => _DireccionDialogState();
@@ -30,7 +27,7 @@ class _DireccionDialogState extends State<DireccionDialog> {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    
+
     return AlertDialog(
       title: Text(
         'Confirmar entrega',
@@ -43,7 +40,11 @@ class _DireccionDialogState extends State<DireccionDialog> {
           children: [
             Text(
               'Dirección de entrega: ${widget.direccionInicial}',
-              style: TextStyle(fontSize: 14, color: colorScheme.onSurface, fontWeight: FontWeight.bold),
+              style: TextStyle(
+                fontSize: 14,
+                color: colorScheme.onSurface,
+                fontWeight: FontWeight.bold,
+              ),
             ),
             const SizedBox(height: 16),
             Text(
@@ -71,9 +72,7 @@ class _DireccionDialogState extends State<DireccionDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
-          style: TextButton.styleFrom(
-            foregroundColor: colorScheme.primary,
-          ),
+          style: TextButton.styleFrom(foregroundColor: colorScheme.primary),
           child: const Text('Cancelar'),
         ),
         ElevatedButton(

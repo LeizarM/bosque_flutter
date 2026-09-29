@@ -14,9 +14,7 @@ class EntregaDetalleScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final bool tieneUbicacion = entrega.latitud != 0 && entrega.longitud != 0;
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Detalles de ${entrega.tipo}'),
-      ),
+      appBar: AppBar(title: Text('Detalles de ${entrega.tipo}')),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
@@ -27,11 +25,13 @@ class EntregaDetalleScreen extends StatelessWidget {
           if (entrega.fechaNota != null)
             _buildDetailItem('Fecha Nota', entrega.fechaNota.toString()),
           _buildDetailItem('Fecha Entrega', entrega.fechaEntrega.toString()),
-          if ((entrega.direccionEntrega != null && entrega.direccionEntrega.isNotEmpty) ||
+          if ((entrega.direccionEntrega != null &&
+                  entrega.direccionEntrega.isNotEmpty) ||
               (entrega.addressEntregaFac.isNotEmpty))
             _buildDetailItem(
               'Dirección',
-              entrega.direccionEntrega != null && entrega.direccionEntrega.isNotEmpty
+              entrega.direccionEntrega != null &&
+                      entrega.direccionEntrega.isNotEmpty
                   ? entrega.direccionEntrega
                   : entrega.addressEntregaFac,
             ),
@@ -74,7 +74,11 @@ class EntregaDetalleScreen extends StatelessWidget {
                           width: 40,
                           height: 40,
                           point: LatLng(entrega.latitud, entrega.longitud),
-                          child: const Icon(Icons.location_on, color: Colors.red, size: 40),
+                          child: const Icon(
+                            Icons.location_on,
+                            color: Colors.red,
+                            size: 40,
+                          ),
                         ),
                       ],
                     ),
@@ -106,7 +110,10 @@ class EntregaDetalleScreen extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+          Text(
+            label,
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+          ),
           const SizedBox(height: 2),
           Text(value, style: const TextStyle(fontSize: 14)),
           const Divider(),

@@ -37,7 +37,6 @@ class ControlCombustibleMaquinaMontacargaModel {
   final String nombreSucursal;
   final DateTime fechaInicio;
   final DateTime fechaFin;
-  
 
   ControlCombustibleMaquinaMontacargaModel({
     required this.idCM,
@@ -66,7 +65,6 @@ class ControlCombustibleMaquinaMontacargaModel {
     required this.nombreSucursal,
     required this.fechaInicio,
     required this.fechaFin,
-    
   });
 
   factory ControlCombustibleMaquinaMontacargaModel.fromJson(
@@ -79,9 +77,12 @@ class ControlCombustibleMaquinaMontacargaModel {
     codSucursalMaqVehiDestino: json["codSucursalMaqVehiDestino"] ?? 0,
     codigoOrigen: json["codigoOrigen"] ?? '',
     codigoDestino: json["codigoDestino"] ?? '',
-    fecha: json["fecha"] != null && json["fecha"] != '' ? DateTime.parse(json["fecha"]) : DateTime.now(),
+    fecha:
+        json["fecha"] != null && json["fecha"] != ''
+            ? DateTime.parse(json["fecha"])
+            : DateTime.now(),
     litrosIngreso: json["litrosIngreso"]?.toDouble() ?? 0.0,
-    litrosSalida: json["litrosSalida"]?.toDouble() ?? 0.0  ,
+    litrosSalida: json["litrosSalida"]?.toDouble() ?? 0.0,
     saldoLitros: json["saldoLitros"]?.toDouble() ?? 0.0,
     codEmpleado: json["codEmpleado"] ?? 0,
     codAlmacen: json["codAlmacen"] ?? '',
@@ -96,15 +97,24 @@ class ControlCombustibleMaquinaMontacargaModel {
     nombreMaquinaOrigen: json["nombreMaquinaOrigen"] ?? '',
     nombreMaquinaDestino: json["nombreMaquinaDestino"] ?? '',
     nombreSucursal: json["nombreSucursal"] ?? '',
-    fechaInicio: json["fechaInicio"] != null && json["fechaInicio"] != '' ? DateTime.parse(json["fechaInicio"]) : DateTime.now(),
-    fechaFin: json["fechaFin"] != null && json["fechaFin"] != '' ? DateTime.parse(json["fechaFin"]) : DateTime.now(),
+    fechaInicio:
+        json["fechaInicio"] != null && json["fechaInicio"] != ''
+            ? DateTime.parse(json["fechaInicio"])
+            : DateTime.now(),
+    fechaFin:
+        json["fechaFin"] != null && json["fechaFin"] != ''
+            ? DateTime.parse(json["fechaFin"])
+            : DateTime.now(),
   );
 
   Map<String, dynamic> toJson() => {
     "idMaquinaVehiculoOrigen": idMaquinaVehiculoOrigen,
-    "idMaquinaVehiculoDestino": idMaquinaVehiculoDestino == 0 ? null : idMaquinaVehiculoDestino,
-    "codSucursalMaqVehiOrigen": codSucursalMaqVehiOrigen == 0 ? null : codSucursalMaqVehiOrigen,
-    "codSucursalMaqVehiDestino": codSucursalMaqVehiDestino == 0 ? null : codSucursalMaqVehiDestino,
+    "idMaquinaVehiculoDestino":
+        idMaquinaVehiculoDestino == 0 ? null : idMaquinaVehiculoDestino,
+    "codSucursalMaqVehiOrigen":
+        codSucursalMaqVehiOrigen == 0 ? null : codSucursalMaqVehiOrigen,
+    "codSucursalMaqVehiDestino":
+        codSucursalMaqVehiDestino == 0 ? null : codSucursalMaqVehiDestino,
     "codigoOrigen": codigoOrigen.isEmpty ? null : codigoOrigen,
     "codigoDestino": codigoDestino.isEmpty ? null : codigoDestino,
     "fecha": fecha.toIso8601String(),
@@ -113,15 +123,17 @@ class ControlCombustibleMaquinaMontacargaModel {
     "codEmpleado": codEmpleado,
     "codAlmacen": codAlmacen,
     "obs": obs,
-    "estado": estado, 
+    "estado": estado,
     "audUsuario": audUsuario,
     "tipoTransaccion": tipoTransaccion.isEmpty ? null : tipoTransaccion,
     "whsCode": whsCode.isEmpty ? null : whsCode,
     "whsName": whsName.isEmpty ? null : whsName,
     "maquina": maquina.isEmpty ? null : maquina,
     "nombreCompleto": nombreCompleto.isEmpty ? null : nombreCompleto,
-    "nombreMaquinaOrigen": nombreMaquinaOrigen.isEmpty ? null : nombreMaquinaOrigen,
-    "nombreMaquinaDestino": nombreMaquinaDestino.isEmpty ? null : nombreMaquinaDestino,
+    "nombreMaquinaOrigen":
+        nombreMaquinaOrigen.isEmpty ? null : nombreMaquinaOrigen,
+    "nombreMaquinaDestino":
+        nombreMaquinaDestino.isEmpty ? null : nombreMaquinaDestino,
     "nombreSucursal": nombreSucursal.isEmpty ? null : nombreSucursal,
     "fechaInicio": fechaInicio.toIso8601String(),
     "fechaFin": fechaFin.toIso8601String(),
@@ -189,6 +201,5 @@ class ControlCombustibleMaquinaMontacargaModel {
     nombreSucursal: entity.nombreSucursal,
     fechaInicio: entity.fechaInicio,
     fechaFin: entity.fechaFin,
-
   );
 }

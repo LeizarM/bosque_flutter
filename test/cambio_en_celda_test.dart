@@ -57,7 +57,7 @@ void main() {
       );
 
       // 15/08 — el día que se devuelve. Las mismas dos personas, la frase al
-      // revés: acá el que faltó es el que había cubierto.
+      // revés: aquí el que faltó es el que había cubierto.
       expect(
         _celda(
           codigoExcel: 'C',

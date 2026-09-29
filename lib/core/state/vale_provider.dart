@@ -52,9 +52,7 @@ class ValeNotifier extends StateNotifier<ValeState> {
       await _repo.registrar(item);
       state = state.copyWith(
         cargando: false,
-        mensajeExito: item.idVale == 0
-            ? 'Vale agregado.'
-            : 'Vale actualizado.',
+        mensajeExito: item.idVale == 0 ? 'Vale agregado.' : 'Vale actualizado.',
       );
       await cargar();
       return true;
@@ -80,7 +78,6 @@ class ValeNotifier extends StateNotifier<ValeState> {
 
 final _valeRepoProvider = Provider((ref) => ValeImpl());
 
-final valeProvider =
-    StateNotifierProvider.autoDispose<ValeNotifier, ValeState>(
+final valeProvider = StateNotifierProvider.autoDispose<ValeNotifier, ValeState>(
   (ref) => ValeNotifier(ref.read(_valeRepoProvider)),
 );

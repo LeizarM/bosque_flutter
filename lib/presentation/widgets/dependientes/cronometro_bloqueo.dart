@@ -20,7 +20,7 @@ class CronometroBloqueo extends StatefulWidget {
 class _CronometroBloqueoState extends State<CronometroBloqueo> {
   late Duration _restante;
   Timer? _timer;
-bool _finalizado = false;
+  bool _finalizado = false;
   @override
   void initState() {
     super.initState();
@@ -28,7 +28,8 @@ bool _finalizado = false;
     if (!widget.estaBloqueado) {
       _timer = Timer.periodic(const Duration(seconds: 1), (_) {
         final nuevaRestante = widget.fechaLimite.difference(DateTime.now());
-        if ((nuevaRestante.isNegative || nuevaRestante == Duration.zero) && !_finalizado) {
+        if ((nuevaRestante.isNegative || nuevaRestante == Duration.zero) &&
+            !_finalizado) {
           _finalizado = true;
           _timer?.cancel();
           if (widget.onFinalizado != null) {
@@ -71,37 +72,46 @@ bool _finalizado = false;
     }
     final isMobile = MediaQuery.of(context).size.width < 400;
 
-  if (isMobile) {
-    // Diseño vertical para móvil
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            const Icon(Icons.timer, color: Colors.blue),
-            const SizedBox(width: 8),
-            Text(
-              _formatearDuracion(_restante),
-              style: const TextStyle(color: Colors.blue, fontWeight: FontWeight.bold),
+    if (isMobile) {
+      // Diseño vertical para móvil
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.timer, color: Colors.blue),
+              const SizedBox(width: 8),
+              Text(
+                _formatearDuracion(_restante),
+                style: const TextStyle(
+                  color: Colors.blue,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'Debe actualizar sus datos o se bloqueará su usuario.',
+            style: const TextStyle(
+              color: Colors.blue,
+              fontWeight: FontWeight.bold,
             ),
-          ],
-        ),
-        const SizedBox(height: 4),
-        Text(
-          'Debe actualizar sus datos o se bloqueará su usuario.',
-          style: const TextStyle(color: Colors.blue, fontWeight: FontWeight.bold),
-          maxLines: 3,
-        ),
-      ],
-    );
-  }
+            maxLines: 3,
+          ),
+        ],
+      );
+    }
     return Row(
       children: [
         const Icon(Icons.timer, color: Colors.blue),
         const SizedBox(width: 8),
         Text(
           'Debe actualizar sus datos o se bloqueará su usuario en: ${_formatearDuracion(_restante)}',
-          style: const TextStyle(color: Colors.blue, fontWeight: FontWeight.bold),
+          style: const TextStyle(
+            color: Colors.blue,
+            fontWeight: FontWeight.bold,
+          ),
           maxLines: 3,
         ),
       ],

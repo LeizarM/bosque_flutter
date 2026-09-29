@@ -17,12 +17,14 @@ class DiaNoLaborableModel {
 
   factory DiaNoLaborableModel.fromJson(Map<String, dynamic> json) =>
       DiaNoLaborableModel(
-        idDiaNoLaborable: json['idDiaNoLaborable'] != null
-            ? BigInt.from(json['idDiaNoLaborable'])
-            : BigInt.zero,
-        fecha: json['fecha'] != null
-            ? DateTime.parse(json['fecha'])
-            : DateTime.now(),
+        idDiaNoLaborable:
+            json['idDiaNoLaborable'] != null
+                ? BigInt.from(json['idDiaNoLaborable'])
+                : BigInt.zero,
+        fecha:
+            json['fecha'] != null
+                ? DateTime.parse(json['fecha'])
+                : DateTime.now(),
         motivo: json['motivo'] ?? '',
         alcance: json['alcance'] ?? '',
         audUsuario: json['audUsuario'] ?? 0,

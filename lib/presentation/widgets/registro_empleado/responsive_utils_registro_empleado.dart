@@ -21,15 +21,11 @@ extension ResponsiveContext on BuildContext {
   // ============================================================================
 
   /// Obtiene un valor responsivo basado en el dispositivo actual
-  T responsiveValue<T>({
-    required T mobile,
-    T? tablet,
-    T? desktop,
-  }) {
+  T responsiveValue<T>({required T mobile, T? tablet, T? desktop}) {
     if (isMobile) return mobile;
     if (isTablet && tablet != null) return tablet;
     if (isDesktop && desktop != null) return desktop;
-    
+
     return tablet ?? desktop ?? mobile;
   }
 
@@ -45,11 +41,8 @@ extension ResponsiveContext on BuildContext {
   );
 
   /// Retorna spacing entre elementos
-  double get spacing => responsiveValue(
-    mobile: 8.0,
-    tablet: 10.0,
-    desktop: 12.0,
-  );
+  double get spacing =>
+      responsiveValue(mobile: 8.0, tablet: 10.0, desktop: 12.0);
 
   /// Retorna spacing pequeño
   double get smallSpacing => spacing * 0.5;
@@ -62,32 +55,20 @@ extension ResponsiveContext on BuildContext {
   // ============================================================================
 
   /// Tamaño de fuente para títulos
-  double get titleFontSize => responsiveValue(
-    mobile: 18.0,
-    tablet: 20.0,
-    desktop: 22.0,
-  );
+  double get titleFontSize =>
+      responsiveValue(mobile: 18.0, tablet: 20.0, desktop: 22.0);
 
   /// Tamaño de fuente para subtítulos
-  double get subtitleFontSize => responsiveValue(
-    mobile: 14.0,
-    tablet: 15.0,
-    desktop: 16.0,
-  );
+  double get subtitleFontSize =>
+      responsiveValue(mobile: 14.0, tablet: 15.0, desktop: 16.0);
 
   /// Tamaño de fuente para body
-  double get bodyFontSize => responsiveValue(
-    mobile: 12.0,
-    tablet: 13.0,
-    desktop: 14.0,
-  );
+  double get bodyFontSize =>
+      responsiveValue(mobile: 12.0, tablet: 13.0, desktop: 14.0);
 
   /// Tamaño de fuente pequeño
-  double get smallFontSize => responsiveValue(
-    mobile: 10.0,
-    tablet: 11.0,
-    desktop: 12.0,
-  );
+  double get smallFontSize =>
+      responsiveValue(mobile: 10.0, tablet: 11.0, desktop: 12.0);
 
   // ============================================================================
   // ESTILOS DE TEXTO
@@ -126,11 +107,8 @@ extension ResponsiveContext on BuildContext {
   // ============================================================================
 
   /// Tamaño de icono responsivo
-  double get iconSize => responsiveValue(
-    mobile: 20.0,
-    tablet: 22.0,
-    desktop: 24.0,
-  );
+  double get iconSize =>
+      responsiveValue(mobile: 20.0, tablet: 22.0, desktop: 24.0);
 
   /// Tamaño de icono pequeño
   double get smallIconSize => iconSize * 0.75;
@@ -140,11 +118,7 @@ extension ResponsiveContext on BuildContext {
 
   /// BorderRadius responsivo
   BorderRadius get borderRadius => BorderRadius.circular(
-    responsiveValue(
-      mobile: 8.0,
-      tablet: 10.0,
-      desktop: 12.0,
-    ),
+    responsiveValue(mobile: 8.0, tablet: 10.0, desktop: 12.0),
   );
 
   // ============================================================================
@@ -152,29 +126,20 @@ extension ResponsiveContext on BuildContext {
   // ============================================================================
 
   /// Ancho del panel izquierdo (solo para desktop y tablet grande)
-  double get leftPanelWidth => responsiveValue(
-    mobile: 0.0,
-    tablet: 300.0,
-    desktop: 380.0,
-  );
+  double get leftPanelWidth =>
+      responsiveValue(mobile: 0.0, tablet: 300.0, desktop: 380.0);
 
   /// Ancho máximo del contenedor
-  double get maxContainerWidth => responsiveValue(
-    mobile: double.infinity,
-    tablet: 500.0,
-    desktop: 1200.0,
-  );
+  double get maxContainerWidth =>
+      responsiveValue(mobile: double.infinity, tablet: 500.0, desktop: 1200.0);
 
   // ============================================================================
   // ALTURA DE COMPONENTES
   // ============================================================================
 
   /// Altura del header compacto
-  double get headerHeight => responsiveValue(
-    mobile: 56.0,
-    tablet: 60.0,
-    desktop: 64.0,
-  );
+  double get headerHeight =>
+      responsiveValue(mobile: 56.0, tablet: 60.0, desktop: 64.0);
 
   // ============================================================================
   // LÓGICA DE LAYOUT
@@ -187,9 +152,5 @@ extension ResponsiveContext on BuildContext {
   bool get shouldTabsBeScrollable => isMobile;
 
   /// Retorna número de columnas para mostrar contenido
-  int get columnCount => responsiveValue(
-    mobile: 1,
-    tablet: 2,
-    desktop: 2,
-  );
+  int get columnCount => responsiveValue(mobile: 1, tablet: 2, desktop: 2);
 }

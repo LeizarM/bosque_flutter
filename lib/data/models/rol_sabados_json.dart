@@ -7,7 +7,8 @@ library;
 
 int rsInt(dynamic v) => v is int ? v : (v is num ? v.toInt() : 0);
 String rsStr(dynamic v) => v?.toString() ?? '';
-DateTime? rsDate(dynamic v) => v == null ? null : DateTime.tryParse(v.toString());
+DateTime? rsDate(dynamic v) =>
+    v == null ? null : DateTime.tryParse(v.toString());
 
 /// Para los `float` de SQL. **No se puede usar [rsInt]**: los días de un permiso
 /// vienen en fracciones —0.4375, 0.5, 0.625— y truncarlos a entero convertiría

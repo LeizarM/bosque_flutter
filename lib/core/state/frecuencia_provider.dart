@@ -52,9 +52,10 @@ class FrecuenciaNotifier extends StateNotifier<FrecuenciaState> {
       await _repo.registrar(item);
       state = state.copyWith(
         cargando: false,
-        mensajeExito: item.idFrec == 0
-            ? 'Frecuencia agregada.'
-            : 'Frecuencia actualizada.',
+        mensajeExito:
+            item.idFrec == 0
+                ? 'Frecuencia agregada.'
+                : 'Frecuencia actualizada.',
       );
       await cargar();
       return true;
@@ -68,7 +69,10 @@ class FrecuenciaNotifier extends StateNotifier<FrecuenciaState> {
     state = state.copyWith(cargando: true);
     try {
       await _repo.eliminar(idFrec, audUsuario);
-      state = state.copyWith(cargando: false, mensajeExito: 'Frecuencia eliminada.');
+      state = state.copyWith(
+        cargando: false,
+        mensajeExito: 'Frecuencia eliminada.',
+      );
       await cargar();
       return true;
     } catch (e) {
@@ -82,5 +86,5 @@ final _frecuenciaRepoProvider = Provider((ref) => FrecuenciaImpl());
 
 final frecuenciaProvider =
     StateNotifierProvider.autoDispose<FrecuenciaNotifier, FrecuenciaState>(
-  (ref) => FrecuenciaNotifier(ref.read(_frecuenciaRepoProvider)),
-);
+      (ref) => FrecuenciaNotifier(ref.read(_frecuenciaRepoProvider)),
+    );

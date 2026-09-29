@@ -73,10 +73,12 @@ class EtiquetaCuadre extends StatelessWidget {
 
     return Tooltip(
       message: switch (estado) {
-        EstadoCuadre.cuadrado => 'Los kilos que entraron se explican con la '
-            'salida y la merma.',
-        EstadoCuadre.desvio => 'Quedan ${fmtNumero.format(diferenciaKilos)} kg '
-            'sin explicar. Revise pesos y merma.',
+        EstadoCuadre.cuadrado =>
+          'Los kilos que entraron se explican con la '
+              'salida y la merma.',
+        EstadoCuadre.desvio =>
+          'Quedan ${fmtNumero.format(diferenciaKilos)} kg '
+              'sin explicar. Revise pesos y merma.',
         EstadoCuadre.desviado =>
           'Quedan ${fmtNumero.format(diferenciaKilos)} kg sin explicar sobre '
               '${fmtNumero.format(kilosIngreso)} kg de ingreso.',
@@ -139,10 +141,7 @@ class BarraDeBalance extends StatelessWidget {
           Row(
             children: [
               Expanded(
-                child: Text(
-                  'Balance del lote',
-                  style: context.tituloSeccion(),
-                ),
+                child: Text('Balance del lote', style: context.tituloSeccion()),
               ),
               EtiquetaCuadre(
                 diferenciaKilos: diferencia,
@@ -195,10 +194,7 @@ class BarraDeBalance extends StatelessWidget {
             ],
           ),
           Divider(height: Esp.xl),
-          _FilaResmas(
-            contadas: resmasContadas,
-            estimadas: resmasEstimadas,
-          ),
+          _FilaResmas(contadas: resmasContadas, estimadas: resmasEstimadas),
         ],
       ),
     );
@@ -322,8 +318,9 @@ class AvisoSinUtm extends StatelessWidget {
             child: Text(
               'El articulo de salida no tiene UTM cargada: no se puede estimar '
               'la cantidad de resmas.',
-              style: Theme.of(context).textTheme.bodySmall
-                  ?.copyWith(color: cs.onTertiaryContainer),
+              style: Theme.of(
+                context,
+              ).textTheme.bodySmall?.copyWith(color: cs.onTertiaryContainer),
             ),
           ),
         ],

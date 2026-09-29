@@ -45,21 +45,22 @@ class CeldaTurnoModel {
     this.cambioTipo = '',
   });
 
-  factory CeldaTurnoModel.fromJson(Map<String, dynamic> json) => CeldaTurnoModel(
-    idAsignacion: rsInt(json['idAsignacion']),
-    idRol: rsInt(json['idRol']),
-    idParticipante: rsInt(json['idParticipante']),
-    idSabado: rsInt(json['idSabado']),
-    codigoExcel: rsStr(json['codigoExcel']),
-    estadoNombre: rsStr(json['estadoNombre']),
-    origen: rsStr(json['origen']),
-    observacion: rsStr(json['observacion']),
-    fecha: rsDate(json['fecha']),
-    nombreRol: rsStr(json['nombreRol']),
-    cambioCon: rsStr(json['cambioCon']),
-    cambioRol: rsStr(json['cambioRol']),
-    cambioTipo: rsStr(json['cambioTipo']),
-  );
+  factory CeldaTurnoModel.fromJson(Map<String, dynamic> json) =>
+      CeldaTurnoModel(
+        idAsignacion: rsInt(json['idAsignacion']),
+        idRol: rsInt(json['idRol']),
+        idParticipante: rsInt(json['idParticipante']),
+        idSabado: rsInt(json['idSabado']),
+        codigoExcel: rsStr(json['codigoExcel']),
+        estadoNombre: rsStr(json['estadoNombre']),
+        origen: rsStr(json['origen']),
+        observacion: rsStr(json['observacion']),
+        fecha: rsDate(json['fecha']),
+        nombreRol: rsStr(json['nombreRol']),
+        cambioCon: rsStr(json['cambioCon']),
+        cambioRol: rsStr(json['cambioRol']),
+        cambioTipo: rsStr(json['cambioTipo']),
+      );
 
   CeldaTurnoEntity toEntity() => CeldaTurnoEntity(
     idAsignacion: idAsignacion,

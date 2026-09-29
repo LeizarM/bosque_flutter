@@ -18,7 +18,7 @@ import 'package:bosque_flutter/domain/entities/vacacion_asignada_entity.dart';
 /// EMPLEADO (pide su permiso, ve sus días). Esto es lo que usa RR.HH. para
 /// mirar —y desde la Fase 2, corregir— a cualquier empleado.
 ///
-/// **Las escrituras de acá mueven dinero.** Una vacación asignada vale 15 a 30
+/// **Las escrituras de aquí mueven dinero.** Una vacación asignada vale 15 a 30
 /// días pagados y un abono son días libres cobrados. Toda escritura pasa por una
 /// confirmación explícita en la pantalla, dice a cuántas personas alcanza, y es
 /// recuperable: los triggers `dad_` archivan la fila antes de borrarla.
@@ -43,7 +43,7 @@ import 'package:bosque_flutter/domain/entities/vacacion_asignada_entity.dart';
 /// mismo cuerpo, confirmación incluida, y el backend lo vuelve a rechazar. Por
 /// eso no llega como este tipo.
 ///
-/// **Existe porque el duplicado acá no se puede bloquear.** Hay 215 grupos con
+/// **Existe porque el duplicado aquí no se puede bloquear.** Hay 215 grupos con
 /// la misma `(codEmpleado, codRelEmplEmpr, fecha)` en `trh_vacacionAsignada`,
 /// casi todos del proceso automático que escribe el día 1 de cada mes:
 /// rechazarlos sería rechazar datos que el ERP ya da por buenos.
@@ -76,7 +76,7 @@ abstract class PermisosRrhhRepository {
   /// exactamente esto.** Ese método envuelve todo en un `try/catch` que devuelve
   /// `[]` ante cualquier excepción: un 403 —el caso de D4, alguien sin el botón
   /// del ACL— se vería en pantalla como «no hay empleados», y quien lo mire va a
-  /// ir a buscar el problema al lugar equivocado. Acá el error sube y la
+  /// ir a buscar el problema al lugar equivocado. Aquí el error sube y la
   /// pantalla lo dice.
   ///
   /// **No lleva `get` a propósito**: el verbo dice que hay un texto que filtra,
@@ -133,13 +133,13 @@ abstract class PermisosRrhhRepository {
 
   // ── escrituras ────────────────────────────────────────────────────────
   //
-  // **Sin `audUsuario`**, al revés de lo que decía el hueco que había acá: D4
+  // **Sin `audUsuario`**, al revés de lo que decía el hueco que había aquí: D4
   // vale también para las escrituras, y con más razón. La identidad sale del
   // token; un `audUsuario` en el cuerpo sería una firma que se puede tipear.
   //
   // **Ninguno de los tres SP de escritura devuelve envelope de error, id
   // generado ni transacción**, así que todo lo que estos métodos prometen lo
-  // sostiene Java, no la base. Lo que llega acá ya viene resuelto del otro lado.
+  // sostiene Java, no la base. Lo que llega aquí ya viene resuelto del otro lado.
 
   /// Da de alta o edita una vacación asignada. **La acción la decide el id**
   /// (`codVacacionAsignada == 0` → alta), igual que el legacy.
@@ -222,7 +222,7 @@ abstract class PermisosRrhhRepository {
   /// Acredita los mismos días a varias personas, **todo o nada**.
   ///
   /// El legacy no es transaccional: cuenta los fallos y deja cargados a los que
-  /// sí entraron. Acá va en una transacción de Java, así que el mensaje de error
+  /// sí entraron. Aquí va en una transacción de Java, así que el mensaje de error
   /// también cambia — si algo falla **no se guardó ninguno**, y eso es lo que
   /// tiene que decir. Copiar el texto viejo con la semántica nueva sería mentir.
   ///
@@ -280,7 +280,7 @@ abstract class PermisosRrhhRepository {
   ///   permiso tiene que atrapar esa fecha, no al revés. Es el filtro que el
   ///   legacy llama «Fecha Rango» y el único que no es un extremo.
   ///
-  /// [codRelEmplEmpr] en 0 = «la relación vigente, resolvela vos».
+  /// [codRelEmplEmpr] en 0 = «la relación vigente, resuélvela tú».
   Future<List<NominaPermisoEntity>> getNominaPermisos(
     int codEmpleado, {
     int codRelEmplEmpr = 0,
@@ -294,7 +294,7 @@ abstract class PermisosRrhhRepository {
   ///
   /// [clave] es la del tramo (`SALDO_PENULTIMO`, `UTILIZADA`, `PROGRAMADA`).
   /// Sólo esos tres se abren: los otros dos no son listas de permisos. Las
-  /// fechas del corte las resuelve el servidor, así que acá no se mandan.
+  /// fechas del corte las resuelve el servidor, así que aquí no se mandan.
   /// **Boletas entre fechas**: el buscador global, de toda la empresa.
   ///
   /// Acota por permisos **contenidos** en la ventana, no por los que la cruzan:
@@ -355,7 +355,7 @@ abstract class PermisosRrhhRepository {
   /// en vez de confiar en lo que trajo el cliente.
   ///
   /// [tipoPermiso] no cambia los días —la función SQL no lo recibe— pero sí las
-  /// «Horas a reponer», que salen de la regla `tipo in ('otro','pcr')`. Va acá
+  /// «Horas a reponer», que salen de la regla `tipo in ('otro','pcr')`. Va aquí
   /// y no se recalcula en el cliente: dos motores para el mismo número es lo
   /// que este módulo evita en todos lados.
   ///
@@ -373,7 +373,7 @@ abstract class PermisosRrhhRepository {
   /// [incluirVacacionYPago] `false` replica `Tipos.cargarList13A()` del legacy
   /// —los 7 del modal de permiso, **sin** `vac` ni `pva`—; `true` devuelve los
   /// 9 para el filtro de la Nómina. La opción «Todos» del filtro no viene de
-  /// acá: es el vacío, y lo pone la pantalla.
+  /// aquí: es el vacío, y lo pone la pantalla.
   Future<List<TipoPermisoVacacionEntity>> getTiposPermiso({
     bool incluirVacacionYPago = false,
   });
@@ -383,7 +383,7 @@ abstract class PermisosRrhhRepository {
   ///
   /// Es el mismo camino de escritura que [aplicarVacacionColectiva] con una
   /// lista de un solo elemento. [tipoPermiso] es uno de los 7 de
-  /// `cargarList13A`; **`'vac'` no entra por acá** —el servidor lo rechaza con
+  /// `cargarList13A`; **`'vac'` no entra por aquí** —el servidor lo rechaza con
   /// un 400— porque la vacación individual pide otro botón del ACL: es
   /// [registrarVacacion]. Devuelve el mensaje del servidor.
   ///
@@ -434,10 +434,10 @@ abstract class PermisosRrhhRepository {
   /// no los calcula nadie.** El servidor fuerza `hasta = desde` (por eso una
   /// PVA siempre ocupa un solo día) y `tipoPermiso = 'pva'`.
   ///
-  /// **Lo que el legacy no hace y acá sí:** `savePagoDiasVacac` acepta cualquier
+  /// **Lo que el legacy no hace y aquí sí:** `savePagoDiasVacac` acepta cualquier
   /// cantidad sin mirar el saldo, sin tope y sin confirmar —hay una fila
   /// histórica de 247 días pagados y otra de 30—, y un doble toque mete dos
-  /// filas. Acá va con confirmación explícita diciendo el saldo antes y
+  /// filas. Aquí va con confirmación explícita diciendo el saldo antes y
   /// después, y el backend rechaza el duplicado reciente con 409.
   ///
   /// Son 32 filas en 10 años: la pantalla se justifica por el impacto, no por

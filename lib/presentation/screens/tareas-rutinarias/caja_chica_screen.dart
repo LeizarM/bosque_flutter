@@ -1,17 +1,27 @@
 // Destino final: lib/presentation/screens/tareas-rutinarias/caja_chica_screen.dart
 import 'dart:async';
 
+import 'package:bosque_flutter/core/constants/tareas_breakpoints.dart';
 import 'package:bosque_flutter/core/state/caja_chica_flujo_provider.dart';
 import 'package:bosque_flutter/core/theme/tareas_colors.dart';
 import 'package:bosque_flutter/core/ui/aviso.dart';
+import 'package:bosque_flutter/core/ui/visor_pdf.dart';
+import 'package:bosque_flutter/core/utils/formatear_fecha.dart';
+import 'package:bosque_flutter/core/utils/formato_moneda.dart';
 import 'package:bosque_flutter/data/repositories/caja_chica_flujo_impl.dart';
 import 'package:bosque_flutter/domain/entities/caja_chica_entity.dart';
+import 'package:bosque_flutter/core/theme/tareas_tema.dart';
+import 'package:bosque_flutter/core/ui/ofrecer_pdf.dart';
+import 'package:bosque_flutter/core/ui/tokens_bosque.dart';
+import 'package:bosque_flutter/presentation/widgets/tareas-rutinarias/pagina_tareas.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:bosque_flutter/core/ui/cerrar_ruta.dart';
+import 'package:bosque_flutter/presentation/widgets/tareas-rutinarias/tabla_modulo.dart';
 
 /// Reemplaza dlgCajaChica del legacy. A diferencia de ese diálogo (que
-/// borraba la fila en silencio si el saldo corrido quedaba negativo), acá
+/// borraba la fila en silencio si el saldo corrido quedaba negativo), aquí
 /// el backend rechaza el egreso ANTES de guardar nada y explica por qué —
 /// ver p_cajaChica_registrarEgreso.
 class CajaChicaScreen extends ConsumerWidget {
@@ -32,9 +42,6 @@ class CajaChicaScreen extends ConsumerWidget {
     await showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
       builder: (_) => _FormularioEgreso(params: params),
     );
   }
@@ -47,20 +54,94 @@ class CajaChicaScreen extends ConsumerWidget {
     );
   }
 
+  /// Reemplaza la mitad "esto reiniciara su caja chica" del "Generar PDF"
+  /// del legacy (el reporte en sí lo migra un esfuerzo aparte): cierra el
+  /// lote vigente y abre uno nuevo con su saldo inicial. Pide confirmación
+  /// primero porque, a diferencia de un egreso, no hay forma de deshacerlo
+  /// desde aquí.
+  Future<void> _confirmarCerrarLote(
+    BuildContext context,
+    WidgetRef ref,
+    CajaChicaParams params,
+    double saldoActual,
+  ) async {
+    final confirmar = await showDialog<bool>(
+      context: context,
+      builder:
+          (ctx) => AlertDialog(
+            title: const Text('¿Cerrar este lote?'),
+            content: Text(
+              'Se va a cerrar el lote actual (saldo: ${FormatoMoneda.monto.format(saldoActual)}) '
+              'y se va a abrir uno nuevo para esta sucursal, con su propio saldo inicial de '
+              'caja chica. Los movimientos de este lote quedan guardados y siguen disponibles '
+              'en "Ver cajas chicas anteriores", pero ya no se le pueden agregar más egresos.',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => cerrarRuta(ctx, false),
+                child: const Text('Cancelar'),
+              ),
+              FilledButton(
+                onPressed: () => cerrarRuta(ctx, true),
+                child: const Text('Cerrar lote'),
+              ),
+            ],
+          ),
+    );
+    if (confirmar != true || !context.mounted) return;
+
+    // El lote y la sucursal se leen ANTES de cerrar: después, el provider ya
+    // recargó con el lote NUEVO (vacío) y el que se acaba de archivar no está
+    // más en pantalla — pedir el PDF con esos datos daría el lote equivocado.
+    final filas = ref.read(cajaChicaFlujoProvider(params)).items;
+    final loteCerrado = filas.isEmpty ? null : filas.first.lote;
+    final codSucursal = filas.isEmpty ? null : filas.first.codSucursal;
+
+    final ok =
+        await ref.read(cajaChicaFlujoProvider(params).notifier).cerrarLote();
+    // Si falló, el listener de errores de la pantalla ya muestra el aviso
+    // (mensajeError) — no hace falta duplicarlo aquí.
+    if (!ok || !context.mounted) return;
+
+    HapticFeedback.mediumImpact();
+
+    // El PDF del lote recién cerrado, en el mismo momento del cierre: en el
+    // legacy ese reporte era el paso con el que la caja chica entraba a
+    // archivo, no un extra a buscar después en el histórico.
+    if (loteCerrado != null && codSucursal != null) {
+      await ofrecerPdf(
+        context,
+        tituloDialogo: 'Lote cerrado',
+        mensaje:
+            'Se cerró el lote $loteCerrado y se abrió uno nuevo para esta '
+            'sucursal. ¿Quieres el PDF del lote cerrado, para archivo?',
+        titulo: 'Caja chica — Lote $loteCerrado',
+        nombreArchivo: 'caja_chica_lote_$loteCerrado.pdf',
+        generar:
+            () => CajaChicaFlujoImpl().generarReportePdf(
+              lote: loteCerrado,
+              codSucursal: codSucursal,
+            ),
+      );
+    } else {
+      mostrarAviso(
+        context,
+        'Lote cerrado. Se abrió un lote nuevo para esta sucursal.',
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final params = (idBitTarea: idBitTarea);
     final state = ref.watch(cajaChicaFlujoProvider(params));
     final notifier = ref.read(cajaChicaFlujoProvider(params).notifier);
-    final scheme = Theme.of(context).colorScheme;
-    final anchoDisponible = MediaQuery.sizeOf(context).width;
-    final esAncho = anchoDisponible >= 700;
 
     ref.listen(cajaChicaFlujoProvider(params), (previo, actual) {
       if (actual.finalizado && previo?.finalizado != true) {
         HapticFeedback.mediumImpact();
         mostrarAviso(context, 'Caja chica finalizada — tarea completada.');
-        Navigator.of(context).pop(true);
+        cerrarRuta(context, true);
       }
       if (actual.mensajeError != null &&
           actual.mensajeError != previo?.mensajeError) {
@@ -69,116 +150,218 @@ class CajaChicaScreen extends ConsumerWidget {
       }
     });
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(nombreTarea, overflow: TextOverflow.ellipsis),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.history),
-            tooltip: 'Ver cajas chicas anteriores',
-            onPressed: () => _abrirHistorialLotes(context),
-          ),
-        ],
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(28),
-          child: Padding(
-            padding: const EdgeInsets.only(bottom: 8),
-            child: Text(
-              'Saldo actual: ${state.saldoActual.toStringAsFixed(2)}',
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color:
-                    Theme.of(
-                      context,
-                    ).appBarTheme.foregroundColor?.withValues(alpha: 0.85) ??
-                    Theme.of(context).colorScheme.onSurfaceVariant,
-              ),
+    return TareasScope(
+      child: Scaffold(
+        appBar: AppBarTareas(
+          titulo: nombreTarea,
+          subtitulo:
+              state.items.isEmpty
+                  ? null
+                  : 'Lote ${state.items.first.lote ?? '—'} · '
+                      '${state.cantidadEgresos == 1 ? '1 egreso' : '${state.cantidadEgresos} egresos'}',
+          insignia: InsigniaTarea.deTipo(context, 7),
+          acciones: [
+            IconButton(
+              icon:
+                  state.cerrandoLote
+                      ? SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Theme.of(context).appBarTheme.foregroundColor,
+                        ),
+                      )
+                      : const Icon(Icons.restart_alt),
+              tooltip: 'Cerrar lote y empezar uno nuevo',
+              onPressed:
+                  state.cerrandoLote
+                      ? null
+                      : () => _confirmarCerrarLote(
+                        context,
+                        ref,
+                        params,
+                        state.saldoActual,
+                      ),
             ),
-          ),
+            IconButton(
+              icon: const Icon(Icons.history),
+              tooltip: 'Ver cajas chicas anteriores',
+              onPressed: () => _abrirHistorialLotes(context),
+            ),
+          ],
         ),
-      ),
-      body: RefreshIndicator(
-        onRefresh: notifier.cargar,
-        child: AnimatedSwitcher(
-          duration: const Duration(milliseconds: 220),
-          child:
-              state.cargando && state.items.isEmpty
-                  ? const Center(
-                    key: ValueKey('cargando'),
-                    child: CircularProgressIndicator(),
-                  )
-                  : state.items.isEmpty
-                  ? Center(
-                    key: const ValueKey('vacio'),
-                    child: Padding(
-                      padding: const EdgeInsets.all(32),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            Icons.savings_outlined,
-                            size: 56,
-                            color: scheme.outline,
-                          ),
-                          const SizedBox(height: 16),
-                          Text(
-                            'Todavía no hay movimientos en este lote.',
-                            textAlign: TextAlign.center,
-                            style: Theme.of(context).textTheme.bodyMedium,
-                          ),
-                        ],
-                      ),
-                    ),
-                  )
-                  : Align(
-                    key: const ValueKey('lista'),
-                    alignment: Alignment.topCenter,
-                    child: ConstrainedBox(
-                      constraints: BoxConstraints(
-                        maxWidth: esAncho ? 640 : double.infinity,
-                      ),
-                      child: ListView.builder(
-                        padding: const EdgeInsets.all(12),
-                        itemCount: state.items.length,
-                        itemBuilder:
-                            (context, i) => _FilaAnimada(
-                              key: ValueKey(state.items[i].idCC),
-                              child: _FilaCajaChica(item: state.items[i]),
-                            ),
-                      ),
-                    ),
-                  ),
-        ),
-      ),
-      floatingActionButton: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.end,
-        children: [
-          FloatingActionButton.extended(
-            heroTag: 'agregarEgreso',
-            onPressed: () => _abrirFormularioEgreso(context, ref, params),
-            icon: const Icon(Icons.remove_circle_outline),
-            label: const Text('Registrar egreso'),
-          ),
-          const SizedBox(height: 10),
-          FloatingActionButton.extended(
-            heroTag: 'finalizar',
-            backgroundColor: scheme.tertiary,
-            onPressed: state.finalizando ? null : notifier.finalizar,
-            icon:
-                state.finalizando
-                    ? SizedBox(
-                      width: 16,
-                      height: 16,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: scheme.onTertiary,
-                      ),
+        body: RefreshIndicator(
+          onRefresh: notifier.cargar,
+          child: AnimatedSwitcher(
+            duration: const Duration(milliseconds: 220),
+            child:
+                !state.cargado
+                    ? (state.cargando
+                        ? const Center(
+                          key: ValueKey('cargando'),
+                          child: CircularProgressIndicator(),
+                        )
+                        // Un error de lectura no es "todavía no hay movimientos".
+                        : EstadoTareas.error(
+                          key: const ValueKey('error'),
+                          titulo: 'No se pudo leer el lote de caja chica',
+                          error: state.errorCarga,
+                          onReintentar: notifier.cargar,
+                        ))
+                    : state.items.isEmpty
+                    ? const EstadoTareas(
+                      key: ValueKey('vacio'),
+                      icono: Icons.savings_outlined,
+                      titulo: 'Todavía no hay movimientos en este lote',
+                      detalle: 'Registra el primero con "Registrar egreso".',
                     )
-                    : const Icon(Icons.check),
-            label: Text(state.finalizando ? 'Finalizando…' : 'Finalizar'),
+                    // El ancho del cajón y no el de la ventana: el sidebar del
+                    // dashboard se come 260 px.
+                    : LayoutBuilder(
+                      key: const ValueKey('lista'),
+                      builder:
+                          (context, cajon) => _LibroContable(
+                            items: state.items,
+                            esAncho:
+                                cajon.maxWidth >= TareasBreakpoints.compactMax,
+                          ),
+                    ),
+          ),
+        ),
+        // Un solo FAB. Antes eran dos apilados —"Registrar egreso" y
+        // "Finalizar"— que juntos tapaban el final de la lista y ponían al
+        // mismo peso visual la acción que se repite muchas veces y la que se
+        // hace una sola vez y cierra la tarea. Finalizar se fue a la barra de
+        // abajo, al lado del saldo, que es el dato con el que se decide.
+        floatingActionButton: FloatingActionButton.extended(
+          heroTag: 'agregarEgreso',
+          onPressed: () => _abrirFormularioEgreso(context, ref, params),
+          icon: const Icon(Icons.remove_circle_outline),
+          label: const Text('Registrar egreso'),
+        ),
+        bottomNavigationBar: _BarraSaldo(
+          state: state,
+          // Sin una lectura buena no se finaliza nada.
+          onFinalizar:
+              !state.cargado || state.finalizando ? null : notifier.finalizar,
+        ),
+      ),
+    );
+  }
+}
+
+/// Barra fija con la plata del lote y el botón que cierra la tarea.
+///
+/// El saldo vivía en una tira de 28px bajo el título del AppBar, en 11px: es
+/// el número con el que se decide si se puede pagar el próximo egreso, o sea
+/// lo único que la pantalla realmente tiene que contestar, y estaba escrito
+/// más chico que las descripciones de los movimientos. Aquí está siempre a la
+/// vista mientras se scrollea la lista — mismo patrón que la barra de "Total
+/// contado / Dif." de Arqueo de Caja, para que las dos pantallas de plata del
+/// módulo se lean igual.
+///
+/// Los tres números juntos y no solo el saldo: "quedan 340" no dice nada sin
+/// "de 1.000, con 12 egresos".
+class _BarraSaldo extends StatelessWidget {
+  final CajaChicaFlujoState state;
+  final VoidCallback? onFinalizar;
+
+  const _BarraSaldo({required this.state, required this.onFinalizar});
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    // Sin plata no se puede registrar el próximo egreso: el saldo pasa al tono
+    // de alerta del módulo en vez de quedar igual que cuando sobra.
+    final sinSaldo = state.saldoActual <= 0;
+    final tono =
+        sinSaldo
+            ? TareasColors.vencidoTexto(context)
+            // El tono de caja chica y no el de "dato de SAP", que no es.
+            : TareasColors.tipoTareaTexto(context, 7);
+
+    return BarraAccionTareas(
+      resumen: Wrap(
+        spacing: Esp.l,
+        runSpacing: Esp.xs,
+        crossAxisAlignment: WrapCrossAlignment.center,
+        children: [
+          _Cifra(
+            etiqueta: 'Saldo inicial',
+            valor: FormatoMoneda.monto.format(state.saldoInicial),
+          ),
+          _Cifra(
+            etiqueta: 'Egresos (${state.cantidadEgresos})',
+            valor: FormatoMoneda.monto.format(state.totalEgresos),
+          ),
+          _Cifra(
+            etiqueta: 'Disponible',
+            valor: FormatoMoneda.monto.format(state.saldoActual),
+            color: tono,
+            destacado: true,
           ),
         ],
       ),
+      accion: FilledButton.icon(
+        onPressed: onFinalizar,
+        icon:
+            state.finalizando
+                ? SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: scheme.onPrimary,
+                  ),
+                )
+                : const Icon(Icons.check),
+        label: Text(
+          state.finalizando ? 'Finalizando…' : 'Finalizar y cerrar tarea',
+        ),
+      ),
+    );
+  }
+}
+
+class _Cifra extends StatelessWidget {
+  final String etiqueta;
+  final String valor;
+  final Color? color;
+  final bool destacado;
+
+  const _Cifra({
+    required this.etiqueta,
+    required this.valor,
+    this.color,
+    this.destacado = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          etiqueta,
+          style: Theme.of(
+            context,
+          ).textTheme.labelSmall?.copyWith(color: scheme.onSurfaceVariant),
+        ),
+        Text(
+          valor,
+          style: (destacado
+                  ? Theme.of(context).textTheme.titleMedium
+                  : Theme.of(context).textTheme.bodyMedium)
+              ?.copyWith(
+                fontWeight: destacado ? Peso.dato : Peso.titulo,
+                fontFeatures: cifrasTabulares,
+                color: color ?? scheme.onSurface,
+              ),
+        ),
+      ],
     );
   }
 }
@@ -209,53 +392,388 @@ class _FilaAnimada extends StatelessWidget {
   }
 }
 
-class _FilaCajaChica extends StatelessWidget {
+/// La lista de movimientos, como un libro de caja.
+///
+/// Antes era una pila de tarjetas donde cada movimiento repetia la frase
+/// "Saldo tras el movimiento: 2.959,00" en letra chica: para saber cuanto
+/// entro, cuanto salio y con que quedaste habia que leer renglon por renglon y
+/// sumar de memoria. Un libro de caja resuelve eso desde hace siglos con tres
+/// columnas -entradas, salidas y saldo corriente- y los numeros alineados a la
+/// derecha, que es lo que deja comparar magnitudes de un vistazo.
+///
+/// **Encabezado y totales fijos, asientos virtualizados.** Un lote llega a
+/// tener 125 movimientos (medido en la base). Con el encabezado dentro del
+/// scroll habia que subir hasta arriba para recordar que columna era cual, y
+/// con todas las filas construidas de una el scroll y cada registro daban un
+/// tiron. Aca el encabezado y la linea de totales viven FUERA del scroll y
+/// solo se construyen los asientos visibles.
+///
+/// En el telefono no hay ancho para cinco columnas, asi que ahi el mismo dato
+/// va apilado, con la misma alineacion.
+class _LibroContable extends StatelessWidget {
+  final List<CajaChicaEntity> items;
+  final bool esAncho;
+
+  const _LibroContable({
+    required this.items,
+    required this.esAncho,
+  });
+
+  /// Los anchos son los MISMOS para encabezado, asientos y totales: ahi esta
+  /// toda la alineacion de la tabla.
+  static const _anchos = <AnchoCol>[
+    AnchoCol.fijo(96), // fecha
+    AnchoCol.flexible(), // detalle
+    AnchoCol.fijo(120), // entradas
+    AnchoCol.fijo(120), // salidas
+    AnchoCol.fijo(128), // saldo
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    if (!esAncho) {
+      return ListView.builder(
+        key: const ValueKey('libroCompacto'),
+        // Abajo, el alto del FAB "Registrar egreso".
+        padding: const EdgeInsets.fromLTRB(Esp.m, Esp.m, Esp.m, aireBajoFab),
+        itemCount: items.length,
+        itemBuilder:
+            (context, i) => _FilaAnimada(
+              key: ValueKey(items[i].idCC),
+              child: _AsientoCompacto(item: items[i]),
+            ),
+      );
+    }
+
+    final totalIng = items.fold<double>(0, (a, i) => a + (i.montoIng ?? 0));
+    final totalEg = items.fold<double>(0, (a, i) => a + (i.montoEg ?? 0));
+    // El saldo final es el del ULTIMO asiento, no `totalIng - totalEg`: el
+    // saldo lo lleva la base (tac_cajaChica.saldo) y recalcularlo aca seria
+    // inventar una segunda fuente de verdad que puede discrepar.
+    final saldoFinal = items.isEmpty ? 0.0 : (items.last.saldo ?? 0);
+
+    return Padding(
+      key: const ValueKey('libroAncho'),
+      // Sin tope centrado: el libro usa todo el ancho. Abajo, el alto del
+      // FAB, que tapaba la columna Saldo.
+      padding: const EdgeInsets.fromLTRB(Esp.l, Esp.m, Esp.l, aireBajoFab),
+      child: MarcoTabla(
+        child: Column(
+          children: [
+            const EncabezadoTabla(
+              anchos: _anchos,
+              titulos: ['Fecha', 'Detalle', 'Entradas', 'Salidas', 'Saldo'],
+              aLaDerecha: {2, 3, 4},
+            ),
+            Expanded(
+              child: ListView.builder(
+                padding: EdgeInsets.zero,
+                itemCount: items.length,
+                itemBuilder:
+                    (context, i) => _AsientoDelLibro(
+                      item: items[i],
+                      anchos: _anchos,
+                      rayado: i.isOdd,
+                    ),
+              ),
+            ),
+            _TotalesDelLibro(
+              anchos: _anchos,
+              totalIng: totalIng,
+              totalEg: totalEg,
+              saldoFinal: saldoFinal,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Un renglon del libro.
+class _AsientoDelLibro extends StatelessWidget {
+  final CajaChicaEntity item;
+  final List<AnchoCol> anchos;
+  final bool rayado;
+
+  const _AsientoDelLibro({
+    required this.item,
+    required this.anchos,
+    required this.rayado,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final ing = item.montoIng ?? 0;
+    final eg = item.montoEg ?? 0;
+    final esIngreso = ing > 0;
+
+    final meta = <String>[
+      if (item.numFactura != null && item.numFactura! > 0)
+        'Factura N.${item.numFactura}',
+      if (item.numVale != null && item.numVale! > 0) 'Vale N.${item.numVale}',
+    ].join(' - ');
+
+    return FilaTabla(
+      anchos: anchos,
+      // Rayado de libro: las filas impares apenas tintadas. Ayuda a seguir el
+      // renglon hasta la columna del saldo sin perder la linea.
+      fondo:
+          rayado
+              ? scheme.surfaceContainerHighest.withValues(alpha: 0.35)
+              : null,
+      celdas: [
+        Text(
+          item.fecha == null
+              ? '-'
+              : FormatearFecha.formatearFecha(item.fecha!),
+          style: Theme.of(
+            context,
+          ).textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
+        ),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              item.descripcion ?? (esIngreso ? 'Saldo inicial' : 'Egreso'),
+              style: Theme.of(context).textTheme.bodyMedium,
+            ),
+            if (meta.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.only(top: 2),
+                child: Text(
+                  meta,
+                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                    color: scheme.onSurfaceVariant,
+                  ),
+                ),
+              ),
+          ],
+        ),
+        _Importe(
+          valor: ing,
+          color: TareasColors.realizadoTexto(context),
+          enNegrita: esIngreso,
+        ),
+        _Importe(
+          valor: eg,
+          color: TareasColors.vencidoTexto(context),
+          enNegrita: !esIngreso && eg > 0,
+        ),
+        _Importe(
+          valor: item.saldo ?? 0,
+          color: scheme.onSurface,
+          enNegrita: false,
+          siempreVisible: true,
+        ),
+      ],
+    );
+  }
+}
+
+/// La linea de cierre del libro. Vive FUERA del scroll: es el numero con el
+/// que se decide si alcanza para el proximo egreso, y tener que buscarlo
+/// scrolleando 125 renglones lo vuelve inutil.
+class _TotalesDelLibro extends StatelessWidget {
+  final List<AnchoCol> anchos;
+  final double totalIng;
+  final double totalEg;
+  final double saldoFinal;
+
+  const _TotalesDelLibro({
+    required this.anchos,
+    required this.totalIng,
+    required this.totalEg,
+    required this.saldoFinal,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return FilaTabla(
+      anchos: anchos,
+      fondo: scheme.surfaceContainerHighest,
+      borde: Border(top: BorderSide(color: scheme.outlineVariant)),
+      celdas: [
+        const SizedBox.shrink(),
+        Text(
+          'Totales',
+          style: Theme.of(
+            context,
+          ).textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w700),
+        ),
+        _Importe(
+          valor: totalIng,
+          color: TareasColors.realizadoTexto(context),
+          enNegrita: true,
+          siempreVisible: true,
+        ),
+        _Importe(
+          valor: totalEg,
+          color: TareasColors.vencidoTexto(context),
+          enNegrita: true,
+          siempreVisible: true,
+        ),
+        _Importe(
+          valor: saldoFinal,
+          color: scheme.onSurface,
+          enNegrita: true,
+          siempreVisible: true,
+        ),
+      ],
+    );
+  }
+}
+
+
+class _Importe extends StatelessWidget {
+  final double valor;
+  final Color color;
+  final bool enNegrita;
+
+  /// Un cero en la columna de entradas de un egreso no es información: es
+  /// ruido. Se pinta una raya, como en un libro de papel.
+  final bool siempreVisible;
+
+  const _Importe({
+    required this.valor,
+    required this.color,
+    required this.enNegrita,
+    this.siempreVisible = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    if (valor == 0 && !siempreVisible) {
+      return Text(
+        '—',
+        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+          color: Theme.of(context).colorScheme.outline,
+        ),
+      );
+    }
+    return Text(
+      FormatoMoneda.monto.format(valor),
+      textAlign: TextAlign.right,
+      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+        color: color,
+        fontWeight: enNegrita ? FontWeight.w700 : FontWeight.w500,
+        fontFeatures: const [FontFeature.tabularFigures()],
+      ),
+    );
+  }
+}
+
+/// El mismo asiento, para pantallas donde cinco columnas no entran.
+class _AsientoCompacto extends StatelessWidget {
   final CajaChicaEntity item;
 
-  const _FilaCajaChica({required this.item});
+  const _AsientoCompacto({required this.item});
+
+  /// Fecha real + Nº factura/vale del movimiento — el backend ya los
+  /// devuelve (p_list_tac_CajaChica ACCION='D', columnas fecha/numFactura/
+  /// numVale de tac_cajaChica) y el formulario de egreso ya los captura
+  /// (_FormularioEgreso más abajo); solo faltaba pintarlos aquí. Mismo hueco
+  /// que las columnas de Vales en Arqueo: dato soportado de punta a punta,
+  /// nunca mostrado en el listado.
+  String? _metaLinea() {
+    final partes = <String>[];
+    if (item.fecha != null) {
+      partes.add(FormatearFecha.formatearFecha(item.fecha!));
+    }
+    if (item.numFactura != null && item.numFactura! > 0) {
+      partes.add('Factura Nº${item.numFactura}');
+    }
+    if (item.numVale != null && item.numVale! > 0) {
+      partes.add('Vale Nº${item.numVale}');
+    }
+    return partes.isEmpty ? null : partes.join(' · ');
+  }
 
   @override
   Widget build(BuildContext context) {
     final esIngreso = (item.montoIng ?? 0) > 0;
     final scheme = Theme.of(context).colorScheme;
-    final fondoTint = (esIngreso
-            ? TareasColors.realizado(context)
-            : TareasColors.vencido(context))
-        .withValues(alpha: 0.35);
-    return Card(
-      margin: const EdgeInsets.only(bottom: 8),
-      elevation: 0,
-      color: fondoTint,
-      shape: RoundedRectangleBorder(
+    final meta = _metaLinea();
+    final colorImporte =
+        esIngreso
+            ? TareasColors.realizadoTexto(context)
+            : TareasColors.vencidoTexto(context);
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(10),
-        side: BorderSide(color: scheme.outlineVariant),
+        border: Border.all(color: scheme.outlineVariant),
       ),
-      child: ListTile(
-        leading: Icon(
-          esIngreso ? Icons.add_circle_outline : Icons.remove_circle_outline,
-          color:
-              esIngreso
-                  ? TareasColors.realizadoTexto(context)
-                  : TareasColors.vencidoTexto(context),
-        ),
-        title: Text(
-          item.descripcion ?? (esIngreso ? 'Saldo inicial' : 'Egreso'),
-        ),
-        subtitle: Text(
-          'Saldo tras el movimiento: ${(item.saldo ?? 0).toStringAsFixed(2)}',
-        ),
-        trailing: Text(
-          esIngreso
-              ? '+${item.montoIng!.toStringAsFixed(2)}'
-              : '-${(item.montoEg ?? 0).toStringAsFixed(2)}',
-          style: TextStyle(
-            fontWeight: FontWeight.w700,
-            color:
-                esIngreso
-                    ? TareasColors.realizadoTexto(context)
-                    : TareasColors.vencidoTexto(context),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // La franja de color reemplaza al fondo tintado entero: marca si es
+          // entrada o salida sin teñir el texto, que en la lista larga hacía
+          // que todo pareciera un aviso.
+          Container(
+            width: 3,
+            height: 34,
+            margin: const EdgeInsets.only(right: 10, top: 2),
+            decoration: BoxDecoration(
+              color: colorImporte,
+              borderRadius: BorderRadius.circular(2),
+            ),
           ),
-        ),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  item.descripcion ?? (esIngreso ? 'Saldo inicial' : 'Egreso'),
+                  style: Theme.of(context).textTheme.bodyMedium,
+                ),
+                if (meta != null)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 2),
+                    child: Text(
+                      meta,
+                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                        color: scheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 10),
+          // Importe y saldo alineados a la derecha y con cifras tabulares: es
+          // la misma lectura vertical que da el libro en escritorio.
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                (esIngreso ? '+' : '−') +
+                    FormatoMoneda.monto.format(
+                      esIngreso ? item.montoIng! : (item.montoEg ?? 0),
+                    ),
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  fontWeight: FontWeight.w700,
+                  color: colorImporte,
+                  fontFeatures: const [FontFeature.tabularFigures()],
+                ),
+              ),
+              Text(
+                'Saldo ${FormatoMoneda.monto.format(item.saldo ?? 0)}',
+                style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                  color: scheme.onSurfaceVariant,
+                  fontFeatures: const [FontFeature.tabularFigures()],
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
@@ -287,172 +805,217 @@ class _FormularioEgresoState extends ConsumerState<_FormularioEgreso> {
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(cajaChicaFlujoProvider(widget.params));
-    return Padding(
-      padding: EdgeInsets.only(
-        left: 20,
-        right: 20,
-        top: 20,
-        bottom: MediaQuery.viewInsetsOf(context).bottom + 20,
-      ),
-      child: Form(
-        key: _formKey,
-        child: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                'Registrar egreso',
-                style: Theme.of(
-                  context,
-                ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                'Saldo disponible: ${state.saldoActual.toStringAsFixed(2)}',
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                ),
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                decoration: const InputDecoration(
-                  labelText: 'Monto',
-                  border: OutlineInputBorder(),
-                ),
-                keyboardType: const TextInputType.numberWithOptions(
-                  decimal: true,
-                ),
-                onChanged: (v) => _monto = double.tryParse(v),
-                validator:
-                    (v) =>
-                        (double.tryParse(v ?? '') ?? 0) > 0
-                            ? null
-                            : 'Ingresa un monto válido.',
-              ),
-              const SizedBox(height: 4),
-              // El legacy avisa esto mismo junto al formulario — el backend
-              // ya rechaza montoEg<=0 (p_abm_tac_CajaChica ACCION='R'), acá
-              // solo se hace visible la regla ANTES de que la persona
-              // intente guardar.
-              Row(
-                children: [
-                  Icon(
-                    Icons.info_outline,
-                    size: 14,
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
-                  const SizedBox(width: 6),
-                  Expanded(
-                    child: Text(
-                      'Los montos iguales o menores a cero no se guardan.',
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              TextFormField(
-                controller: _descripcionCtrl,
-                decoration: const InputDecoration(
-                  labelText: 'Descripción',
-                  border: OutlineInputBorder(),
-                ),
-                validator:
-                    (v) =>
-                        (v == null || v.trim().isEmpty)
-                            ? 'Describe el gasto.'
-                            : null,
-              ),
-              const SizedBox(height: 12),
-              _EmpleadoDestinoField(
-                onSeleccionado:
-                    (codEmpleado) =>
-                        setState(() => _codEmpDestino = codEmpleado),
-              ),
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  Expanded(
-                    child: TextFormField(
-                      decoration: const InputDecoration(
-                        labelText: 'N° factura (opcional)',
-                        border: OutlineInputBorder(),
-                      ),
-                      keyboardType: TextInputType.number,
-                      onChanged: (v) => _numFactura = int.tryParse(v),
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: TextFormField(
-                      decoration: const InputDecoration(
-                        labelText: 'N° vale (opcional)',
-                        border: OutlineInputBorder(),
-                      ),
-                      keyboardType: TextInputType.number,
-                      onChanged: (v) => _numVale = int.tryParse(v),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 20),
-              SizedBox(
-                width: double.infinity,
-                child: FilledButton(
-                  onPressed:
-                      state.guardando
-                          ? null
-                          : () async {
-                            if (!_formKey.currentState!.validate()) {
-                              HapticFeedback.lightImpact();
-                              return;
-                            }
-                            if (_codEmpDestino == null) {
-                              HapticFeedback.lightImpact();
-                              mostrarAviso(
-                                context,
-                                'Indica a quién se entregó el dinero.',
-                                tono: TonoAviso.aviso,
-                              );
-                              return;
-                            }
-                            final ok = await ref
-                                .read(
-                                  cajaChicaFlujoProvider(
-                                    widget.params,
-                                  ).notifier,
-                                )
-                                .registrarEgreso(
-                                  montoEg: _monto!,
-                                  descripcion: _descripcionCtrl.text.trim(),
-                                  codEmpDestino: _codEmpDestino!,
-                                  numFactura: _numFactura,
-                                  numVale: _numVale,
-                                );
-                            if (ok && context.mounted) {
-                              Navigator.of(context).pop();
-                            }
-                          },
-                  child:
-                      state.guardando
-                          ? SizedBox(
-                            width: 16,
-                            height: 16,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: Theme.of(context).colorScheme.onPrimary,
-                            ),
-                          )
-                          : const Text('Registrar'),
-                ),
-              ),
-            ],
+    // Guarda de UX en vivo: además del validator (que ya rechaza el submit),
+    // esto deshabilita el botón apenas lo tipeado supera el saldo — sin
+    // esperar a que la persona presione "Registrar" para enterarse. El
+    // backend (p_cajaChica_registrarEgreso) sigue siendo la barrera real.
+    final superaSaldo = (_monto ?? 0) > state.saldoActual;
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        // Affordance de arrastre — la hoja ya soporta drag-to-dismiss por
+        // default (showModalBottomSheet, sin un scroll que capture el
+        // gesto antes), esto solo lo hace visible.
+        Container(
+          margin: const EdgeInsets.only(top: 10, bottom: 4),
+          width: 40,
+          height: 4,
+          decoration: BoxDecoration(
+            color: Theme.of(
+              context,
+            ).colorScheme.onSurfaceVariant.withValues(alpha: 0.4),
+            borderRadius: BorderRadius.circular(2),
           ),
         ),
-      ),
+        Padding(
+          padding: EdgeInsets.only(
+            left: 20,
+            right: 20,
+            top: 4,
+            bottom: MediaQuery.viewInsetsOf(context).bottom + 20,
+          ),
+          child: Form(
+            key: _formKey,
+            child: SingleChildScrollView(
+              keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    'Registrar egreso',
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Saldo disponible: ${FormatoMoneda.monto.format(state.saldoActual)}',
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  TextFormField(
+                    decoration: const InputDecoration(
+                      labelText: 'Monto',
+                      border: OutlineInputBorder(),
+                    ),
+                    keyboardType: const TextInputType.numberWithOptions(
+                      decimal: true,
+                    ),
+                    textInputAction: TextInputAction.next,
+                    // Antes el tope de saldo sólo se sabía DESPUÉS de guardar,
+                    // vía el error del backend ("Saldo insuficiente"). Con
+                    // autovalidate, este mismo validator ya revalida en cada
+                    // tecla y muestra el error en vivo — el chequeo del backend
+                    // (p_cajaChica_registrarEgreso) queda de respaldo, no se
+                    // quita.
+                    autovalidateMode: AutovalidateMode.onUserInteraction,
+                    onChanged:
+                        (v) => setState(() => _monto = double.tryParse(v)),
+                    validator: (v) {
+                      final monto = double.tryParse(v ?? '') ?? 0;
+                      if (monto <= 0) return 'Ingresa un monto válido.';
+                      if (monto > state.saldoActual) {
+                        return 'Supera el saldo disponible '
+                            '(${FormatoMoneda.monto.format(state.saldoActual)}).';
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 4),
+                  // El legacy avisa esto mismo junto al formulario — el backend
+                  // ya rechaza montoEg<=0 (p_abm_tac_CajaChica ACCION='R'), aquí
+                  // solo se hace visible la regla ANTES de que la persona
+                  // intente guardar.
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.info_outline,
+                        size: 14,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: Text(
+                          'Los montos iguales o menores a cero no se guardan.',
+                          style: Theme.of(
+                            context,
+                          ).textTheme.bodySmall?.copyWith(
+                            color:
+                                Theme.of(context).colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  TextFormField(
+                    controller: _descripcionCtrl,
+                    decoration: const InputDecoration(
+                      labelText: 'Descripción',
+                      border: OutlineInputBorder(),
+                    ),
+                    textInputAction: TextInputAction.next,
+                    validator:
+                        (v) =>
+                            (v == null || v.trim().isEmpty)
+                                ? 'Describe el gasto.'
+                                : null,
+                  ),
+                  const SizedBox(height: 12),
+                  _EmpleadoDestinoField(
+                    onSeleccionado:
+                        (codEmpleado) =>
+                            setState(() => _codEmpDestino = codEmpleado),
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextFormField(
+                          decoration: const InputDecoration(
+                            labelText: 'N° factura (opcional)',
+                            border: OutlineInputBorder(),
+                          ),
+                          keyboardType: TextInputType.number,
+                          textInputAction: TextInputAction.next,
+                          onChanged: (v) => _numFactura = int.tryParse(v),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: TextFormField(
+                          decoration: const InputDecoration(
+                            labelText: 'N° vale (opcional)',
+                            border: OutlineInputBorder(),
+                          ),
+                          keyboardType: TextInputType.number,
+                          textInputAction: TextInputAction.done,
+                          onChanged: (v) => _numVale = int.tryParse(v),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
+                  SizedBox(
+                    width: double.infinity,
+                    child: FilledButton(
+                      onPressed:
+                          (state.guardando || superaSaldo)
+                              ? null
+                              : () async {
+                                if (!_formKey.currentState!.validate()) {
+                                  HapticFeedback.lightImpact();
+                                  return;
+                                }
+                                if (_codEmpDestino == null) {
+                                  HapticFeedback.lightImpact();
+                                  mostrarAviso(
+                                    context,
+                                    'Indica a quién se entregó el dinero.',
+                                    tono: TonoAviso.aviso,
+                                  );
+                                  return;
+                                }
+                                final ok = await ref
+                                    .read(
+                                      cajaChicaFlujoProvider(
+                                        widget.params,
+                                      ).notifier,
+                                    )
+                                    .registrarEgreso(
+                                      montoEg: _monto!,
+                                      descripcion: _descripcionCtrl.text.trim(),
+                                      codEmpDestino: _codEmpDestino!,
+                                      numFactura: _numFactura,
+                                      numVale: _numVale,
+                                    );
+                                if (ok && context.mounted) {
+                                  cerrarRuta(context);
+                                }
+                              },
+                      child:
+                          state.guardando
+                              ? SizedBox(
+                                width: 16,
+                                height: 16,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color:
+                                      Theme.of(context).colorScheme.onPrimary,
+                                ),
+                              )
+                              : const Text('Registrar'),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
@@ -486,18 +1049,35 @@ class _EmpleadoDestinoFieldState extends State<_EmpleadoDestinoField> {
     super.dispose();
   }
 
+  /// Nombre y cargo de un empleado del picker.
+  ///
+  /// **Las rutas importan y no son las obvias.** `p_list_Empleado @ACCION='Y'`
+  /// devuelve columnas planas y `EmpleadoDao` las reparte a mano por el grafo:
+  ///
+  /// ```java
+  /// temp.getPersona().setDatoPersona(rs.getString(4));
+  /// temp.getEmpleadoCargo().getCargoSucursal().getCargo()
+  ///     .setDescripcion(rs.getString(6));
+  /// ```
+  ///
+  /// O sea que el nombre viene armado en `persona.datoPersona` —no en
+  /// `nombres`/`apPaterno`, que ese SP no trae— y el cargo cuelga cuatro
+  /// niveles abajo. Leyendo `persona.nombres` la rama existe (los objetos
+  /// nacen con `= new X()`) pero está VACÍA, así que el picker caía siempre al
+  /// respaldo y listaba "Empleado 172", "Empleado 104"… un menú de números
+  /// donde había que elegir una persona.
   String _label(Map<String, dynamic> emp) {
     final persona = emp['persona'] as Map<String, dynamic>?;
-    final cargo = emp['cargo'] as Map<String, dynamic>?;
-    final nombre = [
-      persona?['nombres'],
-      persona?['apPaterno'],
-    ].where((p) => p != null && (p as String).isNotEmpty).join(' ');
-    final cargoDesc = cargo?['descripcion'] as String?;
+    final nombre = (persona?['datoPersona'] as String?)?.trim() ?? '';
+
+    final cargoDesc =
+        ((emp['empleadoCargo'] as Map<String, dynamic>?)?['cargoSucursal']
+                    as Map<String, dynamic>?)?['cargo']
+                as Map<String, dynamic>?;
+    final desc = (cargoDesc?['descripcion'] as String?)?.trim() ?? '';
+
     if (nombre.isEmpty) return 'Empleado ${emp['codEmpleado']}';
-    return cargoDesc != null && cargoDesc.isNotEmpty
-        ? '$nombre - $cargoDesc'
-        : nombre;
+    return desc.isEmpty ? nombre : '$nombre - $desc';
   }
 
   void _buscar(String texto) {
@@ -628,6 +1208,9 @@ class _HistorialLotesDialogState extends State<_HistorialLotesDialog> {
   bool _cargando = true;
   String? _error;
   List<Map<String, dynamic>> _lotes = [];
+  // Lote cuyo PDF se está generando en este momento (null = ninguno) — solo
+  // ese botón muestra spinner y se deshabilitan los demás mientras dura.
+  int? _generandoLote;
 
   @override
   void initState() {
@@ -658,10 +1241,59 @@ class _HistorialLotesDialogState extends State<_HistorialLotesDialog> {
     }
   }
 
+  // Sigue siendo necesario como wrapper: el valor crudo llega como
+  // `dynamic` (String ISO o null) desde el JSON del backend, algo que
+  // FormatearFecha.formatearFecha (que espera un DateTime ya parseado) no
+  // resuelve por sí solo.
   String _fmt(dynamic raw) {
     final d = raw is String ? DateTime.tryParse(raw) : null;
     if (d == null) return '—';
-    return '${d.day.toString().padLeft(2, '0')}/${d.month.toString().padLeft(2, '0')}/${d.year}';
+    return FormatearFecha.formatearFecha(d);
+  }
+
+  /// "Generar PDF" del legacy (RptCajaChica), por fila del histórico.
+  /// codSucursal viene de esta misma fila — ya resuelta server-side por
+  /// /caja-chica/historial-lotes a partir del cargo vigente del empleado
+  /// dueño de la ocurrencia, nunca de un valor tipeado a mano aquí.
+  Future<void> _generarPdf(Map<String, dynamic> lote) async {
+    final numLote = (lote['lote'] as num?)?.toInt();
+    final codSucursal = (lote['codSucursal'] as num?)?.toInt();
+    if (numLote == null) return;
+    if (codSucursal == null) {
+      HapticFeedback.lightImpact();
+      mostrarAviso(
+        context,
+        'No se pudo determinar la sucursal de este lote.',
+        tono: TonoAviso.error,
+      );
+      return;
+    }
+
+    setState(() => _generandoLote = numLote);
+    try {
+      final bytes = await _repo.generarReportePdf(
+        lote: numLote,
+        codSucursal: codSucursal,
+      );
+      if (!mounted) return;
+      HapticFeedback.selectionClick();
+      await mostrarPdf(
+        context,
+        bytes: bytes,
+        titulo: 'Caja chica — Lote $numLote',
+        nombreArchivo: 'caja_chica_lote_$numLote.pdf',
+      );
+    } catch (e) {
+      if (!mounted) return;
+      HapticFeedback.lightImpact();
+      mostrarAviso(
+        context,
+        'No se pudo generar el reporte: $e',
+        tono: TonoAviso.error,
+      );
+    } finally {
+      if (mounted) setState(() => _generandoLote = null);
+    }
   }
 
   @override
@@ -701,9 +1333,40 @@ class _HistorialLotesDialogState extends State<_HistorialLotesDialog> {
                         subtitle: Text(
                           '${_fmt(lote['desde'])} – ${_fmt(lote['hasta'])} · ${lote['nombreSucursal'] ?? ''}',
                         ),
-                        trailing: Text(
-                          'Bs ${((lote['totalEgresos'] as num?)?.toDouble() ?? 0).toStringAsFixed(2)}',
-                          style: const TextStyle(fontWeight: FontWeight.w600),
+                        trailing: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              'Bs ${FormatoMoneda.monto.format((lote['totalEgresos'] as num?)?.toDouble() ?? 0)}',
+                              style: TextStyle(
+                                fontWeight: FontWeight.w700,
+                                color: TareasColors.vencidoTexto(context),
+                              ),
+                            ),
+                            const SizedBox(width: 4),
+                            _generandoLote == (lote['lote'] as num?)?.toInt()
+                                ? const Padding(
+                                  padding: EdgeInsets.all(10),
+                                  child: SizedBox(
+                                    width: 18,
+                                    height: 18,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                    ),
+                                  ),
+                                )
+                                : IconButton(
+                                  icon: const Icon(
+                                    Icons.picture_as_pdf_outlined,
+                                  ),
+                                  visualDensity: VisualDensity.compact,
+                                  tooltip: 'Generar PDF',
+                                  onPressed:
+                                      _generandoLote != null
+                                          ? null
+                                          : () => _generarPdf(lote),
+                                ),
+                          ],
                         ),
                       ),
                     );
@@ -712,7 +1375,7 @@ class _HistorialLotesDialogState extends State<_HistorialLotesDialog> {
       ),
       actions: [
         TextButton(
-          onPressed: () => Navigator.of(context).pop(),
+          onPressed: () => cerrarRuta(context),
           child: const Text('Cerrar'),
         ),
       ],

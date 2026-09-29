@@ -17,7 +17,7 @@
 /// avanzando de 30 en 30 minutos. **Esa cuenta no es la que está grabando la
 /// producción**: las filas escritas por lo ya migrado llevan los números de la
 /// función SQL, y las dos cifras no coinciden (un 08:00→18:00 da 1,125 con la
-/// función y 1,25 con el motor Java). Reimplementar el motor acá sería una
+/// función y 1,25 con el motor Java). Reimplementar el motor aquí sería una
 /// tercera cifra sobre el mismo número.
 ///
 /// Consecuencia visible y esperada: el motor del modal de permiso del legacy
@@ -25,7 +25,7 @@
 /// esta pantalla va a dar MENOS días que el ERP. Es la corrección de un bug, no
 /// una regresión.
 ///
-/// ## El radio «Horario Estándar / Continuo» no viaja acá
+/// ## El radio «Horario Estándar / Continuo» no viaja aquí
 ///
 /// `f_CalcularDiasHabilesPermiso` no recibe ese parámetro: lo deduce de la hora
 /// de fin (`hasta > 17:30` = continuo, tope 600 min y 60 de almuerzo; si no,
@@ -47,7 +47,7 @@ class SimulacionPermisoEntity {
   ///
   /// Es un cartel, no un dato: `p_abm_Permiso` no tiene parámetro donde
   /// guardarlas y `trh_permiso` no tiene columna. Viene de allá igual porque la
-  /// regla tiene que estar escrita en un solo lado — recalcularla acá era el
+  /// regla tiene que estar escrita en un solo lado — recalcularla aquí era el
   /// mismo «segundo motor» que el módulo evita para los días.
   final double horasAReponer;
 

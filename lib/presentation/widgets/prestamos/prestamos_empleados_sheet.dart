@@ -179,7 +179,10 @@ class _PrestamosEmpleadosSheetState
                               const SizedBox(width: 8),
                               // VER DETALLE
                               IconButton(
-                                icon: const Icon(Icons.remove_red_eye_rounded, size: 18),
+                                icon: const Icon(
+                                  Icons.remove_red_eye_rounded,
+                                  size: 18,
+                                ),
                                 tooltip: 'Ver Detalle',
                                 onPressed: () {
                                   showModalBottomSheet(
@@ -198,15 +201,27 @@ class _PrestamosEmpleadosSheetState
                                   );
                                 },
                               ),
-                              if (widget.onEditar != null && e.estadoPrestamo != 'ANU' && e.estadoPrestamo != 'CAN' && e.haber == 0)
+                              if (widget.onEditar != null &&
+                                  e.estadoPrestamo != 'ANU' &&
+                                  e.estadoPrestamo != 'CAN' &&
+                                  e.haber == 0)
                                 IconButton(
-                                  icon: const Icon(Icons.edit_rounded, size: 18),
+                                  icon: const Icon(
+                                    Icons.edit_rounded,
+                                    size: 18,
+                                  ),
                                   tooltip: 'Editar Préstamo Individual',
                                   onPressed: () => widget.onEditar!(e),
                                 ),
-                              if (widget.onAnular != null && e.estadoPrestamo == 'PEN' && e.haber == 0)
+                              if (widget.onAnular != null &&
+                                  e.estadoPrestamo == 'PEN' &&
+                                  e.haber == 0)
                                 IconButton(
-                                  icon: const Icon(Icons.cancel_rounded, size: 18, color: Colors.red),
+                                  icon: const Icon(
+                                    Icons.cancel_rounded,
+                                    size: 18,
+                                    color: Colors.red,
+                                  ),
                                   tooltip: 'Anular Préstamo Individual',
                                   onPressed: () => widget.onAnular!(e),
                                 ),
@@ -218,12 +233,14 @@ class _PrestamosEmpleadosSheetState
                               isScrollControlled: true,
                               backgroundColor: Colors.transparent,
                               constraints: BoxConstraints(
-                                maxWidth: ResponsiveUtilsBosque.isDesktop(ctx)
-                                    ? 800
-                                    : double.infinity,
+                                maxWidth:
+                                    ResponsiveUtilsBosque.isDesktop(ctx)
+                                        ? 800
+                                        : double.infinity,
                               ),
-                              builder: (context) =>
-                                  PrestamosDetalleSheet(prestamo: e),
+                              builder:
+                                  (context) =>
+                                      PrestamosDetalleSheet(prestamo: e),
                             );
                           },
                         );

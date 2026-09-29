@@ -522,5 +522,6 @@ class _DependienteFormState extends ConsumerState<DependienteForm> {
 
     super.dispose();
   }
+
   // Agregar después de la sección de género en _buildDatosAdicionalesSection
 }

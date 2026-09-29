@@ -65,8 +65,13 @@ class ListaCartasCite extends ConsumerWidget {
     if (doc.esAutor == 1) return true;
     final user = ref.read(userProvider);
     if (user?.tipoUsuario == 'ROLE_ADM') return true;
-    return ref.read(buttonPermissionsProvider).maybeWhen(
-          data: (_) => ref.read(buttonPermissionsProvider.notifier).tienePermiso(boton),
+    return ref
+        .read(buttonPermissionsProvider)
+        .maybeWhen(
+          data:
+              (_) => ref
+                  .read(buttonPermissionsProvider.notifier)
+                  .tienePermiso(boton),
           orElse: () => false,
         );
   }
@@ -90,27 +95,28 @@ class ListaCartasCite extends ConsumerWidget {
       horizontal: aire.esChico ? Esp.m : Esp.xl,
     );
 
-    final contenido = aire == Aire.amplio
-        ? _Tabla(
-            padding: padding,
-            estado: estado,
-            onVer: onVer,
-            acciones: (doc) => _accionesTabla(context, ref, doc),
-          )
-        : ListView.separated(
-            padding: padding.copyWith(bottom: Esp.xxl + Esp.xxl),
-            itemCount: estado.items.length,
-            separatorBuilder: (_, __) => SizedBox(height: Esp.s),
-            itemBuilder: (context, i) {
-              final doc = estado.items[i];
-              return _Tarjeta(
-                doc: doc,
-                onTap: () => onVer(doc),
-                onImprimir: () => onImprimir(doc),
-                menu: _menu(context, ref, doc, editarEstaAfuera: false),
-              );
-            },
-          );
+    final contenido =
+        aire == Aire.amplio
+            ? _Tabla(
+              padding: padding,
+              estado: estado,
+              onVer: onVer,
+              acciones: (doc) => _accionesTabla(context, ref, doc),
+            )
+            : ListView.separated(
+              padding: padding.copyWith(bottom: Esp.xxl + Esp.xxl),
+              itemCount: estado.items.length,
+              separatorBuilder: (_, __) => SizedBox(height: Esp.s),
+              itemBuilder: (context, i) {
+                final doc = estado.items[i];
+                return _Tarjeta(
+                  doc: doc,
+                  onTap: () => onVer(doc),
+                  onImprimir: () => onImprimir(doc),
+                  menu: _menu(context, ref, doc, editarEstaAfuera: false),
+                );
+              },
+            );
 
     // Cambio de página o de filtro con datos ya en pantalla: la lista vieja se
     // queda quieta y la espera se cuenta con la barra de arriba. Reemplazarla
@@ -119,7 +125,10 @@ class ListaCartasCite extends ConsumerWidget {
       children: [
         SizedBox(
           height: 2,
-          child: estado.cargando ? const LinearProgressIndicator(minHeight: 2) : null,
+          child:
+              estado.cargando
+                  ? const LinearProgressIndicator(minHeight: 2)
+                  : null,
         ),
         Expanded(child: contenido),
       ],
@@ -130,7 +139,11 @@ class ListaCartasCite extends ConsumerWidget {
 
   /// En la grilla quedan a la vista las dos de todos los días; el resto vive en
   /// el menú, incluida anular, que consume un número de CITE para siempre.
-  List<Widget> _accionesTabla(BuildContext context, WidgetRef ref, CartaCiteEntity doc) {
+  List<Widget> _accionesTabla(
+    BuildContext context,
+    WidgetRef ref,
+    CartaCiteEntity doc,
+  ) {
     final puedeEditar = _puede(ref, doc, _btnEditar);
 
     return [
@@ -179,50 +192,51 @@ class ListaCartasCite extends ConsumerWidget {
             onAnular(doc);
         }
       },
-      itemBuilder: (_) => [
-        const PopupMenuItem(
-          value: 'ver',
-          child: ListTile(
-            leading: Icon(Icons.visibility_outlined),
-            title: Text('Ver'),
-            dense: true,
-            contentPadding: EdgeInsets.zero,
-          ),
-        ),
-        if (puedeEditar && !editarEstaAfuera)
-          const PopupMenuItem(
-            value: 'editar',
-            child: ListTile(
-              leading: Icon(Icons.edit_outlined),
-              title: Text('Editar'),
-              dense: true,
-              contentPadding: EdgeInsets.zero,
+      itemBuilder:
+          (_) => [
+            const PopupMenuItem(
+              value: 'ver',
+              child: ListTile(
+                leading: Icon(Icons.visibility_outlined),
+                title: Text('Ver'),
+                dense: true,
+                contentPadding: EdgeInsets.zero,
+              ),
             ),
-          ),
-        if (puedeDuplicar)
-          const PopupMenuItem(
-            value: 'duplicar',
-            child: ListTile(
-              leading: Icon(Icons.copy_all_outlined),
-              title: Text('Duplicar'),
-              subtitle: Text('Copia el texto y saca un número nuevo'),
-              dense: true,
-              contentPadding: EdgeInsets.zero,
-            ),
-          ),
-        if (puedeEditar) ...[
-          const PopupMenuDivider(),
-          PopupMenuItem(
-            value: 'anular',
-            child: ListTile(
-              leading: Icon(Icons.block_outlined, color: cs.error),
-              title: Text('Anular', style: TextStyle(color: cs.error)),
-              dense: true,
-              contentPadding: EdgeInsets.zero,
-            ),
-          ),
-        ],
-      ],
+            if (puedeEditar && !editarEstaAfuera)
+              const PopupMenuItem(
+                value: 'editar',
+                child: ListTile(
+                  leading: Icon(Icons.edit_outlined),
+                  title: Text('Editar'),
+                  dense: true,
+                  contentPadding: EdgeInsets.zero,
+                ),
+              ),
+            if (puedeDuplicar)
+              const PopupMenuItem(
+                value: 'duplicar',
+                child: ListTile(
+                  leading: Icon(Icons.copy_all_outlined),
+                  title: Text('Duplicar'),
+                  subtitle: Text('Copia el texto y saca un número nuevo'),
+                  dense: true,
+                  contentPadding: EdgeInsets.zero,
+                ),
+              ),
+            if (puedeEditar) ...[
+              const PopupMenuDivider(),
+              PopupMenuItem(
+                value: 'anular',
+                child: ListTile(
+                  leading: Icon(Icons.block_outlined, color: cs.error),
+                  title: Text('Anular', style: TextStyle(color: cs.error)),
+                  dense: true,
+                  contentPadding: EdgeInsets.zero,
+                ),
+              ),
+            ],
+          ],
     );
   }
 }
@@ -273,10 +287,12 @@ class _Tabla extends StatelessWidget {
             child: ConstrainedBox(
               constraints: const BoxConstraints(minWidth: 980),
               child: DataTable(
-                headingRowColor: WidgetStatePropertyAll(cs.surfaceContainerHigh),
+                headingRowColor: WidgetStatePropertyAll(
+                  cs.surfaceContainerHigh,
+                ),
                 // La fila entera abre el documento: es lo que la gente intenta
                 // primero y antes no pasaba nada al hacerlo. Sin la casilla de
-                // selección, que acá no selecciona nada.
+                // selección, que aquí no selecciona nada.
                 showCheckboxColumn: false,
                 columnSpacing: Esp.xl,
                 horizontalMargin: Esp.l,
@@ -291,43 +307,63 @@ class _Tabla extends StatelessWidget {
                   DataColumn(label: Text('ESTADO')),
                   DataColumn(label: Text('')),
                 ],
-                rows: estado.items.map((doc) {
-                  return DataRow(
-                    onSelectChanged: (_) => onVer(doc),
-                    cells: [
-                      DataCell(_CeldaDocumento(doc: doc)),
-                      DataCell(Text(
-                        doc.fechaDoc == null ? '-' : fmt.format(doc.fechaDoc!),
-                        style: context.numero(),
-                      )),
-                      DataCell(ConstrainedBox(
-                        constraints: const BoxConstraints(maxWidth: 190),
-                        child: Text(
-                          _sinNa(doc.dirigido).isEmpty ? '-' : _sinNa(doc.dirigido),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      )),
-                      DataCell(ConstrainedBox(
-                        constraints: const BoxConstraints(maxWidth: 250),
-                        child: Text(
-                          _resumen(doc).isEmpty ? '-' : _resumen(doc),
-                          overflow: TextOverflow.ellipsis,
-                          style: context.apagado(),
-                        ),
-                      )),
-                      DataCell(ConstrainedBox(
-                        constraints: const BoxConstraints(maxWidth: 150),
-                        child: Text(
-                          doc.redactadoPor,
-                          overflow: TextOverflow.ellipsis,
-                          style: context.apagado(),
-                        ),
-                      )),
-                      DataCell(EstadoImpresionCite(impreso: doc.yaExportado)),
-                      DataCell(Row(mainAxisSize: MainAxisSize.min, children: acciones(doc))),
-                    ],
-                  );
-                }).toList(),
+                rows:
+                    estado.items.map((doc) {
+                      return DataRow(
+                        onSelectChanged: (_) => onVer(doc),
+                        cells: [
+                          DataCell(_CeldaDocumento(doc: doc)),
+                          DataCell(
+                            Text(
+                              doc.fechaDoc == null
+                                  ? '-'
+                                  : fmt.format(doc.fechaDoc!),
+                              style: context.numero(),
+                            ),
+                          ),
+                          DataCell(
+                            ConstrainedBox(
+                              constraints: const BoxConstraints(maxWidth: 190),
+                              child: Text(
+                                _sinNa(doc.dirigido).isEmpty
+                                    ? '-'
+                                    : _sinNa(doc.dirigido),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ),
+                          DataCell(
+                            ConstrainedBox(
+                              constraints: const BoxConstraints(maxWidth: 250),
+                              child: Text(
+                                _resumen(doc).isEmpty ? '-' : _resumen(doc),
+                                overflow: TextOverflow.ellipsis,
+                                style: context.apagado(),
+                              ),
+                            ),
+                          ),
+                          DataCell(
+                            ConstrainedBox(
+                              constraints: const BoxConstraints(maxWidth: 150),
+                              child: Text(
+                                doc.redactadoPor,
+                                overflow: TextOverflow.ellipsis,
+                                style: context.apagado(),
+                              ),
+                            ),
+                          ),
+                          DataCell(
+                            EstadoImpresionCite(impreso: doc.yaExportado),
+                          ),
+                          DataCell(
+                            Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: acciones(doc),
+                            ),
+                          ),
+                        ],
+                      );
+                    }).toList(),
               ),
             ),
           ),
@@ -362,9 +398,9 @@ class _CeldaDocumento extends StatelessWidget {
               Text(
                 doc.cite,
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      fontWeight: Peso.dato,
-                      fontFeatures: cifrasTabulares,
-                    ),
+                  fontWeight: Peso.dato,
+                  fontFeatures: cifrasTabulares,
+                ),
                 overflow: TextOverflow.ellipsis,
               ),
               Text(
@@ -422,7 +458,11 @@ class _Tarjeta extends StatelessWidget {
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  SelloTipoCite(idTipoDoc: doc.tipoDoc, tipo: doc.tipo, lado: 44),
+                  SelloTipoCite(
+                    idTipoDoc: doc.tipoDoc,
+                    tipo: doc.tipo,
+                    lado: 44,
+                  ),
                   SizedBox(width: Esp.m),
                   Expanded(
                     child: Column(
@@ -430,10 +470,12 @@ class _Tarjeta extends StatelessWidget {
                       children: [
                         Text(
                           doc.cite,
-                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                fontWeight: Peso.dato,
-                                fontFeatures: cifrasTabulares,
-                              ),
+                          style: Theme.of(
+                            context,
+                          ).textTheme.titleMedium?.copyWith(
+                            fontWeight: Peso.dato,
+                            fontFeatures: cifrasTabulares,
+                          ),
                         ),
                         Text(doc.tipo, style: context.apagado()),
                       ],
@@ -443,7 +485,8 @@ class _Tarjeta extends StatelessWidget {
                   EstadoImpresionCite(impreso: doc.yaExportado),
                 ],
               ),
-              if (para.isNotEmpty || resumen.isNotEmpty) SizedBox(height: Esp.m),
+              if (para.isNotEmpty || resumen.isNotEmpty)
+                SizedBox(height: Esp.m),
               if (para.isNotEmpty)
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -454,10 +497,9 @@ class _Tarjeta extends StatelessWidget {
                         para,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: Theme.of(context)
-                            .textTheme
-                            .bodyMedium
-                            ?.copyWith(fontWeight: Peso.titulo),
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          fontWeight: Peso.titulo,
+                        ),
                       ),
                     ),
                   ],
@@ -482,9 +524,15 @@ class _Tarjeta extends StatelessWidget {
                       texto: fmt.format(doc.fechaDoc!),
                     ),
                   if (doc.empresa.isNotEmpty)
-                    DatoCite(icono: Icons.business_outlined, texto: doc.empresa),
+                    DatoCite(
+                      icono: Icons.business_outlined,
+                      texto: doc.empresa,
+                    ),
                   if (doc.redactadoPor.isNotEmpty)
-                    DatoCite(icono: Icons.person_outline, texto: doc.redactadoPor),
+                    DatoCite(
+                      icono: Icons.person_outline,
+                      texto: doc.redactadoPor,
+                    ),
                 ],
               ),
               Divider(height: Esp.l, color: cs.outlineVariant),
@@ -560,17 +608,16 @@ class _Vacio extends StatelessWidget {
                 hayFiltro
                     ? 'Ningún documento coincide con la búsqueda'
                     : 'Todavía no hay documentos en este período',
-                style: Theme.of(context)
-                    .textTheme
-                    .titleMedium
-                    ?.copyWith(fontWeight: Peso.titulo),
+                style: Theme.of(
+                  context,
+                ).textTheme.titleMedium?.copyWith(fontWeight: Peso.titulo),
                 textAlign: TextAlign.center,
               ),
               SizedBox(height: Esp.s),
               Text(
                 hayFiltro
-                    ? 'Probá con otro texto, o ampliá el período y el tipo.'
-                    : 'Ampliá el período con los botones de arriba, o redactá el primero.',
+                    ? 'Prueba con otro texto, o amplía el período y el tipo.'
+                    : 'Amplía el período con los botones de arriba, o redacta el primero.',
                 style: context.apagado(),
                 textAlign: TextAlign.center,
               ),

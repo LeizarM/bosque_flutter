@@ -8,7 +8,7 @@ import 'package:printing/printing.dart';
 /// Pestaña "Resumen mensual": todos los empleados enlazados, un mes, sus
 /// totales — responde "dónde veo el reporte de todos los empleados". El
 /// detalle día-por-día de UNO de ellos sigue viviendo en la pestaña Reporte;
-/// tocar una fila acá te manda ahí ya con ese empleado elegido, en vez de
+/// tocar una fila aquí te manda ahí ya con ese empleado elegido, en vez de
 /// repetir el detalle de 400 personas en una sola pantalla.
 ///
 /// Rediseñada 2026-09-01: el `DataTable` original se autoajustaba al
@@ -58,7 +58,8 @@ class _TabResumenMensualState extends ConsumerState<TabResumenMensual> {
                   tooltip: 'Actualizar',
                   icon: const Icon(Icons.refresh),
                   onPressed:
-                      () => ref.invalidate(resumenMensualBiometricoProvider(mes)),
+                      () =>
+                          ref.invalidate(resumenMensualBiometricoProvider(mes)),
                 ),
                 _BotonDescargarResumenPdf(mes: mes),
                 _BotonDescargarDetalladoTodosPdf(mes: mes),
@@ -84,7 +85,7 @@ class _TabResumenMensualState extends ConsumerState<TabResumenMensual> {
                   const Spacer(),
                   // Wrap en vez de spread directo: con estiloBotonAccion
                   // (fondo visible, no un ícono pelado) los botones tocándose
-                  // se ven amontonados — spacing acá, igual que en Aire.justo.
+                  // se ven amontonados — spacing aquí, igual que en Aire.justo.
                   Wrap(spacing: Esp.xs, children: acciones),
                 ],
               );
@@ -145,7 +146,8 @@ class _TabResumenMensualState extends ConsumerState<TabResumenMensual> {
                   return const MensajeVacio(
                     icono: Icons.groups_outlined,
                     titulo: 'Sin empleados enlazados',
-                    detalle: 'Enlazá empleados en la pestaña Empleados primero.',
+                    detalle:
+                        'Enlaza empleados en la pestaña Empleados primero.',
                   );
                 }
                 final filtro = _busqueda.trim().toLowerCase();
@@ -154,8 +156,9 @@ class _TabResumenMensualState extends ConsumerState<TabResumenMensual> {
                         ? todas
                         : todas
                             .where(
-                              (f) =>
-                                  f.nombreEmpleado.toLowerCase().contains(filtro),
+                              (f) => f.nombreEmpleado.toLowerCase().contains(
+                                filtro,
+                              ),
                             )
                             .toList();
                 if (filas.isEmpty) {
@@ -223,8 +226,7 @@ class _SelectorDeMesResumen extends ConsumerWidget {
           onPressed:
               esMesActual
                   ? null
-                  : () =>
-                      notifier.state = DateTime(mes.year, mes.month + 1, 1),
+                  : () => notifier.state = DateTime(mes.year, mes.month + 1, 1),
         ),
       ],
     );
@@ -340,10 +342,7 @@ class _FilaResumen extends StatelessWidget {
       onTap: onTap,
       hoverColor: cs.primary.withValues(alpha: 0.04),
       child: Padding(
-        padding: const EdgeInsets.symmetric(
-          horizontal: Esp.l,
-          vertical: Esp.m,
-        ),
+        padding: const EdgeInsets.symmetric(horizontal: Esp.l, vertical: Esp.m),
         child: Row(
           children: [
             Expanded(
@@ -388,7 +387,11 @@ class _FilaResumen extends StatelessWidget {
             ),
             SizedBox(
               width: 32,
-              child: Icon(Icons.chevron_right, size: 20, color: cs.onSurfaceVariant),
+              child: Icon(
+                Icons.chevron_right,
+                size: 20,
+                color: cs.onSurfaceVariant,
+              ),
             ),
           ],
         ),
@@ -446,7 +449,10 @@ class _TarjetaResumen extends StatelessWidget {
               Row(
                 children: [
                   Expanded(
-                    child: Text(fila.nombreEmpleado, style: context.tituloSeccion()),
+                    child: Text(
+                      fila.nombreEmpleado,
+                      style: context.tituloSeccion(),
+                    ),
                   ),
                   Icon(Icons.chevron_right, color: cs.onSurfaceVariant),
                 ],
@@ -456,13 +462,19 @@ class _TarjetaResumen extends StatelessWidget {
                 spacing: Esp.xl,
                 runSpacing: Esp.s,
                 children: [
-                  _Estadistica(etiqueta: 'Días asignados', valor: '${fila.diasAsignados}'),
+                  _Estadistica(
+                    etiqueta: 'Días asignados',
+                    valor: '${fila.diasAsignados}',
+                  ),
                   _Estadistica(
                     etiqueta: 'No marcados',
                     valor: '${fila.diasNoMarcados}',
                     destacado: fila.diasNoMarcados > 0,
                   ),
-                  _Estadistica(etiqueta: 'Atraso', valor: '${fila.minutosAtraso} min'),
+                  _Estadistica(
+                    etiqueta: 'Atraso',
+                    valor: '${fila.minutosAtraso} min',
+                  ),
                 ],
               ),
               if ((fila.observaciones ?? '').trim().isNotEmpty) ...[
@@ -497,7 +509,10 @@ class _Estadistica extends StatelessWidget {
         Text(etiqueta, style: context.apagado()),
         Text(
           valor,
-          style: context.numero(fuerte: true, color: destacado ? cs.error : null),
+          style: context.numero(
+            fuerte: true,
+            color: destacado ? cs.error : null,
+          ),
         ),
       ],
     );
@@ -648,7 +663,8 @@ class _BotonDescargarHorarioVigentePdfState
   Widget build(BuildContext context) {
     return IconButton(
       style: estiloBotonAccion(context),
-      tooltip: 'Descargar horario vigente PDF (qué horario tiene cada empleado hoy)',
+      tooltip:
+          'Descargar horario vigente PDF (qué horario tiene cada empleado hoy)',
       icon:
           _generando
               ? const SizedBox(

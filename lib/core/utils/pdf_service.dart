@@ -24,7 +24,10 @@ class PdfService {
 
     // En web, descarga directamente
     if (kIsWeb) {
-      _downloadWebPdf(pdf, 'depositos_${DateTime.now().millisecondsSinceEpoch}.pdf');
+      _downloadWebPdf(
+        pdf,
+        'depositos_${DateTime.now().millisecondsSinceEpoch}.pdf',
+      );
     } else {
       // En móvil, muestra la previsualización
       await Printing.layoutPdf(
@@ -54,13 +57,14 @@ class PdfService {
         // Ya no usamos tema con fuente personalizada
         header: (context) => _buildHeader(title),
         footer: (context) => _buildFooter(context),
-        build: (context) => [
-          // Sección de filtros aplicados
-          _buildFiltrosSection(filtros),
-          pw.SizedBox(height: 20),
-          // Tabla de resultados
-          _buildDepositosTable(depositos),
-        ],
+        build:
+            (context) => [
+              // Sección de filtros aplicados
+              _buildFiltrosSection(filtros),
+              pw.SizedBox(height: 20),
+              // Tabla de resultados
+              _buildDepositosTable(depositos),
+            ],
       ),
     );
 
@@ -72,17 +76,16 @@ class PdfService {
     return pw.Container(
       padding: const pw.EdgeInsets.only(bottom: 10),
       decoration: pw.BoxDecoration(
-        border: pw.Border(bottom: pw.BorderSide(width: 1, color: PdfColors.grey300)),
+        border: pw.Border(
+          bottom: pw.BorderSide(width: 1, color: PdfColors.grey300),
+        ),
       ),
       child: pw.Row(
         mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
         children: [
           pw.Text(
             title,
-            style: pw.TextStyle(
-              fontSize: 20,
-              fontWeight: pw.FontWeight.bold,
-            ),
+            style: pw.TextStyle(fontSize: 20, fontWeight: pw.FontWeight.bold),
           ),
           pw.Text(
             DateFormat('dd/MM/yyyy HH:mm').format(DateTime.now()),
@@ -98,15 +101,14 @@ class PdfService {
     return pw.Container(
       padding: const pw.EdgeInsets.only(top: 10),
       decoration: pw.BoxDecoration(
-        border: pw.Border(top: pw.BorderSide(width: 1, color: PdfColors.grey300)),
+        border: pw.Border(
+          top: pw.BorderSide(width: 1, color: PdfColors.grey300),
+        ),
       ),
       child: pw.Row(
         mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
         children: [
-          pw.Text(
-            'Sistema Bosque',
-            style: const pw.TextStyle(fontSize: 12),
-          ),
+          pw.Text('Sistema Bosque', style: const pw.TextStyle(fontSize: 12)),
           pw.Text(
             'Página ${context.pageNumber} de ${context.pagesCount}',
             style: const pw.TextStyle(fontSize: 12),
@@ -129,29 +131,27 @@ class PdfService {
         children: [
           pw.Text(
             'Filtros aplicados:',
-            style: pw.TextStyle(
-              fontSize: 14,
-              fontWeight: pw.FontWeight.bold,
-            ),
+            style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold),
           ),
           pw.SizedBox(height: 8),
           pw.Wrap(
             spacing: 20,
             runSpacing: 8,
-            children: filtros.entries.map((entry) {
-              // Formatear fechas si es necesario
-              String valueText = '';
-              if (entry.value is DateTime) {
-                valueText = DateFormat('dd/MM/yyyy').format(entry.value);
-              } else {
-                valueText = entry.value?.toString() ?? 'Todos';
-              }
-              
-              return pw.Text(
-                '${entry.key}: $valueText',
-                style: const pw.TextStyle(fontSize: 12),
-              );
-            }).toList(),
+            children:
+                filtros.entries.map((entry) {
+                  // Formatear fechas si es necesario
+                  String valueText = '';
+                  if (entry.value is DateTime) {
+                    valueText = DateFormat('dd/MM/yyyy').format(entry.value);
+                  } else {
+                    valueText = entry.value?.toString() ?? 'Todos';
+                  }
+
+                  return pw.Text(
+                    '${entry.key}: $valueText',
+                    style: const pw.TextStyle(fontSize: 12),
+                  );
+                }).toList(),
           ),
         ],
       ),
@@ -162,8 +162,15 @@ class PdfService {
   static pw.Widget _buildDepositosTable(List<DepositoChequeEntity> depositos) {
     // Definir columnas de la tabla (excluye "Acciones")
     final columns = [
-      'ID', 'Cliente', 'Banco', 'Empresa', 'Importe', 
-      'Moneda', 'Fecha Ingreso', 'Num. Transaccion', 'Estado'
+      'ID',
+      'Cliente',
+      'Banco',
+      'Empresa',
+      'Importe',
+      'Moneda',
+      'Fecha Ingreso',
+      'Num. Transaccion',
+      'Estado',
     ];
 
     return pw.Table(
@@ -183,41 +190,55 @@ class PdfService {
         // Encabezados
         pw.TableRow(
           decoration: const pw.BoxDecoration(color: PdfColors.grey200),
-          children: columns.map((column) => pw.Container(
-            padding: const pw.EdgeInsets.all(6),
-            child: pw.Text(
-              column,
-              style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
-              textAlign: pw.TextAlign.center,
-            ),
-          )).toList(),
+          children:
+              columns
+                  .map(
+                    (column) => pw.Container(
+                      padding: const pw.EdgeInsets.all(6),
+                      child: pw.Text(
+                        column,
+                        style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
+                        textAlign: pw.TextAlign.center,
+                      ),
+                    ),
+                  )
+                  .toList(),
         ),
         // Datos de depósitos
-        ...depositos.map((deposito) => pw.TableRow(
-          children: [
-            _cellText(deposito.idDeposito.toString()),
-            _cellText(deposito.codCliente),
-            _cellText(deposito.nombreBanco),
-            _cellText(deposito.nombreEmpresa),
-            _cellText(deposito.importe.toStringAsFixed(2), alignment: pw.TextAlign.right),
-            _cellText(deposito.moneda, alignment: pw.TextAlign.center),
-            _cellText(deposito.fechaI != null ? "${deposito.fechaI!.day.toString().padLeft(2, '0')}/${deposito.fechaI!.month.toString().padLeft(2, '0')}/${deposito.fechaI!.year}" : ''),
-            _cellText(deposito.nroTransaccion),
-            _cellText(deposito.esPendiente, alignment: pw.TextAlign.center),
-          ],
-        )),
+        ...depositos.map(
+          (deposito) => pw.TableRow(
+            children: [
+              _cellText(deposito.idDeposito.toString()),
+              _cellText(deposito.codCliente),
+              _cellText(deposito.nombreBanco),
+              _cellText(deposito.nombreEmpresa),
+              _cellText(
+                deposito.importe.toStringAsFixed(2),
+                alignment: pw.TextAlign.right,
+              ),
+              _cellText(deposito.moneda, alignment: pw.TextAlign.center),
+              _cellText(
+                deposito.fechaI != null
+                    ? "${deposito.fechaI!.day.toString().padLeft(2, '0')}/${deposito.fechaI!.month.toString().padLeft(2, '0')}/${deposito.fechaI!.year}"
+                    : '',
+              ),
+              _cellText(deposito.nroTransaccion),
+              _cellText(deposito.esPendiente, alignment: pw.TextAlign.center),
+            ],
+          ),
+        ),
       ],
     );
   }
 
   // Helper para crear celdas de texto en la tabla
-  static pw.Widget _cellText(String text, {pw.TextAlign alignment = pw.TextAlign.left}) {
+  static pw.Widget _cellText(
+    String text, {
+    pw.TextAlign alignment = pw.TextAlign.left,
+  }) {
     return pw.Container(
       padding: const pw.EdgeInsets.all(6),
-      child: pw.Text(
-        text,
-        textAlign: alignment,
-      ),
+      child: pw.Text(text, textAlign: alignment),
     );
   }
 
@@ -225,14 +246,15 @@ class PdfService {
   static void _downloadWebPdf(Uint8List pdfBytes, String fileName) {
     final blob = html.Blob([pdfBytes], 'application/pdf');
     final url = html.Url.createObjectUrlFromBlob(blob);
-    final anchor = html.AnchorElement(href: url)
-      ..setAttribute('download', fileName)
-      ..style.display = 'none';
+    final anchor =
+        html.AnchorElement(href: url)
+          ..setAttribute('download', fileName)
+          ..style.display = 'none';
     html.document.body?.children.add(anchor);
-    
+
     // Simular click para iniciar descarga
     anchor.click();
-    
+
     // Limpiar
     html.document.body?.children.remove(anchor);
     html.Url.revokeObjectUrl(url);

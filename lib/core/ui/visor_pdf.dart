@@ -15,11 +15,11 @@ import 'package:bosque_flutter/core/ui/tokens_bosque.dart';
 /// **Por qué ver y no bajar directo.** La alternativa que usa medio proyecto es
 /// `Printing.sharePdf`, que dispara la descarga sin mostrar nada: si el reporte
 /// salió con los filtros equivocados uno se entera después de abrir el archivo.
-/// Acá se ve primero y se imprime si sirve.
+/// Aquí se ve primero y se imprime si sirve.
 ///
 /// Nota: `presentation/widgets/cartas-cite/visor_pdf_cite.dart` es un gemelo de
 /// esta función, anterior y atado por nombre a ese módulo. Cuando haya que
-/// tocarlo, conviene que delegue acá en vez de mantener dos.
+/// tocarlo, conviene que delegue aquí en vez de mantener dos.
 Future<void> mostrarPdf(
   BuildContext context, {
   required Uint8List bytes,

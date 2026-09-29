@@ -51,7 +51,7 @@ class SabadoModel {
     indiceAnio: rsInt(json['indiceAnio']),
     grupoQueRota: rsStr(json['grupoQueRota']),
     esFeriado: rsInt(json['esFeriado']),
-    // Ojo: null acá NO es un dato faltante, significa "sábado normal".
+    // Ojo: null aquí NO es un dato faltante, significa "sábado normal".
     alcanceEvento: json['alcanceEvento']?.toString(),
     motivoEspecial: rsStr(json['motivoEspecial']),
     activo: rsInt(json['activo']),

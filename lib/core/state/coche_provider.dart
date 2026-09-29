@@ -52,9 +52,8 @@ class CocheNotifier extends StateNotifier<CocheState> {
       await _repo.registrar(item);
       state = state.copyWith(
         cargando: false,
-        mensajeExito: item.idCoche == 0
-            ? 'Coche agregado.'
-            : 'Coche actualizado.',
+        mensajeExito:
+            item.idCoche == 0 ? 'Coche agregado.' : 'Coche actualizado.',
       );
       await cargar();
       return true;
@@ -82,5 +81,5 @@ final _cocheRepoProvider = Provider((ref) => CocheImpl());
 
 final cocheProvider =
     StateNotifierProvider.autoDispose<CocheNotifier, CocheState>(
-  (ref) => CocheNotifier(ref.read(_cocheRepoProvider)),
-);
+      (ref) => CocheNotifier(ref.read(_cocheRepoProvider)),
+    );

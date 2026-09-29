@@ -2,17 +2,17 @@ import 'package:bosque_flutter/presentation/widgets/entregas/entregas_dashboard_
 import 'package:bosque_flutter/presentation/widgets/entregas/entregas_por_chofer_content.dart';
 import 'package:flutter/material.dart';
 
-
 class EntregasDashboardScreen extends StatefulWidget {
   const EntregasDashboardScreen({super.key});
 
   @override
-  State<EntregasDashboardScreen> createState() => _EntregasDashboardScreenState();
+  State<EntregasDashboardScreen> createState() =>
+      _EntregasDashboardScreenState();
 }
 
 class _EntregasDashboardScreenState extends State<EntregasDashboardScreen> {
   int _selectedIndex = 0;
-  
+
   static final List<Widget> _widgetOptions = <Widget>[
     const EntregasDashboardContent(),
     const EntregasPorChoferContent(),
@@ -27,12 +27,8 @@ class _EntregasDashboardScreenState extends State<EntregasDashboardScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Entregas'),
-      ),
-      body: Center(
-        child: _widgetOptions.elementAt(_selectedIndex),
-      ),
+      appBar: AppBar(title: const Text('Entregas')),
+      body: Center(child: _widgetOptions.elementAt(_selectedIndex)),
       bottomNavigationBar: BottomNavigationBar(
         items: const <BottomNavigationBarItem>[
           BottomNavigationBarItem(

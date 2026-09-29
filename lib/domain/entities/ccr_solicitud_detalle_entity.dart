@@ -181,7 +181,8 @@ class CcrSolicitudDetalleEntity {
     required double largo,
     required double cantHojas,
   }) {
-    final divisor = (gramaje / 1000) * (ancho / 100) * (largo / 100) * cantHojas;
+    final divisor =
+        (gramaje / 1000) * (ancho / 100) * (largo / 100) * cantHojas;
     if (divisor <= 0) return 0;
     return cantidad / divisor;
   }

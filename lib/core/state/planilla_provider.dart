@@ -190,7 +190,11 @@ class PlanillaNotifier extends StateNotifier<PlanillaState> {
   }
 
   Future<String?> preValidarEjecutarPlanilla() async {
-    state = state.copyWith(generando: true, mensajeError: null, mensajeExito: null);
+    state = state.copyWith(
+      generando: true,
+      mensajeError: null,
+      mensajeExito: null,
+    );
     try {
       final response = await _repo.ejecutarPlanilla(soloValidar: true);
       state = state.copyWith(generando: false);
@@ -203,7 +207,7 @@ class PlanillaNotifier extends StateNotifier<PlanillaState> {
         state = state.copyWith(generando: false);
         return msg.split('ADVERTENCIAS_SQL|').last.trim();
       }
-      
+
       // Si es un error real bloqueante, lo marcamos en el estado para el snackbar.
       state = state.copyWith(generando: false, mensajeError: msg);
       return null;
@@ -345,17 +349,15 @@ final pdfEstimadoPagoBancoProvider = FutureProvider<Uint8List>((ref) async {
   return await repo.descargarEstimadoPagoBanco();
 });
 
-final excelPlanillaTributariaProvider = FutureProvider.family<Uint8List, Map<String, int>>((
-  ref,
-  params,
-) async {
-  final repo = PlanillaImpl();
-  return await repo.descargarExcelPlanillaTributaria(
-    mes: params['mes']!,
-    anio: params['anio']!,
-    codEmpresa: params['codEmpresa']!,
-  );
-});
+final excelPlanillaTributariaProvider =
+    FutureProvider.family<Uint8List, Map<String, int>>((ref, params) async {
+      final repo = PlanillaImpl();
+      return await repo.descargarExcelPlanillaTributaria(
+        mes: params['mes']!,
+        anio: params['anio']!,
+        codEmpresa: params['codEmpresa']!,
+      );
+    });
 
 /// El record da igualdad por valor, así que el cache de la family sigue
 /// funcionando igual que cuando la clave era un `int` suelto.

@@ -158,15 +158,15 @@ class SecureStorage {
   Future<TokenResult> readTokenDetailed() async {
     for (var intento = 0; intento < 2; intento++) {
       try {
-        final value = await _storage
-            .read(key: _tokenKey)
-            .timeout(_readTimeout);
+        final value = await _storage.read(key: _tokenKey).timeout(_readTimeout);
         if (value == null || value.isEmpty) {
           return const TokenResult(TokenReadStatus.absent);
         }
         return TokenResult(TokenReadStatus.ok, value);
       } on TimeoutException {
-        console('⚠️ SecureStorage timeout leyendo token (intento ${intento + 1})');
+        console(
+          '⚠️ SecureStorage timeout leyendo token (intento ${intento + 1})',
+        );
         // Reintentar una vez: los cuelgues del Keystore suelen ser transitorios.
       } on PlatformException catch (e) {
         // Descifrado fallido → storage corrupto. Lo reseteamos y lo tratamos
@@ -214,8 +214,6 @@ class SecureStorage {
     return null;
   }
 
-
-
   /// ¿La sesión venció?
   ///
   /// <h3>Por qué las dos lecturas van en paralelo</h3>
@@ -232,7 +230,7 @@ class SecureStorage {
   /// ya estaba caliente. Con `Future.wait` el peor caso baja a ~3 s, por debajo
   /// del tope del router.
   ///
-  /// <h3>Y por qué NO hay caché acá</h3>
+  /// <h3>Y por qué NO hay caché aquí</h3>
   /// Se intentó cachear el vencimiento en memoria y salió mal. `saveToken`
   /// escribe el token y guarda la expiración en una llamada APARTE; entre las
   /// dos hay una ventana donde el estado es "token sí, expiración todavía no".
@@ -253,7 +251,7 @@ class SecureStorage {
       final token = resultados[0] as String?;
       final expiry = resultados[1] as DateTime?;
 
-      // Los dos "no" de acá abajo son BARATOS de recalcular y pueden ser
+      // Los dos "no" de aquí abajo son BARATOS de recalcular y pueden ser
       // transitorios (la ventana entre escribir el token y escribir su
       // expiración es un estado real que dura milisegundos). Por eso no se
       // memoriza ninguno: se vuelve a preguntar y listo.

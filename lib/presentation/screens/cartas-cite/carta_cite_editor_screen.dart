@@ -37,7 +37,8 @@ class CartaCiteEditorScreen extends ConsumerStatefulWidget {
   });
 
   @override
-  ConsumerState<CartaCiteEditorScreen> createState() => _CartaCiteEditorScreenState();
+  ConsumerState<CartaCiteEditorScreen> createState() =>
+      _CartaCiteEditorScreenState();
 }
 
 class _CartaCiteEditorScreenState extends ConsumerState<CartaCiteEditorScreen> {
@@ -165,8 +166,14 @@ class _CartaCiteEditorScreenState extends ConsumerState<CartaCiteEditorScreen> {
   @override
   void dispose() {
     for (final c in [
-      _ciudad, _dirigido, _cargoDirigido, _referencia,
-      _asunto, _via, _cargoVia, _cuerpo,
+      _ciudad,
+      _dirigido,
+      _cargoDirigido,
+      _referencia,
+      _asunto,
+      _via,
+      _cargoVia,
+      _cuerpo,
     ]) {
       c.dispose();
     }
@@ -184,10 +191,9 @@ class _CartaCiteEditorScreenState extends ConsumerState<CartaCiteEditorScreen> {
   Future<void> _cargarPreviewCite() async {
     setState(() => _cargandoCite = true);
     try {
-      final g = await ref.read(cartasCiteRepositoryProvider).siguienteCite(
-            idTipoDoc: _tipo,
-            codEmpresa: _doc.codEmpresa.toInt(),
-          );
+      final g = await ref
+          .read(cartasCiteRepositoryProvider)
+          .siguienteCite(idTipoDoc: _tipo, codEmpresa: _doc.codEmpresa.toInt());
       if (mounted) setState(() => _preview = g);
     } catch (_) {
       // Sin previsualización se puede redactar igual; el número lo pone la base.
@@ -227,20 +233,23 @@ class _CartaCiteEditorScreenState extends ConsumerState<CartaCiteEditorScreen> {
     if (TipoCite.usaArea(_tipo) && _doc.area.trim().isEmpty) {
       falta.add((
         corto: 'el área',
-        largo: 'Seleccioná el área que emite el documento.',
+        largo: 'Selecciona el área que emite el documento.',
       ));
     }
     if (_doc.codEmpresa.toInt() <= 0) {
-      falta.add((corto: 'la empresa', largo: 'Seleccioná la empresa.'));
+      falta.add((corto: 'la empresa', largo: 'Selecciona la empresa.'));
     }
     if (TipoCite.destinatarioLibre(_tipo) && _dirigido.text.trim().isEmpty) {
       falta.add((
         corto: 'el destinatario',
-        largo: 'Indicá a quién va dirigido el documento.',
+        largo: 'Indica a quién va dirigido el documento.',
       ));
     }
     if (TipoCite.destinatarioEmpleado(_tipo) && _doc.codEmpleado.toInt() == 0) {
-      falta.add((corto: 'el destinatario', largo: 'Seleccioná el destinatario.'));
+      falta.add((
+        corto: 'el destinatario',
+        largo: 'Selecciona el destinatario.',
+      ));
     }
     /* Referencia y asunto son obligatorios según el tipo, igual que el resto:
        cada formato imprime uno u otro, nunca los dos. De los 781 documentos
@@ -249,11 +258,14 @@ class _CartaCiteEditorScreenState extends ConsumerState<CartaCiteEditorScreen> {
     if (TipoCite.usaReferencia(_tipo) && _referencia.text.trim().isEmpty) {
       falta.add((
         corto: 'la referencia',
-        largo: 'Escribí la referencia: la línea que resume de qué trata.',
+        largo: 'Escribe la referencia: la línea que resume de qué trata.',
       ));
     }
     if (TipoCite.usaAsunto(_tipo) && _asunto.text.trim().isEmpty) {
-      falta.add((corto: 'el asunto', largo: 'Escribí el asunto del documento.'));
+      falta.add((
+        corto: 'el asunto',
+        largo: 'Escribe el asunto del documento.',
+      ));
     }
     if (normalizarCuerpo(_cuerpo.text).isEmpty) {
       falta.add((
@@ -265,7 +277,8 @@ class _CartaCiteEditorScreenState extends ConsumerState<CartaCiteEditorScreen> {
         _ctrlRemitentes.every((f) => f[0].text.trim().isEmpty)) {
       falta.add((
         corto: 'quién firma',
-        largo: 'El documento tiene que llevar al menos un remitente que lo firme.',
+        largo:
+            'El documento tiene que llevar al menos un remitente que lo firme.',
       ));
     }
 
@@ -285,11 +298,7 @@ class _CartaCiteEditorScreenState extends ConsumerState<CartaCiteEditorScreen> {
     if (mensaje == null) return hijo;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        hijo,
-        SizedBox(height: Esp.s),
-        _CampoError(mensaje: mensaje),
-      ],
+      children: [hijo, SizedBox(height: Esp.s), _CampoError(mensaje: mensaje)],
     );
   }
 
@@ -315,18 +324,20 @@ class _CartaCiteEditorScreenState extends ConsumerState<CartaCiteEditorScreen> {
       ..copiasArchivo = [
         for (var i = 0; i < _ctrlCopias.length; i++)
           CopiaArchEntity(
-            idCopiaArch: i < _doc.copiasArchivo.length
-                ? _doc.copiasArchivo[i].idCopiaArch
-                : BigInt.zero,
+            idCopiaArch:
+                i < _doc.copiasArchivo.length
+                    ? _doc.copiasArchivo[i].idCopiaArch
+                    : BigInt.zero,
             copiaArch: _ctrlCopias[i].text.trim(),
           ),
       ]
       ..destinatarios = [
         for (var i = 0; i < _ctrlDestinatarios.length; i++)
           CopiaEncabezadoEntity(
-            idCopiaEncab: i < _doc.destinatarios.length
-                ? _doc.destinatarios[i].idCopiaEncab
-                : BigInt.zero,
+            idCopiaEncab:
+                i < _doc.destinatarios.length
+                    ? _doc.destinatarios[i].idCopiaEncab
+                    : BigInt.zero,
             copiaEnca: _ctrlDestinatarios[i][0].text.trim(),
             cargoCopia: _ctrlDestinatarios[i][1].text.trim(),
           ),
@@ -334,16 +345,19 @@ class _CartaCiteEditorScreenState extends ConsumerState<CartaCiteEditorScreen> {
       ..remitentes = [
         for (var i = 0; i < _ctrlRemitentes.length; i++)
           RemitenteEntity(
-            idRemitente: i < _doc.remitentes.length
-                ? _doc.remitentes[i].idRemitente
-                : BigInt.zero,
+            idRemitente:
+                i < _doc.remitentes.length
+                    ? _doc.remitentes[i].idRemitente
+                    : BigInt.zero,
             remitente: _ctrlRemitentes[i][0].text.trim(),
             cargoRemitente: _ctrlRemitentes[i][1].text.trim(),
           ),
       ];
 
     try {
-      final msg = await ref.read(cartasCiteProvider(_uid).notifier).guardar(
+      final msg = await ref
+          .read(cartasCiteProvider(_uid).notifier)
+          .guardar(
             _doc,
             copiasAEliminar: _copiasAEliminar,
             destinatariosAEliminar: _destinatariosAEliminar,
@@ -354,15 +368,21 @@ class _CartaCiteEditorScreenState extends ConsumerState<CartaCiteEditorScreen> {
     } catch (e) {
       if (!mounted) return;
       setState(() => _guardando = false);
-      _avisar(e.toString().replaceFirst(RegExp(r'^Exception:\s*'), ''), esError: true);
+      _avisar(
+        e.toString().replaceFirst(RegExp(r'^Exception:\s*'), ''),
+        esError: true,
+      );
     }
   }
 
   void _avisar(String texto, {bool esError = false}) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text(texto),
-      backgroundColor: esError ? Theme.of(context).colorScheme.error : Colors.green,
-    ));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(texto),
+        backgroundColor:
+            esError ? Theme.of(context).colorScheme.error : Colors.green,
+      ),
+    );
   }
 
   // ── UI ──────────────────────────────────────────────────────────────────
@@ -391,13 +411,14 @@ class _CartaCiteEditorScreenState extends ConsumerState<CartaCiteEditorScreen> {
       // Guardar vive abajo y en un solo lugar. Estaba arriba a la derecha, que
       // en un teléfono es la esquina más lejos del pulgar, y en un formulario
       // de seis bloques obliga a subir hasta el final para terminar.
-      bottomNavigationBar: _bloqueado
-          ? null
-          : _BarraGuardar(
-              pendientes: _pendientes().map((p) => p.corto).toList(),
-              guardando: _guardando,
-              onGuardar: _guardar,
-            ),
+      bottomNavigationBar:
+          _bloqueado
+              ? null
+              : _BarraGuardar(
+                pendientes: _pendientes().map((p) => p.corto).toList(),
+                guardando: _guardando,
+                onGuardar: _guardar,
+              ),
       body: LayoutBuilder(
         builder: (context, cons) {
           final aire = Aire.de(cons.maxWidth);
@@ -485,54 +506,69 @@ class _CartaCiteEditorScreenState extends ConsumerState<CartaCiteEditorScreen> {
   Widget _encabezado(Aire aire) {
     final areasAsync = ref.watch(areasCiteProvider(_doc.codEmpresa.toInt()));
 
-    final campoArea = TipoCite.usaArea(_tipo)
-        ? areasAsync.when(
-            loading: () => const _CampoCargando(etiqueta: 'Área'),
-            error: (e, _) => _CampoError(mensaje: 'No se pudieron cargar las áreas'),
-            data: (areas) {
-              // El valor guardado puede no estar en el catálogo actual (un área
-              // dada de baja). Sin esta comprobación el Dropdown revienta.
-              final valor = areas.any((a) => a.siglas == _doc.area.trim())
-                  ? _doc.area.trim()
-                  : null;
-              return DropdownButtonFormField<String>(
-                value: valor,
-                isExpanded: true,
-                decoration: InputDecoration(
-                  labelText: 'Área que emite *',
-                  border: const OutlineInputBorder(),
-                  isDense: true,
-                  errorText: _errorSi(
-                    _doc.area.trim().isEmpty,
-                    'Elegí el área que emite.',
+    final campoArea =
+        TipoCite.usaArea(_tipo)
+            ? areasAsync.when(
+              loading: () => const _CampoCargando(etiqueta: 'Área'),
+              error:
+                  (e, _) =>
+                      _CampoError(mensaje: 'No se pudieron cargar las áreas'),
+              data: (areas) {
+                // El valor guardado puede no estar en el catálogo actual (un área
+                // dada de baja). Sin esta comprobación el Dropdown revienta.
+                final valor =
+                    areas.any((a) => a.siglas == _doc.area.trim())
+                        ? _doc.area.trim()
+                        : null;
+                return DropdownButtonFormField<String>(
+                  value: valor,
+                  isExpanded: true,
+                  decoration: InputDecoration(
+                    labelText: 'Área que emite *',
+                    border: const OutlineInputBorder(),
+                    isDense: true,
+                    errorText: _errorSi(
+                      _doc.area.trim().isEmpty,
+                      'Elige el área que emite.',
+                    ),
                   ),
-                ),
-                items: areas
-                    .map((a) => DropdownMenuItem(
-                          value: a.siglas,
-                          child: Text(a.etiqueta, overflow: TextOverflow.ellipsis),
-                        ))
-                    .toList(),
-                onChanged: _bloqueado
-                    ? null
-                    : (v) => setState(() => _doc.area = v ?? ''),
-              );
-            },
-          )
-        : const _CampoFijo(etiqueta: 'Área', valor: 'G.A. (la fija el sistema)');
+                  items:
+                      areas
+                          .map(
+                            (a) => DropdownMenuItem(
+                              value: a.siglas,
+                              child: Text(
+                                a.etiqueta,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          )
+                          .toList(),
+                  onChanged:
+                      _bloqueado
+                          ? null
+                          : (v) => setState(() => _doc.area = v ?? ''),
+                );
+              },
+            )
+            : const _CampoFijo(
+              etiqueta: 'Área',
+              valor: 'G.A. (la fija el sistema)',
+            );
 
     final campoFecha = InkWell(
-      onTap: _bloqueado
-          ? null
-          : () async {
-              final elegida = await showDatePicker(
-                context: context,
-                initialDate: _doc.fechaDoc ?? DateTime.now(),
-                firstDate: DateTime(2018),
-                lastDate: DateTime.now().add(const Duration(days: 365)),
-              );
-              if (elegida != null) setState(() => _doc.fechaDoc = elegida);
-            },
+      onTap:
+          _bloqueado
+              ? null
+              : () async {
+                final elegida = await showDatePicker(
+                  context: context,
+                  initialDate: _doc.fechaDoc ?? DateTime.now(),
+                  firstDate: DateTime(2018),
+                  lastDate: DateTime.now().add(const Duration(days: 365)),
+                );
+                if (elegida != null) setState(() => _doc.fechaDoc = elegida);
+              },
       child: InputDecorator(
         decoration: const InputDecoration(
           labelText: 'Fecha del documento',
@@ -540,21 +576,24 @@ class _CartaCiteEditorScreenState extends ConsumerState<CartaCiteEditorScreen> {
           isDense: true,
           suffixIcon: Icon(Icons.calendar_today, size: 18),
         ),
-        child: Text(DateFormat('dd/MM/yyyy').format(_doc.fechaDoc ?? DateTime.now())),
+        child: Text(
+          DateFormat('dd/MM/yyyy').format(_doc.fechaDoc ?? DateTime.now()),
+        ),
       ),
     );
 
-    final campoCiudad = TipoCite.usaCiudad(_tipo)
-        ? TextField(
-            controller: _ciudad,
-            readOnly: _bloqueado,
-            decoration: const InputDecoration(
-              labelText: 'Ciudad',
-              border: OutlineInputBorder(),
-              isDense: true,
-            ),
-          )
-        : null;
+    final campoCiudad =
+        TipoCite.usaCiudad(_tipo)
+            ? TextField(
+              controller: _ciudad,
+              readOnly: _bloqueado,
+              decoration: const InputDecoration(
+                labelText: 'Ciudad',
+                border: OutlineInputBorder(),
+                isDense: true,
+              ),
+            )
+            : null;
 
     return _seccion(
       'Encabezado',
@@ -566,9 +605,10 @@ class _CartaCiteEditorScreenState extends ConsumerState<CartaCiteEditorScreen> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           _ChipCite(
-            cite: _doc.esNuevo
-                ? _citePrevisto()
-                : (_doc.cite.isEmpty ? '—' : _doc.cite),
+            cite:
+                _doc.esNuevo
+                    ? _citePrevisto()
+                    : (_doc.cite.isEmpty ? '—' : _doc.cite),
             empresa: _doc.empresa,
             tipo: _doc.tipo,
             idTipoDoc: _tipo,
@@ -600,7 +640,10 @@ class _CartaCiteEditorScreenState extends ConsumerState<CartaCiteEditorScreen> {
         'Destinatario',
         'El certificado de trabajo no lleva destinatario.',
         Icons.person_outline,
-        Text('No aplica para este tipo de documento.', style: context.apagado()),
+        Text(
+          'No aplica para este tipo de documento.',
+          style: context.apagado(),
+        ),
       );
     }
 
@@ -612,11 +655,15 @@ class _CartaCiteEditorScreenState extends ConsumerState<CartaCiteEditorScreen> {
         Icons.person_outline,
         empleadosAsync.when(
           loading: () => const _CampoCargando(etiqueta: 'Destinatario'),
-          error: (e, _) => _CampoError(mensaje: 'No se pudo cargar la lista de empleados'),
+          error:
+              (e, _) => _CampoError(
+                mensaje: 'No se pudo cargar la lista de empleados',
+              ),
           data: (empleados) {
             final cod = _doc.codEmpleado.toInt();
             // -1 es la opción "todo el personal", igual que en el módulo viejo.
-            final existe = cod == -1 || empleados.any((e) => e.codEmpleado.toInt() == cod);
+            final existe =
+                cod == -1 || empleados.any((e) => e.codEmpleado.toInt() == cod);
             return Column(
               children: [
                 DropdownButtonFormField<int>(
@@ -628,38 +675,49 @@ class _CartaCiteEditorScreenState extends ConsumerState<CartaCiteEditorScreen> {
                     isDense: true,
                     errorText: _errorSi(
                       _doc.codEmpleado.toInt() == 0,
-                      'Elegí el destinatario.',
+                      'Elige el destinatario.',
                     ),
                   ),
                   items: [
-                    const DropdownMenuItem(value: -1, child: Text('Personal de IMPEXPAP')),
-                    ...empleados.map((e) => DropdownMenuItem(
-                          value: e.codEmpleado.toInt(),
-                          child: Text(e.nombreCompleto, overflow: TextOverflow.ellipsis),
-                        )),
+                    const DropdownMenuItem(
+                      value: -1,
+                      child: Text('Personal de IMPEXPAP'),
+                    ),
+                    ...empleados.map(
+                      (e) => DropdownMenuItem(
+                        value: e.codEmpleado.toInt(),
+                        child: Text(
+                          e.nombreCompleto,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ),
                   ],
-                  onChanged: _bloqueado
-                      ? null
-                      : (v) {
-                          if (v == null) return;
-                          setState(() {
-                            _doc.codEmpleado = BigInt.from(v);
-                            if (v == -1) {
-                              _dirigido.text = 'PERSONAL DE IMPEXPAP';
-                              _cargoDirigido.text = 'N/A';
-                            } else {
-                              final e = empleados
-                                  .firstWhere((x) => x.codEmpleado.toInt() == v);
-                              _dirigido.text = e.nombreCompleto;
-                              _cargoDirigido.text = e.cargo;
-                            }
-                          });
-                        },
+                  onChanged:
+                      _bloqueado
+                          ? null
+                          : (v) {
+                            if (v == null) return;
+                            setState(() {
+                              _doc.codEmpleado = BigInt.from(v);
+                              if (v == -1) {
+                                _dirigido.text = 'PERSONAL DE IMPEXPAP';
+                                _cargoDirigido.text = 'N/A';
+                              } else {
+                                final e = empleados.firstWhere(
+                                  (x) => x.codEmpleado.toInt() == v,
+                                );
+                                _dirigido.text = e.nombreCompleto;
+                                _cargoDirigido.text = e.cargo;
+                              }
+                            });
+                          },
                 ),
                 SizedBox(height: Esp.s),
                 _CampoFijo(
                   etiqueta: 'Cargo',
-                  valor: _cargoDirigido.text.isEmpty ? '—' : _cargoDirigido.text,
+                  valor:
+                      _cargoDirigido.text.isEmpty ? '—' : _cargoDirigido.text,
                 ),
               ],
             );
@@ -689,8 +747,8 @@ class _CartaCiteEditorScreenState extends ConsumerState<CartaCiteEditorScreen> {
                 errorText: _errorSi(
                   _dirigido.text.trim().isEmpty,
                   esRemite
-                      ? 'Indicá de quién es el documento.'
-                      : 'Indicá a quién va dirigido.',
+                      ? 'Indica de quién es el documento.'
+                      : 'Indica a quién va dirigido.',
                 ),
               ),
             ),
@@ -795,13 +853,14 @@ class _CartaCiteEditorScreenState extends ConsumerState<CartaCiteEditorScreen> {
   }
 
   Widget _listaDestinatariosExtra() => ListaEditableCite(
-        titulo: 'Copia a:',
-        descripcion: 'Destinatarios adicionales que se imprimen en el encabezado.',
-        icono: Icons.group_outlined,
-        cantidad: _ctrlDestinatarios.length,
-        soloLectura: _bloqueado,
-        textoVacio: 'Sin destinatarios adicionales.',
-        camposDe: (i) => [
+    titulo: 'Copia a:',
+    descripcion: 'Destinatarios adicionales que se imprimen en el encabezado.',
+    icono: Icons.group_outlined,
+    cantidad: _ctrlDestinatarios.length,
+    soloLectura: _bloqueado,
+    textoVacio: 'Sin destinatarios adicionales.',
+    camposDe:
+        (i) => [
           CampoFila(
             controller: _ctrlDestinatarios[i][0],
             etiqueta: 'Nombre',
@@ -815,13 +874,20 @@ class _CartaCiteEditorScreenState extends ConsumerState<CartaCiteEditorScreen> {
             soloLectura: _bloqueado,
           ),
         ],
-        onAgregar: () => setState(() => _ctrlDestinatarios.add([
-              TextEditingController(),
-              TextEditingController(),
-            ])),
-        onQuitar: (i) => setState(() {
+    onAgregar:
+        () => setState(
+          () => _ctrlDestinatarios.add([
+            TextEditingController(),
+            TextEditingController(),
+          ]),
+        ),
+    onQuitar:
+        (i) => setState(() {
           if (i < _doc.destinatarios.length) {
-            _marcarBaja(_destinatariosAEliminar, _doc.destinatarios[i].idCopiaEncab);
+            _marcarBaja(
+              _destinatariosAEliminar,
+              _doc.destinatarios[i].idCopiaEncab,
+            );
             _doc.destinatarios.removeAt(i);
           }
           for (final c in _ctrlDestinatarios[i]) {
@@ -829,26 +895,27 @@ class _CartaCiteEditorScreenState extends ConsumerState<CartaCiteEditorScreen> {
           }
           _ctrlDestinatarios.removeAt(i);
         }),
-      );
+  );
 
   Widget _listaRemitentes() => _conAviso(
-        _listaRemitentesCruda(),
-        _errorSi(
-          _ctrlRemitentes.isEmpty ||
-              _ctrlRemitentes.every((f) => f[0].text.trim().isEmpty),
-          'El documento tiene que llevar al menos un firmante.',
-        ),
-      );
+    _listaRemitentesCruda(),
+    _errorSi(
+      _ctrlRemitentes.isEmpty ||
+          _ctrlRemitentes.every((f) => f[0].text.trim().isEmpty),
+      'El documento tiene que llevar al menos un firmante.',
+    ),
+  );
 
   Widget _listaRemitentesCruda() => ListaEditableCite(
-        titulo: 'Firman',
-        descripcion: 'Quiénes firman el documento. Máximo dos.',
-        icono: Icons.draw_outlined,
-        cantidad: _ctrlRemitentes.length,
-        maximo: 2,
-        soloLectura: _bloqueado,
-        textoVacio: 'Sin remitentes. El documento tiene que llevar al menos uno.',
-        camposDe: (i) => [
+    titulo: 'Firman',
+    descripcion: 'Quiénes firman el documento. Máximo dos.',
+    icono: Icons.draw_outlined,
+    cantidad: _ctrlRemitentes.length,
+    maximo: 2,
+    soloLectura: _bloqueado,
+    textoVacio: 'Sin remitentes. El documento tiene que llevar al menos uno.',
+    camposDe:
+        (i) => [
           CampoFila(
             controller: _ctrlRemitentes[i][0],
             etiqueta: 'Nombre',
@@ -862,11 +929,12 @@ class _CartaCiteEditorScreenState extends ConsumerState<CartaCiteEditorScreen> {
             soloLectura: _bloqueado,
           ),
         ],
-        onAgregar: () => setState(() => _ctrlRemitentes.add([
-              _ctrlVigilado(),
-              TextEditingController(),
-            ])),
-        onQuitar: (i) => setState(() {
+    onAgregar:
+        () => setState(
+          () => _ctrlRemitentes.add([_ctrlVigilado(), TextEditingController()]),
+        ),
+    onQuitar:
+        (i) => setState(() {
           if (i < _doc.remitentes.length) {
             _marcarBaja(_remitentesAEliminar, _doc.remitentes[i].idRemitente);
             _doc.remitentes.removeAt(i);
@@ -876,16 +944,17 @@ class _CartaCiteEditorScreenState extends ConsumerState<CartaCiteEditorScreen> {
           }
           _ctrlRemitentes.removeAt(i);
         }),
-      );
+  );
 
   Widget _listaCopiasArchivo() => ListaEditableCite(
-        titulo: 'cc/Arch',
-        descripcion: 'Siglas que se imprimen al pie. Hasta 25 caracteres cada una.',
-        icono: Icons.folder_copy_outlined,
-        cantidad: _ctrlCopias.length,
-        soloLectura: _bloqueado,
-        textoVacio: 'Sin copias de archivo.',
-        camposDe: (i) => [
+    titulo: 'cc/Arch',
+    descripcion: 'Siglas que se imprimen al pie. Hasta 25 caracteres cada una.',
+    icono: Icons.folder_copy_outlined,
+    cantidad: _ctrlCopias.length,
+    soloLectura: _bloqueado,
+    textoVacio: 'Sin copias de archivo.',
+    camposDe:
+        (i) => [
           CampoFila(
             controller: _ctrlCopias[i],
             etiqueta: 'cc/Arch',
@@ -893,8 +962,9 @@ class _CartaCiteEditorScreenState extends ConsumerState<CartaCiteEditorScreen> {
             soloLectura: _bloqueado,
           ),
         ],
-        onAgregar: () => setState(() => _ctrlCopias.add(TextEditingController())),
-        onQuitar: (i) => setState(() {
+    onAgregar: () => setState(() => _ctrlCopias.add(TextEditingController())),
+    onQuitar:
+        (i) => setState(() {
           if (i < _doc.copiasArchivo.length) {
             _marcarBaja(_copiasAEliminar, _doc.copiasArchivo[i].idCopiaArch);
             _doc.copiasArchivo.removeAt(i);
@@ -902,7 +972,7 @@ class _CartaCiteEditorScreenState extends ConsumerState<CartaCiteEditorScreen> {
           _ctrlCopias[i].dispose();
           _ctrlCopias.removeAt(i);
         }),
-      );
+  );
 
   /// Dos columnas cuando entra, una cuando no. El corte se mide sobre el ancho
   /// del cajón y no sobre el de la ventana, porque adentro del dashboard el
@@ -972,10 +1042,10 @@ class _ChipCite extends StatelessWidget {
                 Text(
                   cite,
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        color: cs.onPrimaryContainer,
-                        fontWeight: Peso.dato,
-                        fontFeatures: cifrasTabulares,
-                      ),
+                    color: cs.onPrimaryContainer,
+                    fontWeight: Peso.dato,
+                    fontFeatures: cifrasTabulares,
+                  ),
                 ),
                 Text(
                   [
@@ -983,15 +1053,16 @@ class _ChipCite extends StatelessWidget {
                     if (empresa.isNotEmpty) empresa,
                   ].join(' · '),
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: cs.onPrimaryContainer.withValues(alpha: 0.85),
-                      ),
+                    color: cs.onPrimaryContainer.withValues(alpha: 0.85),
+                  ),
                 ),
               ],
             ),
           ),
           if (cargando)
             const SizedBox(
-              width: 16, height: 16,
+              width: 16,
+              height: 16,
               child: CircularProgressIndicator(strokeWidth: 2),
             )
           else if (provisorio)
@@ -999,7 +1070,8 @@ class _ChipCite extends StatelessWidget {
             // que pasarle el mouse por encima para enterarse, y en un teléfono
             // no hay mouse. La palabra sí lo dice.
             Tooltip(
-              message: 'Es el número que tocaría hoy.\n'
+              message:
+                  'Es el número que tocaría hoy.\n'
                   'El definitivo se asigna al guardar.',
               child: Container(
                 padding: EdgeInsets.symmetric(horizontal: Esp.s, vertical: 3),
@@ -1012,15 +1084,18 @@ class _ChipCite extends StatelessWidget {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.info_outline,
-                        size: 13, color: cs.onPrimaryContainer),
+                    Icon(
+                      Icons.info_outline,
+                      size: 13,
+                      color: cs.onPrimaryContainer,
+                    ),
                     const SizedBox(width: 4),
                     Text(
                       'Provisional',
                       style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                            color: cs.onPrimaryContainer,
-                            fontWeight: Peso.titulo,
-                          ),
+                        color: cs.onPrimaryContainer,
+                        fontWeight: Peso.titulo,
+                      ),
                     ),
                   ],
                 ),
@@ -1066,22 +1141,23 @@ class _CampoCargando extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => InputDecorator(
-        decoration: InputDecoration(
-          labelText: etiqueta,
-          border: const OutlineInputBorder(),
-          isDense: true,
+    decoration: InputDecoration(
+      labelText: etiqueta,
+      border: const OutlineInputBorder(),
+      isDense: true,
+    ),
+    child: Row(
+      children: [
+        const SizedBox(
+          width: 14,
+          height: 14,
+          child: CircularProgressIndicator(strokeWidth: 2),
         ),
-        child: Row(
-          children: [
-            const SizedBox(
-              width: 14, height: 14,
-              child: CircularProgressIndicator(strokeWidth: 2),
-            ),
-            SizedBox(width: Esp.s),
-            Text('Cargando…', style: context.apagado()),
-          ],
-        ),
-      );
+        SizedBox(width: Esp.s),
+        Text('Cargando…', style: context.apagado()),
+      ],
+    ),
+  );
 }
 
 class _CampoError extends StatelessWidget {
@@ -1108,14 +1184,14 @@ class _CampoFijo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => InputDecorator(
-        decoration: InputDecoration(
-          labelText: etiqueta,
-          border: const OutlineInputBorder(),
-          isDense: true,
-          enabled: false,
-        ),
-        child: Text(valor, style: context.apagado()),
-      );
+    decoration: InputDecoration(
+      labelText: etiqueta,
+      border: const OutlineInputBorder(),
+      isDense: true,
+      enabled: false,
+    ),
+    child: Text(valor, style: context.apagado()),
+  );
 }
 
 /// La barra de abajo: qué falta y el botón de guardar.
@@ -1172,9 +1248,9 @@ class _BarraGuardar extends StatelessWidget {
                   _resumen,
                   overflow: TextOverflow.ellipsis,
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: listo ? cs.primary : cs.onSurfaceVariant,
-                        fontWeight: listo ? Peso.titulo : Peso.normal,
-                      ),
+                    color: listo ? cs.primary : cs.onSurfaceVariant,
+                    fontWeight: listo ? Peso.titulo : Peso.normal,
+                  ),
                 ),
               ),
               SizedBox(width: Esp.s),
@@ -1182,13 +1258,14 @@ class _BarraGuardar extends StatelessWidget {
                 // Sigue habilitado con pendientes a propósito: apretarlo dice
                 // cuál es el que frena. Un botón gris no explica nada.
                 onPressed: guardando ? null : onGuardar,
-                icon: guardando
-                    ? const SizedBox(
-                        width: 16,
-                        height: 16,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : const Icon(Icons.save_outlined, size: 18),
+                icon:
+                    guardando
+                        ? const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                        : const Icon(Icons.save_outlined, size: 18),
                 label: Text(guardando ? 'Guardando…' : 'Guardar'),
               ),
             ],

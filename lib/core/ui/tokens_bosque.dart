@@ -13,7 +13,7 @@
 ///
 /// **Por qué está en `core/ui/` y ya no en el módulo de sábados.** Estos tokens
 /// se venían copiando de módulo en módulo; con `permisos-rrhh` iba a ser la
-/// cuarta copia y la cuarta divergencia. Se movieron acá tal cual estaban —sin
+/// cuarta copia y la cuarta divergencia. Se movieron aquí tal cual estaban —sin
 /// cambiar una constante— y `rol-sabados/estilo_modulo.dart` quedó como
 /// re-export para que sus 15 importadores no se enteren.
 library;
@@ -182,14 +182,14 @@ ColorDeEstado colorDeEstado(ColorScheme cs, String codigoExcel) {
 /// dibujaban con el color de «tipo desconocido» sin que nada avisara—. Un
 /// catálogo que vive en la base no se copia al frontend: se lee.
 ///
-/// Así que acá entra la **posición** que el tipo ocupa en la lista que devuelve
+/// Así que aquí entra la **posición** que el tipo ocupa en la lista que devuelve
 /// `p_list_Permiso @ACCION='T1'`, y agregar un tipo en la base le da color solo,
 /// sin tocar Dart.
 ///
 /// El precio es que qué color le toca a cada tipo ya no lo decide nadie: sale
 /// del orden del catálogo. Es estable —el orden no cambia entre consultas— pero
 /// arbitrario. Si algún día hace falta que la vacación sea siempre de un color
-/// concreto, **el lugar es una columna en la base**, no un `switch` acá.
+/// concreto, **el lugar es una columna en la base**, no un `switch` aquí.
 ///
 /// ## Por qué estas familias y no nueve roles del tema
 ///
@@ -274,7 +274,7 @@ ColorDeEstado colorDeCatalogo(ColorScheme cs, int indiceEnCatalogo) {
 
 /// Negro o blanco sobre [fondo]: el que dé más contraste.
 ///
-/// No se usan los pares `on*` del tema porque acá el fondo ya no es un rol puro,
+/// No se usan los pares `on*` del tema porque aquí el fondo ya no es un rol puro,
 /// se le aplicó un tono. Y no se usa un umbral fijo de luminancia porque un
 /// umbral hay que elegirlo bien: con 0.42 el gris del feriado quedaba justo del
 /// lado equivocado y la letra salía clara sobre un fondo medio, a 2.89:1.
@@ -306,7 +306,7 @@ double _contraste(Color a, Color b) {
 /// diferencia de un feriado, una falta sin justificar SÍ es lo que el rol de
 /// error de Material existe para señalar — es el estado que este reporte se
 /// reescribió para poder afirmar con confianza (antes un feriado o un sábado
-/// libre también salían acá). Límite conocido, igual al que ya acepta
+/// libre también salían aquí). Límite conocido, igual al que ya acepta
 /// [colorDeEstado]: con semilla roja, `error` se acerca a `primary`; por eso
 /// TRABAJADO usa el contenedor pálido y no el rol pleno, para dejar más
 /// distancia entre los dos estados que más importa distinguir.
@@ -348,7 +348,7 @@ ColorDeEstado colorDeAsistencia(ColorScheme cs, String estado) {
 
 /// Cuánto espacio hay, medido en lo que el contenido necesita.
 ///
-/// No se usa `ResponsiveUtilsBosque` directamente en los widgets porque acá el
+/// No se usa `ResponsiveUtilsBosque` directamente en los widgets porque aquí el
 /// corte no es "es un teléfono": es **cuánto entra**. Una tablet en vertical y
 /// un teléfono en horizontal necesitan tratos distintos aunque el paquete los
 /// clasifique igual.
@@ -356,7 +356,7 @@ ColorDeEstado colorDeAsistencia(ColorScheme cs, String estado) {
 /// Y sobre todo: se mide el ancho del **cajón** (`LayoutBuilder`), no el de la
 /// ventana. Adentro del dashboard el sidebar se come su parte, así que
 /// `MediaQuery` miente. Nació en la matriz del Rol de Sábados —de ahí los
-/// nombres de los cortes— y vive acá desde que el segundo módulo la necesitó.
+/// nombres de los cortes— y vive aquí desde que el segundo módulo la necesitó.
 enum Aire {
   /// Menos de ~7 columnas visibles: la matriz no se puede leer.
   justo,

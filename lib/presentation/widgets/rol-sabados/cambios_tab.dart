@@ -16,7 +16,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 /// tres celdas —titular en 'C', el que cubre en '1', y la reposición liberada—
 /// y las tres van juntas en una transacción.
 ///
-/// Por eso APROBADO no se puede editar ni anular desde acá: sus celdas ya están
+/// Por eso APROBADO no se puede editar ni anular desde aquí: sus celdas ya están
 /// en la grilla y deshacerlas por este lado la dejaría mintiendo.
 class CambiosTab extends ConsumerWidget {
   const CambiosTab({super.key, required this.idRol});
@@ -220,7 +220,7 @@ class _TarjetaState extends ConsumerState<_Tarjeta> {
     _ => TonoEtiqueta.neutro,
   };
 
-  /// Aprobar escribe celdas y no se deshace desde acá: conviene preguntar.
+  /// Aprobar escribe celdas y no se deshace desde aquí: conviene preguntar.
   Future<void> _confirmarAprobacion() async {
     final c = widget.cambio;
     final ok = await showDialog<bool>(

@@ -174,7 +174,7 @@ void main() {
       expect(v.problema, isNull);
     });
 
-    test('un motivo más largo que la columna se para acá, no en el SP', () {
+    test('un motivo más largo que la columna se para aquí, no en el SP', () {
       final v = const VacacionAsignadaEntity(
         codVacacionAsignada: 0,
         codEmpleado: 130,
@@ -235,7 +235,7 @@ void main() {
       // aniversario.
       expect(j['fecha'], '2026-08-31');
       expect(j['motivo'], 'Vacación 2026');
-      // D4: la identidad sale del token. Un audUsuario acá sería una firma que
+      // D4: la identidad sale del token. Un audUsuario aquí sería una firma que
       // se puede tipear.
       expect(j.containsKey('audUsuarioI'), isFalse);
       expect(j.containsKey('audFechaI'), isFalse);
@@ -258,7 +258,7 @@ void main() {
       expect(a.esAlta, isFalse);
     });
 
-    test('acá el cero NO es válido, al revés que en la vacación asignada', () {
+    test('aquí el cero NO es válido, al revés que en la vacación asignada', () {
       final a = AbonoDiasEntity(
         codAbonoDias: 0,
         codEmpleado: 124,
@@ -285,7 +285,9 @@ void main() {
       // El caso real: 54 caracteres, que el SP trunca o hace fallar.
       expect(
         a
-            .copyWith(motivo: 'Compensación por inventario del 21 de septiembre')
+            .copyWith(
+              motivo: 'Compensación por inventario del 21 de septiembre',
+            )
             .problema,
         isNull,
       );

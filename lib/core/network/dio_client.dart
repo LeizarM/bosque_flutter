@@ -61,13 +61,16 @@ class DioClient {
               // Fallo TRANSITORIO de lectura (cuelgue del Keystore en algunos
               // dispositivos). NO destruimos la sesión ni redirigimos al login:
               // rechazamos SOLO este request para que se pueda reintentar.
-              console('⚠️ No se pudo leer el token (transitorio) en ${options.path}: se rechaza el request sin cerrar sesión');
+              console(
+                '⚠️ No se pudo leer el token (transitorio) en ${options.path}: se rechaza el request sin cerrar sesión',
+              );
               return handler.reject(
                 DioException(
                   requestOptions: options,
                   type: DioExceptionType.cancel,
                   error: 'STORAGE_NO_DISPONIBLE',
-                  message: 'No se pudo verificar tu sesión. Inténtalo de nuevo.',
+                  message:
+                      'No se pudo verificar tu sesión. Inténtalo de nuevo.',
                 ),
               );
 
@@ -79,7 +82,7 @@ class DioClient {
               // `ref.invalidate(...)` sobre providers que, si alguien los sigue
               // observando, Riverpod recalcula EN EL ACTO — y ese recálculo
               // dispara otra petición autenticada, que tampoco encuentra token,
-              // que vuelve a llamar acá. El bucle se veía tal cual en la consola:
+              // que vuelve a llamar aquí. El bucle se veía tal cual en la consola:
               //
               //     Request a /rol-sabados/mi-equipo sin sesión: redirigiendo al login
               //     Limpiando permisos de botones
@@ -93,10 +96,14 @@ class DioClient {
               // El aviso se re-arma solo en cuanto vuelve a haber token (rama
               // `ok` de arriba), así que un logout real posterior avisa igual.
               if (_sesionInvalidaAvisada) {
-                console('⚠️ Request a ${options.path} sin sesión (aviso ya emitido, no se repite)');
+                console(
+                  '⚠️ Request a ${options.path} sin sesión (aviso ya emitido, no se repite)',
+                );
               } else {
                 _sesionInvalidaAvisada = true;
-                console('⚠️ Request a ${options.path} sin sesión: redirigiendo al login');
+                console(
+                  '⚠️ Request a ${options.path} sin sesión: redirigiendo al login',
+                );
                 _onAuthError?.call();
               }
               return handler.reject(
@@ -220,7 +227,7 @@ class DioClient {
   /// `responseType.bytes`: Dio no interpreta el cuerpo y el JSON de error
   /// llega como `Uint8List`, así que la comprobación `is Map` nunca da y el
   /// mensaje que el backend se tomó el trabajo de escribir —el del stored
-  /// procedure, por ejemplo— se perdía. Acá se desenvuelve primero.
+  /// procedure, por ejemplo— se perdía. Aquí se desenvuelve primero.
   static String mensajeDeReporteFallido(DioException e) {
     final datos = e.response?.data;
     if (datos is List<int>) {
@@ -235,11 +242,11 @@ class DioClient {
       }
     }
 
-    // El de red habla de «revisa tu internet», que acá desorienta: el pedido
+    // El de red habla de «revisa tu internet», que aquí desorienta: el pedido
     // llegó bien y el servidor sigue trabajando; lo que se acabó es la espera.
     if (e.type == DioExceptionType.receiveTimeout) {
       return 'El reporte tardó más de lo permitido y se canceló. '
-          'Probá acotarlo con más filtros.';
+          'Prueba acotarlo con más filtros.';
     }
 
     return handleDioError(e, 'No se pudo generar el reporte.');

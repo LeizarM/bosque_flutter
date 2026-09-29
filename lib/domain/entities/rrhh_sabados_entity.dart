@@ -16,7 +16,7 @@
 ///
 /// **No confundir con [ProgramadorEntity]**, que es la otra mitad del control:
 /// un jefe programador tiene un árbol y una sucursal y sólo alcanza a su propia
-/// gente, y sólo puede decidir si viene o no viene. Quien está acá no tiene
+/// gente, y sólo puede decidir si viene o no viene. Quien está aquí no tiene
 /// límite de árbol, de sucursal ni de letra.
 class RrhhSabadosEntity {
   final int idRrhh;

@@ -55,7 +55,8 @@ class PrestamosPaginationBar extends StatelessWidget {
                 color: isCur ? cs.primary : Colors.transparent,
                 borderRadius: BorderRadius.circular(6),
                 border: Border.all(
-                  color: isCur ? cs.primary : cs.outline.withValues(alpha: 0.25),
+                  color:
+                      isCur ? cs.primary : cs.outline.withValues(alpha: 0.25),
                 ),
               ),
               alignment: Alignment.center,
@@ -93,7 +94,9 @@ class PrestamosPaginationBar extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 16),
       decoration: BoxDecoration(
         color: cs.surface,
-        border: Border(top: BorderSide(color: cs.outline.withValues(alpha: 0.15))),
+        border: Border(
+          top: BorderSide(color: cs.outline.withValues(alpha: 0.15)),
+        ),
       ),
       child: Row(
         children: [
@@ -113,7 +116,9 @@ class PrestamosPaginationBar extends StatelessWidget {
             icon: Icon(
               Icons.chevron_left_rounded,
               color:
-                  st.pagina > 1 ? cs.primary : cs.onSurface.withValues(alpha: 0.25),
+                  st.pagina > 1
+                      ? cs.primary
+                      : cs.onSurface.withValues(alpha: 0.25),
             ),
             onPressed:
                 st.pagina > 1 ? () => ntf.cargar(pagina: st.pagina - 1) : null,

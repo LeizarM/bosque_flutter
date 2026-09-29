@@ -1,7 +1,7 @@
 /// Las piezas de interfaz que ya no son de un módulo: el estado vacío, la
 /// etiqueta de estado, el combo con buscador y la fecha corta.
 ///
-/// **Por qué están acá y no copiadas otra vez.** Las cuatro nacieron en el Rol
+/// **Por qué están aquí y no copiadas otra vez.** Las cuatro nacieron en el Rol
 /// de Sábados, y `permisos-rrhh` iba a ser la segunda copia de cada una — que es
 /// como empiezan las divergencias que después nadie unifica: el mismo estado
 /// vacío con dos textos distintos, la misma etiqueta con dos verdes. Se movieron
@@ -139,7 +139,7 @@ enum TonoEtiqueta { neutro, exito, aviso, error }
 /// la base —que es el del organigrama, no uno que ayude a buscar— y sin forma de
 /// escribir. Encontrar a alguien es scroll y suerte.
 ///
-/// Acá las opciones vienen **ordenadas alfabéticamente** y se filtran a medida
+/// Aquí las opciones vienen **ordenadas alfabéticamente** y se filtran a medida
 /// que se escribe.
 class ComboBuscable<T> extends StatelessWidget {
   const ComboBuscable({

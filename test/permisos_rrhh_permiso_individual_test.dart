@@ -20,7 +20,7 @@ import 'package:flutter_test/flutter_test.dart';
 /// Tres cosas distintas:
 ///
 /// 1. **Que entre.** Un `Table` de seis columnas compila perfecto y recién
-///    falla al renderizar. Acá se dibuja de verdad en teléfono, tablet y
+///    falla al renderizar. Aquí se dibuja de verdad en teléfono, tablet y
 ///    escritorio con motivos del largo real de la columna (100 caracteres).
 /// 2. **Que el número que se muestra sea el del servidor.** Es la regla que
 ///    sostiene todo: los tres campos calculados salen de `/permiso/simular`, y
@@ -42,7 +42,9 @@ void main() {
   };
 
   for (final entrada in anchos.entries) {
-    testWidgets('la nómina de permisos entra en ${entrada.key}', (tester) async {
+    testWidgets('la nómina de permisos entra en ${entrada.key}', (
+      tester,
+    ) async {
       await _dibujar(tester, tamano: entrada.value, permisos: _kardex);
       expect(
         tester.takeException(),
@@ -83,7 +85,10 @@ void main() {
     final barras = tester.widgetList<FractionallySizedBox>(
       find.byType(FractionallySizedBox),
     );
-    expect(barras.map((b) => b.widthFactor).reduce((a, b) => a! > b! ? a : b), 1.0);
+    expect(
+      barras.map((b) => b.widthFactor).reduce((a, b) => a! > b! ? a : b),
+      1.0,
+    );
   });
 
   testWidgets('la etiqueta de tipo aparece sólo en lo que no es vacación', (
@@ -355,19 +360,17 @@ void main() {
     expect(find.text('10'), findsOneWidget);
   });
 
-  testWidgets('la vacación pagada avisa cuando se pagan más días que el saldo', (
-    tester,
-  ) async {
-    await _dibujar(tester, tamano: const Size(1280, 900));
-    await _abrir(tester, 'Vacación pagada');
-    await tester.enterText(_campo('Días a pagar'), '40');
-    await tester.pumpAndSettle();
+  testWidgets(
+    'la vacación pagada avisa cuando se pagan más días que el saldo',
+    (tester) async {
+      await _dibujar(tester, tamano: const Size(1280, 900));
+      await _abrir(tester, 'Vacación pagada');
+      await tester.enterText(_campo('Días a pagar'), '40');
+      await tester.pumpAndSettle();
 
-    expect(
-      find.textContaining('más días de los que tiene'),
-      findsOneWidget,
-    );
-  });
+      expect(find.textContaining('más días de los que tiene'), findsOneWidget);
+    },
+  );
 
   testWidgets('la vacación pagada confirma diciendo cómo queda el saldo', (
     tester,
@@ -421,10 +424,12 @@ Finder _campo(String etiqueta) =>
 
 ButtonStyleButton _botonDe(WidgetTester tester, String texto) =>
     tester.widget<ButtonStyleButton>(
-      find.ancestor(
-        of: find.text(texto),
-        matching: find.byWidgetPredicate((w) => w is ButtonStyleButton),
-      ).first,
+      find
+          .ancestor(
+            of: find.text(texto),
+            matching: find.byWidgetPredicate((w) => w is ButtonStyleButton),
+          )
+          .first,
     );
 
 Future<void> _dibujar(
@@ -449,7 +454,9 @@ Future<void> _dibujar(
   await tester.pumpWidget(
     ProviderScope(
       overrides: [
-        userProvider.overrideWith((ref) => UserStateNotifier.sinStorage(_admin)),
+        userProvider.overrideWith(
+          (ref) => UserStateNotifier.sinStorage(_admin),
+        ),
         permisosRrhhRepositoryProvider.overrideWithValue(_repo),
       ],
       child: const MaterialApp(
@@ -458,7 +465,7 @@ Future<void> _dibujar(
     ),
   );
   await tester.pumpAndSettle();
-  // Los temporizadores del ACL, que sale a una red que acá no existe.
+  // Los temporizadores del ACL, que sale a una red que aquí no existe.
   await tester.pump(const Duration(minutes: 2));
 }
 
@@ -607,9 +614,10 @@ class _RepoFalso implements PermisosRrhhRepository {
   /// Lo que estas pruebas no usan: si alguna futura llama a otra cosa, revienta
   /// diciendo cuál, que es mejor que un `null` en silencio.
   @override
-  dynamic noSuchMethod(Invocation invocacion) => throw UnimplementedError(
-    'El repositorio falso no implementa ${invocacion.memberName}',
-  );
+  dynamic noSuchMethod(Invocation invocacion) =>
+      throw UnimplementedError(
+        'El repositorio falso no implementa ${invocacion.memberName}',
+      );
 }
 
 // ═══════════════════════════════════════════════════════════════════════════

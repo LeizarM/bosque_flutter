@@ -100,14 +100,23 @@ class LoginDataModel {
   });
 
   factory LoginDataModel.fromJson(Map<String, dynamic> json) {
-    // Mapeo seguro para cargo anidado
-    String cargo = '';
-    try {
-      cargo =
-          json['empleado']?['empleadoCargo']?['cargoSucursal']?['cargo']?['descripcion'] ??
-          '';
-    } catch (_) {
-      cargo = '';
+    // El backend responde con el DTO plano `Jwt`, que trae `cargo` como String
+    // en la raíz. Antes aquí solo se leía la ruta anidada
+    // empleado.empleadoCargo.cargoSucursal.cargo.descripcion — que existía en
+    // un contrato viejo y hoy no viene en la respuesta: el `?.` la resolvía a
+    // null sin error y el cargo quedaba SIEMPRE vacío (por eso el panel de
+    // contexto de Arqueo mostraba "Cargo —" aunque el SP sí lo devuelve).
+    // Se prioriza la clave plana y se deja la anidada como respaldo por si
+    // algún endpoint viejo todavía responde con el grafo completo.
+    String cargo = json['cargo'] ?? '';
+    if (cargo.isEmpty) {
+      try {
+        cargo =
+            json['empleado']?['empleadoCargo']?['cargoSucursal']?['cargo']?['descripcion'] ??
+            '';
+      } catch (_) {
+        cargo = '';
+      }
     }
 
     return LoginDataModel(

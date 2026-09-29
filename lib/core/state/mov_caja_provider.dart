@@ -52,9 +52,10 @@ class MovCajaNotifier extends StateNotifier<MovCajaState> {
       await _repo.registrar(item);
       state = state.copyWith(
         cargando: false,
-        mensajeExito: item.idMC == 0
-            ? 'Movimiento de caja agregado.'
-            : 'Movimiento de caja actualizado.',
+        mensajeExito:
+            item.idMC == 0
+                ? 'Movimiento de caja agregado.'
+                : 'Movimiento de caja actualizado.',
       );
       await cargar();
       return true;
@@ -68,7 +69,10 @@ class MovCajaNotifier extends StateNotifier<MovCajaState> {
     state = state.copyWith(cargando: true);
     try {
       await _repo.eliminar(idMC, audUsuario);
-      state = state.copyWith(cargando: false, mensajeExito: 'Movimiento de caja eliminado.');
+      state = state.copyWith(
+        cargando: false,
+        mensajeExito: 'Movimiento de caja eliminado.',
+      );
       await cargar();
       return true;
     } catch (e) {
@@ -82,5 +86,5 @@ final _movCajaRepoProvider = Provider((ref) => MovCajaImpl());
 
 final movCajaProvider =
     StateNotifierProvider.autoDispose<MovCajaNotifier, MovCajaState>(
-  (ref) => MovCajaNotifier(ref.read(_movCajaRepoProvider)),
-);
+      (ref) => MovCajaNotifier(ref.read(_movCajaRepoProvider)),
+    );

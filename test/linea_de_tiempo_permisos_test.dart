@@ -28,8 +28,10 @@ void main() {
     test('mismo día del mes pero distinto mes o año NO es el mismo día', () {
       expect(mismoDia(DateTime(2026, 3, 5), DateTime(2026, 4, 5)), isFalse);
       expect(mismoDia(DateTime(2025, 3, 5), DateTime(2026, 3, 5)), isFalse);
-      expect(cuandoCompacto(DateTime(2026, 3, 5), DateTime(2026, 4, 5)),
-          '05 mar → 05 abr');
+      expect(
+        cuandoCompacto(DateTime(2026, 3, 5), DateTime(2026, 4, 5)),
+        '05 mar → 05 abr',
+      );
     });
 
     test('sin fecha no inventa nada', () {
@@ -62,17 +64,19 @@ void main() {
         DateTime(2025, 5, 1),
         DateTime(2026, 2, 1),
       ];
-      expect(
-        agruparPorAnio(fechas, (f) => f).map((g) => g.$1).toList(),
-        ['2026', '2025', '2026'],
-      );
+      expect(agruparPorAnio(fechas, (f) => f).map((g) => g.$1).toList(), [
+        '2026',
+        '2025',
+        '2026',
+      ]);
     });
 
     test('las filas sin fecha caen en su propio tramo', () {
-      final grupos = agruparPorAnio<DateTime?>(
-        [DateTime(2026, 1, 1), null, null],
-        (f) => f,
-      );
+      final grupos = agruparPorAnio<DateTime?>([
+        DateTime(2026, 1, 1),
+        null,
+        null,
+      ], (f) => f);
       expect(grupos.map((g) => g.$1).toList(), ['2026', 'Sin fecha']);
       expect(grupos[1].$2.length, 2);
     });
@@ -88,8 +92,10 @@ void main() {
     });
 
     test('respeta lo que ya está bien escrito', () {
-      expect(enOracion('Vacaciones Normales Una semana.'),
-          'Vacaciones Normales Una semana.');
+      expect(
+        enOracion('Vacaciones Normales Una semana.'),
+        'Vacaciones Normales Una semana.',
+      );
     });
 
     test('el vacío sigue vacío', () {

@@ -1,9 +1,19 @@
 // Destino final: lib/data/repositories/caja_chica_flujo_impl.dart
+import 'dart:typed_data';
+
 import 'package:bosque_flutter/core/constants/app_constants.dart';
 import 'package:bosque_flutter/core/network/base_api_repository.dart';
+import 'package:bosque_flutter/core/network/dio_client.dart';
 import 'package:bosque_flutter/data/models/caja_chica_model.dart';
 import 'package:bosque_flutter/domain/entities/caja_chica_entity.dart';
 import 'package:bosque_flutter/domain/repositories/caja_chica_flujo_repository.dart';
+
+/// Tope de espera solo para el PDF (RptCajaChica, sin subreportes — el más
+/// liviano de los reportes de Tareas Rutinarias). El default de 30 s de
+/// `BaseOptions` alcanza casi siempre, pero Jasper arma el documento entero
+/// antes de mandar el primer byte — con un lote grande puede tardar más.
+/// Mismo criterio que `_esperaReporteLocal` de `talonarios_impl.dart`.
+const Duration _esperaReporteCajaChica = Duration(minutes: 1);
 
 class CajaChicaFlujoImpl extends BaseApiRepository
     implements CajaChicaFlujoRepository {
@@ -52,6 +62,15 @@ class CajaChicaFlujoImpl extends BaseApiRepository
   }
 
   @override
+  Future<void> cerrarLote(int idBitTarea) async {
+    await postAndReturnId(
+      endpoint: AppConstants.tarCajaChicaCerrarLote,
+      data: {'idBitTarea': idBitTarea},
+      errorMessage: 'No se pudo cerrar el lote de caja chica.',
+    );
+  }
+
+  @override
   Future<List<Map<String, dynamic>>> obtenerHistorialLotes(int idBitTarea) {
     return postAndReturnList<Map<String, dynamic>>(
       endpoint: AppConstants.tarCajaChicaHistorialLotes,
@@ -68,4 +87,14 @@ class CajaChicaFlujoImpl extends BaseApiRepository
       fromJson: (json) => json,
     );
   }
+
+  @override
+  Future<Uint8List> generarReportePdf({
+    required int lote,
+    required int codSucursal,
+  }) => DioClient.descargarReportePdf(
+    endpoint: AppConstants.tarCajaChicaReportePdf,
+    receiveTimeout: _esperaReporteCajaChica,
+    data: {'lote': lote, 'codSucursal': codSucursal},
+  );
 }

@@ -34,4 +34,59 @@ class TraspasoMovCajaImpl extends BaseApiRepository
       errorMessage: 'No se pudo eliminar el traspaso de movimiento de caja.',
     );
   }
+
+  // ===== Tarea 289 "Verificar Traspaso de Efectivo Entre Sistemas" =====
+
+  @override
+  Future<List<TraspasoMovCajaEntity>> obtenerDelDia(DateTime fecha) async {
+    final modelos = await postAndReturnList<TraspasoMovCajaModel>(
+      endpoint: AppConstants.tarTraspasoEntreSistemasDelDia,
+      data: {'fecha': fecha.toIso8601String().substring(0, 10)},
+      fromJson: (json) => TraspasoMovCajaModel.fromJson(json),
+    );
+    return modelos.map((e) => e.toEntity()).toList();
+  }
+
+  @override
+  Future<void> verificar({
+    required int idBitTarRuti,
+    required TraspasoMovCajaEntity fila,
+    required bool cuadra,
+    String? obs,
+  }) async {
+    await postAndReturnId(
+      endpoint: AppConstants.tarTraspasoEntreSistemasVerificar,
+      data: {
+        'idBitTarRuti': idBitTarRuti,
+        // 0 = la fila todavia no existe en Bosque; el servidor la inserta.
+        'idTrasp': fila.idTrasp,
+        'bd': fila.bd,
+        'fecha': fila.fecha?.toIso8601String().substring(0, 10),
+        'account': fila.account,
+        'contraAct': fila.contraAct,
+        'acctName': fila.acctName,
+        'tipoTransaccion': fila.tipoTransaccion,
+        'dolares': fila.dolares,
+        'bs': fila.bs,
+        'fueVerificado': cuadra ? 1 : 0,
+        'obs': obs,
+      },
+      errorMessage: 'No se pudo guardar la verificacion del traspaso.',
+    );
+  }
+
+  @override
+  Future<void> sinNovedad({
+    required int idBitTarRuti,
+    required DateTime fecha,
+  }) async {
+    await postAndReturnId(
+      endpoint: AppConstants.tarTraspasoEntreSistemasSinNovedad,
+      data: {
+        'idBitTarRuti': idBitTarRuti,
+        'fecha': fecha.toIso8601String().substring(0, 10),
+      },
+      errorMessage: 'No se pudo cerrar el dia como sin novedad.',
+    );
+  }
 }

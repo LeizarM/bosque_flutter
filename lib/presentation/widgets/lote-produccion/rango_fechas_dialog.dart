@@ -23,14 +23,15 @@ Future<({DateTime desde, DateTime hasta})?> pedirRangoDeFechas(
 }) {
   return showDialog<({DateTime desde, DateTime hasta})>(
     context: context,
-    builder: (_) => _RangoFechasDialog(
-      titulo: titulo,
-      explicacion: explicacion,
-      desde: desde,
-      hasta: hasta,
-      textoAceptar: textoAceptar,
-      iconoAceptar: iconoAceptar,
-    ),
+    builder:
+        (_) => _RangoFechasDialog(
+          titulo: titulo,
+          explicacion: explicacion,
+          desde: desde,
+          hasta: hasta,
+          textoAceptar: textoAceptar,
+          iconoAceptar: iconoAceptar,
+        ),
   );
 }
 
@@ -128,8 +129,8 @@ class _RangoFechasDialogState extends State<_RangoFechasDialog> {
           child: const Text('Cancelar'),
         ),
         FilledButton.icon(
-          onPressed: () =>
-              Navigator.pop(context, (desde: _desde, hasta: _hasta)),
+          onPressed:
+              () => Navigator.pop(context, (desde: _desde, hasta: _hasta)),
           icon: Icon(widget.iconoAceptar, size: 18),
           label: Text(widget.textoAceptar),
         ),

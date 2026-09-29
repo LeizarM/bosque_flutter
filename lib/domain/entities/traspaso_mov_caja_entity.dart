@@ -10,6 +10,16 @@ class TraspasoMovCajaEntity {
   final double? dolares;
   final double? bs;
   final int? fueVerificado;
+
+  /// Por que no cuadro. La exige el servidor cuando [fueVerificado] es 0.
+  final String? obs;
+
+  /// La fila esta guardada en Bosque pero SAP ya no la devuelve.
+  ///
+  /// No se oculta: que un traspaso verificado desaparezca del sistema de
+  /// origen es justo el descuadre que esta tarea existe para encontrar.
+  final bool soloEnBosque;
+
   final int? idBitTarRuti;
   final int audUsuario;
   final DateTime? audFecha;
@@ -25,6 +35,8 @@ class TraspasoMovCajaEntity {
     this.dolares,
     this.bs,
     this.fueVerificado,
+    this.obs,
+    this.soloEnBosque = false,
     this.idBitTarRuti,
     required this.audUsuario,
     this.audFecha,
@@ -41,6 +53,8 @@ class TraspasoMovCajaEntity {
     double? dolares,
     double? bs,
     int? fueVerificado,
+    String? obs,
+    bool? soloEnBosque,
     int? idBitTarRuti,
     int? audUsuario,
     DateTime? audFecha,
@@ -56,6 +70,8 @@ class TraspasoMovCajaEntity {
       dolares: dolares ?? this.dolares,
       bs: bs ?? this.bs,
       fueVerificado: fueVerificado ?? this.fueVerificado,
+      obs: obs ?? this.obs,
+      soloEnBosque: soloEnBosque ?? this.soloEnBosque,
       idBitTarRuti: idBitTarRuti ?? this.idBitTarRuti,
       audUsuario: audUsuario ?? this.audUsuario,
       audFecha: audFecha ?? this.audFecha,

@@ -105,11 +105,12 @@ class ResumenDelPeriodo extends StatelessWidget {
                       children: [
                         Text(
                           fmtNumero.format(total),
-                          style: Theme.of(context).textTheme.headlineSmall
-                              ?.copyWith(
-                                fontWeight: Peso.dato,
-                                fontFeatures: cifrasTabulares,
-                              ),
+                          style: Theme.of(
+                            context,
+                          ).textTheme.headlineSmall?.copyWith(
+                            fontWeight: Peso.dato,
+                            fontFeatures: cifrasTabulares,
+                          ),
                         ),
                         SizedBox(width: Esp.s),
                         Text('resmas', style: context.apagado()),
@@ -118,7 +119,8 @@ class ResumenDelPeriodo extends StatelessWidget {
                   ],
                 ),
               ),
-              if (sinOrden > 0) _AvisoSinOrden(cantidad: sinOrden, onVer: onVerSinOrden),
+              if (sinOrden > 0)
+                _AvisoSinOrden(cantidad: sinOrden, onVer: onVerSinOrden),
             ],
           ),
 
@@ -159,9 +161,7 @@ class _BarraPorGrupo extends StatelessWidget {
                     message:
                         '${g.nombre}: ${fmtNumero.format(g.total)} resmas '
                         'en ${g.cantidad} registro${g.cantidad == 1 ? "" : "s"}',
-                    child: ColoredBox(
-                      color: colorDeGrupo(cs, g.idGrupo).fondo,
-                    ),
+                    child: ColoredBox(color: colorDeGrupo(cs, g.idGrupo).fondo),
                   ),
                 ),
           ],

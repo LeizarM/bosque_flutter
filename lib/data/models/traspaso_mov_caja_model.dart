@@ -61,6 +61,8 @@ class TraspasoMovCajaModel {
   double? dolares;
   double? bs;
   int? fueVerificado;
+  String? obs;
+  bool soloEnBosque;
   int? idBitTarRuti;
   int audUsuario;
   DateTime? audFecha;
@@ -76,28 +78,42 @@ class TraspasoMovCajaModel {
     this.dolares,
     this.bs,
     this.fueVerificado,
+    this.obs,
+    this.soloEnBosque = false,
     this.idBitTarRuti,
     required this.audUsuario,
     this.audFecha,
   });
 
   factory TraspasoMovCajaModel.fromJson(Map<String, dynamic> json) {
+    final idTrasp = (json["idTrasp"] as num?)?.toInt() ?? 0;
     return TraspasoMovCajaModel(
-      idTrasp: json["idTrasp"] ?? 0,
+      idTrasp: idTrasp,
       bd: json["bd"],
       fecha: json["fecha"] != null ? DateTime.tryParse(json["fecha"]) : null,
       account: json["account"],
       contraAct: json["contraAct"],
       acctName: json["acctName"],
       tipoTransaccion: json["tipoTransaccion"],
-      dolares: json["dolares"],
-      bs: json["bs"],
-      fueVerificado: json["fueVerificado"],
+      // `num` y no `double`: un importe entero puede llegar como 350 y no
+      // como 350.0, y la asignación directa a double? revienta la lectura
+      // entera del día.
+      dolares: (json["dolares"] as num?)?.toDouble(),
+      bs: (json["bs"] as num?)?.toDouble(),
+      // Sin fila guardada (idTrasp 0) nadie lo revisó todavía: la fila recién
+      // se escribe cuando alguien lo marca. El listado del día del servidor
+      // manda ISNULL(fueVerificado, 0) para esos, y ese 0 se veía como "No
+      // cuadra" y no contaba como pendiente (2026-09-11).
+      fueVerificado:
+          idTrasp == 0 ? null : (json["fueVerificado"] as num?)?.toInt(),
+      obs: json["obs"],
+      // El backend solo manda soloEnBosque en el listado del dia; en el
+      // resto de las respuestas no viene y false es lo correcto.
+      soloEnBosque: json["soloEnBosque"] == true,
       idBitTarRuti: json["idBitTarRuti"],
       audUsuario: json["audUsuario"] ?? 0,
-      audFecha: json["audFecha"] != null
-          ? DateTime.tryParse(json["audFecha"])
-          : null,
+      audFecha:
+          json["audFecha"] != null ? DateTime.tryParse(json["audFecha"]) : null,
     );
   }
 
@@ -112,6 +128,7 @@ class TraspasoMovCajaModel {
     "dolares": dolares,
     "bs": bs,
     "fueVerificado": fueVerificado,
+    "obs": obs,
     "idBitTarRuti": idBitTarRuti,
     "audUsuario": audUsuario,
     "audFecha": audFecha?.toIso8601String(),
@@ -129,6 +146,8 @@ class TraspasoMovCajaModel {
       dolares: dolares,
       bs: bs,
       fueVerificado: fueVerificado,
+      obs: obs,
+      soloEnBosque: soloEnBosque,
       idBitTarRuti: idBitTarRuti,
       audUsuario: audUsuario,
       audFecha: audFecha,
@@ -138,6 +157,8 @@ class TraspasoMovCajaModel {
   factory TraspasoMovCajaModel.fromEntity(TraspasoMovCajaEntity entity) {
     return TraspasoMovCajaModel(
       idTrasp: entity.idTrasp,
+      obs: entity.obs,
+      soloEnBosque: entity.soloEnBosque,
       bd: entity.bd,
       fecha: entity.fecha,
       account: entity.account,

@@ -4,7 +4,11 @@ import 'package:flutter/material.dart';
 class PlanillasPaginationBar extends StatelessWidget {
   final PlanillaState st;
   final PlanillaNotifier ntf;
-  const PlanillasPaginationBar({super.key, required this.st, required this.ntf});
+  const PlanillasPaginationBar({
+    super.key,
+    required this.st,
+    required this.ntf,
+  });
 
   List<Widget> _pageButtons(ColorScheme cs) {
     final pages = st.totalPaginas;

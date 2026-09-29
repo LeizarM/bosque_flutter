@@ -7,7 +7,7 @@ import 'package:bosque_flutter/domain/entities/vacacion_asignada_entity.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 /// **Las dos pruebas que faltaban**, y por las que las escrituras salieron rotas
-/// con los 61 tests del backend y los 200 de acá en verde.
+/// con los 61 tests del backend y los 200 de aquí en verde.
 ///
 /// Ninguna de las dos suites veía el desajuste: el backend mockea el DAO y estas
 /// pruebas mockean el repositorio, así que **nadie comparaba el cuerpo que sale
@@ -37,7 +37,7 @@ void main() {
   /// rutas de escritura), copiados uno por uno.
   ///
   /// **`confirmado` y no `confirmarDuplicado`**; **`dias` y no `diasAsignados`
-  /// ni `diasAbonados`**. Lo que no está acá, el servidor lo tira.
+  /// ni `diasAbonados`**. Lo que no está aquí, el servidor lo tira.
   const camposDelDto = {
     'codVacacionAsignada',
     'codAbonoDias',
@@ -157,7 +157,7 @@ void main() {
       );
 
       expect(j.keys, everyElement(isIn(camposDelDto)));
-      // **Acá el chequeo de claves NO alcanza y por eso va aparte.** El DTO
+      // **Aquí el chequeo de claves NO alcanza y por eso va aparte.** El DTO
       // declara los dos campos: `fecha` (la fecha de corte, que es la que lee
       // `vacDao.historial`) y `hasta` (el fin del rango de la vacación
       // colectiva). Mandarla como `hasta` pasa el filtro de claves, Jackson la
@@ -178,7 +178,7 @@ void main() {
       );
 
       expect(j.keys, everyElement(isIn(camposDelDto)));
-      // Acá la hora SÍ viaja: los días se cuentan de a media hora entre las
+      // Aquí la hora SÍ viaja: los días se cuentan de a media hora entre las
       // dos, así que perderla convierte medio día en cero.
       expect(j['desde'], '2026-04-03T08:30:00');
       expect(j['hasta'], '2026-04-10T18:30:00');
@@ -225,30 +225,33 @@ void main() {
       expect(j['codEmpleado'], 130);
     });
 
-    test('la simulación individual manda la hora, que es la que elige horario', () {
-      final j = PermisosRrhhImpl.cuerpoSimulacionPermiso(
-        130,
-        DateTime(2026, 8, 17, 8),
-        DateTime(2026, 8, 17, 18),
-        'otro',
-      );
+    test(
+      'la simulación individual manda la hora, que es la que elige horario',
+      () {
+        final j = PermisosRrhhImpl.cuerpoSimulacionPermiso(
+          130,
+          DateTime(2026, 8, 17, 8),
+          DateTime(2026, 8, 17, 18),
+          'otro',
+        );
 
-      expect(j.keys, everyElement(isIn(camposDelFiltroDto)));
-      // **El tipo va aunque no cambie los días**: es lo que el servidor usa
-      // para las «Horas a reponer» (`tipo in ('otro','pcr')`). Sin él vuelven
-      // siempre en 0 y la pantalla tendría que recalcularlas por su cuenta.
-      expect(j['tipoPermiso'], 'otro');
-      expect(j['desde'], '2026-08-17T08:00:00');
-      // **`hasta > 17:30` es lo que conmuta `f_CalcularDiasHabilesPermiso` a
-      // horario continuo** (tope 600 min, almuerzo 60) en vez de estándar (480
-      // y 30). Perder la hora no es perder precisión: es cambiar de horario y
-      // de resultado.
-      expect(j['hasta'], '2026-08-17T18:00:00');
-      // El radio Estándar/Continuo NO viaja: la función lo deduce de esa hora,
-      // así que un flag acá sería un control que el servidor ignora.
-      expect(j.containsKey('horario'), isFalse);
-      expect(j.containsKey('continuo'), isFalse);
-    });
+        expect(j.keys, everyElement(isIn(camposDelFiltroDto)));
+        // **El tipo va aunque no cambie los días**: es lo que el servidor usa
+        // para las «Horas a reponer» (`tipo in ('otro','pcr')`). Sin él vuelven
+        // siempre en 0 y la pantalla tendría que recalcularlas por su cuenta.
+        expect(j['tipoPermiso'], 'otro');
+        expect(j['desde'], '2026-08-17T08:00:00');
+        // **`hasta > 17:30` es lo que conmuta `f_CalcularDiasHabilesPermiso` a
+        // horario continuo** (tope 600 min, almuerzo 60) en vez de estándar (480
+        // y 30). Perder la hora no es perder precisión: es cambiar de horario y
+        // de resultado.
+        expect(j['hasta'], '2026-08-17T18:00:00');
+        // El radio Estándar/Continuo NO viaja: la función lo deduce de esa hora,
+        // así que un flag aquí sería un control que el servidor ignora.
+        expect(j.containsKey('horario'), isFalse);
+        expect(j.containsKey('continuo'), isFalse);
+      },
+    );
 
     test('el alta de un permiso lleva el tipo y NO lleva horas a reponer', () {
       final j = PermisosRrhhImpl.cuerpoPermiso(
@@ -306,7 +309,7 @@ void main() {
       expect(j.keys, everyElement(isIn(camposDelDto)));
       // `dias` y no `diasAPagar`: el campo del DTO ya se llama así y sirve para
       // las tres tablas. Un nombre nuevo repetiría la falla de `diasAsignados`,
-      // que llegaba en 0 sin que se cayera nada — y acá el 0 es plata.
+      // que llegaba en 0 sin que se cayera nada — y aquí el 0 es plata.
       expect(j['dias'], 2.5);
       expect(j.containsKey('diasAPagar'), isFalse);
       // El modal legacy no tiene hora y el servidor fuerza `hasta = desde`.
@@ -352,7 +355,8 @@ void main() {
       AppConstants.permRrhhAbonoRegistrar: '/permiso-rrhh/abono-dias/registrar',
       AppConstants.permRrhhAbonoEliminar: '/permiso-rrhh/abono-dias/eliminar',
       // Cargas colectivas. `colectivo`, en singular.
-      AppConstants.permRrhhColectivaEmpleados: '/permiso-rrhh/colectivo/empleados',
+      AppConstants.permRrhhColectivaEmpleados:
+          '/permiso-rrhh/colectivo/empleados',
       AppConstants.permRrhhColectivaAbonoSimular:
           '/permiso-rrhh/colectivo/abono-dias/simular',
       AppConstants.permRrhhColectivaAbonoAplicar:
@@ -378,7 +382,8 @@ void main() {
       AppConstants.permRrhhPermisoRegistrar: '/permiso-rrhh/permisos/registrar',
       AppConstants.permRrhhVacacionRegistrar:
           '/permiso-rrhh/vacacion/registrar',
-      AppConstants.permRrhhPermisoVacacionPagada: '/permiso-rrhh/vacacion/pagar',
+      AppConstants.permRrhhPermisoVacacionPagada:
+          '/permiso-rrhh/vacacion/pagar',
     };
 
     test('cada constante coincide con su @PostMapping, letra por letra', () {
@@ -386,7 +391,8 @@ void main() {
         expect(
           constante,
           canonica,
-          reason: 'una ruta que no existe del otro lado es un 404, y en '
+          reason:
+              'una ruta que no existe del otro lado es un 404, y en '
               'pantalla se lee como un problema de conexión',
         );
       });
@@ -434,17 +440,19 @@ void main() {
       expect(t.nombre, 'Otros');
     });
 
-    test('los alias del otro molde siguen valiendo, y un JSON vacío no revienta',
-        () {
-      final t = PermisosRrhhImpl.tipoDeJson(const {
-        'codTipos': 'pcr',
-        'nombre': 'Permiso con Reposición',
-      });
-      expect(t.codTipos, 'pcr');
-      expect(t.nombre, 'Permiso con Reposición');
+    test(
+      'los alias del otro molde siguen valiendo, y un JSON vacío no revienta',
+      () {
+        final t = PermisosRrhhImpl.tipoDeJson(const {
+          'codTipos': 'pcr',
+          'nombre': 'Permiso con Reposición',
+        });
+        expect(t.codTipos, 'pcr');
+        expect(t.nombre, 'Permiso con Reposición');
 
-      final vacio = PermisosRrhhImpl.tipoDeJson(const {});
-      expect(vacio.codTipos, '');
-    });
+        final vacio = PermisosRrhhImpl.tipoDeJson(const {});
+        expect(vacio.codTipos, '');
+      },
+    );
   });
 }

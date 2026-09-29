@@ -21,7 +21,7 @@ class TramoSaldoModel {
       etiqueta: prStr(json['etiqueta']),
       monto: prNum(json['monto']),
       montoTxt: prStr(json['montoTxt']),
-      // Sin helper acá: `prStr` daría '' y '' no es un signo. Sin signo conocido
+      // Sin helper aquí: `prStr` daría '' y '' no es un signo. Sin signo conocido
       // el tramo se trata como informativo, o sea no suma. Es el lado seguro —
       // inventar un DEBE cambiaría el total (ver D1).
       signo: json['signo']?.toString() ?? 'INFO',

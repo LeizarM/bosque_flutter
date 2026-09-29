@@ -66,6 +66,8 @@ class BitTareaRutiModel {
   DateTime? audFecha;
   int? idATR;
   int? idFrec;
+  int? diasPlazo;
+  DateTime? fechaLimite;
 
   BitTareaRutiModel({
     required this.idBitTarea,
@@ -83,36 +85,48 @@ class BitTareaRutiModel {
     this.audFecha,
     this.idATR,
     this.idFrec,
+    this.diasPlazo,
+    this.fechaLimite,
   });
 
   factory BitTareaRutiModel.fromJson(Map<String, dynamic> json) {
     return BitTareaRutiModel(
       idBitTarea: json["idBitTarea"] ?? 0,
-      fechaActivo: json["fechaActivo"] != null
-          ? DateTime.tryParse(json["fechaActivo"])
-          : null,
-      fechaPresentacion: json["fechaPresentacion"] != null
-          ? DateTime.tryParse(json["fechaPresentacion"])
-          : null,
+      fechaActivo:
+          json["fechaActivo"] != null
+              ? DateTime.tryParse(json["fechaActivo"])
+              : null,
+      fechaPresentacion:
+          json["fechaPresentacion"] != null
+              ? DateTime.tryParse(json["fechaPresentacion"])
+              : null,
       idTarRuti: json["idTarRuti"],
       nombreTareaRutinaria: json["nombreTareaRutinaria"],
       codEmpleado: json["codEmpleado"],
       descripCargo: json["descripCargo"],
-      fechaCompletado: json["fechaCompletado"] != null
-          ? DateTime.tryParse(json["fechaCompletado"])
-          : null,
+      fechaCompletado:
+          json["fechaCompletado"] != null
+              ? DateTime.tryParse(json["fechaCompletado"])
+              : null,
       fueRealizado: json["fueRealizado"],
       obs: json["obs"],
       estado: json["estado"],
       audUsuario: json["audUsuario"] ?? 0,
-      audFecha: json["audFecha"] != null
-          ? DateTime.tryParse(json["audFecha"])
-          : null,
+      audFecha:
+          json["audFecha"] != null ? DateTime.tryParse(json["audFecha"]) : null,
       idATR: json["idATR"],
       idFrec: json["idFrec"],
+      diasPlazo: json["diasPlazo"],
+      fechaLimite:
+          json["fechaLimite"] != null
+              ? DateTime.tryParse(json["fechaLimite"])
+              : null,
     );
   }
 
+  // idATR, idFrec, diasPlazo y fechaLimite NO van aquí: son proyecciones de
+  // tac_tareaRutinaria (o calculadas), y este mapa es lo que se manda al ABM,
+  // que no tiene parámetros para ellas.
   Map<String, dynamic> toJson() => {
     "idBitTarea": idBitTarea,
     "fechaActivo": fechaActivo?.toIso8601String(),
@@ -146,6 +160,8 @@ class BitTareaRutiModel {
       audFecha: audFecha,
       idATR: idATR,
       idFrec: idFrec,
+      diasPlazo: diasPlazo,
+      fechaLimite: fechaLimite,
     );
   }
 
@@ -166,6 +182,8 @@ class BitTareaRutiModel {
       audFecha: entity.audFecha,
       idATR: entity.idATR,
       idFrec: entity.idFrec,
+      diasPlazo: entity.diasPlazo,
+      fechaLimite: entity.fechaLimite,
     );
   }
 }

@@ -92,11 +92,7 @@ class _NuevaAreaExpandableState extends ConsumerState<NuevaAreaExpandable> {
         mostrarAviso(context, '✅ ${response.message}');
       } else {
         setState(() => _guardando = false);
-        mostrarAviso(
-          context,
-          '⚠️ ${response.message}',
-          tono: TonoAviso.aviso,
-        );
+        mostrarAviso(context, '⚠️ ${response.message}', tono: TonoAviso.aviso);
       }
     } catch (e) {
       setState(() => _guardando = false);

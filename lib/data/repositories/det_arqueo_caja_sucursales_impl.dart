@@ -22,7 +22,8 @@ class DetArqueoCajaSucursalesImpl extends BaseApiRepository
     return postAndReturnId(
       endpoint: AppConstants.tarRegistrarDetArqueoCajaSucursales,
       data: model.toJson(),
-      errorMessage: 'No se pudo guardar el detalle de arqueo de caja de sucursales.',
+      errorMessage:
+          'No se pudo guardar el detalle de arqueo de caja de sucursales.',
     );
   }
 
@@ -31,7 +32,8 @@ class DetArqueoCajaSucursalesImpl extends BaseApiRepository
     await postAndReturnId(
       endpoint: AppConstants.tarEliminarDetArqueoCajaSucursales,
       data: {'idDetAS': idDetAS, 'audUsuario': audUsuario},
-      errorMessage: 'No se pudo eliminar el detalle de arqueo de caja de sucursales.',
+      errorMessage:
+          'No se pudo eliminar el detalle de arqueo de caja de sucursales.',
     );
   }
 }

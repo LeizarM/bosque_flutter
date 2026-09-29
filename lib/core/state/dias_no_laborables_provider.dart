@@ -12,7 +12,10 @@ final diasNoLaborablesProvider = FutureProvider.autoDispose
 
 /// Matriz de sucursales para el modal ABM. BigInt.zero = registro nuevo (todas sin marcar).
 final sucursalesDiaNoLaborableProvider = FutureProvider.autoDispose
-    .family<List<SucursalSeleccionEntity>, BigInt>((ref, idDiaNoLaborable) async {
+    .family<List<SucursalSeleccionEntity>, BigInt>((
+      ref,
+      idDiaNoLaborable,
+    ) async {
       final repo = DiasNoLaborablesImpl();
       return repo.obtenerSucursalesDiaNoLaborable(idDiaNoLaborable);
     });

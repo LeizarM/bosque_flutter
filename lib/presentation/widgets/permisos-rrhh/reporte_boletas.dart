@@ -43,7 +43,7 @@ import 'package:printing/printing.dart';
 Future<void> mostrarReporteBoletas(BuildContext context) {
   const contenido = _ReporteBoletas();
 
-  // El corte es el de la ventana y no el del cajón: acá todavía no hay cajón,
+  // El corte es el de la ventana y no el del cajón: aquí todavía no hay cajón,
   // se está decidiendo qué contenedor abrir.
   if (Aire.de(MediaQuery.sizeOf(context).width) == Aire.justo) {
     return showModalBottomSheet<void>(
@@ -199,7 +199,7 @@ class _ReporteBoletasState extends ConsumerState<_ReporteBoletas> {
           // 200%. No es un caso raro: el sistema operativo sube la escala de
           // letra y el reporte se rompía entero.
           //
-          // Acá todo vive en el mismo scroll, así que **no hay alto que no
+          // Aquí todo vive en el mismo scroll, así que **no hay alto que no
           // alcance**: si no entra, se scrollea. Y la lista sigue siendo
           // perezosa —`SliverList.builder`—, que es lo que se perdería metiendo
           // todo dentro de un `SingleChildScrollView`.
@@ -487,7 +487,7 @@ class _ReporteBoletasState extends ConsumerState<_ReporteBoletas> {
     final lista = _filtrar(todas);
 
     if (lista.isEmpty) {
-      // Motivo distinto del de arriba, así que mensaje distinto: acá sí hay
+      // Motivo distinto del de arriba, así que mensaje distinto: aquí sí hay
       // boletas en el rango, lo que no hay es coincidencia.
       return [
         _Relleno(
@@ -506,7 +506,7 @@ class _ReporteBoletasState extends ConsumerState<_ReporteBoletas> {
     final comoTabla = cajon >= _cajonMinimoTabla;
     final esCronograma = _vista == _Vista.cronograma;
 
-    // **El catálogo manda el color, no una lista escrita acá.** Los tipos son
+    // **El catálogo manda el color, no una lista escrita aquí.** Los tipos son
     // los de `v_tipos` grupo 13, que llegan por el mismo provider que llena el
     // combo; el color de cada barra sale de la posición que ocupa el tipo en
     // esa lista. Agregar un tipo en la base le da color solo.
@@ -568,7 +568,7 @@ class _ReporteBoletasState extends ConsumerState<_ReporteBoletas> {
         // **Un `Wrap` y no un `Row` con `Expanded`.** Las métricas se encogen,
         // pero el conmutador y el botón de Excel tienen ancho propio: con el
         // texto al 200 %, o en una ventana de 760 px, los dos juntos no entran
-        // y el `Row` desbordaba 9,6 px. Acá el grupo de acciones se baja solo a
+        // y el `Row` desbordaba 9,6 px. Aquí el grupo de acciones se baja solo a
         // la línea de abajo en vez de reventar.
         Wrap(
           spacing: Esp.xl,
@@ -1144,7 +1144,7 @@ class _ReporteBoletasState extends ConsumerState<_ReporteBoletas> {
       // anterior a `desde` y en otro mes —las hay en el histórico— el `while`
       // no daba ni una vuelta y la boleta no entraba en NINGÚN bloque: ni
       // dibujada, ni contada, ni avisada. El resumen decía una cosa y el
-      // cronograma otra, en silencio. Acotado acá, la fila cae en el mes del
+      // cronograma otra, en silencio. Acotado aquí, la fila cae en el mes del
       // `desde` y `_tramo` le da su día de ancho.
       final mesDeHasta = DateTime(h.year, h.month);
       final ultimo = mesDeHasta.isBefore(cursor) ? cursor : mesDeHasta;
@@ -1172,9 +1172,9 @@ class _ReporteBoletasState extends ConsumerState<_ReporteBoletas> {
           // con un nombre en la cabeza, no con un código.
           final codigos =
               porEmpleado.keys.toList()..sort(
-                (a, b) => _nombreDelEmpleado(porEmpleado[a]!.first).compareTo(
-                  _nombreDelEmpleado(porEmpleado[b]!.first),
-                ),
+                (a, b) => _nombreDelEmpleado(
+                  porEmpleado[a]!.first,
+                ).compareTo(_nombreDelEmpleado(porEmpleado[b]!.first)),
               );
           final filas = [
             for (final cod in codigos)
@@ -1241,8 +1241,10 @@ class _ReporteBoletasState extends ConsumerState<_ReporteBoletas> {
     final h = p.hasta ?? d;
     if (d == null || h == null) return (0, 1);
 
-    final empiezaAntes = d.year < mes.year || (d.year == mes.year && d.month < mes.month);
-    final terminaDespues = h.year > mes.year || (h.year == mes.year && h.month > mes.month);
+    final empiezaAntes =
+        d.year < mes.year || (d.year == mes.year && d.month < mes.month);
+    final terminaDespues =
+        h.year > mes.year || (h.year == mes.year && h.month > mes.month);
 
     final inicio = empiezaAntes ? 0 : (d.day - 1).clamp(0, diasDelMes - 1);
     final fin = terminaDespues ? diasDelMes : h.day.clamp(1, diasDelMes);
@@ -1256,7 +1258,10 @@ class _ReporteBoletasState extends ConsumerState<_ReporteBoletas> {
   Widget _leyenda(List<NominaPermisoEntity> lista, Map<String, int> catalogo) {
     final vistos = <String, String>{};
     for (final p in lista) {
-      vistos.putIfAbsent(p.tipoPermiso.trim().toLowerCase(), () => _nombreDelTipo(p));
+      vistos.putIfAbsent(
+        p.tipoPermiso.trim().toLowerCase(),
+        () => _nombreDelTipo(p),
+      );
     }
     // **Las que no se pueden dibujar se dicen, no se descartan en silencio.**
     // Una boleta sin fecha no tiene dónde ir en la grilla, pero la lista sí la
@@ -1285,10 +1290,10 @@ class _ReporteBoletasState extends ConsumerState<_ReporteBoletas> {
                         height: 12,
                         decoration: BoxDecoration(
                           color:
-                            colorDeTipoPermiso(
-                              context.cs,
-                              catalogo[e.key] ?? -1,
-                            ).fondo,
+                              colorDeTipoPermiso(
+                                context.cs,
+                                catalogo[e.key] ?? -1,
+                              ).fondo,
                           borderRadius: BorderRadius.circular(3),
                           border: Border.all(color: context.cs.outline),
                         ),
@@ -1338,8 +1343,7 @@ class _ReporteBoletasState extends ConsumerState<_ReporteBoletas> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 _eje(mes, anchoDia),
-                for (final f in mes.filas)
-                  _barras(mes, f, anchoDia, catalogo),
+                for (final f in mes.filas) _barras(mes, f, anchoDia, catalogo),
               ],
             ),
           );
@@ -1402,7 +1406,8 @@ class _ReporteBoletasState extends ConsumerState<_ReporteBoletas> {
     );
   }
 
-  double _altoDeFila(_FilaEmpleado f) => _altoBarra * f.carriles.length + Esp.xs;
+  double _altoDeFila(_FilaEmpleado f) =>
+      _altoBarra * f.carriles.length + Esp.xs;
 
   Widget _tituloDelMes(_Mes mes) {
     // **Sólo los que EMPIEZAN en este mes.** Un permiso que cruza aparece en
@@ -1597,7 +1602,9 @@ class _ReporteBoletasState extends ConsumerState<_ReporteBoletas> {
               hoy
                   ? cs.primary.withValues(alpha: 0.10)
                   : (finde ? cs.surfaceContainerHighest : null),
-          border: Border(right: BorderSide(color: cs.outlineVariant, width: 0.5)),
+          border: Border(
+            right: BorderSide(color: cs.outlineVariant, width: 0.5),
+          ),
         ),
         child: hijo,
       ),
@@ -1652,11 +1659,11 @@ class _ReporteBoletasState extends ConsumerState<_ReporteBoletas> {
 
   /// `03 ago`, o `03 ago → 10 ago 2025` cuando el rango buscado cruza años.
   ///
-  /// **El año no es opcional acá.** En el kardex de una persona lo dice el
+  /// **El año no es opcional aquí.** En el kardex de una persona lo dice el
   /// encabezado del tramo; este reporte no agrupa por año y se puede pedir
   /// «01/01/2024 a 31/12/2025», donde dos filas «03 ago» del mismo empleado y
   /// con el mismo motivo son indistinguibles. El sistema anterior mostraba la
-  /// fecha completa siempre; acá sale sólo cuando hace falta, para no pagar el
+  /// fecha completa siempre; aquí sale sólo cuando hace falta, para no pagar el
   /// ancho en el caso normal, que es pedir un mes. La tarjeta del teléfono usa
   /// `cuandoLargo`, que ya trae el año.
   String _cuando(NominaPermisoEntity p) {

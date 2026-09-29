@@ -53,7 +53,7 @@ final busquedaPersonaProvider = StateProvider<String>((ref) => '');
 /// con 85 personas mezcladas hay que leer fila por fila cuál letra está
 /// resaltada— y «mostrame a Pérez» sirve para ir a alguien puntual.
 ///
-/// Vive acá y no adentro de la pestaña por lo mismo que los otros filtros del
+/// Vive aquí y no adentro de la pestaña por lo mismo que los otros filtros del
 /// módulo: `grillaRolProvider` es `autoDispose`, así que ir a la grilla y
 /// volver reconstruye la vista entera y un estado local se perdería en cada
 /// vuelta. Mismo criterio y mismo tipo que [filtroEstadoCambioProvider].
@@ -77,7 +77,7 @@ const String filtroSinSabados = 'SIN SABADOS';
 ///
 /// El backend devuelve tres listas sueltas (filas, columnas y celdas ocupadas)
 /// porque la matriz pivoteada tendría columnas dinámicas — 52 o 53 según el año.
-/// El cruce se hace acá, una sola vez, y no en el `build` de cada celda.
+/// El cruce se hace aquí, una sola vez, y no en el `build` de cada celda.
 class GrillaRol {
   final RolSabadosEntity rol;
   final List<SabadoEntity> sabados;
@@ -324,7 +324,7 @@ class RolSabadosAcciones {
       codAprobador: u,
       audUsuario: u,
     );
-    // Acá SÍ se movieron celdas: hasta tres, en una transacción.
+    // Aquí SÍ se movieron celdas: hasta tres, en una transacción.
     _ref.invalidate(cambiosProvider(idRol));
     _refrescar(idRol);
   }
@@ -397,7 +397,7 @@ class RolSabadosAcciones {
 
   /// Aplica de verdad las excusas por horario (no `soloInformar`). La
   /// previsualización vive en [excusasHorarioProvider], que llama al mismo
-  /// endpoint con `soloInformar=true` y no pasa por acá.
+  /// endpoint con `soloInformar=true` y no pasa por aquí.
   Future<List<ExcusaHorarioEntity>> aplicarExcusasHorario({
     required int idRol,
   }) async {
@@ -440,7 +440,7 @@ class RolSabadosAcciones {
   ///
   /// **No llama a `_usuario()` y no es un olvido:** el endpoint deriva quién
   /// programa del token, justamente para que nadie pueda programar a nombre de
-  /// otro. Si le agregás el `audUsuario` que usan todas las demás acciones de
+  /// otro. Si le agregas el `audUsuario` que usan todas las demás acciones de
   /// esta clase, el body deja de coincidir con lo que espera el controller.
   Future<void> programar({
     required int idRol,
@@ -631,7 +631,7 @@ final excusasHorarioProvider = FutureProvider.autoDispose
 /// seleccionado. Se apoya en la MISMA regla que ya usan
 /// [excusasHorarioProvider]/[RolSabadosAcciones.aplicarExcusasHorario]
 /// (`ExcusaHorarioService.calcular`, del lado del backend) — no hay ninguna
-/// decisión nueva acá, sólo un disparador distinto.
+/// decisión nueva aquí, sólo un disparador distinto.
 ///
 /// **Por qué atrapa el error y no deja que se propague.** No todo el que abre
 /// la pantalla es RR.HH. (el endpoint exige `ROLE_ADM` o estar en
@@ -696,7 +696,7 @@ final sabadoElegidoProvider = StateProvider<int?>((ref) => null);
 /// se reconstruye entera y habría que replegar la cabecera cada vez.
 ///
 /// **No va a disco.** En el módulo no persiste ningún estado de interfaz —ni el
-/// mes de la grilla, ni la búsqueda, ni el sábado elegido—, y acá persistir
+/// mes de la grilla, ni la búsqueda, ni el sábado elegido—, y aquí persistir
 /// sería peor que no hacerlo: el plegado se decide planificando («abrime los
 /// meses») y se cobra el jueves siguiente, que es el contexto opuesto.
 final cabeceraEquipoPlegadaProvider = StateProvider<bool?>((ref) => null);
@@ -718,7 +718,7 @@ final programadoresProvider =
 ///
 /// **Falla cerrado.** Ser de RR.HH. no viaja en el token, es una fila en
 /// `trs_Rrhh` que llega por `/mi-equipo`. Mientras esa respuesta viaja —o si
-/// falla— acá se contesta que no. Un `ROLE_ADM` no depende de esa llamada, así
+/// falla— aquí se contesta que no. Un `ROLE_ADM` no depende de esa llamada, así
 /// que ese pasa igual. Equivocarse para este lado se ve —«no me deja»— y se
 /// pregunta; para el otro lado no se ve hasta que alguien encuentra su año
 /// rehecho.
@@ -756,7 +756,7 @@ class PermisoDeCelda {
 
 /// Lo que la grilla necesita saber antes de dejar tocar una celda.
 ///
-/// Se calcula acá y no en cada celda: una matriz de 85 × 52 son 4.420 celdas, y
+/// Se calcula aquí y no en cada celda: una matriz de 85 × 52 son 4.420 celdas, y
 /// que cada una observe providers por su cuenta es 4.420 suscripciones para
 /// responder siempre lo mismo.
 final permisoDeCeldaProvider = Provider.autoDispose<PermisoDeCelda>((ref) {
@@ -777,10 +777,11 @@ final permisoDeCeldaProvider = Provider.autoDispose<PermisoDeCelda>((ref) {
 ///
 /// Sin filtro de estado a propósito: la pantalla necesita ver también a los
 /// dados de baja, porque volver a agregar a alguien es reactivar esa fila.
-final rrhhSabadosProvider =
-    FutureProvider.autoDispose<List<RrhhSabadosEntity>>((ref) async {
-      return ref.watch(rolSabadosRepositoryProvider).getRrhh();
-    });
+final rrhhSabadosProvider = FutureProvider.autoDispose<List<RrhhSabadosEntity>>(
+  (ref) async {
+    return ref.watch(rolSabadosRepositoryProvider).getRrhh();
+  },
+);
 
 /// Lo que define un puente: el sábado y el horario del permiso.
 ///
@@ -820,21 +821,24 @@ typedef PreviaDePermiso =
 /// nada que refrescar, y sin esto la caché se quedaría con una entrada por cada
 /// combinación que el admin probó mientras dudaba.
 final previaDependientesProvider = FutureProvider.autoDispose
-    .family<List<ProgramadorDependienteEntity>, PreviaDePermiso>((ref, p) async {
-      // Sin persona no hay nada que preguntar: se corta acá para no pegarle al
+    .family<List<ProgramadorDependienteEntity>, PreviaDePermiso>((
+      ref,
+      p,
+    ) async {
+      // Sin persona no hay nada que preguntar: se corta aquí para no pegarle al
       // servidor mientras todavía se está buscando a alguien en el combo.
       //
-      // **`codSucursal == 0` NO corta**, aunque acá antes cortaba. Cuando el 0
+      // **`codSucursal == 0` NO corta**, aunque aquí antes cortaba. Cuando el 0
       // quería decir «no sé cuál es su sucursal» tenía sentido; desde que
       // significa «todas las sucursales» —el mismo idioma que el NULL de
-      // `trs_Programador.codSucursal`— cortar acá dejaba a la opción «Todas»
+      // `trs_Programador.codSucursal`— cortar aquí dejaba a la opción «Todas»
       // devolviendo lista vacía sin llegar nunca al backend. La pantalla
       // entonces decía «el organigrama no le da NINGÚN dependiente», que era
       // exactamente lo contrario de la verdad.
       //
       // El caso «no sé cuál es su sucursal» lo resuelve la pantalla, que no
       // dibuja la previsualización ni deja guardar. Es donde se puede explicar
-      // qué hacer al respecto; acá sólo se sabría que hay un cero.
+      // qué hacer al respecto; aquí sólo se sabría que hay un cero.
       if (p.codEmpleado == 0) {
         return const <ProgramadorDependienteEntity>[];
       }

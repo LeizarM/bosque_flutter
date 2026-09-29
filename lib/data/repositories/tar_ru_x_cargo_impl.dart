@@ -22,7 +22,8 @@ class TarRuXCargoImpl extends BaseApiRepository
     return postAndReturnId(
       endpoint: AppConstants.tarRegistrarTarRuXCargo,
       data: model.toJson(),
-      errorMessage: 'No se pudo guardar la asignación de cargo a tarea rutinaria.',
+      errorMessage:
+          'No se pudo guardar la asignación de cargo a tarea rutinaria.',
     );
   }
 
@@ -31,7 +32,8 @@ class TarRuXCargoImpl extends BaseApiRepository
     await postAndReturnId(
       endpoint: AppConstants.tarEliminarTarRuXCargo,
       data: {'idTarXCargo': idTarXCargo, 'audUsuario': audUsuario},
-      errorMessage: 'No se pudo eliminar la asignación de cargo a tarea rutinaria.',
+      errorMessage:
+          'No se pudo eliminar la asignación de cargo a tarea rutinaria.',
     );
   }
 }

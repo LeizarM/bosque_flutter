@@ -158,7 +158,8 @@ class TransaccionesModel {
       estado: json["estado"] ?? '',
       observaciones: json["observaciones"] ?? '',
       idTransaccionOrigen:
-          json["idTransaccionOrigen"] != null && json["idTransaccionOrigen"] != 0
+          json["idTransaccionOrigen"] != null &&
+                  json["idTransaccionOrigen"] != 0
               ? BigInt.from(json["idTransaccionOrigen"])
               : null,
       audUsuario: json["audUsuario"] ?? 0,

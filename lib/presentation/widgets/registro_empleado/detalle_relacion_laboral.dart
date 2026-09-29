@@ -29,7 +29,8 @@ class DetalleRelacionLaboral extends ConsumerStatefulWidget {
       _DetalleRelacionLaboralState();
 }
 
-class _DetalleRelacionLaboralState extends ConsumerState<DetalleRelacionLaboral> {
+class _DetalleRelacionLaboralState
+    extends ConsumerState<DetalleRelacionLaboral> {
   int _editingIndex = -1;
   bool _isAddingNew = false;
   late int _audUsuario;
@@ -73,12 +74,12 @@ class _DetalleRelacionLaboralState extends ConsumerState<DetalleRelacionLaboral>
 
     // Si tempRelacionLaboralListProvider está vacío, cargar del servidor SOLO UNA VEZ
     if (listaRelacionLaboral.isEmpty) {
-      final relacionDelServidorAsync =
-          ref.watch(relacionLaboralProvider(widget.codEmpleado));
+      final relacionDelServidorAsync = ref.watch(
+        relacionLaboralProvider(widget.codEmpleado),
+      );
 
       return relacionDelServidorAsync.when(
-        loading: () =>
-            const Center(child: CircularProgressIndicator()),
+        loading: () => const Center(child: CircularProgressIndicator()),
         error: (err, _) => Center(child: Text('Error: $err')),
         data: (relacionDelServidor) {
           // IMPORTANTE: Cargar en tempRelacionLaboralListProvider SOLO una vez
@@ -103,14 +104,16 @@ class _DetalleRelacionLaboralState extends ConsumerState<DetalleRelacionLaboral>
   // ============================================================================
 
   Widget _buildEdicionMode(BuildContext context) {
-    final relacionAsync =
-        ref.watch(relacionLaboralProvider(widget.codEmpleado));
+    final relacionAsync = ref.watch(
+      relacionLaboralProvider(widget.codEmpleado),
+    );
 
     return relacionAsync.when(
       loading: () => const Center(child: CircularProgressIndicator()),
       error: (err, _) => Center(child: Text('Error: $err')),
-      data: (listaRelacionLaboral) =>
-          _buildUI(context, listaRelacionLaboral, isEdition: true),
+      data:
+          (listaRelacionLaboral) =>
+              _buildUI(context, listaRelacionLaboral, isEdition: true),
     );
   }
 
@@ -118,7 +121,7 @@ class _DetalleRelacionLaboralState extends ConsumerState<DetalleRelacionLaboral>
   // UI PRINCIPAL
   // ============================================================================
 
- /* Widget _buildUI(BuildContext context, List<RelacionLaboralEntity> lista,
+  /* Widget _buildUI(BuildContext context, List<RelacionLaboralEntity> lista,
       {required bool isEdition}) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -144,36 +147,41 @@ class _DetalleRelacionLaboralState extends ConsumerState<DetalleRelacionLaboral>
       ],
     );
   }*/
-  Widget _buildUI(BuildContext context, List<RelacionLaboralEntity> lista,
-    {required bool isEdition}) {
-  // ✅ LIMITAR A 1 RELACIÓN EN MODO NUEVO
-  final tieneRelacion = lista.isNotEmpty;
-  final puedeAgregar = !isEdition && !tieneRelacion; // Solo en modo nuevo SIN relación
+  Widget _buildUI(
+    BuildContext context,
+    List<RelacionLaboralEntity> lista, {
+    required bool isEdition,
+  }) {
+    // ✅ LIMITAR A 1 RELACIÓN EN MODO NUEVO
+    final tieneRelacion = lista.isNotEmpty;
+    final puedeAgregar =
+        !isEdition && !tieneRelacion; // Solo en modo nuevo SIN relación
 
-  return Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      _buildHeader(context),
-      Column(
-        children: [
-          // Lista de relación laboral
-          ...List.generate(
-            lista.length,
-            (idx) => _editingIndex == idx
-                ? _buildEditForm(context, idx, lista, isEdition)
-                : _buildRelacionCard(context, idx, lista[idx], isEdition),
-          ),
-          // Formulario nuevo si está activo
-          if (_isAddingNew) _buildNewForm(context, isEdition),
-          // Botón agregar - ✅ SOLO si no hay relación y estamos en modo nuevo
-          if (!_isAddingNew && puedeAgregar) _buildAddButton(context),
-          // Estado vacío
-          if (lista.isEmpty && !_isAddingNew) _buildEmptyState(context),
-        ],
-      ),
-    ],
-  );
-}
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildHeader(context),
+        Column(
+          children: [
+            // Lista de relación laboral
+            ...List.generate(
+              lista.length,
+              (idx) =>
+                  _editingIndex == idx
+                      ? _buildEditForm(context, idx, lista, isEdition)
+                      : _buildRelacionCard(context, idx, lista[idx], isEdition),
+            ),
+            // Formulario nuevo si está activo
+            if (_isAddingNew) _buildNewForm(context, isEdition),
+            // Botón agregar - ✅ SOLO si no hay relación y estamos en modo nuevo
+            if (!_isAddingNew && puedeAgregar) _buildAddButton(context),
+            // Estado vacío
+            if (lista.isEmpty && !_isAddingNew) _buildEmptyState(context),
+          ],
+        ),
+      ],
+    );
+  }
 
   // ============================================================================
   // HEADER
@@ -184,17 +192,11 @@ class _DetalleRelacionLaboralState extends ConsumerState<DetalleRelacionLaboral>
       padding: EdgeInsets.only(bottom: context.smallSpacing),
       child: Row(
         children: [
-          Icon(
-            Icons.work,
-            size: context.smallIconSize,
-            color: Colors.grey,
-          ),
+          Icon(Icons.work, size: context.smallIconSize, color: Colors.grey),
           SizedBox(width: context.smallSpacing),
           Text(
             'Relación Laboral',
-            style: context.subtitleStyle.copyWith(
-              fontWeight: FontWeight.bold,
-            ),
+            style: context.subtitleStyle.copyWith(fontWeight: FontWeight.bold),
           ),
         ],
       ),
@@ -205,8 +207,12 @@ class _DetalleRelacionLaboralState extends ConsumerState<DetalleRelacionLaboral>
   // TARJETA DE RELACIÓN LABORAL (LECTURA)
   // ============================================================================
 
-  Widget _buildRelacionCard(BuildContext context, int index,
-      RelacionLaboralEntity relacion, bool isEdition) {
+  Widget _buildRelacionCard(
+    BuildContext context,
+    int index,
+    RelacionLaboralEntity relacion,
+    bool isEdition,
+  ) {
     return Card(
       margin: EdgeInsets.symmetric(vertical: context.smallSpacing),
       elevation: 0,
@@ -241,9 +247,7 @@ class _DetalleRelacionLaboralState extends ConsumerState<DetalleRelacionLaboral>
       getCode: (tipo) => tipo.codTipos,
       getDescription: (tipo) => tipo.nombre,
       fallback: relacion.tipoRel,
-      style: context.bodyStyle.copyWith(
-        fontWeight: FontWeight.bold,
-      ),
+      style: context.bodyStyle.copyWith(fontWeight: FontWeight.bold),
     );
   }
 
@@ -258,7 +262,7 @@ class _DetalleRelacionLaboralState extends ConsumerState<DetalleRelacionLaboral>
             'Desde:',
             FechaUtils.formatDate(relacion.fechaIni ?? DateTime.now()),
           ),
-         /* _buildDataRow(
+          /* _buildDataRow(
             context,
             'Hasta:',
             FechaUtils.formatDate(relacion.fechaFin ?? DateTime.now()),
@@ -292,8 +296,12 @@ class _DetalleRelacionLaboralState extends ConsumerState<DetalleRelacionLaboral>
     );
   }
 
-  Widget _buildActions(BuildContext context, int index,
-      RelacionLaboralEntity relacion, bool isEdition) {
+  Widget _buildActions(
+    BuildContext context,
+    int index,
+    RelacionLaboralEntity relacion,
+    bool isEdition,
+  ) {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -312,9 +320,11 @@ class _DetalleRelacionLaboralState extends ConsumerState<DetalleRelacionLaboral>
             size: context.smallIconSize,
             color: Colors.redAccent,
           ),
-          onPressed: () => isEdition
-              ? _deleteFromServer(relacion.codRelEmplEmpr)
-              : _deleteFromList(index),
+          onPressed:
+              () =>
+                  isEdition
+                      ? _deleteFromServer(relacion.codRelEmplEmpr)
+                      : _deleteFromList(index),
           tooltip: 'Eliminar',
         ),
       ],
@@ -333,14 +343,21 @@ class _DetalleRelacionLaboralState extends ConsumerState<DetalleRelacionLaboral>
   // FORMULARIOS
   // ============================================================================
 
-  Widget _buildEditForm(BuildContext context,
-      int index, List<RelacionLaboralEntity> lista, bool isEdition) {
+  Widget _buildEditForm(
+    BuildContext context,
+    int index,
+    List<RelacionLaboralEntity> lista,
+    bool isEdition,
+  ) {
     return FormRelacionLaboral(
       relacionInicial: lista[index],
       codEmpleado: widget.codEmpleado,
       audUsuario: _audUsuario,
-      onSave: (relacion) =>
-          isEdition ? _saveToServer(relacion) : _updateInList(relacion, index),
+      onSave:
+          (relacion) =>
+              isEdition
+                  ? _saveToServer(relacion)
+                  : _updateInList(relacion, index),
       onCancel: () {
         FocusManager.instance.primaryFocus?.unfocus();
         setState(() => _editingIndex = -1);
@@ -370,8 +387,9 @@ class _DetalleRelacionLaboralState extends ConsumerState<DetalleRelacionLaboral>
       ),
       codEmpleado: widget.codEmpleado,
       audUsuario: _audUsuario,
-      onSave: (relacion) =>
-          isEdition ? _saveToServer(relacion) : _addToList(relacion),
+      onSave:
+          (relacion) =>
+              isEdition ? _saveToServer(relacion) : _addToList(relacion),
       onCancel: () {
         FocusManager.instance.primaryFocus?.unfocus();
         setState(() => _isAddingNew = false);
@@ -418,15 +436,16 @@ class _DetalleRelacionLaboralState extends ConsumerState<DetalleRelacionLaboral>
     showSuccessMessage(context, 'Relación laboral agregada');
   }*/
   void _addToList(RelacionLaboralEntity relacion) {
-  // ✅ REEMPLAZAR en lugar de agregar (máximo 1)
-  ref.read(tempRelacionLaboralListProvider.notifier).state = [relacion];
-  setState(() => _isAddingNew = false);
-  showSuccessMessage(context, 'Relación laboral agregada');
-}
+    // ✅ REEMPLAZAR en lugar de agregar (máximo 1)
+    ref.read(tempRelacionLaboralListProvider.notifier).state = [relacion];
+    setState(() => _isAddingNew = false);
+    showSuccessMessage(context, 'Relación laboral agregada');
+  }
 
   void _updateInList(RelacionLaboralEntity relacion, int index) {
     final list = List<RelacionLaboralEntity>.from(
-        ref.read(tempRelacionLaboralListProvider));
+      ref.read(tempRelacionLaboralListProvider),
+    );
     list[index] = relacion;
     ref.read(tempRelacionLaboralListProvider.notifier).state = list;
     setState(() => _editingIndex = -1);
@@ -435,7 +454,8 @@ class _DetalleRelacionLaboralState extends ConsumerState<DetalleRelacionLaboral>
 
   void _deleteFromList(int index) {
     final list = List<RelacionLaboralEntity>.from(
-        ref.read(tempRelacionLaboralListProvider));
+      ref.read(tempRelacionLaboralListProvider),
+    );
     list.removeAt(index);
     ref.read(tempRelacionLaboralListProvider.notifier).state = list;
     _resetFormState();
@@ -450,11 +470,9 @@ class _DetalleRelacionLaboralState extends ConsumerState<DetalleRelacionLaboral>
     await executeABM(
       ref: ref,
       context: context,
-      operation: () =>
-          ref.read(registrarRelacionLaboral(relacion).future),
+      operation: () => ref.read(registrarRelacionLaboral(relacion).future),
       providersToInvalidate: [relacionLaboralProvider(widget.codEmpleado)],
-      successMessage:
-          '✅ Relación laboral guardada: ${relacion.tipoRel}',
+      successMessage: '✅ Relación laboral guardada: ${relacion.tipoRel}',
     );
 
     if (mounted) {
@@ -466,8 +484,7 @@ class _DetalleRelacionLaboralState extends ConsumerState<DetalleRelacionLaboral>
     final success = await executeABM(
       ref: ref,
       context: context,
-      operation: () =>
-          ref.read(eliminarRelacionLaboral(codRelEmplEmpr).future),
+      operation: () => ref.read(eliminarRelacionLaboral(codRelEmplEmpr).future),
       providersToInvalidate: [relacionLaboralProvider(widget.codEmpleado)],
       successMessage: 'Relación laboral eliminada correctamente',
       requireConfirmation: true,

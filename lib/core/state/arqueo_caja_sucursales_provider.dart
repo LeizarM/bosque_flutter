@@ -54,9 +54,10 @@ class ArqueoCajaSucursalesNotifier
       await _repo.registrar(item);
       state = state.copyWith(
         cargando: false,
-        mensajeExito: item.idAC == 0
-            ? 'Arqueo de caja de sucursales agregado.'
-            : 'Arqueo de caja de sucursales actualizado.',
+        mensajeExito:
+            item.idAC == 0
+                ? 'Arqueo de caja de sucursales agregado.'
+                : 'Arqueo de caja de sucursales actualizado.',
       );
       await cargar();
       return true;
@@ -90,4 +91,7 @@ final _arqueoCajaSucursalesRepoProvider = Provider(
 final arqueoCajaSucursalesProvider = StateNotifierProvider.autoDispose<
   ArqueoCajaSucursalesNotifier,
   ArqueoCajaSucursalesState
->((ref) => ArqueoCajaSucursalesNotifier(ref.read(_arqueoCajaSucursalesRepoProvider)));
+>(
+  (ref) =>
+      ArqueoCajaSucursalesNotifier(ref.read(_arqueoCajaSucursalesRepoProvider)),
+);

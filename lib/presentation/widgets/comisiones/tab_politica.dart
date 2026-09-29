@@ -128,7 +128,7 @@ class _Advertencia extends StatelessWidget {
                           children: [
                             const TextSpan(
                               text:
-                                  'Lo que se configura acá cambia cuánto se le paga a la '
+                                  'Lo que se configura aquí cambia cuánto se le paga a la '
                                   'fuerza de ventas. El porcentaje es ',
                             ),
                             const TextSpan(
@@ -236,6 +236,10 @@ class _SeccionFamilias extends ConsumerWidget {
                                 f.estaActiva
                                     ? () => _desactivar(context, ref, f)
                                     : null,
+                            pistaInactiva:
+                                'Editar esta fila no la reactiva: para '
+                                'volver a aplicarla, use «Agregar familia» '
+                                'de nuevo.',
                           );
                         },
                       ),
@@ -338,6 +342,10 @@ class _SeccionExentos extends ConsumerWidget {
                                   texto: 'hasta ${_f(e.vigenteHasta)}',
                                 ),
                             ],
+                            pistaInactiva:
+                                'Para volver a eximirlo, use «Eximir '
+                                'vendedor» de nuevo: esta fila ya no se '
+                                'puede reactivar.',
                             alDesactivar:
                                 e.estaActiva
                                     ? () async {
@@ -442,6 +450,10 @@ class _SeccionClientes extends ConsumerWidget {
                                   texto: 'hasta ${_f(c.vigenteHasta)}',
                                 ),
                             ],
+                            pistaInactiva:
+                                'Para volver a excluirlo, use «Excluir '
+                                'cliente» de nuevo: esta fila ya no se '
+                                'puede reactivar.',
                             alDesactivar:
                                 c.estaActiva
                                     ? () async {
@@ -978,6 +990,7 @@ class _Ficha extends StatelessWidget {
     required this.chips,
     this.alEditar,
     this.alDesactivar,
+    this.pistaInactiva,
   });
 
   final String titulo;
@@ -986,6 +999,13 @@ class _Ficha extends StatelessWidget {
   final List<Widget> chips;
   final VoidCallback? alEditar;
   final VoidCallback? alDesactivar;
+
+  /// Solo se muestra cuando [activa] es false. Existe porque no hay botón de
+  /// "reactivar": desactivar es una baja lógica (activo=0) y la única forma
+  /// de volver a aplicar la regla es cargarla de nuevo desde el botón de
+  /// arriba, no editando esta fila. Sin este texto el usuario que se
+  /// equivoca al desactivar no tiene cómo enterarse de eso.
+  final String? pistaInactiva;
 
   @override
   Widget build(BuildContext context) {
@@ -1038,6 +1058,22 @@ class _Ficha extends StatelessWidget {
           ],
           const SizedBox(height: 10),
           Wrap(spacing: 6, runSpacing: 6, children: chips),
+          if (!activa && pistaInactiva != null) ...[
+            const SizedBox(height: 8),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(Icons.info_outline, size: 14, color: cs.onSurfaceVariant),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    pistaInactiva!,
+                    style: tt.bodySmall?.copyWith(color: cs.onSurfaceVariant),
+                  ),
+                ),
+              ],
+            ),
+          ],
         ],
       ),
     );
@@ -1100,16 +1136,16 @@ Future<bool> _confirmar(
   final r = await showDialog<bool>(
     context: context,
     builder:
-        (_) => AlertDialog(
+        (dialogContext) => AlertDialog(
           title: Text(titulo),
           content: Text(detalle),
           actions: [
             TextButton(
-              onPressed: () => Navigator.of(context).pop(false),
+              onPressed: () => Navigator.of(dialogContext).pop(false),
               child: const Text('Cancelar'),
             ),
             FilledButton(
-              onPressed: () => Navigator.of(context).pop(true),
+              onPressed: () => Navigator.of(dialogContext).pop(true),
               child: const Text('Confirmar'),
             ),
           ],

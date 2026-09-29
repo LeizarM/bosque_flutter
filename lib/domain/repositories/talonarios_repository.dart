@@ -149,7 +149,7 @@ abstract class TalonariosRepository {
   /// Custodia: quién tiene talonarios ahora y quién registró la entrega.
   ///
   /// Es lo que Trazabilidad no contestaba: ese reporte devuelve las entregas
-  /// históricas y no tiene con qué quedarse solo con las abiertas. Acá el
+  /// históricas y no tiene con qué quedarse solo con las abiertas. Aquí el
   /// default son las vigentes.
   ///
   /// [tipoDestinatario] es `'S'` sucursales, `'E'` personal, null ambos.

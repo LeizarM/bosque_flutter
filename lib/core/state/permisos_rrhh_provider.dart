@@ -13,7 +13,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// El repositorio del módulo.
 ///
-/// **Se declara acá y no en `main.dart`.** El `ProviderScope` de `main.dart` ya
+/// **Se declara aquí y no en `main.dart`.** El `ProviderScope` de `main.dart` ya
 /// no tiene `overrides`: los registrados ahí construían su repo —y con él todo
 /// el cliente Dio— antes del primer frame, para todos los usuarios, entraran o
 /// no al módulo. Así se fabrica solo y de forma perezosa. (El `CLAUDE.md` que
@@ -26,10 +26,10 @@ final permisosRrhhRepositoryProvider = Provider<PermisosRrhhRepository>(
 // AUTORIZACIÓN (SUPUESTO D4 — pendiente de confirmación de RR.HH., ver plan §5)
 // ═══════════════════════════════════════════════════════════════════════════
 //
-// Van acá y no en `permisos_rrhh_comunes.dart`: en el Rol de Sábados la decisión
+// Van aquí y no en `permisos_rrhh_comunes.dart`: en el Rol de Sábados la decisión
 // de permiso vive entera en el provider del módulo (`administraRolProvider`,
 // `permisoDeCeldaProvider`) y el archivo de piezas no sabe nada de ACL. Allá el
-// gate es un `Provider<bool>` propio; acá el ACL es el de `tb_vistaBtn`, así que
+// gate es un `Provider<bool>` propio; aquí el ACL es el de `tb_vistaBtn`, así que
 // lo que queda es la constante con el nombre real del botón.
 
 /// El botón del ACL (`tb_vistaBtn` / `tb_usuarioBtn`) que habilita la consulta
@@ -64,7 +64,7 @@ const String btnCalculadora = 'btnApoyoCalc';
 /// Es el mismo que exige el backend en `/vacacion/RptPermisoVacacion`
 /// (codBtn 109, 6 usuarios con `nivelAcceso != 0`). Ahí el gate tiene tres
 /// puertas —este botón, o que la boleta sea propia, o que el empleado esté en
-/// el subárbol de cargos de quien pide—, así que esconderlo acá sólo evita el
+/// el subárbol de cargos de quien pide—, así que esconderlo aquí sólo evita el
 /// 403: **quién puede bajar qué lo decide el servidor**.
 const String btnBoleta = 'btnReImprimirBoleta';
 
@@ -151,7 +151,7 @@ const String btnVacacionPagada = 'btnNuevaVacPagada';
 ///
 /// **Global y no estado local del widget** a propósito: los providers de abajo
 /// son `autoDispose`, así que salir del módulo y volver reconstruye la vista, y
-/// un `setState` guardado en la pantalla se habría perdido. Acá el módulo
+/// un `setState` guardado en la pantalla se habría perdido. Aquí el módulo
 /// vuelve mostrando a la misma persona.
 final empleadoSeleccionadoProvider = StateProvider<EmpleadoEntity?>(
   (ref) => null,
@@ -179,7 +179,7 @@ final filtroSoloActivosProvider = StateProvider<bool>((ref) => true);
 ///
 /// **No es un `family`**: los tres filtros son estado global del módulo, así que
 /// se leen con `watch` y Riverpod rearma la búsqueda cuando cambia cualquiera.
-/// Un `family` acá pediría una clave, y la clave sería justamente esos tres.
+/// Un `family` aquí pediría una clave, y la clave sería justamente esos tres.
 final empleadosBuscadosProvider =
     FutureProvider.autoDispose<List<EmpleadoEntity>>((ref) {
       return ref
@@ -239,8 +239,8 @@ final calculoAntiguedadProvider = FutureProvider.autoDispose
 /// por `codEmpleado` **y** `codRelEmplEmpr` (`p_list_vacacionAsignada 'B'`,
 /// `p_list_AbonoDias 'B'`), porque el saldo es de la relación vigente: la misma
 /// persona en dos contratos tiene dos historias distintas y sumarlas daría un
-/// número que no es el de nadie. `codRelEmplEmpr` en 0 = «la vigente, resolvela
-/// vos», que es lo que sabe la pantalla antes de tener la ficha.
+/// número que no es el de nadie. `codRelEmplEmpr` en 0 = «la vigente, resuélvela
+/// tú», que es lo que sabe la pantalla antes de tener la ficha.
 ///
 /// Es un **record** por lo mismo que [RangoDeCalculo]: la clave de un `family`
 /// se compara con `==`, y un objeto sin igualdad estructural sería una clave
@@ -299,7 +299,7 @@ final filtroFechaFinProvider = StateProvider<DateTime?>((ref) => null);
 /// «Fecha Rango» del filtro, que es **«quién estaba de permiso el día X»** y no
 /// un extremo de nada: el SP pregunta si esa fecha cae DENTRO del `[desde,
 /// hasta]` del permiso. El rótulo del legacy es de los que engañan, y por eso
-/// el nombre de acá dice fecha y no rango.
+/// el nombre de aquí dice fecha y no rango.
 final filtroFechaRangoProvider = StateProvider<DateTime?>((ref) => null);
 
 /// La clave de la Nómina: la persona, su relación laboral y los tres filtros.
@@ -313,14 +313,15 @@ final filtroFechaRangoProvider = StateProvider<DateTime?>((ref) => null);
 /// botón («Buscar Permisos»), no cada tecla: con `watch` sobre cuatro filtros,
 /// elegir una fecha en el calendario pegaría un viaje al servidor por cada
 /// toque. La pantalla arma la clave cuando la persona aprieta buscar.
-typedef FiltroNominaPermisos = ({
-  int codEmpleado,
-  int codRelEmplEmpr,
-  String tipoPermiso,
-  DateTime? desde,
-  DateTime? hasta,
-  DateTime? fecRango,
-});
+typedef FiltroNominaPermisos =
+    ({
+      int codEmpleado,
+      int codRelEmplEmpr,
+      String tipoPermiso,
+      DateTime? desde,
+      DateTime? hasta,
+      DateTime? fecRango,
+    });
 
 /// La grilla del kardex (`p_list_Permiso 'Q'`).
 final nominaPermisosProvider = FutureProvider.autoDispose
@@ -352,7 +353,8 @@ final detalleTramoProvider = FutureProvider.autoDispose
     );
 
 /// La clave del buscador de boletas: la ventana y el tipo.
-typedef FiltroBoletas = ({DateTime? desde, DateTime? hasta, String tipoPermiso});
+typedef FiltroBoletas =
+    ({DateTime? desde, DateTime? hasta, String tipoPermiso});
 
 /// Las boletas emitidas en una ventana, de toda la empresa.
 final boletasProvider = FutureProvider.autoDispose
@@ -425,12 +427,8 @@ final diasNoHabilesProvider = FutureProvider.autoDispose
 /// usa Fecha Inicio y Fecha Fin—, así que la clave es más corta que la de la
 /// Nómina a propósito. Con la clave grande, cambiar el combo invalidaría una
 /// lista que el combo no filtra.
-typedef ClaveVacGanadas = ({
-  int codEmpleado,
-  int codRelEmplEmpr,
-  DateTime? desde,
-  DateTime? hasta,
-});
+typedef ClaveVacGanadas =
+    ({int codEmpleado, int codRelEmplEmpr, DateTime? desde, DateTime? hasta});
 
 /// «Buscar Vac Ganadas»: la segunda grilla de la pantalla («Nómina de
 /// Vacaciones Asignadas»).
@@ -462,7 +460,7 @@ final vacGanadasProvider = FutureProvider.autoDispose
 /// **Se llama `...RrhhProvider` y no `tiposPermisoProvider` porque ese nombre
 /// ya está tomado** por el flujo del EMPLEADO
 /// (`permisos_vacacion_provider.dart`), que filtra por `codEmpleado` +
-/// `codUsuarioLogueado` — los tipos que ESA persona puede pedirse—. Acá RR.HH.
+/// `codUsuarioLogueado` — los tipos que ESA persona puede pedirse—. Aquí RR.HH.
 /// carga a nombre de otro, así que la lista es otra. Dos nombres iguales en un
 /// mismo widget serían un `import as` y un error esperando.
 final tiposPermisoRrhhProvider = FutureProvider.autoDispose
@@ -507,7 +505,7 @@ final tiposPermisoRrhhProvider = FutureProvider.autoDispose
 /// y ya dejó filas fechadas en 2026. Nada de cachear como si la tabla fuera
 /// nuestra.
 ///
-/// **El error no se atrapa acá**: sube al widget, que es el único que puede
+/// **El error no se atrapa aquí**: sube al widget, que es el único que puede
 /// decidir si lo muestra en la hoja, en un aviso o cerrando el modal. Igual que
 /// en `RolSabadosAcciones`.
 class PermisosRrhhAcciones {
@@ -527,7 +525,7 @@ class PermisosRrhhAcciones {
   /// laboral, y quien acaba de escribir no siempre sabe con cuál se pidió.
   ///
   /// **Es el `_recargar` que hoy vive en `permisos_rrhh_screen.dart`**, mudado
-  /// acá como su propio comentario pedía. Público porque la pantalla también lo
+  /// aquí como su propio comentario pedía. Público porque la pantalla también lo
   /// usa para su «actualizar» a mano.
   void refrescar([int? codEmpleado]) {
     if (codEmpleado == null) {
@@ -635,13 +633,13 @@ class PermisosRrhhAcciones {
   /// Programa un permiso a nombre del empleado («Registro de permisos»).
   ///
   /// [tipoPermiso] es uno de los 7 del combo —`baja`, `clb`, `def`, `libre`,
-  /// `otro`, `pcr`, `sinsuel`—; **`'vac'` no entra por acá**: el servidor lo
+  /// `otro`, `pcr`, `sinsuel`—; **`'vac'` no entra por aquí**: el servidor lo
   /// rechaza con un 400 porque la vacación pide otro botón del ACL. Es
   /// [registrarVacacion].
   ///
   /// Devuelve el mensaje del servidor: `p_abm_Permiso` no devuelve el id
   /// generado, así que no hay fila que releer con certeza. Lo que quedó
-  /// guardado lo dice el kardex, que se refresca acá.
+  /// guardado lo dice el kardex, que se refresca aquí.
   Future<String> registrarPermiso({
     required int codEmpleado,
     required String tipoPermiso,
@@ -690,7 +688,7 @@ class PermisosRrhhAcciones {
   /// tipea una persona y no los calcula nadie: 32 filas en 10 años, una de
   /// ellas de 247 días. La pantalla tiene que confirmar en dos pasos diciendo
   /// el saldo antes y después, y bloquear el reenvío mientras la llamada está
-  /// en vuelo — un doble toque acá cuesta dinero.
+  /// en vuelo — un doble toque aquí cuesta dinero.
   ///
   /// El refresco de la ficha no es decorativo: es lo que muestra el saldo nuevo
   /// inmediatamente después, que es la única forma de que quien pagó vea lo que

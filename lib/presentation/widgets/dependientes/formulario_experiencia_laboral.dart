@@ -1,4 +1,3 @@
-
 import 'package:bosque_flutter/core/state/user_provider.dart';
 import 'package:bosque_flutter/core/utils/formatear_fecha.dart';
 import 'package:bosque_flutter/core/utils/responsive_utils_bosque.dart';
@@ -8,7 +7,7 @@ import 'package:bosque_flutter/presentation/widgets/dependientes/confirm_dialogs
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-class FormularioExperienciaLaboral extends ConsumerStatefulWidget{
+class FormularioExperienciaLaboral extends ConsumerStatefulWidget {
   final String title;
   final ExperienciaLaboralEntity? experienciaLaboral;
   final int codEmpleado;
@@ -27,9 +26,12 @@ class FormularioExperienciaLaboral extends ConsumerStatefulWidget{
   });
 
   @override
-  FormularioExperienciaLaboralState createState() => FormularioExperienciaLaboralState();
+  FormularioExperienciaLaboralState createState() =>
+      FormularioExperienciaLaboralState();
 }
-class FormularioExperienciaLaboralState extends ConsumerState<FormularioExperienciaLaboral> {
+
+class FormularioExperienciaLaboralState
+    extends ConsumerState<FormularioExperienciaLaboral> {
   final _formKey = GlobalKey<FormState>();
   final _empresaController = TextEditingController();
   final _cargoController = TextEditingController();
@@ -38,107 +40,118 @@ class FormularioExperienciaLaboralState extends ConsumerState<FormularioExperien
   final _descripcionController = TextEditingController();
   final _nroReferenciaController = TextEditingController();
 
-@override
-void initState(){
-  super.initState();
-  if (widget.isEditing && widget.experienciaLaboral != null) {
-    _empresaController.text = widget.experienciaLaboral!.nombreEmpresa;
-    _cargoController.text = widget.experienciaLaboral!.cargo;
-    _fechaInicioController.text = FormatearFecha.formatearFecha(
+  @override
+  void initState() {
+    super.initState();
+    if (widget.isEditing && widget.experienciaLaboral != null) {
+      _empresaController.text = widget.experienciaLaboral!.nombreEmpresa;
+      _cargoController.text = widget.experienciaLaboral!.cargo;
+      _fechaInicioController.text = FormatearFecha.formatearFecha(
         widget.experienciaLaboral!.fechaInicio,
       );
-    _fechaFinController.text = FormatearFecha.formatearFecha(
+      _fechaFinController.text = FormatearFecha.formatearFecha(
         widget.experienciaLaboral!.fechaFin,
       );
-    _descripcionController.text = widget.experienciaLaboral!.descripcion;
-    _nroReferenciaController.text = widget.experienciaLaboral!.nroReferencia;
+      _descripcionController.text = widget.experienciaLaboral!.descripcion;
+      _nroReferenciaController.text = widget.experienciaLaboral!.nroReferencia;
+    }
   }
-}
-@override
-void dispose() {
-  _empresaController.dispose();
-  _cargoController.dispose();
-  _fechaInicioController.dispose();
-  _fechaFinController.dispose();
-  _descripcionController.dispose();
-  _nroReferenciaController.dispose();
-  super.dispose();
-}
-Future<int> getCodUsuario() async {
-  return await ref.read(userProvider.notifier).getCodUsuario();
-}
-void _handleSubmit() async {
-  if (_formKey.currentState?.validate() ?? false) {
-    try {
-      final experienciaLaboral = widget.isEditing && widget.experienciaLaboral != null
-          ? widget.experienciaLaboral!.copyWith(
-              codExperienciaLaboral: widget.experienciaLaboral!.codExperienciaLaboral,
-              codEmpleado: widget.codEmpleado,
-              nombreEmpresa: _empresaController.text,
-              cargo: _cargoController.text,
-              fechaInicio: FormatearFecha.parseFecha(_fechaInicioController.text),
-              fechaFin: FormatearFecha.parseFecha(_fechaFinController.text),
-              descripcion: _descripcionController.text,
-              nroReferencia: _nroReferenciaController.text,
-              audUsuario: await getCodUsuario(),
-            )
-          : ExperienciaLaboralEntity(
-              codExperienciaLaboral: 0, // Asignar un valor por defecto si es nuevo
-              codEmpleado: widget.codEmpleado,
-              nombreEmpresa: _empresaController.text,
-              cargo: _cargoController.text,
-              fechaInicio: FormatearFecha.parseFecha(_fechaInicioController.text),
-              fechaFin: FormatearFecha.parseFecha(_fechaFinController.text),
-              descripcion: _descripcionController.text,
-              nroReferencia: _nroReferenciaController.text,
-              audUsuario: await getCodUsuario(),
+
+  @override
+  void dispose() {
+    _empresaController.dispose();
+    _cargoController.dispose();
+    _fechaInicioController.dispose();
+    _fechaFinController.dispose();
+    _descripcionController.dispose();
+    _nroReferenciaController.dispose();
+    super.dispose();
+  }
+
+  Future<int> getCodUsuario() async {
+    return await ref.read(userProvider.notifier).getCodUsuario();
+  }
+
+  void _handleSubmit() async {
+    if (_formKey.currentState?.validate() ?? false) {
+      try {
+        final experienciaLaboral =
+            widget.isEditing && widget.experienciaLaboral != null
+                ? widget.experienciaLaboral!.copyWith(
+                  codExperienciaLaboral:
+                      widget.experienciaLaboral!.codExperienciaLaboral,
+                  codEmpleado: widget.codEmpleado,
+                  nombreEmpresa: _empresaController.text,
+                  cargo: _cargoController.text,
+                  fechaInicio: FormatearFecha.parseFecha(
+                    _fechaInicioController.text,
+                  ),
+                  fechaFin: FormatearFecha.parseFecha(_fechaFinController.text),
+                  descripcion: _descripcionController.text,
+                  nroReferencia: _nroReferenciaController.text,
+                  audUsuario: await getCodUsuario(),
+                )
+                : ExperienciaLaboralEntity(
+                  codExperienciaLaboral:
+                      0, // Asignar un valor por defecto si es nuevo
+                  codEmpleado: widget.codEmpleado,
+                  nombreEmpresa: _empresaController.text,
+                  cargo: _cargoController.text,
+                  fechaInicio: FormatearFecha.parseFecha(
+                    _fechaInicioController.text,
+                  ),
+                  fechaFin: FormatearFecha.parseFecha(_fechaFinController.text),
+                  descripcion: _descripcionController.text,
+                  nroReferencia: _nroReferenciaController.text,
+                  audUsuario: await getCodUsuario(),
+                );
+
+        widget.onSave(experienciaLaboral);
+        // Usar los nuevos SnackBars personalizados
+        if (context.mounted) {
+          if (widget.isEditing) {
+            AppSnackbarCustom.showEdit(
+              context,
+              'Experiencia Laboral actualizada correctamente',
             );
-
-      widget.onSave(experienciaLaboral);
-      // Usar los nuevos SnackBars personalizados
-      if (context.mounted) {
-        if (widget.isEditing) {
-          AppSnackbarCustom.showEdit(
-            context, 
-            'Experiencia Laboral actualizada correctamente'
-          );
-        } else {
-          AppSnackbarCustom.showAdd(
-            context, 
-            'Experiencia Laboral agregada correctamente'
-          );
+          } else {
+            AppSnackbarCustom.showAdd(
+              context,
+              'Experiencia Laboral agregada correctamente',
+            );
+          }
+          Navigator.of(context).pop();
         }
-        Navigator.of(context).pop();
-      }
-
-        
       } catch (e) {
         // Mostrar SnackBar de error
-      if (context.mounted) {
-        AppSnackbar.showError(
-          context, 
-          'Error al ${widget.isEditing ? 'actualizar' : 'agregar'} la Experiencia Laboral'
-        );
+        if (context.mounted) {
+          AppSnackbar.showError(
+            context,
+            'Error al ${widget.isEditing ? 'actualizar' : 'agregar'} la Experiencia Laboral',
+          );
+        }
       }
-      }
+    }
   }
-}
-@override
+
+  @override
   Widget build(BuildContext context) {
     final isDesktop = ResponsiveUtilsBosque.isDesktop(context);
     final screenWidth = MediaQuery.of(context).size.width;
-    final horizontalPadding = ResponsiveUtilsBosque.getHorizontalPadding(context);
+    final horizontalPadding = ResponsiveUtilsBosque.getHorizontalPadding(
+      context,
+    );
     final verticalPadding = ResponsiveUtilsBosque.getVerticalPadding(context);
 
     return Dialog(
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: SingleChildScrollView(
         child: Container(
-          width: isDesktop 
-              ? screenWidth * 0.5  // 50% del ancho en desktop
-              : screenWidth * 0.9, // 90% del ancho en móvil
+          width:
+              isDesktop
+                  ? screenWidth *
+                      0.5 // 50% del ancho en desktop
+                  : screenWidth * 0.9, // 90% del ancho en móvil
           constraints: BoxConstraints(
             maxWidth: 800,
             maxHeight: MediaQuery.of(context).size.height * 0.9,
@@ -184,7 +197,7 @@ void _handleSubmit() async {
     return Wrap(
       runSpacing: spacing,
       children: [
-        if (isDesktop) 
+        if (isDesktop)
           Row(
             children: [
               Expanded(child: _buildTextField(_empresaController, 'EMPRESA')),
@@ -229,14 +242,14 @@ void _handleSubmit() async {
         ],
         SizedBox(height: spacing),
         _buildTextField(
-          _descripcionController, 
+          _descripcionController,
           'DESCRIPCIÓN',
           maxLines: 2,
           validator: (value) => validarTextoMixto(value, esObligatorio: false),
         ),
         SizedBox(height: spacing),
         _buildTextField(
-          _nroReferenciaController, 
+          _nroReferenciaController,
           'NÚMERO DE REFERENCIA',
           validator: (value) => validarSoloNumeros(value, esObligatorio: false),
         ),
@@ -261,7 +274,8 @@ void _handleSubmit() async {
         ),
       ),
       maxLines: maxLines ?? 1,
-      validator: validator ?? (value) => validarTextoMixto(value, esObligatorio: true),
+      validator:
+          validator ?? (value) => validarTextoMixto(value, esObligatorio: true),
       inputFormatters: bloquearEspacios,
       style: TextStyle(
         fontSize: ResponsiveUtilsBosque.getResponsiveValue<double>(
@@ -276,8 +290,9 @@ void _handleSubmit() async {
   }
 
   Widget _buildButtons(BuildContext context) {
-    final buttonSpacing = ResponsiveUtilsBosque.getHorizontalPadding(context) / 2;
-    
+    final buttonSpacing =
+        ResponsiveUtilsBosque.getHorizontalPadding(context) / 2;
+
     return Row(
       mainAxisAlignment: MainAxisAlignment.end,
       children: [
@@ -305,5 +320,4 @@ void _handleSubmit() async {
       ],
     );
   }
-
 }

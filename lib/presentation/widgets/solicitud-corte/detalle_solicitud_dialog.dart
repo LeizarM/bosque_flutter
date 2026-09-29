@@ -31,11 +31,12 @@ Future<void> abrirDetalleSolicitud(
   required VoidCallback? onCancelar,
 }) => showDialog<void>(
   context: context,
-  builder: (_) => DetalleSolicitudDialog(
-    solicitud: solicitud,
-    onImprimir: onImprimir,
-    onCancelar: onCancelar,
-  ),
+  builder:
+      (_) => DetalleSolicitudDialog(
+        solicitud: solicitud,
+        onImprimir: onImprimir,
+        onCancelar: onCancelar,
+      ),
 );
 
 class DetalleSolicitudDialog extends ConsumerWidget {
@@ -106,25 +107,29 @@ class DetalleSolicitudDialog extends ConsumerWidget {
                       SizedBox(height: Esp.m),
 
                       detalle.when(
-                        loading: () => const Padding(
-                          padding: EdgeInsets.symmetric(vertical: 32),
-                          child: Center(child: CircularProgressIndicator()),
-                        ),
-                        error: (_, _) => Text(
-                          'No se pudo cargar el detalle de la solicitud.',
-                          style: context.apagado(),
-                        ),
-                        data: (items) => items.isEmpty
-                            ? Text(
-                                'Esta solicitud no tiene items cargados.',
-                                style: context.apagado(),
-                              )
-                            : Column(
-                                children: [
-                                  for (final i in items)
-                                    _ItemSolicitado(item: i),
-                                ],
-                              ),
+                        loading:
+                            () => const Padding(
+                              padding: EdgeInsets.symmetric(vertical: 32),
+                              child: Center(child: CircularProgressIndicator()),
+                            ),
+                        error:
+                            (_, _) => Text(
+                              'No se pudo cargar el detalle de la solicitud.',
+                              style: context.apagado(),
+                            ),
+                        data:
+                            (items) =>
+                                items.isEmpty
+                                    ? Text(
+                                      'Esta solicitud no tiene items cargados.',
+                                      style: context.apagado(),
+                                    )
+                                    : Column(
+                                      children: [
+                                        for (final i in items)
+                                          _ItemSolicitado(item: i),
+                                      ],
+                                    ),
                       ),
                     ],
                   ),
@@ -199,26 +204,30 @@ class _Cabecera extends StatelessWidget {
                   children: [
                     Text(
                       'Nro ${solicitud.datoNroSolicitud}',
-                      style: Theme.of(context).textTheme.headlineSmall
-                          ?.copyWith(
-                            fontWeight: Peso.dato,
-                            fontFeatures: cifrasTabulares,
-                          ),
+                      style: Theme.of(
+                        context,
+                      ).textTheme.headlineSmall?.copyWith(
+                        fontWeight: Peso.dato,
+                        fontFeatures: cifrasTabulares,
+                      ),
                     ),
                     SizedBox(width: Esp.m),
                     Etiqueta(
-                      texto: solicitud.datoEstado.isEmpty
-                          ? solicitud.estado
-                          : solicitud.datoEstado,
-                      tono: solicitud.estaCancelada
-                          ? TonoEtiqueta.error
-                          : TonoEtiqueta.exito,
+                      texto:
+                          solicitud.datoEstado.isEmpty
+                              ? solicitud.estado
+                              : solicitud.datoEstado,
+                      tono:
+                          solicitud.estaCancelada
+                              ? TonoEtiqueta.error
+                              : TonoEtiqueta.exito,
                     ),
                     SizedBox(width: Esp.s),
                     Etiqueta(
-                      texto: solicitud.datoTipoSolicitud.isEmpty
-                          ? solicitud.tipoSolicitud
-                          : solicitud.datoTipoSolicitud,
+                      texto:
+                          solicitud.datoTipoSolicitud.isEmpty
+                              ? solicitud.tipoSolicitud
+                              : solicitud.datoTipoSolicitud,
                     ),
                   ],
                 ),
@@ -297,9 +306,10 @@ class _ItemSolicitado extends StatelessWidget {
       item.anchoSalidaEsp > 0 ? item.anchoSalidaEsp : item.anchoSAPSalida;
   double get largoCorte =>
       item.largoSalidaEsp > 0 ? item.largoSalidaEsp : item.largoSAPSalida;
-  double get hojasPorResma => item.cantHojasSalidaEsp > 0
-      ? item.cantHojasSalidaEsp.toDouble()
-      : item.cantHojasSAPSalida;
+  double get hojasPorResma =>
+      item.cantHojasSalidaEsp > 0
+          ? item.cantHojasSalidaEsp.toDouble()
+          : item.cantHojasSAPSalida;
 
   @override
   Widget build(BuildContext context) {
@@ -389,49 +399,48 @@ class _ItemSolicitado extends StatelessWidget {
           // vez de dejar la fila muda.
           Container(
             width: double.infinity,
-            padding: EdgeInsets.symmetric(
-              horizontal: Esp.m,
-              vertical: Esp.s,
-            ),
+            padding: EdgeInsets.symmetric(horizontal: Esp.m, vertical: Esp.s),
             color: cs.surfaceContainerLow,
-            child: tieneSap
-                ? Wrap(
-                    spacing: Esp.l,
-                    runSpacing: Esp.xs,
-                    crossAxisAlignment: WrapCrossAlignment.center,
-                    children: [
-                      Etiqueta(
-                        texto: item.sapEstado.isEmpty
-                            ? 'En SAP'
-                            : item.sapEstado,
-                        tono: tonoSap(item.sapEstado),
-                      ),
-                      _Par('NR', item.sapDocNum.toString()),
-                      if (item.datoFecInicioStr.isNotEmpty)
-                        _Par('Inicio', item.datoFecInicioStr),
-                      if (item.datoFecCierreStr.isNotEmpty)
-                        _Par('Cierre', item.datoFecCierreStr),
-                      if (item.sapPlannedQty > 0)
-                        _Par(
-                          'Planificado',
-                          fmtNumero.format(item.sapPlannedQty),
+            child:
+                tieneSap
+                    ? Wrap(
+                      spacing: Esp.l,
+                      runSpacing: Esp.xs,
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      children: [
+                        Etiqueta(
+                          texto:
+                              item.sapEstado.isEmpty
+                                  ? 'En SAP'
+                                  : item.sapEstado,
+                          tono: tonoSap(item.sapEstado),
                         ),
-                    ],
-                  )
-                : Row(
-                    children: [
-                      Icon(
-                        Icons.schedule,
-                        size: 16,
-                        color: Theme.of(context).hintColor,
-                      ),
-                      SizedBox(width: Esp.s),
-                      Text(
-                        'SAP todavia no genero la orden de fabricacion',
-                        style: context.apagado(),
-                      ),
-                    ],
-                  ),
+                        _Par('NR', item.sapDocNum.toString()),
+                        if (item.datoFecInicioStr.isNotEmpty)
+                          _Par('Inicio', item.datoFecInicioStr),
+                        if (item.datoFecCierreStr.isNotEmpty)
+                          _Par('Cierre', item.datoFecCierreStr),
+                        if (item.sapPlannedQty > 0)
+                          _Par(
+                            'Planificado',
+                            fmtNumero.format(item.sapPlannedQty),
+                          ),
+                      ],
+                    )
+                    : Row(
+                      children: [
+                        Icon(
+                          Icons.schedule,
+                          size: 16,
+                          color: Theme.of(context).hintColor,
+                        ),
+                        SizedBox(width: Esp.s),
+                        Text(
+                          'SAP todavia no genero la orden de fabricacion',
+                          style: context.apagado(),
+                        ),
+                      ],
+                    ),
           ),
         ],
       ),

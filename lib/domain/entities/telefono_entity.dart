@@ -23,6 +23,7 @@ class TelefonoEntity {
       'audUsuario': audUsuario,
     };
   }
+
   //metodo copyWith
   TelefonoEntity copyWith({
     int? codTelefono,

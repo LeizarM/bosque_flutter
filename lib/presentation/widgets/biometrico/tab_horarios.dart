@@ -8,7 +8,15 @@ import 'package:bosque_flutter/presentation/widgets/biometrico/buscador_empleado
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-const _diasSemana = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
+const _diasSemana = [
+  'Lunes',
+  'Martes',
+  'Miércoles',
+  'Jueves',
+  'Viernes',
+  'Sábado',
+  'Domingo',
+];
 
 /// Pestaña "Horarios": las tres piezas del legacy "Definir Horas de Trabajo
 /// en el Día" + "Programación Mensual por Empleado", como tres sub-pestañas
@@ -105,7 +113,8 @@ class _SeccionPlantillas extends ConsumerWidget {
                     ),
                     IconButton(
                       icon: const Icon(Icons.edit_outlined),
-                      onPressed: () => _abrirFormulario(context, ref, existente: t),
+                      onPressed:
+                          () => _abrirFormulario(context, ref, existente: t),
                     ),
                     IconButton(
                       icon: const Icon(Icons.delete_outline),
@@ -137,9 +146,9 @@ class _SeccionPlantillas extends ConsumerWidget {
     );
     if (!ok || !context.mounted) return;
     try {
-      await ref
-          .read(biometricoRepositoryProvider)
-          .registrarHorario({'idHrs': t.idHrs.toInt()}, 'D');
+      await ref.read(biometricoRepositoryProvider).registrarHorario({
+        'idHrs': t.idHrs.toInt(),
+      }, 'D');
       ref.invalidate(bioHrsListProvider);
       if (context.mounted) avisar(context, 'Plantilla eliminada.');
     } catch (e) {
@@ -175,14 +184,18 @@ class _SeccionPlantillas extends ConsumerWidget {
           (c) => StatefulBuilder(
             builder:
                 (c, setState) => AlertDialog(
-                  title: Text(existente == null ? 'Nueva plantilla' : 'Editar plantilla'),
+                  title: Text(
+                    existente == null ? 'Nueva plantilla' : 'Editar plantilla',
+                  ),
                   content: SingleChildScrollView(
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         TextField(
                           controller: nombreCtrl,
-                          decoration: const InputDecoration(labelText: 'Nombre'),
+                          decoration: const InputDecoration(
+                            labelText: 'Nombre',
+                          ),
                           onChanged: (_) => setState(() {}),
                         ),
                         const SizedBox(height: Esp.m),
@@ -318,7 +331,10 @@ class _SeccionPlantillas extends ConsumerWidget {
           );
       ref.invalidate(bioHrsListProvider);
       if (context.mounted) {
-        avisar(context, existente == null ? 'Plantilla creada.' : 'Plantilla actualizada.');
+        avisar(
+          context,
+          existente == null ? 'Plantilla creada.' : 'Plantilla actualizada.',
+        );
       }
     } catch (e) {
       if (context.mounted) avisarError(context, e);
@@ -339,7 +355,10 @@ class _CampoHora extends StatelessWidget {
   @override
   Widget build(BuildContext context) => InkWell(
     onTap: () async {
-      final elegido = await showTimePicker(context: context, initialTime: valor);
+      final elegido = await showTimePicker(
+        context: context,
+        initialTime: valor,
+      );
       if (elegido != null) onElegir(elegido);
     },
     child: InputDecorator(
@@ -385,8 +404,7 @@ class _SeccionSemanales extends ConsumerWidget {
           return ListView.builder(
             padding: const EdgeInsets.all(Esp.l),
             itemCount: lista.length,
-            itemBuilder:
-                (context, i) => _TarjetaSemanal(horario: lista[i]),
+            itemBuilder: (context, i) => _TarjetaSemanal(horario: lista[i]),
           );
         },
       ),
@@ -441,7 +459,7 @@ class _SeccionSemanales extends ConsumerWidget {
     );
     if (ok != true || !context.mounted) return;
 
-    // Acá no hay un rango horario propio para comparar (un horario semanal
+    // Aquí no hay un rango horario propio para comparar (un horario semanal
     // recién creado todavía no tiene ningún día asignado — eso se carga
     // después, en "Horarios semanales" — así que el único duplicado
     // detectable en este punto es el nombre repetido).
@@ -463,11 +481,13 @@ class _SeccionSemanales extends ConsumerWidget {
     }
 
     try {
-      await ref.read(biometricoRepositoryProvider).registrarHorarioSemanal({
-        'idHrSemanal': 0,
-        'nombre': nombre,
-        'estado': '1',
-      }, 'I', motivo: motivoCtrl.text);
+      await ref
+          .read(biometricoRepositoryProvider)
+          .registrarHorarioSemanal(
+            {'idHrSemanal': 0, 'nombre': nombre, 'estado': '1'},
+            'I',
+            motivo: motivoCtrl.text,
+          );
       ref.invalidate(bioHrSemanalListProvider);
       if (context.mounted) avisar(context, 'Horario semanal creado.');
     } catch (e) {
@@ -509,7 +529,8 @@ class _SeccionSemanales extends ConsumerWidget {
                         maxLines: 2,
                         decoration: const InputDecoration(
                           labelText: 'Motivo',
-                          hintText: 'Por qué se renombra — queda en el historial',
+                          hintText:
+                              'Por qué se renombra — queda en el historial',
                         ),
                       ),
                     ],
@@ -556,11 +577,17 @@ class _SeccionSemanales extends ConsumerWidget {
     }
 
     try {
-      await ref.read(biometricoRepositoryProvider).registrarHorarioSemanal({
-        'idHrSemanal': horario.idHrSemanal.toInt(),
-        'nombre': nombre,
-        'estado': horario.estado,
-      }, 'U', motivo: motivoCtrl.text);
+      await ref
+          .read(biometricoRepositoryProvider)
+          .registrarHorarioSemanal(
+            {
+              'idHrSemanal': horario.idHrSemanal.toInt(),
+              'nombre': nombre,
+              'estado': horario.estado,
+            },
+            'U',
+            motivo: motivoCtrl.text,
+          );
       ref.invalidate(bioHrSemanalListProvider);
       if (context.mounted) avisar(context, 'Horario semanal renombrado.');
     } catch (e) {
@@ -641,10 +668,11 @@ class _DetalleSemanal extends ConsumerWidget {
     final turnosAsync = ref.watch(bioHrsListProvider);
 
     return detalleAsync.when(
-      loading: () => const Padding(
-        padding: EdgeInsets.all(Esp.l),
-        child: Center(child: CircularProgressIndicator()),
-      ),
+      loading:
+          () => const Padding(
+            padding: EdgeInsets.all(Esp.l),
+            child: Center(child: CircularProgressIndicator()),
+          ),
       error: (e, _) => Text(textoDeError(e)),
       data: (detalle) {
         final porDia = {for (final d in detalle) d.dia: d};
@@ -693,9 +721,10 @@ class _FilaDia extends ConsumerWidget {
           Expanded(
             child: DropdownButton<BigInt>(
               isExpanded: true,
-              value: detalle != null && detalle!.idHrs > BigInt.zero
-                  ? detalle!.idHrs
-                  : null,
+              value:
+                  detalle != null && detalle!.idHrs > BigInt.zero
+                      ? detalle!.idHrs
+                      : null,
               hint: const Text('Sin asignar'),
               items: [
                 for (final t in turnos)
@@ -706,8 +735,7 @@ class _FilaDia extends ConsumerWidget {
                     ),
                   ),
               ],
-              onChanged:
-                  (idHrs) => _asignar(context, ref, idHrs),
+              onChanged: (idHrs) => _asignar(context, ref, idHrs),
             ),
           ),
         ],
@@ -715,7 +743,11 @@ class _FilaDia extends ConsumerWidget {
     );
   }
 
-  Future<void> _asignar(BuildContext context, WidgetRef ref, BigInt? idHrs) async {
+  Future<void> _asignar(
+    BuildContext context,
+    WidgetRef ref,
+    BigInt? idHrs,
+  ) async {
     if (idHrs == null) return;
     try {
       final payload = {
@@ -759,11 +791,14 @@ class _SeccionPorEmpleado extends ConsumerWidget {
           if (elegido == null)
             const MensajeVacio(
               icono: Icons.badge_outlined,
-              titulo: 'Elegí un empleado',
-              detalle: 'Buscá por nombre arriba para ver u otorgarle un horario.',
+              titulo: 'Elige un empleado',
+              detalle:
+                  'Busca por nombre arriba para ver u otorgarle un horario.',
             )
           else
-            Expanded(child: _AsignacionesDelEmpleado(idEmplead: elegido.idEmpleado)),
+            Expanded(
+              child: _AsignacionesDelEmpleado(idEmplead: elegido.idEmpleado),
+            ),
         ],
       ),
     );
@@ -790,9 +825,9 @@ class _AsignacionesDelEmpleado extends ConsumerWidget {
             FilledButton.icon(
               icon: const Icon(Icons.add, size: 18),
               label: const Text('Asignar'),
-              onPressed:
-                  semanalesAsync.maybeWhen(
-                    data: (semanales) =>
+              onPressed: semanalesAsync.maybeWhen(
+                data:
+                    (semanales) =>
                         semanales.isEmpty
                             ? null
                             : () => _asignarNuevo(
@@ -801,14 +836,14 @@ class _AsignacionesDelEmpleado extends ConsumerWidget {
                               semanales,
                               async.valueOrNull ?? [],
                             ),
-                    orElse: () => null,
-                  ),
+                orElse: () => null,
+              ),
             ),
           ],
         ),
         const SizedBox(height: Esp.m),
         // Mismo `mesSeleccionadoBiometricoProvider` que Reporte/Resumen —
-        // elegir el mes acá también lo mueve allá, a propósito: es el mismo
+        // elegir el mes aquí también lo mueve allá, a propósito: es el mismo
         // "qué mes estoy mirando" en toda la pestaña Biométrica.
         _SelectorDeMesHorarios(mes: mes),
         const SizedBox(height: Esp.m),
@@ -826,7 +861,8 @@ class _AsignacionesDelEmpleado extends ConsumerWidget {
                 return const MensajeVacio(
                   icono: Icons.event_note_outlined,
                   titulo: 'Sin horario asignado',
-                  detalle: 'Este empleado no tiene ningún horario cargado todavía.',
+                  detalle:
+                      'Este empleado no tiene ningún horario cargado todavía.',
                 );
               }
               final semanales = semanalesAsync.valueOrNull ?? [];
@@ -838,7 +874,7 @@ class _AsignacionesDelEmpleado extends ConsumerWidget {
                   // deja ver DE UN VISTAZO qué tramo de días le tocó a cada
                   // uno. Esta franja hace exactamente el mismo cálculo
                   // "vigente día por día" que ya usa el reporte
-                  // (BiometricoController.horarioVigente), sólo que acá se
+                  // (BiometricoController.horarioVigente), sólo que aquí se
                   // ve en vez de leerse en una fila de PDF.
                   _TimelineMensual(
                     asignaciones: lista,
@@ -927,9 +963,13 @@ class _AsignacionesDelEmpleado extends ConsumerWidget {
     );
     if (ok != true || !context.mounted) return;
     try {
-      await ref.read(biometricoRepositoryProvider).registrarHorarioEmpleado({
-        'idHrEmpleado': a.idHrEmpleado.toInt(),
-      }, 'A', motivo: motivoCtrl.text);
+      await ref
+          .read(biometricoRepositoryProvider)
+          .registrarHorarioEmpleado(
+            {'idHrEmpleado': a.idHrEmpleado.toInt()},
+            'A',
+            motivo: motivoCtrl.text,
+          );
       ref.invalidate(bioHrEmpleadoListProvider(idEmplead));
       _sincronizarTrasCambioDeHorario(context, ref);
       if (context.mounted) avisar(context, 'Horario inactivado.');
@@ -964,14 +1004,15 @@ class _AsignacionesDelEmpleado extends ConsumerWidget {
             .where((a) => a.idHrSemanal == resultado.semanal.idHrSemanal)
             .firstOrNull;
     if (duplicado != null) {
-      final inactivo = duplicado.inicio == null || duplicado.inicio!.year <= 2000;
+      final inactivo =
+          duplicado.inicio == null || duplicado.inicio!.year <= 2000;
       final seguir = await confirmar(
         context,
         titulo: 'Horario ya asignado',
         mensaje:
             'Este empleado ya tiene una asignación de "${resultado.semanal.nombre}" '
             '(${inactivo ? 'inactiva' : 'vigente desde ${fechaCorta(duplicado.inicio!)}'}). '
-            'Si sólo querés cambiar la fecha, usá "Editar" en esa fila del historial '
+            'Si sólo quieres cambiar la fecha, usa "Editar" en esa fila del historial '
             'en vez de crear una nueva. ¿Crear esta asignación de todas formas?',
         accion: 'Asignar igual',
       );
@@ -979,12 +1020,18 @@ class _AsignacionesDelEmpleado extends ConsumerWidget {
     }
 
     try {
-      await ref.read(biometricoRepositoryProvider).registrarHorarioEmpleado({
-        'idHrEmpleado': 0,
-        'idHrSemanal': resultado.semanal.idHrSemanal.toInt(),
-        'idEmplead': idEmplead.toInt(),
-        'inicio': resultado.inicio.toIso8601String(),
-      }, 'I', motivo: resultado.motivo);
+      await ref
+          .read(biometricoRepositoryProvider)
+          .registrarHorarioEmpleado(
+            {
+              'idHrEmpleado': 0,
+              'idHrSemanal': resultado.semanal.idHrSemanal.toInt(),
+              'idEmplead': idEmplead.toInt(),
+              'inicio': resultado.inicio.toIso8601String(),
+            },
+            'I',
+            motivo: resultado.motivo,
+          );
       ref.invalidate(bioHrEmpleadoListProvider(idEmplead));
       _sincronizarTrasCambioDeHorario(context, ref);
       if (context.mounted) avisar(context, 'Horario asignado.');
@@ -1009,17 +1056,24 @@ class _AsignacionesDelEmpleado extends ConsumerWidget {
   ) async {
     final resultado = await showDialog<_HorarioElegido>(
       context: context,
-      builder: (c) => _DialogoAsignarHorario(semanales: semanales, existente: a),
+      builder:
+          (c) => _DialogoAsignarHorario(semanales: semanales, existente: a),
     );
     if (resultado == null || !context.mounted) return;
 
     try {
-      await ref.read(biometricoRepositoryProvider).registrarHorarioEmpleado({
-        'idHrEmpleado': a.idHrEmpleado.toInt(),
-        'idHrSemanal': resultado.semanal.idHrSemanal.toInt(),
-        'idEmplead': idEmplead.toInt(),
-        'inicio': resultado.inicio.toIso8601String(),
-      }, 'U', motivo: resultado.motivo);
+      await ref
+          .read(biometricoRepositoryProvider)
+          .registrarHorarioEmpleado(
+            {
+              'idHrEmpleado': a.idHrEmpleado.toInt(),
+              'idHrSemanal': resultado.semanal.idHrSemanal.toInt(),
+              'idEmplead': idEmplead.toInt(),
+              'inicio': resultado.inicio.toIso8601String(),
+            },
+            'U',
+            motivo: resultado.motivo,
+          );
       ref.invalidate(bioHrEmpleadoListProvider(idEmplead));
       _sincronizarTrasCambioDeHorario(context, ref);
       if (context.mounted) avisar(context, 'Horario actualizado.');
@@ -1030,7 +1084,7 @@ class _AsignacionesDelEmpleado extends ConsumerWidget {
 
   /// El reporte (`reporteBiometricoProvider`) se cachea por empleado+mes: si
   /// ya se había abierto el mes actual para este empleado antes de
-  /// asignar/editar/inactivar un horario, se invalida acá para que no quede
+  /// asignar/editar/inactivar un horario, se invalida aquí para que no quede
   /// mostrando datos viejos al volver a la pestaña Reporte.
   ///
   /// También dispara la regeneración de `tbio_bioHrXEmplExpandido` para el
@@ -1038,7 +1092,7 @@ class _AsignacionesDelEmpleado extends ConsumerWidget {
   /// que ya terminó y avisó "Horario asignado/actualizado/inactivado." antes
   /// de esta línea) contra esa tabla, que sólo lee `p_Rpt_Biometrico` (el
   /// reporte LEGACY, confirmado el 2026-09-01 vía `sys.sql_modules`), no el
-  /// reporte nuevo. Un fallo acá sigue sin interrumpir ni tapar el resultado
+  /// reporte nuevo. Un fallo aquí sigue sin interrumpir ni tapar el resultado
   /// de la acción principal — pero desde 2026-09-01, a pedido, si TERMINA
   /// bien se avisa con un segundo toast (llega uno o dos segundos después
   /// del primero, es una llamada de red aparte) para que quede constancia de
@@ -1115,8 +1169,7 @@ class _SelectorDeMesHorarios extends ConsumerWidget {
           onPressed:
               esMesActual
                   ? null
-                  : () =>
-                      notifier.state = DateTime(mes.year, mes.month + 1, 1),
+                  : () => notifier.state = DateTime(mes.year, mes.month + 1, 1),
         ),
       ],
     );
@@ -1198,13 +1251,15 @@ class _FilaAsignacionState extends ConsumerState<_FilaAsignacion> {
           ),
         ),
         // La misma vista previa día-por-día del diálogo "Asignar" — "a lado
-        // del nombre que muestre el horario semanal también": acá se pidió
+        // del nombre que muestre el horario semanal también": aquí se pidió
         // exactamente eso, para el historial y no sólo al asignar uno nuevo.
         if (_abierto)
           Padding(
             padding: const EdgeInsets.fromLTRB(Esp.xxl, 0, Esp.l, Esp.m),
             child: _VistaPreviaHorario(
-              detalleAsync: ref.watch(bioHrSemanalDetalleProvider(a.idHrSemanal)),
+              detalleAsync: ref.watch(
+                bioHrSemanalDetalleProvider(a.idHrSemanal),
+              ),
               turnosAsync: ref.watch(bioHrsListProvider),
             ),
           ),
@@ -1305,7 +1360,7 @@ List<_TramoMes> _tramosDelMes(
 /// leyenda. El color viene de `colorDeCatalogo` — la misma función que ya
 /// colorea el cronograma de tipos de permiso en `permisos-rrhh`, por
 /// **posición** de la asignación (ordenadas por `inicio`), no un `switch`
-/// escrito a mano: acá el "catálogo" es la propia lista de asignaciones de
+/// escrito a mano: aquí el "catálogo" es la propia lista de asignaciones de
 /// este empleado. `-1` (fuera de catálogo) es a propósito el color de "Sin
 /// horario".
 class _TimelineMensual extends StatelessWidget {
@@ -1343,10 +1398,8 @@ class _TimelineMensual extends StatelessWidget {
             ? 'Sin horario'
             : (nombresPorSemanal[a.idHrSemanal] ?? 'Horario #${a.idHrSemanal}');
 
-    ColorDeEstado colorDe(BioHrEmpleadoEntity? a) => colorDeCatalogo(
-      cs,
-      a == null ? -1 : indicePorId[a.idHrEmpleado] ?? -1,
-    );
+    ColorDeEstado colorDe(BioHrEmpleadoEntity? a) =>
+        colorDeCatalogo(cs, a == null ? -1 : indicePorId[a.idHrEmpleado] ?? -1);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1454,8 +1507,8 @@ class _DialogoAsignarHorarioState
     final existente = widget.existente;
     if (existente == null) return widget.semanales.first;
     return widget.semanales
-        .where((s) => s.idHrSemanal == existente.idHrSemanal)
-        .firstOrNull ??
+            .where((s) => s.idHrSemanal == existente.idHrSemanal)
+            .firstOrNull ??
         widget.semanales.first;
   }
 
@@ -1493,7 +1546,10 @@ class _DialogoAsignarHorarioState
             const SizedBox(height: Esp.m),
             Text('A qué hora entra y sale cada día:', style: context.apagado()),
             const SizedBox(height: Esp.xs),
-            _VistaPreviaHorario(detalleAsync: detalleAsync, turnosAsync: turnosAsync),
+            _VistaPreviaHorario(
+              detalleAsync: detalleAsync,
+              turnosAsync: turnosAsync,
+            ),
             const SizedBox(height: Esp.m),
             InkWell(
               onTap: () async {
@@ -1552,7 +1608,10 @@ class _DialogoAsignarHorarioState
 }
 
 class _VistaPreviaHorario extends StatelessWidget {
-  const _VistaPreviaHorario({required this.detalleAsync, required this.turnosAsync});
+  const _VistaPreviaHorario({
+    required this.detalleAsync,
+    required this.turnosAsync,
+  });
   final AsyncValue<List<BioHrSemanalDetalleEntity>> detalleAsync;
   final AsyncValue<List<BioHrsEntity>> turnosAsync;
 

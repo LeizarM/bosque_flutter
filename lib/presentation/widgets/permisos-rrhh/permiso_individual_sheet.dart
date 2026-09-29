@@ -62,7 +62,7 @@ Future<void> _mostrar(
 /// permiso`, `Total días de vacación`) los resolvía un motor en Java que
 /// avanzaba de media hora en media hora. **Ese no es el motor que está grabando
 /// hoy**: las filas que escribe lo ya migrado llevan los números de
-/// `dbo.f_CalcularDiasHabilesPermiso`, y las dos cuentas no coinciden. Acá los
+/// `dbo.f_CalcularDiasHabilesPermiso`, y las dos cuentas no coinciden. Aquí los
 /// números salen de `/permiso-rrhh/permisos/calcular`, que es esa misma función,
 /// y el backend vuelve a calcularlos dentro de la transacción antes de escribir:
 /// no hay forma de que la pantalla diga un número y se grabe otro.
@@ -77,7 +77,7 @@ Future<void> _mostrar(
 /// La función SQL no recibe ese parámetro: lo deduce de la hora de fin —después
 /// de las 17:30 el día cuenta 600 minutos y una hora de almuerzo, si no 480 y
 /// media—. Mandarlo en el cuerpo sería un campo que el servidor ignora, o sea un
-/// control que miente. Acá el radio hace lo único que puede hacer sin mentir:
+/// control que miente. Aquí el radio hace lo único que puede hacer sin mentir:
 /// **mueve la ventana de horas que se puede elegir** (estándar hasta 17:30,
 /// continuo hasta 19:00) y, si la hora de fin queda fuera, la recorta — con lo
 /// cual el número cambia de verdad, que es lo que la persona espera al tocarlo.
@@ -210,11 +210,7 @@ class _PermisoIndividualSheetState
                     )
                     : Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        desde,
-                        const SizedBox(height: Esp.m),
-                        hasta,
-                      ],
+                      children: [desde, const SizedBox(height: Esp.m), hasta],
                     );
               },
             ),
@@ -244,7 +240,8 @@ class _PermisoIndividualSheetState
                 labelText: 'Motivo',
                 border: OutlineInputBorder(),
                 isDense: true,
-                helperText: 'Queda en la fila y en la bitácora. Es obligatorio.',
+                helperText:
+                    'Queda en la fila y en la bitácora. Es obligatorio.',
               ),
               onChanged: (_) => setState(() {}),
             ),
@@ -285,8 +282,7 @@ class _PermisoIndividualSheetState
           ButtonSegment(value: true, label: Text('Horario continuo')),
         ],
         selected: {_continuo},
-        onSelectionChanged:
-            _guardando ? null : (s) => _cambiarHorario(s.first),
+        onSelectionChanged: _guardando ? null : (s) => _cambiarHorario(s.first),
       ),
       const SizedBox(height: Esp.xs),
       Text(
@@ -299,7 +295,7 @@ class _PermisoIndividualSheetState
       ),
       const SizedBox(height: Esp.xs),
       Text(
-        'El horario lo decide la hora de fin, no este selector: acá sólo se '
+        'El horario lo decide la hora de fin, no este selector: aquí sólo se '
         'elige hasta qué hora se puede cargar.',
         style: context.apagado(),
       ),
@@ -582,8 +578,9 @@ class _PermisoIndividualSheetState
           : '${c.detalle} Cambie las fechas o revise lo que ya está cargado en '
               'la nómina.';
 
-  Widget _comboDeTipos(AsyncValue<List<TipoPermisoVacacionEntity>> tipos) =>
-      tipos.when(
+  Widget _comboDeTipos(
+    AsyncValue<List<TipoPermisoVacacionEntity>> tipos,
+  ) => tipos.when(
     loading:
         () => const InputDecorator(
           decoration: InputDecoration(
@@ -659,7 +656,8 @@ class _PermisoIndividualSheetState
     if (c == null) return;
     final ok = await confirmar(
       context,
-      titulo: _esVacacion ? '¿Programar la vacación?' : '¿Programar el permiso?',
+      titulo:
+          _esVacacion ? '¿Programar la vacación?' : '¿Programar el permiso?',
       mensaje: _queVaAPasar(c),
       accion: 'Programar',
     );
@@ -694,7 +692,7 @@ class _PermisoIndividualSheetState
   ///
   /// **Sin flujo de dos pasos**: estas dos rutas no emiten ningún 400
   /// confirmable —el controlador no le pasa el flag al DAO y el DAO no lo
-  /// tiene—, así que un «Guardar igual» acá sería un botón que no guarda nunca.
+  /// tiene—, así que un «Guardar igual» aquí sería un botón que no guarda nunca.
   /// Lo que el servidor no acepta lo dice el cálculo antes, con el botón
   /// apagado. El de la vacación pagada sí es real y vive en su propia hoja.
   Future<void> _guardar() async {

@@ -44,7 +44,7 @@ void main() => runApp(const _App());
 
 /// La barra de reportes hace `ref.read(comisionesRepositoryProvider)` en su
 /// build: sin un doble, la pestaña ni se dibuja. Solo se lee, los métodos se
-/// llaman al apretar un botón y acá no se aprieta ninguno.
+/// llaman al apretar un botón y aquí no se aprieta ninguno.
 class _RepoFalso implements ComisionesRepository {
   @override
   dynamic noSuchMethod(Invocation i) =>

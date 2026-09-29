@@ -52,8 +52,9 @@ class EntregasRouteStatusBar extends StatelessWidget {
       child: Align(
         alignment: Alignment.topCenter,
         child: ConstrainedBox(
-          constraints:
-              const BoxConstraints(maxWidth: EntregasUI.maxContentWidth),
+          constraints: const BoxConstraints(
+            maxWidth: EntregasUI.maxContentWidth,
+          ),
           child: Padding(
             padding: EdgeInsets.symmetric(
               horizontal: EntregasUI.padH(context),
@@ -68,9 +69,10 @@ class EntregasRouteStatusBar extends StatelessWidget {
                   margin: const EdgeInsets.only(right: EntregasUI.s3, top: 2),
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: activa
-                        ? const Color(0xFF2E9E63)
-                        : cs.outline.withValues(alpha: 0.6),
+                    color:
+                        activa
+                            ? const Color(0xFF2E9E63)
+                            : cs.outline.withValues(alpha: 0.6),
                   ),
                 ),
                 Expanded(
@@ -93,8 +95,8 @@ class EntregasRouteStatusBar extends StatelessWidget {
                         fechaInicio != null
                             ? 'Desde ${_fechaLegible(fechaInicio!)}'
                             : (angosto
-                                ? 'Iniciá la ruta para marcar'
-                                : 'Iniciá la ruta para poder marcar entregas'),
+                                ? 'Inicia la ruta para marcar'
+                                : 'Inicia la ruta para poder marcar entregas'),
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
@@ -120,17 +122,19 @@ class EntregasRouteStatusBar extends StatelessWidget {
                   _BotonRuta(
                     activa: activa,
                     angosto: angosto,
-                    habilitado: activa
-                        ? isLocationEnabled
-                        : (!entregasVacias && isLocationEnabled),
+                    habilitado:
+                        activa
+                            ? isLocationEnabled
+                            : (!entregasVacias && isLocationEnabled),
                     onPressed: activa ? onFinalizarRuta : onIniciarRuta,
                     // Sin ubicación el botón está gris y nadie sabe por qué.
                     // El tooltip lo dice sin ocupar espacio permanente.
-                    motivoBloqueo: !isLocationEnabled
-                        ? 'Activá la ubicación para continuar'
-                        : (entregasVacias && !activa
-                            ? 'No hay entregas para iniciar'
-                            : null),
+                    motivoBloqueo:
+                        !isLocationEnabled
+                            ? 'Activa la ubicación para continuar'
+                            : (entregasVacias && !activa
+                                ? 'No hay entregas para iniciar'
+                                : null),
                   ),
               ],
             ),
@@ -166,45 +170,49 @@ class _BotonRuta extends StatelessWidget {
     // En angosto se cae el icono y se acorta el texto. Con "Finalizar entregas"
     // + icono el boton pide ~190 px, que en un telefono de 360 deja al titulo
     // sin lugar y lo parte en tres renglones.
-    final String etiqueta = activa
-        ? (angosto ? 'Finalizar' : 'Finalizar entregas')
-        : (angosto ? 'Iniciar' : 'Iniciar entregas');
+    final String etiqueta =
+        activa
+            ? (angosto ? 'Finalizar' : 'Finalizar entregas')
+            : (angosto ? 'Iniciar' : 'Iniciar entregas');
 
-    final Widget boton = activa
-        ? OutlinedButton.icon(
-            onPressed: habilitado ? onPressed : null,
-            icon: angosto
-                ? const SizedBox.shrink()
-                : const Icon(Icons.flag_outlined, size: 18),
-            label: Text(etiqueta),
-            style: OutlinedButton.styleFrom(
-              foregroundColor: cs.error,
-              side: BorderSide(color: cs.error.withValues(alpha: 0.4)),
-              padding: EdgeInsets.symmetric(
-                horizontal: angosto ? EntregasUI.s3 : EntregasUI.s4,
-                vertical: EntregasUI.s3,
+    final Widget boton =
+        activa
+            ? OutlinedButton.icon(
+              onPressed: habilitado ? onPressed : null,
+              icon:
+                  angosto
+                      ? const SizedBox.shrink()
+                      : const Icon(Icons.flag_outlined, size: 18),
+              label: Text(etiqueta),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: cs.error,
+                side: BorderSide(color: cs.error.withValues(alpha: 0.4)),
+                padding: EdgeInsets.symmetric(
+                  horizontal: angosto ? EntregasUI.s3 : EntregasUI.s4,
+                  vertical: EntregasUI.s3,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(EntregasUI.rInner),
+                ),
               ),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(EntregasUI.rInner),
+            )
+            : FilledButton.icon(
+              onPressed: habilitado ? onPressed : null,
+              icon:
+                  angosto
+                      ? const SizedBox.shrink()
+                      : const Icon(Icons.local_shipping_outlined, size: 18),
+              label: Text(etiqueta),
+              style: FilledButton.styleFrom(
+                padding: EdgeInsets.symmetric(
+                  horizontal: angosto ? EntregasUI.s3 : EntregasUI.s4,
+                  vertical: EntregasUI.s3,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(EntregasUI.rInner),
+                ),
               ),
-            ),
-          )
-        : FilledButton.icon(
-            onPressed: habilitado ? onPressed : null,
-            icon: angosto
-                ? const SizedBox.shrink()
-                : const Icon(Icons.local_shipping_outlined, size: 18),
-            label: Text(etiqueta),
-            style: FilledButton.styleFrom(
-              padding: EdgeInsets.symmetric(
-                horizontal: angosto ? EntregasUI.s3 : EntregasUI.s4,
-                vertical: EntregasUI.s3,
-              ),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(EntregasUI.rInner),
-              ),
-            ),
-          );
+            );
 
     if (!habilitado && motivoBloqueo != null) {
       return Tooltip(message: motivoBloqueo!, child: boton);

@@ -14,7 +14,7 @@
 /// **Vive aparte de `programadores_admin.dart`** aunque las dos sean ABM de
 /// permisos, porque son permisos distintos y confundirlos es caro: un jefe
 /// programador alcanza sólo a su gente y sólo decide si viene o no viene; quien
-/// está acá no tiene límite de árbol, de sucursal ni de letra.
+/// está aquí no tiene límite de árbol, de sucursal ni de letra.
 library;
 
 import 'package:bosque_flutter/core/state/rol_sabados_provider.dart';
@@ -158,7 +158,7 @@ class _Fila extends ConsumerWidget {
       trailing:
           baja
               // Un dado de baja no se borra: se vuelve a agregar, y el SP
-              // reactiva la misma fila. Por eso acá no hay botón de alta —
+              // reactiva la misma fila. Por eso aquí no hay botón de alta —
               // se usa «Agregar» de arriba y se elige a la misma persona.
               ? null
               : IconButton(

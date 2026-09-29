@@ -43,7 +43,10 @@ class TipoMontoRow extends StatelessWidget {
               isDense: true,
               decoration: InputDecoration(
                 isDense: true,
-                contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 8,
+                  vertical: 4,
+                ),
                 filled: true,
                 fillColor: cs.surface,
                 border: brd,
@@ -55,7 +58,8 @@ class TipoMontoRow extends StatelessWidget {
                 DropdownMenuItem(value: 'F', child: Text('Fijo')),
               ],
               onChanged: (v) {
-                if (v != null) onUpdate(v, double.tryParse(montoController.text) ?? 0);
+                if (v != null)
+                  onUpdate(v, double.tryParse(montoController.text) ?? 0);
               },
             ),
           ),
@@ -66,7 +70,9 @@ class TipoMontoRow extends StatelessWidget {
                 height: 28,
                 child: TextField(
                   controller: montoController,
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
+                  ),
                   inputFormatters: [
                     FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*')),
                   ],
@@ -74,12 +80,17 @@ class TipoMontoRow extends StatelessWidget {
                   decoration: InputDecoration(
                     hintText: 'Monto Bs.',
                     isDense: true,
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
                     filled: true,
                     fillColor: cs.surface,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(6),
-                      borderSide: BorderSide(color: cs.outline.withOpacity(0.3)),
+                      borderSide: BorderSide(
+                        color: cs.outline.withOpacity(0.3),
+                      ),
                     ),
                   ),
                   onChanged: (v) => onUpdate('F', double.tryParse(v) ?? 0),
@@ -124,7 +135,11 @@ class EmpleadoSeleccionadoTile extends StatelessWidget {
               borderRadius: BorderRadius.circular(6),
               child: Padding(
                 padding: const EdgeInsets.all(4),
-                child: Icon(Icons.delete_outline_rounded, size: 20, color: cs.error),
+                child: Icon(
+                  Icons.delete_outline_rounded,
+                  size: 20,
+                  color: cs.error,
+                ),
               ),
             ),
           ),
@@ -133,9 +148,19 @@ class EmpleadoSeleccionadoTile extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(asig.nombreCompleto, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+                Text(
+                  asig.nombreCompleto,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
                 const SizedBox(height: 4),
-                TipoMontoRow(tipo: asig.tipo, montoController: montoController, onUpdate: onUpdate),
+                TipoMontoRow(
+                  tipo: asig.tipo,
+                  montoController: montoController,
+                  onUpdate: onUpdate,
+                ),
               ],
             ),
           ),
@@ -144,13 +169,22 @@ class EmpleadoSeleccionadoTile extends StatelessWidget {
             Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Text('A recibir', style: TextStyle(fontSize: 9, color: cs.onSurface.withOpacity(0.45))),
+                Text(
+                  'A recibir',
+                  style: TextStyle(
+                    fontSize: 9,
+                    color: cs.onSurface.withOpacity(0.45),
+                  ),
+                ),
                 Text(
                   'Bs. ${fmtAnticipo.format(asig.montoCalculadoPrev)}',
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 13,
-                    color: isDark ? Colors.greenAccent.shade200 : const Color(0xFF1B5E20),
+                    color:
+                        isDark
+                            ? Colors.greenAccent.shade200
+                            : const Color(0xFF1B5E20),
                   ),
                 ),
               ],
@@ -175,7 +209,8 @@ class AsignacionManualSheet extends ConsumerStatefulWidget {
     this.esEdicion = false,
   });
   @override
-  ConsumerState<AsignacionManualSheet> createState() => _AsignacionManualSheetState();
+  ConsumerState<AsignacionManualSheet> createState() =>
+      _AsignacionManualSheetState();
 }
 
 class _AsignacionManualSheetState extends ConsumerState<AsignacionManualSheet> {
@@ -199,7 +234,9 @@ class _AsignacionManualSheetState extends ConsumerState<AsignacionManualSheet> {
     if (widget.esEdicion) {
       Future.microtask(() {
         if (mounted)
-          ref.read(asignacionManualProvider.notifier).cargarParaEdicion(widget.cabecera);
+          ref
+              .read(asignacionManualProvider.notifier)
+              .cargarParaEdicion(widget.cabecera);
       });
     }
   }
@@ -230,7 +267,9 @@ class _AsignacionManualSheetState extends ConsumerState<AsignacionManualSheet> {
       if (!mounted) return;
       final st = ref.read(asignacionManualProvider);
       if (st.empleados.isEmpty) return;
-      ref.read(asignacionManualProvider.notifier).previsualizar(widget.cabecera);
+      ref
+          .read(asignacionManualProvider.notifier)
+          .previsualizar(widget.cabecera);
     });
   }
 
@@ -266,7 +305,9 @@ class _AsignacionManualSheetState extends ConsumerState<AsignacionManualSheet> {
   }
 
   void _onUpdate(int id, String tipo, double monto) {
-    ref.read(asignacionManualProvider.notifier).actualizarTipoYMonto(id, tipo, monto);
+    ref
+        .read(asignacionManualProvider.notifier)
+        .actualizarTipoYMonto(id, tipo, monto);
     _debCalc();
   }
 
@@ -276,7 +317,9 @@ class _AsignacionManualSheetState extends ConsumerState<AsignacionManualSheet> {
     onDelete: () {
       _sel.remove(asig.codEmpleado);
       _montoCtrls.remove(asig.codEmpleado)?.dispose();
-      ref.read(asignacionManualProvider.notifier).removerEmpleado(asig.codEmpleado);
+      ref
+          .read(asignacionManualProvider.notifier)
+          .removerEmpleado(asig.codEmpleado);
       _debCalc();
       setState(() {});
     },
@@ -291,7 +334,10 @@ class _AsignacionManualSheetState extends ConsumerState<AsignacionManualSheet> {
       activeColor: cs.primary,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       onChanged: (_) => _toggle(emp, true),
-      title: Text(emp.persona.datoPersona ?? '', style: const TextStyle(fontSize: 13)),
+      title: Text(
+        emp.persona.datoPersona ?? '',
+        style: const TextStyle(fontSize: 13),
+      ),
     );
   }
 
@@ -305,34 +351,52 @@ class _AsignacionManualSheetState extends ConsumerState<AsignacionManualSheet> {
     final empAsync = ref.watch(
       getListaEmpleados((
         term.trim().isEmpty ? null : term.trim(),
-        1, 1, 200,
+        1,
+        1,
+        200,
         cab.codEmpresa,
       )),
     );
 
     ref.listen<AsignacionManualState>(asignacionManualProvider, (prev, next) {
       if (!context.mounted) return;
-      if (widget.esEdicion && next.empleados.isNotEmpty && prev?.empleados.isEmpty == true) {
+      if (widget.esEdicion &&
+          next.empleados.isNotEmpty &&
+          prev?.empleados.isEmpty == true) {
         setState(() {
           for (final e in next.empleados) {
             _sel.add(e.codEmpleado);
-            if (e.tipo == 'F') _montoCtrl(e.codEmpleado).text = e.monto.toString();
+            if (e.tipo == 'F')
+              _montoCtrl(e.codEmpleado).text = e.monto.toString();
           }
         });
       }
-      if (next.mensajeExito != null && prev?.mensajeExito != next.mensajeExito) {
+      if (next.mensajeExito != null &&
+          prev?.mensajeExito != next.mensajeExito) {
         final m = ScaffoldMessenger.of(context);
         Navigator.of(context).pop();
-        m.showSnackBar(SnackBar(content: Text(next.mensajeExito!), backgroundColor: Colors.green.shade700));
+        m.showSnackBar(
+          SnackBar(
+            content: Text(next.mensajeExito!),
+            backgroundColor: Colors.green.shade700,
+          ),
+        );
       }
       if (next.error != null && prev?.error != next.error) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(next.error!), backgroundColor: cs.error, duration: const Duration(seconds: 4)),
+          SnackBar(
+            content: Text(next.error!),
+            backgroundColor: cs.error,
+            duration: const Duration(seconds: 4),
+          ),
         );
       }
     });
 
-    final sumaLocal = st.empleados.fold(0.0, (sum, e) => sum + (e.tipo == 'F' ? e.monto : 0.0));
+    final sumaLocal = st.empleados.fold(
+      0.0,
+      (sum, e) => sum + (e.tipo == 'F' ? e.monto : 0.0),
+    );
 
     final double montoCal;
     final bool hayDif;
@@ -347,116 +411,203 @@ class _AsignacionManualSheetState extends ConsumerState<AsignacionManualSheet> {
       hayDif = false;
     }
 
-    final puedeConfirmar = st.preview.isNotEmpty && !hayDif && !st.cargando && st.empleados.isNotEmpty;
-    final titulo = widget.esEdicion ? 'Editar distribución' : 'Asignación Manual';
+    final puedeConfirmar =
+        st.preview.isNotEmpty &&
+        !hayDif &&
+        !st.cargando &&
+        st.empleados.isNotEmpty;
+    final titulo =
+        widget.esEdicion ? 'Editar distribución' : 'Asignación Manual';
     final labelBtn =
-        st.cargando ? 'Calculando…'
-        : st.empleados.isEmpty ? 'Selecciona al menos un empleado'
-        : !puedeConfirmar ? 'La suma debe cuadrar exactamente'
-        : widget.esEdicion ? 'Guardar cambios'
-        : 'Confirmar Asignación';
+        st.cargando
+            ? 'Calculando…'
+            : st.empleados.isEmpty
+            ? 'Selecciona al menos un empleado'
+            : !puedeConfirmar
+            ? 'La suma debe cuadrar exactamente'
+            : widget.esEdicion
+            ? 'Guardar cambios'
+            : 'Confirmar Asignación';
 
     return AnticipoBaseSheet(
       initialChildSize: 0.88,
-      builder: (_, ctrl) => Column(
-        children: [
-          const AnticipoSheetHandle(),
-          AnticipoSheetCabecera(cabecera: cab, titulo: titulo, icon: Icons.group_add_rounded),
-          AnticipoMontoProgress(
-            montoTotal: cab.debe, montoAsignado: montoCal,
-            cargando: st.cargando, hayItems: st.empleados.isNotEmpty, prefixLabel: 'Calculado',
-          ),
-          const Divider(height: 1),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            child: Row(
-              children: [
-                Expanded(child: AnticipoSheetSearchField(controller: _searchCtrl, hint: 'Buscar empleado…', onChanged: _onSearch)),
-                const SizedBox(width: 10),
-                empAsync.when(
-                  data: (emps) {
-                    final all = emps.isNotEmpty && emps.every((e) => _sel.contains(e.codEmpleado));
-                    return AnticipoSelectAllButton(allSelected: all, enabled: emps.isNotEmpty, onTap: () => _toggleTodos(emps, !all));
-                  },
-                  loading: () => const SizedBox.shrink(),
-                  error: (_, __) => const SizedBox.shrink(),
-                ),
-              ],
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 4),
-            child: Align(
-              alignment: Alignment.centerLeft,
-              child: Text('${_sel.length} seleccionado(s)',
-                style: TextStyle(fontSize: 11, color: cs.onSurface.withOpacity(0.5), fontWeight: FontWeight.w600)),
-            ),
-          ),
-          if (st.empleados.isNotEmpty)
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 6),
-              child: Row(
-                children: [
-                  Text('Distribución rápida:', style: TextStyle(fontSize: 11, color: cs.onSurface.withOpacity(0.55))),
-                  const SizedBox(width: 8),
-                  AnticipoQuickTipoBtn(
-                    label: 'Todos Auto', icon: Icons.tune_rounded,
-                    active: st.empleados.isNotEmpty && st.empleados.every((e) => e.tipo == 'A'),
-                    onTap: () => _setAllTipo('A'),
-                  ),
-                  const SizedBox(width: 6),
-                  AnticipoQuickTipoBtn(
-                    label: 'Todos Fijo', icon: Icons.attach_money_rounded,
-                    active: st.empleados.isNotEmpty && st.empleados.every((e) => e.tipo == 'F'),
-                    onTap: () => _setAllTipo('F'),
-                  ),
-                ],
+      builder:
+          (_, ctrl) => Column(
+            children: [
+              const AnticipoSheetHandle(),
+              AnticipoSheetCabecera(
+                cabecera: cab,
+                titulo: titulo,
+                icon: Icons.group_add_rounded,
               ),
-            ),
-          Expanded(
-            child: empAsync.when(
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error: (e, _) => Center(child: Text('Error: $e')),
-              data: (emps) {
-                final noSel = emps.where((e) => !_sel.contains(e.codEmpleado)).toList();
-                final hasSel = st.empleados.isNotEmpty;
-                if (!hasSel && noSel.isEmpty)
-                  return const AnticipoEmptyState(mensaje: 'No se encontraron empleados\ncon ese criterio.', icon: Icons.search_off_rounded);
-                return CustomScrollView(
-                  controller: ctrl,
-                  slivers: [
-                    if (hasSel) ...[
-                      SliverToBoxAdapter(child: AnticipoSectionHeader(label: 'SELECCIONADOS (${st.empleados.length})')),
-                      SliverList(
-                        delegate: SliverChildBuilderDelegate(
-                          (_, i) => Column(mainAxisSize: MainAxisSize.min, children: [_buildSel(st.empleados[i]), const Divider(height: 1)]),
-                          childCount: st.empleados.length,
-                        ),
+              AnticipoMontoProgress(
+                montoTotal: cab.debe,
+                montoAsignado: montoCal,
+                cargando: st.cargando,
+                hayItems: st.empleados.isNotEmpty,
+                prefixLabel: 'Calculado',
+              ),
+              const Divider(height: 1),
+              Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 8,
+                ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: AnticipoSheetSearchField(
+                        controller: _searchCtrl,
+                        hint: 'Buscar empleado…',
+                        onChanged: _onSearch,
                       ),
-                    ],
-                    if (noSel.isNotEmpty) ...[
-                      if (hasSel) SliverToBoxAdapter(child: AnticipoSectionHeader(label: 'RESULTADOS DE BÚSQUEDA')),
-                      SliverList(
-                        delegate: SliverChildBuilderDelegate(
-                          (_, i) => Column(mainAxisSize: MainAxisSize.min, children: [_buildBuscar(noSel[i]), if (i < noSel.length - 1) const Divider(height: 1)]),
-                          childCount: noSel.length,
-                        ),
-                      ),
-                    ],
+                    ),
+                    const SizedBox(width: 10),
+                    empAsync.when(
+                      data: (emps) {
+                        final all =
+                            emps.isNotEmpty &&
+                            emps.every((e) => _sel.contains(e.codEmpleado));
+                        return AnticipoSelectAllButton(
+                          allSelected: all,
+                          enabled: emps.isNotEmpty,
+                          onTap: () => _toggleTodos(emps, !all),
+                        );
+                      },
+                      loading: () => const SizedBox.shrink(),
+                      error: (_, __) => const SizedBox.shrink(),
+                    ),
                   ],
-                );
-              },
-            ),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 4),
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    '${_sel.length} seleccionado(s)',
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: cs.onSurface.withOpacity(0.5),
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ),
+              if (st.empleados.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 6),
+                  child: Row(
+                    children: [
+                      Text(
+                        'Distribución rápida:',
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: cs.onSurface.withOpacity(0.55),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      AnticipoQuickTipoBtn(
+                        label: 'Todos Auto',
+                        icon: Icons.tune_rounded,
+                        active:
+                            st.empleados.isNotEmpty &&
+                            st.empleados.every((e) => e.tipo == 'A'),
+                        onTap: () => _setAllTipo('A'),
+                      ),
+                      const SizedBox(width: 6),
+                      AnticipoQuickTipoBtn(
+                        label: 'Todos Fijo',
+                        icon: Icons.attach_money_rounded,
+                        active:
+                            st.empleados.isNotEmpty &&
+                            st.empleados.every((e) => e.tipo == 'F'),
+                        onTap: () => _setAllTipo('F'),
+                      ),
+                    ],
+                  ),
+                ),
+              Expanded(
+                child: empAsync.when(
+                  loading:
+                      () => const Center(child: CircularProgressIndicator()),
+                  error: (e, _) => Center(child: Text('Error: $e')),
+                  data: (emps) {
+                    final noSel =
+                        emps
+                            .where((e) => !_sel.contains(e.codEmpleado))
+                            .toList();
+                    final hasSel = st.empleados.isNotEmpty;
+                    if (!hasSel && noSel.isEmpty)
+                      return const AnticipoEmptyState(
+                        mensaje:
+                            'No se encontraron empleados\ncon ese criterio.',
+                        icon: Icons.search_off_rounded,
+                      );
+                    return CustomScrollView(
+                      controller: ctrl,
+                      slivers: [
+                        if (hasSel) ...[
+                          SliverToBoxAdapter(
+                            child: AnticipoSectionHeader(
+                              label: 'SELECCIONADOS (${st.empleados.length})',
+                            ),
+                          ),
+                          SliverList(
+                            delegate: SliverChildBuilderDelegate(
+                              (_, i) => Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  _buildSel(st.empleados[i]),
+                                  const Divider(height: 1),
+                                ],
+                              ),
+                              childCount: st.empleados.length,
+                            ),
+                          ),
+                        ],
+                        if (noSel.isNotEmpty) ...[
+                          if (hasSel)
+                            SliverToBoxAdapter(
+                              child: AnticipoSectionHeader(
+                                label: 'RESULTADOS DE BÚSQUEDA',
+                              ),
+                            ),
+                          SliverList(
+                            delegate: SliverChildBuilderDelegate(
+                              (_, i) => Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  _buildBuscar(noSel[i]),
+                                  if (i < noSel.length - 1)
+                                    const Divider(height: 1),
+                                ],
+                              ),
+                              childCount: noSel.length,
+                            ),
+                          ),
+                        ],
+                      ],
+                    );
+                  },
+                ),
+              ),
+              AnticipoConfirmButton(
+                enabled: puedeConfirmar,
+                loading: st.cargando,
+                label: labelBtn,
+                icon:
+                    widget.esEdicion
+                        ? Icons.save_rounded
+                        : Icons.check_circle_rounded,
+                onPressed:
+                    () =>
+                        widget.esEdicion
+                            ? ntf.confirmarEdicion(cab, widget.audUsuarioI)
+                            : ntf.confirmarAsignacion(cab, widget.audUsuarioI),
+              ),
+            ],
           ),
-          AnticipoConfirmButton(
-            enabled: puedeConfirmar, loading: st.cargando, label: labelBtn,
-            icon: widget.esEdicion ? Icons.save_rounded : Icons.check_circle_rounded,
-            onPressed: () => widget.esEdicion
-                ? ntf.confirmarEdicion(cab, widget.audUsuarioI)
-                : ntf.confirmarAsignacion(cab, widget.audUsuarioI),
-          ),
-        ],
-      ),
     );
   }
 }

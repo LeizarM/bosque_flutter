@@ -13,9 +13,10 @@ class SucursalSeleccionModel {
 
   factory SucursalSeleccionModel.fromJson(Map<String, dynamic> json) =>
       SucursalSeleccionModel(
-        codSucursal: json['codSucursal'] != null
-            ? BigInt.from(json['codSucursal'])
-            : BigInt.zero,
+        codSucursal:
+            json['codSucursal'] != null
+                ? BigInt.from(json['codSucursal'])
+                : BigInt.zero,
         nombreSucEmpresa: json['nombreSucEmpresa'] ?? '',
         seleccionado: json['seleccionado'] ?? 0,
       );

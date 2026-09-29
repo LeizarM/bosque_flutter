@@ -12,7 +12,7 @@ import 'package:printing/printing.dart';
 /// el día. Es la pestaña «Saldo».
 ///
 /// **Origen:** `p_list_Permiso 'C'`, una llamada, una fila. Los números vienen
-/// formateados del backend (`*Txt`); acá sólo se decide dónde van y de qué color.
+/// formateados del backend (`*Txt`); aquí sólo se decide dónde van y de qué color.
 class SaldoTab extends ConsumerWidget {
   const SaldoTab({super.key, required this.codEmpleado});
 
@@ -36,7 +36,7 @@ class SaldoTab extends ConsumerWidget {
             titulo: 'Sin ficha de saldo',
             // 204: la consulta salió bien y no devolvió filas. Los casos que sí
             // tienen explicación —no existe, sin relación activa, sin cargo—
-            // llegan como error con el texto del backend, no por acá.
+            // llegan como error con el texto del backend, no por aquí.
             detalle:
                 'La consulta no devolvió datos para este empleado. Verifique en '
                 'el sistema anterior que tenga cargo y relación laboral activa.',
@@ -149,7 +149,7 @@ class _Tarjeta extends StatelessWidget {
             // tomó la opción (c): no se cambia el cálculo, se rotula el alcance
             // — pero se rotula en la pantalla, no en un manual. Si RR.HH.
             // confirma que el saldo debe abarcar todas las relaciones, cambia
-            // el backend y este bloque se borra; nada más de acá se rehace.
+            // el backend y este bloque se borra; nada más de aquí se rehace.
             if (ficha.tieneRelacionesAnteriores) ...[
               const SizedBox(height: Esp.m),
               AvisoDelDato(
@@ -192,7 +192,7 @@ class _Tarjeta extends StatelessWidget {
             // rotulados. Este total es el de la consola ('C'); el que el
             // empleado ve en su propia app sale de otra acción ('H1') y no
             // siempre coincide — 45 negativos contra 10, y 35 cambios de signo.
-            // Decirlo acá es más barato que explicarlo por teléfono.
+            // Decirlo aquí es más barato que explicarlo por teléfono.
             const SizedBox(height: Esp.m),
             Text(
               'Total = días no usados + días abonados, de la relación laboral '
@@ -229,7 +229,7 @@ class _Tarjeta extends StatelessWidget {
 ///
 /// Dos variantes, y la diferencia importa: la **interna** muestra los días
 /// abonados y la **fiscal** no. Ese recorte lo decidió la empresa hace años y
-/// vive dentro del `.jrxml`, no acá, así que no hay forma de pedir la fiscal y
+/// vive dentro del `.jrxml`, no aquí, así que no hay forma de pedir la fiscal y
 /// que salga con abonados. Se rotula cuál es cuál en vez de dejar dos botones
 /// que parecen lo mismo.
 class _EstadoDeCuenta extends ConsumerStatefulWidget {

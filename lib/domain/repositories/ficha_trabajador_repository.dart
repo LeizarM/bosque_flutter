@@ -21,65 +21,71 @@ import 'package:bosque_flutter/domain/entities/tipo_telefono_entity.dart';
 import 'package:bosque_flutter/domain/entities/usuario_bloqueado_entity.dart';
 import 'package:bosque_flutter/domain/entities/zona_entity.dart';
 
-abstract class FichaTrabajadorRepository{
-  Future<List<EmpleadoEntity>>obtenerListaEmpleadoyDependientes(int codEmpleado); 
-  
-  Future<List<DependienteEntity>>getDependientes(int codEmpleado);
-  Future<List<DependienteEntity>>editarDep(DependienteEntity dep);
-  Future<List<ParentescoEntity>>obtenerParentesco();
-  Future<bool>eliminarDependiente(int codDependiente);
+abstract class FichaTrabajadorRepository {
+  Future<List<EmpleadoEntity>> obtenerListaEmpleadoyDependientes(
+    int codEmpleado,
+  );
 
-  Future<List<EmpleadoEntity>>obtenerDatosEmp(int codEmpleado);
-  Future<List<EmpleadoEntity>>obtenerCumples();
+  Future<List<DependienteEntity>> getDependientes(int codEmpleado);
+  Future<List<DependienteEntity>> editarDep(DependienteEntity dep);
+  Future<List<ParentescoEntity>> obtenerParentesco();
+  Future<bool> eliminarDependiente(int codDependiente);
 
- 
+  Future<List<EmpleadoEntity>> obtenerDatosEmp(int codEmpleado);
+  Future<List<EmpleadoEntity>> obtenerCumples();
 
-  Future<PersonaEntity>obtenerPersona(int codPersona);
-  Future<PersonaEntity>editarPersona(PersonaEntity per);
-  Future<PersonaEntity>registrarPersona(PersonaModel persona);
+  Future<PersonaEntity> obtenerPersona(int codPersona);
+  Future<PersonaEntity> editarPersona(PersonaEntity per);
+  Future<PersonaEntity> registrarPersona(PersonaModel persona);
 
-  Future<List<PersonaEntity>>obtenerListaPersonas();
-  
+  Future<List<PersonaEntity>> obtenerListaPersonas();
 
-  Future<List<SexoEntity>>obtenerGenero();
-  Future<List<EstadoCivilEntity>>obtenerEstadoCivil();
-  Future<List<CiExpedidoEntity>>obtenerCiExp();
-  Future<List<PaisEntity>>obtenerPais();
-  Future<List<CiudadEntity>>obtenerCiudad(int codPais);
-  Future<List<ZonaEntity>>obtenerZona(int codCiudad);
+  Future<List<SexoEntity>> obtenerGenero();
+  Future<List<EstadoCivilEntity>> obtenerEstadoCivil();
+  Future<List<CiExpedidoEntity>> obtenerCiExp();
+  Future<List<PaisEntity>> obtenerPais();
+  Future<List<CiudadEntity>> obtenerCiudad(int codPais);
+  Future<List<ZonaEntity>> obtenerZona(int codCiudad);
 
   //para tipos formacion
-  Future<List<TipoFormacionEntity>>obtenerTipoFormacion();
-  Future<List<TipoDuracionFormacionEntity>>obtenerTipoDuracionFor();
+  Future<List<TipoFormacionEntity>> obtenerTipoFormacion();
+  Future<List<TipoDuracionFormacionEntity>> obtenerTipoDuracionFor();
   //para tipos gar ref
-  Future<List<TipoGaranteReferenciaEntity>>obtenerTipoGaranteRef();
-  Future<List<GaranteReferenciaEntity>>obtenerListaGarRef();
-  Future<bool>eliminarGarRef(int codgarante);
+  Future<List<TipoGaranteReferenciaEntity>> obtenerTipoGaranteRef();
+  Future<List<GaranteReferenciaEntity>> obtenerListaGarRef();
+  Future<bool> eliminarGarRef(int codgarante);
 
+  Future<List<FormacionEntity>> obtenerFormacion(int codEmpleado);
+  Future<List<FormacionEntity>> registrarFormacion(FormacionEntity fr);
+  Future<bool> eliminarFormacion(int codFormacion);
 
+  Future<List<TelefonoEntity>> obtenerTelefono(int codPersona);
+  Future<List<TelefonoEntity>> registrarTelefono(TelefonoEntity tel);
+  Future<bool> eliminarTelefono(int codTelefono);
+  Future<List<TipoTelefonoEntity>> obtenerTipoTelefono();
 
-  Future<List<FormacionEntity>>obtenerFormacion(int codEmpleado);
-  Future<List<FormacionEntity>>registrarFormacion(FormacionEntity fr);
-  Future<bool>eliminarFormacion(int codFormacion);
-
-  Future<List<TelefonoEntity>>obtenerTelefono(int codPersona);
-  Future<List<TelefonoEntity>>registrarTelefono(TelefonoEntity tel);
-  Future<bool>eliminarTelefono(int codTelefono);
-  Future<List<TipoTelefonoEntity>>obtenerTipoTelefono();
-
-  Future<List<ExperienciaLaboralEntity>> obtenerExperienciaLaboral(int codEmpleado);
-  Future<List<ExperienciaLaboralEntity>>registrarExpLaboral(ExperienciaLaboralEntity expl);
-  Future<bool>eliminarExpLab(int codExperienciaLaboral);
-
+  Future<List<ExperienciaLaboralEntity>> obtenerExperienciaLaboral(
+    int codEmpleado,
+  );
+  Future<List<ExperienciaLaboralEntity>> registrarExpLaboral(
+    ExperienciaLaboralEntity expl,
+  );
+  Future<bool> eliminarExpLab(int codExperienciaLaboral);
 
   Future<List<EmailEntity>> obtenerEmail(int codPersona);
   Future<List<EmailEntity>> registrarEmail(EmailEntity email);
   Future<bool> eliminarEmail(int codEmail);
 
-  Future<List<GaranteReferenciaEntity>> obtenerGaranteReferencia(int codEmpleado);
-  Future<List<GaranteReferenciaEntity>> registrarGaranteReferencia(GaranteReferenciaEntity garRef);
+  Future<List<GaranteReferenciaEntity>> obtenerGaranteReferencia(
+    int codEmpleado,
+  );
+  Future<List<GaranteReferenciaEntity>> registrarGaranteReferencia(
+    GaranteReferenciaEntity garRef,
+  );
 
-  Future<List<RelacionLaboralEntity>> registrarRelEmp(RelacionLaboralEntity ree);
+  Future<List<RelacionLaboralEntity>> registrarRelEmp(
+    RelacionLaboralEntity ree,
+  );
   Future<List<RelacionLaboralEntity>> obtenerRelEmp(int codEmpleado);
 
   Future<bool> uploadImg(int codEmpleado, dynamic imagen);
@@ -95,6 +101,12 @@ abstract class FichaTrabajadorRepository{
   Future<List<PersonaEntity>> getListaPersonas();
   Future<PersonaEntity> obtenerPersonaXCarnet(String ciNumero);
   Future<PersonaEntity> obtenerDatosEmpleado(int codEmpleado);
-  Future<TelefonoEntity> obtenerCorporativoEmpleado(int codTipoTel,String telefono);
-  Future<EmpleadoEntity> verDatosXJerarquia(int codEmpleado,int codEmpleadoConsultado);
+  Future<TelefonoEntity> obtenerCorporativoEmpleado(
+    int codTipoTel,
+    String telefono,
+  );
+  Future<EmpleadoEntity> verDatosXJerarquia(
+    int codEmpleado,
+    int codEmpleadoConsultado,
+  );
 }

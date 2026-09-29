@@ -122,13 +122,16 @@ class EntregasNotifier extends StateNotifier<EntregasState> {
       // cerró: el cron de las 23:58:59 corre la ACCIÓN 'C' contra la base, pero no tiene
       // forma de tocar el SharedPreferences del teléfono. El estado local quedaba mintiendo.
       final hoy = DateTime.now();
-      final esDeHoy = fechaInicio != null &&
+      final esDeHoy =
+          fechaInicio != null &&
           fechaInicio.year == hoy.year &&
           fechaInicio.month == hoy.month &&
           fechaInicio.day == hoy.day;
 
       if (!esDeHoy) {
-        console('🧹 Ruta guardada del ${fechaInicio ?? "sin fecha"}: no es de hoy, se descarta.');
+        console(
+          '🧹 Ruta guardada del ${fechaInicio ?? "sin fecha"}: no es de hoy, se descarta.',
+        );
         await _limpiarEstadoRuta();
         return;
       }
@@ -143,10 +146,14 @@ class EntregasNotifier extends StateNotifier<EntregasState> {
   /// Borra la ruta guardada en el teléfono.
   ///
   /// Se usa cuando la ruta persistida quedó vieja (de otro día). No toca el backend: allá el
-  /// cierre lo hace el cron de las 23:58:59 con la ACCIÓN 'C'. Acá solo se limpia la copia
+  /// cierre lo hace el cron de las 23:58:59 con la ACCIÓN 'C'. Aquí solo se limpia la copia
   /// local, que es la que estaba quedando desincronizada.
   Future<void> _limpiarEstadoRuta() async {
-    state = state.copyWith(rutaIniciada: false, fechaInicio: null, fechaFin: null);
+    state = state.copyWith(
+      rutaIniciada: false,
+      fechaInicio: null,
+      fechaFin: null,
+    );
     if (!_prefsInitialized || _prefs == null) {
       return;
     }
@@ -552,7 +559,7 @@ class EntregasNotifier extends StateNotifier<EntregasState> {
 /// `EntregasImpl`, que en su campo `_dio` llama a `DioClient.getInstance()` y arma el cliente
 /// HTTP con sus interceptores. Un módulo entre veinte retrasando el primer frame de todos.
 ///
-/// Ahora la fábrica está acá y Riverpod la ejecuta LAZY: la primera vez que alguien lea este
+/// Ahora la fábrica está aquí y Riverpod la ejecuta LAZY: la primera vez que alguien lea este
 /// provider. Si el usuario nunca entra a Entregas, nunca se construye nada.
 ///
 /// Sigue siendo sobrescribible para tests con `ProviderScope(overrides: [...])`; lo único que

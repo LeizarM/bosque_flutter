@@ -117,9 +117,11 @@ class SolicitudesCorteNotifier extends StateNotifier<SolicitudesCorteState> {
 
   void setBusqueda(String valor) => state = state.copyWith(busqueda: valor);
 
-  void setEstado(String? valor) => state = valor == null
-      ? state.copyWith(todosLosEstados: true)
-      : state.copyWith(estado: valor);
+  void setEstado(String? valor) =>
+      state =
+          valor == null
+              ? state.copyWith(todosLosEstados: true)
+              : state.copyWith(estado: valor);
 
   /// Cambiar el rango vuelve a consultar: el recorte lo hace el SP.
   Future<void> setRango(DateTime desde, DateTime hasta) async {
@@ -131,7 +133,10 @@ class SolicitudesCorteNotifier extends StateNotifier<SolicitudesCorteState> {
 final solicitudesCorteProvider = StateNotifierProvider.autoDispose<
   SolicitudesCorteNotifier,
   SolicitudesCorteState
->((ref) => SolicitudesCorteNotifier(ref.watch(solicitudCorteRepositoryProvider)));
+>(
+  (ref) =>
+      SolicitudesCorteNotifier(ref.watch(solicitudCorteRepositoryProvider)),
+);
 
 // ═══════════════════════════════════════════════════════════════════════════
 // DETALLE

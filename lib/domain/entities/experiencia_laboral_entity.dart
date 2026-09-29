@@ -32,6 +32,7 @@ class ExperienciaLaboralEntity {
       'audUsuario': audUsuario,
     };
   }
+
   // Método copyWith
   ExperienciaLaboralEntity copyWith({
     int? codExperienciaLaboral,
@@ -45,7 +46,8 @@ class ExperienciaLaboralEntity {
     int? audUsuario,
   }) {
     return ExperienciaLaboralEntity(
-      codExperienciaLaboral: codExperienciaLaboral ?? this.codExperienciaLaboral,
+      codExperienciaLaboral:
+          codExperienciaLaboral ?? this.codExperienciaLaboral,
       codEmpleado: codEmpleado ?? this.codEmpleado,
       nombreEmpresa: nombreEmpresa ?? this.nombreEmpresa,
       cargo: cargo ?? this.cargo,

@@ -12,7 +12,7 @@ class DependientesJefeImpl extends BaseApiRepository {
   ///
   /// El backend devuelve 403 (no 400) cuando el cargo vigente no califica
   /// como jefe/gerente — no es un error de red, es una respuesta legítima
-  /// que hay que mostrar con su propio mensaje, así que se maneja acá en
+  /// que hay que mostrar con su propio mensaje, así que se maneja aquí en
   /// vez de con los helpers genéricos de BaseApiRepository (pensados para
   /// 200/201/204/400).
   Future<ResultadoDependientesEntity> listarDependientes({
@@ -33,10 +33,17 @@ class DependientesJefeImpl extends BaseApiRepository {
         );
       }
       final raw = response.data;
-      final List<dynamic> rawData = raw is Map ? (raw['data'] as List<dynamic>? ?? []) : [];
-      final dependientes = rawData
-          .map((json) => DependienteCargoModel.fromJson(json as Map<String, dynamic>).toEntity())
-          .toList();
+      final List<dynamic> rawData =
+          raw is Map ? (raw['data'] as List<dynamic>? ?? []) : [];
+      final dependientes =
+          rawData
+              .map(
+                (json) =>
+                    DependienteCargoModel.fromJson(
+                      json as Map<String, dynamic>,
+                    ).toEntity(),
+              )
+              .toList();
       return ResultadoDependientesEntity(
         autorizado: true,
         mensaje: raw is Map ? (raw['message'] ?? '') : '',
@@ -46,20 +53,26 @@ class DependientesJefeImpl extends BaseApiRepository {
       if (e.response?.statusCode == 403 && e.response?.data is Map) {
         return ResultadoDependientesEntity(
           autorizado: false,
-          mensaje: e.response!.data['message'] ?? 'No tienes un cargo habilitado para esto.',
+          mensaje:
+              e.response!.data['message'] ??
+              'No tienes un cargo habilitado para esto.',
           dependientes: const [],
         );
       }
       if (e.response?.statusCode == 400 && e.response?.data is Map) {
-        throw Exception(e.response!.data['message'] ?? 'Error al obtener los dependientes.');
+        throw Exception(
+          e.response!.data['message'] ?? 'Error al obtener los dependientes.',
+        );
       }
-      throw Exception(DioClient.handleDioError(e, 'Error al obtener los dependientes.'));
+      throw Exception(
+        DioClient.handleDioError(e, 'Error al obtener los dependientes.'),
+      );
     }
   }
 
   /// Crea una tarea rutinaria y la asigna a los cargos elegidos, en una sola
   /// transacción. codUsuario/modoJefe los resuelve el backend desde el JWT —
-  /// no hace falta (ni sirve) mandarlos desde acá.
+  /// no hace falta (ni sirve) mandarlos desde aquí.
   ///
   /// [cargos] es la lista de asignaciones — cada mapa con las claves
   /// codCargo (obligatorio), codCargoSucursal/fechaInicio/fechaFin

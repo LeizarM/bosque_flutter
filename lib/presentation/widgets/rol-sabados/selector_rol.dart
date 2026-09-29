@@ -160,7 +160,8 @@ class AlcanceDelRol extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final gente = ref.watch(grillaRolProvider(idRol)).valueOrNull?.participantes;
+    final gente =
+        ref.watch(grillaRolProvider(idRol)).valueOrNull?.participantes;
     if (gente == null || gente.isEmpty) return const SizedBox.shrink();
 
     final alcance = Alcance.de(gente);
@@ -199,7 +200,10 @@ class AlcanceDelRol extends ConsumerWidget {
     );
   }
 
-  Future<void> _verDesglose(BuildContext context, Alcance a) => showDialog<void>(
+  Future<void> _verDesglose(
+    BuildContext context,
+    Alcance a,
+  ) => showDialog<void>(
     context: context,
     builder:
         (ctx) => AlertDialog(
@@ -217,7 +221,7 @@ class AlcanceDelRol extends ConsumerWidget {
                 else if (a.empresas.length > 1)
                   // La anomalía que alguien querría ver: el rol es global, así
                   // que puede juntar sucursales de empresas distintas sin que
-                  // nada lo avise. Acá se avisa.
+                  // nada lo avise. Aquí se avisa.
                   Text(
                     'Este rol junta ${a.empresas.length} empresas.',
                     style: ctx.tituloSeccion()?.copyWith(color: ctx.cs.error),
@@ -269,7 +273,7 @@ class _FilaDeAlcance extends StatelessWidget {
   final int cantidad;
   final String detalle;
 
-  /// Pinta el número con el rol de error. Es lo único con color acá: la
+  /// Pinta el número con el rol de error. Es lo único con color aquí: la
   /// sucursal es contexto, pero «nadie le puso sucursal» sí es un estado.
   final bool esProblema;
 
@@ -390,7 +394,7 @@ class Alcance {
 
 /// Un paso posible del ciclo de vida del rol, con lo que hay que decir antes.
 ///
-/// Están acá como datos y no como tres ramas de un `if` porque el texto es la
+/// Están aquí como datos y no como tres ramas de un `if` porque el texto es la
 /// mitad de la función: quien aprieta tiene que saber QUÉ deja de andar antes
 /// de apretar, no después.
 enum PasoDelRol {
@@ -412,7 +416,8 @@ enum PasoDelRol {
         '• los refrescos de feriados y de vacaciones: esos no reparten nada, '
         'sincronizan con lo que carga RR.HH.\n\n'
         'Se puede volver atrás cuando quieras: reabrir está en el mismo menú.',
-    exito: 'Rol publicado. La rotación quedó repartida; las excepciones siguen.',
+    exito:
+        'Rol publicado. La rotación quedó repartida; las excepciones siguen.',
   ),
   reabrir(
     destino: 'BORRADOR',
@@ -498,7 +503,7 @@ enum PasoDelRol {
 ///
 /// **Esto era `ROLE_ADM` estricto y tenía que dejar de serlo el mismo día que
 /// RR.HH. ganó la varita.** Reabrir a BORRADOR es el ÚNICO camino para regenerar
-/// un rol publicado —`trs_sp_generarRol` lo rechaza y en el mensaje manda acá—,
+/// un rol publicado —`trs_sp_generarRol` lo rechaza y en el mensaje manda aquí—,
 /// y hoy los dos únicos usuarios del padrón de RR.HH. son `lim`. Dejar la varita
 /// de un lado y la palanca del otro es dar un botón cuyo único desenlace posible
 /// es un error cuyas instrucciones no se pueden seguir.
@@ -548,10 +553,7 @@ class EstadoDelRol extends ConsumerWidget {
       // mismo estado se tiene que reconocer igual lo mire quien lo mire.
       child: Row(
         mainAxisSize: MainAxisSize.min,
-        children: [
-          etiqueta,
-          const Icon(Icons.arrow_drop_down, size: 18),
-        ],
+        children: [etiqueta, const Icon(Icons.arrow_drop_down, size: 18)],
       ),
     );
   }
@@ -559,7 +561,7 @@ class EstadoDelRol extends ConsumerWidget {
   /// El color dice en qué punto del ciclo está, no si algo salió bien.
   ///
   /// `CERRADO` va en la familia de error porque es la única que se lee como
-  /// «acá no se toca». No significa que cerrar esté mal.
+  /// «aquí no se toca». No significa que cerrar esté mal.
   TonoEtiqueta _tono(String estado) => switch (estado) {
     'PUBLICADO' => TonoEtiqueta.exito,
     'CERRADO' => TonoEtiqueta.error,

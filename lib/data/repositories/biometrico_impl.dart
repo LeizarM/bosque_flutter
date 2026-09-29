@@ -33,7 +33,9 @@ import 'package:bosque_flutter/domain/repositories/biometrico_repository.dart';
 /// así que se concatenan en el propio endpoint.
 class BiometricoImpl extends BaseApiRepository implements BiometricoRepository {
   String _conAcc(String endpoint, String acc, {String? motivo}) {
-    final buffer = StringBuffer('$endpoint?acc=${Uri.encodeQueryComponent(acc)}');
+    final buffer = StringBuffer(
+      '$endpoint?acc=${Uri.encodeQueryComponent(acc)}',
+    );
     if (motivo != null && motivo.trim().isNotEmpty) {
       buffer.write('&motivo=${Uri.encodeQueryComponent(motivo.trim())}');
     }
@@ -111,9 +113,7 @@ class BiometricoImpl extends BaseApiRepository implements BiometricoRepository {
       );
 
   @override
-  Future<List<BioHrsEntity>> listarHorarios(
-    Map<String, dynamic> filtro,
-  ) async {
+  Future<List<BioHrsEntity>> listarHorarios(Map<String, dynamic> filtro) async {
     final modelos = await postAndReturnList<BioHrsModel>(
       endpoint: AppConstants.biometricoListarHorarios,
       data: filtro,
@@ -235,10 +235,7 @@ class BiometricoImpl extends BaseApiRepository implements BiometricoRepository {
     Map<String, dynamic> payload,
     String acc,
   ) => postAndReturnId(
-    endpoint: _conAcc(
-      AppConstants.biometricoRegistrarCalendarioExpandido,
-      acc,
-    ),
+    endpoint: _conAcc(AppConstants.biometricoRegistrarCalendarioExpandido, acc),
     data: payload,
     errorMessage: 'Error al registrar el calendario expandido',
   );
@@ -324,7 +321,7 @@ class BiometricoImpl extends BaseApiRepository implements BiometricoRepository {
     endpoint: AppConstants.biometricoReporteMensualDetalladoTodosPdf,
     data: {'anio': anio, 'mes': mes},
     // Más pesado que reporteMensualResumenPdf: allá cada empleado es UNA
-    // fila; acá cada empleado es un llenado Jasper completo (hasta 31 filas)
+    // fila; aquí cada empleado es un llenado Jasper completo (hasta 31 filas)
     // que hay que unir con los demás. Mismo cálculo N+1 en el backend, más
     // trabajo de Jasper encima — no probado aún contra el padrón completo,
     // así que el margen es generoso a propósito.
@@ -332,7 +329,8 @@ class BiometricoImpl extends BaseApiRepository implements BiometricoRepository {
   );
 
   @override
-  Future<Uint8List> horarioVigentePorEmpleadoPdf() => DioClient.descargarReportePdf(
+  Future<Uint8List>
+  horarioVigentePorEmpleadoPdf() => DioClient.descargarReportePdf(
     endpoint: AppConstants.biometricoHorarioVigentePorEmpleadoPdf,
     // Sin body — "ahora mismo" no toma anio/mes.
     // Más liviano que reporteMensualResumenPdf: por empleado sólo lee sus
@@ -340,5 +338,28 @@ class BiometricoImpl extends BaseApiRepository implements BiometricoRepository {
     // mismo paralelismo acotado (3 hilos) en el backend, así que se deja el
     // mismo margen por las dudas.
     receiveTimeout: const Duration(seconds: 90),
+  );
+
+  @override
+  Future<Uint8List> reporteDetalladoRangoPdf({
+    required BigInt codEmpleado,
+    required int anioDesde,
+    required int mesDesde,
+    required int anioHasta,
+    required int mesHasta,
+  }) => DioClient.descargarReportePdf(
+    endpoint: AppConstants.biometricoReporteDetalladoRangoPdf,
+    data: {
+      'codEmpleado': codEmpleado.toInt(),
+      'anioDesde': anioDesde,
+      'mesDesde': mesDesde,
+      'anioHasta': anioHasta,
+      'mesHasta': mesHasta,
+    },
+    // Un empleado, N meses — cada mes pesa como reporteMensualPdf. El backend
+    // acota el rango a 100 meses (MAX_MESES_RANGO), así que el peor caso es
+    // comparable al de reporteMensualDetalladoTodosPdf (mismo orden de Jaspers
+    // a unir); mismo margen generoso.
+    receiveTimeout: const Duration(seconds: 180),
   );
 }

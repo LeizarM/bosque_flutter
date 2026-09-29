@@ -43,7 +43,7 @@ class TareasPorCargoNotifier extends StateNotifier<TareasPorCargoState> {
   final TarRuXCargoImpl _tarRuXCargoRepo;
 
   TareasPorCargoNotifier(this.codCargo, this._repo, this._tarRuXCargoRepo)
-      : super(const TareasPorCargoState()) {
+    : super(const TareasPorCargoState()) {
     Future.microtask(() => cargar());
   }
 
@@ -122,6 +122,69 @@ class TareasPorCargoNotifier extends StateNotifier<TareasPorCargoState> {
     }
   }
 
+  /// Engancha a ESTE cargo tareas que ya existen en el catálogo.
+  ///
+  /// Es la contraparte de [copiarACargos]: aquélla va de una tarea hacia
+  /// varios cargos, ésta de un cargo hacia varias tareas. Las dos terminan en
+  /// el mismo `p_abm_tac_TarRuXCargo ACCION='I'`.
+  ///
+  /// A diferencia de [copiarACargos], **no se corta en el primer error**. El
+  /// selector ya oculta las que el cargo tiene, así que un fallo aquí es un
+  /// caso de carrera — alguien más la asignó mientras el diálogo estaba
+  /// abierto — y no hay motivo para que eso impida agregar las otras cuatro.
+  /// Se cuenta lo que entró y se avisa lo que no.
+  Future<bool> asignarExistentes(
+    List<int> idTarRutis, {
+    DateTime? desde,
+  }) async {
+    state = state.copyWith(guardando: true);
+    var puestas = 0;
+    final fallidas = <String>[];
+
+    for (final idTarRuti in idTarRutis) {
+      try {
+        await _tarRuXCargoRepo.registrar(
+          TarRuXCargoEntity(
+            idTarXCargo: 0,
+            idTarRuti: idTarRuti,
+            codCargo: codCargo,
+            estado: 1,
+            // Cuando quien asigna eligió una fecha, manda ésa. Con [desde] en
+            // null el SP resuelve con CAST(GETDATE() AS DATE) — el reloj del
+            // SERVIDOR, no el del teléfono, que es lo correcto para el caso
+            // "hoy" cerca de medianoche.
+            fechaInicio: desde,
+            audUsuario: 0, // lo resuelve el backend desde el JWT
+          ),
+        );
+        puestas++;
+      } catch (e) {
+        fallidas.add('$idTarRuti');
+      }
+    }
+
+    await cargar();
+
+    if (fallidas.isEmpty) {
+      state = state.copyWith(
+        guardando: false,
+        mensajeExito:
+            puestas == 1
+                ? 'Tarea agregada al cargo.'
+                : '$puestas tareas agregadas al cargo.',
+      );
+      return true;
+    }
+
+    state = state.copyWith(
+      guardando: false,
+      mensajeError:
+          'Se agregaron $puestas de ${idTarRutis.length}. '
+          'No se pudo con: ${fallidas.join(', ')}.',
+    );
+    return puestas > 0;
+  }
+
   /// Toggle "Estado" inline — misma fila, solo cambia estado.
   Future<bool> toggleEstado(Map<String, dynamic> fila) async {
     state = state.copyWith(guardando: true);
@@ -134,16 +197,21 @@ class TareasPorCargoNotifier extends StateNotifier<TareasPorCargoState> {
           codCargo: (fila['codCargo'] as num?)?.toInt(),
           estado: estadoActual == 1 ? 0 : 1,
           codCargoSucursal: (fila['codCargoSucursal'] as num?)?.toInt(),
-          fechaInicio: fila['fechaInicio'] != null
-              ? DateTime.tryParse(fila['fechaInicio'].toString())
-              : null,
-          fechaFin: fila['fechaFin'] != null
-              ? DateTime.tryParse(fila['fechaFin'].toString())
-              : null,
+          fechaInicio:
+              fila['fechaInicio'] != null
+                  ? DateTime.tryParse(fila['fechaInicio'].toString())
+                  : null,
+          fechaFin:
+              fila['fechaFin'] != null
+                  ? DateTime.tryParse(fila['fechaFin'].toString())
+                  : null,
           audUsuario: 0,
         ),
       );
-      state = state.copyWith(guardando: false, mensajeExito: 'Estado actualizado.');
+      state = state.copyWith(
+        guardando: false,
+        mensajeExito: 'Estado actualizado.',
+      );
       await cargar();
       return true;
     } catch (e) {
@@ -158,9 +226,9 @@ final _tarRuXCargoRepoParaCopiarProvider = Provider((ref) => TarRuXCargoImpl());
 
 final tareasRutinariasPorCargoProvider = StateNotifierProvider.autoDispose
     .family<TareasPorCargoNotifier, TareasPorCargoState, int>((ref, codCargo) {
-  return TareasPorCargoNotifier(
-    codCargo,
-    ref.read(_tareasPorCargoRepoProvider),
-    ref.read(_tarRuXCargoRepoParaCopiarProvider),
-  );
-});
+      return TareasPorCargoNotifier(
+        codCargo,
+        ref.read(_tareasPorCargoRepoProvider),
+        ref.read(_tarRuXCargoRepoParaCopiarProvider),
+      );
+    });

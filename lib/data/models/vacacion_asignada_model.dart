@@ -11,29 +11,30 @@ import 'package:bosque_flutter/domain/entities/vacacion_asignada_entity.dart';
 /// los parámetros del SP, para que el mapeo se lea de un lado y del otro.
 ///
 /// **`audUsuarioI` no está y no es un olvido** (D4): la identidad la saca el
-/// backend del token. Mandarla desde acá sería un permiso que se puede escribir
+/// backend del token. Mandarla desde aquí sería un permiso que se puede escribir
 /// a mano. **`audFechaI` tampoco**: el SP la pisa siempre con `GETDATE()`,
 /// aunque declare el parámetro.
 class VacacionAsignadaModel {
   final VacacionAsignadaEntity _e;
   const VacacionAsignadaModel(this._e);
 
-  factory VacacionAsignadaModel.fromJson(Map<String, dynamic> json) =>
-      VacacionAsignadaModel(
-        VacacionAsignadaEntity(
-          codVacacionAsignada: prInt(json['codVacacionAsignada']),
-          codEmpleado: prInt(json['codEmpleado']),
-          codRelEmplEmpr: prInt(json['codRelEmplEmpr']),
-          // prNum y no prInt: la columna es `float` y hay filas con 14,5 y 12,5.
-          // Ver la nota de `permisos_rrhh_json.dart`.
-          diasAsignados: prNum(json['diasAsignados']),
-          diasAsignadosTxt: prStr(json['diasAsignadosTxt']),
-          motivo: prStr(json['motivo']),
-          fecha: prDate(json['fecha']),
-          datoEmpleado: prStr(json['datoEmpleado']),
-          datoRelacion: prStr(json['datoRelacion']),
-        ),
-      );
+  factory VacacionAsignadaModel.fromJson(
+    Map<String, dynamic> json,
+  ) => VacacionAsignadaModel(
+    VacacionAsignadaEntity(
+      codVacacionAsignada: prInt(json['codVacacionAsignada']),
+      codEmpleado: prInt(json['codEmpleado']),
+      codRelEmplEmpr: prInt(json['codRelEmplEmpr']),
+      // prNum y no prInt: la columna es `float` y hay filas con 14,5 y 12,5.
+      // Ver la nota de `permisos_rrhh_json.dart`.
+      diasAsignados: prNum(json['diasAsignados']),
+      diasAsignadosTxt: prStr(json['diasAsignadosTxt']),
+      motivo: prStr(json['motivo']),
+      fecha: prDate(json['fecha']),
+      datoEmpleado: prStr(json['datoEmpleado']),
+      datoRelacion: prStr(json['datoRelacion']),
+    ),
+  );
 
   /// El cuerpo de la escritura.
   ///

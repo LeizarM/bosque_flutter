@@ -15,17 +15,18 @@ class ResponsiveUtilsBosque {
   static bool isDesktop(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
     final screenHeight = MediaQuery.of(context).size.height;
-    
+
     final isLargeDisplay = screenWidth > 1500 && screenHeight > 1200;
-    return ResponsiveBreakpoints.of(context).largerOrEqualTo(DESKTOP) || isLargeDisplay;
+    return ResponsiveBreakpoints.of(context).largerOrEqualTo(DESKTOP) ||
+        isLargeDisplay;
   }
 
   /// Determina si el dispositivo es tablet
   static bool isTablet(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
-    
-    return ResponsiveBreakpoints.of(context).between(TABLET, DESKTOP) || 
-           (screenWidth > 750 && screenWidth < 1200);
+
+    return ResponsiveBreakpoints.of(context).between(TABLET, DESKTOP) ||
+        (screenWidth > 750 && screenWidth < 1200);
   }
 
   /// Determina si el dispositivo es móvil
@@ -37,11 +38,12 @@ class ResponsiveUtilsBosque {
   static double getHorizontalPadding(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
     final screenHeight = MediaQuery.of(context).size.height;
-    
+
     final isLargeDisplay = screenWidth > 1500 && screenHeight > 1200;
-    final isIpadPro = (screenWidth >= 1000 && screenWidth <= 1366) && 
-                       (screenHeight >= 900 && screenHeight <= 1366);
-    
+    final isIpadPro =
+        (screenWidth >= 1000 && screenWidth <= 1366) &&
+        (screenHeight >= 900 && screenHeight <= 1366);
+
     if (isLargeDisplay) return 24.0;
     if (isIpadPro) return 16.0;
     if (isDesktop(context)) return 32.0;
@@ -53,11 +55,12 @@ class ResponsiveUtilsBosque {
   static double getVerticalPadding(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
     final screenHeight = MediaQuery.of(context).size.height;
-    
+
     final isLargeDisplay = screenWidth > 1500 && screenHeight > 1200;
-    final isIpadPro = (screenWidth >= 1000 && screenWidth <= 1366) && 
-                       (screenHeight >= 900 && screenHeight <= 1366);
-    
+    final isIpadPro =
+        (screenWidth >= 1000 && screenWidth <= 1366) &&
+        (screenHeight >= 900 && screenHeight <= 1366);
+
     if (isLargeDisplay) return 16.0;
     if (isIpadPro) return 8.0;
     if (isDesktop(context)) return 24.0;
@@ -68,10 +71,10 @@ class ResponsiveUtilsBosque {
   /// Obtiene las dimensiones del grid para diferentes resoluciones
   static GridDimensions getGridDimensions(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
-    
+
     int crossAxisCount = 3; // Por defecto 3 columnas para escritorio
     double childAspectRatio = 1.8; // Proporción para 3 columnas
-    
+
     if (screenWidth > 1800) {
       crossAxisCount = 4; // 4 columnas para pantallas muy anchas
       childAspectRatio = 2.0;
@@ -79,7 +82,7 @@ class ResponsiveUtilsBosque {
       crossAxisCount = 2; // 2 columnas para escritorio más pequeño
       childAspectRatio = 1.6;
     }
-    
+
     return GridDimensions(
       crossAxisCount: crossAxisCount,
       childAspectRatio: childAspectRatio,
@@ -89,7 +92,7 @@ class ResponsiveUtilsBosque {
   }
 
   /// Obtiene el estilo de texto apropiado para títulos según el dispositivo
-   static TextStyle? getTitleStyle(BuildContext context) {
+  static TextStyle? getTitleStyle(BuildContext context) {
     return Theme.of(context).textTheme.headlineMedium?.copyWith(
       fontWeight: FontWeight.bold,
       fontSize: getResponsiveValue<double>(
@@ -99,7 +102,7 @@ class ResponsiveUtilsBosque {
         desktop: 28.0,
       ),
     );
-  } 
+  }
 
   /// Obtiene un valor responsive basado en el tipo de dispositivo
   static T getResponsiveValue<T>({
@@ -114,7 +117,6 @@ class ResponsiveUtilsBosque {
     if (isDesktop(context) && desktop != null) return desktop;
     return defaultValue;
   }
-  
 }
 
 /// Clase para almacenar las dimensiones del grid
@@ -123,7 +125,7 @@ class GridDimensions {
   final double childAspectRatio;
   final double crossAxisSpacing;
   final double mainAxisSpacing;
-  
+
   GridDimensions({
     required this.crossAxisCount,
     required this.childAspectRatio,

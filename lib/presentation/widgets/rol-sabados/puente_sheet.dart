@@ -107,9 +107,21 @@ class _PuenteSheetState extends ConsumerState<_PuenteSheet> {
             const SizedBox(height: Esp.l),
             Row(
               children: [
-                Expanded(child: _Hora(controlador: _desde, etiqueta: 'Desde', alSalir: _revisarHoras)),
+                Expanded(
+                  child: _Hora(
+                    controlador: _desde,
+                    etiqueta: 'Desde',
+                    alSalir: _revisarHoras,
+                  ),
+                ),
                 const SizedBox(width: Esp.m),
-                Expanded(child: _Hora(controlador: _hasta, etiqueta: 'Hasta', alSalir: _revisarHoras)),
+                Expanded(
+                  child: _Hora(
+                    controlador: _hasta,
+                    etiqueta: 'Hasta',
+                    alSalir: _revisarHoras,
+                  ),
+                ),
               ],
             ),
             // El detalle que nadie adivina mirando la pantalla, y que decide
@@ -166,7 +178,11 @@ class _PuenteSheetState extends ConsumerState<_PuenteSheet> {
                 // Se apaga si no hay nadie a quien darle de alta: apretarlo
                 // devolvería el error del servidor y no habría hecho nada.
                 onPressed:
-                    (_guardando || (previa.valueOrNull?.where((d) => d.entra).isEmpty ?? true))
+                    (_guardando ||
+                            (previa.valueOrNull
+                                    ?.where((d) => d.entra)
+                                    .isEmpty ??
+                                true))
                         ? null
                         : _confirmar,
                 icon:
@@ -187,7 +203,8 @@ class _PuenteSheetState extends ConsumerState<_PuenteSheet> {
   }
 
   Future<void> _confirmar() async {
-    final lista = ref.read(previaPuenteProvider(_clave)).valueOrNull ?? const [];
+    final lista =
+        ref.read(previaPuenteProvider(_clave)).valueOrNull ?? const [];
     final entran = lista.where((d) => d.entra).toList();
     final dias = entran.fold<double>(0, (a, d) => a + d.dias);
 
@@ -205,7 +222,7 @@ class _PuenteSheetState extends ConsumerState<_PuenteSheet> {
               '${fechaCorta(widget.sabado.fecha)}, por '
               '${_dias(dias)} días en total.\n\n'
               'A cada persona se le descuenta de su saldo. Esto no se deshace '
-              'desde acá: para revertirlo hay que borrar los permisos en RR.HH.',
+              'desde aquí: para revertirlo hay que borrar los permisos en RR.HH.',
             ),
             actions: [
               TextButton(
@@ -249,8 +266,10 @@ class _PuenteSheetState extends ConsumerState<_PuenteSheet> {
 /// Los días con hasta cuatro decimales, sin ceros de relleno. Un permiso de
 /// sábado puede valer 0.4375, y redondearlo a 0.44 en la confirmación mostraría
 /// un número que después no coincide con el que quedó guardado.
-String _dias(double d) =>
-    d.toStringAsFixed(4).replaceFirst(RegExp(r'0+$'), '').replaceFirst(RegExp(r'\.$'), '');
+String _dias(double d) => d
+    .toStringAsFixed(4)
+    .replaceFirst(RegExp(r'0+$'), '')
+    .replaceFirst(RegExp(r'\.$'), '');
 
 class _Hora extends StatelessWidget {
   const _Hora({
@@ -296,7 +315,7 @@ class _Resumen extends StatelessWidget {
     }
 
     // El servidor manda el motivo como una fila, no como una excepción: leerlo
-    // acá es lo que hace que en pantalla salga «falta tal dato» y no un error
+    // aquí es lo que hace que en pantalla salga «falta tal dato» y no un error
     // de driver. Ver `PuenteVacacionEntity.esError`.
     if (lista.first.esError) return _Aviso(lista.first.detalle);
 
@@ -356,7 +375,9 @@ class _Resumen extends StatelessWidget {
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style:
-                              d.entra ? null : TextStyle(color: context.cs.error),
+                              d.entra
+                                  ? null
+                                  : TextStyle(color: context.cs.error),
                         ),
                       ),
                       Text(

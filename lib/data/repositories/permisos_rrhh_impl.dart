@@ -97,7 +97,7 @@ class PermisosRrhhImpl extends BaseApiRepository
       // justamente el que nadie puede adivinar. Sin esto, el único caso donde el
       // sistema sabe exactamente qué pasa es el único donde no lo dice.
       //
-      // Se traduce acá y NO se toca `BaseApiRepository`: ese helper lo comparten
+      // Se traduce aquí y NO se toca `BaseApiRepository`: ese helper lo comparten
       // unos 40 llamadores en producción. `handleDioError` sí lee
       // `data['message']` para cualquier status.
       throw Exception(
@@ -159,7 +159,7 @@ class PermisosRrhhImpl extends BaseApiRepository
       return r.map((m) => m.toEntity()).toList();
     } on DioException catch (e) {
       // Mismo motivo que en `getFichaSaldo`: fuera del 400, `postAndReturnList`
-      // hace `rethrow` de la DioException cruda. Acá el 403 —el ACL de la ABM,
+      // hace `rethrow` de la DioException cruda. Aquí el 403 —el ACL de la ABM,
       // que hoy sólo tienen los administradores— es el caso más probable de
       // todos, y es el que hay que poder leer.
       throw Exception(
@@ -178,7 +178,7 @@ class PermisosRrhhImpl extends BaseApiRepository
         endpoint: AppConstants.permRrhhAbonoHistorial,
         data: {
           'codEmpleado': codEmpleado,
-          // Null limpio y no 0: `null` es «la relación vigente, resolvela vos»,
+          // Null limpio y no 0: `null` es «la relación vigente, resuélvela tú»,
           // que es lo único que la pantalla sabe antes de tener la ficha.
           'codRelEmplEmpr': codRelEmplEmpr == 0 ? null : codRelEmplEmpr,
         },
@@ -202,7 +202,7 @@ class PermisosRrhhImpl extends BaseApiRepository
   // controller.
   //
   // **Ninguna usa `postAndReturnId`, y no es un capricho.** Aquel helper hace
-  // `BigInt.from(data)` y acá `data` es un OBJETO —la fila releída—, así que
+  // `BigInt.from(data)` y aquí `data` es un OBJETO —la fila releída—, así que
   // reventaba con «type '_Map' is not a subtype of type 'num'». Además traduce
   // cualquier `DioException` a un `Exception` con el mensaje adentro y ahí se
   // pierde el **status**, que es justo lo que hay que poder distinguir: el 400
@@ -218,7 +218,10 @@ class PermisosRrhhImpl extends BaseApiRepository
     bool confirmado = false,
   }) => _filaEscrita(
     endpoint: AppConstants.permRrhhVacAsigRegistrar,
-    data: {...VacacionAsignadaModel(vacacion).toJson(), 'confirmado': confirmado},
+    data: {
+      ...VacacionAsignadaModel(vacacion).toJson(),
+      'confirmado': confirmado,
+    },
     fromJson: (json) => VacacionAsignadaModel.fromJson(json).toEntity(),
     siNoVino: vacacion,
     errorMessage: 'Error al registrar la vacación asignada',
@@ -454,7 +457,7 @@ class PermisosRrhhImpl extends BaseApiRepository
     } on DioException catch (e) {
       // Mismo motivo que en `getFichaSaldo`: fuera del 400, `postAndReturnList`
       // hace `rethrow` de la DioException cruda y la pantalla mostraría
-      // «DioException [bad response]». Acá el 403 es el caso más probable.
+      // «DioException [bad response]». Aquí el 403 es el caso más probable.
       throw Exception(
         DioClient.handleDioError(e, 'Error al obtener la nómina de permisos'),
       );
@@ -499,7 +502,7 @@ class PermisosRrhhImpl extends BaseApiRepository
     required DateTime hasta,
     String tipoPermiso = '',
   }) async {
-    // **Objeto y no lista**, al revés que las dos simulaciones colectivas: acá
+    // **Objeto y no lista**, al revés que las dos simulaciones colectivas: aquí
     // la persona es una sola. Con `postAndReturnList` esto devolvería lista
     // vacía en silencio y el modal mostraría 0 días sobre un rango que sí los
     // tiene.
@@ -599,7 +602,7 @@ class PermisosRrhhImpl extends BaseApiRepository
   /// **Las fechas viajan como `desde` / `hasta` / `fecRango`**, que son los
   /// nombres de los parámetros del SP y los campos que tiene que declarar
   /// `PermisoRrhhFiltroDto`. Los rótulos de la pantalla dicen otra cosa —«Fecha
-  /// Inicio», «Fecha Fin», «Fecha Rango»— y por eso los parámetros de acá se
+  /// Inicio», «Fecha Fin», «Fecha Rango»— y por eso los parámetros de aquí se
   /// llaman por lo que significan; lo que no se puede es mandar el rótulo.
   ///
   /// **`tipoPermiso` y `fecRango` son los dos campos que el DTO de lecturas NO
@@ -716,7 +719,7 @@ class PermisosRrhhImpl extends BaseApiRepository
   /// El cuerpo del historial de vacación asignada.
   ///
   /// **La fecha de corte viaja como `fecha`, no como `hasta`**, aunque el
-  /// parámetro de acá se llame por lo que significa. El controller la lee de
+  /// parámetro de aquí se llame por lo que significa. El controller la lee de
   /// `PermisoRrhhEscrituraDto.fecha`
   /// (`vacDao.historial(codEmpleado, codRelEmplEmpr, f.getFecha())`), y ese
   /// mismo DTO **también declara un `hasta`** —el del rango de la vacación
@@ -733,10 +736,10 @@ class PermisosRrhhImpl extends BaseApiRepository
     DateTime? hasta,
   ) => {
     'codEmpleado': codEmpleado,
-    // 0 = «la relación vigente, resolvela vos». El SP filtra con
+    // 0 = «la relación vigente, resuélvela tú». El SP filtra con
     // `(@x IS NULL OR @x = col)`, así que un 0 de más vaciaría la lista.
     'codRelEmplEmpr': codRelEmplEmpr == 0 ? null : codRelEmplEmpr,
-    // Null = hoy. El relleno de aniversarios sintéticos corre hasta acá.
+    // Null = hoy. El relleno de aniversarios sintéticos corre hasta aquí.
     'fecha': hasta == null ? null : prDia(hasta),
   };
 
@@ -793,7 +796,7 @@ class PermisosRrhhImpl extends BaseApiRepository
   ///    200 en la edición. `postAndReturnId` haría `BigInt.from` sobre un Map.
   /// 2. **El status hay que poder leerlo.** Los helpers traducen la
   ///    `DioException` a un `Exception` con el texto adentro y ahí se pierde;
-  ///    acá el **400 con `confirmable: true`** es una pregunta que se puede
+  ///    aquí el **400 con `confirmable: true`** es una pregunta que se puede
   ///    contestar insistiendo, y el 409 es un doble toque que no.
   ///
   /// [siNoVino] es lo que se devuelve si el servidor contestó sin cuerpo (204,
@@ -824,7 +827,7 @@ class PermisosRrhhImpl extends BaseApiRepository
   /// **No se usa [_mensaje] para esto**: aquel va por
   /// `postAndReturnFullResponse`, que traduce la `DioException` a un String y
   /// ahí se pierde el status. En una pantalla que paga días, perder la
-  /// diferencia entre «esto es raro, ¿seguís?» y «esto ya se guardó hace diez
+  /// diferencia entre «esto es raro, ¿sigues?» y «esto ya se guardó hace diez
   /// segundos» es perder justamente la protección.
   Future<String> _mensajeConfirmable(
     String endpoint,

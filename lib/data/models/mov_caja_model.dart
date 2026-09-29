@@ -77,9 +77,8 @@ class MovCajaModel {
       codSucursal: json["codSucursal"],
       montoBs: json["montoBs"],
       audUsuario: json["audUsuario"] ?? 0,
-      audFecha: json["audFecha"] != null
-          ? DateTime.tryParse(json["audFecha"])
-          : null,
+      audFecha:
+          json["audFecha"] != null ? DateTime.tryParse(json["audFecha"]) : null,
     );
   }
 

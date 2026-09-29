@@ -58,6 +58,7 @@ class TigoEjecutadoEntity {
       'listaCodEmpleado': listaCodEmpleado,
     };
   }
+
   //meoto copywith
   TigoEjecutadoEntity copyWith({
     int? codCuenta,
@@ -89,7 +90,8 @@ class TigoEjecutadoEntity {
       periodoCobrado: periodoCobrado ?? this.periodoCobrado,
       estado: estado ?? this.estado,
       totalCobradoXCuenta: totalCobradoXCuenta ?? this.totalCobradoXCuenta,
-      montoCubiertoXEmpresa: montoCubiertoXEmpresa ?? this.montoCubiertoXEmpresa,
+      montoCubiertoXEmpresa:
+          montoCubiertoXEmpresa ?? this.montoCubiertoXEmpresa,
       montoEmpleado: montoEmpleado ?? this.montoEmpleado,
       audUsuarioI: audUsuarioI ?? this.audUsuarioI,
       fila: fila ?? this.fila,

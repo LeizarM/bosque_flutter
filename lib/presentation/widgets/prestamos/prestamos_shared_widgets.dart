@@ -217,12 +217,16 @@ class PrestamoEmpleadoSeleccionadoTile extends StatelessWidget {
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
                 decoration: BoxDecoration(
-                  color: asig.tipo == 'A' ? cs.primaryContainer : cs.tertiaryContainer,
+                  color:
+                      asig.tipo == 'A'
+                          ? cs.primaryContainer
+                          : cs.tertiaryContainer,
                   borderRadius: BorderRadius.circular(6),
                   border: Border.all(
-                    color: asig.tipo == 'A'
-                        ? cs.primary.withValues(alpha: 0.4)
-                        : cs.tertiary.withValues(alpha: 0.4),
+                    color:
+                        asig.tipo == 'A'
+                            ? cs.primary.withValues(alpha: 0.4)
+                            : cs.tertiary.withValues(alpha: 0.4),
                   ),
                 ),
                 child: Text(
@@ -230,7 +234,10 @@ class PrestamoEmpleadoSeleccionadoTile extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 9.5,
                     fontWeight: FontWeight.w800,
-                    color: asig.tipo == 'A' ? cs.onPrimaryContainer : cs.onTertiaryContainer,
+                    color:
+                        asig.tipo == 'A'
+                            ? cs.onPrimaryContainer
+                            : cs.onTertiaryContainer,
                   ),
                 ),
               ),
@@ -545,7 +552,9 @@ class PrestamoDialogHeader extends StatelessWidget {
             onPressed: () => Navigator.of(ctx).pop(),
             icon: Icon(Icons.close_rounded, color: cs.onSurfaceVariant),
             style: IconButton.styleFrom(
-              backgroundColor: cs.surfaceContainerHighest.withValues(alpha: 0.4),
+              backgroundColor: cs.surfaceContainerHighest.withValues(
+                alpha: 0.4,
+              ),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
               ),
@@ -585,7 +594,9 @@ class PrestamoMontoProgress extends StatelessWidget {
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            (excede ? cs.errorContainer : cs.primaryContainer).withValues(alpha: 0.5),
+            (excede ? cs.errorContainer : cs.primaryContainer).withValues(
+              alpha: 0.5,
+            ),
             cs.primaryContainer.withValues(alpha: 0.08),
           ],
           begin: Alignment.topLeft,
@@ -772,9 +783,7 @@ class EmpleadosSeleccionHeader extends StatelessWidget {
                   (_, val, __) => SearchBar(
                     controller: searchCtrl,
                     hintText:
-                        isSwapMode
-                            ? 'Buscar reemplazo…'
-                            : 'Buscar empleado…',
+                        isSwapMode ? 'Buscar reemplazo…' : 'Buscar empleado…',
                     leading: const Icon(Icons.search, size: 18),
                     trailing: [
                       if (val.text.isNotEmpty)
@@ -824,7 +833,9 @@ class EmpleadosSeleccionHeader extends StatelessWidget {
                 )
                 : Tooltip(
                   message:
-                      isAllSelected ? 'Deseleccionar todos' : 'Seleccionar todos',
+                      isAllSelected
+                          ? 'Deseleccionar todos'
+                          : 'Seleccionar todos',
                   child: InkWell(
                     onTap: onToggleAll,
                     borderRadius: BorderRadius.circular(11),
@@ -851,9 +862,7 @@ class EmpleadosSeleccionHeader extends StatelessWidget {
                             : Icons.select_all_rounded,
                         size: 17,
                         color:
-                            isAllSelected
-                                ? cs.onPrimary
-                                : cs.onSurfaceVariant,
+                            isAllSelected ? cs.onPrimary : cs.onSurfaceVariant,
                       ),
                     ),
                   ),
@@ -864,4 +873,3 @@ class EmpleadosSeleccionHeader extends StatelessWidget {
     );
   }
 }
-

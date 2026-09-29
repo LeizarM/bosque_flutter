@@ -1,4 +1,3 @@
-
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -34,6 +33,7 @@ class SidebarVisibilityNotifier extends StateNotifier<bool> {
 }
 
 // Provider para la visibilidad del sidebar
-final sidebarVisibilityProvider = StateNotifierProvider<SidebarVisibilityNotifier, bool>((ref) {
-  return SidebarVisibilityNotifier();
-});
+final sidebarVisibilityProvider =
+    StateNotifierProvider<SidebarVisibilityNotifier, bool>((ref) {
+      return SidebarVisibilityNotifier();
+    });

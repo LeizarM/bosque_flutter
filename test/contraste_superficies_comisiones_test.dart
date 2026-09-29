@@ -30,7 +30,7 @@ void main() {
     return (math.max(la, lb) + 0.05) / (math.min(la, lb) + 0.05);
   }
 
-  /// Umbrales deliberadamente bajos: no se persigue legibilidad de texto acá,
+  /// Umbrales deliberadamente bajos: no se persigue legibilidad de texto aquí,
   /// sino que las capas **se distingan como capas**. Los valores medidos con la
   /// paleta actual son 1,171 y 1,283 en claro, 1,124 y 1,319 en oscuro; los
   /// pisos dejan margen para un ajuste fino de la paleta pero no para volver al
@@ -38,7 +38,7 @@ void main() {
   const minPaginaTarjeta = 1.10;
   const minTarjetaEncabezado = 1.20;
 
-  // Texto sobre la tarjeta: acá sí manda WCAG AA para texto chico.
+  // Texto sobre la tarjeta: aquí sí manda WCAG AA para texto chico.
   const minTexto = 4.5;
 
   /// Monta el tema del módulo. `temaModulo` toma un BuildContext porque lee el

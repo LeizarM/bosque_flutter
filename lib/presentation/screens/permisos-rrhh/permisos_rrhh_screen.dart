@@ -108,7 +108,7 @@ class PermisosRrhhScreen extends ConsumerWidget {
                   child: IconButton(
                     tooltip: 'Calculadora de antigüedad',
                     icon: const Icon(Icons.calculate_outlined),
-                    // El índice sale de `PestanasDelEmpleado` y no escrito acá:
+                    // El índice sale de `PestanasDelEmpleado` y no escrito aquí:
                     // es posicional, así que cualquier pestaña que entre o salga
                     // del medio lo mueve. Pasó cuando entró «Permisos» —la
                     // calculadora quedó en 5— y volvería a pasar ahora que
@@ -126,7 +126,7 @@ class PermisosRrhhScreen extends ConsumerWidget {
               //
               // **No es una limitación de ancho, es de seguridad.** Marcar
               // gente en una lista táctil de 360 px se dispara de un roce, y
-              // acá cada roce de más es una persona cobrando días que no le
+              // aquí cada roce de más es una persona cobrando días que no le
               // tocaban. Escribe N filas de una sola vez y no hay «deshacer»:
               // revertir es borrar N filas a mano.
               //
@@ -233,7 +233,7 @@ class PermisosRrhhScreen extends ConsumerWidget {
     );
   }
 
-  // El `_recargar` que vivía acá se mudó a `PermisosRrhhAcciones.refrescar`,
+  // El `_recargar` que vivía aquí se mudó a `PermisosRrhhAcciones.refrescar`,
   // como decía su propio comentario: ahora invalida lo mismo que toda escritura
   // del módulo, así que el botón «Actualizar» y guardar una fila no pueden
   // dejar la pantalla en dos estados distintos.

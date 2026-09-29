@@ -7,12 +7,7 @@ import 'package:bosque_flutter/domain/entities/tipo_solicitud_entity.dart';
 import 'package:bosque_flutter/data/repositories/entregas_impl.dart';
 import 'package:bosque_flutter/domain/entities/entregas_entity.dart';
 
-enum FetchStatus {
-  initial,
-  loading,
-  success,
-  error,
-}
+enum FetchStatus { initial, loading, success, error }
 
 // Provider for the PrestamoVehiculos implementation
 final prestamoVehiculosProvider = Provider<PrestamoVehiculosImpl>((ref) {
@@ -20,13 +15,17 @@ final prestamoVehiculosProvider = Provider<PrestamoVehiculosImpl>((ref) {
 });
 
 // Provider for the list of vehicle types (asynchronous)
-final tipoSolicitudesProvider = FutureProvider<List<TipoSolicitudEntity>>((ref) async {
+final tipoSolicitudesProvider = FutureProvider<List<TipoSolicitudEntity>>((
+  ref,
+) async {
   final repository = ref.watch(prestamoVehiculosProvider);
   return await repository.lstTipoSolicitudes();
 });
 
 // Provider for the list of available cars (asynchronous)
-final cochesDisponiblesProvider = FutureProvider<List<SolicitudChoferEntity>>((ref) async {
+final cochesDisponiblesProvider = FutureProvider<List<SolicitudChoferEntity>>((
+  ref,
+) async {
   final repository = ref.watch(prestamoVehiculosProvider);
   return await repository.obtainCoches();
 });
@@ -60,10 +59,8 @@ class SolicitudesState {
     );
   }
 
-  factory SolicitudesState.initial() => SolicitudesState(
-    status: FetchStatus.initial,
-    solicitudes: [],
-  );
+  factory SolicitudesState.initial() =>
+      SolicitudesState(status: FetchStatus.initial, solicitudes: []);
 }
 
 // Notifier para manejar las solicitudes del empleado
@@ -74,10 +71,10 @@ class SolicitudesNotifier extends StateNotifier<SolicitudesState> {
 
   Future<void> cargarSolicitudesEmpleado(int codEmpleado) async {
     state = state.copyWith(status: FetchStatus.loading);
-    
+
     try {
       final solicitudes = await _repository.obtainSolicitudes(codEmpleado);
-      
+
       state = state.copyWith(
         status: FetchStatus.success,
         solicitudes: solicitudes,
@@ -86,8 +83,8 @@ class SolicitudesNotifier extends StateNotifier<SolicitudesState> {
     } catch (e) {
       // Verificar si es un error de "no hay datos" vs un error real
       final errorMessage = e.toString().toLowerCase();
-      if (errorMessage.contains('no hay') || 
-          errorMessage.contains('empty') || 
+      if (errorMessage.contains('no hay') ||
+          errorMessage.contains('empty') ||
           errorMessage.contains('sin datos') ||
           errorMessage.contains('no encontrado') ||
           errorMessage.contains('no solicitudes') ||
@@ -110,21 +107,24 @@ class SolicitudesNotifier extends StateNotifier<SolicitudesState> {
 }
 
 // Provider para las solicitudes del empleado con estado de carga
-final solicitudesNotifierProvider = StateNotifierProvider<SolicitudesNotifier, SolicitudesState>((ref) {
-  final repository = ref.watch(prestamoVehiculosProvider);
-  return SolicitudesNotifier(repository);
-});
+final solicitudesNotifierProvider =
+    StateNotifierProvider<SolicitudesNotifier, SolicitudesState>((ref) {
+      final repository = ref.watch(prestamoVehiculosProvider);
+      return SolicitudesNotifier(repository);
+    });
 
 // Provider for registering a new vehicle request
-final registroSolicitudProvider = StateNotifierProvider<RegistroSolicitudNotifier, AsyncValue<bool>>((ref) {
-  final repository = ref.watch(prestamoVehiculosProvider);
-  return RegistroSolicitudNotifier(repository);
-});
+final registroSolicitudProvider =
+    StateNotifierProvider<RegistroSolicitudNotifier, AsyncValue<bool>>((ref) {
+      final repository = ref.watch(prestamoVehiculosProvider);
+      return RegistroSolicitudNotifier(repository);
+    });
 
 class RegistroSolicitudNotifier extends StateNotifier<AsyncValue<bool>> {
   final PrestamoVehiculosImpl _repository;
 
-  RegistroSolicitudNotifier(this._repository) : super(const AsyncValue.data(false));
+  RegistroSolicitudNotifier(this._repository)
+    : super(const AsyncValue.data(false));
 
   Future<bool> registrarSolicitud(SolicitudChoferEntity solicitud) async {
     state = const AsyncValue.loading();
@@ -133,7 +133,8 @@ class RegistroSolicitudNotifier extends StateNotifier<AsyncValue<bool>> {
       // We use DateTime.now() as a placeholder, but it will be ignored by backend
       final solicitudParaBackend = SolicitudChoferEntity(
         idSolicitud: solicitud.idSolicitud,
-        fechaSolicitud: DateTime.now(), // This will be ignored/calculated by backend
+        fechaSolicitud:
+            DateTime.now(), // This will be ignored/calculated by backend
         motivo: solicitud.motivo,
         codEmpSoli: solicitud.codEmpSoli,
         cargo: solicitud.cargo,
@@ -147,8 +148,10 @@ class RegistroSolicitudNotifier extends StateNotifier<AsyncValue<bool>> {
         codSucursal: solicitud.codSucursal,
         coche: solicitud.coche,
       );
-      
-      final result = await _repository.registerSolicitudChofer(solicitudParaBackend);
+
+      final result = await _repository.registerSolicitudChofer(
+        solicitudParaBackend,
+      );
       state = AsyncValue.data(result);
       return result;
     } catch (e, stack) {
@@ -199,19 +202,26 @@ class SolicitudesPrestamosState {
 }
 
 // Notifier para manejar las solicitudes de préstamos
-class SolicitudesPrestamosNotifier extends StateNotifier<SolicitudesPrestamosState> {
+class SolicitudesPrestamosNotifier
+    extends StateNotifier<SolicitudesPrestamosState> {
   final PrestamoVehiculosImpl _repository;
   final EntregasImpl _entregasRepository;
 
-  SolicitudesPrestamosNotifier(this._repository, this._entregasRepository) 
-      : super(SolicitudesPrestamosState.initial());
+  SolicitudesPrestamosNotifier(this._repository, this._entregasRepository)
+    : super(SolicitudesPrestamosState.initial());
 
-  Future<void> cargarSolicitudesPrestamos(int codSucursal, int codEmpEntregadoPor) async {
+  Future<void> cargarSolicitudesPrestamos(
+    int codSucursal,
+    int codEmpEntregadoPor,
+  ) async {
     state = state.copyWith(status: FetchStatus.loading);
-    
+
     try {
-      final solicitudes = await _repository.lstSolicitudesPretamos(codSucursal, codEmpEntregadoPor);
-      
+      final solicitudes = await _repository.lstSolicitudesPretamos(
+        codSucursal,
+        codEmpEntregadoPor,
+      );
+
       state = state.copyWith(
         status: FetchStatus.success,
         solicitudesPrestamos: solicitudes,
@@ -220,8 +230,8 @@ class SolicitudesPrestamosNotifier extends StateNotifier<SolicitudesPrestamosSta
     } catch (e) {
       // Verificar si es un error de "no hay datos" vs un error real
       final errorMessage = e.toString().toLowerCase();
-      if (errorMessage.contains('no hay') || 
-          errorMessage.contains('empty') || 
+      if (errorMessage.contains('no hay') ||
+          errorMessage.contains('empty') ||
           errorMessage.contains('sin datos') ||
           errorMessage.contains('no encontrado')) {
         // Tratar como éxito con lista vacía
@@ -242,10 +252,10 @@ class SolicitudesPrestamosNotifier extends StateNotifier<SolicitudesPrestamosSta
 
   Future<void> cargarChoferes() async {
     state = state.copyWith(choferesStatus: FetchStatus.loading);
-    
+
     try {
       final choferes = await _entregasRepository.getChoferes();
-      
+
       state = state.copyWith(
         choferesStatus: FetchStatus.success,
         choferes: choferes,
@@ -259,7 +269,9 @@ class SolicitudesPrestamosNotifier extends StateNotifier<SolicitudesPrestamosSta
     }
   }
 
-  Future<bool> registrarEntregaPrestamo(Map<String, dynamic> datosEntrega) async {
+  Future<bool> registrarEntregaPrestamo(
+    Map<String, dynamic> datosEntrega,
+  ) async {
     try {
       // Crear la entity desde los datos del diálogo
       final prestamoEntity = PrestamoChoferEntity(
@@ -267,13 +279,17 @@ class SolicitudesPrestamosNotifier extends StateNotifier<SolicitudesPrestamosSta
         idCoche: datosEntrega["idCoche"] ?? 0,
         idSolicitud: datosEntrega["idSolicitud"] ?? 0,
         codSucursal: datosEntrega["codSucursal"] ?? 0,
-        fechaEntrega: DateTime.now(), // Placeholder - será ignorado por el backend
+        fechaEntrega:
+            DateTime.now(), // Placeholder - será ignorado por el backend
         codEmpChoferSolicitado: datosEntrega["codEmpChoferSolicitado"] ?? 0,
         codEmpEntregadoPor: datosEntrega["codEmpEntregadoPor"] ?? 0,
-        kilometrajeEntrega: datosEntrega["kilometrajeEntrega"]?.toDouble() ?? 0.0,
-        kilometrajeRecepcion: datosEntrega["kilometrajeRecepcion"]?.toDouble() ?? 0.0,
+        kilometrajeEntrega:
+            datosEntrega["kilometrajeEntrega"]?.toDouble() ?? 0.0,
+        kilometrajeRecepcion:
+            datosEntrega["kilometrajeRecepcion"]?.toDouble() ?? 0.0,
         nivelCombustibleEntrega: datosEntrega["nivelCombustibleEntrega"] ?? 0,
-        nivelCombustibleRecepcion: datosEntrega["nivelCombustibleRecepcion"] ?? 0,
+        nivelCombustibleRecepcion:
+            datosEntrega["nivelCombustibleRecepcion"] ?? 0,
         estadoLateralesEntrega: 0, // Será calculado por el backend
         estadoInteriorEntrega: 0,
         estadoDelanteraEntrega: 0,
@@ -293,9 +309,12 @@ class SolicitudesPrestamosNotifier extends StateNotifier<SolicitudesPrestamosSta
         estadoDisponibilidad: '',
         requiereChofer: 0,
         // Enviar los campos Aux con los estados como string para que el backend los procese
-        estadoLateralesEntregaAux: datosEntrega["estadoLateralesEntregaAux"] ?? '',
-        estadoInteriorEntregaAux: datosEntrega["estadoInteriorEntregaAux"] ?? '',
-        estadoDelanteraEntregaAux: datosEntrega["estadoDelanteraEntregaAux"] ?? '',
+        estadoLateralesEntregaAux:
+            datosEntrega["estadoLateralesEntregaAux"] ?? '',
+        estadoInteriorEntregaAux:
+            datosEntrega["estadoInteriorEntregaAux"] ?? '',
+        estadoDelanteraEntregaAux:
+            datosEntrega["estadoDelanteraEntregaAux"] ?? '',
         estadoTraseraEntregaAux: datosEntrega["estadoTraseraEntregaAux"] ?? '',
         estadoCapoteEntregaAux: datosEntrega["estadoCapoteEntregaAux"] ?? '',
         estadoLateralRecepcionAux: '',
@@ -307,21 +326,21 @@ class SolicitudesPrestamosNotifier extends StateNotifier<SolicitudesPrestamosSta
 
       // Registrar la entrega usando el método registerPrestamo del impl
       final result = await _repository.registerPrestamo(prestamoEntity);
-      
+
       if (result) {
         return true;
       }
-      
+
       return false;
     } catch (e) {
-      state = state.copyWith(
-        errorMessage: e.toString(),
-      );
+      state = state.copyWith(errorMessage: e.toString());
       return false;
     }
   }
 
-  Future<bool> registrarRecepcionPrestamo(Map<String, dynamic> datosRecepcion) async {
+  Future<bool> registrarRecepcionPrestamo(
+    Map<String, dynamic> datosRecepcion,
+  ) async {
     try {
       // Crear la entity optimizada para recepción usando solo los campos necesarios
       final prestamoEntity = PrestamoChoferEntity(
@@ -329,13 +348,16 @@ class SolicitudesPrestamosNotifier extends StateNotifier<SolicitudesPrestamosSta
         idCoche: 0, // No necesario para recepción
         idSolicitud: 0, // No necesario para recepción
         codSucursal: 0, // No necesario para recepción
-        fechaEntrega: DateTime.now(), // Placeholder - será ignorado por el backend
+        fechaEntrega:
+            DateTime.now(), // Placeholder - será ignorado por el backend
         codEmpChoferSolicitado: 0, // No necesario para recepción
         codEmpEntregadoPor: 0, // No necesario para recepción
         kilometrajeEntrega: 0.0, // No necesario para recepción
-        kilometrajeRecepcion: datosRecepcion["kilometrajeRecepcion"]?.toDouble() ?? 0.0,
+        kilometrajeRecepcion:
+            datosRecepcion["kilometrajeRecepcion"]?.toDouble() ?? 0.0,
         nivelCombustibleEntrega: 0, // No necesario para recepción
-        nivelCombustibleRecepcion: datosRecepcion["nivelCombustibleRecepcion"] ?? 0,
+        nivelCombustibleRecepcion:
+            datosRecepcion["nivelCombustibleRecepcion"] ?? 0,
         estadoLateralesEntrega: 0, // No necesario para recepción
         estadoInteriorEntrega: 0,
         estadoDelanteraEntrega: 0,
@@ -361,25 +383,28 @@ class SolicitudesPrestamosNotifier extends StateNotifier<SolicitudesPrestamosSta
         estadoTraseraEntregaAux: '',
         estadoCapoteEntregaAux: '',
         // Usar los campos Aux correctos para enviar los estados de recepción como string
-        estadoLateralRecepcionAux: datosRecepcion["estadoLateralRecepcionAux"] ?? '',
-        estadoInteriorRecepcionAux: datosRecepcion["estadoInteriorRecepcionAux"] ?? '',
-        estadoDelanteraRecepcionAux: datosRecepcion["estadoDelanteraRecepcionAux"] ?? '',
-        estadoTraseraRecepcionAux: datosRecepcion["estadoTraseraRecepcionAux"] ?? '',
-        estadoCapoteRecepcionAux: datosRecepcion["estadoCapoteRecepcionAux"] ?? '',
+        estadoLateralRecepcionAux:
+            datosRecepcion["estadoLateralRecepcionAux"] ?? '',
+        estadoInteriorRecepcionAux:
+            datosRecepcion["estadoInteriorRecepcionAux"] ?? '',
+        estadoDelanteraRecepcionAux:
+            datosRecepcion["estadoDelanteraRecepcionAux"] ?? '',
+        estadoTraseraRecepcionAux:
+            datosRecepcion["estadoTraseraRecepcionAux"] ?? '',
+        estadoCapoteRecepcionAux:
+            datosRecepcion["estadoCapoteRecepcionAux"] ?? '',
       );
 
       // Usar el mismo método registerPrestamo para la recepción
       final result = await _repository.registerPrestamo(prestamoEntity);
-      
+
       if (result) {
         return true;
       }
-      
+
       return false;
     } catch (e) {
-      state = state.copyWith(
-        errorMessage: e.toString(),
-      );
+      state = state.copyWith(errorMessage: e.toString());
       return false;
     }
   }
@@ -389,7 +414,7 @@ class SolicitudesPrestamosNotifier extends StateNotifier<SolicitudesPrestamosSta
       // Obtener el código de usuario para auditoría
       final userNotifier = UserStateNotifier();
       final audUsuario = await userNotifier.getCodUsuario();
-      
+
       // Crear entity con el estado aprobado (2) sin fecha
       final solicitudEntity = SolicitudChoferEntity(
         idSolicitud: idSolicitud,
@@ -409,16 +434,14 @@ class SolicitudesPrestamosNotifier extends StateNotifier<SolicitudesPrestamosSta
       );
 
       final result = await _repository.actualizarSolicitud(solicitudEntity);
-      
+
       if (result) {
         return true;
       }
-      
+
       return false;
     } catch (e) {
-      state = state.copyWith(
-        errorMessage: e.toString(),
-      );
+      state = state.copyWith(errorMessage: e.toString());
       return false;
     }
   }
@@ -428,7 +451,7 @@ class SolicitudesPrestamosNotifier extends StateNotifier<SolicitudesPrestamosSta
       // Obtener el código de usuario para auditoría
       final userNotifier = UserStateNotifier();
       final audUsuario = await userNotifier.getCodUsuario();
-      
+
       // Crear entity con el estado rechazado (3) sin fecha
       final solicitudEntity = SolicitudChoferEntity(
         idSolicitud: idSolicitud,
@@ -448,23 +471,24 @@ class SolicitudesPrestamosNotifier extends StateNotifier<SolicitudesPrestamosSta
       );
 
       final result = await _repository.actualizarSolicitud(solicitudEntity);
-      
+
       if (result) {
         return true;
       }
-      
+
       return false;
     } catch (e) {
-      state = state.copyWith(
-        errorMessage: e.toString(),
-      );
+      state = state.copyWith(errorMessage: e.toString());
       return false;
     }
   }
 }
 
 // Provider para las solicitudes de préstamos con estado de carga
-final solicitudesPrestamosNotifierProvider = StateNotifierProvider<SolicitudesPrestamosNotifier, SolicitudesPrestamosState>((ref) {
+final solicitudesPrestamosNotifierProvider = StateNotifierProvider<
+  SolicitudesPrestamosNotifier,
+  SolicitudesPrestamosState
+>((ref) {
   final repository = ref.watch(prestamoVehiculosProvider);
   final entregasRepository = ref.watch(entregasProvider);
   return SolicitudesPrestamosNotifier(repository, entregasRepository);

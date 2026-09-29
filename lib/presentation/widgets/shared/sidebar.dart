@@ -455,8 +455,7 @@ class _AppSidebarState extends ConsumerState<AppSidebar> {
                                   id: 9001,
                                   title: 'Aprobación de Solicitudes',
                                   icon: Icons.approval_rounded,
-                                  route:
-                                      '/dashboard/tpex_Aprobacion/Gerencia',
+                                  route: '/dashboard/tpex_Aprobacion/Gerencia',
                                 ),
                                 currentRoute ==
                                     '/dashboard/tpex_Aprobacion/Gerencia',
@@ -675,7 +674,7 @@ class _AppSidebarState extends ConsumerState<AppSidebar> {
                   await ref.read(menuProvider.notifier).clearCache();
                   await ref.read(userProvider.notifier).clearUser();
                   // El equipo del jefe queda cacheado (miEquipoProvider no es
-                  // autoDispose). Si no se tira acá, quien entre después ve la
+                  // autoDispose). Si no se tira aquí, quien entre después ve la
                   // pestaña «Su Equipo» con la gente del que se fue.
                   ref.invalidate(miEquipoProvider);
                   context.go('/login');

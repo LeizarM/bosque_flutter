@@ -297,10 +297,7 @@ class DetallePersona extends ConsumerWidget {
               color: Colors.blue.shade700,
             ),
           ),
-          Divider(
-            height: context.spacing * 1.5,
-            color: Colors.grey.shade300,
-          ),
+          Divider(height: context.spacing * 1.5, color: Colors.grey.shade300),
         ],
       ),
     );
@@ -488,8 +485,7 @@ class _EditingFormPersonaState extends ConsumerState<_EditingFormPersona> {
     if (personaFormState == null) return;
 
     try {
-      final validado =
-          await (personaFormState as dynamic).validarYGuardar();
+      final validado = await (personaFormState as dynamic).validarYGuardar();
 
       if (!validado) {
         if (!context.mounted) return;
@@ -524,8 +520,7 @@ class _EditingFormPersonaState extends ConsumerState<_EditingFormPersona> {
           obtenerPersonaProvider(personaActualizada.codPersona),
           getListaEmpleados,
         ],
-        successMessage:
-            ' Persona actualizada correctamente',
+        successMessage: ' Persona actualizada correctamente',
       );
 
       if (!context.mounted) return;

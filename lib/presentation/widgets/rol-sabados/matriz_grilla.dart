@@ -125,7 +125,7 @@ class GrillaTab extends ConsumerWidget {
 /// Los cuatro `ScrollController` vienen de afuera porque están **atados entre
 /// sí** en la pantalla: el nombre y la fecha no se pueden despegar de su celda.
 /// Sin eso, al llegar a septiembre ya no se sabe de quién es cada fila.
-/// **Es `ConsumerWidget` sólo por el permiso de edición.** Se observa acá, una
+/// **Es `ConsumerWidget` sólo por el permiso de edición.** Se observa aquí, una
 /// vez, y baja como un `bool` a cada celda: si lo observara `CeldaMatriz`,
 /// serían 4.420 suscripciones para responder siempre lo mismo.
 class Matriz extends ConsumerWidget {
@@ -153,7 +153,7 @@ class Matriz extends ConsumerWidget {
   final MedidasGrilla medidas;
 
   /// Lo que mide el panel. Con el filtro en un mes son cuatro o cinco columnas
-  /// y en un monitor sobra medio metro de blanco: de acá sale cuánto puede
+  /// y en un monitor sobra medio metro de blanco: de aquí sale cuánto puede
   /// crecer cada columna antes de que crecer deje de servir.
   final double anchoDisponible;
 
@@ -177,7 +177,7 @@ class Matriz extends ConsumerWidget {
        que entren enteros —cortar «BALDERRAMA CRISTHIAN...» es la pérdida más
        cara— y recién después engordan las celdas, hasta el tope de
        `anchoCeldaMax`. El porqué del tope y del orden está en
-       `MedidasGrilla.repartir`; acá alcanza con saber que con «Todo el año»
+       `MedidasGrilla.repartir`; aquí alcanza con saber que con «Todo el año»
        —52 columnas— no sobra nada y todo vuelve a los mínimos. */
     final reparto = m.repartir(
       disponible: anchoDisponible,
@@ -321,7 +321,7 @@ class Matriz extends ConsumerWidget {
 /// diga que ese 26 es del año entero. El rótulo va alineado a la derecha, contra
 /// el mismo borde que los números, que es donde se lo busca.
 ///
-/// **Abreviado, y el texto completo en el tooltip.** Acá el ancho es prestado:
+/// **Abreviado, y el texto completo en el tooltip.** Aquí el ancho es prestado:
 /// con «Todo el año» la columna vuelve a su mínimo —150 px en tablet— y cada
 /// pixel que gane el rótulo se lo saca al apellido, que es la pérdida que todo
 /// el reparto de anchos está escrito para evitar. Un tooltip no paga ancho, así
@@ -412,7 +412,7 @@ class CabeceraSabado extends ConsumerStatefulWidget {
 }
 
 class _CabeceraSabadoState extends ConsumerState<CabeceraSabado> {
-  /// Mientras el PDF se arma. **Vive acá y no adentro del menú** porque el menú
+  /// Mientras el PDF se arma. **Vive aquí y no adentro del menú** porque el menú
   /// se cierra al elegir: si el estado se fuera con él, el segundo toque
   /// encontraría el ítem habilitado otra vez y saldrían dos PDF del mismo día.
   bool _ocupado = false;
@@ -428,7 +428,7 @@ class _CabeceraSabadoState extends ConsumerState<CabeceraSabado> {
     final corto = widget.objetivo > 0 && widget.cobertura < widget.objetivo;
 
     // `PopupMenuButton` con `child` es exactamente `Tooltip > InkWell > child`,
-    // sin relleno ni tamaño mínimo: reemplaza al par que había acá sin mover un
+    // sin relleno ni tamaño mínimo: reemplaza al par que había aquí sin mover un
     // pixel de la columna. (Con `icon` en vez de `child` sí impondría 48 px.)
     return PopupMenuButton<_AccionColumna>(
       tooltip: '${_tooltip()}\nToca para exportar el PDF o marcar el evento.',
@@ -465,7 +465,7 @@ class _CabeceraSabadoState extends ConsumerState<CabeceraSabado> {
                   texto: 'Declarar el evento del día',
                 ),
               ),
-            // El puente cuelga de acá y no de un botón propio porque es de la
+            // El puente cuelga de aquí y no de un botón propio porque es de la
             // misma familia que «declarar el evento»: las dos son decisiones
             // sobre ESE día. Quién puede lo decide el servidor con el token; la
             // entrada se ofrece igual porque esconderla dejaría a RR.HH.
@@ -593,7 +593,7 @@ class _ItemMenu extends StatelessWidget {
       Icon(icono, size: 18, color: DefaultTextStyle.of(context).style.color),
       const SizedBox(width: Esp.m),
       // **Flexible y no `Text` suelto.** El menú de Material se dibuja en pasos
-      // fijos de ancho y acá se queda en 256 px: «Exportar el PDF de este
+      // fijos de ancho y aquí se queda en 256 px: «Exportar el PDF de este
       // sábado» con el ícono adelante no entra en un renglón y desbordaba de
       // verdad —lo agarró el test—. Así se parte en dos y no se pierde texto,
       // que es justo lo que el menú vino a comprar.
@@ -626,7 +626,7 @@ class FilaNombre extends StatelessWidget {
     // Para qué lado y por cuánto. Sin esto el rojo es una alarma sin causa: no
     // se ve si a esa persona le faltan sábados o le sobran, y con 28/26 —que
     // también se pinta— la lectura intuitiva es la contraria a la verdadera.
-    // `desviado` exige más de 1, así que acá la diferencia es 2 o más y el
+    // `desviado` exige más de 1, así que aquí la diferencia es 2 o más y el
     // plural siempre cae bien.
     final diferencia = turnos - meta;
 
@@ -652,7 +652,7 @@ class FilaNombre extends StatelessWidget {
     // por sucursal del rol entero esta en el encabezado, una sola vez.
 
     // El contador se escribe con la misma función que «Grupos»: es el mismo
-    // número y tiene que leerse igual en las dos pantallas. Acá además el
+    // número y tiene que leerse igual en las dos pantallas. Aquí además el
     // tooltip es el único lugar donde el «26/26» se explica entero, así que
     // sigue una línea que cuenta qué significa el color —o su ausencia—.
     return Tooltip(
@@ -725,7 +725,7 @@ class CeldaMatriz extends StatelessWidget {
   final double alto;
 
   /// Si esta persona está dentro de lo que el usuario puede tocar. Lo resuelve
-  /// [Matriz] una vez por fila; acá sólo se obedece.
+  /// [Matriz] una vez por fila; aquí sólo se obedece.
   final bool puedeEditar;
 
   @override
@@ -789,11 +789,11 @@ class CeldaMatriz extends StatelessWidget {
     //
     // En el teléfono la grilla ni se dibuja —esa vista es `AgendaSabado`—, así
     // que este tooltip es para el escritorio: se ve al pasar el mouse. El dato
-    // completo vive igual en el editor de la celda, a un toque de acá, que es
+    // completo vive igual en el editor de la celda, a un toque de aquí, que es
     // lo que hace que no dependa del hover.
     //
     // `observacion` viaja desde `trs_Asignacion.observacion` hace rato (la
-    // escribe `trs_sp_corregirCelda`, origen='M') pero nadie la mostraba acá
+    // escribe `trs_sp_corregirCelda`, origen='M') pero nadie la mostraba aquí
     // — sólo el cambio tenía tooltip. Es el motivo por el que RR.HH. no veía
     // POR QUÉ quedó excusada una celda (por horario biométrico o por
     // cualquier otra corrección manual) sin abrir el editor.

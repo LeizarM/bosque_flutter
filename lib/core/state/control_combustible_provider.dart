@@ -3,25 +3,36 @@ import 'package:bosque_flutter/domain/entities/control_combustible_entity.dart';
 import 'package:bosque_flutter/domain/repositories/control_combustible_repository.dart';
 import 'package:bosque_flutter/data/repositories/control_combustible_impl.dart';
 
+final controlCombustibleRepositoryProvider =
+    Provider<ControlCombustibleRepository>((ref) {
+      return ControlCombustibleImpl();
+    });
 
-final controlCombustibleRepositoryProvider = Provider<ControlCombustibleRepository>((ref) {
-  return ControlCombustibleImpl();
-});
+final controlCombustibleProvider =
+    StateNotifierProvider<ControlCombustibleNotifier, AsyncValue<bool>>((ref) {
+      final repo = ref.watch(controlCombustibleRepositoryProvider);
+      return ControlCombustibleNotifier(repo);
+    });
 
-final controlCombustibleProvider = StateNotifierProvider<ControlCombustibleNotifier, AsyncValue<bool>>((ref) {
-  final repo = ref.watch(controlCombustibleRepositoryProvider);
-  return ControlCombustibleNotifier(repo);
-});
+final combustiblesPorCocheProvider =
+    FutureProvider.family<List<CombustibleControlEntity>, int>((
+      ref,
+      idCoche,
+    ) async {
+      final repo = ref.read(controlCombustibleRepositoryProvider);
+      return await repo.getCombustiblesPorCoche(idCoche);
+    });
 
-final combustiblesPorCocheProvider = FutureProvider.family<List<CombustibleControlEntity>, int>((ref, idCoche) async {
-  final repo = ref.read(controlCombustibleRepositoryProvider);
-  return await repo.getCombustiblesPorCoche(idCoche);
-});
-
-final listConsumoProvider = FutureProvider.family<List<CombustibleControlEntity>, Map<String, dynamic>>((ref, params) async {
-  final repo = ref.read(controlCombustibleRepositoryProvider);
-  return await repo.listConsumo(params['kilometraje'] as double, params['idCoche'] as int);
-});
+final listConsumoProvider =
+    FutureProvider.family<List<CombustibleControlEntity>, Map<String, dynamic>>(
+      (ref, params) async {
+        final repo = ref.read(controlCombustibleRepositoryProvider);
+        return await repo.listConsumo(
+          params['kilometraje'] as double,
+          params['idCoche'] as int,
+        );
+      },
+    );
 
 class ControlCombustibleNotifier extends StateNotifier<AsyncValue<bool>> {
   final ControlCombustibleRepository _repo;
@@ -37,7 +48,10 @@ class ControlCombustibleNotifier extends StateNotifier<AsyncValue<bool>> {
     }
   }
 
-  Future<List<CombustibleControlEntity>> getConsumoData(double kilometraje, int idCoche) async {
+  Future<List<CombustibleControlEntity>> getConsumoData(
+    double kilometraje,
+    int idCoche,
+  ) async {
     try {
       return await _repo.listConsumo(kilometraje, idCoche);
     } catch (e) {

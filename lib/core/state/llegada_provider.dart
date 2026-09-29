@@ -52,9 +52,8 @@ class LlegadaNotifier extends StateNotifier<LlegadaState> {
       await _repo.registrar(item);
       state = state.copyWith(
         cargando: false,
-        mensajeExito: item.idRp == 0
-            ? 'Llegada agregada.'
-            : 'Llegada actualizada.',
+        mensajeExito:
+            item.idRp == 0 ? 'Llegada agregada.' : 'Llegada actualizada.',
       );
       await cargar();
       return true;
@@ -68,7 +67,10 @@ class LlegadaNotifier extends StateNotifier<LlegadaState> {
     state = state.copyWith(cargando: true);
     try {
       await _repo.eliminar(idRp, audUsuario);
-      state = state.copyWith(cargando: false, mensajeExito: 'Llegada eliminada.');
+      state = state.copyWith(
+        cargando: false,
+        mensajeExito: 'Llegada eliminada.',
+      );
       await cargar();
       return true;
     } catch (e) {
@@ -82,5 +84,5 @@ final _llegadaRepoProvider = Provider((ref) => LlegadaImpl());
 
 final llegadaProvider =
     StateNotifierProvider.autoDispose<LlegadaNotifier, LlegadaState>(
-  (ref) => LlegadaNotifier(ref.read(_llegadaRepoProvider)),
-);
+      (ref) => LlegadaNotifier(ref.read(_llegadaRepoProvider)),
+    );

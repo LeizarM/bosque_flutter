@@ -2,7 +2,8 @@ class DiaNoLaborableEntity {
   BigInt idDiaNoLaborable;
   DateTime fecha;
   String motivo;
-  String alcance; // "Global" o "N sucursal(es)" — solo lectura, lo calcula el backend
+  String
+  alcance; // "Global" o "N sucursal(es)" — solo lectura, lo calcula el backend
   int audUsuario;
 
   DiaNoLaborableEntity({

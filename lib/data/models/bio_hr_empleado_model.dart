@@ -18,27 +18,26 @@ class BioHrEmpleadoModel {
     this.audFecha,
   });
 
-  factory BioHrEmpleadoModel.fromJson(Map<String, dynamic> json) =>
-      BioHrEmpleadoModel(
-        idHrEmpleado:
-            json['idHrEmpleado'] != null
-                ? BigInt.from(json['idHrEmpleado'])
-                : BigInt.zero,
-        idHrSemanal:
-            json['idHrSemanal'] != null
-                ? BigInt.from(json['idHrSemanal'])
-                : BigInt.zero,
-        idEmplead:
-            json['idEmplead'] != null
-                ? BigInt.from(json['idEmplead'])
-                : BigInt.zero,
-        inicio: json['inicio'] != null ? DateTime.tryParse(json['inicio']) : null,
-        audUsuario: json['audUsuario'] ?? 0,
-        audFecha:
-            json['audFecha'] != null
-                ? DateTime.tryParse(json['audFecha'])
-                : null,
-      );
+  factory BioHrEmpleadoModel.fromJson(
+    Map<String, dynamic> json,
+  ) => BioHrEmpleadoModel(
+    idHrEmpleado:
+        json['idHrEmpleado'] != null
+            ? BigInt.from(json['idHrEmpleado'])
+            : BigInt.zero,
+    idHrSemanal:
+        json['idHrSemanal'] != null
+            ? BigInt.from(json['idHrSemanal'])
+            : BigInt.zero,
+    idEmplead:
+        json['idEmplead'] != null
+            ? BigInt.from(json['idEmplead'])
+            : BigInt.zero,
+    inicio: json['inicio'] != null ? DateTime.tryParse(json['inicio']) : null,
+    audUsuario: json['audUsuario'] ?? 0,
+    audFecha:
+        json['audFecha'] != null ? DateTime.tryParse(json['audFecha']) : null,
+  );
 
   factory BioHrEmpleadoModel.fromEntity(BioHrEmpleadoEntity e) =>
       BioHrEmpleadoModel(

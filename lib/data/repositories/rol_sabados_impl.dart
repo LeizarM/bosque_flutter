@@ -139,7 +139,7 @@ class RolSabadosImpl extends BaseApiRepository implements RolSabadosRepository {
   }
 
   /// **No usa `postAndReturnList` a propósito.** Ese camino parsea la respuesta
-  /// como JSON y devuelve modelos; acá el cuerpo es un PDF binario. Se baja con
+  /// como JSON y devuelve modelos; aquí el cuerpo es un PDF binario. Se baja con
   /// el helper de siempre para reportes Jasper, que pide `ResponseType.bytes`
   /// y comparte el interceptor del token con el resto de la app.
   @override
@@ -228,7 +228,7 @@ class RolSabadosImpl extends BaseApiRepository implements RolSabadosRepository {
       endpoint: AppConstants.rolSabMarcarEvento,
       data: {
         'idSabado': idSabado,
-        // null acá NO es "no cambiar": es "volvé a ser un sábado normal".
+        // null aquí NO es "no cambiar": es "vuelve a ser un sábado normal".
         'alcanceEvento': alcanceEvento,
         'motivoEspecial': motivoEspecial,
         'audUsuario': audUsuario,
@@ -559,7 +559,7 @@ class RolSabadosImpl extends BaseApiRepository implements RolSabadosRepository {
       errorMessage: 'Error al leer tu equipo',
     );
     // null = 204, o un backend que todavía no tiene el endpoint. En los dos
-    // casos la respuesta correcta es «no sos programador»: la pestaña no
+    // casos la respuesta correcta es «no eres programador»: la pestaña no
     // aparece y nadie ve un error que no puede resolver.
     return r?.toEntity() ?? MiEquipoEntity.vacio;
   }
@@ -618,7 +618,7 @@ class RolSabadosImpl extends BaseApiRepository implements RolSabadosRepository {
         'codSucursal': codSucursal == 0 ? null : codSucursal,
         // OJO con el reemplazo: en la rama 'U' el SP lo toma con ISNULL, así
         // que null significa «dejalo como está», NO «borralo». Hoy no hay forma
-        // de sacarle el reemplazo a alguien desde acá; si algún día hace falta,
+        // de sacarle el reemplazo a alguien desde aquí; si algún día hace falta,
         // el cambio va en el SP y no en esta línea.
         'codEmpleadoReemplazo':
             codEmpleadoReemplazo == 0 ? null : codEmpleadoReemplazo,
@@ -748,7 +748,7 @@ class RolSabadosImpl extends BaseApiRepository implements RolSabadosRepository {
     String horaHasta = '',
     String motivo = '',
   }) async {
-    // `postAndReturnFullResponse` y no `postAndReturnId`: acá el `message` del
+    // `postAndReturnFullResponse` y no `postAndReturnId`: aquí el `message` del
     // servidor ES el resultado —«42 permisos por 18.375 días, se saltearon 3»—
     // y con el id solo no habría forma de contarle a nadie qué pasó.
     final r = await postAndReturnFullResponse<Map<String, dynamic>>(

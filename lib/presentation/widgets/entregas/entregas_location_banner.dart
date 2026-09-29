@@ -62,8 +62,9 @@ class EntregasLocationBanner extends StatelessWidget {
       child: Align(
         alignment: Alignment.topCenter,
         child: ConstrainedBox(
-          constraints:
-              const BoxConstraints(maxWidth: EntregasUI.maxContentWidth),
+          constraints: const BoxConstraints(
+            maxWidth: EntregasUI.maxContentWidth,
+          ),
           child: Padding(
             padding: EdgeInsets.symmetric(
               horizontal: EntregasUI.padH(context),
@@ -72,34 +73,35 @@ class EntregasLocationBanner extends StatelessWidget {
             // En un telefono, "texto largo + boton" en una sola fila deja al
             // texto en una columna de ~130 px. Se apila: el mensaje arriba y la
             // accion abajo alineada a la izquierda, donde cae el pulgar.
-            child: angosto
-                ? Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Padding(
-                            padding: const EdgeInsets.only(top: 1),
-                            child: icono,
-                          ),
-                          const SizedBox(width: EntregasUI.s2),
-                          Expanded(child: mensaje),
-                        ],
-                      ),
-                      Align(alignment: Alignment.centerLeft, child: accion),
-                    ],
-                  )
-                : Row(
-                    children: [
-                      icono,
-                      const SizedBox(width: EntregasUI.s3),
-                      Expanded(child: mensaje),
-                      const SizedBox(width: EntregasUI.s3),
-                      accion,
-                    ],
-                  ),
+            child:
+                angosto
+                    ? Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Padding(
+                              padding: const EdgeInsets.only(top: 1),
+                              child: icono,
+                            ),
+                            const SizedBox(width: EntregasUI.s2),
+                            Expanded(child: mensaje),
+                          ],
+                        ),
+                        Align(alignment: Alignment.centerLeft, child: accion),
+                      ],
+                    )
+                    : Row(
+                      children: [
+                        icono,
+                        const SizedBox(width: EntregasUI.s3),
+                        Expanded(child: mensaje),
+                        const SizedBox(width: EntregasUI.s3),
+                        accion,
+                      ],
+                    ),
           ),
         ),
       ),

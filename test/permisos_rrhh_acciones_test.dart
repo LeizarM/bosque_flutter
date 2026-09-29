@@ -24,28 +24,31 @@ void main() {
     return c;
   }
 
-  test('una escritura obliga a releer la ficha y el desglose del empleado', () async {
-    final repo = _RepoContador();
-    final c = contenedor(repo);
+  test(
+    'una escritura obliga a releer la ficha y el desglose del empleado',
+    () async {
+      final repo = _RepoContador();
+      final c = contenedor(repo);
 
-    // Los providers son `autoDispose`: sin alguien escuchando se apagan solos y
-    // la invalidación no probaría nada. Esto es lo que hace la pantalla.
-    c.listen(fichaSaldoProvider(130), (_, _) {});
-    c.listen(desgloseSaldoProvider(130), (_, _) {});
-    await c.read(fichaSaldoProvider(130).future);
-    await c.read(desgloseSaldoProvider(130).future);
-    expect(repo.fichas, 1);
-    expect(repo.desgloses, 1);
+      // Los providers son `autoDispose`: sin alguien escuchando se apagan solos y
+      // la invalidación no probaría nada. Esto es lo que hace la pantalla.
+      c.listen(fichaSaldoProvider(130), (_, _) {});
+      c.listen(desgloseSaldoProvider(130), (_, _) {});
+      await c.read(fichaSaldoProvider(130).future);
+      await c.read(desgloseSaldoProvider(130).future);
+      expect(repo.fichas, 1);
+      expect(repo.desgloses, 1);
 
-    await c
-        .read(permisosRrhhAccionesProvider)
-        .registrarVacacionAsignada(_vacacion);
+      await c
+          .read(permisosRrhhAccionesProvider)
+          .registrarVacacionAsignada(_vacacion);
 
-    await c.read(fichaSaldoProvider(130).future);
-    await c.read(desgloseSaldoProvider(130).future);
-    expect(repo.fichas, 2, reason: 'el saldo de arriba quedó viejo');
-    expect(repo.desgloses, 2, reason: 'el desglose quedó viejo');
-  });
+      await c.read(fichaSaldoProvider(130).future);
+      await c.read(desgloseSaldoProvider(130).future);
+      expect(repo.fichas, 2, reason: 'el saldo de arriba quedó viejo');
+      expect(repo.desgloses, 2, reason: 'el desglose quedó viejo');
+    },
+  );
 
   test('una carga colectiva refresca a todos, no al último tocado', () async {
     final repo = _RepoContador();
@@ -135,7 +138,8 @@ class _RepoContador implements PermisosRrhhRepository {
   /// El resto del contrato, que estas pruebas no tocan. Ver la nota del
   /// `_RepoFalso` de `permisos_rrhh_responsive_test.dart`.
   @override
-  dynamic noSuchMethod(Invocation invocacion) => throw UnimplementedError(
-    'El repositorio de prueba no implementa ${invocacion.memberName}',
-  );
+  dynamic noSuchMethod(Invocation invocacion) =>
+      throw UnimplementedError(
+        'El repositorio de prueba no implementa ${invocacion.memberName}',
+      );
 }

@@ -9,7 +9,7 @@ import 'package:bosque_flutter/core/ui/tokens_bosque.dart';
 /// muestra a la persona un `DioException [connection error]` o el nombre de un
 /// stored procedure, y encima la deja sin salida: si el catálogo de empleados
 /// falló, el formulario queda inservible y lo único que se puede hacer es el
-/// back. [textoParaUsuario] ya traduce eso; acá se le suma el reintento.
+/// back. [textoParaUsuario] ya traduce eso; aquí se le suma el reintento.
 ///
 /// Con [compacto] queda del alto de un campo de formulario, para cuando lo que
 /// falló es un combo y no la pantalla entera.
@@ -145,7 +145,7 @@ class _Bloque extends StatefulWidget {
 class _BloqueState extends State<_Bloque> with SingleTickerProviderStateMixin {
   late final AnimationController _c = AnimationController(
     vsync: this,
-    // 1200ms: un latido lento dice "esperá" sin pedir atención. Más rápido
+    // 1200ms: un latido lento dice "espera" sin pedir atención. Más rápido
     // parpadea y compite con el contenido que está por llegar.
     duration: const Duration(milliseconds: 1200),
   )..repeat(reverse: true);

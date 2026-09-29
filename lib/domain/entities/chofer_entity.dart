@@ -2,13 +2,13 @@ class ChoferEntity {
   final int codEmpleado;
   final String nombreCompleto;
   final String cargo;
-  
+
   ChoferEntity({
     required this.codEmpleado,
     required this.nombreCompleto,
     required this.cargo,
   });
-  
+
   // Constructor de copia para hacer inmutable la entidad
   ChoferEntity copyWith({
     int? codEmpleado,
@@ -21,7 +21,7 @@ class ChoferEntity {
       cargo: cargo ?? this.cargo,
     );
   }
-  
+
   // Factory constructor para crear desde EntregaEntity
   factory ChoferEntity.fromEntregaEntity(dynamic entregaEntity) {
     return ChoferEntity(

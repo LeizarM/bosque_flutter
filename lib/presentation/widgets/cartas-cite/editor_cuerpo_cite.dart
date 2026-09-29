@@ -73,7 +73,11 @@ class _EditorCuerpoCiteState extends State<EditorCuerpoCite> {
     final fin = sel.end;
     final seleccionado = texto.substring(inicio, fin);
 
-    final nuevo = texto.replaceRange(inicio, fin, '$apertura$seleccionado$cierre');
+    final nuevo = texto.replaceRange(
+      inicio,
+      fin,
+      '$apertura$seleccionado$cierre',
+    );
     ctrl.value = TextEditingValue(
       text: nuevo,
       selection: TextSelection.collapsed(
@@ -101,7 +105,7 @@ class _EditorCuerpoCiteState extends State<EditorCuerpoCite> {
   }
 
   /// Pasa el contenido a HTML bien formado. Es lo mismo que se hace al guardar,
-  /// pero acá el usuario ve el resultado y puede corregirlo.
+  /// pero aquí el usuario ve el resultado y puede corregirlo.
   void _ordenar() {
     final ctrl = widget.controller;
     ctrl.text = normalizarCuerpo(ctrl.text);
@@ -144,23 +148,24 @@ class _EditorCuerpoCiteState extends State<EditorCuerpoCite> {
                 onOrdenar: _ordenar,
                 mostrandoPrevia: _mostrandoPrevia,
                 puedeAlternar: !ladoALado,
-                onAlternarPrevia: () =>
-                    setState(() => _mostrandoPrevia = !_mostrandoPrevia),
+                onAlternarPrevia:
+                    () => setState(() => _mostrandoPrevia = !_mostrandoPrevia),
               ),
             SizedBox(height: Esp.s),
             SizedBox(
               height: widget.alto,
-              child: widget.soloLectura
-                  ? previa
-                  : ladoALado
+              child:
+                  widget.soloLectura
+                      ? previa
+                      : ladoALado
                       ? Row(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            Expanded(child: editor),
-                            SizedBox(width: Esp.m),
-                            Expanded(child: previa),
-                          ],
-                        )
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Expanded(child: editor),
+                          SizedBox(width: Esp.m),
+                          Expanded(child: previa),
+                        ],
+                      )
                       : (_mostrandoPrevia ? previa : editor),
             ),
             if (!widget.soloLectura) ...[
@@ -168,7 +173,7 @@ class _EditorCuerpoCiteState extends State<EditorCuerpoCite> {
               Text(
                 ladoALado
                     ? 'A la izquierda se escribe, a la derecha se ve cómo sale impreso.'
-                    : 'Usá los botones de formato; el ojo muestra cómo sale impreso.',
+                    : 'Usa los botones de formato; el ojo muestra cómo sale impreso.',
                 style: context.apagado(),
               ),
             ],
@@ -207,11 +212,13 @@ class _CampoHtml extends StatelessWidget {
       style: Theme.of(context).textTheme.bodyMedium?.copyWith(height: 1.4),
       decoration: InputDecoration(
         alignLabelWithHint: true,
-        hintText: 'Escribí el contenido del documento…',
+        hintText: 'Escribe el contenido del documento…',
         filled: true,
         fillColor: cs.surfaceContainerLowest,
         contentPadding: EdgeInsets.all(Esp.m),
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(Esquina.chica)),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(Esquina.chica),
+        ),
       ),
     );
   }
@@ -231,9 +238,7 @@ class _PanelPrevia extends StatelessWidget {
         borderRadius: BorderRadius.circular(Esquina.chica),
       ),
       padding: EdgeInsets.all(Esp.l),
-      child: SingleChildScrollView(
-        child: VistaHtmlCite(html: html),
-      ),
+      child: SingleChildScrollView(child: VistaHtmlCite(html: html)),
     );
   }
 }
@@ -271,7 +276,8 @@ class _BarraFormato extends StatelessWidget {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
 
-    Widget boton(IconData icono, String tooltip, VoidCallback onTap) => IconButton(
+    Widget boton(IconData icono, String tooltip, VoidCallback onTap) =>
+        IconButton(
           icon: Icon(icono, size: 18),
           tooltip: tooltip,
           onPressed: onTap,
@@ -318,13 +324,13 @@ class _Separador extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Padding(
-        padding: EdgeInsets.symmetric(horizontal: Esp.xs),
-        child: SizedBox(
-          height: 20,
-          child: VerticalDivider(
-            width: 1,
-            color: Theme.of(context).colorScheme.outlineVariant,
-          ),
-        ),
-      );
+    padding: EdgeInsets.symmetric(horizontal: Esp.xs),
+    child: SizedBox(
+      height: 20,
+      child: VerticalDivider(
+        width: 1,
+        color: Theme.of(context).colorScheme.outlineVariant,
+      ),
+    ),
+  );
 }

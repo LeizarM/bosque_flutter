@@ -568,7 +568,7 @@ void main() {
 
 /// El campo de texto cuyo rótulo es [etiqueta].
 ///
-/// `find.widgetWithText` sirve acá porque `TextField` es la clase real. Para los
+/// `find.widgetWithText` sirve aquí porque `TextField` es la clase real. Para los
 /// **botones** no sirve: `FilledButton.icon` construye una subclase privada y
 /// `find.byType` compara el tipo exacto, así que devolvería cero. Por eso los
 /// botones se buscan por su texto, que además es lo que ve quien usa la app.
@@ -641,7 +641,7 @@ Future<void> _dibujar(
   );
   await tester.pumpAndSettle();
   // `PermissionWidget` deja temporizadores colgados esperando al servidor, que
-  // acá no existe. Ver la nota de `permisos_rrhh_responsive_test.dart`.
+  // aquí no existe. Ver la nota de `permisos_rrhh_responsive_test.dart`.
   await tester.pump(const Duration(minutes: 2));
 }
 
@@ -654,7 +654,7 @@ final _admin = LoginEntity.fromJson(<String, dynamic>{
 
 /// Devuelve lo que se le puso y **anota lo que le pidieron escribir**.
 ///
-/// Lo que estas pruebas miden es justamente eso: que nada llegue acá sin haber
+/// Lo que estas pruebas miden es justamente eso: que nada llegue aquí sin haber
 /// pasado por la confirmación.
 class _RepoEspia implements PermisosRrhhRepository {
   _RepoEspia({
@@ -725,7 +725,7 @@ class _RepoEspia implements PermisosRrhhRepository {
   /// A qué empleado se le pidió el kardex, en orden de llamada.
   ///
   /// Es lo único que mide la prueba de cambio de empleado: si el segundo código
-  /// no aparece acá, la pestaña se quedó consultando a la persona anterior.
+  /// no aparece aquí, la pestaña se quedó consultando a la persona anterior.
   final consultasNomina = <int>[];
 
   @override
@@ -764,7 +764,7 @@ class _RepoEspia implements PermisosRrhhRepository {
   }) async {
     confirmaciones.add(confirmado);
     if (errorAlRegistrar) {
-      throw Exception('Ya se cargó hace instantes; refrescá la pantalla.');
+      throw Exception('Ya se cargó hace instantes; refresca la pantalla.');
     }
     if (duplicadoLaPrimera && !confirmado) {
       // El 400 con `confirmable: true`, que SÍ se arregla insistiendo. El 409

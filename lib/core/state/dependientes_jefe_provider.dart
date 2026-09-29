@@ -3,9 +3,19 @@ import 'package:bosque_flutter/data/repositories/dependientes_jefe_impl.dart';
 import 'package:bosque_flutter/domain/entities/dependiente_cargo_entity.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+// Marca de "no cambiar" para poder limpiar `errorCarga` pasándole null.
+const _igual = Object();
+
 class DependientesJefeState {
   final List<DependienteCargoEntity> dependientes;
   final bool cargando;
+
+  /// Si alguna lectura terminó bien. Sin esto, una lectura fallida se veía
+  /// como "No hay cargos para este filtro" (auditoría del 2026-09-11).
+  final bool cargado;
+
+  /// Por qué falló la última lectura; queda hasta la próxima buena.
+  final Object? errorCarga;
   final bool guardando;
   final bool autorizado;
   final String? mensajeInfo; // motivo de no-autorizado, o vacío al lista
@@ -18,6 +28,8 @@ class DependientesJefeState {
   const DependientesJefeState({
     this.dependientes = const [],
     this.cargando = false,
+    this.cargado = false,
+    this.errorCarga,
     this.guardando = false,
     this.autorizado = true,
     this.mensajeInfo,
@@ -31,6 +43,8 @@ class DependientesJefeState {
   DependientesJefeState copyWith({
     List<DependienteCargoEntity>? dependientes,
     bool? cargando,
+    bool? cargado,
+    Object? errorCarga = _igual,
     bool? guardando,
     bool? autorizado,
     String? mensajeInfo,
@@ -42,6 +56,8 @@ class DependientesJefeState {
   }) => DependientesJefeState(
     dependientes: dependientes ?? this.dependientes,
     cargando: cargando ?? this.cargando,
+    cargado: cargado ?? this.cargado,
+    errorCarga: identical(errorCarga, _igual) ? this.errorCarga : errorCarga,
     guardando: guardando ?? this.guardando,
     autorizado: autorizado ?? this.autorizado,
     mensajeInfo: mensajeInfo,
@@ -56,7 +72,9 @@ class DependientesJefeState {
 class DependientesJefeNotifier extends StateNotifier<DependientesJefeState> {
   final DependientesJefeImpl _repo;
 
-  DependientesJefeNotifier(this._repo) : super(const DependientesJefeState()) {
+  DependientesJefeNotifier(this._repo)
+    // Arranca cargando: en reposo, el primer cuadro se vería como un error.
+    : super(const DependientesJefeState(cargando: true)) {
     Future.microtask(() => cargar());
   }
 
@@ -72,9 +90,17 @@ class DependientesJefeNotifier extends StateNotifier<DependientesJefeState> {
         autorizado: resultado.autorizado,
         dependientes: resultado.dependientes,
         mensajeInfo: resultado.autorizado ? null : resultado.mensaje,
+        cargado: true,
+        errorCarga: null,
       );
     } catch (e) {
-      state = state.copyWith(cargando: false, mensajeError: e.toString());
+      // Sin aviso flotante: la pantalla muestra el error en su lugar.
+      state = state.copyWith(
+        cargando: false,
+        cargado: false,
+        errorCarga: e,
+        dependientes: const [],
+      );
     }
   }
 
@@ -94,10 +120,10 @@ class DependientesJefeNotifier extends StateNotifier<DependientesJefeState> {
     state = state.copyWith(seleccionados: nuevos);
   }
 
-  List<DependienteCargoEntity> get dependientesSeleccionados => state
-      .dependientes
-      .where((d) => state.seleccionados.contains(d.claveSeleccion))
-      .toList();
+  List<DependienteCargoEntity> get dependientesSeleccionados =>
+      state.dependientes
+          .where((d) => state.seleccionados.contains(d.claveSeleccion))
+          .toList();
 
   Future<bool> registrarTarea({
     required String descripcion,
@@ -114,16 +140,17 @@ class DependientesJefeNotifier extends StateNotifier<DependientesJefeState> {
     }
     state = state.copyWith(guardando: true);
     try {
-      final cargos = dependientesSeleccionados
-          .map(
-            (d) => {
-              'codCargo': d.codCargo,
-              'codCargoSucursal': d.codCargoSucursal,
-              'fechaInicio': fechaInicioAsignacion?.toIso8601String(),
-              'fechaFin': fechaFinAsignacion?.toIso8601String(),
-            },
-          )
-          .toList();
+      final cargos =
+          dependientesSeleccionados
+              .map(
+                (d) => {
+                  'codCargo': d.codCargo,
+                  'codCargoSucursal': d.codCargoSucursal,
+                  'fechaInicio': fechaInicioAsignacion?.toIso8601String(),
+                  'fechaFin': fechaFinAsignacion?.toIso8601String(),
+                },
+              )
+              .toList();
 
       await _repo.registrarTareaConCargos(
         descripcion: descripcion,
@@ -148,11 +175,33 @@ class DependientesJefeNotifier extends StateNotifier<DependientesJefeState> {
   }
 }
 
-final _dependientesJefeRepoProvider = Provider(
-  (ref) => DependientesJefeImpl(),
-);
+final _dependientesJefeRepoProvider = Provider((ref) => DependientesJefeImpl());
 
 final dependientesJefeProvider = StateNotifierProvider.autoDispose<
   DependientesJefeNotifier,
   DependientesJefeState
 >((ref) => DependientesJefeNotifier(ref.read(_dependientesJefeRepoProvider)));
+
+/// Si quien entró puede programar tareas a su equipo: su cargo vigente tiene
+/// codNivel <= nivelMaximoJefe (tac_configuracion, hoy 3).
+///
+/// Decide si "Mis tareas rutinarias" muestra el botón "Mi equipo". Marcelo
+/// (2026-09-11), sacándolo del menú: "que solo te aparezca si el umbral de tu
+/// cargo es <=3; si es mayor, que no aparezca y ya".
+///
+/// La regla no se copia aquí: se le pregunta al mismo procedimiento que usa la
+/// pantalla, pidiendo lo mínimo (solo directos, solo su sucursal). Ante
+/// cualquier falla, falso: el botón no aparece, y la pantalla de todos modos
+/// vuelve a validar en el servidor.
+final puedeProgramarAMiEquipoProvider = FutureProvider.autoDispose<bool>((
+  ref,
+) async {
+  try {
+    final resultado = await ref
+        .read(_dependientesJefeRepoProvider)
+        .listarDependientes(profundidad: 'D', alcanceSucursal: 'M');
+    return resultado.autorizado;
+  } catch (_) {
+    return false;
+  }
+});

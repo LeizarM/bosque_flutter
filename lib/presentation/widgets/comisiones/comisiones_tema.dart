@@ -115,7 +115,7 @@ class ComisionesTema {
   // ── Superficies ──────────────────────────────────────────────────────────
   /// Contenedor de datos: borde fino, sin sombra.
   ///
-  /// Las sombras separan planos; acá no hay planos, hay una tabla sobre un
+  /// Las sombras separan planos; aquí no hay planos, hay una tabla sobre un
   /// fondo. Un borde de 1px hace el trabajo sin ensuciar.
   static BoxDecoration contenedor(BuildContext context) {
     final cs = Theme.of(context).colorScheme;

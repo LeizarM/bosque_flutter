@@ -48,8 +48,7 @@ class BuscadorEmpleadoBiometrico extends ConsumerWidget {
                 id == null
                     ? null
                     : empleados.firstWhere((e) => e.idEmpleado == id);
-            ref.read(empleadoSeleccionadoBiometricoProvider.notifier).state =
-                e;
+            ref.read(empleadoSeleccionadoBiometricoProvider.notifier).state = e;
           },
         );
       },
@@ -78,11 +77,7 @@ class _CampoDeshabilitado extends StatelessWidget {
         labelText: 'Empleado',
         border: const OutlineInputBorder(),
         isDense: true,
-        prefixIcon: Icon(
-          icono,
-          size: 18,
-          color: esError ? cs.error : null,
-        ),
+        prefixIcon: Icon(icono, size: 18, color: esError ? cs.error : null),
       ),
       child: Text(
         texto,

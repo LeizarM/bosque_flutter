@@ -11,6 +11,9 @@ import 'package:bosque_flutter/data/models/tipo_permiso_vacacion_model.dart';
 import 'package:bosque_flutter/domain/entities/tipo_permiso_vacacion_entity.dart';
 import 'package:bosque_flutter/data/models/feriado_model.dart';
 
+import 'package:bosque_flutter/domain/entities/horario_empleado_entity.dart';
+import 'package:bosque_flutter/data/models/horario_empleado_model.dart';
+
 class PermisosVacacionImpl extends BaseApiRepository
     implements PermisosVacacionRepository {
   @override
@@ -24,6 +27,20 @@ class PermisosVacacionImpl extends BaseApiRepository
       return modelos.first.toEntity();
     }
     return null;
+  }
+
+  @override
+  Future<List<HorarioEmpleadoEntity>> obtenerHorario(int codEmpleado, DateTime desde, DateTime hasta) async {
+    final modelos = await postAndReturnList<HorarioEmpleadoModel>(
+      endpoint: AppConstants.obtenerHorario,
+      data: {
+        'codEmpleado': codEmpleado,
+        'desde': desde.toIso8601String(),
+        'hasta': hasta.toIso8601String(),
+      },
+      fromJson: (json) => HorarioEmpleadoModel.fromJson(json),
+    );
+    return modelos;
   }
 
   @override
@@ -141,10 +158,16 @@ class PermisosVacacionImpl extends BaseApiRepository
   }
 
   @override
-  Future<List<TipoPermisoVacacionEntity>> getTiposPermisosVacaciones(int codEmpleado, int codUsuarioLogueado) async {
+  Future<List<TipoPermisoVacacionEntity>> getTiposPermisosVacaciones(
+    int codEmpleado,
+    int codUsuarioLogueado,
+  ) async {
     final modelos = await postAndReturnList<TipoPermisoVacacionModel>(
       endpoint: AppConstants.tipoPermisoSolicitudVacacion,
-      data: {'codEmpleado': codEmpleado, 'codUsuarioLogueado': codUsuarioLogueado},
+      data: {
+        'codEmpleado': codEmpleado,
+        'codUsuarioLogueado': codUsuarioLogueado,
+      },
       fromJson: (json) => TipoPermisoVacacionModel.fromJson(json),
     );
     return modelos.map((m) => m.toEntity()).toList();

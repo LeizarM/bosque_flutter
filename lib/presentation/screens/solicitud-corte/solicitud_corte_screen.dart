@@ -63,9 +63,10 @@ class _SolicitudCorteScreenState extends ConsumerState<SolicitudCorteScreen> {
 
   Future<void> _imprimir(CcrSolicitudEntity s) => mostrarReportePdf(
     context: context,
-    downloadFunction: () => ref
-        .read(solicitudCorteRepositoryProvider)
-        .reporteSolicitudPdf(s.idSolicitud),
+    downloadFunction:
+        () => ref
+            .read(solicitudCorteRepositoryProvider)
+            .reporteSolicitudPdf(s.idSolicitud),
     filename: 'solicitud_corte_${s.tipoSolicitud}_${s.datoNroSolicitud}.pdf',
   );
 
@@ -133,9 +134,10 @@ class _SolicitudCorteScreenState extends ConsumerState<SolicitudCorteScreen> {
 
     await mostrarReportePdf(
       context: context,
-      downloadFunction: () => ref
-          .read(solicitudCorteRepositoryProvider)
-          .reporteResumenPdf(rango.desde, rango.hasta),
+      downloadFunction:
+          () => ref
+              .read(solicitudCorteRepositoryProvider)
+              .reporteResumenPdf(rango.desde, rango.hasta),
       filename:
           'resumen_solicitudes_corte_${fechaArchivo(rango.desde)}_'
           '${fechaArchivo(rango.hasta)}.pdf',
@@ -152,9 +154,10 @@ class _SolicitudCorteScreenState extends ConsumerState<SolicitudCorteScreen> {
     final puedeCrear = ref
         .watch(buttonPermissionsProvider)
         .maybeWhen(
-          data: (_) => ref
-              .read(buttonPermissionsProvider.notifier)
-              .tienePermiso(_btnNueva),
+          data:
+              (_) => ref
+                  .read(buttonPermissionsProvider.notifier)
+                  .tienePermiso(_btnNueva),
           orElse: () => false,
         );
 
@@ -198,9 +201,10 @@ class _SolicitudCorteScreenState extends ConsumerState<SolicitudCorteScreen> {
                 ),
               SizedBox(
                 height: 2,
-                child: estado.cargando
-                    ? const LinearProgressIndicator(minHeight: 2)
-                    : null,
+                child:
+                    estado.cargando
+                        ? const LinearProgressIndicator(minHeight: 2)
+                        : null,
               ),
               Expanded(
                 child: _Listado(
@@ -222,12 +226,12 @@ class _SolicitudCorteScreenState extends ConsumerState<SolicitudCorteScreen> {
       ),
       floatingActionButton:
           puedeCrear && Aire.de(MediaQuery.of(context).size.width).esChico
-          ? FloatingActionButton.extended(
-              onPressed: _nueva,
-              icon: const Icon(Icons.add),
-              label: const Text('Nueva'),
-            )
-          : null,
+              ? FloatingActionButton.extended(
+                onPressed: _nueva,
+                icon: const Icon(Icons.add),
+                label: const Text('Nueva'),
+              )
+              : null,
     );
   }
 }
@@ -304,22 +308,23 @@ class _Cabecera extends StatelessWidget {
         Esp.m,
       ),
       color: cs.surfaceContainerLow,
-      child: aire.esChico
-          ? Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                titulo,
-                SizedBox(height: Esp.m),
-                Wrap(spacing: Esp.s, runSpacing: Esp.s, children: acciones),
-              ],
-            )
-          : Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(child: titulo),
-                Wrap(spacing: Esp.s, runSpacing: Esp.s, children: acciones),
-              ],
-            ),
+      child:
+          aire.esChico
+              ? Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  titulo,
+                  SizedBox(height: Esp.m),
+                  Wrap(spacing: Esp.s, runSpacing: Esp.s, children: acciones),
+                ],
+              )
+              : Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(child: titulo),
+                  Wrap(spacing: Esp.s, runSpacing: Esp.s, children: acciones),
+                ],
+              ),
     );
   }
 }
@@ -367,15 +372,16 @@ class _BarraFiltros extends StatelessWidget {
         prefixIcon: const Icon(Icons.search, size: 20),
         border: const OutlineInputBorder(),
         isDense: true,
-        suffixIcon: buscarCtrl.text.isEmpty
-            ? null
-            : IconButton(
-                icon: const Icon(Icons.close, size: 18),
-                onPressed: () {
-                  buscarCtrl.clear();
-                  onBuscar('');
-                },
-              ),
+        suffixIcon:
+            buscarCtrl.text.isEmpty
+                ? null
+                : IconButton(
+                  icon: const Icon(Icons.close, size: 18),
+                  onPressed: () {
+                    buscarCtrl.clear();
+                    onBuscar('');
+                  },
+                ),
       ),
     );
 
@@ -401,26 +407,27 @@ class _BarraFiltros extends StatelessWidget {
         aire.esChico ? Esp.m : Esp.xl,
         Esp.m,
       ),
-      child: aire.esChico
-          ? Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                periodo,
-                SizedBox(height: Esp.s),
-                buscador,
-                SizedBox(height: Esp.s),
-                estados,
-              ],
-            )
-          : Row(
-              children: [
-                periodo,
-                SizedBox(width: Esp.m),
-                Expanded(flex: 3, child: buscador),
-                SizedBox(width: Esp.m),
-                Expanded(child: estados),
-              ],
-            ),
+      child:
+          aire.esChico
+              ? Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  periodo,
+                  SizedBox(height: Esp.s),
+                  buscador,
+                  SizedBox(height: Esp.s),
+                  estados,
+                ],
+              )
+              : Row(
+                children: [
+                  periodo,
+                  SizedBox(width: Esp.m),
+                  Expanded(flex: 3, child: buscador),
+                  SizedBox(width: Esp.m),
+                  Expanded(child: estados),
+                ],
+              ),
     );
   }
 }
@@ -464,16 +471,17 @@ class _Listado extends StatelessWidget {
         children: [
           Expanded(
             child: MensajeVacio(
-              icono: hayFiltro
-                  ? Icons.filter_alt_off
-                  : Icons.event_busy_outlined,
-              titulo: hayFiltro
-                  ? 'Ninguna solicitud coincide con el filtro'
-                  : 'No hay solicitudes en este periodo',
-              detalle: hayFiltro
-                  ? 'Pruebe con otro numero o quite el filtro de estado.'
-                  : 'El periodo consultado es $periodo. Amplielo para ver '
-                        'solicitudes de anios anteriores.',
+              icono:
+                  hayFiltro ? Icons.filter_alt_off : Icons.event_busy_outlined,
+              titulo:
+                  hayFiltro
+                      ? 'Ninguna solicitud coincide con el filtro'
+                      : 'No hay solicitudes en este periodo',
+              detalle:
+                  hayFiltro
+                      ? 'Pruebe con otro numero o quite el filtro de estado.'
+                      : 'El periodo consultado es $periodo. Amplielo para ver '
+                          'solicitudes de anios anteriores.',
             ),
           ),
           Padding(
@@ -508,11 +516,12 @@ class _Listado extends StatelessWidget {
       padding: padding.copyWith(top: Esp.xs, bottom: Esp.xxl + Esp.xxl),
       itemCount: lista.length,
       separatorBuilder: (_, _) => SizedBox(height: Esp.s),
-      itemBuilder: (context, i) => _Tarjeta(
-        s: lista[i],
-        onAbrir: () => onAbrir(lista[i]),
-        onImprimir: () => onImprimir(lista[i]),
-      ),
+      itemBuilder:
+          (context, i) => _Tarjeta(
+            s: lista[i],
+            onAbrir: () => onAbrir(lista[i]),
+            onImprimir: () => onImprimir(lista[i]),
+          ),
     );
   }
 }
@@ -577,11 +586,12 @@ class _Tabla extends StatelessWidget {
                             s.datoNroSolicitud.isEmpty
                                 ? s.numeracion.toString()
                                 : s.datoNroSolicitud,
-                            style: Theme.of(context).textTheme.bodyMedium
-                                ?.copyWith(
-                                  fontWeight: Peso.dato,
-                                  fontFeatures: cifrasTabulares,
-                                ),
+                            style: Theme.of(
+                              context,
+                            ).textTheme.bodyMedium?.copyWith(
+                              fontWeight: Peso.dato,
+                              fontFeatures: cifrasTabulares,
+                            ),
                           ),
                         ),
                         DataCell(
@@ -600,12 +610,12 @@ class _Tabla extends StatelessWidget {
                         ),
                         DataCell(
                           Etiqueta(
-                            texto: s.datoEstado.isEmpty
-                                ? s.estado
-                                : s.datoEstado,
-                            tono: s.estaCancelada
-                                ? TonoEtiqueta.error
-                                : TonoEtiqueta.exito,
+                            texto:
+                                s.datoEstado.isEmpty ? s.estado : s.datoEstado,
+                            tono:
+                                s.estaCancelada
+                                    ? TonoEtiqueta.error
+                                    : TonoEtiqueta.exito,
                           ),
                         ),
                         DataCell(
@@ -699,11 +709,12 @@ class _Tarjeta extends StatelessWidget {
                       children: [
                         Text(
                           'Nro ${s.datoNroSolicitud}',
-                          style: Theme.of(context).textTheme.titleMedium
-                              ?.copyWith(
-                                fontWeight: Peso.dato,
-                                fontFeatures: cifrasTabulares,
-                              ),
+                          style: Theme.of(
+                            context,
+                          ).textTheme.titleMedium?.copyWith(
+                            fontWeight: Peso.dato,
+                            fontFeatures: cifrasTabulares,
+                          ),
                         ),
                         Text(
                           '${fechaCorta(s.fechaSolicitud)}  ·  '
@@ -715,9 +726,10 @@ class _Tarjeta extends StatelessWidget {
                   ),
                   Etiqueta(
                     texto: s.datoEstado.isEmpty ? s.estado : s.datoEstado,
-                    tono: s.estaCancelada
-                        ? TonoEtiqueta.error
-                        : TonoEtiqueta.exito,
+                    tono:
+                        s.estaCancelada
+                            ? TonoEtiqueta.error
+                            : TonoEtiqueta.exito,
                   ),
                 ],
               ),
@@ -751,10 +763,7 @@ class _Tarjeta extends StatelessWidget {
                     ),
                   ),
                   IconButton(
-                    icon: const Icon(
-                      Icons.picture_as_pdf_outlined,
-                      size: 18,
-                    ),
+                    icon: const Icon(Icons.picture_as_pdf_outlined, size: 18),
                     tooltip: 'Boleta PDF',
                     onPressed: onImprimir,
                   ),
@@ -825,9 +834,7 @@ class _MotivoCancelacionDialogState extends State<_MotivoCancelacionDialog> {
               decoration: InputDecoration(
                 labelText: 'Motivo',
                 border: const OutlineInputBorder(),
-                helperText: alcanza
-                    ? null
-                    : 'Faltan ${16 - largo} caracteres',
+                helperText: alcanza ? null : 'Faltan ${16 - largo} caracteres',
               ),
             ),
           ],
@@ -839,9 +846,8 @@ class _MotivoCancelacionDialogState extends State<_MotivoCancelacionDialog> {
           child: const Text('Volver'),
         ),
         FilledButton(
-          onPressed: alcanza
-              ? () => Navigator.pop(context, _ctrl.text.trim())
-              : null,
+          onPressed:
+              alcanza ? () => Navigator.pop(context, _ctrl.text.trim()) : null,
           child: const Text('Cancelar solicitud'),
         ),
       ],

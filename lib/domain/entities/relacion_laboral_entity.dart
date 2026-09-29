@@ -54,6 +54,7 @@ class RelacionLaboralEntity {
       'empresaInterna': empresaInterna,
     };
   }
+
   RelacionLaboralEntity copyWith({
     int? codRelEmplEmpr,
     int? codEmpleado,

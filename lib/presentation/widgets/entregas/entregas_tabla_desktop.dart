@@ -9,7 +9,7 @@ import 'package:bosque_flutter/presentation/widgets/entregas/entregas_ui.dart';
 /// El anterior lo era, con `rowsPerPage: 8`. Ese widget reserva SIEMPRE las 8
 /// filas aunque haya una sola entrega: de ahí las cuatro franjas vacías
 /// gigantes debajo del único registro. No era un problema de estilo sino del
-/// componente elegido — un paginador tiene sentido con cientos de filas, y acá
+/// componente elegido — un paginador tiene sentido con cientos de filas, y aquí
 /// un chofer ve entre una y quince entregas en el día.
 ///
 /// Se reemplaza por una lista con encabezado fijo que dibuja exactamente las
@@ -74,22 +74,28 @@ class EntregasTablaDesktop extends StatelessWidget {
                   sortAscending: sortAscending,
                   onSort: onSort,
                 ),
-                Divider(height: 1, thickness: 1, color: EntregasUI.hairline(cs)),
+                Divider(
+                  height: 1,
+                  thickness: 1,
+                  color: EntregasUI.hairline(cs),
+                ),
                 Flexible(
                   child: ListView.separated(
                     shrinkWrap: true,
                     padding: EdgeInsets.zero,
                     itemCount: filteredEntregas.length,
-                    separatorBuilder: (_, __) => Divider(
-                      height: 1,
-                      thickness: 1,
-                      color: EntregasUI.hairline(cs),
-                    ),
+                    separatorBuilder:
+                        (_, __) => Divider(
+                          height: 1,
+                          thickness: 1,
+                          color: EntregasUI.hairline(cs),
+                        ),
                     itemBuilder: (context, index) {
                       final entregas = filteredEntregas[index].value;
                       final primaria = entregas.first;
-                      final todosEntregados =
-                          entregas.every((e) => e.fueEntregado == 1);
+                      final todosEntregados = entregas.every(
+                        (e) => e.fueEntregado == 1,
+                      );
                       return _Fila(
                         entrega: primaria,
                         cantidadProductos: entregas.length,
@@ -232,9 +238,9 @@ class _LabelOrdenable extends StatelessWidget {
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 softWrap: false,
-                style: EntregasUI.columnLabel(context).copyWith(
-                  color: activo ? cs.onSurface : EntregasUI.muted(cs),
-                ),
+                style: EntregasUI.columnLabel(
+                  context,
+                ).copyWith(color: activo ? cs.onSurface : EntregasUI.muted(cs)),
               ),
             ),
             // La flecha solo aparece en la columna por la que se está ordenando.
@@ -300,11 +306,12 @@ class _FilaState extends State<_Fila> {
         curve: Curves.easeOut,
         decoration: BoxDecoration(
           color: _hover ? cs.onSurface.withValues(alpha: 0.035) : null,
-          borderRadius: widget.esUltima
-              ? const BorderRadius.vertical(
-                  bottom: Radius.circular(EntregasUI.rContainer),
-                )
-              : null,
+          borderRadius:
+              widget.esUltima
+                  ? const BorderRadius.vertical(
+                    bottom: Radius.circular(EntregasUI.rContainer),
+                  )
+                  : null,
         ),
         padding: const EdgeInsets.symmetric(
           horizontal: EntregasUI.s5,
@@ -387,28 +394,30 @@ class _FilaState extends State<_Fila> {
               width: EntregasTablaDesktop._anchoAccion,
               child: Align(
                 alignment: Alignment.centerRight,
-                child: widget.entregado
-                    // Ya entregada: no se muestra un botón gris que invita a
-                    // hacer clic y no hace nada. Se muestra el hecho.
-                    ? Icon(
-                        Icons.check_circle_outline,
-                        size: 20,
-                        color: EntregasUI.muted(cs),
-                      )
-                    : FilledButton(
-                        onPressed: widget.habilitado ? widget.onMarcar : null,
-                        style: FilledButton.styleFrom(
-                          visualDensity: VisualDensity.compact,
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: EntregasUI.s4,
+                child:
+                    widget.entregado
+                        // Ya entregada: no se muestra un botón gris que invita a
+                        // hacer clic y no hace nada. Se muestra el hecho.
+                        ? Icon(
+                          Icons.check_circle_outline,
+                          size: 20,
+                          color: EntregasUI.muted(cs),
+                        )
+                        : FilledButton(
+                          onPressed: widget.habilitado ? widget.onMarcar : null,
+                          style: FilledButton.styleFrom(
+                            visualDensity: VisualDensity.compact,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: EntregasUI.s4,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(
+                                EntregasUI.rInner,
+                              ),
+                            ),
                           ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius:
-                                BorderRadius.circular(EntregasUI.rInner),
-                          ),
+                          child: const Text('Marcar'),
                         ),
-                        child: const Text('Marcar'),
-                      ),
               ),
             ),
           ],

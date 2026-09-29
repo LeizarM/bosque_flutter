@@ -35,7 +35,7 @@ Future<void> mostrarVacacionPagada({
 /// acepta cualquier cantidad, no mira el saldo, no tiene tope, no confirma nada
 /// y un doble clic mete dos filas.
 ///
-/// Acá van, en orden: el saldo antes y después **a la vista mientras se tipea**,
+/// Aquí van, en orden: el saldo antes y después **a la vista mientras se tipea**,
 /// un aviso si el número supera el saldo o la mayor PVA razonable, una
 /// confirmación que repite los dos saldos, y el botón apagado mientras la
 /// llamada está en vuelo. Del otro lado, el backend rechaza con 409 la fila
@@ -86,7 +86,7 @@ class _VacacionPagadaSheetState extends ConsumerState<_VacacionPagadaSheet> {
   @override
   Widget build(BuildContext context) {
     // El saldo con el que se compara. Sale de la ficha que la pantalla ya tiene
-    // cargada: pedirlo de nuevo acá sería una consulta más para el mismo dato.
+    // cargada: pedirlo de nuevo aquí sería una consulta más para el mismo dato.
     final ficha = ref.watch(fichaSaldoProvider(widget.codEmpleado)).valueOrNull;
     final dias = diasDeTexto(_dias.text);
 
@@ -147,7 +147,8 @@ class _VacacionPagadaSheetState extends ConsumerState<_VacacionPagadaSheet> {
                 labelText: 'Días a pagar',
                 border: OutlineInputBorder(),
                 isDense: true,
-                helperText: 'Medio día como mínimo. Los ingresa usted: aquí no hay '
+                helperText:
+                    'Medio día como mínimo. Los ingresa usted: aquí no hay '
                     'nada que los calcule.',
               ),
               onChanged: (_) => setState(() {}),
@@ -191,7 +192,8 @@ class _VacacionPagadaSheetState extends ConsumerState<_VacacionPagadaSheet> {
                 labelText: 'Motivo',
                 border: OutlineInputBorder(),
                 isDense: true,
-                helperText: 'Queda en la fila y en la bitácora. Es obligatorio.',
+                helperText:
+                    'Queda en la fila y en la bitácora. Es obligatorio.',
               ),
               onChanged: (_) => setState(() {}),
             ),
@@ -199,9 +201,10 @@ class _VacacionPagadaSheetState extends ConsumerState<_VacacionPagadaSheet> {
             const SizedBox(height: Esp.m),
             FilledButton.icon(
               // Apagado mientras la llamada está en vuelo: es lo único que el
-              // cliente puede aportar contra el doble toque, y acá el doble
+              // cliente puede aportar contra el doble toque, y aquí el doble
               // toque cuesta plata.
-              onPressed: _puedeGuardar(dias) ? () => _revisar(ficha, dias!) : null,
+              onPressed:
+                  _puedeGuardar(dias) ? () => _revisar(ficha, dias!) : null,
               icon:
                   _guardando
                       ? const SizedBox(
@@ -328,9 +331,7 @@ class _VacacionPagadaSheetState extends ConsumerState<_VacacionPagadaSheet> {
       Navigator.of(context).pop();
       avisar(
         context,
-        msg.isEmpty
-            ? 'Quedaron pagados ${numeroDeDias(dias)} días.'
-            : msg,
+        msg.isEmpty ? 'Quedaron pagados ${numeroDeDias(dias)} días.' : msg,
       );
     } on RequiereConfirmacion catch (d) {
       // 400 confirmable: el servidor encontró algo raro —una PVA parecida, un
@@ -353,7 +354,7 @@ class _VacacionPagadaSheetState extends ConsumerState<_VacacionPagadaSheet> {
       if (!mounted) return;
       setState(() => _guardando = false);
       // Se relee: si fue un 409, la fila ya existe y el saldo en pantalla es el
-      // viejo. Lo peor que puede pasar acá es que alguien vuelva a intentarlo
+      // viejo. Lo peor que puede pasar aquí es que alguien vuelva a intentarlo
       // creyendo que no se guardó.
       ref.read(permisosRrhhAccionesProvider).refrescar(widget.codEmpleado);
       avisarError(context, e);

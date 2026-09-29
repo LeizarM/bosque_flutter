@@ -138,7 +138,7 @@ String horaCorta(DateTime? f) =>
 //
 // Las cuatro funciones de abajo son lo que hace que una lista de permisos se lea
 // como una historia y no como una planilla. Nacieron privadas dentro de
-// `nomina_permisos_tab.dart`; viven acá desde que la pestaña «Permisos» de la
+// `nomina_permisos_tab.dart`; viven aquí desde que la pestaña «Permisos» de la
 // ficha del trabajador pinta la misma línea de tiempo con otra entidad
 // (`SolicitudPermisoEntity`, que además tiene estado). No toman entidades sino
 // `DateTime?` sueltos, justamente para no atarse a ninguna de las dos.
@@ -160,7 +160,7 @@ const List<String> mesesCortos = [
 
 /// Los meses escritos, para un encabezado que se lee en vez de escanearse.
 ///
-/// Vive acá y no en cada pantalla porque ya había dos copias: el filtro de la
+/// Vive aquí y no en cada pantalla porque ya había dos copias: el filtro de la
 /// nómina individual y el título del cronograma de boletas. Dos listas de doce
 /// literales cada una es dos lugares donde arreglar el mismo error de tipeo.
 const List<String> mesesLargos = [
@@ -216,7 +216,7 @@ String cuandoLargo(DateTime? desde, DateTime? hasta) {
 /// reordena nada: sólo marca dónde cambia el año. Quien la llama es el que
 /// decide el orden, y si la lista no viene ordenada por fecha el mismo año
 /// aparecerá en varios tramos — que es la señal correcta de que algo no se
-/// ordenó, no un error a tapar acá.
+/// ordenó, no un error a tapar aquí.
 List<(String anio, List<T> filas)> agruparPorAnio<T>(
   List<T> lista,
   DateTime? Function(T) fechaDe,
@@ -375,7 +375,7 @@ class AvisoDelDato extends StatelessWidget {
 /// Un número de días con su rótulo: la unidad de lectura de todo el módulo.
 ///
 /// El número llega **ya formateado por el backend** (`diasNoUsadosTxt`, coma
-/// decimal, sufijo « día»/« días»). No se reformatea acá: así la app y el
+/// decimal, sufijo « día»/« días»). No se reformatea aquí: así la app y el
 /// reporte impreso dicen exactamente lo mismo, que es contra lo que RR.HH.
 /// compara.
 ///

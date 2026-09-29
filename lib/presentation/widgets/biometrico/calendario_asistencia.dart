@@ -13,7 +13,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 /// bien marcados?), algo que una lista larga no muestra tan rápido.
 ///
 /// **Por qué esta pantalla existe.** El reporte legacy (`p_Rpt_Biometrico`)
-/// mezclaba "faltó" con "no tenía por qué venir" en una sola columna. Acá cada
+/// mezclaba "faltó" con "no tenía por qué venir" en una sola columna. Aquí cada
 /// día trae su [AsistenciaDiaEntity.estado] ya resuelto por el backend, así
 /// que la grilla sólo tiene que mostrarlo distinto — nunca recalcularlo.
 ///
@@ -196,7 +196,7 @@ class _Grilla extends StatelessWidget {
           ],
         ),
         const SizedBox(height: Esp.s),
-        // La proporción de la celda se calcula del ancho REAL que le toca acá
+        // La proporción de la celda se calcula del ancho REAL que le toca aquí
         // adentro (no del ancho de la pestaña completa, que no es lo mismo
         // una vez restados el padding y el tope de 900 px) — así se puede
         // aplanar agresivo en pantalla ancha sin desbordar en la franja
@@ -284,7 +284,7 @@ class _CeldaDia extends ConsumerWidget {
     final radio = BorderRadius.circular(Esquina.chica);
 
     // Antes la celda entera se pintaba con el color pleno del estado — un
-    // bloque sólido y saturado por día, 31 a la vez. Acá el color queda como
+    // bloque sólido y saturado por día, 31 a la vez. Aquí el color queda como
     // acento (franja + ícono + etiqueta) sobre una base tenida, no un bloque
     // saturado. Empezó en 0.12 (casi imperceptible, feriado/vacación no se
     // distinguían de un día en blanco — pedido explícito del usuario) y
@@ -503,7 +503,7 @@ class _FilaAngosta extends ConsumerWidget {
                 children: [
                   Text(_etiquetaDeEstado(entrada!.estado)),
                   // Mismo criterio que la marca de la celda ancha: falta, o
-                  // trabajó con atraso — acá al lado de la etiqueta en vez de
+                  // trabajó con atraso — aquí al lado de la etiqueta en vez de
                   // superpuesta al avatar (evita cualquier riesgo de recorte
                   // dentro del slot fijo de `ListTile.leading`).
                   if (entrada!.tieneProblema) ...[
@@ -521,7 +521,7 @@ class _FilaAngosta extends ConsumerWidget {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// LEYENDA — el color no es el único canal: acá está el texto de cada uno.
+// LEYENDA — el color no es el único canal: aquí está el texto de cada uno.
 // ═══════════════════════════════════════════════════════════════════════════
 
 class _Leyenda extends StatelessWidget {
@@ -650,7 +650,7 @@ void _mostrarDetalle(
             // `marOlv` a nivel de BiometricoScreen, pero este atajo vive
             // adentro de Reporte, que no tiene botón propio. Sin este
             // PermissionWidget, alguien sin `marOlv` no vería la pestaña
-            // pero igual podría cargar una marcación a mano desde acá.
+            // pero igual podría cargar una marcación a mano desde aquí.
             PermissionWidget(
               buttonName: 'marOlv',
               child: SizedBox(

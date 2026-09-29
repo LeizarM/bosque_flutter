@@ -29,7 +29,7 @@
 /// primero y mirar el texto de adentro. Es lo que hace `_pelar`, y por eso
 /// corre antes que todo lo demás.
 ///
-/// **Nació en el módulo del Rol de Sábados y se mudó acá sin cambiar una
+/// **Nació en el módulo del Rol de Sábados y se mudó aquí sin cambiar una
 /// letra**: las reglas están escritas mirando los `RAISERROR` de los `trs_sp_`,
 /// pero el envoltorio del `CATCH`, los errores del motor y los cortes de red
 /// son los mismos para todos los `p_` del ERP, así que el segundo módulo que
@@ -88,7 +88,7 @@ MensajeUsuario humanizar(Object? crudo) {
 
   // ── 4. Venía envuelto y nadie lo reconoció ───────────────────────────
   // Por el `CATCH` sólo pasan dos cosas: reglas del negocio —que están en la
-  // tabla de arriba— y excepciones del motor. Si llegó hasta acá es lo
+  // tabla de arriba— y excepciones del motor. Si llegó hasta aquí es lo
   // segundo, o un mensaje nuevo del SQL que este archivo todavía no conoce.
   // En los dos casos mostrarlo crudo sería pegarle en la cara a quien usa la
   // app un texto que habla de tablas y líneas; se va al log, que es donde
@@ -219,10 +219,10 @@ String? _deConexion(String t) {
   if (b.contains('unauthorized') || codigo('401')) {
     return 'Tu sesión venció. Vuelve a iniciar sesión.';
   }
-  // Ojo: acá NO va la palabra «permisos». El módulo tiene una acción que se
+  // Ojo: aquí NO va la palabra «permisos». El módulo tiene una acción que se
   // llama «refrescar permisos» y un estado 'P' de permiso de RR.HH.; con
   // aquella condición, cualquier mensaje sobre las vacaciones de la gente
-  // terminaba convertido en «no tenés permiso para hacer este cambio».
+  // terminaba convertido en «no tienes permiso para hacer este cambio».
   if (b.contains('forbidden') || codigo('403')) {
     return 'No tienes permiso para hacer este cambio.';
   }
@@ -237,12 +237,12 @@ String? _deConexion(String t) {
 final _reglas = <(RegExp, String)>[
   // ── el rol ──────────────────────────────────────────────────────────
   //
-  // **El `%s` parte la frase, y por eso los patrones de acá tienen un comodín
+  // **El `%s` parte la frase, y por eso los patrones de aquí tienen un comodín
   // en el medio.** `trs_sp_generarRol` arma sus rechazos con
   // `RAISERROR('El rol %s esta CERRADO...', 16, 1, @nombre)`, y `@nombre` es
   // `'ROL ' + el año`. Lo que llega es «El rol ROL 2026 esta CERRADO», no «El
   // rol esta CERRADO»: cualquier patrón que pegue las dos palabras falla
-  // contra el mensaje de verdad. Y fallar acá no se ve como una regla que
+  // contra el mensaje de verdad. Y fallar aquí no se ve como una regla que
   // falta —el fail-closed de más arriba lo convierte en «problema del
   // sistema»—, así que el usuario terminaba creyendo que rompió algo cuando en
   // realidad el SP le estaba explicando qué hacer.
@@ -267,10 +267,7 @@ final _reglas = <(RegExp, String)>[
   (
     // Las dos formas del mismo rechazo: la del SP («El rol ROL 2026 ya
     // existe…») y la que usan los ABM («Ya existe el rol…»).
-    RegExp(
-      r'(ya existe el rol|rol[^.;]{0,40}ya existe)',
-      caseSensitive: false,
-    ),
+    RegExp(r'(ya existe el rol|rol[^.;]{0,40}ya existe)', caseSensitive: false),
     'Ya hay un rol generado para ese año. Si quieres actualizarlo con el '
         'personal de hoy, usa «Regenerar» en vez de «Crear».',
   ),

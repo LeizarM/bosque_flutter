@@ -324,5 +324,4 @@ abstract class ComisionesRepository {
   /// Devuelve true solo si realmente cargo: si los datos estaban frescos o ya
   /// habia otra carga en curso devuelve false, y eso no es un error.
   Future<bool> sincronizarNotas();
-
 }

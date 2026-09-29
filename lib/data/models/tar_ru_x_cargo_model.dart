@@ -80,16 +80,15 @@ class TarRuXCargoModel {
       codCargo: json["codCargo"],
       estado: json["estado"],
       audUsuario: json["audUsuario"] ?? 0,
-      audFecha: json["audFecha"] != null
-          ? DateTime.tryParse(json["audFecha"])
-          : null,
+      audFecha:
+          json["audFecha"] != null ? DateTime.tryParse(json["audFecha"]) : null,
       codCargoSucursal: json["codCargoSucursal"],
-      fechaInicio: json["fechaInicio"] != null
-          ? DateTime.tryParse(json["fechaInicio"])
-          : null,
-      fechaFin: json["fechaFin"] != null
-          ? DateTime.tryParse(json["fechaFin"])
-          : null,
+      fechaInicio:
+          json["fechaInicio"] != null
+              ? DateTime.tryParse(json["fechaInicio"])
+              : null,
+      fechaFin:
+          json["fechaFin"] != null ? DateTime.tryParse(json["fechaFin"]) : null,
     );
   }
 

@@ -31,7 +31,11 @@ class ResmadoEntity {
     this.empresa = '',
   });
 
-  ResmadoEntity copyWith({int? codEmpresa, int? docNumOrdFab, String? empresa}) {
+  ResmadoEntity copyWith({
+    int? codEmpresa,
+    int? docNumOrdFab,
+    String? empresa,
+  }) {
     return ResmadoEntity(
       idRes: idRes,
       idGrupo: idGrupo,

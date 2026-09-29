@@ -43,6 +43,19 @@ class AppConstants {
   static const String articulosEndpoint = '/paginaXApp/articulosX';
   static const String articulosAlmacenEndpoint =
       '/paginaXApp/articulosXAlmacen';
+  // Ciudades del catálogo de Ventas. El backend decide cuáles ve cada usuario
+  // (admin: todas; con excepciones: las asignadas; resto: la del login).
+  static const String ventasCiudadesPermitidas =
+      '/paginaXApp/ciudadesPermitidas';
+  // Gestión de excepciones por usuario (solo ROLE_ADM).
+  static const String ventasUsuarioCiudadCiudadesVenta =
+      '/paginaXApp/usuarioCiudad/ciudadesVenta';
+  static const String ventasUsuarioCiudadAsignaciones =
+      '/paginaXApp/usuarioCiudad/asignaciones';
+  static const String ventasUsuarioCiudadRegistrar =
+      '/paginaXApp/usuarioCiudad/registrar';
+  static const String ventasUsuarioCiudadEliminar =
+      '/paginaXApp/usuarioCiudad/eliminar';
 
   // ═══════════════════════════════════════════════════════════════════════════════
   // RUTAS MODULO: ENTREGAS Y RUTAS DE CHOFERES
@@ -517,6 +530,7 @@ class AppConstants {
   // RUTAS MODULO: PERMISOS / VACACION
   // ═══════════════════════════════════════════════════════════════════════════════
   static const String vacDiasDisponibles = '/vacacion/diasDisponibles';
+  static const String obtenerHorario = '/vacacion/obtener-horario';
   //-----------------
   // ENDPOINTS PARA SOLOCITUD DE PERMISO/VACACION DE CADA EMPLEADO
   //-----------------
@@ -760,7 +774,7 @@ class AppConstants {
 
   /// El «DETALLE COMPLETO» del sistema anterior: el estado de cuenta del
   /// empleado en PDF. La variante fiscal oculta los días abonados, y ese flag
-  /// vive dentro del `.jrxml`, no acá: son dos rutas y no un parámetro.
+  /// vive dentro del `.jrxml`, no aquí: son dos rutas y no un parámetro.
   static const String permRrhhEstadoCuenta =
       '$_permRrhh/reportes/estado-cuenta';
   static const String permRrhhEstadoCuentaFiscal =
@@ -1152,6 +1166,8 @@ class AppConstants {
       '/biometrico/reporte-mensual-detallado-todos-pdf';
   static const String biometricoHorarioVigentePorEmpleadoPdf =
       '/biometrico/horario-vigente-por-empleado-pdf';
+  static const String biometricoReporteDetalladoRangoPdf =
+      '/biometrico/reporte-detallado-rango-pdf';
 
   // ── TAREAS RUTINARIAS ────────────────────────────────────────────────────
   // Prefijo "tar" (no "tpex"/"mul"/etc.) — módulo nuevo, procs p_abm_tac_*/
@@ -1200,6 +1216,45 @@ class AppConstants {
       '/tareas-rutinarias/eliminar-traspaso-mov-caja';
   static const String tarObtenerTraspasoMovCaja =
       '/tareas-rutinarias/obtener-traspaso-mov-caja';
+
+  // Tarea 295, "Verificar traspaso Caja AXA contra movimiento de caja"
+  // (idATR 12). Las rutas dicen "traspaso-entre-sistemas" por historia: al
+  // principio se creyó que era la 289, que es TesBase (ver el archivo SQL 51).
+  // El listado NO lee la tabla: el servidor consulta SAP y cruza contra lo ya
+  // verificado, asi que puede tardar y puede fallar si el enlace no responde.
+  static const String tarTraspasoEntreSistemasDelDia =
+      '/tareas-rutinarias/traspaso-entre-sistemas/del-dia';
+  static const String tarTraspasoEntreSistemasVerificar =
+      '/tareas-rutinarias/traspaso-entre-sistemas/verificar';
+  static const String tarTraspasoEntreSistemasSinNovedad =
+      '/tareas-rutinarias/traspaso-entre-sistemas/sin-novedad';
+
+  // Tarea 289, "Verificar Traspaso de Efectivo Entre Sistemas" (idATR 11,
+  // TesBase / ttes_TesBase). Solo la verificación; el registro sigue en el
+  // sistema anterior. Archivo SQL 56.
+  static const String tarTesBasePendientes =
+      '/tareas-rutinarias/traspaso-efectivo-tesbase/pendientes';
+  static const String tarTesBaseCerrar =
+      '/tareas-rutinarias/traspaso-efectivo-tesbase/cerrar';
+  static const String tarTesBaseSinPendientes =
+      '/tareas-rutinarias/traspaso-efectivo-tesbase/sin-pendientes';
+  // Qué día revisa la ocurrencia (el hábil anterior, con los feriados de la
+  // sucursal) y las transferencias de un día. Archivo SQL 58.
+  static const String tarTesBaseDiaRevisado =
+      '/tareas-rutinarias/traspaso-efectivo-tesbase/dia-revisado';
+  static const String tarTesBaseDelDia =
+      '/tareas-rutinarias/traspaso-efectivo-tesbase/del-dia';
+
+  // Bitácoras de tareas rutinarias (vista tacTareas/Bitacora, archivo SQL 55).
+  // El alcance —toda la empresa o el equipo propio— lo decide el servidor
+  // desde el token; nada de lo que se mande aquí lo amplía.
+  static const String tarBitacoraCumplimiento =
+      '/tareas-rutinarias/bitacora/cumplimiento';
+  static const String tarBitacoraCumplimientoPdf =
+      '/tareas-rutinarias/bitacora/cumplimiento-pdf';
+  static const String tarBitacoraGeneracion =
+      '/tareas-rutinarias/bitacora/generacion';
+  static const String tarBitacoraPorQue = '/tareas-rutinarias/bitacora/por-que';
 
   // Acción de tarea rutinaria (catálogo idATR)
   static const String tarRegistrarAccionTareaRutinaria =
@@ -1334,6 +1389,40 @@ class AppConstants {
       '/tareas-rutinarias/arqueo-caja/tipo-cambio';
   static const String tarArqueoCajaAnterior =
       '/tareas-rutinarias/arqueo-caja/anterior';
+  // PDF del arqueo ya registrado (RptArqueoDeCaja del legacy) — idAC es el
+  // id que devuelve tarArqueoCajaRegistrar al guardar.
+  static const String tarArqueoCajaReportePdf =
+      '/tareas-rutinarias/arqueo-caja/reporte-pdf';
+
+  // Historial de tareas rutinarias de un empleado (RptTareaXDia del legacy,
+  // p_list_bitTareaRuti ACCION='A'). Sin body = el del propio usuario; con
+  // codEmpleado = el de otro, y ahí el backend exige el botón btnEmpAll.
+  static const String tarMisTareasReportePdf =
+      '/tareas-rutinarias/mis-tareas/reporte-pdf';
+
+  // Traspaso de tareas por cambio de cargo (archivo SQL 39). El generador solo
+  // mira el cargo mas reciente del empleado, asi que al cambiarle el cargo las
+  // tareas del anterior dejan de generarse en silencio. Estos dos endpoints
+  // hacen visible esa perdida y dejan decidirla, tarea por tarea.
+  static const String tarTraspasosPendientes =
+      '/tareas-rutinarias/admin/traspasos-pendientes';
+  static const String tarTraspasarTarea =
+      '/tareas-rutinarias/admin/traspasar-tarea';
+
+  // Abrir un flujo a requerimiento (archivo SQL 40). Caja Fuerte, Coches, Caja
+  // Chica y Cierre de Operaciones ya no son tareas rutinarias: el Job dejo de
+  // generarlas y ahora son submodulos de la vista 87. La ocurrencia
+  // (tac_bitTareaRuti) nace cuando alguien entra a hacer el trabajo, y este
+  // endpoint la crea o devuelve la de hoy si ya existe. El empleado lo resuelve
+  // el backend desde el token.
+  static const String tarAbrirFlujo = '/tareas-rutinarias/abrir-flujo';
+
+  // PDF del kardex de caja fuerte de HOY para el propio chofer que lo acaba
+  // de registrar (RptCajaFuerteCO). Distinto de la variante bajo
+  // /verificar-cierre/, que es del supervisor y exige el boton plCajaFuerte:
+  // este verifica que el idBitTarea sea de quien llama.
+  static const String tarCajaFuerteReportePdf =
+      '/tareas-rutinarias/caja-fuerte/reporte-pdf';
 
   // Flujo especial: Caja Chica (idATR=7) — p_cajaChica_*.
   static const String tarCajaChicaListarDelLote =
@@ -1342,6 +1431,11 @@ class AppConstants {
       '/tareas-rutinarias/caja-chica/registrar-egreso';
   static const String tarCajaChicaFinalizar =
       '/tareas-rutinarias/caja-chica/finalizar';
+  // Cierra el lote vigente de la sucursal y abre uno nuevo con su saldo
+  // inicial ya sembrado — reemplaza la mitad "reiniciar caja chica" del
+  // legacy "Generar PDF" (el reporte en sí se migra aparte).
+  static const String tarCajaChicaCerrarLote =
+      '/tareas-rutinarias/caja-chica/cerrar-lote';
   // "Ver Cajas Chicas" del legacy — histórico de lotes por sucursal.
   static const String tarCajaChicaHistorialLotes =
       '/tareas-rutinarias/caja-chica/historial-lotes';
@@ -1349,12 +1443,36 @@ class AppConstants {
   // usa un <p:selectOneMenu filter="true">, no un id numérico crudo).
   static const String tarCajaChicaBuscarEmpleados =
       '/tareas-rutinarias/caja-chica/buscar-empleados';
+  // PDF "Caja Chica" (RptCajaChica) — botón "Generar PDF" por fila del
+  // diálogo "Ver Cajas Chicas". lote y codSucursal viajan desde la propia
+  // fila del histórico (tarCajaChicaHistorialLotes ya resuelve codSucursal
+  // server-side), nunca de un valor tipeado a mano.
+  static const String tarCajaChicaReportePdf =
+      '/tareas-rutinarias/caja-chica/reporte-pdf';
 
-  // Flujo especial: Cierre de Operaciones (idATR=3) — p_cierreOperaciones_confirmarTraspasos.
-  // El listado reutiliza tarObtenerTraspasoMovCaja (filtrado por fecha,
-  // ahora elegible con un selector — antes hardcodeado a hoy).
+  // Flujo especial: Cierre de Operaciones (idATR 3 y 5) — la revisión del día.
+  // Reemplaza el diálogo dlgRevArqueo del sistema anterior: arqueos, traspasos
+  // de Caja AXA, caja fuerte, cheques y las tareas que generó el Job. Cada
+  // panel tiene su endpoint; los de arqueos y caja fuerte viven bajo
+  // /verificar-cierre/ porque nacieron para la tarea 39 (ver más abajo).
+  //
+  // El listado de traspasos es el del día de Caja AXA
+  // (tarTraspasoEntreSistemasDelDia): SAP cruzado con lo verificado, siempre
+  // con fecha. Hasta el 2026-09-11 usaba tarObtenerTraspasoMovCaja, que sin
+  // fecha devolvía la tabla entera.
   static const String tarCierreOperacionesConfirmar =
       '/tareas-rutinarias/cierre-operaciones/confirmar';
+  // Los cheques del día cruzados contra SAP (p_SAP_Rpt_ImpChequesPR 'A', el
+  // panel plCheques del sistema anterior). Falla si SAP no contesta: una lista
+  // vacía diría "no hubo cheques".
+  static const String tarCierreOperacionesCheques =
+      '/tareas-rutinarias/cierre-operaciones/cheques';
+  // Las tareas que generó el Job ese día en la sucursal de la ocurrencia
+  // (p_list_tac_BitTareaRuti 'R', archivo SQL 60): lo que quien cierra revisa
+  // que los demás hayan hecho. Mismo cuerpo que los otros paneles
+  // (idBitTarea + fecha + todasSucursales).
+  static const String tarCierreOperacionesTareasDelDia =
+      '/tareas-rutinarias/cierre-operaciones/tareas-del-dia';
 
   // Flujo especial: Verificar Cierre de Operaciones (idATR=5) — el paso
   // supervisor. Los paneles de arqueos/llegadas de HOY ahora vienen
@@ -1371,6 +1489,21 @@ class AppConstants {
       '/tareas-rutinarias/verificar-cierre/marcar-llegada-verificada';
   static const String tarVerificarCierreConfirmar =
       '/tareas-rutinarias/verificar-cierre/confirmar';
+  // PDF consolidado "Cierre de Operaciones" (RptCierreOperaciones del
+  // legacy, botón de cabecera de dlgRevArqueo, solo idATR=5) — junta los 6
+  // flujos del día (arqueos, vales, caja fuerte, traspasos, cheques SAP,
+  // coches) en un solo PDF. Mismo body que tarVerificarCierreArqueosDeHoy/
+  // LlegadasDeHoy (idBitTarea + todasSucursales) — se pide con
+  // DioClient.descargarReportePdf y no con BaseApiRepository.postAndReturn*.
+  static const String tarVerificarCierreReporteCierreOperacionesPdf =
+      '/tareas-rutinarias/verificar-cierre/reporte-cierre-operaciones-pdf';
+  // PDF "Caja Fuerte" (RptCajaFuerteCO del legacy, comandLink
+  // "DESCARGAR PDF" dentro del panel plCajaFuerte de dlgRevArqueo) —
+  // mismo body que tarVerificarCierreArqueosDeHoy/LlegadasDeHoy
+  // (idBitTarea + todasSucursales); se pide con
+  // DioClient.descargarReportePdf, no con BaseApiRepository.postAndReturn*.
+  static const String tarVerificarCierreReporteCajaFuertePdf =
+      '/tareas-rutinarias/verificar-cierre/reporte-caja-fuerte-pdf';
 
   // ── Dias No Laborables (ABM admin) ──────────────────────────────────────
   // Reemplaza al modulo JSF legacy tbDiaNoLaborable. Backend: bloque
@@ -1386,4 +1519,341 @@ class AppConstants {
       '$_diasNoLab/obtener-dias-no-laborables';
   static const String diasNoLabObtenerSucursales =
       '$_diasNoLab/obtener-sucursales-dia-no-laborable';
+
+  // ==================== PRECIOS (tpr) ====================
+  // Migracion de la pantalla tprAutorizacion/Autorizacion.xhtml de Bosque v2.
+  // Backend: PrecioController (prefijo /price) y CatalogoPreciosController
+  // (prefijo /price/catalogo). Todos los endpoints son POST, incluidas las
+  // lecturas, y responden el envelope {message, data, status}.
+  static const String _precios = '/price';
+  static const String _preciosCatalogo = '$_precios/catalogo';
+
+  // --- Propuestas: lecturas ---
+  // Propuestas pendientes de autorizacion, con estado y quien las genero.
+  static const String preciosAutorizacion = '$_precios/autorizacion';
+  // Estados posibles de una propuesta (v_tipos grupo 38).
+  static const String preciosEstadoPropuesta = '$_precios/estadoPropuesta';
+  // Costo de flete de transporte por sucursal.
+  static const String preciosCostoFlete = '$_precios/costoFlete';
+  static const String preciosProveedoresSap = '$_precios/lstProveedor';
+  // Familias con su descripcion resuelta. El cuerpo es el filtro: los campos
+  // que no viajan no filtran, pero un 0 SI filtra (no es lo mismo que ausente).
+  static const String preciosFamilias = '$_precios/listFamilia';
+  static const String preciosFamiliasPorGrupo = '$_precios/listFamiliaXGrupo';
+  // Articulos de varias familias. El cuerpo lleva codCad: los codigos
+  // separados por coma y con coma final ("12,13,14,").
+  static const String preciosArticulosPorFamilias =
+      '$_precios/listFamiliaXArticulo';
+  static const String preciosCargarFamilia = '$_precios/cargarProducto';
+  // Alta y edicion de una familia (tpr_producto). Exigen la pantalla Familias.
+  static const String preciosFamiliaRegistrar = '$_precios/familia/registrar';
+  static const String preciosFamiliaActualizar = '$_precios/familia/actualizar';
+  // Las listas de precio activas con el porcentaje en 0: la grilla
+  // "Porcentaje por familia" del alta.
+  static const String preciosFamiliaListasParaPorcentaje =
+      '$_precios/familia/listasParaPorcentaje';
+  // Acciones de la fila, sin abrir la ficha. Exigen la pantalla Familias.
+  static const String preciosFamiliaCambiarEstado =
+      '$_precios/familia/cambiarEstado';
+  static const String preciosFamiliaEliminar = '$_precios/familia/eliminar';
+  static const String preciosFamiliaAsignarSap = '$_precios/familia/asignarSap';
+  // Trae de SAP los proveedores y grupos de familia nuevos (p_abm_producto
+  // 'H'). Exige la pantalla Familias o la de Catalogos.
+  static const String preciosFamiliaSincronizarSap =
+      '$_precios/familia/sincronizarSap';
+  // Historial del costo de una familia (p_list_bitCostoProducto).
+  static const String preciosFamiliaHistorialCosto =
+      '$_precios/familia/historialCosto';
+  static const String preciosPrecioTonPorFamilia =
+      '$_precios/lstPrecioTonXFamilia';
+  // La vista preliminar con las mismas filas que el PDF de la propuesta y los
+  // precios por unidad del Excel. Reemplaza a lstArticulosXPropuesta.
+  static const String preciosVistaPropuesta = '$_precios/vistaPropuesta';
+
+  // --- Propuestas: escrituras ---
+  // Las escrituras sueltas (registrarPropuesta, registrarCostoIncre,
+  // registrarPrecioPropuesta, registrarCostoSug) se quitaron el 2026-09-25 junto con sus endpoints: ninguna pantalla las
+  // usaba -todo pasa por el asistente- y en el servidor no pedian permiso.
+
+  // --- Armado de una propuesta (asistente "Nueva propuesta") ---
+  // Reemplaza a dlgNuevo, dlgProd, dlgVista y dlgArtD. El precio lo calcula
+  // siempre el servidor: calcularFamilia es la vista previa y no escribe;
+  // guardarFamilia vuelve a calcular y graba cabecera, fletes, precios y costo
+  // en una sola transaccion. La propuesta nace con la primera familia (o el
+  // primer articulo) que se guarda, como en el sistema anterior.
+  static const String _preciosArmado = '$_precios/armado';
+  static const String preciosArmadoFletes = '$_preciosArmado/fletes';
+  static const String preciosArmadoFamilias = '$_preciosArmado/familias';
+  static const String preciosArmadoCalcularFamilia =
+      '$_preciosArmado/calcularFamilia';
+  static const String preciosArmadoGuardarFamilia =
+      '$_preciosArmado/guardarFamilia';
+  // Carga en lote: varias familias, cada una con su costo. calcularFamilias no
+  // escribe y dice por familia si se puede guardar; guardarFamilias graba todo
+  // el pedido en una transaccion.
+  static const String preciosArmadoCalcularFamilias =
+      '$_preciosArmado/calcularFamilias';
+  static const String preciosArmadoGuardarFamilias =
+      '$_preciosArmado/guardarFamilias';
+  // Cambiar un flete recalcula todas las familias de la propuesta.
+  static const String preciosArmadoGuardarFletes =
+      '$_preciosArmado/guardarFletes';
+  static const String preciosArmadoArticulos = '$_preciosArmado/articulos';
+  static const String preciosArmadoAgregarArticulos =
+      '$_preciosArmado/agregarArticulos';
+  static const String preciosArmadoQuitarArticulo =
+      '$_preciosArmado/quitarArticulo';
+  // Trae de SAP los articulos nuevos: puede tardar varios minutos.
+  static const String preciosArmadoSincronizarArticulosSap =
+      '$_preciosArmado/sincronizarArticulosSap';
+
+  // Reportes PDF del modulo (reemplazan a los Jasper del JSF). Devuelven el PDF
+  // crudo; un error de negocio llega como 400 con el JSON de siempre.
+  static const String _preciosReporte = '$_precios/reporte';
+  // Puede tardar: consulta en otro servidor los articulos no creados.
+  static const String preciosReportePropuesta = '$_preciosReporte/propuesta';
+  static const String preciosReportePreciosGrupo =
+      '$_preciosReporte/preciosGrupo';
+  static const String preciosReportePreciosTodas =
+      '$_preciosReporte/preciosTodas';
+  static const String preciosReporteFamiliasActivas =
+      '$_preciosReporte/familiasActivas';
+
+  // --- Circuito de autorizacion ---
+  // resolverPropuesta es la operacion mas sensible del modulo: al aprobar, los
+  // precios propuestos pasan a ser los precios de venta vigentes de toda la
+  // empresa. El backend exige el boton btnAprobar y corre en una transaccion.
+  static const String preciosResolverPropuesta = '$_precios/resolverPropuesta';
+  static const String preciosMarcarEnEspera = '$_precios/marcarEnEspera';
+  // Generar: devuelve CambioDePrecios.xlsx (bytes, como los PDF) y registra
+  // quien lo genero. Exige btnGen y una propuesta aprobada.
+  static const String preciosGenerarPropuesta = '$_precios/generarPropuesta';
+
+  // --- Porcentajes por familia y lista de precios (tpr_porcentaje) ---
+  // El margen que se aplica sobre el costo para calcular el precio de cada
+  // familia en cada lista de precios: es parte del calculo y por eso cuelga de
+  // /price y no de /price/catalogo. Reemplaza a los dialogos dlgPorcen y
+  // dlgPorcGrupo de Autorizacion.xhtml.
+
+  // La grilla de dlgPorcen: una fila por sucursal y lista de precios, con el
+  // porcentaje vigente. Cuerpo: codigoFamilia. Las listas que la familia
+  // todavia no tiene vuelven con idPorcen y porcentaje en 0: eso es un alta
+  // pendiente, no un error.
+  static const String preciosPorcentajePorFamilia =
+      '$_precios/lstPorcentajeXFamilia';
+  // La grilla de destinos de dlgPorcGrupo: las sucursales con sus listas de
+  // precios activas, con el porcentaje en 0. Cuerpo: id = idGrpFamiliaSap.
+  //
+  // OJO: la grilla NO depende del grupo -el backend lista todas las
+  // clasificaciones activas-, pero el id se exige igual porque sin el la
+  // edicion masiva no tiene destino. Las familias afectadas salen de
+  // preciosFamiliasPorGrupo. El backend tampoco ordena esta rama: el orden por
+  // vpp y sucursal lo aplica la pantalla.
+  static const String preciosPorcentajeParaGrupo =
+      '$_precios/lstPorcentajeParaGrupo';
+  // Listas de precios que todavia no tienen porcentaje para una familia.
+  static const String preciosPorcentajeFaltante =
+      '$_precios/lstPorcentajeFaltante';
+  // Las filas crudas de tpr_porcentaje. A diferencia de la grilla no completa
+  // las listas faltantes: devuelve solo lo que existe en la tabla.
+  static const String preciosPorcentajeListar = '$_precios/lstPorcentaje';
+
+  // Alta o modificacion de UNA fila por llamada, que es lo que soporta el
+  // procedimiento: la grilla completa se guarda con una llamada por lista de
+  // precios, igual que hacia actualizaPorcen() en el legacy.
+  static const String preciosRegistrarPorcentaje =
+      '$_precios/registrarPorcentaje';
+  // La baja (eliminarPorcentaje) se quitaron el 2026-09-25 junto con sus endpoints: ninguna pantalla las
+  // usaba -todo pasa por el asistente- y en el servidor no pedian permiso.
+
+  // --- Catalogo: color (tpr_color) ---
+  static const String preciosColorListar = '$_preciosCatalogo/color/listar';
+  static const String preciosColorActivos = '$_preciosCatalogo/color/activos';
+  static const String preciosColorRegistrar =
+      '$_preciosCatalogo/color/registrar';
+  static const String preciosColorEliminar = '$_preciosCatalogo/color/eliminar';
+
+  // --- Catalogo: tipo de papel (tpr_tipo) ---
+  static const String preciosTipoListar = '$_preciosCatalogo/tipo/listar';
+  static const String preciosTipoActivos = '$_preciosCatalogo/tipo/activos';
+  static const String preciosTipoRegistrar = '$_preciosCatalogo/tipo/registrar';
+  static const String preciosTipoEliminar = '$_preciosCatalogo/tipo/eliminar';
+
+  // --- Catalogo: presentacion (tpr_presentacion) ---
+  static const String preciosPresentacionListar =
+      '$_preciosCatalogo/presentacion/listar';
+  static const String preciosPresentacionBuscar =
+      '$_preciosCatalogo/presentacion/buscar';
+  static const String preciosPresentacionActivas =
+      '$_preciosCatalogo/presentacion/activas';
+  static const String preciosPresentacionObtener =
+      '$_preciosCatalogo/presentacion/obtener';
+  static const String preciosPresentacionRegistrar =
+      '$_preciosCatalogo/presentacion/registrar';
+  static const String preciosPresentacionEliminar =
+      '$_preciosCatalogo/presentacion/eliminar';
+
+  // --- Catalogo: rango de gramaje (tpr_RangoGramaje) ---
+  static const String preciosRangoGramajeListar =
+      '$_preciosCatalogo/rango-gramaje/listar';
+  static const String preciosRangoGramajeObtener =
+      '$_preciosCatalogo/rango-gramaje/obtener';
+  // Los mismos rangos con la etiqueta "[ min - max ]" ya armada por el backend.
+  static const String preciosRangoGramajeCombo =
+      '$_preciosCatalogo/rango-gramaje/combo';
+  // Cuerpo: la clave natural (idGrpFamiliaSap, idTipo) de la tabla puente.
+  static const String preciosRangoGramajePorGrupoFamiliaTipo =
+      '$_preciosCatalogo/rango-gramaje/por-grupo-familia-tipo';
+  static const String preciosRangoGramajeRegistrar =
+      '$_preciosCatalogo/rango-gramaje/registrar';
+  static const String preciosRangoGramajeEliminar =
+      '$_preciosCatalogo/rango-gramaje/eliminar';
+
+  // --- Catalogo: grupo de familia SAP (tpr_grupoFamiliaSap) ---
+  static const String preciosGrupoFamiliaSapListar =
+      '$_preciosCatalogo/grupo-familia-sap/listar';
+  // Devuelve una lista de una sola fila, no un objeto.
+  static const String preciosGrupoFamiliaSapObtener =
+      '$_preciosCatalogo/grupo-familia-sap/obtener';
+  static const String preciosGrupoFamiliaSapBuscar =
+      '$_preciosCatalogo/grupo-familia-sap/buscar';
+  static const String preciosGrupoFamiliaSapRegistrar =
+      '$_preciosCatalogo/grupo-familia-sap/registrar';
+  static const String preciosGrupoFamiliaSapEliminar =
+      '$_preciosCatalogo/grupo-familia-sap/eliminar';
+
+  // --- Catalogo: proveedor externo SAP (tpr_proveedorExtSap) ---
+  static const String preciosProveedorSapListar =
+      '$_preciosCatalogo/proveedor-sap/listar';
+  static const String preciosProveedorSapBuscar =
+      '$_preciosCatalogo/proveedor-sap/buscar';
+  static const String preciosProveedorSapObtener =
+      '$_preciosCatalogo/proveedor-sap/obtener';
+  static const String preciosProveedorSapRegistrar =
+      '$_preciosCatalogo/proveedor-sap/registrar';
+  static const String preciosProveedorSapEliminar =
+      '$_preciosCatalogo/proveedor-sap/eliminar';
+
+  // --- Catalogo: parametros de gramaje (tpr_grupoFamTipoRangoGram) ---
+  // La tabla es un HEAP: no tiene PK ni IDENTITY. La fila se identifica por su
+  // clave natural (idGrpFamiliaSap, idTipo) y el alta siempre devuelve id 0.
+  static const String preciosGrupoFamTipoRangoListar =
+      '$_preciosCatalogo/grupo-fam-tipo-rango/listar';
+  static const String preciosGrupoFamTipoRangoPorGrupoFamilia =
+      '$_preciosCatalogo/grupo-fam-tipo-rango/por-grupo-familia';
+  static const String preciosGrupoFamTipoRangoObtener =
+      '$_preciosCatalogo/grupo-fam-tipo-rango/obtener';
+  // La tabla pivoteada: un renglon por grupo de familia con sus columnas
+  // Liviano / Mediano / Pesado.
+  static const String preciosGrupoFamTipoRangoParametros =
+      '$_preciosCatalogo/grupo-fam-tipo-rango/parametros-gramaje';
+  static const String preciosGrupoFamTipoRangoRegistrar =
+      '$_preciosCatalogo/grupo-fam-tipo-rango/registrar';
+  static const String preciosGrupoFamTipoRangoEliminar =
+      '$_preciosCatalogo/grupo-fam-tipo-rango/eliminar';
+
+  // --- Catalogo: listas de precios (tpr_clasificacionPrecio) ---
+  static const String preciosClasificacionListar =
+      '$_preciosCatalogo/clasificacion-precio/listar';
+  static const String preciosClasificacionConSucursal =
+      '$_preciosCatalogo/clasificacion-precio/con-sucursal';
+  // Devuelve una lista de enteros crudos, no de objetos.
+  static const String preciosClasificacionVpps =
+      '$_preciosCatalogo/clasificacion-precio/vpps';
+  // Devuelve un booleano crudo y siempre 200: que el vpp exista no es un error.
+  static const String preciosClasificacionExisteVpp =
+      '$_preciosCatalogo/clasificacion-precio/existe-vpp';
+  static const String preciosClasificacionRegistrar =
+      '$_preciosCatalogo/clasificacion-precio/registrar';
+  static const String preciosClasificacionCambiarEstado =
+      '$_preciosCatalogo/clasificacion-precio/cambiar-estado';
+  static const String preciosClasificacionEliminar =
+      '$_preciosCatalogo/clasificacion-precio/eliminar';
+
+  // --- Catalogo: IVA / IT (tpr_costoIvaIt, singleton) ---
+  static const String preciosCostoIvaItListar =
+      '$_preciosCatalogo/costo-iva-it/listar';
+  // La fila vigente, con totalIvaIt ya sumado por el backend.
+  static const String preciosCostoIvaItVigente =
+      '$_preciosCatalogo/costo-iva-it/vigente';
+  static const String preciosCostoIvaItPorPropuesta =
+      '$_preciosCatalogo/costo-iva-it/por-propuesta';
+  // El backend prefiere actualizar antes que insertar: la tabla tiene que
+  // quedarse en una sola fila porque los calculos la leen con SELECT TOP 1
+  // sin ORDER BY.
+  static const String preciosCostoIvaItRegistrar =
+      '$_preciosCatalogo/costo-iva-it/registrar';
+
+  // --- Catalogo: ancla del tipo de cambio (tpr_tcAncla) ---
+  // SOLO LECTURA a proposito: la configuracion del reprecio nocturno la maneja
+  // un job externo y escribirla desde la aplicacion lo descalibraria.
+  static const String preciosTcAnclaListar =
+      '$_preciosCatalogo/tc-ancla/listar';
+  static const String preciosTcAnclaObtener =
+      '$_preciosCatalogo/tc-ancla/obtener';
+
+  // ==================== PRECIOS (tpr): direcciones de pantalla ============
+  // La `direccion` de tb_vista, TAL CUAL esta en la base: el sidebar arma el
+  // destino como '/' + direccion, y el router registra la misma cadena bajo
+  // '/dashboard/'. Por eso viven aca y no sueltas en router.dart.
+  //
+  // La primera es la del modulo legacy (codVista 66, padre 65 'Cambio de
+  // Precios'): se conserva exacta para reemplazar la pantalla JSF sin tocar
+  // el menu ni los permisos que los usuarios ya tienen.
+  static const String rutaPreciosPropuestas = 'tprAutorizacion/Autorizacion';
+  // Las seis siguientes son pantallas nuevas, cuelgan del mismo padre 65.
+  // Hubo una septima, 'tprPropuestaDetalle/Detalle' (Detalle de Propuesta):
+  // se quito el 2026-09-25 porque desde el menu se abria vacia; el detalle se
+  // ve con la vista preliminar del listado. Su baja en tb_vista esta en
+  // sql/tpr_99b_quitar_detalle_propuesta.sql del directorio de la migracion.
+  static const String rutaPreciosFamilias = 'tprFamilias/Familias';
+  static const String rutaPreciosPrecios = 'tprPrecios/Precios';
+  static const String rutaPreciosListas = 'tprListasPrecio/Listas';
+  static const String rutaPreciosCatalogos = 'tprCatalogos/Catalogos';
+  static const String rutaPreciosParametros = 'tprParametros/Parametros';
+  // Porcentajes por familia y lista de precios (tpr_porcentaje). Reemplaza a
+  // los dialogos dlgPorcen y dlgPorcGrupo de la pantalla legacy.
+  static const String rutaPreciosPorcentajes = 'tprPorcentajes/Porcentajes';
+
+  // ==================== GARANTIAS DE COBRANZA (tcbr) ======================
+  // Contrato: API_GARANTIAS.md del proyecto de migracion. Todos POST, tambien
+  // las lecturas. Las escrituras y los PDF exigen ademas el boton de la vista
+  // 45 que corresponde; el backend responde 403 sin el.
+  static const String _garantias = '/garantias';
+
+  // --- Lecturas ---
+  static const String garantiasResumenClientes = '$_garantias/resumen-clientes';
+  static const String garantiasListar = '$_garantias/listar';
+  static const String garantiasObtener = '$_garantias/obtener';
+  // Minimo 3 caracteres; devuelve hasta 50 clientes.
+  static const String garantiasClientesSap = '$_garantias/clientes-sap';
+  static const String garantiasDetalles = '$_garantias/detalles';
+  static const String garantiasAcciones = '$_garantias/acciones';
+  static const String garantiasTraspasosPendientes =
+      '$_garantias/traspasos-pendientes';
+  static const String garantiasTiposGarantia = '$_garantias/tipos-garantia';
+  static const String garantiasEstadosAccion = '$_garantias/estados-accion';
+
+  // --- Escrituras (201, data = id; en /traspaso, data = cantidad) ---
+  static const String garantiasRegistrar = '$_garantias/registrar';
+  static const String garantiasActualizar = '$_garantias/actualizar';
+  static const String garantiasExtension = '$_garantias/extension';
+  static const String garantiasDetalleRegistrar =
+      '$_garantias/detalle/registrar';
+  static const String garantiasDetalleEliminar = '$_garantias/detalle/eliminar';
+  static const String garantiasAccionRegistrar = '$_garantias/accion/registrar';
+  static const String garantiasAccionEliminar = '$_garantias/accion/eliminar';
+  static const String garantiasTraspaso = '$_garantias/traspaso';
+
+  // --- Reportes: application/pdf en bytes crudos. Se bajan con
+  // DioClient.descargarReportePdf, no con BaseApiRepository.postAndReturn*.
+  static const String garantiasReporteRecibo = '$_garantias/reporte/recibo';
+  static const String garantiasReporteTraspaso = '$_garantias/reporte/traspaso';
+  static const String garantiasReporteBusqueda = '$_garantias/reporte/busqueda';
+
+  // --- Direccion de pantalla ---
+  // tb_vista codVista 45, TAL CUAL esta en la base (padre 44 'Cobranza'): la
+  // misma direccion de la pantalla JSF, asi el item de menu y los permisos
+  // que los usuarios ya tienen siguen sirviendo sin tocar tb_vista.
+  static const String rutaGarantias = 'tcbrGarantia/garantia';
 }

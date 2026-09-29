@@ -103,11 +103,7 @@ class PlanillaImpl extends BaseApiRepository implements PlanillaRepository {
   }) async {
     final response = await _dio.post(
       '${AppConstants.baseUrl}/planilla/excelPlanillaTributaria',
-      data: {
-        'mes': mes,
-        'anio': anio,
-        'codEmpresa': codEmpresa,
-      },
+      data: {'mes': mes, 'anio': anio, 'codEmpresa': codEmpresa},
       options: Options(
         headers: {'Content-Type': 'application/json'},
         responseType: ResponseType.bytes,
@@ -137,7 +133,7 @@ class PlanillaImpl extends BaseApiRepository implements PlanillaRepository {
   }
 
   /// [codEmpresa] es sólo para el logo del pie: el backend lo usa para elegir
-  /// `logos/<codEmpresa>.png`. La ACCION R2 del SP no lo devuelve, por eso viaja acá.
+  /// `logos/<codEmpresa>.png`. La ACCION R2 del SP no lo devuelve, por eso viaja aquí.
   Future<Uint8List> descargarPlanillaCompacta(
     int codPlanilla,
     int codEmpresa,

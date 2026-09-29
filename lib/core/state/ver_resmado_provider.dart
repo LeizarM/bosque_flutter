@@ -92,8 +92,8 @@ class VerResmadosState {
         cantidad: (previo?.cantidad ?? 0) + 1,
       );
     }
-    final lista = acumulado.values.toList()
-      ..sort((a, b) => b.total.compareTo(a.total));
+    final lista =
+        acumulado.values.toList()..sort((a, b) => b.total.compareTo(a.total));
     return lista;
   }
 
@@ -194,10 +194,11 @@ class VerResmadosNotifier extends StateNotifier<VerResmadosState> {
 
     // Se refleja en la lista sin volver a pedirla: el nombre de la empresa se
     // resuelve con el catalogo que ya esta cargado.
-    final nombreEmpresa = state.empresas
-        .where((e) => e.codEmpresa == codEmpresa)
-        .map((e) => e.nombre)
-        .firstOrNull;
+    final nombreEmpresa =
+        state.empresas
+            .where((e) => e.codEmpresa == codEmpresa)
+            .map((e) => e.nombre)
+            .firstOrNull;
 
     state = state.copyWith(
       resmados: [

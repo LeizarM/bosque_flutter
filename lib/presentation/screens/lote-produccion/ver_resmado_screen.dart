@@ -106,9 +106,10 @@ class _VerResmadoScreenState extends ConsumerState<VerResmadoScreen> {
                 ),
               SizedBox(
                 height: 2,
-                child: estado.cargando
-                    ? const LinearProgressIndicator(minHeight: 2)
-                    : null,
+                child:
+                    estado.cargando
+                        ? const LinearProgressIndicator(minHeight: 2)
+                        : null,
               ),
               Expanded(
                 child: _Listado(
@@ -168,9 +169,9 @@ class _Cabecera extends StatelessWidget {
               children: [
                 Text(
                   'Resmados',
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    fontWeight: Peso.titulo,
-                  ),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.titleLarge?.copyWith(fontWeight: Peso.titulo),
                 ),
                 SizedBox(height: Esp.xs),
                 // Lo pendiente ya se cuenta en el resumen, con su atajo. Aqui
@@ -226,22 +227,26 @@ class _BarraFiltros extends StatelessWidget {
         prefixIcon: const Icon(Icons.search, size: 20),
         border: const OutlineInputBorder(),
         isDense: true,
-        suffixIcon: buscarCtrl.text.isEmpty
-            ? null
-            : IconButton(
-                icon: const Icon(Icons.close, size: 18),
-                onPressed: () {
-                  buscarCtrl.clear();
-                  onBuscar('');
-                },
-              ),
+        suffixIcon:
+            buscarCtrl.text.isEmpty
+                ? null
+                : IconButton(
+                  icon: const Icon(Icons.close, size: 18),
+                  onPressed: () {
+                    buscarCtrl.clear();
+                    onBuscar('');
+                  },
+                ),
       ),
     );
 
     final filtro = FilterChip(
       selected: estado.soloSinOrden,
       onSelected: onSoloSinOrden,
-      avatar: estado.soloSinOrden ? null : const Icon(Icons.pending_actions, size: 18),
+      avatar:
+          estado.soloSinOrden
+              ? null
+              : const Icon(Icons.pending_actions, size: 18),
       label: const Text('Solo sin orden'),
     );
 
@@ -266,26 +271,27 @@ class _BarraFiltros extends StatelessWidget {
         aire.esChico ? Esp.m : Esp.xl,
         Esp.m,
       ),
-      child: aire.esChico
-          ? Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                periodo,
-                SizedBox(height: Esp.s),
-                buscador,
-                SizedBox(height: Esp.s),
-                Align(alignment: Alignment.centerLeft, child: filtro),
-              ],
-            )
-          : Row(
-              children: [
-                periodo,
-                SizedBox(width: Esp.m),
-                Expanded(child: buscador),
-                SizedBox(width: Esp.m),
-                filtro,
-              ],
-            ),
+      child:
+          aire.esChico
+              ? Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  periodo,
+                  SizedBox(height: Esp.s),
+                  buscador,
+                  SizedBox(height: Esp.s),
+                  Align(alignment: Alignment.centerLeft, child: filtro),
+                ],
+              )
+              : Row(
+                children: [
+                  periodo,
+                  SizedBox(width: Esp.m),
+                  Expanded(child: buscador),
+                  SizedBox(width: Esp.m),
+                  filtro,
+                ],
+              ),
     );
   }
 }
@@ -329,30 +335,30 @@ class _Listado extends StatelessWidget {
         children: [
           Expanded(
             child: MensajeVacio(
-              icono: hayFiltro
-                  ? Icons.filter_alt_off
-                  : Icons.event_busy_outlined,
-              titulo: hayFiltro
-                  ? (estado.soloSinOrden
-                        ? 'Todo el periodo esta imputado'
-                        : 'Ningun resmado coincide con el filtro')
-                  : 'No hay resmados en este periodo',
-              detalle: hayFiltro
-                  ? (estado.soloSinOrden
-                        ? 'Los resmados del periodo $periodo ya tienen su orden '
+              icono:
+                  hayFiltro ? Icons.filter_alt_off : Icons.event_busy_outlined,
+              titulo:
+                  hayFiltro
+                      ? (estado.soloSinOrden
+                          ? 'Todo el periodo esta imputado'
+                          : 'Ningun resmado coincide con el filtro')
+                      : 'No hay resmados en este periodo',
+              detalle:
+                  hayFiltro
+                      ? (estado.soloSinOrden
+                          ? 'Los resmados del periodo $periodo ya tienen su orden '
                               'de fabricacion. Amplie el periodo para revisar '
                               'meses anteriores.'
-                        : 'Pruebe con otro grupo, empleado u orden.')
-                  : 'El periodo consultado es $periodo. Amplielo para ver '
-                        'resmados de meses anteriores.',
+                          : 'Pruebe con otro grupo, empleado u orden.')
+                      : 'El periodo consultado es $periodo. Amplielo para ver '
+                          'resmados de meses anteriores.',
             ),
           ),
           Padding(
             padding: EdgeInsets.only(bottom: Esp.xxl),
             child: TextButton.icon(
-              onPressed: hayFiltro && !estado.soloSinOrden
-                  ? onLimpiar
-                  : onRango,
+              onPressed:
+                  hayFiltro && !estado.soloSinOrden ? onLimpiar : onRango,
               icon: Icon(
                 hayFiltro && !estado.soloSinOrden
                     ? Icons.filter_alt_off
@@ -382,8 +388,11 @@ class _Listado extends StatelessWidget {
       padding: padding.copyWith(top: Esp.xs, bottom: Esp.xxl),
       itemCount: resmados.length,
       separatorBuilder: (_, _) => SizedBox(height: Esp.s),
-      itemBuilder: (context, i) =>
-          _Tarjeta(resmado: resmados[i], onAbrir: () => onAbrir(resmados[i])),
+      itemBuilder:
+          (context, i) => _Tarjeta(
+            resmado: resmados[i],
+            onAbrir: () => onAbrir(resmados[i]),
+          ),
     );
   }
 }
@@ -517,12 +526,13 @@ class _CeldaOrden extends StatelessWidget {
   final ResmadoEntity resmado;
 
   @override
-  Widget build(BuildContext context) => resmado.docNumOrdFab > 0
-      ? Text(
-          resmado.docNumOrdFab.toString(),
-          style: context.numero(fuerte: true),
-        )
-      : const Etiqueta(texto: 'Falta', tono: TonoEtiqueta.aviso);
+  Widget build(BuildContext context) =>
+      resmado.docNumOrdFab > 0
+          ? Text(
+            resmado.docNumOrdFab.toString(),
+            style: context.numero(fuerte: true),
+          )
+          : const Etiqueta(texto: 'Falta', tono: TonoEtiqueta.aviso);
 }
 
 class _Tarjeta extends StatelessWidget {

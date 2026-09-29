@@ -2,7 +2,7 @@
 import 'package:bosque_flutter/domain/entities/dependiente_cargo_entity.dart';
 
 /// Envuelve la respuesta de listar-dependientes-jefe: a diferencia de un
-/// CRUD normal, una lista vacía acá puede significar "no autorizado" O
+/// CRUD normal, una lista vacía aquí puede significar "no autorizado" O
 /// "autorizado pero sin dependientes" — hay que distinguirlas para mostrar
 /// el mensaje correcto (ver TareasColors y la pantalla de asignación).
 class ResultadoDependientesEntity {

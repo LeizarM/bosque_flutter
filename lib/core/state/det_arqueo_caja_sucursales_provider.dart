@@ -54,9 +54,10 @@ class DetArqueoCajaSucursalesNotifier
       await _repo.registrar(item);
       state = state.copyWith(
         cargando: false,
-        mensajeExito: item.idDetAS == 0
-            ? 'Detalle de arqueo de caja de sucursales agregado.'
-            : 'Detalle de arqueo de caja de sucursales actualizado.',
+        mensajeExito:
+            item.idDetAS == 0
+                ? 'Detalle de arqueo de caja de sucursales agregado.'
+                : 'Detalle de arqueo de caja de sucursales actualizado.',
       );
       await cargar();
       return true;
@@ -90,6 +91,8 @@ final _detArqueoCajaSucursalesRepoProvider = Provider(
 final detArqueoCajaSucursalesProvider = StateNotifierProvider.autoDispose<
   DetArqueoCajaSucursalesNotifier,
   DetArqueoCajaSucursalesState
->((ref) => DetArqueoCajaSucursalesNotifier(
-  ref.read(_detArqueoCajaSucursalesRepoProvider),
-));
+>(
+  (ref) => DetArqueoCajaSucursalesNotifier(
+    ref.read(_detArqueoCajaSucursalesRepoProvider),
+  ),
+);

@@ -4,7 +4,8 @@ import 'package:bosque_flutter/domain/entities/tipo_recibo_entity.dart';
 TipoReciboModel tipoReciboModelFromJson(String str) =>
     TipoReciboModel.fromJson(json.decode(str));
 
-String tipoReciboModelToJson(TipoReciboModel data) => json.encode(data.toJson());
+String tipoReciboModelToJson(TipoReciboModel data) =>
+    json.encode(data.toJson());
 
 BigInt _big(dynamic v) =>
     v == null ? BigInt.zero : BigInt.from((v as num).toInt());
@@ -40,20 +41,21 @@ class TipoReciboModel {
     this.ultimoFolio = 0,
   });
 
-  factory TipoReciboModel.fromJson(Map<String, dynamic> json) => TipoReciboModel(
-    codTipoRecibo: _big(json["codTipoRecibo"]),
-    nombre: json["nombre"] ?? '',
-    detalle: json["detalle"] ?? '',
-    estado: json["estado"] ?? '1',
-    sigla: json["sigla"] ?? '',
-    audUsuario: _big(json["audUsuario"]),
-    audFecha: _fecha(json["audFecha"]),
-    datoEstado: json["datoEstado"] ?? '',
-    datoTipo: json["datoTipo"] ?? '',
-    cantTalonarios: json["cantTalonarios"] ?? 0,
-    cantGrupos: json["cantGrupos"] ?? 0,
-    ultimoFolio: json["ultimoFolio"] ?? 0,
-  );
+  factory TipoReciboModel.fromJson(Map<String, dynamic> json) =>
+      TipoReciboModel(
+        codTipoRecibo: _big(json["codTipoRecibo"]),
+        nombre: json["nombre"] ?? '',
+        detalle: json["detalle"] ?? '',
+        estado: json["estado"] ?? '1',
+        sigla: json["sigla"] ?? '',
+        audUsuario: _big(json["audUsuario"]),
+        audFecha: _fecha(json["audFecha"]),
+        datoEstado: json["datoEstado"] ?? '',
+        datoTipo: json["datoTipo"] ?? '',
+        cantTalonarios: json["cantTalonarios"] ?? 0,
+        cantGrupos: json["cantGrupos"] ?? 0,
+        ultimoFolio: json["ultimoFolio"] ?? 0,
+      );
 
   /// Solo los campos que el SP de ABM acepta.
   Map<String, dynamic> toJson() => {

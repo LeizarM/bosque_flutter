@@ -169,7 +169,11 @@ class CartasCiteImpl extends BaseApiRepository implements CartasCiteRepository {
   }
 
   @override
-  Future<String> anular(BigInt idDocumento, int audUsuario, {String? motivo}) async {
+  Future<String> anular(
+    BigInt idDocumento,
+    int audUsuario, {
+    String? motivo,
+  }) async {
     final respuesta = await postAndReturnFullResponse<Map<String, dynamic>>(
       endpoint: AppConstants.citeAnular,
       data: {

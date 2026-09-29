@@ -28,7 +28,7 @@ class ParticipanteTurnoModel {
   final int activo;
 
   /// VIGENTE · SIN SABADOS · VUELVE EL dd/mm/aaaa · FUERA DE LA EMPRESA.
-  /// La resuelve el listado; acá sólo se transporta.
+  /// La resuelve el listado; aquí sólo se transporta.
   final String situacion;
   final DateTime? fechaSituacion;
   final int turnosTrabaja;
@@ -75,7 +75,7 @@ class ParticipanteTurnoModel {
         sucursal: rsStr(json['sucursal']),
         cargo: rsStr(json['cargo']),
         // LEFT JOIN contra tb_sucursal/tb_empresa: quien no tiene sucursal
-        // cargada llega con los dos en null y acá colapsan a 0 y a ''.
+        // cargada llega con los dos en null y aquí colapsan a 0 y a ''.
         codEmpresa: rsInt(json['codEmpresa']),
         empresa: rsStr(json['empresa']),
         fechaNacimiento: rsDate(json['fechaNacimiento']),

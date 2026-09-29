@@ -60,11 +60,12 @@ class _DiasNoLaborablesScreenState
         shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
         ),
-        builder: (_) => DialogoDiaNoLaborable(
-          gestion: _gestion,
-          audUsuario: audUsuario,
-          editar: editar,
-        ),
+        builder:
+            (_) => DialogoDiaNoLaborable(
+              gestion: _gestion,
+              audUsuario: audUsuario,
+              editar: editar,
+            ),
       );
       return;
     }
@@ -73,43 +74,45 @@ class _DiasNoLaborablesScreenState
     // sheet estirado de punta a punta de una pantalla de 1920px.
     showDialog(
       context: context,
-      builder: (_) => Dialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(Esquina.media),
-        ),
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 520),
-          child: DialogoDiaNoLaborable(
-            gestion: _gestion,
-            audUsuario: audUsuario,
-            editar: editar,
-            mostrarAsa: false,
+      builder:
+          (_) => Dialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(Esquina.media),
+            ),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 520),
+              child: DialogoDiaNoLaborable(
+                gestion: _gestion,
+                audUsuario: audUsuario,
+                editar: editar,
+                mostrarAsa: false,
+              ),
+            ),
           ),
-        ),
-      ),
     );
   }
 
   Future<void> _eliminar(DiaNoLaborableEntity item) async {
     final ok = await showDialog<bool>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Eliminar dia no laborable'),
-        content: Text(
-          '¿Confirma eliminar "${item.motivo}" (${_df.format(item.fecha)})?',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancelar'),
+      builder:
+          (ctx) => AlertDialog(
+            title: const Text('Eliminar dia no laborable'),
+            content: Text(
+              '¿Confirma eliminar "${item.motivo}" (${_df.format(item.fecha)})?',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx, false),
+                child: const Text('Cancelar'),
+              ),
+              FilledButton(
+                style: FilledButton.styleFrom(backgroundColor: Colors.red),
+                onPressed: () => Navigator.pop(ctx, true),
+                child: const Text('Eliminar'),
+              ),
+            ],
           ),
-          FilledButton(
-            style: FilledButton.styleFrom(backgroundColor: Colors.red),
-            onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Eliminar'),
-          ),
-        ],
-      ),
     );
     if (ok != true || !mounted) return;
 
@@ -153,51 +156,58 @@ class _DiasNoLaborablesScreenState
                 gestion: _gestion,
                 gestiones: _gestiones,
                 onNuevo: () => _abrirDialogo(compacto: compacto),
-                onRefrescar: () =>
-                    ref.invalidate(diasNoLaborablesProvider(_gestion)),
+                onRefrescar:
+                    () => ref.invalidate(diasNoLaborablesProvider(_gestion)),
                 onGestionChange: (y) => setState(() => _gestion = y),
               ),
               const Divider(height: 1),
               Expanded(
                 child: asyncLista.when(
-                  loading: () =>
-                      const Center(child: CircularProgressIndicator()),
-                  error: (e, _) => Center(
-                    child: Padding(
-                      padding: const EdgeInsets.all(Esp.xxl),
-                      child: Text(
-                        'Error: $e',
-                        style: TextStyle(color: cs.error),
-                        textAlign: TextAlign.center,
+                  loading:
+                      () => const Center(child: CircularProgressIndicator()),
+                  error:
+                      (e, _) => Center(
+                        child: Padding(
+                          padding: const EdgeInsets.all(Esp.xxl),
+                          child: Text(
+                            'Error: $e',
+                            style: TextStyle(color: cs.error),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
                       ),
-                    ),
-                  ),
                   data: (lista) {
                     if (lista.isEmpty) {
-                      return _EstadoVacio(gestion: _gestion, compacto: compacto);
+                      return _EstadoVacio(
+                        gestion: _gestion,
+                        compacto: compacto,
+                      );
                     }
                     return Center(
                       child: ConstrainedBox(
                         constraints: const BoxConstraints(
                           maxWidth: _anchoMaxContenido,
                         ),
-                        child: compacto
-                            ? _ListaMobile(
-                                lista: lista,
-                                onEditar: (item) => _abrirDialogo(
-                                  editar: item,
-                                  compacto: true,
+                        child:
+                            compacto
+                                ? _ListaMobile(
+                                  lista: lista,
+                                  onEditar:
+                                      (item) => _abrirDialogo(
+                                        editar: item,
+                                        compacto: true,
+                                      ),
+                                  onEliminar: _eliminar,
+                                )
+                                : _TablaEscritorio(
+                                  lista: lista,
+                                  onEditar:
+                                      (item) => _abrirDialogo(
+                                        editar: item,
+                                        compacto: false,
+                                      ),
+                                  onEliminar: _eliminar,
                                 ),
-                                onEliminar: _eliminar,
-                              )
-                            : _TablaEscritorio(
-                                lista: lista,
-                                onEditar: (item) => _abrirDialogo(
-                                  editar: item,
-                                  compacto: false,
-                                ),
-                                onEliminar: _eliminar,
-                              ),
                       ),
                     );
                   },
@@ -269,9 +279,12 @@ class _Header extends StatelessWidget {
               DropdownButton<int>(
                 value: gestion,
                 underline: const SizedBox.shrink(),
-                items: gestiones
-                    .map((y) => DropdownMenuItem(value: y, child: Text('$y')))
-                    .toList(),
+                items:
+                    gestiones
+                        .map(
+                          (y) => DropdownMenuItem(value: y, child: Text('$y')),
+                        )
+                        .toList(),
                 onChanged: (y) {
                   if (y != null) onGestionChange(y);
                 },
@@ -535,12 +548,16 @@ class _FilaDiaState extends State<_FilaDia> {
       onExit: (_) => setState(() => _hover = false),
       child: Container(
         decoration: BoxDecoration(
-          color: _hover
-              ? cs.primaryContainer.withValues(alpha: 0.08)
-              : Colors.transparent,
+          color:
+              _hover
+                  ? cs.primaryContainer.withValues(alpha: 0.08)
+                  : Colors.transparent,
           borderRadius: BorderRadius.circular(Esquina.chica),
         ),
-        padding: const EdgeInsets.symmetric(vertical: Esp.s, horizontal: Esp.xs),
+        padding: const EdgeInsets.symmetric(
+          vertical: Esp.s,
+          horizontal: Esp.xs,
+        ),
         child: Row(
           children: [
             SizedBox(
@@ -640,30 +657,35 @@ class _AccionesDia extends ConsumerWidget {
       return PopupMenuButton<String>(
         icon: const Icon(Icons.more_vert_rounded, size: 20),
         onSelected: (v) => v == 'editar' ? onEditar() : onEliminar(),
-        itemBuilder: (context) => [
-          if (puedeEditar)
-            const PopupMenuItem(
-              value: 'editar',
-              child: Row(
-                children: [
-                  Icon(Icons.edit_rounded, size: 18),
-                  SizedBox(width: Esp.s),
-                  Text('Editar'),
-                ],
-              ),
-            ),
-          if (puedeEliminar)
-            const PopupMenuItem(
-              value: 'eliminar',
-              child: Row(
-                children: [
-                  Icon(Icons.delete_outline_rounded, size: 18, color: Colors.red),
-                  SizedBox(width: Esp.s),
-                  Text('Eliminar', style: TextStyle(color: Colors.red)),
-                ],
-              ),
-            ),
-        ],
+        itemBuilder:
+            (context) => [
+              if (puedeEditar)
+                const PopupMenuItem(
+                  value: 'editar',
+                  child: Row(
+                    children: [
+                      Icon(Icons.edit_rounded, size: 18),
+                      SizedBox(width: Esp.s),
+                      Text('Editar'),
+                    ],
+                  ),
+                ),
+              if (puedeEliminar)
+                const PopupMenuItem(
+                  value: 'eliminar',
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.delete_outline_rounded,
+                        size: 18,
+                        color: Colors.red,
+                      ),
+                      SizedBox(width: Esp.s),
+                      Text('Eliminar', style: TextStyle(color: Colors.red)),
+                    ],
+                  ),
+                ),
+            ],
       );
     }
 

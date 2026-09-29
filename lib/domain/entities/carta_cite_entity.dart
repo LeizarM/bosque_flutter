@@ -32,7 +32,10 @@ abstract final class TipoCite {
       t == memorando || t == comunicacionInterna;
 
   static bool usaCiudad(int t) =>
-      t == carta || t == certificadoTrabajo || t == informeControlInterno || t == comunicacionCi;
+      t == carta ||
+      t == certificadoTrabajo ||
+      t == informeControlInterno ||
+      t == comunicacionCi;
 
   static bool usaReferencia(int t) => t == carta || t == comunicacionCi;
 
@@ -151,27 +154,26 @@ class CartaCiteEntity {
     List<CopiaArchEntity>? copiasArchivo,
     List<CopiaEncabezadoEntity>? destinatarios,
     List<RemitenteEntity>? remitentes,
-  })  : idRegDoc = idRegDoc ?? BigInt.zero,
-        copiasArchivo = copiasArchivo ?? [],
-        destinatarios = destinatarios ?? [],
-        remitentes = remitentes ?? [];
+  }) : idRegDoc = idRegDoc ?? BigInt.zero,
+       copiasArchivo = copiasArchivo ?? [],
+       destinatarios = destinatarios ?? [],
+       remitentes = remitentes ?? [];
 
   /// Un documento nuevo, en blanco, para el tipo y la empresa elegidos.
   factory CartaCiteEntity.nuevo({
     required int idTipoDoc,
     required int codEmpresa,
     required int codUsuario,
-  }) =>
-      CartaCiteEntity(
-        idDocumento: BigInt.zero,
-        idTipoDoc: BigInt.from(idTipoDoc),
-        idGestion: BigInt.zero,
-        codEmpresa: BigInt.from(codEmpresa),
-        codUsuario: BigInt.from(codUsuario),
-        codEmpleado: BigInt.zero,
-        fechaDoc: DateTime.now(),
-        ciudad: 'La Paz',
-      );
+  }) => CartaCiteEntity(
+    idDocumento: BigInt.zero,
+    idTipoDoc: BigInt.from(idTipoDoc),
+    idGestion: BigInt.zero,
+    codEmpresa: BigInt.from(codEmpresa),
+    codUsuario: BigInt.from(codUsuario),
+    codEmpleado: BigInt.zero,
+    fechaDoc: DateTime.now(),
+    ciudad: 'La Paz',
+  );
 
   bool get esNuevo => idDocumento == BigInt.zero;
   bool get anulado => esAnulado == 1;
@@ -184,39 +186,57 @@ class CartaCiteEntity {
   /// Es la función "Duplicar" del módulo viejo, que servía para no volver a
   /// tipear una carta casi igual a otra.
   CartaCiteEntity duplicar() => CartaCiteEntity(
-        idDocumento: BigInt.zero,
-        idTipoDoc: idTipoDoc,
-        idGestion: BigInt.zero,
-        codEmpresa: codEmpresa,
-        codUsuario: codUsuario,
-        codEmpleado: codEmpleado,
-        empleadoDe: empleadoDe,
-        cargoDe: cargoDe,
-        ciudad: ciudad,
-        area: area,
-        nroCite: 0,
-        fechaDoc: DateTime.now(),
-        dirigido: dirigido,
-        cargoDirigido: cargoDirigido,
-        referencia: referencia,
-        via: via,
-        cargoVia: cargoVia,
-        asunto: asunto,
-        cuerpo: cuerpo,
-        tipo: tipo,
-        empresa: empresa,
-        copiasArchivo: copiasArchivo
-            .map((e) => CopiaArchEntity(idCopiaArch: BigInt.zero, copiaArch: e.copiaArch))
+    idDocumento: BigInt.zero,
+    idTipoDoc: idTipoDoc,
+    idGestion: BigInt.zero,
+    codEmpresa: codEmpresa,
+    codUsuario: codUsuario,
+    codEmpleado: codEmpleado,
+    empleadoDe: empleadoDe,
+    cargoDe: cargoDe,
+    ciudad: ciudad,
+    area: area,
+    nroCite: 0,
+    fechaDoc: DateTime.now(),
+    dirigido: dirigido,
+    cargoDirigido: cargoDirigido,
+    referencia: referencia,
+    via: via,
+    cargoVia: cargoVia,
+    asunto: asunto,
+    cuerpo: cuerpo,
+    tipo: tipo,
+    empresa: empresa,
+    copiasArchivo:
+        copiasArchivo
+            .map(
+              (e) => CopiaArchEntity(
+                idCopiaArch: BigInt.zero,
+                copiaArch: e.copiaArch,
+              ),
+            )
             .toList(),
-        destinatarios: destinatarios
-            .map((e) => CopiaEncabezadoEntity(
-                idCopiaEncab: BigInt.zero, copiaEnca: e.copiaEnca, cargoCopia: e.cargoCopia))
+    destinatarios:
+        destinatarios
+            .map(
+              (e) => CopiaEncabezadoEntity(
+                idCopiaEncab: BigInt.zero,
+                copiaEnca: e.copiaEnca,
+                cargoCopia: e.cargoCopia,
+              ),
+            )
             .toList(),
-        remitentes: remitentes
-            .map((e) => RemitenteEntity(
-                idRemitente: BigInt.zero, remitente: e.remitente, cargoRemitente: e.cargoRemitente))
+    remitentes:
+        remitentes
+            .map(
+              (e) => RemitenteEntity(
+                idRemitente: BigInt.zero,
+                remitente: e.remitente,
+                cargoRemitente: e.cargoRemitente,
+              ),
+            )
             .toList(),
-      );
+  );
 }
 
 /// Una línea del bloque "cc/Arch" del pie. La columna en BD son 25 caracteres.

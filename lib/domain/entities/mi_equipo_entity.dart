@@ -10,7 +10,7 @@ import 'package:bosque_flutter/domain/entities/programador_dependiente_entity.da
 /// `p_list_trs_Programador` @E (quien soy yo para este modulo, resuelto por el
 /// login) con @D (mi gente).
 ///
-/// Siempre responde 200, nunca 204: si no sos programador viene
+/// Siempre responde 200, nunca 204: si no eres programador viene
 /// `esProgramador=0` con el equipo vacio, que es una respuesta valida.
 ///
 /// Mi permiso para programar, resuelto por el servidor a partir del token.
@@ -49,8 +49,8 @@ class MiEquipoEntity {
   final String sucursal;
 
   /// Lo que dice el backend que tiene el equipo. Puede diferir de
-  /// `equipo.length` si algún día el listado se pagina: para mostrar contá con
-  /// éste, para recorrer usá la lista.
+  /// `equipo.length` si algún día el listado se pagina: para mostrar usa
+  /// éste, para recorrer usa la lista.
   final int cantidadDependientes;
   final List<ProgramadorDependienteEntity> equipo;
 
@@ -81,8 +81,7 @@ class MiEquipoEntity {
   ///
   /// Se arma una vez y no en cada celda: la grilla pregunta esto miles de veces
   /// por pantalla, y recorrer la lista cada vez es cuadrático sobre la matriz.
-  Set<int> get codigosDeMiGente =>
-      {for (final d in equipo) d.codDependiente};
+  Set<int> get codigosDeMiGente => {for (final d in equipo) d.codDependiente};
 
   /// Tiene el permiso pero el organigrama no le cuelga a nadie. No es un error:
   /// es un jefe sin gente, y hay que decírselo en vez de mostrar una tabla
@@ -90,7 +89,7 @@ class MiEquipoEntity {
   bool get sinEquipo => puedoProgramar && equipo.isEmpty;
 
   /// La respuesta cuando el servidor no contesta nada (204, o un backend viejo
-  /// que todavía no tiene el endpoint). Se comporta como «no sos programador»:
+  /// que todavía no tiene el endpoint). Se comporta como «no eres programador»:
   /// la pestaña no aparece y nadie ve una pantalla rota.
   static const vacio = MiEquipoEntity();
 }

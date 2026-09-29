@@ -9,7 +9,7 @@
 /// la semilla **roja**, el rojo fijo del recuadro de error quedaba igual que el
 /// acento, así que un error se veía exactamente como todo lo demás.
 ///
-/// Acá cada color sale de un rol del `ColorScheme`, así que las nueve semillas
+/// Aquí cada color sale de un rol del `ColorScheme`, así que las nueve semillas
 /// por dos modos —dieciocho combinaciones— quedan resueltas por Material, que
 /// además garantiza el contraste de cada par `X` / `onX`.
 ///
@@ -17,7 +17,7 @@
 ///
 /// Antes el acento estaba repartido en tres orbes flotantes al 6% de opacidad,
 /// un gradiente de fondo al 8% y la sombra del logo. Mucho lugar, ninguno
-/// visible. Acá ocupa **una superficie entera** —el panel de marca en
+/// visible. Aquí ocupa **una superficie entera** —el panel de marca en
 /// escritorio, la banda de arriba en teléfono— y el resto de la pantalla es
 /// superficie limpia. El color se ve porque tiene dónde verse.
 ///
@@ -28,7 +28,7 @@
 /// repintaban para siempre en una pantalla que suele quedar abierta, y ninguna
 /// comunicaba nada.
 ///
-/// Acá el movimiento entra donde tiene un motivo:
+/// Aquí el movimiento entra donde tiene un motivo:
 /// * **La entrada** presenta la pantalla en orden —marca, encabezado, campos,
 ///   botón— para que el ojo sepa por dónde empezar. Dura 900 ms y termina.
 /// * **El halo del logo** respira: es lo único perpetuo que queda, encerrado en
@@ -87,7 +87,7 @@ const BorderRadius _esquina = BorderRadius.all(Radius.circular(14));
 ///
 /// El color solo no alcanza para elegir: quien no distingue bien el violeta del
 /// púrpura necesita leerlo. Si mañana agregan una semilla a `colorList`, la que
-/// no tenga nombre acá se muestra por su posición en vez de romper.
+/// no tenga nombre aquí se muestra por su posición en vez de romper.
 const List<String> _nombresDeSemilla = [
   'Azul',
   'Turquesa',
@@ -144,7 +144,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
   void initState() {
     super.initState();
 
-    // Ninguno de los dos arranca acá: si el sistema pide menos animación hay
+    // Ninguno de los dos arranca aquí: si el sistema pide menos animación hay
     // que saltearlos, y eso recién se puede leer en didChangeDependencies.
     _entrada = AnimationController(
       vsync: this,
@@ -249,7 +249,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
           // que es quien lo mira, seguiría creyendo que no hay usuario.
           //
           // `setUser` acaba de escribir el storage, así que este es el momento
-          // exacto en que ese caché quedó viejo. Invalidarlo acá lo obliga a
+          // exacto en que ese caché quedó viejo. Invalidarlo aquí lo obliga a
           // releer y a ver la sesión nueva.
           ref.invalidate(asyncUserProvider);
           context.go('/dashboard');
@@ -281,9 +281,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
             fit: StackFit.expand,
             children: [
               _CampoDeAcento(amplio: amplio),
-              amplio
-                  ? _partido(tema)
-                  : _apilado(tema, restricciones.maxHeight),
+              amplio ? _partido(tema) : _apilado(tema, restricciones.maxHeight),
             ],
           );
         },
@@ -364,7 +362,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
 
   /// Todo en una columna: marca, formulario y pie.
   ///
-  /// Acá hubo una tarjeta, y después una banda de acento con las esquinas de
+  /// Aquí hubo una tarjeta, y después una banda de acento con las esquinas de
   /// abajo redondeadas. Las dos eran lo mismo: un bloque de color con un borde
   /// neto contra la hoja. El resplandor de [_CampoDeAcento] hace el trabajo que
   /// hacían —decir dónde está la marca— sin dibujar ese borde.
@@ -521,9 +519,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
               // campos. En telefono la marca esta justo arriba y centrada: un
               // titulo pegado a la izquierda debajo de un logo centrado se lee
               // como dos composiciones apiladas en vez de una columna.
-              crossAxisAlignment: amplio
-                  ? CrossAxisAlignment.start
-                  : CrossAxisAlignment.center,
+              crossAxisAlignment:
+                  amplio ? CrossAxisAlignment.start : CrossAxisAlignment.center,
               children: [
                 Text(
                   'Bienvenido',
@@ -610,8 +607,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
             habilitado: habilitado,
             esClave: true,
             oculto: _obscurePassword,
-            onAlternarOculto: () =>
-                setState(() => _obscurePassword = !_obscurePassword),
+            onAlternarOculto:
+                () => setState(() => _obscurePassword = !_obscurePassword),
             onEnviar: _login,
           ),
 
@@ -619,17 +616,19 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
           // el botón hacia abajo justo cuando la persona iba a volver a
           // apretarlo.
           AnimatedSize(
-            duration: MediaQuery.disableAnimationsOf(context)
-                ? Duration.zero
-                : const Duration(milliseconds: 220),
+            duration:
+                MediaQuery.disableAnimationsOf(context)
+                    ? Duration.zero
+                    : const Duration(milliseconds: 220),
             curve: Curves.easeOutCubic,
             alignment: Alignment.topCenter,
-            child: _message == null
-                ? const SizedBox(width: double.infinity)
-                : Padding(
-                    padding: const EdgeInsets.only(top: Esp.l),
-                    child: _Aviso(texto: _message!, tono: _tono),
-                  ),
+            child:
+                _message == null
+                    ? const SizedBox(width: double.infinity)
+                    : Padding(
+                      padding: const EdgeInsets.only(top: Esp.l),
+                      child: _Aviso(texto: _message!, tono: _tono),
+                    ),
           ),
 
           const SizedBox(height: Esp.xl),
@@ -668,7 +667,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
   ///
   /// Antes eran nueve cuadrados sin rótulo y con una sombra del propio color
   /// abajo: un resplandor de color sobre color, que es la decoración que se
-  /// pone cuando no hay nada que mostrar. Acá el rótulo hace el trabajo y la
+  /// pone cuando no hay nada que mostrar. Aquí el rótulo hace el trabajo y la
   /// elegida se marca con un anillo de `onSurface`, que contrasta con la hoja
   /// pase lo que pase con la semilla.
   void _mostrarPaleta(BuildContext context, int elegida) {
@@ -733,9 +732,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                     for (var i = 0; i < colorList.length; i++)
                       _MuestraDeColor(
                         color: colorList[i],
-                        nombre: i < _nombresDeSemilla.length
-                            ? _nombresDeSemilla[i]
-                            : 'Color ${i + 1}',
+                        nombre:
+                            i < _nombresDeSemilla.length
+                                ? _nombresDeSemilla[i]
+                                : 'Color ${i + 1}',
                         elegida: elegida == i,
                         onTap: () {
                           ref
@@ -768,7 +768,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
 /// y partia la pantalla en **dos objetos** en vez de en dos zonas —«la caja de
 /// color» y «lo de al lado»—, pegados con cinta.
 ///
-/// Acá el acento no tiene contorno. Son tres degradados radiales que arrancan
+/// Aquí el acento no tiene contorno. Son tres degradados radiales que arrancan
 /// teñidos y terminan **en transparente**, pintados encima de `surface`. Donde
 /// el resplandor se apaga no hay un límite: hay hoja. Por eso se mezcla con el
 /// blanco y con el negro sin decidir nada: lo que queda cuando el color se
@@ -802,21 +802,42 @@ class _CampoDeAcento extends StatelessWidget {
     // junta arriba, por el mismo motivo.
     return IgnorePointer(
       child: Stack(
-        children: amplio
-            ? [
-                // La primera va DETRAS de la marca, no en la esquina. Estuvo
-                // arriba a la izquierda y el resultado era que justo abajo del
-                // logo la hoja quedaba mas limpia que alrededor: la marca se
-                // apoyaba en el hueco del resplandor en vez de en su centro.
-                _mancha(cs.primary, const Alignment(-0.55, -0.30), 0.85, 0.42),
-                _mancha(cs.tertiary, const Alignment(-0.12, 0.78), 0.75, 0.30),
-                _mancha(cs.primary, const Alignment(-0.95, 0.60), 0.55, 0.24),
-              ]
-            : [
-                _mancha(cs.primary, const Alignment(0, -0.62), 1.00, 0.38),
-                _mancha(cs.tertiary, const Alignment(0.82, -0.28), 0.70, 0.24),
-                _mancha(cs.primary, const Alignment(-0.78, -0.05), 0.60, 0.18),
-              ],
+        children:
+            amplio
+                ? [
+                  // La primera va DETRAS de la marca, no en la esquina. Estuvo
+                  // arriba a la izquierda y el resultado era que justo abajo del
+                  // logo la hoja quedaba mas limpia que alrededor: la marca se
+                  // apoyaba en el hueco del resplandor en vez de en su centro.
+                  _mancha(
+                    cs.primary,
+                    const Alignment(-0.55, -0.30),
+                    0.85,
+                    0.42,
+                  ),
+                  _mancha(
+                    cs.tertiary,
+                    const Alignment(-0.12, 0.78),
+                    0.75,
+                    0.30,
+                  ),
+                  _mancha(cs.primary, const Alignment(-0.95, 0.60), 0.55, 0.24),
+                ]
+                : [
+                  _mancha(cs.primary, const Alignment(0, -0.62), 1.00, 0.38),
+                  _mancha(
+                    cs.tertiary,
+                    const Alignment(0.82, -0.28),
+                    0.70,
+                    0.24,
+                  ),
+                  _mancha(
+                    cs.primary,
+                    const Alignment(-0.78, -0.05),
+                    0.60,
+                    0.18,
+                  ),
+                ],
       ),
     );
   }
@@ -1046,10 +1067,11 @@ class _ControlesDeTema extends StatelessWidget {
           // gesto en que la pantalla entera cambia de modo.
           icon: AnimatedSwitcher(
             duration: const Duration(milliseconds: 240),
-            transitionBuilder: (hijo, anim) => RotationTransition(
-              turns: Tween<double>(begin: 0.65, end: 1).animate(anim),
-              child: FadeTransition(opacity: anim, child: hijo),
-            ),
+            transitionBuilder:
+                (hijo, anim) => RotationTransition(
+                  turns: Tween<double>(begin: 0.65, end: 1).animate(anim),
+                  child: FadeTransition(opacity: anim, child: hijo),
+                ),
             child: Icon(
               oscuro ? Icons.light_mode_rounded : Icons.dark_mode_rounded,
               key: ValueKey<bool>(oscuro),
@@ -1160,28 +1182,31 @@ class _Campo extends StatelessWidget {
         fillColor: cs.surfaceContainerHigh,
         prefixIcon: Icon(icono, size: 20),
         prefixIconColor: WidgetStateColor.resolveWith(
-          (estados) => estados.contains(WidgetState.focused)
-              ? cs.primary
-              : cs.onSurfaceVariant,
+          (estados) =>
+              estados.contains(WidgetState.focused)
+                  ? cs.primary
+                  : cs.onSurfaceVariant,
         ),
-        suffixIcon: esClave
-            // `ExcludeFocus`: sin esto, tocar el ojo le saca el foco al campo y
-            // en el teléfono se cierra el teclado en medio de escribir la
-            // contraseña.
-            ? ExcludeFocus(
-                child: IconButton(
-                  tooltip: oculto ? 'Mostrar contraseña' : 'Ocultar contraseña',
-                  onPressed: onAlternarOculto,
-                  color: cs.onSurfaceVariant,
-                  icon: Icon(
-                    oculto
-                        ? Icons.visibility_outlined
-                        : Icons.visibility_off_outlined,
-                    size: 20,
+        suffixIcon:
+            esClave
+                // `ExcludeFocus`: sin esto, tocar el ojo le saca el foco al campo y
+                // en el teléfono se cierra el teclado en medio de escribir la
+                // contraseña.
+                ? ExcludeFocus(
+                  child: IconButton(
+                    tooltip:
+                        oculto ? 'Mostrar contraseña' : 'Ocultar contraseña',
+                    onPressed: onAlternarOculto,
+                    color: cs.onSurfaceVariant,
+                    icon: Icon(
+                      oculto
+                          ? Icons.visibility_outlined
+                          : Icons.visibility_off_outlined,
+                      size: 20,
+                    ),
                   ),
-                ),
-              )
-            : null,
+                )
+                : null,
         border: borde(cs.outlineVariant, 1),
         enabledBorder: borde(cs.outlineVariant, 1),
         focusedBorder: borde(cs.primary, 2),
@@ -1222,12 +1247,13 @@ class _BotonEntrarState extends State<_BotonEntrar> {
       listenable: _estados,
       // El hundido de 1,5% al apretar. La tinta de Material dice «te escuché»;
       // el hundido dice «esto es un botón físico». Cuesta un `Transform`.
-      builder: (context, hijo) => AnimatedScale(
-        scale: _estados.value.contains(WidgetState.pressed) ? 0.985 : 1,
-        duration: const Duration(milliseconds: 110),
-        curve: Curves.easeOut,
-        child: hijo,
-      ),
+      builder:
+          (context, hijo) => AnimatedScale(
+            scale: _estados.value.contains(WidgetState.pressed) ? 0.985 : 1,
+            duration: const Duration(milliseconds: 110),
+            curve: Curves.easeOut,
+            child: hijo,
+          ),
       child: FilledButton(
         statesController: _estados,
         onPressed: widget.cargando ? null : widget.onPresionar,
@@ -1244,32 +1270,33 @@ class _BotonEntrarState extends State<_BotonEntrar> {
         ),
         child: AnimatedSwitcher(
           duration: const Duration(milliseconds: 180),
-          child: widget.cargando
-              ? Row(
-                  key: const ValueKey('cargando'),
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    SizedBox(
-                      width: 18,
-                      height: 18,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2.2,
-                        color: cs.onPrimary,
+          child:
+              widget.cargando
+                  ? Row(
+                    key: const ValueKey('cargando'),
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2.2,
+                          color: cs.onPrimary,
+                        ),
                       ),
-                    ),
-                    const SizedBox(width: Esp.m),
-                    const Text('Verificando'),
-                  ],
-                )
-              : const Row(
-                  key: ValueKey('listo'),
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text('Iniciar sesión'),
-                    SizedBox(width: Esp.s),
-                    Icon(Icons.arrow_forward_rounded, size: 18),
-                  ],
-                ),
+                      const SizedBox(width: Esp.m),
+                      const Text('Verificando'),
+                    ],
+                  )
+                  : const Row(
+                    key: ValueKey('listo'),
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text('Iniciar sesión'),
+                      SizedBox(width: Esp.s),
+                      Icon(Icons.arrow_forward_rounded, size: 18),
+                    ],
+                  ),
         ),
       ),
     );
@@ -1314,7 +1341,9 @@ class _Aviso extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Icon(
-              esError ? Icons.error_outline_rounded : Icons.info_outline_rounded,
+              esError
+                  ? Icons.error_outline_rounded
+                  : Icons.info_outline_rounded,
               color: tinta,
               size: 19,
             ),
@@ -1359,8 +1388,8 @@ class _MuestraDeColor extends StatelessWidget {
     // antemano qué letra se lee sobre un amarillo y sobre un violeta.
     final tinta =
         ThemeData.estimateBrightnessForColor(color) == Brightness.light
-        ? Colors.black87
-        : Colors.white;
+            ? Colors.black87
+            : Colors.white;
 
     return SizedBox(
       width: 78,

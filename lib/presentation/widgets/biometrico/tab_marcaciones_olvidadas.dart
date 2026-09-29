@@ -27,8 +27,9 @@ class TabMarcacionesOlvidadas extends ConsumerWidget {
           if (elegido == null)
             const MensajeVacio(
               icono: Icons.badge_outlined,
-              titulo: 'Elegí un empleado',
-              detalle: 'Buscá por nombre arriba para ver o registrar marcaciones olvidadas.',
+              titulo: 'Elige un empleado',
+              detalle:
+                  'Busca por nombre arriba para ver o registrar marcaciones olvidadas.',
             )
           else
             Expanded(
@@ -58,7 +59,10 @@ class _Marcaciones extends ConsumerWidget {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text('Marcaciones registradas a mano', style: context.tituloSeccion()),
+            Text(
+              'Marcaciones registradas a mano',
+              style: context.tituloSeccion(),
+            ),
             FilledButton.icon(
               icon: const Icon(Icons.add, size: 18),
               label: const Text('Registrar'),
@@ -81,7 +85,8 @@ class _Marcaciones extends ConsumerWidget {
                 return const MensajeVacio(
                   icono: Icons.edit_calendar_outlined,
                   titulo: 'Sin marcaciones olvidadas',
-                  detalle: 'No hay ninguna registrada a mano para este empleado.',
+                  detalle:
+                      'No hay ninguna registrada a mano para este empleado.',
                 );
               }
               return ListView.separated(
@@ -133,7 +138,8 @@ class _Marcaciones extends ConsumerWidget {
     final ok = await confirmar(
       context,
       titulo: 'Eliminar marcación',
-      mensaje: '¿Eliminar la marcación del ${fechaCorta(m.checkTime)} a las ${horaCorta(m.checkTime)}?',
+      mensaje:
+          '¿Eliminar la marcación del ${fechaCorta(m.checkTime)} a las ${horaCorta(m.checkTime)}?',
       accion: 'Eliminar',
       destructiva: true,
     );

@@ -23,14 +23,14 @@ import 'package:bosque_flutter/presentation/widgets/talonarios/talonarios_comune
 
 /// Listado de talonarios con su estado y el historial de cada uno.
 ///
-/// **El estado no se calcula acá.** Viene resuelto del backend en `estadoActual`
+/// **El estado no se calcula aquí.** Viene resuelto del backend en `estadoActual`
 /// y en los flags `puedeEntregar` / `puedeDevolver` / `puedeCerrar`, que salen
 /// de contar el log de eventos. La UI solo los dibuja: duplicar esa regla en
 /// Dart es garantizar que las dos versiones se separen.
 ///
-/// **La entrega no se hace desde acá.** En la práctica es una operación en lote
+/// **La entrega no se hace desde aquí.** En la práctica es una operación en lote
 /// —el 59% de las entregas históricas se hicieron así— y tiene su pantalla.
-/// Acá quedan la devolución y el cierre, que son de a uno.
+/// Aquí quedan la devolución y el cierre, que son de a uno.
 class TalonariosScreen extends ConsumerStatefulWidget {
   const TalonariosScreen({super.key});
 
@@ -124,7 +124,7 @@ class _TalonariosScreenState extends ConsumerState<TalonariosScreen> {
 
   /// Lo que se le pide al servidor.
   ///
-  /// Estado, empresa y período van acá y no se filtran en Dart: el objetivo es
+  /// Estado, empresa y período van aquí y no se filtran en Dart: el objetivo es
   /// que el backend devuelva menos filas, no que el cliente esconda las que ya
   /// viajaron. Lo único que queda del lado del cliente es la búsqueda por
   /// texto, que es incremental y no justifica una vuelta por tecla.
@@ -231,7 +231,8 @@ class _TalonariosScreenState extends ConsumerState<TalonariosScreen> {
               hintText: 'Buscar por número, tipo o destinatario',
               border: OutlineInputBorder(),
             ),
-            onChanged: (v) => setState(() => _busqueda = v.trim().toLowerCase()),
+            onChanged:
+                (v) => setState(() => _busqueda = v.trim().toLowerCase()),
           ),
         ],
       ),
@@ -255,14 +256,16 @@ class _TalonariosScreenState extends ConsumerState<TalonariosScreen> {
       // Con un estado elegido el servidor devuelve SOLO ese, así que los
       // conteos de los demás serían 0 y mentirían. Se muestran nada más
       // cuando está puesto «Todos», que es cuando de verdad se sabe.
-      final sinConteo = datos == null || cerradosNoCargados || _estadoFiltro != null;
+      final sinConteo =
+          datos == null || cerradosNoCargados || _estadoFiltro != null;
       final etiqueta = sinConteo ? texto : '$texto  ${cuentaDe(estado)}';
 
       return Padding(
         padding: const EdgeInsets.only(right: Esp.s),
         child: FilterChip(
           label: Text(etiqueta),
-          avatar: cerradosNoCargados ? const Icon(Icons.download, size: 15) : null,
+          avatar:
+              cerradosNoCargados ? const Icon(Icons.download, size: 15) : null,
           selected: _estadoFiltro == estado,
           onSelected:
               (sel) => setState(() {
@@ -369,9 +372,7 @@ class _TalonariosScreenState extends ConsumerState<TalonariosScreen> {
   Widget _chipPeriodo() {
     final p = _periodo;
     final etiqueta =
-        p == null
-            ? 'Período'
-            : '${fechaCorta(p.start)} – ${fechaCorta(p.end)}';
+        p == null ? 'Período' : '${fechaCorta(p.start)} – ${fechaCorta(p.end)}';
 
     return Padding(
       padding: const EdgeInsets.only(right: Esp.s),
@@ -413,7 +414,8 @@ class _TalonariosScreenState extends ConsumerState<TalonariosScreen> {
       error:
           (e, _) => MensajeError(
             error: e,
-            onReintentar: () => ref.invalidate(talonariosProvider(_filtroServidor)),
+            onReintentar:
+                () => ref.invalidate(talonariosProvider(_filtroServidor)),
           ),
       data: (todos) {
         final lista = _filtrar(todos);
@@ -444,7 +446,7 @@ class _TalonariosScreenState extends ConsumerState<TalonariosScreen> {
                             : 'Todavía no hay talonarios',
                     detalle:
                         hayFiltro
-                            ? 'Probá con otro estado o borrá lo que escribiste en la búsqueda.'
+                            ? 'Prueba con otro estado o borra lo que escribiste en la búsqueda.'
                             : 'Los talonarios se dan de alta en lote, desde «Nuevo lote».',
                   ),
                 ),
@@ -457,7 +459,7 @@ class _TalonariosScreenState extends ConsumerState<TalonariosScreen> {
         // superficie propia y ripple por fila, y con 480 filas eso traba el
         // scroll en web. La fila de tabla es un Row de Text.
         //
-        // Y NO se usa `DataTable`: construye todas las filas de golpe. Acá la
+        // Y NO se usa `DataTable`: construye todas las filas de golpe. Aquí la
         // cabecera va fija fuera del scroll y las filas por `ListView.builder`,
         // que arma solo las visibles.
         if (aire == Aire.amplio) {
@@ -516,7 +518,7 @@ class _TalonariosScreenState extends ConsumerState<TalonariosScreen> {
 
   List<TalonarioEntity> _filtrar(List<TalonarioEntity> todos) {
     return todos.where((t) {
-      // El estado ya lo aplicó el servidor: filtrarlo otra vez acá no cambia
+      // El estado ya lo aplicó el servidor: filtrarlo otra vez aquí no cambia
       // nada y esconde un bug si alguna vez dejan de coincidir.
       if (_busqueda.isEmpty) return true;
       return t.nroTalonario.toLowerCase().contains(_busqueda) ||
@@ -808,9 +810,9 @@ class _TalonariosScreenState extends ConsumerState<TalonariosScreen> {
                   Expanded(
                     child: Text(
                       ev.datoEstado,
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        fontWeight: Peso.titulo,
-                      ),
+                      style: Theme.of(
+                        context,
+                      ).textTheme.bodyMedium?.copyWith(fontWeight: Peso.titulo),
                     ),
                   ),
                   Text(
@@ -843,7 +845,7 @@ class _TalonariosScreenState extends ConsumerState<TalonariosScreen> {
     await Navigator.of(context).push<bool>(
       MaterialPageRoute(builder: (_) => const TalonariosAltaLoteScreen()),
     );
-    // El refresco lo dispara la pantalla hija al guardar; acá no se repite.
+    // El refresco lo dispara la pantalla hija al guardar; aquí no se repite.
   }
 
   Future<void> _abrirCatalogos() async {
@@ -869,7 +871,7 @@ class _TalonariosScreenState extends ConsumerState<TalonariosScreen> {
 /// el diálogo hacía `pop` con la fecha y el texto, y recién después venía el
 /// `await`. Si el guardado fallaba —un talonario que otro ya cerró, la red— el
 /// diálogo ya no existía y lo escrito se perdía. Ahora el error se muestra
-/// acá arriba con todo intacto, y se puede reintentar.
+/// aquí arriba con todo intacto, y se puede reintentar.
 class _HojaEvento extends StatefulWidget {
   const _HojaEvento({
     required this.talonario,
@@ -930,8 +932,7 @@ class _HojaEventoState extends State<_HojaEvento> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            if (_error != null)
-              MensajeError(error: _error, compacto: true),
+            if (_error != null) MensajeError(error: _error, compacto: true),
             if (_error != null) const SizedBox(height: Esp.m),
             CampoFecha(
               etiqueta: 'Fecha del evento',

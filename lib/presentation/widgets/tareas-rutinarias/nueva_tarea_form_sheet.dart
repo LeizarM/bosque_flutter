@@ -3,9 +3,11 @@ import 'package:bosque_flutter/core/state/dependientes_jefe_provider.dart';
 import 'package:bosque_flutter/core/state/frecuencia_provider.dart';
 import 'package:bosque_flutter/core/theme/tareas_colors.dart';
 import 'package:bosque_flutter/core/ui/aviso.dart';
+import 'package:bosque_flutter/core/utils/formatear_fecha.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:bosque_flutter/core/ui/cerrar_ruta.dart';
 
 /// Hoja inferior con los datos de la nueva tarea, una vez ya elegidos los
 /// dependientes. Separada de la lista de selección a propósito: dos
@@ -35,9 +37,6 @@ class _NuevaTareaFormSheetState extends ConsumerState<NuevaTareaFormSheet> {
     _descripcionCtrl.dispose();
     super.dispose();
   }
-
-  String _dateFmt(DateTime d) =>
-      '${d.day.toString().padLeft(2, '0')}/${d.month.toString().padLeft(2, '0')}/${d.year}';
 
   Future<void> _elegirFecha({required bool esFin}) async {
     final elegida = await showDatePicker(
@@ -82,11 +81,12 @@ class _NuevaTareaFormSheetState extends ConsumerState<NuevaTareaFormSheet> {
         left: 20,
         right: 20,
         top: 20,
-        bottom: MediaQuery.of(context).viewInsets.bottom + 20,
+        bottom: MediaQuery.viewInsetsOf(context).bottom + 20,
       ),
       child: Form(
         key: _formKey,
         child: SingleChildScrollView(
+          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
@@ -118,6 +118,7 @@ class _NuevaTareaFormSheetState extends ConsumerState<NuevaTareaFormSheet> {
                 controller: _descripcionCtrl,
                 maxLength: 500,
                 maxLines: 2,
+                textInputAction: TextInputAction.done,
                 decoration: const InputDecoration(
                   labelText: 'Qué hay que hacer',
                   hintText: 'Ej: Revisar cierre de caja del día',
@@ -142,7 +143,7 @@ class _NuevaTareaFormSheetState extends ConsumerState<NuevaTareaFormSheet> {
                 )
               else if (frecuenciaState.mensajeError != null)
                 // Antes esto se quedaba en blanco sin avisar nada — un error
-                // de red acá se veía idéntico a "no hay frecuencias".
+                // de red aquí se veía idéntico a "no hay frecuencias".
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
@@ -235,7 +236,7 @@ class _NuevaTareaFormSheetState extends ConsumerState<NuevaTareaFormSheet> {
               OutlinedButton.icon(
                 onPressed: () => _elegirFecha(esFin: false),
                 icon: const Icon(Icons.event_outlined),
-                label: Text(_dateFmt(_fechaPartida)),
+                label: Text(FormatearFecha.formatearFecha(_fechaPartida)),
               ),
               const SizedBox(height: 16),
               Text(
@@ -251,7 +252,9 @@ class _NuevaTareaFormSheetState extends ConsumerState<NuevaTareaFormSheet> {
               OutlinedButton.icon(
                 onPressed: _elegirFechaInicioAsignacion,
                 icon: const Icon(Icons.event_available_outlined),
-                label: Text(_dateFmt(_fechaInicioAsignacion)),
+                label: Text(
+                  FormatearFecha.formatearFecha(_fechaInicioAsignacion),
+                ),
               ),
               const SizedBox(height: 12),
               SwitchListTile(
@@ -276,7 +279,7 @@ class _NuevaTareaFormSheetState extends ConsumerState<NuevaTareaFormSheet> {
                   label: Text(
                     _fechaFinAsignacion == null
                         ? 'Elegir fecha de fin'
-                        : _dateFmt(_fechaFinAsignacion!),
+                        : FormatearFecha.formatearFecha(_fechaFinAsignacion!),
                   ),
                 ),
               const SizedBox(height: 24),
@@ -307,7 +310,7 @@ class _NuevaTareaFormSheetState extends ConsumerState<NuevaTareaFormSheet> {
                                   fechaFinAsignacion: _fechaFinAsignacion,
                                 );
                             if (ok && context.mounted) {
-                              Navigator.of(context).pop(true);
+                              cerrarRuta(context, true);
                             }
                           },
                   icon:

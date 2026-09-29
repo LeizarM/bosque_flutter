@@ -15,7 +15,7 @@ import 'package:bosque_flutter/presentation/widgets/comisiones/comisiones_tema.d
 ///
 /// La lectura es libre; el mantenimiento queda restringido a ROLE_ADM porque
 /// tocar estos tramos cambia lo que se paga en todos los períodos que se
-/// calculen de acá en adelante. El backend lo exige además del ocultamiento.
+/// calculen de aquí en adelante. El backend lo exige además del ocultamiento.
 class TabRangos extends ConsumerWidget {
   const TabRangos({super.key});
 
@@ -124,7 +124,7 @@ class _Explicacion extends StatelessWidget {
                 Text(
                   esAdmin
                       ? 'Estos tramos definen cuánto se paga según los días que tardó el cobro. '
-                          'Modificarlos cambia el cálculo de los períodos que se ejecuten de acá '
+                          'Modificarlos cambia el cálculo de los períodos que se ejecuten de aquí '
                           'en adelante, no el de los ya pagados.'
                       : 'Estos tramos definen cuánto se paga según los días que tardó el cobro. '
                           'Solo un administrador puede modificarlos.',

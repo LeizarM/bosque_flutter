@@ -160,7 +160,7 @@ class _TalonariosAltaLoteScreenState
                 if (!puedeCrear) ...[
                   const NotaDelDato(
                     texto:
-                        'No tenés permiso para dar de alta talonarios. Podés '
+                        'No tienes permiso para dar de alta talonarios. Puedes '
                         'previsualizar, pero no guardar.',
                     tono: TonoNota.aviso,
                   ),
@@ -342,7 +342,7 @@ class _TalonariosAltaLoteScreenState
                   onChanged: (_) => _invalidarPreview(),
                 ),
 
-                // En ancho el botón vive acá; en el resto está en la barra fija.
+                // En ancho el botón vive aquí; en el resto está en la barra fija.
                 if (aire == Aire.amplio) ...[
                   const SizedBox(height: Esp.s),
                   BotonAccion(
@@ -382,19 +382,20 @@ class _TalonariosAltaLoteScreenState
     data: construir,
   );
 
-  Widget _opcionCosto(int valor, String texto, String ayuda) => RadioListTile<int>(
-    contentPadding: EdgeInsets.zero,
-    value: valor,
-    groupValue: _tipoCosto,
-    title: Text(texto),
-    subtitle: Text(ayuda, style: context.apagado()),
-    onChanged:
-        (v) => setState(() {
-          _tipoCosto = v ?? TalonarioLoteModel.costoIndividual;
-          _preview = null;
-          _duplicados = const {};
-        }),
-  );
+  Widget _opcionCosto(int valor, String texto, String ayuda) =>
+      RadioListTile<int>(
+        contentPadding: EdgeInsets.zero,
+        value: valor,
+        groupValue: _tipoCosto,
+        title: Text(texto),
+        subtitle: Text(ayuda, style: context.apagado()),
+        onChanged:
+            (v) => setState(() {
+              _tipoCosto = v ?? TalonarioLoteModel.costoIndividual;
+              _preview = null;
+              _duplicados = const {};
+            }),
+      );
 
   /// Los topes espejan los del backend (MAX_CANTIDAD_LOTE, MAX_BLOQUE,
   /// MAX_CORRELATIVO). Sin ellos un número de 11 dígitos no entra en el `int`
@@ -468,7 +469,7 @@ class _TalonariosAltaLoteScreenState
             ? const NotaDelDato(
               tono: TonoNota.aviso,
               texto:
-                  'Esta sigla nunca se usó en esta empresa. Revisá que sea la '
+                  'Esta sigla nunca se usó en esta empresa. Revisa que sea la '
                   'correcta antes de continuar.',
             )
             : NotaDelDato(
@@ -502,7 +503,7 @@ class _TalonariosAltaLoteScreenState
       texto:
           'Estos folios ya se usaron. Este tipo llega hasta el folio '
           '$_ultimoFolioTipo, y el bloque $bloque arranca en el $primerFolio. '
-          'Usá el bloque $sugerido o uno mayor.',
+          'Usa el bloque $sugerido o uno mayor.',
       accion: TextButton(
         onPressed:
             () => setState(() {
@@ -524,7 +525,7 @@ class _TalonariosAltaLoteScreenState
         icono: Icons.visibility_outlined,
         titulo: 'Nada previsualizado todavía',
         detalle:
-            'Completá el formulario y tocá Previsualizar. No se guarda nada '
+            'Completa el formulario y toca Previsualizar. No se guarda nada '
             'hasta que confirmes.',
       );
     }
@@ -603,14 +604,14 @@ class _TalonariosAltaLoteScreenState
               texto:
                   '${p.duplicados.length} ya existen: $muestra'
                   '${resto > 0 ? ' y $resto más' : ''}. '
-                  'Cambiá el correlativo inicial: el alta es todo o nada, con '
+                  'Cambia el correlativo inicial: el alta es todo o nada, con '
                   'un duplicado no se guarda ninguno.',
             ),
           const SizedBox(height: Esp.m),
           PermissionWidget(
             buttonName: TalonariosBotones.nuevo,
             placeholder: Text(
-              'No tenés permiso para dar de alta talonarios.',
+              'No tienes permiso para dar de alta talonarios.',
               style: context.apagado(),
             ),
             child: BotonAccion(
@@ -675,7 +676,8 @@ class _TalonariosAltaLoteScreenState
                           child: ListView.builder(
                             controller: scroll,
                             itemCount: p.talonarios.length,
-                            itemBuilder: (_, i) => _filaPreview(p.talonarios[i]),
+                            itemBuilder:
+                                (_, i) => _filaPreview(p.talonarios[i]),
                           ),
                         ),
                       ],

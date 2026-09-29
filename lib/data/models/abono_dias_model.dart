@@ -41,7 +41,7 @@ class AbonoDiasModel {
   ///
   /// **`dias` y no `diasAbonados`**, por el mismo motivo que en
   /// `VacacionAsignadaModel.toJson`: es el nombre del campo del DTO, y con el
-  /// de la columna el backend recibía 0 en silencio. Acá el 0 además se rechaza
+  /// de la columna el backend recibía 0 en silencio. Aquí el 0 además se rechaza
   /// del otro lado —el abono exige mayor a cero—, así que el síntoma era «no se
   /// puede abonar 0 días» sobre un formulario donde decía 3.
   Map<String, dynamic> toJson() => {

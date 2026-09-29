@@ -4,12 +4,12 @@
 /// la matriz del escritorio y la agenda del teléfono— y `matriz_grilla.dart` ya
 /// importa `agenda_sabado.dart`, así que poner esto en cualquiera de los dos
 /// arma un ciclo o esconde el reporte adentro de un archivo que habla de otra
-/// cosa. Acá el nombre dice qué hace y los dos lo importan igual.
+/// cosa. Aquí el nombre dice qué hace y los dos lo importan igual.
 ///
 /// **Qué NO hace: el estado de ocupado.** Ese lo lleva cada botón, porque cada
 /// uno lo dibuja distinto —un ítem de menú deshabilitado en la matriz, una
 /// ruedita en el ícono de la agenda— y porque tiene que sobrevivir a que el
-/// menú se cierre: si el ocupado viviera acá, el segundo toque no encontraría
+/// menú se cierre: si el ocupado viviera aquí, el segundo toque no encontraría
 /// nada que lo frene y saldrían dos PDF.
 library;
 
@@ -44,7 +44,7 @@ String nombreArchivoSabado(SabadoEntity sabado) {
 /// En el teléfono esa hoja es la que tiene WhatsApp, que es todo el motivo de
 /// este reporte; en el escritorio y en la web se descarga.
 ///
-/// **Por qué se bajan los bytes acá y no adentro de `mostrarReportePdf`.** Ese
+/// **Por qué se bajan los bytes aquí y no adentro de `mostrarReportePdf`.** Ese
 /// helper es de toda la app y atrapa cualquier error con un `ScaffoldMessenger`
 /// —un SnackBar que el `Scaffold` de la pantalla dibuja DEBAJO de los diálogos y
 /// de sus velos, que es el problema que `shared/aviso.dart` existe para

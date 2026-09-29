@@ -14,7 +14,7 @@
 ///
 /// La lista no se arma a mano: sale del organigrama, así que cuando RR.HH.
 /// cambia a alguien de jefe el equipo se corrige solo, sin que nadie tenga que
-/// acordarse de venir acá a mantenerlo.
+/// acordarse de venir aquí a mantenerlo.
 class ProgramadorDependienteEntity {
   final int idProgramador;
 

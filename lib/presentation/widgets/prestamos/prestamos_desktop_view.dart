@@ -67,7 +67,8 @@ class PrestamosDesktopView extends ConsumerWidget {
               PrestamosTH('ASIGNADO A', wTrans, Alignment.centerLeft),
               PrestamosTH('FECHA', wFec, Alignment.center),
               PrestamosTH('MONTO', wMon, Alignment.centerRight),
-              if (isVigentesTab) PrestamosTH('SALDO', wSal, Alignment.centerRight),
+              if (isVigentesTab)
+                PrestamosTH('SALDO', wSal, Alignment.centerRight),
               PrestamosTH('ESTADO', wEst, Alignment.center),
               PrestamosTH('ACCIÓN', wAcc, Alignment.center),
             ],
@@ -350,11 +351,12 @@ class _PrestamosDesktopRowState extends ConsumerState<PrestamosDesktopRow> {
                         style: TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.bold,
-                          color: e.haber > 0 
-                               ? Colors.blue.shade600 
-                               : (isDark
-                                  ? Colors.greenAccent.shade200
-                                  : const Color(0xFF1B5E20)),
+                          color:
+                              e.haber > 0
+                                  ? Colors.blue.shade600
+                                  : (isDark
+                                      ? Colors.greenAccent.shade200
+                                      : const Color(0xFF1B5E20)),
                         ),
                       ),
                     ],
@@ -383,9 +385,10 @@ class _PrestamosDesktopRowState extends ConsumerState<PrestamosDesktopRow> {
                           style: TextStyle(
                             fontSize: 13,
                             fontWeight: FontWeight.bold,
-                            color: (e.saldoPendiente ?? 0) > 0 
-                                ? cs.primary 
-                                : Colors.green,
+                            color:
+                                (e.saldoPendiente ?? 0) > 0
+                                    ? cs.primary
+                                    : Colors.green,
                           ),
                         ),
                       ],
@@ -413,18 +416,24 @@ class _PrestamosDesktopRowState extends ConsumerState<PrestamosDesktopRow> {
 
                         if (widget.isVigentesTab) {
                           // En la pestaña de préstamos, mostrar siempre el estado del préstamo
-                          final colorBase = estadoFound.codTipos == 'ANU'
-                              ? Colors.red
-                              : estadoFound.codTipos == 'CAN'
+                          final colorBase =
+                              estadoFound.codTipos == 'ANU'
+                                  ? Colors.red
+                                  : estadoFound.codTipos == 'CAN'
                                   ? Colors.green
                                   : Colors.orange; // PEN
-                          
+
                           return Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 6,
+                              vertical: 2,
+                            ),
                             decoration: BoxDecoration(
                               color: colorBase.withValues(alpha: 0.2),
                               borderRadius: BorderRadius.circular(4),
-                              border: Border.all(color: colorBase.withValues(alpha: 0.5)),
+                              border: Border.all(
+                                color: colorBase.withValues(alpha: 0.5),
+                              ),
                             ),
                             child: Text(
                               estadoFound.nombre,
@@ -437,7 +446,9 @@ class _PrestamosDesktopRowState extends ConsumerState<PrestamosDesktopRow> {
                           );
                         } else {
                           // En la Bandeja SAP, mostrar el estado de asignación
-                          return PrestamosEstadoChip(estado: e.estadoAsignacion);
+                          return PrestamosEstadoChip(
+                            estado: e.estadoAsignacion,
+                          );
                         }
                       },
                       loading:
@@ -462,20 +473,30 @@ class _PrestamosDesktopRowState extends ConsumerState<PrestamosDesktopRow> {
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      if (e.estadoAsignacion != 'ASIGNADO' && !widget.isVigentesTab)
+                      if (e.estadoAsignacion != 'ASIGNADO' &&
+                          !widget.isVigentesTab)
                         PermissionWidget(
                           buttonName: 'btnAsignarPrestamo',
                           child: IconButton(
                             icon: Icon(
-                              (e.haber > 0) ? Icons.payments_rounded : Icons.person_add_alt_1_rounded,
+                              (e.haber > 0)
+                                  ? Icons.payments_rounded
+                                  : Icons.person_add_alt_1_rounded,
                               size: 18,
-                              color: (e.haber > 0) ? Colors.blue.shade600 : cs.primary,
+                              color:
+                                  (e.haber > 0)
+                                      ? Colors.blue.shade600
+                                      : cs.primary,
                             ),
-                            tooltip: (e.haber > 0) ? 'Asignar Pago' : 'Asignar préstamo',
+                            tooltip:
+                                (e.haber > 0)
+                                    ? 'Asignar Pago'
+                                    : 'Asignar préstamo',
                             onPressed: widget.onAsignar,
                           ),
                         ),
-                      if (e.estadoAsignacion == 'ASIGNADO' || widget.isVigentesTab)
+                      if (e.estadoAsignacion == 'ASIGNADO' ||
+                          widget.isVigentesTab)
                         IconButton(
                           icon: const Icon(
                             Icons.remove_red_eye_rounded,

@@ -8,7 +8,6 @@ import 'package:bosque_flutter/domain/entities/nota_remision_entity.dart';
 import 'package:bosque_flutter/domain/entities/socio_negocio_entity.dart';
 
 abstract class DepositoChequesRepository {
-  
   Future<List<EmpresaEntity>> getEmpresas();
   Future<List<SocioNegocioEntity>> getSociosNegocio(int codEmpresa);
   Future<List<BancoXCuentaEntity>> getBancos(int codEmpresa);
@@ -37,11 +36,14 @@ abstract class DepositoChequesRepository {
     String codCliente,
   );
 
-  Future<Uint8List> obtenerPdfDeposito(int idDeposito, DepositoChequeEntity deposito);
+  Future<Uint8List> obtenerPdfDeposito(
+    int idDeposito,
+    DepositoChequeEntity deposito,
+  );
 
   Future<Uint8List> obtenerImagenDeposito(int idDeposito);
 
-  Future<bool> actualizarNroTransaccion( DepositoChequeEntity deposito );
+  Future<bool> actualizarNroTransaccion(DepositoChequeEntity deposito);
 
-  Future<bool> rechazarNotaRemision( DepositoChequeEntity deposito );
+  Future<bool> rechazarNotaRemision(DepositoChequeEntity deposito);
 }

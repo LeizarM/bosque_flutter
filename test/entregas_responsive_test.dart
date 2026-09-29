@@ -92,15 +92,16 @@ Widget _app(Widget child, {bool oscuro = false}) {
       brightness: oscuro ? Brightness.dark : Brightness.light,
       colorSchemeSeed: Colors.green,
     ),
-    builder: (context, widget) => ResponsiveBreakpoints.builder(
-      child: widget!,
-      breakpoints: const [
-        Breakpoint(start: 0, end: 450, name: MOBILE),
-        Breakpoint(start: 451, end: 800, name: TABLET),
-        Breakpoint(start: 801, end: 1920, name: DESKTOP),
-        Breakpoint(start: 1921, end: double.infinity, name: '4K'),
-      ],
-    ),
+    builder:
+        (context, widget) => ResponsiveBreakpoints.builder(
+          child: widget!,
+          breakpoints: const [
+            Breakpoint(start: 0, end: 450, name: MOBILE),
+            Breakpoint(start: 451, end: 800, name: TABLET),
+            Breakpoint(start: 801, end: 1920, name: DESKTOP),
+            Breakpoint(start: 1921, end: double.infinity, name: '4K'),
+          ],
+        ),
     home: Scaffold(body: child),
   );
 }
@@ -194,13 +195,15 @@ void main() {
   }
 
   // La tabla solo se usa en escritorio; se prueba en los anchos donde vive.
-  for (final entrada in {
-    'escritorio 1024×768': const Size(1024, 768),
-    'escritorio 1440×900': const Size(1440, 900),
-    'escritorio ancho 1920×1080': const Size(1920, 1080),
-  }.entries) {
-    testWidgets('tabla de escritorio sin desbordes en ${entrada.key}',
-        (tester) async {
+  for (final entrada
+      in {
+        'escritorio 1024×768': const Size(1024, 768),
+        'escritorio 1440×900': const Size(1440, 900),
+        'escritorio ancho 1920×1080': const Size(1920, 1080),
+      }.entries) {
+    testWidgets('tabla de escritorio sin desbordes en ${entrada.key}', (
+      tester,
+    ) async {
       tester.view.physicalSize = entrada.value;
       tester.view.devicePixelRatio = 1.0;
       addTearDown(tester.view.reset);
@@ -225,8 +228,7 @@ void main() {
                 _entrega(
                   docEntry: 2048,
                   cardName: 'EDITORIAL DEL ESTADO 2',
-                  direccion:
-                      'CALLE 3 NRO 22 ESQ SEMPERTEGUI  EL ALTO BOLIVIA',
+                  direccion: 'CALLE 3 NRO 22 ESQ SEMPERTEGUI  EL ALTO BOLIVIA',
                   fueEntregado: 1,
                 ),
               ]),

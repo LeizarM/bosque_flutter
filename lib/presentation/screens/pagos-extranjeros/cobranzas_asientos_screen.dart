@@ -16,9 +16,10 @@ final _df = DateFormat('dd/MM/yyyy');
 
 // Etiqueta de la "fuente": banco real, o "Tesorería" si la txn no tiene banco
 // (operaciones USDT/Mercury/Devolución sin proveedor → codBanco NULL/0).
-String _fuenteLabel(TransaccionesEntity t) => t.banco.isNotEmpty
-    ? t.banco
-    : (t.codBanco > 0 ? 'Banco #${t.codBanco}' : 'Tesorería');
+String _fuenteLabel(TransaccionesEntity t) =>
+    t.banco.isNotEmpty
+        ? t.banco
+        : (t.codBanco > 0 ? 'Banco #${t.codBanco}' : 'Tesorería');
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Screen principal
@@ -154,14 +155,19 @@ class _CobranzasAsientosScreenState
                   // OPCIÓN B — alta de operaciones de tesorería (USDT/Mercury/
                   // Devolución) sin pasar por solicitud/cotización de proveedor.
                   FilledButton.tonalIcon(
-                    onPressed: () => showDialog(
-                      context: context,
-                      builder: (_) => DialogoOperacionTesoreria(
-                        onGuardado: () => ref.invalidate(
-                          reporteTransaccionesFechasProvider(_params),
+                    onPressed:
+                        () => showDialog(
+                          context: context,
+                          builder:
+                              (_) => DialogoOperacionTesoreria(
+                                onGuardado:
+                                    () => ref.invalidate(
+                                      reporteTransaccionesFechasProvider(
+                                        _params,
+                                      ),
+                                    ),
+                              ),
                         ),
-                      ),
-                    ),
                     icon: const Icon(Icons.add, size: 18),
                     label: const Text('Tesorería'),
                   ),

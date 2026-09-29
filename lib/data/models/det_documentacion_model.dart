@@ -74,9 +74,8 @@ class DetDocumentacionModel {
       idDoc: json["idDoc"],
       monto: (json["monto"] as num?)?.toDouble(),
       audUsuario: json["audUsuario"] ?? 0,
-      audFecha: json["audFecha"] != null
-          ? DateTime.tryParse(json["audFecha"])
-          : null,
+      audFecha:
+          json["audFecha"] != null ? DateTime.tryParse(json["audFecha"]) : null,
     );
   }
 

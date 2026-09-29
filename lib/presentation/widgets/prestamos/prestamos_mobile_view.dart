@@ -200,9 +200,10 @@ class PrestamosMobileCard extends ConsumerWidget {
                             );
 
                             if (isVigentesTab) {
-                              final colorBase = estadoFound.codTipos == 'ANU'
-                                  ? Colors.red
-                                  : estadoFound.codTipos == 'CAN'
+                              final colorBase =
+                                  estadoFound.codTipos == 'ANU'
+                                      ? Colors.red
+                                      : estadoFound.codTipos == 'CAN'
                                       ? Colors.green
                                       : Colors.orange; // PEN
 

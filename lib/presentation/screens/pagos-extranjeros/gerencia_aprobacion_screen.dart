@@ -180,8 +180,9 @@ class _SolicitudPendienteCardState
 
   /// Un proveedor con ≥1 cuota aprobada (APROBADO o APROBADO_PARCIAL) cuenta
   /// como aprobado para habilitar la solicitud.
-  bool get _algunProveedorAprobado => widget.solicitud.proveedores
-      .any((p) => p.estado == 'APROBADO' || p.estado == 'APROBADO_PARCIAL');
+  bool get _algunProveedorAprobado => widget.solicitud.proveedores.any(
+    (p) => p.estado == 'APROBADO' || p.estado == 'APROBADO_PARCIAL',
+  );
 
   /// La solicitud puede aprobarse en cuanto hay ≥1 proveedor con cuotas
   /// aprobadas. Los proveedores/cuotas que queden sin aprobar pueden permanecer

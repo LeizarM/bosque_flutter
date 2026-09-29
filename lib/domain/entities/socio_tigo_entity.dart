@@ -17,14 +17,14 @@ class SocioTigoEntity {
     required this.audUsuario,
   });
   Map<String, dynamic> toJson() => {
-        "codCuenta": codCuenta,
-        "telefono": telefono,
-        "codEmpleado": codEmpleado,
-        "nombreCompleto": nombreCompleto,
-        "descripcion": descripcion,
-        "periodoCobrado": periodoCobrado,
-        "audUsuario": audUsuario,
-      };
+    "codCuenta": codCuenta,
+    "telefono": telefono,
+    "codEmpleado": codEmpleado,
+    "nombreCompleto": nombreCompleto,
+    "descripcion": descripcion,
+    "periodoCobrado": periodoCobrado,
+    "audUsuario": audUsuario,
+  };
 
   //metodo copyWith
   SocioTigoEntity copyWith({
@@ -34,7 +34,7 @@ class SocioTigoEntity {
     String? nombreCompleto,
     String? descripcion,
     String? periodoCobrado,
-    
+
     int? audUsuario,
   }) {
     return SocioTigoEntity(

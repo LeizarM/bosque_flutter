@@ -16,12 +16,20 @@ import 'package:bosque_flutter/domain/entities/ccr_solicitud_entity.dart';
 import 'package:bosque_flutter/presentation/widgets/lote-produccion/balance_lote.dart';
 import 'package:flutter/material.dart';
 
-const _meses = [
-  'E', 'F', 'M', 'A', 'M', 'J', 'J', 'A', 'S', 'O', 'N', 'D',
-];
+const _meses = ['E', 'F', 'M', 'A', 'M', 'J', 'J', 'A', 'S', 'O', 'N', 'D'];
 const _mesesLargo = [
-  'enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
-  'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre',
+  'enero',
+  'febrero',
+  'marzo',
+  'abril',
+  'mayo',
+  'junio',
+  'julio',
+  'agosto',
+  'septiembre',
+  'octubre',
+  'noviembre',
+  'diciembre',
 ];
 
 class _Mes {
@@ -94,7 +102,10 @@ class ResumenPeriodoCorte extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _Totales(total: total, vigentes: vigentes, canceladas: canceladas),
-          SizedBox(width: aire.esChico ? 0 : Esp.xxl, height: aire.esChico ? Esp.l : 0),
+          SizedBox(
+            width: aire.esChico ? 0 : Esp.xxl,
+            height: aire.esChico ? Esp.l : 0,
+          ),
           if (tope > 0)
             aire.esChico
                 ? _Columnas(serie: serie, tope: tope)
@@ -178,12 +189,13 @@ class _Columnas extends StatelessWidget {
               for (final m in serie)
                 Expanded(
                   child: Tooltip(
-                    message: m.cantidad == 0
-                        ? '${_mesesLargo[m.mes - 1]} ${m.anio}: sin solicitudes'
-                        : '${_mesesLargo[m.mes - 1]} ${m.anio}: '
-                              '${fmtNumero.format(m.kilos)} kg en '
-                              '${m.cantidad} solicitud'
-                              '${m.cantidad == 1 ? "" : "es"}',
+                    message:
+                        m.cantidad == 0
+                            ? '${_mesesLargo[m.mes - 1]} ${m.anio}: sin solicitudes'
+                            : '${_mesesLargo[m.mes - 1]} ${m.anio}: '
+                                '${fmtNumero.format(m.kilos)} kg en '
+                                '${m.cantidad} solicitud'
+                                '${m.cantidad == 1 ? "" : "es"}',
                     child: Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 1.5),
                       child: Align(
@@ -191,13 +203,13 @@ class _Columnas extends StatelessWidget {
                         child: Container(
                           // Los meses sin nada dejan una marca minima en vez de
                           // desaparecer: el hueco tambien es un dato.
-                          height: m.kilos <= 0
-                              ? 2
-                              : (m.kilos / tope * 64).clamp(4.0, 64.0),
+                          height:
+                              m.kilos <= 0
+                                  ? 2
+                                  : (m.kilos / tope * 64).clamp(4.0, 64.0),
                           decoration: BoxDecoration(
-                            color: m.kilos <= 0
-                                ? cs.outlineVariant
-                                : cs.primary,
+                            color:
+                                m.kilos <= 0 ? cs.outlineVariant : cs.primary,
                             borderRadius: const BorderRadius.vertical(
                               top: Radius.circular(2),
                             ),

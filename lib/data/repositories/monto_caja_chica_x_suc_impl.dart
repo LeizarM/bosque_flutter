@@ -31,8 +31,7 @@ class MontoCajaChicaXSucImpl extends BaseApiRepository
     await postAndReturnId(
       endpoint: AppConstants.tarEliminarMontoCajaChicaXSuc,
       data: {'idCS': idCS, 'audUsuario': audUsuario},
-      errorMessage:
-          'No se pudo eliminar el monto de caja chica por sucursal.',
+      errorMessage: 'No se pudo eliminar el monto de caja chica por sucursal.',
     );
   }
 }

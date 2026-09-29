@@ -19,21 +19,18 @@ class BioCheckInOutAdicionalModel {
     this.audFecha,
   });
 
-  factory BioCheckInOutAdicionalModel.fromJson(Map<String, dynamic> json) =>
-      BioCheckInOutAdicionalModel(
-        userId: json['USERID'] ?? 0,
-        checkTime:
-            json['CHECKTIME'] != null
-                ? DateTime.tryParse(json['CHECKTIME'])
-                : null,
-        codEmpleado: json['CODEMPLEADO'] ?? 0,
-        fechaString: json['fechaString'] ?? '',
-        audUsuario: json['audUsuario'] ?? 0,
-        audFecha:
-            json['audFecha'] != null
-                ? DateTime.tryParse(json['audFecha'])
-                : null,
-      );
+  factory BioCheckInOutAdicionalModel.fromJson(
+    Map<String, dynamic> json,
+  ) => BioCheckInOutAdicionalModel(
+    userId: json['USERID'] ?? 0,
+    checkTime:
+        json['CHECKTIME'] != null ? DateTime.tryParse(json['CHECKTIME']) : null,
+    codEmpleado: json['CODEMPLEADO'] ?? 0,
+    fechaString: json['fechaString'] ?? '',
+    audUsuario: json['audUsuario'] ?? 0,
+    audFecha:
+        json['audFecha'] != null ? DateTime.tryParse(json['audFecha']) : null,
+  );
 
   factory BioCheckInOutAdicionalModel.fromEntity(
     BioCheckInOutAdicionalEntity e,

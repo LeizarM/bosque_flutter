@@ -74,7 +74,7 @@ class _EntregasHomeScreenState extends ConsumerState<EntregasHomeScreen> {
       });
     }
 
-    // La ubicación llega cuando llega. Un fallo acá deja el banner de "ubicación desactivada",
+    // La ubicación llega cuando llega. Un fallo aquí deja el banner de "ubicación desactivada",
     // que es exactamente lo que corresponde mostrar.
     bool ubicacion = false;
     try {
@@ -279,16 +279,17 @@ class _EntregasHomeScreenState extends ConsumerState<EntregasHomeScreen> {
           IconButton(
             tooltip: 'Actualizar lista',
             onPressed: _refrescando ? null : _refrescar,
-            icon: _refrescando
-                ? SizedBox(
-                    width: 18,
-                    height: 18,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: EntregasUI.muted(colorScheme),
-                    ),
-                  )
-                : const Icon(Icons.refresh),
+            icon:
+                _refrescando
+                    ? SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: EntregasUI.muted(colorScheme),
+                      ),
+                    )
+                    : const Icon(Icons.refresh),
           ),
           const SizedBox(width: EntregasUI.s2),
         ],
@@ -331,9 +332,10 @@ class _EntregasHomeScreenState extends ConsumerState<EntregasHomeScreen> {
                         children: [
                           EntregasStat(
                             valor: '${filteredEntregas.length}',
-                            etiqueta: filteredEntregas.length == 1
-                                ? 'FACTURA'
-                                : 'FACTURAS',
+                            etiqueta:
+                                filteredEntregas.length == 1
+                                    ? 'FACTURA'
+                                    : 'FACTURAS',
                           ),
                           const SizedBox(width: EntregasUI.s6),
                           EntregasStat(
@@ -345,12 +347,13 @@ class _EntregasHomeScreenState extends ConsumerState<EntregasHomeScreen> {
                             SizedBox(
                               width: 320,
                               child: TextField(
-                                onChanged: (v) =>
-                                    setState(() => _searchText = v),
+                                onChanged:
+                                    (v) => setState(() => _searchText = v),
                                 style: const TextStyle(fontSize: 14),
                                 decoration: InputDecoration(
                                   isDense: true,
-                                  hintText: 'Buscar cliente, factura o dirección',
+                                  hintText:
+                                      'Buscar cliente, factura o dirección',
                                   hintStyle: TextStyle(
                                     fontSize: 14,
                                     color: EntregasUI.muted(colorScheme),
@@ -368,8 +371,7 @@ class _EntregasHomeScreenState extends ConsumerState<EntregasHomeScreen> {
                                     horizontal: EntregasUI.s3,
                                   ),
                                   filled: true,
-                                  fillColor:
-                                      EntregasUI.raised(colorScheme),
+                                  fillColor: EntregasUI.raised(colorScheme),
                                   border: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(
                                       EntregasUI.rInner,
@@ -457,7 +459,7 @@ class _EntregasHomeScreenState extends ConsumerState<EntregasHomeScreen> {
                               ),
                               const SizedBox(height: EntregasUI.s1),
                               Text(
-                                'Cuando se asignen facturas a tu ruta van a aparecer acá.',
+                                'Cuando se asignen facturas a tu ruta van a aparecer aquí.',
                                 style: TextStyle(
                                   fontSize: 13,
                                   color: EntregasUI.muted(colorScheme),
@@ -465,9 +467,10 @@ class _EntregasHomeScreenState extends ConsumerState<EntregasHomeScreen> {
                               ),
                               const SizedBox(height: EntregasUI.s5),
                               OutlinedButton.icon(
-                                onPressed: () => _controller.cargarEntregas(
-                                  _codEmpleado,
-                                ),
+                                onPressed:
+                                    () => _controller.cargarEntregas(
+                                      _codEmpleado,
+                                    ),
                                 icon: const Icon(Icons.refresh, size: 18),
                                 label: const Text('Actualizar'),
                               ),

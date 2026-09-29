@@ -1,12 +1,15 @@
 // Destino final: lib/data/repositories/arqueo_caja_impl.dart
+import 'dart:typed_data';
+
 import 'package:bosque_flutter/core/constants/app_constants.dart';
 import 'package:bosque_flutter/core/network/base_api_repository.dart';
+import 'package:bosque_flutter/core/network/dio_client.dart';
 import 'package:bosque_flutter/domain/entities/vale_arqueo_entity.dart';
 import 'package:bosque_flutter/domain/repositories/arqueo_caja_repository.dart';
 
 class ArqueoCajaImpl extends BaseApiRepository implements ArqueoCajaRepository {
   @override
-  Future<void> registrar({
+  Future<int> registrar({
     required int idTarRuti,
     required int idBitTarea,
     required double saldoMovSap,
@@ -16,7 +19,7 @@ class ArqueoCajaImpl extends BaseApiRepository implements ArqueoCajaRepository {
     required Map<int, double> montoPorDoc,
     required List<ValeArqueoEntity> vales,
   }) async {
-    await postAndReturnId(
+    final idGenerado = await postAndReturnId(
       endpoint: AppConstants.tarArqueoCajaRegistrar,
       data: {
         'idTarRuti': idTarRuti,
@@ -42,6 +45,8 @@ class ArqueoCajaImpl extends BaseApiRepository implements ArqueoCajaRepository {
                     'numVale': v.numVale,
                     'nombre': v.nombre,
                     'monto': v.monto,
+                    'fecha': v.fecha?.toIso8601String(),
+                    'codEmpresa': v.codEmpresa,
                     'obs': v.obs.isEmpty ? null : v.obs,
                   },
                 )
@@ -49,7 +54,17 @@ class ArqueoCajaImpl extends BaseApiRepository implements ArqueoCajaRepository {
       },
       errorMessage: 'No se pudo registrar el arqueo de caja.',
     );
+    return idGenerado.toInt();
   }
+
+  /// PDF de un arqueo ya registrado (RptArqueoDeCaja del legacy, con sus 3
+  /// subreportes: movimiento de caja SAP, cortes+documentación y vales sin
+  /// cerrar). El backend manda los bytes pelados, sin Content-Disposition.
+  @override
+  Future<Uint8List> reportePdf(int idAC) => DioClient.descargarReportePdf(
+    endpoint: AppConstants.tarArqueoCajaReportePdf,
+    data: {'idAC': idAC},
+  );
 
   /// Desglose de saldo SAP por caja de la sucursal de esta ocurrencia — el
   /// legacy lo muestra como una tabla, no un solo número manual.

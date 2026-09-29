@@ -6,7 +6,7 @@ import 'package:flutter/material.dart';
 /// que firman.
 ///
 /// El módulo JSF resolvía esto con tres `dataTable` de PrimeFaces editables
-/// celda por celda, más un diálogo aparte para los destinatarios. Acá son tres
+/// celda por celda, más un diálogo aparte para los destinatarios. Aquí son tres
 /// listas con el mismo comportamiento: agregar al final, editar en el lugar,
 /// quitar con la X. Es menos ceremonia y funciona igual con el dedo que con el
 /// mouse.
@@ -93,14 +93,16 @@ class ListaEditableCite extends StatelessWidget {
                     final campos = camposDe(i);
                     final apretado = cons.maxWidth < 520;
 
-                    final quitar = soloLectura
-                        ? const SizedBox.shrink()
-                        : IconButton(
-                            tooltip: 'Quitar',
-                            icon: const Icon(Icons.close, size: 18),
-                            visualDensity: VisualDensity.compact,
-                            onPressed: onQuitar == null ? null : () => onQuitar!(i),
-                          );
+                    final quitar =
+                        soloLectura
+                            ? const SizedBox.shrink()
+                            : IconButton(
+                              tooltip: 'Quitar',
+                              icon: const Icon(Icons.close, size: 18),
+                              visualDensity: VisualDensity.compact,
+                              onPressed:
+                                  onQuitar == null ? null : () => onQuitar!(i),
+                            );
 
                     // En pantalla angosta los campos de una misma fila se
                     // apilan: dos campos de texto lado a lado en un teléfono

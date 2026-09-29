@@ -52,9 +52,8 @@ class CorteNotifier extends StateNotifier<CorteState> {
       await _repo.registrar(item);
       state = state.copyWith(
         cargando: false,
-        mensajeExito: item.idCorte == 0
-            ? 'Corte agregado.'
-            : 'Corte actualizado.',
+        mensajeExito:
+            item.idCorte == 0 ? 'Corte agregado.' : 'Corte actualizado.',
       );
       await cargar();
       return true;
@@ -82,5 +81,5 @@ final _corteRepoProvider = Provider((ref) => CorteImpl());
 
 final corteProvider =
     StateNotifierProvider.autoDispose<CorteNotifier, CorteState>(
-  (ref) => CorteNotifier(ref.read(_corteRepoProvider)),
-);
+      (ref) => CorteNotifier(ref.read(_corteRepoProvider)),
+    );

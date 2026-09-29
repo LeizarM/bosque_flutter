@@ -52,9 +52,10 @@ class DetDocumentacionNotifier extends StateNotifier<DetDocumentacionState> {
       await _repo.registrar(item);
       state = state.copyWith(
         cargando: false,
-        mensajeExito: item.idDetDoc == 0
-            ? 'Detalle de documentación agregado.'
-            : 'Detalle de documentación actualizado.',
+        mensajeExito:
+            item.idDetDoc == 0
+                ? 'Detalle de documentación agregado.'
+                : 'Detalle de documentación actualizado.',
       );
       await cargar();
       return true;

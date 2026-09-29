@@ -54,9 +54,10 @@ class AccionTareaRutinariaNotifier
       await _repo.registrar(item);
       state = state.copyWith(
         cargando: false,
-        mensajeExito: item.idATR == 0
-            ? 'Acción de tarea rutinaria agregada.'
-            : 'Acción de tarea rutinaria actualizada.',
+        mensajeExito:
+            item.idATR == 0
+                ? 'Acción de tarea rutinaria agregada.'
+                : 'Acción de tarea rutinaria actualizada.',
       );
       await cargar();
       return true;
@@ -90,4 +91,7 @@ final _accionTareaRutinariaRepoProvider = Provider(
 final accionTareaRutinariaProvider = StateNotifierProvider.autoDispose<
   AccionTareaRutinariaNotifier,
   AccionTareaRutinariaState
->((ref) => AccionTareaRutinariaNotifier(ref.read(_accionTareaRutinariaRepoProvider)));
+>(
+  (ref) =>
+      AccionTareaRutinariaNotifier(ref.read(_accionTareaRutinariaRepoProvider)),
+);

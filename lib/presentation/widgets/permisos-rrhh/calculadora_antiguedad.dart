@@ -65,7 +65,7 @@ class _CalculadoraTabState extends ConsumerState<CalculadoraTab> {
     final hasta = _hasta;
     if (desde == null || hasta == null) return;
 
-    // El backend también lo valida —es el que manda—, pero rebotar acá evita un
+    // El backend también lo valida —es el que manda—, pero rebotar aquí evita un
     // viaje y da el mensaje en el acto. 60 años es el tope del plan.
     final anios = hasta.difference(desde).inDays.abs() / 365.25;
     if (anios > 60) {
@@ -109,7 +109,7 @@ class _CalculadoraTabState extends ConsumerState<CalculadoraTab> {
 
   Widget _formulario(Aire aire) {
     // `CampoElegido` vive en las piezas del módulo desde que las hojas de
-    // escritura necesitaron el mismo campo: acá había una copia privada.
+    // escritura necesitaron el mismo campo: aquí había una copia privada.
     final desde = CampoElegido(
       etiqueta: 'Inicio de beneficio',
       texto: _desde == null ? null : fechaCorta(_desde),
@@ -226,7 +226,7 @@ class _CalculadoraTabState extends ConsumerState<CalculadoraTab> {
   /// meses y devuelve **0 días por antigüedad**, justo en el caso más
   /// simbólico: el día en que se devenga la nueva dotación.
   ///
-  /// No se arregla acá ni se parsea la frase: se detecta la subcadena y se
+  /// No se arregla aquí ni se parsea la frase: se detecta la subcadena y se
   /// avisa. El arreglo es un ticket para el DBA.
   static bool _esCasoLimite(String texto) =>
       texto.contains('= 0 dias por antiguedad');

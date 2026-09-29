@@ -24,7 +24,7 @@ import 'package:responsive_framework/responsive_framework.dart';
 /// Son dos cosas distintas:
 ///
 /// 1. **Que entre.** Un `Row` que no entra compila perfecto y recién falla al
-///    renderizar, con la franja amarilla y negra. Acá se dibuja de verdad a los
+///    renderizar, con la franja amarilla y negra. Aquí se dibuja de verdad a los
 ///    cuatro anchos del criterio de aceptación (360, 800, 1280 y 1920) más el
 ///    iPad Pro, **con las etiquetas reales del SP** —que llegan a 95 caracteres,
 ///    no las del JSON de ejemplo del plan—.
@@ -36,7 +36,7 @@ import 'package:responsive_framework/responsive_framework.dart';
 ///    publicar una cifra defendible y una que no.
 void main() {
   // `AppConstants.baseUrl` lee `dotenv.env`, que **lanza** si nadie cargó el
-  // archivo. En la app lo carga `main.dart`; acá alcanza con dejarlo vacío para
+  // archivo. En la app lo carga `main.dart`; aquí alcanza con dejarlo vacío para
   // que caiga en los valores compilados. Sin esto, cualquier widget que toque
   // el cliente HTTP —`PermissionWidget`, que arma el repositorio de permisos—
   // revienta antes de dibujar nada.
@@ -336,7 +336,7 @@ void _pruebasDeLaPestanaApagada() {
     tester,
   ) async {
     // Si `indiceCalculadora` quedara desfasado de `cantidad`, el
-    // `DefaultTabController` lanzaría acá con un `initialIndex` fuera de rango
+    // `DefaultTabController` lanzaría aquí con un `initialIndex` fuera de rango
     // — que es exactamente el modo en que esto se rompe.
     await _dibujar(
       tester,
@@ -405,14 +405,14 @@ Future<void> _dibujar(
 
   // `PermissionWidget` dispara la carga real del ACL: arma el cliente HTTP, le
   // pide el token a `SecureStorage` (3 s de vencimiento) y sale a la red (que
-  // acá no existe). Esos temporizadores quedan colgados y el banco de pruebas
+  // aquí no existe). Esos temporizadores quedan colgados y el banco de pruebas
   // lo denuncia al desmontar el árbol. El tiempo es simulado, así que dejarlos
   // vencer no cuesta nada: dos minutos cubren toda la cadena.
   await tester.pump(const Duration(minutes: 2));
 }
 
 /// `ROLE_ADM` para que `PermissionWidget` deje pasar: el ACL de verdad se
-/// resuelve en el servidor y acá no hay servidor.
+/// resuelve en el servidor y aquí no hay servidor.
 final _admin = LoginEntity.fromJson(<String, dynamic>{
   'tipoUsuario': 'ROLE_ADM',
   'codUsuario': 34,

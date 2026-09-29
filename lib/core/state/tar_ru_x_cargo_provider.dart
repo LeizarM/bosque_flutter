@@ -52,9 +52,10 @@ class TarRuXCargoNotifier extends StateNotifier<TarRuXCargoState> {
       await _repo.registrar(item);
       state = state.copyWith(
         cargando: false,
-        mensajeExito: item.idTarXCargo == 0
-            ? 'Asignación de cargo a tarea rutinaria agregada.'
-            : 'Asignación de cargo a tarea rutinaria actualizada.',
+        mensajeExito:
+            item.idTarXCargo == 0
+                ? 'Asignación de cargo a tarea rutinaria agregada.'
+                : 'Asignación de cargo a tarea rutinaria actualizada.',
       );
       await cargar();
       return true;
@@ -85,5 +86,5 @@ final _tarRuXCargoRepoProvider = Provider((ref) => TarRuXCargoImpl());
 
 final tarRuXCargoProvider =
     StateNotifierProvider.autoDispose<TarRuXCargoNotifier, TarRuXCargoState>(
-  (ref) => TarRuXCargoNotifier(ref.read(_tarRuXCargoRepoProvider)),
-);
+      (ref) => TarRuXCargoNotifier(ref.read(_tarRuXCargoRepoProvider)),
+    );

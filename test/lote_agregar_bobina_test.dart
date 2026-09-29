@@ -79,27 +79,30 @@ void main() {
     expect(estado().difProduccion, 420);
   });
 
-  test('quitar solo alcanza a las bobinas que todavia no se guardaron', () async {
-    final notifier = await abrirDetalle();
+  test(
+    'quitar solo alcanza a las bobinas que todavia no se guardaron',
+    () async {
+      final notifier = await abrirDetalle();
 
-    notifier.agregarIngreso();
-    notifier.editarIngreso(3, pesoKilos: 120);
-    expect(estado().totalPesoIngreso, 420);
+      notifier.agregarIngreso();
+      notifier.editarIngreso(3, pesoKilos: 120);
+      expect(estado().totalPesoIngreso, 420);
 
-    // La nueva se va y el total vuelve atras.
-    notifier.quitarIngreso(3);
-    expect(estado().ingresos, hasLength(3));
-    expect(estado().totalPesoIngreso, 300);
+      // La nueva se va y el total vuelve atras.
+      notifier.quitarIngreso(3);
+      expect(estado().ingresos, hasLength(3));
+      expect(estado().totalPesoIngreso, 300);
 
-    // Una que ya esta en la base no se toca: el backend no tiene baja.
-    notifier.quitarIngreso(0);
-    expect(estado().ingresos, hasLength(3));
-    expect(estado().ingresos.first.idMi, 1);
+      // Una que ya esta en la base no se toca: el backend no tiene baja.
+      notifier.quitarIngreso(0);
+      expect(estado().ingresos, hasLength(3));
+      expect(estado().ingresos.first.idMi, 1);
 
-    // Un indice fuera de rango tampoco explota.
-    notifier.quitarIngreso(9);
-    expect(estado().ingresos, hasLength(3));
-  });
+      // Un indice fuera de rango tampoco explota.
+      notifier.quitarIngreso(9);
+      expect(estado().ingresos, hasLength(3));
+    },
+  );
 
   test('al guardar viaja la fila nueva y la cabecera recalculada', () async {
     final notifier = await abrirDetalle();

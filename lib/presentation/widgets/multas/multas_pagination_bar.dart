@@ -4,11 +4,7 @@ import 'package:flutter/material.dart';
 class MultasPaginationBar extends StatelessWidget {
   final MultaState st;
   final MultaNotifier ntf;
-  const MultasPaginationBar({
-    super.key,
-    required this.st,
-    required this.ntf,
-  });
+  const MultasPaginationBar({super.key, required this.st, required this.ntf});
 
   List<Widget> _pageButtons(ColorScheme cs) {
     final pages = st.totalPaginas;
@@ -51,7 +47,8 @@ class MultasPaginationBar extends StatelessWidget {
                 color: isCur ? cs.primary : Colors.transparent,
                 borderRadius: BorderRadius.circular(6),
                 border: Border.all(
-                  color: isCur ? cs.primary : cs.outline.withValues(alpha: 0.25),
+                  color:
+                      isCur ? cs.primary : cs.outline.withValues(alpha: 0.25),
                 ),
               ),
               alignment: Alignment.center,
@@ -85,7 +82,9 @@ class MultasPaginationBar extends StatelessWidget {
       height: 50,
       decoration: BoxDecoration(
         color: cs.surface,
-        border: Border(top: BorderSide(color: cs.outline.withValues(alpha: 0.15))),
+        border: Border(
+          top: BorderSide(color: cs.outline.withValues(alpha: 0.15)),
+        ),
       ),
       child: SingleChildScrollView(
         scrollDirection: Axis.horizontal,
@@ -103,30 +102,32 @@ class MultasPaginationBar extends StatelessWidget {
             ),
             const SizedBox(width: 16),
             IconButton(
-            iconSize: 18,
-            icon: Icon(
-              Icons.chevron_left_rounded,
-              color:
-                  st.pagina > 1 ? cs.primary : cs.onSurface.withValues(alpha: 0.25),
+              iconSize: 18,
+              icon: Icon(
+                Icons.chevron_left_rounded,
+                color:
+                    st.pagina > 1
+                        ? cs.primary
+                        : cs.onSurface.withValues(alpha: 0.25),
+              ),
+              onPressed:
+                  st.pagina > 1 ? () => ntf.cambiarPagina(st.pagina - 1) : null,
             ),
-            onPressed:
-                st.pagina > 1 ? () => ntf.cambiarPagina(st.pagina - 1) : null,
-          ),
-          ..._pageButtons(cs),
-          IconButton(
-            iconSize: 18,
-            icon: Icon(
-              Icons.chevron_right_rounded,
-              color:
+            ..._pageButtons(cs),
+            IconButton(
+              iconSize: 18,
+              icon: Icon(
+                Icons.chevron_right_rounded,
+                color:
+                    st.pagina < st.totalPaginas
+                        ? cs.primary
+                        : cs.onSurface.withValues(alpha: 0.25),
+              ),
+              onPressed:
                   st.pagina < st.totalPaginas
-                      ? cs.primary
-                      : cs.onSurface.withValues(alpha: 0.25),
+                      ? () => ntf.cambiarPagina(st.pagina + 1)
+                      : null,
             ),
-            onPressed:
-                st.pagina < st.totalPaginas
-                    ? () => ntf.cambiarPagina(st.pagina + 1)
-                    : null,
-          ),
             const SizedBox(width: 16),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8),

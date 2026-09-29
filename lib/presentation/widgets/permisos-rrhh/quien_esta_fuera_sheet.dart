@@ -13,7 +13,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 /// Reemplaza al *Cronograma de Vacaciones* del sistema anterior, que está en el
 /// menú de 194 usuarios pero **no funciona**: su bean `cronogramaBackBean` no
 /// existe en el código fuente, y sus tres reportes Jasper tienen la consulta
-/// vacía porque los alimentaba ese bean. Acá el dato sale del SP
+/// vacía porque los alimentaba ese bean. Aquí el dato sale del SP
 /// (`p_list_Permiso 'Q'` sin `codEmpleado`), no de una colección en memoria.
 Future<void> mostrarQuienEstaFuera(BuildContext context) =>
     showModalBottomSheet<void>(
@@ -122,13 +122,17 @@ class _QuienEstaFueraSheet extends ConsumerWidget {
       datos.when(
         loading: () => const Cargando(),
         error:
-            (e, _) =>
-                ErrorDelDato(error: e, onReintentar: () => ref.invalidate(provider)),
+            (e, _) => ErrorDelDato(
+              error: e,
+              onReintentar: () => ref.invalidate(provider),
+            ),
         data:
             (lista) =>
                 lista.isEmpty
                     ? Text(vacio, style: context.apagado())
-                    : Column(children: [for (final p in lista) _fila(context, p)]),
+                    : Column(
+                      children: [for (final p in lista) _fila(context, p)],
+                    ),
       ),
     ],
   );
@@ -175,9 +179,19 @@ class _QuienEstaFueraSheet extends ConsumerWidget {
 }
 
 const _nombresMeses = [
-  'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
-  'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre',
-]; // solo se usa acá, para el título de esta sección — no vale un helper compartido.
+  'Enero',
+  'Febrero',
+  'Marzo',
+  'Abril',
+  'Mayo',
+  'Junio',
+  'Julio',
+  'Agosto',
+  'Septiembre',
+  'Octubre',
+  'Noviembre',
+  'Diciembre',
+]; // solo se usa aquí, para el título de esta sección — no vale un helper compartido.
 
 /// Flechas mes anterior/siguiente para "Vacaciones y permisos del mes". Sin
 /// tope hacia adelante: a diferencia de asistencia, un mes futuro es

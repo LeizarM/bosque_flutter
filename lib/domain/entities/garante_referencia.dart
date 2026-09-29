@@ -13,7 +13,7 @@ class GaranteReferenciaEntity {
   final String? nombreCompleto;
   final String? direccionDomicilio;
   final String? telefonos;
-final PersonaEntity? persona;
+  final PersonaEntity? persona;
   GaranteReferenciaEntity({
     required this.codGarante,
     required this.codPersona,
@@ -23,11 +23,11 @@ final PersonaEntity? persona;
     required this.tipo,
     required this.observacion,
     required this.audUsuario,
-     this.esEmpleado,
-     this.nombreCompleto,
-     this.direccionDomicilio,
-     this.telefonos,
-     this.persona,
+    this.esEmpleado,
+    this.nombreCompleto,
+    this.direccionDomicilio,
+    this.telefonos,
+    this.persona,
   });
   Map<String, dynamic> toJson() {
     return {
@@ -45,6 +45,7 @@ final PersonaEntity? persona;
       'telefonos': telefonos,
     };
   }
+
   // Método copyWith
   GaranteReferenciaEntity copyWith({
     int? codGarante,

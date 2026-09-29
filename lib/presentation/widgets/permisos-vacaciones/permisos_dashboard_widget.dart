@@ -405,7 +405,15 @@ class PermisosDashboardWidget extends ConsumerWidget {
                   const SizedBox(width: 14),
                   Expanded(child: infoWidget),
                   const SizedBox(width: 10),
-                  datesWidget,
+                  // Flexible, no suelto: datesWidget es un Wrap, y un hijo NO
+                  // flexible de un Row recibe ancho sin tope — así el Wrap
+                  // nunca podía envolver y se estiraba a su ancho intrínseco
+                  // (fecha+hora de "Desde"/"Hasta" más la píldora de días),
+                  // desbordando la tarjeta por la derecha cuando el panel es
+                  // angosto (RIGHT OVERFLOWED BY 127 PIXELS en el dashboard,
+                  // reportado 2026-09-07). Con Flexible recibe el ancho que
+                  // sobra y envuelve, que es para lo que el Wrap estaba.
+                  Flexible(child: datesWidget),
                 ],
               ),
     );

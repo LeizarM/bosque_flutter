@@ -40,9 +40,10 @@ class _FormEducacionState extends ConsumerState<FormEducacion> {
       text: widget.educacionInicial?.descripcion ?? '',
     );
 
-    _selectedTipoEducacion = widget.educacionInicial?.tipoEducacion.isNotEmpty == true
-        ? widget.educacionInicial!.tipoEducacion
-        : null;
+    _selectedTipoEducacion =
+        widget.educacionInicial?.tipoEducacion.isNotEmpty == true
+            ? widget.educacionInicial!.tipoEducacion
+            : null;
 
     final initialDate = widget.educacionInicial?.fecha ?? DateTime.now();
     _fechaController = TextEditingController(
@@ -61,7 +62,8 @@ class _FormEducacionState extends ConsumerState<FormEducacion> {
     if (_formKey.currentState!.validate()) {
       FocusManager.instance.primaryFocus?.unfocus();
 
-      final fechaSeleccionada = FechaUtils.parseDate(_fechaController.text) ?? DateTime.now();
+      final fechaSeleccionada =
+          FechaUtils.parseDate(_fechaController.text) ?? DateTime.now();
 
       final educacionGuardada = EducacionEntity(
         codEducacion: widget.educacionInicial?.codEducacion ?? 0,
@@ -92,9 +94,10 @@ class _FormEducacionState extends ConsumerState<FormEducacion> {
             color: Theme.of(context).primaryColor.withOpacity(0.5),
           ),
         ),
-        child: context.isMobile
-            ? _buildMobileLayout(context, tiposEducacionAsync)
-            : _buildWebLayout(context, tiposEducacionAsync),
+        child:
+            context.isMobile
+                ? _buildMobileLayout(context, tiposEducacionAsync)
+                : _buildWebLayout(context, tiposEducacionAsync),
       ),
     );
   }
@@ -103,7 +106,10 @@ class _FormEducacionState extends ConsumerState<FormEducacion> {
   // LAYOUT MÓVIL: Formulario apilado verticalmente
   // ============================================================================
 
-  Widget _buildMobileLayout(BuildContext context, AsyncValue<List<TipoEducacionEntity>> tiposEducacionAsync) {
+  Widget _buildMobileLayout(
+    BuildContext context,
+    AsyncValue<List<TipoEducacionEntity>> tiposEducacionAsync,
+  ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -122,7 +128,10 @@ class _FormEducacionState extends ConsumerState<FormEducacion> {
   // LAYOUT WEB: Formulario en fila
   // ============================================================================
 
-  Widget _buildWebLayout(BuildContext context, AsyncValue<List<TipoEducacionEntity>> tiposEducacionAsync) {
+  Widget _buildWebLayout(
+    BuildContext context,
+    AsyncValue<List<TipoEducacionEntity>> tiposEducacionAsync,
+  ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -135,10 +144,7 @@ class _FormEducacionState extends ConsumerState<FormEducacion> {
               child: _buildDropdownTipo(context, tiposEducacionAsync),
             ),
             SizedBox(width: context.spacing),
-            SizedBox(
-              width: 160,
-              child: _buildDatePicker(context),
-            ),
+            SizedBox(width: 160, child: _buildDatePicker(context)),
             SizedBox(width: context.spacing),
             _buildActionButtonsWeb(context),
           ],
@@ -154,7 +160,10 @@ class _FormEducacionState extends ConsumerState<FormEducacion> {
   // COMPONENTES
   // ============================================================================
 
-  Widget _buildDropdownTipo(BuildContext context, AsyncValue<List<TipoEducacionEntity>> tiposEducacionAsync) {
+  Widget _buildDropdownTipo(
+    BuildContext context,
+    AsyncValue<List<TipoEducacionEntity>> tiposEducacionAsync,
+  ) {
     return CustomDropdown<TipoEducacionEntity>(
       asyncValue: tiposEducacionAsync,
       label: 'Tipo de Educación',
@@ -189,9 +198,7 @@ class _FormEducacionState extends ConsumerState<FormEducacion> {
         labelText: 'Institución/Descripción *',
         labelStyle: TextStyle(fontSize: context.bodyFontSize),
         hintStyle: context.bodyLightStyle,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(6),
-        ),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(6)),
         contentPadding: EdgeInsets.symmetric(
           horizontal: context.smallSpacing,
           vertical: context.spacing,
