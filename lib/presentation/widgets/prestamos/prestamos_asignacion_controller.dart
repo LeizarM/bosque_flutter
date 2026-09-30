@@ -70,7 +70,8 @@ class PrestamosAsignacionController extends ChangeNotifier {
     PrestamoEntity cabecera,
   ) async {
     if (modo == PrestamoDialogModo.edicionSap) {
-      final asignados = await ref.read(
+      // Leemos todos los empleados asignados a esta cabecera (usando transIdSAP o codPrestamo)
+      List<PrestamoEntity> asignados = await ref.read(
         prestamoEmpleadosAsignadosProvider((
           codEmpresa: cabecera.codEmpresa,
           db: cabecera.db,
@@ -78,6 +79,21 @@ class PrestamosAsignacionController extends ChangeNotifier {
           codPrestamo: cabecera.codPrestamo,
         )).future,
       );
+
+      // FIX BUG: Si estamos editando un empleado individual desde el sheet,
+      // la cabecera tendrá el nombre de ese empleado. Si estamos editando
+      // toda la cabecera desde la lista principal (y tiene múltiples), dirá
+      // "VARIOS...". Filtramos para quedarnos solo con el empleado seleccionado
+      // si no se trata de una edición grupal.
+      if (cabecera.nombreEmpleadoAsignado != null &&
+          !cabecera.nombreEmpleadoAsignado!.toUpperCase().startsWith(
+            'VARIOS',
+          )) {
+        asignados =
+            asignados
+                .where((e) => e.codPrestamo == cabecera.codPrestamo)
+                .toList();
+      }
 
       if (asignados.isNotEmpty) {
         fecIniPago = DateFormat(

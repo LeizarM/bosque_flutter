@@ -216,9 +216,10 @@ void main() {
 
   // btnComDinamica está en tb_vistaBtn (codBtn 297, "ABM de porcentajes de
   // comisión dinámica") y lo tienen las 134 filas, todas en cero. Ninguna
-  // pestaña lo consulta, y DialogoComisionDinamica —que es esa ABM— no se
-  // construye en ningún lado. No es un agujero: es un permiso sin pantalla.
-  // Si algún día se cablea, este test tiene que empezar a fallar.
+  // pestaña lo consulta, y la ABM que sería (DialogoComisionDinamica) se
+  // eliminó por no construirse en ningún lado (queda en el historial de git).
+  // No es un agujero: es un permiso sin pantalla. Si algún día se cablea,
+  // este test tiene que empezar a fallar.
   test('btnComDinamica no abre nada (todavía)', () {
     expect(
       superficiesComision(con({'btnComDinamica'})).vacio,
