@@ -1,12 +1,13 @@
-import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart';
-import 'package:dropdown_search/dropdown_search.dart';
 import 'package:bosque_flutter/core/state/registro_empleado_provider.dart';
 import 'package:bosque_flutter/core/state/rrhh_provider.dart';
-import 'package:bosque_flutter/core/utils/responsive_utils_bosque.dart';
-import 'package:bosque_flutter/domain/entities/descuento_empleado_entity.dart';
+import 'package:bosque_flutter/core/ui/estados_vista.dart';
+import 'package:bosque_flutter/core/ui/tokens_bosque.dart';
 import 'package:bosque_flutter/domain/entities/empleado_entity.dart';
+import 'package:dropdown_search/dropdown_search.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import 'descuento_widgets.dart';
 
 class InformeEmpDescuentosScreen extends ConsumerStatefulWidget {
   const InformeEmpDescuentosScreen({super.key});
@@ -23,177 +24,232 @@ class _InformeEmpDescuentosScreenState
   int _mesSeleccionado = DateTime.now().month;
   int _anioSeleccionado = DateTime.now().year;
 
-  // Meses
-  static const List<Map<String, dynamic>> _meses = [
-    {'num': 1, 'nombre': 'Enero'},
-    {'num': 2, 'nombre': 'Febrero'},
-    {'num': 3, 'nombre': 'Marzo'},
-    {'num': 4, 'nombre': 'Abril'},
-    {'num': 5, 'nombre': 'Mayo'},
-    {'num': 6, 'nombre': 'Junio'},
-    {'num': 7, 'nombre': 'Julio'},
-    {'num': 8, 'nombre': 'Agosto'},
-    {'num': 9, 'nombre': 'Septiembre'},
-    {'num': 10, 'nombre': 'Octubre'},
-    {'num': 11, 'nombre': 'Noviembre'},
-    {'num': 12, 'nombre': 'Diciembre'},
-  ];
+  // Por defecto solo activos (@esActivo = 1); con el check se piden todos.
+  bool _incluirInactivos = false;
 
-  static final NumberFormat _amountFormat = NumberFormat('#,##0.00', 'en_US');
+  // Tope de ancho del contenido: en pantallas muy grandes las tarjetas dejan
+  // de estirarse y se pierde el hilo entre un extremo y otro.
+  static const double _anchoMaximo = 1200;
+
+  static const List<String> _meses = [
+    'Enero',
+    'Febrero',
+    'Marzo',
+    'Abril',
+    'Mayo',
+    'Junio',
+    'Julio',
+    'Agosto',
+    'Septiembre',
+    'Octubre',
+    'Noviembre',
+    'Diciembre',
+  ];
 
   List<int> get _anios {
     final current = DateTime.now().year;
     return [current - 2, current - 1, current];
   }
 
-  String _formatAmount(double value) {
-    return _amountFormat.format(value);
-  }
+  /// «Septiembre 2026».
+  String get _periodo => '${_meses[_mesSeleccionado - 1]} $_anioSeleccionado';
 
-  @override
-  void dispose() {
-    super.dispose();
+  // Relación laboral terminada (esActivo = 0 en p_list_Empleado 'Y').
+  bool _inactivo(EmpleadoEntity e) => e.relEmpEmpr.esActivo == 0;
+
+  String _nombreEmpleado(EmpleadoEntity e) {
+    // El nombre viene en el objeto persona anidado
+    if (e.persona.datoPersona != null &&
+        e.persona.datoPersona!.trim().isNotEmpty) {
+      return e.persona.datoPersona!.trim();
+    }
+    final desdePersona =
+        '${e.persona.nombres} ${e.persona.apPaterno} ${e.persona.apMaterno}'
+            .trim();
+    if (desdePersona.isNotEmpty) return desdePersona;
+    // Fallback: campos de nivel superior
+    if (e.datoPersona.trim().isNotEmpty) return e.datoPersona.trim();
+    return '${e.nombres} ${e.apPaterno} ${e.apMaterno}'.trim();
   }
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-    final isMobile = ResponsiveUtilsBosque.isMobile(context);
-
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Descuentos por Empleado'),
-        centerTitle: true,
-      ),
-      body: Column(
-        children: [
-          _buildFiltros(context, theme, colorScheme, isMobile),
-          if (_empleadoSeleccionado != null)
-            Expanded(child: _buildResultados(theme, colorScheme, isMobile))
-          else
-            Expanded(child: _buildEstadoVacio(theme, colorScheme)),
-        ],
-      ),
+    // Se mide el ancho disponible y no el de la ventana: dentro del dashboard
+    // el menú lateral se come su parte.
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final ancho = constraints.maxWidth;
+        final relleno =
+            ancho >= 1000 ? Esp.xxl : (ancho >= 600 ? Esp.xl : Esp.l);
+        return SingleChildScrollView(
+          padding: EdgeInsets.all(relleno),
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: _anchoMaximo),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  _buildEncabezado(context),
+                  const SizedBox(height: Esp.xl),
+                  _buildFiltros(context),
+                  const SizedBox(height: Esp.xl),
+                  _buildContenido(context),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 
-  Widget _buildFiltros(
-    BuildContext context,
-    ThemeData theme,
-    ColorScheme colorScheme,
-    bool isMobile,
-  ) {
-    return Container(
-      color: colorScheme.surfaceContainerLow,
-      padding: EdgeInsets.symmetric(
-        horizontal: isMobile ? 16 : 24,
-        vertical: 16,
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Título de sección
-          Row(
+  // ── Encabezado y filtros ──────────────────────────────────────────────────
+
+  Widget _buildEncabezado(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final t = Theme.of(context).textTheme;
+    return Row(
+      children: [
+        DecoratedBox(
+          decoration: BoxDecoration(
+            color: cs.primaryContainer,
+            borderRadius: BorderRadius.circular(Esquina.media),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(Esp.m),
+            child: Icon(
+              Icons.request_quote_outlined,
+              color: cs.onPrimaryContainer,
+            ),
+          ),
+        ),
+        const SizedBox(width: Esp.m),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Icon(Icons.filter_list, color: colorScheme.primary, size: 20),
-              const SizedBox(width: 8),
               Text(
-                'Seleccionar período y empleado',
-                style: theme.textTheme.titleSmall?.copyWith(
-                  color: colorScheme.primary,
-                  fontWeight: FontWeight.w600,
-                ),
+                'Descuentos por Empleado',
+                style: t.titleLarge?.copyWith(fontWeight: Peso.dato),
+              ),
+              Text(
+                'Consulte los préstamos, anticipos y multas descontados en un período',
+                style: t.bodyMedium?.copyWith(color: cs.onSurfaceVariant),
               ),
             ],
           ),
-          const SizedBox(height: 12),
-          // Fila de mes y año
-          isMobile
-              ? Column(
-                children: [
-                  _buildMesDropdown(theme, colorScheme),
-                  const SizedBox(height: 10),
-                  _buildAnioDropdown(theme, colorScheme),
-                ],
-              )
-              : Row(
-                children: [
-                  Expanded(child: _buildMesDropdown(theme, colorScheme)),
-                  const SizedBox(width: 12),
-                  Expanded(child: _buildAnioDropdown(theme, colorScheme)),
-                ],
-              ),
-          const SizedBox(height: 12),
-          // Dropdown con buscador de empleados
-          _buildEmpleadoDropdown(theme, colorScheme),
-        ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildFiltros(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return Card(
+      elevation: 0,
+      margin: EdgeInsets.zero,
+      shape: contornoSuperficie(cs),
+      child: Padding(
+        padding: const EdgeInsets.all(Esp.l),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              children: [
+                Icon(Icons.tune, size: 20, color: cs.primary),
+                const SizedBox(width: Esp.s),
+                Text(
+                  'Período y empleado',
+                  style: Theme.of(
+                    context,
+                  ).textTheme.titleMedium?.copyWith(fontWeight: Peso.titulo),
+                ),
+              ],
+            ),
+            const SizedBox(height: Esp.l),
+            LayoutBuilder(
+              builder: (context, c) => _buildCampos(context, c.maxWidth),
+            ),
+          ],
+        ),
       ),
     );
   }
 
-  Widget _buildMesDropdown(ThemeData theme, ColorScheme colorScheme) {
+  /// Los campos en una rejilla de 12 columnas: cada uno ocupa `span`. Con
+  /// espacio amplio van mes, año y empleado en una fila; con menos, mes y año
+  /// juntos y el empleado debajo.
+  Widget _buildCampos(BuildContext context, double ancho) {
+    // Hacia abajo: la suma de una fila nunca pasa del ancho, así no salta de
+    // línea por un error de redondeo.
+    double de(int span) {
+      final columna = (ancho - Esp.m * 11) / 12;
+      return (columna * span + Esp.m * (span - 1)).floorToDouble();
+    }
+
+    final (mes, anio, empleado) = ancho >= 720 ? (3, 2, 7) : (6, 6, 12);
+
+    return Wrap(
+      spacing: Esp.m,
+      runSpacing: Esp.m,
+      children: [
+        SizedBox(width: de(mes), child: _buildMesDropdown()),
+        SizedBox(width: de(anio), child: _buildAnioDropdown()),
+        SizedBox(width: de(empleado), child: _buildEmpleadoDropdown(context)),
+        // El check va bajo el empleado, que es el campo al que modifica.
+        SizedBox(width: ancho, child: _buildIncluirInactivos(context)),
+      ],
+    );
+  }
+
+  Widget _buildMesDropdown() {
     return DropdownButtonFormField<int>(
       value: _mesSeleccionado,
-      decoration: InputDecoration(
-        labelText: 'Mes',
-        prefixIcon: Icon(Icons.calendar_today, color: colorScheme.primary),
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-        isDense: true,
-        filled: true,
-        fillColor: colorScheme.surface,
-      ),
-      items:
-          _meses
-              .map(
-                (m) => DropdownMenuItem<int>(
-                  value: m['num'] as int,
-                  child: Text(m['nombre'] as String),
-                ),
-              )
-              .toList(),
+      decoration: const InputDecoration(labelText: 'Mes'),
+      isExpanded: true,
+      items: [
+        for (var i = 0; i < _meses.length; i++)
+          DropdownMenuItem<int>(value: i + 1, child: Text(_meses[i])),
+      ],
       onChanged: (v) {
         if (v != null) setState(() => _mesSeleccionado = v);
       },
     );
   }
 
-  Widget _buildAnioDropdown(ThemeData theme, ColorScheme colorScheme) {
+  Widget _buildAnioDropdown() {
     return DropdownButtonFormField<int>(
       value: _anioSeleccionado,
-      decoration: InputDecoration(
-        labelText: 'Año',
-        prefixIcon: Icon(Icons.date_range, color: colorScheme.primary),
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-        isDense: true,
-        filled: true,
-        fillColor: colorScheme.surface,
-      ),
-      items:
-          _anios
-              .map((a) => DropdownMenuItem<int>(value: a, child: Text('$a')))
-              .toList(),
+      decoration: const InputDecoration(labelText: 'Año'),
+      isExpanded: true,
+      items: [
+        for (final a in _anios)
+          DropdownMenuItem<int>(value: a, child: Text('$a')),
+      ],
       onChanged: (v) {
         if (v != null) setState(() => _anioSeleccionado = v);
       },
     );
   }
 
-  Widget _buildEmpleadoDropdown(ThemeData theme, ColorScheme colorScheme) {
-    String nombreEmpleado(EmpleadoEntity e) {
-      // El nombre viene en el objeto persona anidado
-      if (e.persona.datoPersona != null &&
-          e.persona.datoPersona!.trim().isNotEmpty) {
-        return e.persona.datoPersona!.trim();
-      }
-      final desdePersona =
-          '${e.persona.nombres} ${e.persona.apPaterno} ${e.persona.apMaterno}'
-              .trim();
-      if (desdePersona.isNotEmpty) return desdePersona;
-      // Fallback: campos de nivel superior
-      if (e.datoPersona.trim().isNotEmpty) return e.datoPersona.trim();
-      return '${e.nombres} ${e.apPaterno} ${e.apMaterno}'.trim();
-    }
+  /// Sin el check solo se listan los activos; con él, todos (activos primero).
+  Widget _buildIncluirInactivos(BuildContext context) {
+    return CheckboxListTile(
+      value: _incluirInactivos,
+      onChanged: (v) => setState(() => _incluirInactivos = v ?? false),
+      title: Text(
+        'Incluir empleados inactivos',
+        style: Theme.of(context).textTheme.bodyMedium,
+      ),
+      controlAffinity: ListTileControlAffinity.leading,
+      contentPadding: EdgeInsets.zero,
+      dense: true,
+    );
+  }
+
+  Widget _buildEmpleadoDropdown(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
 
     return DropdownSearch<EmpleadoEntity>(
       selectedItem: _empleadoSeleccionado,
@@ -201,7 +257,8 @@ class _InformeEmpDescuentosScreenState
         final items = await ref.read(
           getListaEmpleados((
             text.isEmpty ? null : text,
-            1,
+            // 1 = solo activos; null = todos (el SP los ordena activos primero).
+            _incluirInactivos ? null : 1,
             1,
             200,
             null,
@@ -209,34 +266,39 @@ class _InformeEmpDescuentosScreenState
         );
         return items;
       },
-      itemAsString: nombreEmpleado,
+      itemAsString:
+          (e) =>
+              _inactivo(e)
+                  ? '${_nombreEmpleado(e)} (Inactivo)'
+                  : _nombreEmpleado(e),
       compareFn: (a, b) => a.codEmpleado == b.codEmpleado,
       dropdownDecoratorProps: DropDownDecoratorProps(
+        // Mismo tamaño de letra que los otros campos del filtro.
+        baseStyle: theme.textTheme.bodyLarge,
         dropdownSearchDecoration: InputDecoration(
           labelText: 'Empleado',
           hintText: 'Buscar por nombre...',
           prefixIcon: Icon(Icons.person_search, color: colorScheme.primary),
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-          isDense: true,
-          filled: true,
-          fillColor: colorScheme.surface,
         ),
       ),
       popupProps: PopupProps.menu(
         showSearchBox: true,
+        // La búsqueda va al servidor: con inactivos son más de 200 y filtrar
+        // solo en el cliente dejaría a los últimos fuera del alcance.
+        isFilterOnline: true,
         searchDelay: const Duration(milliseconds: 300),
         searchFieldProps: TextFieldProps(
           autofocus: true,
           decoration: InputDecoration(
             hintText: 'Escriba para buscar...',
             prefixIcon: Icon(Icons.search, color: colorScheme.primary),
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
             isDense: true,
           ),
         ),
         itemBuilder: (context, emp, isSelected) {
-          final nombre = nombreEmpleado(emp);
+          final nombre = _nombreEmpleado(emp);
           final initial = nombre.isNotEmpty ? nombre[0].toUpperCase() : '?';
+          final inactivo = _inactivo(emp);
           return ListTile(
             dense: true,
             leading: CircleAvatar(
@@ -251,7 +313,13 @@ class _InformeEmpDescuentosScreenState
                 ),
               ),
             ),
-            title: Text(nombre, style: theme.textTheme.bodyMedium),
+            title: Text(
+              nombre,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: inactivo ? colorScheme.onSurfaceVariant : null,
+              ),
+            ),
+            trailing: inactivo ? const _EtiquetaInactivo() : null,
             selected: isSelected,
             selectedTileColor: colorScheme.primary.withValues(alpha: 0.08),
           );
@@ -262,542 +330,190 @@ class _InformeEmpDescuentosScreenState
     );
   }
 
-  Widget _buildResultados(
-    ThemeData theme,
-    ColorScheme colorScheme,
-    bool isMobile,
-  ) {
-    final emp = _empleadoSeleccionado!;
+  // ── Contenido ─────────────────────────────────────────────────────────────
+
+  Widget _buildContenido(BuildContext context) {
+    final emp = _empleadoSeleccionado;
+    if (emp == null) {
+      return _buildMensaje(
+        context,
+        icono: Icons.person_search,
+        titulo: 'Selecciona un empleado',
+        detalle: 'Elige el período y el empleado para ver sus descuentos',
+      );
+    }
+
     final params = (emp.codEmpleado, _mesSeleccionado, _anioSeleccionado);
     final descuentosAsync = ref.watch(descuentosEmpleadoProvider(params));
 
-    return descuentosAsync.when(
-      loading: () => const Center(child: CircularProgressIndicator()),
-      error:
-          (e, _) => Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.error_outline, size: 48, color: colorScheme.error),
-                const SizedBox(height: 8),
-                Text('Error: $e', textAlign: TextAlign.center),
-                const SizedBox(height: 12),
-                OutlinedButton.icon(
-                  icon: const Icon(Icons.refresh),
-                  label: const Text('Reintentar'),
-                  onPressed:
-                      () => ref.invalidate(descuentosEmpleadoProvider(params)),
-                ),
-              ],
-            ),
-          ),
-      data: (descuentos) {
-        if (descuentos.isEmpty) {
-          return _buildSinDescuentos(theme, colorScheme);
-        }
-        return _buildListaDescuentos(descuentos, theme, colorScheme, isMobile);
-      },
-    );
-  }
-
-  Widget _buildSinDescuentos(ThemeData theme, ColorScheme colorScheme) {
-    final mesNombre =
-        _meses.firstWhere(
-          (m) => m['num'] == _mesSeleccionado,
-          orElse: () => {'nombre': '$_mesSeleccionado'},
-        )['nombre'];
-
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.check_circle_outline,
-            size: 64,
-            color: colorScheme.primary.withValues(alpha: 0.5),
-          ),
-          const SizedBox(height: 16),
-          Text(
-            'Sin descuentos registrados',
-            style: theme.textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'No hay descuentos para $mesNombre $_anioSeleccionado',
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: colorScheme.onSurfaceVariant,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildEstadoVacio(ThemeData theme, ColorScheme colorScheme) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.person_search,
-            size: 64,
-            color: colorScheme.onSurfaceVariant.withValues(alpha: 0.4),
-          ),
-          const SizedBox(height: 16),
-          Text(
-            'Selecciona un empleado',
-            style: theme.textTheme.titleMedium?.copyWith(
-              color: colorScheme.onSurfaceVariant,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Elige el período y el empleado para ver sus descuentos',
-            textAlign: TextAlign.center,
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: colorScheme.onSurfaceVariant,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildListaDescuentos(
-    List<DescuentoEmpleadoEntity> descuentos,
-    ThemeData theme,
-    ColorScheme colorScheme,
-    bool isMobile,
-  ) {
-    // Totales
-    final totalDescuentos = descuentos.fold<double>(
-      0,
-      (sum, d) => sum + d.montoDescuento,
-    );
-    final totalMontoTotal = descuentos.fold<double>(
-      0,
-      (sum, d) => sum + d.montoTotal,
-    );
-    final totalSaldo = descuentos.fold<double>(
-      0,
-      (sum, d) => sum + d.saldoRestante,
-    );
-
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        // Resumen
-        _buildResumen(
-          descuentos,
-          totalDescuentos,
-          totalMontoTotal,
-          totalSaldo,
-          theme,
-          colorScheme,
-          isMobile,
-        ),
-        // Lista de tarjetas
-        Expanded(
-          child: ListView.separated(
-            padding: EdgeInsets.symmetric(
-              horizontal: isMobile ? 12 : 24,
-              vertical: 12,
-            ),
-            itemCount: descuentos.length,
-            separatorBuilder: (_, __) => const SizedBox(height: 10),
-            itemBuilder:
-                (context, i) =>
-                    _buildDescuentoCard(descuentos[i], theme, colorScheme),
-          ),
+        _buildContextoEmpleado(context, emp),
+        const SizedBox(height: Esp.l),
+        descuentosAsync.when(
+          // Un esqueleto del alto de unas tarjetas reserva el lugar: la
+          // página no salta cuando llegan los datos.
+          loading:
+              () => _enTarjeta(
+                context,
+                const SizedBox(
+                  height: 312,
+                  child: EsqueletoLista(filas: 4, altoFila: 64),
+                ),
+              ),
+          error:
+              (e, _) => _enTarjeta(
+                context,
+                SizedBox(
+                  height: 240,
+                  child: MensajeError(
+                    error: e,
+                    onReintentar:
+                        () => ref.invalidate(descuentosEmpleadoProvider(params)),
+                  ),
+                ),
+              ),
+          data: (descuentos) {
+            if (descuentos.isEmpty) {
+              return _buildMensaje(
+                context,
+                icono: Icons.check_circle_outline,
+                titulo: 'Sin descuentos registrados',
+                detalle: 'No hay descuentos para $_periodo',
+              );
+            }
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                ResumenDescuentos(descuentos: descuentos, periodo: _periodo),
+                const SizedBox(height: Esp.l),
+                ListaDescuentos(descuentos: descuentos),
+              ],
+            );
+          },
         ),
       ],
     );
   }
 
-  Widget _buildResumen(
-    List<DescuentoEmpleadoEntity> descuentos,
-    double totalDescuentos,
-    double totalMontoTotal,
-    double totalSaldo,
-    ThemeData theme,
-    ColorScheme colorScheme,
-    bool isMobile,
-  ) {
-    final mesNombre =
-        _meses.firstWhere(
-          (m) => m['num'] == _mesSeleccionado,
-          orElse: () => {'nombre': '$_mesSeleccionado'},
-        )['nombre'];
+  /// Quién y de cuándo es lo que se está viendo; queda a la vista aunque los
+  /// filtros se hayan desplazado fuera de pantalla.
+  Widget _buildContextoEmpleado(BuildContext context, EmpleadoEntity emp) {
+    final cs = Theme.of(context).colorScheme;
+    final t = Theme.of(context).textTheme;
+    final nombre = _nombreEmpleado(emp);
+    final inicial = nombre.isNotEmpty ? nombre[0].toUpperCase() : '?';
 
-    return Container(
-      margin: EdgeInsets.symmetric(
-        horizontal: isMobile ? 12 : 24,
-        vertical: 12,
-      ),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            colorScheme.primary.withValues(alpha: 0.08),
-            colorScheme.secondary.withValues(alpha: 0.05),
-          ],
-        ),
-        border: Border.all(color: colorScheme.primary.withValues(alpha: 0.2)),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(Icons.summarize, color: colorScheme.primary, size: 18),
-              const SizedBox(width: 6),
-              Text(
-                'Resumen — $mesNombre $_anioSeleccionado',
-                style: theme.textTheme.titleSmall?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: colorScheme.primary,
-                ),
-              ),
-              const Spacer(),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 4,
-                ),
-                decoration: BoxDecoration(
-                  color: colorScheme.secondary.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      Icons.receipt_long,
-                      size: 14,
-                      color: colorScheme.secondary,
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      '${descuentos.length} descuentos',
-                      style: theme.textTheme.labelSmall?.copyWith(
-                        color: colorScheme.secondary,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          isMobile
-              ? Column(
-                children: [
-                  _buildResumenItem(
-                    'Monto descontado',
-                    'Bs ${_formatAmount(totalDescuentos)}',
-                    Icons.money_off,
-                    colorScheme.error,
-                    theme,
-                  ),
-                  const SizedBox(height: 8),
-                  _buildResumenItem(
-                    'Monto total',
-                    'Bs ${_formatAmount(totalMontoTotal)}',
-                    Icons.account_balance,
-                    colorScheme.onSurfaceVariant,
-                    theme,
-                  ),
-                  const SizedBox(height: 8),
-                  _buildResumenItem(
-                    'Saldo pendiente',
-                    'Bs ${_formatAmount(totalSaldo)}',
-                    Icons.account_balance_wallet,
-                    colorScheme.tertiary,
-                    theme,
-                  ),
-                ],
-              )
-              : Row(
-                children: [
-                  Expanded(
-                    child: _buildResumenItem(
-                      'Monto descontado',
-                      'Bs ${_formatAmount(totalDescuentos)}',
-                      Icons.money_off,
-                      colorScheme.error,
-                      theme,
-                    ),
-                  ),
-                  Expanded(
-                    child: _buildResumenItem(
-                      'Monto total',
-                      'Bs ${_formatAmount(totalMontoTotal)}',
-                      Icons.account_balance,
-                      colorScheme.onSurfaceVariant,
-                      theme,
-                    ),
-                  ),
-                  Expanded(
-                    child: _buildResumenItem(
-                      'Saldo pendiente',
-                      'Bs ${_formatAmount(totalSaldo)}',
-                      Icons.account_balance_wallet,
-                      colorScheme.tertiary,
-                      theme,
-                    ),
-                  ),
-                ],
-              ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildResumenItem(
-    String label,
-    String value,
-    IconData icon,
-    Color color,
-    ThemeData theme,
-  ) {
     return Row(
       children: [
-        Container(
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: color.withValues(alpha: 0.12),
-            borderRadius: BorderRadius.circular(8),
+        CircleAvatar(
+          radius: 20,
+          backgroundColor: cs.primaryContainer,
+          child: Text(
+            inicial,
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              color: cs.onPrimaryContainer,
+            ),
           ),
-          child: Icon(icon, color: color, size: 18),
         ),
-        const SizedBox(width: 10),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(label, style: theme.textTheme.bodySmall),
-            Text(
-              value,
-              style: theme.textTheme.titleSmall?.copyWith(
-                fontWeight: FontWeight.bold,
-                color: color,
+        const SizedBox(width: Esp.m),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                nombre,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: t.titleMedium?.copyWith(fontWeight: Peso.dato),
               ),
-            ),
-          ],
-        ),
-      ],
-    );
-  }
-
-  Widget _buildDescuentoCard(
-    DescuentoEmpleadoEntity d,
-    ThemeData theme,
-    ColorScheme colorScheme,
-  ) {
-    final bool tieneCuotas = d.totalCuotas > 0;
-    final color = _colorPorTipo(d.tipoDescuento, colorScheme);
-    final icon = _iconPorTipo(d.tipoDescuento);
-
-    return Card(
-      elevation: 2,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: BorderSide(color: color.withValues(alpha: 0.25)),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(14),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Encabezado: tipo + estado
-            Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 4,
-                  ),
-                  decoration: BoxDecoration(
-                    color: color.withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(icon, size: 14, color: color),
-                      const SizedBox(width: 4),
-                      Text(
-                        d.tipoDescuento,
-                        style: theme.textTheme.labelSmall?.copyWith(
-                          color: color,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const Spacer(),
-                _buildEstadoBadge(d.estadoDescuento, theme, colorScheme),
-              ],
-            ),
-            const SizedBox(height: 10),
-            // Descripción
-            Text(
-              d.descripcion,
-              style: theme.textTheme.bodyMedium?.copyWith(
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            const SizedBox(height: 8),
-            const Divider(height: 1),
-            const SizedBox(height: 8),
-            // Montos
-            Row(
-              children: [
-                Expanded(
-                  child: _buildMontoItem(
-                    'Monto descontado',
-                    '${d.moneda} ${_formatAmount(d.montoDescuento)}',
-                    colorScheme.error,
-                    theme,
-                  ),
-                ),
-                Expanded(
-                  child: _buildMontoItem(
-                    'Monto total',
-                    '${d.moneda} ${_formatAmount(d.montoTotal)}',
-                    colorScheme.onSurfaceVariant,
-                    theme,
-                  ),
-                ),
-                Expanded(
-                  child: _buildMontoItem(
-                    'Saldo restante',
-                    '${d.moneda} ${_formatAmount(d.saldoRestante)}',
-                    colorScheme.tertiary,
-                    theme,
-                  ),
-                ),
-              ],
-            ),
-            // Cuotas (solo si aplica)
-            if (tieneCuotas) ...[
-              const SizedBox(height: 8),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 6,
-                ),
-                decoration: BoxDecoration(
-                  color: colorScheme.surfaceContainerHighest,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.format_list_numbered,
-                      size: 14,
-                      color: colorScheme.onSurfaceVariant,
-                    ),
-                    const SizedBox(width: 6),
-                    Text(
-                      'Cuota ${d.primeraCuotaMes} de ${d.totalCuotas}',
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ],
-                ),
+              Text(
+                _periodo,
+                style: t.bodyMedium?.copyWith(color: cs.onSurfaceVariant),
               ),
             ],
+          ),
+        ),
+        if (_inactivo(emp)) ...[
+          const SizedBox(width: Esp.s),
+          const _EtiquetaInactivo(),
+        ],
+      ],
+    );
+  }
+
+  Widget _enTarjeta(BuildContext context, Widget hijo) {
+    return Card(
+      elevation: 0,
+      margin: EdgeInsets.zero,
+      shape: contornoSuperficie(Theme.of(context).colorScheme),
+      child: hijo,
+    );
+  }
+
+  Widget _buildMensaje(
+    BuildContext context, {
+    required IconData icono,
+    required String titulo,
+    required String detalle,
+  }) {
+    final cs = Theme.of(context).colorScheme;
+    final t = Theme.of(context).textTheme;
+    return _enTarjeta(
+      context,
+      Padding(
+        padding: const EdgeInsets.symmetric(
+          vertical: Esp.xxl,
+          horizontal: Esp.l,
+        ),
+        child: Column(
+          children: [
+            Icon(
+              icono,
+              size: 48,
+              color: cs.onSurfaceVariant.withValues(alpha: 0.6),
+            ),
+            const SizedBox(height: Esp.s),
+            Text(
+              titulo,
+              textAlign: TextAlign.center,
+              style: t.titleSmall?.copyWith(
+                fontWeight: Peso.titulo,
+                color: cs.onSurfaceVariant,
+              ),
+            ),
+            const SizedBox(height: Esp.xs),
+            Text(detalle, textAlign: TextAlign.center, style: context.apagado()),
           ],
         ),
       ),
     );
   }
+}
 
-  Widget _buildMontoItem(
-    String label,
-    String value,
-    Color color,
-    ThemeData theme,
-  ) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(label, style: theme.textTheme.bodySmall),
-        Text(
-          value,
-          style: theme.textTheme.bodyMedium?.copyWith(
-            fontWeight: FontWeight.bold,
-            color: color,
-          ),
-        ),
-      ],
-    );
-  }
+/// «Inactivo»: neutra, porque no es un problema sino un dato del empleado.
+class _EtiquetaInactivo extends StatelessWidget {
+  const _EtiquetaInactivo();
 
-  Widget _buildEstadoBadge(
-    String estado,
-    ThemeData theme,
-    ColorScheme colorScheme,
-  ) {
-    final isEjecutado = estado.toLowerCase() == 'ejecutado';
-    final color = isEjecutado ? Colors.green : colorScheme.tertiary;
-    final icon = isEjecutado ? Icons.check_circle : Icons.schedule;
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return DecoratedBox(
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: color.withValues(alpha: 0.3)),
+        color: cs.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(Esquina.pastilla),
       ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 12, color: color),
-          const SizedBox(width: 4),
-          Text(
-            estado,
-            style: theme.textTheme.labelSmall?.copyWith(
-              color: color,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-        ],
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: Esp.s, vertical: 2),
+        child: Text(
+          'Inactivo',
+          style: Theme.of(
+            context,
+          ).textTheme.labelSmall?.copyWith(color: cs.onSurfaceVariant),
+        ),
       ),
     );
-  }
-
-  Color _colorPorTipo(String tipo, ColorScheme colorScheme) {
-    switch (tipo.toLowerCase()) {
-      case 'prestamo - planilla':
-        return Colors.indigo;
-      case 'anticipo':
-        return Colors.orange;
-      case 'atrasos':
-        return colorScheme.error;
-      case 'multa':
-        return Colors.red.shade700;
-      default:
-        return colorScheme.secondary;
-    }
-  }
-
-  IconData _iconPorTipo(String tipo) {
-    switch (tipo.toLowerCase()) {
-      case 'prestamo - planilla':
-        return Icons.account_balance;
-      case 'anticipo':
-        return Icons.monetization_on;
-      case 'atrasos':
-        return Icons.alarm_off;
-      case 'multa':
-        return Icons.gavel;
-      default:
-        return Icons.receipt;
-    }
   }
 }

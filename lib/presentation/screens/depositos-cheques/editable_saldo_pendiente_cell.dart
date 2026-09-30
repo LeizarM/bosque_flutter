@@ -52,8 +52,10 @@ class _EditableSaldoPendienteCellState
 
   @override
   Widget build(BuildContext context) {
-    final isDesktop = MediaQuery.of(context).size.width > 1100;
-    final isMobile = MediaQuery.of(context).size.width < 600;
+    // Solo se lee el ancho: `sizeOf` no reconstruye por teclado ni insets.
+    final ancho = MediaQuery.sizeOf(context).width;
+    final isDesktop = ancho > 1100;
+    final isMobile = ancho < 600;
     final colorScheme = Theme.of(context).colorScheme;
 
     return MouseRegion(

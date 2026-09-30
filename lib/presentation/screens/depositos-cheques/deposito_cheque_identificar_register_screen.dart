@@ -1,22 +1,26 @@
 import 'dart:io';
 import 'dart:async';
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/services.dart' show FilteringTextInputFormatter;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:bosque_flutter/core/state/depositos_cheques_provider.dart';
+import 'package:bosque_flutter/core/ui/aviso.dart';
+import 'package:bosque_flutter/core/ui/estados_vista.dart';
 import 'package:bosque_flutter/core/utils/responsive_utils_bosque.dart';
-import 'package:bosque_flutter/presentation/widgets/shared/aviso.dart';
 import 'dart:typed_data';
 import 'package:universal_html/html.dart' as html;
 
-final imageBytesIdentificarProvider = StateProvider<Uint8List?>((ref) => null);
+final imageBytesIdentificarProvider = StateProvider.autoDispose<Uint8List?>(
+  (ref) => null,
+);
 
 final depositosChequesIdentificarRegisterProvider =
-    StateNotifierProvider<DepositosChequesNotifier, DepositosChequesState>(
-      (ref) => DepositosChequesNotifier(ref),
-    );
+    StateNotifierProvider.autoDispose<
+      DepositosChequesNotifier,
+      DepositosChequesState
+    >((ref) => DepositosChequesNotifier(ref));
 
 class DepositoChequeIdentificarScreen extends ConsumerStatefulWidget {
   const DepositoChequeIdentificarScreen({super.key});
@@ -28,13 +32,38 @@ class DepositoChequeIdentificarScreen extends ConsumerStatefulWidget {
 
 class _DepositoChequeIdentificarScreenState
     extends ConsumerState<DepositoChequeIdentificarScreen> {
+  /// Lo que anuncia la zona de carga («JPG, JPEG, PNG. Máximo 5MB»); se valida
+  /// porque el texto solo no impide subir un archivo enorme o que no es imagen.
+  static const int _maxBytesImagen = 5 * 1024 * 1024;
+  static const Set<String> _tiposImagen = {
+    'image/jpeg',
+    'image/jpg',
+    'image/png',
+  };
+  static const Set<String> _extensionesImagen = {'jpg', 'jpeg', 'png'};
+
   bool _isDragging = false;
   int _dragCounter = 0;
   final List<StreamSubscription> _dragSubs = [];
 
+  // Controllers propios: con el formulario siempre montado y `initialValue`, lo
+  // tecleado se perdía o quedaba desincronizado del estado.
+  final TextEditingController _importeCtrl = TextEditingController();
+  final TextEditingController _obsCtrl = TextEditingController();
+
   @override
   void initState() {
     super.initState();
+
+    // El notifier ya no pide red al crearse: cada pantalla pide lo suyo.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      unawaited(
+        ref
+            .read(depositosChequesIdentificarRegisterProvider.notifier)
+            .cargarEmpresasSiFalta(),
+      );
+    });
 
     if (kIsWeb) {
       _dragSubs.add(
@@ -61,26 +90,13 @@ class _DepositoChequeIdentificarScreenState
         }),
       );
       _dragSubs.add(
-        html.document.onDrop.listen((event) async {
+        html.document.onDrop.listen((event) {
           event.preventDefault();
           _dragCounter = 0;
           if (mounted) setState(() => _isDragging = false);
           final files = event.dataTransfer.files;
           if (files != null && files.isNotEmpty) {
-            final file = files[0];
-            if (file.type.startsWith('image/')) {
-              final reader = html.FileReader();
-              reader.readAsDataUrl(file);
-              await reader.onLoad.first;
-              final dataUrl = reader.result as String;
-              final base64Str = dataUrl.split(',').last;
-              final bytes = base64Decode(base64Str);
-              if (mounted) {
-                ref
-                    .read(imageBytesIdentificarProvider.notifier)
-                    .state = Uint8List.fromList(bytes);
-              }
-            }
+            unawaited(_cargarArchivoSoltado(files[0]));
           }
         }),
       );
@@ -92,7 +108,201 @@ class _DepositoChequeIdentificarScreenState
     for (final sub in _dragSubs) {
       sub.cancel();
     }
+    _importeCtrl.dispose();
+    _obsCtrl.dispose();
     super.dispose();
+  }
+
+  /// `null` si el archivo cumple lo que anuncia la zona de carga; si no, el
+  /// motivo del rechazo. [mime] puede venir vacío (móvil): se usa la extensión.
+  String? _motivoRechazo({
+    required int bytes,
+    required String nombre,
+    String? mime,
+  }) {
+    final punto = nombre.lastIndexOf('.');
+    final extension = punto < 0 ? '' : nombre.substring(punto + 1);
+    final tipoValido =
+        _tiposImagen.contains((mime ?? '').toLowerCase()) ||
+        _extensionesImagen.contains(extension.toLowerCase());
+    if (!tipoValido) return 'El archivo debe ser una imagen JPG, JPEG o PNG.';
+    if (bytes > _maxBytesImagen) {
+      return 'La imagen supera el tamaño máximo de 5 MB.';
+    }
+    return null;
+  }
+
+  /// Valida y carga la imagen soltada sobre la página (solo web).
+  Future<void> _cargarArchivoSoltado(html.File file) async {
+    final motivo = _motivoRechazo(
+      bytes: file.size,
+      nombre: file.name,
+      mime: file.type,
+    );
+    if (motivo != null) {
+      if (mounted) mostrarAviso(context, motivo, tono: TonoAviso.aviso);
+      return;
+    }
+    try {
+      // ArrayBuffer directo: evita el data URL en base64 y sus copias
+      // síncronas en el hilo de UI.
+      final reader = html.FileReader()..readAsArrayBuffer(file);
+      await reader.onLoadEnd.first;
+      final resultado = reader.result;
+      final bytes =
+          resultado is Uint8List
+              ? resultado
+              : (resultado is ByteBuffer ? resultado.asUint8List() : null);
+      if (bytes == null) throw StateError('No se pudo leer el archivo.');
+      if (!mounted) return;
+      ref.read(imageBytesIdentificarProvider.notifier).state = bytes;
+    } catch (_) {
+      if (mounted) {
+        mostrarAviso(
+          context,
+          'No se pudo leer la imagen. Intente de nuevo.',
+          tono: TonoAviso.error,
+        );
+      }
+    }
+  }
+
+  /// Abre el selector, comprime la foto (la cámara entrega varios MB) y
+  /// rechaza lo que no cumple tipo o tamaño.
+  Future<void> _elegirImagen(ImageSource source) async {
+    try {
+      final pickedFile = await ImagePicker().pickImage(
+        source: source,
+        imageQuality: 85,
+        maxWidth: 1800,
+        maxHeight: 1800,
+      );
+      if (pickedFile == null) return;
+      final motivo = _motivoRechazo(
+        bytes: await pickedFile.length(),
+        nombre: pickedFile.name,
+        mime: pickedFile.mimeType,
+      );
+      if (motivo != null) {
+        if (mounted) mostrarAviso(context, motivo, tono: TonoAviso.aviso);
+        return;
+      }
+      if (kIsWeb) {
+        final bytes = await pickedFile.readAsBytes();
+        if (!mounted) return;
+        ref.read(imageBytesIdentificarProvider.notifier).state = bytes;
+      } else {
+        if (!mounted) return;
+        ref
+            .read(depositosChequesIdentificarRegisterProvider.notifier)
+            .setImagenDeposito(File(pickedFile.path));
+      }
+    } catch (_) {
+      if (mounted) {
+        mostrarAviso(
+          context,
+          'No se pudo cargar la imagen. Intente de nuevo.',
+          tono: TonoAviso.error,
+        );
+      }
+    }
+  }
+
+  /// Quita la foto en ambas plataformas (web guarda bytes; móvil, un archivo).
+  void _quitarImagen() {
+    ref
+        .read(depositosChequesIdentificarRegisterProvider.notifier)
+        .setImagenDeposito(null);
+    ref.read(imageBytesIdentificarProvider.notifier).state = null;
+  }
+
+  /// Vacía estado, campos de texto y foto.
+  void _limpiarFormulario() {
+    ref
+        .read(depositosChequesIdentificarRegisterProvider.notifier)
+        .limpiarFormulario();
+    _importeCtrl.clear();
+    _obsCtrl.clear();
+    ref.read(imageBytesIdentificarProvider.notifier).state = null;
+  }
+
+  /// «12,5» (coma decimal, es-BO) y «1.234,50» se leen bien; lo inválido da 0.
+  double _leerImporte(String texto) {
+    var t = texto.trim();
+    final coma = t.lastIndexOf(',');
+    final punto = t.lastIndexOf('.');
+    if (coma >= 0 && punto >= 0) {
+      // Con ambos separadores, el último es el decimal y el otro es de miles.
+      t =
+          coma > punto
+              ? t.replaceAll('.', '').replaceAll(',', '.')
+              : t.replaceAll(',', '');
+    } else {
+      t = t.replaceAll(',', '.');
+    }
+    return double.tryParse(t) ?? 0.0;
+  }
+
+  /// Elige la empresa sin bajar clientes (esta pantalla no los usa). El
+  /// notifier reinicia el importe al cambiar de empresa; como el campo conserva
+  /// lo tecleado, se restituye. La parte síncrona de `seleccionarEmpresa` ya
+  /// fijó el estado cuando retorna, por eso el orden.
+  void _elegirEmpresa(dynamic notifier, dynamic empresa) {
+    final importe = _leerImporte(_importeCtrl.text);
+    unawaited(notifier.seleccionarEmpresa(empresa, cargarClientes: false));
+    notifier.setImporteTotal(importe);
+  }
+
+  /// Lo que falta para poder guardar; vacío si ya se puede.
+  List<String> _faltantes(DepositosChequesState state) {
+    final empresa = state.empresaSeleccionada;
+    final imagen =
+        kIsWeb ? ref.read(imageBytesIdentificarProvider) : state.imagenDeposito;
+    return [
+      if (empresa == null || empresa.codEmpresa == 0) 'empresa',
+      if (state.bancoSeleccionado == null) 'banco',
+      if (state.monedaSeleccionada.isEmpty) 'moneda',
+      if (state.importeTotal <= 0) 'importe mayor a 0',
+      if (imagen == null) 'imagen del depósito',
+    ];
+  }
+
+  Future<void> _guardar() async {
+    final provider = depositosChequesIdentificarRegisterProvider;
+    final state = ref.read(provider);
+    final notifier = ref.read(provider.notifier);
+    // Segundo toque antes de que el botón se deshabilite en pantalla.
+    if (state.guardando) return;
+
+    final faltantes = _faltantes(state);
+    if (faltantes.isNotEmpty) {
+      mostrarAviso(
+        context,
+        'Falta completar: ${faltantes.join(', ')}.',
+        tono: TonoAviso.aviso,
+      );
+      return;
+    }
+    final Object? imagenParaEnviar =
+        kIsWeb ? ref.read(imageBytesIdentificarProvider) : state.imagenDeposito;
+    try {
+      final ok = await notifier.registrarDeposito(imagenParaEnviar);
+      if (!mounted) return;
+      if (!ok) {
+        mostrarAviso(
+          context,
+          'No se pudo registrar el depósito.',
+          tono: TonoAviso.error,
+        );
+        return;
+      }
+      mostrarAviso(context, 'Depósito registrado correctamente.');
+      _limpiarFormulario();
+    } catch (e) {
+      // `registrarDeposito` lanza con el motivo real (timeout, 500, backend).
+      if (!mounted) return;
+      mostrarAviso(context, textoParaUsuario(e), tono: TonoAviso.error);
+    }
   }
 
   @override
@@ -108,6 +318,7 @@ class _DepositoChequeIdentificarScreenState
       context,
     );
     final verticalPadding = ResponsiveUtilsBosque.getVerticalPadding(context);
+    final faltantes = _faltantes(state);
 
     return Scaffold(
       appBar: AppBar(
@@ -115,262 +326,185 @@ class _DepositoChequeIdentificarScreenState
         backgroundColor: colorScheme.surface,
         elevation: 0,
         foregroundColor: colorScheme.onSurface,
+        // Alto fijo (2 px) esté o no cargando: el formulario no se desplaza y
+        // nunca se desmonta por una operación en curso.
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(2),
+          child: SizedBox(
+            height: 2,
+            child: state.cargando ? const LinearProgressIndicator() : null,
+          ),
+        ),
       ),
-      body:
-          state.cargando
-              ? const Center(child: CircularProgressIndicator())
-              : SingleChildScrollView(
-                padding: EdgeInsets.symmetric(
-                  horizontal: horizontalPadding,
-                  vertical: verticalPadding,
-                ),
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: colorScheme.surfaceVariant.withValues(alpha: 0.4),
-                    borderRadius: BorderRadius.circular(
-                      ResponsiveUtilsBosque.getResponsiveValue(
-                        context: context,
-                        defaultValue: 16.0,
-                        mobile: 12.0,
-                        desktop: 20.0,
-                      ),
+      body: SingleChildScrollView(
+        padding: EdgeInsets.symmetric(
+          horizontal: horizontalPadding,
+          vertical: verticalPadding,
+        ),
+        child: Container(
+          decoration: BoxDecoration(
+            color: colorScheme.surfaceVariant.withValues(alpha: 0.4),
+            borderRadius: BorderRadius.circular(
+              ResponsiveUtilsBosque.getResponsiveValue(
+                context: context,
+                defaultValue: 16.0,
+                mobile: 12.0,
+                desktop: 20.0,
+              ),
+            ),
+          ),
+          padding: EdgeInsets.all(
+            ResponsiveUtilsBosque.getResponsiveValue(
+              context: context,
+              defaultValue: 24.0,
+              mobile: 16.0,
+              desktop: 32.0,
+            ),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Icon(
+                    Icons.receipt_long_outlined,
+                    color: colorScheme.primary,
+                    size: 22,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Datos del Depósito',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: colorScheme.primary,
                     ),
                   ),
-                  padding: EdgeInsets.all(
-                    ResponsiveUtilsBosque.getResponsiveValue(
-                      context: context,
-                      defaultValue: 24.0,
-                      mobile: 16.0,
-                      desktop: 32.0,
-                    ),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Icon(
-                            Icons.receipt_long_outlined,
-                            color: colorScheme.primary,
-                            size: 22,
-                          ),
-                          const SizedBox(width: 8),
-                          Text(
-                            'Datos del Depósito',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                              color: colorScheme.primary,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const Divider(height: 24),
-                      isMobile
-                          ? _buildMobileFields(context, state, notifier)
-                          : _buildDesktopFields(context, state, notifier),
-                      SizedBox(
-                        height: ResponsiveUtilsBosque.getVerticalPadding(
-                          context,
-                        ),
-                      ),
-                      isMobile
-                          ? _buildMobileBancoFields(context, state, notifier)
-                          : _buildDesktopBancoFields(context, state, notifier),
-                      SizedBox(
-                        height: ResponsiveUtilsBosque.getVerticalPadding(
-                          context,
-                        ),
-                      ),
-                      isMobile
-                          ? _buildMobileImporteFields(context, state, notifier)
-                          : _buildDesktopImporteFields(
-                            context,
-                            state,
-                            notifier,
-                          ),
-                      SizedBox(
-                        height:
-                            ResponsiveUtilsBosque.getVerticalPadding(context) *
-                            1.5,
-                      ),
-                      _buildObservacionesField(context, notifier),
-                      SizedBox(
-                        height:
-                            ResponsiveUtilsBosque.getVerticalPadding(context) *
-                            1.5,
-                      ),
-                      Text(
-                        'Imagen del Depósito',
-                        style: ResponsiveUtilsBosque.getResponsiveValue(
-                          context: context,
-                          defaultValue: Theme.of(context).textTheme.titleMedium,
-                          desktop: Theme.of(context).textTheme.titleLarge,
-                        ),
-                      ),
-                      SizedBox(
-                        height:
-                            ResponsiveUtilsBosque.getVerticalPadding(context) *
-                            0.5,
-                      ),
-                      _buildImageUploader(
-                        context,
-                        state,
-                        notifier,
-                        imageBytes,
-                        ref,
-                      ),
-                      SizedBox(
-                        height:
-                            ResponsiveUtilsBosque.getVerticalPadding(context) *
-                            1.5,
-                      ),
-                      Align(
-                        alignment: Alignment.centerRight,
-                        child: Wrap(
-                          spacing: 16,
-                          runSpacing: 12,
-                          alignment: WrapAlignment.end,
-                          children: [
-                            OutlinedButton(
-                              onPressed: () {
-                                notifier.limpiarFormulario();
-                                ref
-                                    .read(
-                                      imageBytesIdentificarProvider.notifier,
-                                    )
-                                    .state = null;
-                              },
-                              style: OutlinedButton.styleFrom(
-                                padding: EdgeInsets.symmetric(
-                                  horizontal:
-                                      ResponsiveUtilsBosque.getResponsiveValue(
-                                        context: context,
-                                        defaultValue: 16.0,
-                                        mobile: 12.0,
-                                        desktop: 24.0,
-                                      ),
-                                  vertical:
-                                      ResponsiveUtilsBosque.getResponsiveValue(
-                                        context: context,
-                                        defaultValue: 12.0,
-                                        mobile: 8.0,
-                                        desktop: 16.0,
-                                      ),
-                                ),
-                              ),
-                              child: const Text('Cancelar'),
-                            ),
-                            ElevatedButton.icon(
-                              onPressed:
-                                  _isGuardarEnabled(state)
-                                      ? () async {
-                                        if (state.empresaSeleccionada == null) {
-                                          mostrarAviso(
-                                            context,
-                                            'Debe seleccionar una empresa.',
-                                            tono: TonoAviso.aviso,
-                                          );
-                                          return;
-                                        }
-                                        if (state.bancoSeleccionado == null) {
-                                          mostrarAviso(
-                                            context,
-                                            'Debe seleccionar un banco.',
-                                            tono: TonoAviso.aviso,
-                                          );
-                                          return;
-                                        }
-                                        if (state.monedaSeleccionada == '') {
-                                          mostrarAviso(
-                                            context,
-                                            'Debe seleccionar una moneda.',
-                                            tono: TonoAviso.aviso,
-                                          );
-                                          return;
-                                        }
-                                        if (state.importeTotal <= 0) {
-                                          mostrarAviso(
-                                            context,
-                                            'El importe total debe ser mayor a 0.',
-                                            tono: TonoAviso.aviso,
-                                          );
-                                          return;
-                                        }
-                                        final imagenParaEnviar =
-                                            kIsWeb
-                                                ? ref.read(
-                                                  imageBytesIdentificarProvider,
-                                                )
-                                                : state.imagenDeposito;
-                                        if (imagenParaEnviar == null) {
-                                          mostrarAviso(
-                                            context,
-                                            'Debe cargar una imagen del depósito.',
-                                            tono: TonoAviso.aviso,
-                                          );
-                                          return;
-                                        }
-                                        try {
-                                          final okDeposito = await notifier
-                                              .registrarDeposito(
-                                                imagenParaEnviar,
-                                              );
-                                          if (!okDeposito) {
-                                            throw Exception(
-                                              'No se pudo registrar el depósito',
-                                            );
-                                          }
-                                          mostrarAviso(
-                                            context,
-                                            'Depósito registrado correctamente.',
-                                          );
-                                          notifier.limpiarFormulario();
-                                          ref
-                                              .read(
-                                                imageBytesIdentificarProvider
-                                                    .notifier,
-                                              )
-                                              .state = null;
-                                        } catch (e) {
-                                          mostrarAviso(
-                                            context,
-                                            'Error: ${e.toString()}',
-                                            tono: TonoAviso.error,
-                                          );
-                                        }
-                                      }
-                                      : null,
-                              icon: const Icon(Icons.save),
-                              label: const Text('Guardar'),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: colorScheme.primary,
-                                foregroundColor: colorScheme.onPrimary,
-                                padding: EdgeInsets.symmetric(
-                                  horizontal:
-                                      ResponsiveUtilsBosque.getResponsiveValue(
-                                        context: context,
-                                        defaultValue: 16.0,
-                                        mobile: 12.0,
-                                        desktop: 24.0,
-                                      ),
-                                  vertical:
-                                      ResponsiveUtilsBosque.getResponsiveValue(
-                                        context: context,
-                                        defaultValue: 12.0,
-                                        mobile: 8.0,
-                                        desktop: 16.0,
-                                      ),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
+                ],
+              ),
+              const Divider(height: 24),
+              isMobile
+                  ? _buildMobileFields(context, state, notifier)
+                  : _buildDesktopFields(context, state, notifier),
+              SizedBox(
+                height: ResponsiveUtilsBosque.getVerticalPadding(context),
+              ),
+              isMobile
+                  ? _buildMobileBancoFields(context, state, notifier)
+                  : _buildDesktopBancoFields(context, state, notifier),
+              SizedBox(
+                height: ResponsiveUtilsBosque.getVerticalPadding(context),
+              ),
+              isMobile
+                  ? _buildMobileImporteFields(context, state, notifier)
+                  : _buildDesktopImporteFields(context, state, notifier),
+              SizedBox(
+                height: ResponsiveUtilsBosque.getVerticalPadding(context) * 1.5,
+              ),
+              _buildObservacionesField(context, notifier),
+              SizedBox(
+                height: ResponsiveUtilsBosque.getVerticalPadding(context) * 1.5,
+              ),
+              Text(
+                'Imagen del Depósito',
+                style: ResponsiveUtilsBosque.getResponsiveValue(
+                  context: context,
+                  defaultValue: Theme.of(context).textTheme.titleMedium,
+                  desktop: Theme.of(context).textTheme.titleLarge,
                 ),
               ),
+              SizedBox(
+                height: ResponsiveUtilsBosque.getVerticalPadding(context) * 0.5,
+              ),
+              _buildImageUploader(context, state, notifier, imageBytes, ref),
+              SizedBox(
+                height: ResponsiveUtilsBosque.getVerticalPadding(context) * 1.5,
+              ),
+              Align(
+                alignment: Alignment.centerRight,
+                child: Wrap(
+                  spacing: 16,
+                  runSpacing: 12,
+                  alignment: WrapAlignment.end,
+                  children: [
+                    OutlinedButton(
+                      // No se limpia mientras se guarda: vaciaría el
+                      // formulario a mitad de la subida.
+                      onPressed: state.guardando ? null : _limpiarFormulario,
+                      style: OutlinedButton.styleFrom(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: ResponsiveUtilsBosque.getResponsiveValue(
+                            context: context,
+                            defaultValue: 16.0,
+                            mobile: 12.0,
+                            desktop: 24.0,
+                          ),
+                          vertical: ResponsiveUtilsBosque.getResponsiveValue(
+                            context: context,
+                            defaultValue: 12.0,
+                            mobile: 8.0,
+                            desktop: 16.0,
+                          ),
+                        ),
+                      ),
+                      child: const Text('Cancelar'),
+                    ),
+                    ElevatedButton.icon(
+                      onPressed:
+                          faltantes.isEmpty && !state.guardando
+                              ? _guardar
+                              : null,
+                      icon:
+                          state.guardando
+                              ? const SizedBox(
+                                width: 16,
+                                height: 16,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
+                              )
+                              : const Icon(Icons.save),
+                      label: Text(state.guardando ? 'Guardando…' : 'Guardar'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: colorScheme.primary,
+                        foregroundColor: colorScheme.onPrimary,
+                        padding: EdgeInsets.symmetric(
+                          horizontal: ResponsiveUtilsBosque.getResponsiveValue(
+                            context: context,
+                            defaultValue: 16.0,
+                            mobile: 12.0,
+                            desktop: 24.0,
+                          ),
+                          vertical: ResponsiveUtilsBosque.getResponsiveValue(
+                            context: context,
+                            defaultValue: 12.0,
+                            mobile: 8.0,
+                            desktop: 16.0,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              if (!state.guardando && faltantes.isNotEmpty) ...[
+                const SizedBox(height: 8),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: Text(
+                    'Para guardar falta: ${faltantes.join(', ')}.',
+                    textAlign: TextAlign.end,
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
     );
   }
 
@@ -453,8 +587,15 @@ class _DepositoChequeIdentificarScreenState
     dynamic state,
     dynamic notifier,
   ) {
+    // «Todos» (codEmpresa 0) sirve para filtrar consultas, no para registrar:
+    // dejaba los bancos vacíos.
+    final empresas = state.empresas.where((e) => e.codEmpresa != 0).toList();
+    final empresaSeleccionada =
+        empresas.contains(state.empresaSeleccionada)
+            ? state.empresaSeleccionada
+            : null;
     final empresaItems =
-        state.empresas
+        empresas
             .map<DropdownMenuItem<dynamic>>(
               (e) => DropdownMenuItem<dynamic>(value: e, child: Text(e.nombre)),
             )
@@ -482,22 +623,40 @@ class _DepositoChequeIdentificarScreenState
                 fontWeight: FontWeight.w500,
               ),
             ),
+            if (state.cargandoEmpresas) _cargandoCampo(),
           ],
         ),
         SizedBox(height: 8),
         DropdownButtonFormField<dynamic>(
-          value: state.empresaSeleccionada,
+          value: empresaSeleccionada,
           items: empresaItems,
-          onChanged: (value) {
-            notifier.seleccionarEmpresa(value);
-          },
-          decoration: const InputDecoration(
-            border: OutlineInputBorder(),
-            hintText: 'Seleccione una empresa',
-            contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+          onChanged:
+              state.cargandoEmpresas
+                  ? null
+                  : (value) => _elegirEmpresa(notifier, value),
+          decoration: InputDecoration(
+            border: const OutlineInputBorder(),
+            hintText:
+                state.cargandoEmpresas
+                    ? 'Cargando empresas…'
+                    : 'Seleccione una empresa',
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 12,
+              vertical: 12,
+            ),
           ),
           isExpanded: true,
         ),
+        if (state.error != null &&
+            state.errorEn == OperacionCarga.empresas &&
+            !state.cargandoEmpresas) ...[
+          const SizedBox(height: 8),
+          MensajeError(
+            error: state.error,
+            compacto: true,
+            onReintentar: notifier.reintentarUltimaCarga,
+          ),
+        ],
       ],
     );
   }
@@ -545,20 +704,48 @@ class _DepositoChequeIdentificarScreenState
                 fontWeight: FontWeight.w500,
               ),
             ),
+            if (state.cargandoBancos) _cargandoCampo(),
           ],
         ),
         SizedBox(height: 8),
         DropdownButtonFormField<dynamic>(
           value: bancoSeleccionado,
           items: bancoItems,
-          onChanged: (value) => notifier.seleccionarBanco(value),
-          decoration: const InputDecoration(
-            border: OutlineInputBorder(),
-            hintText: 'Seleccione un banco',
-            contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+          onChanged:
+              state.cargandoBancos
+                  ? null
+                  : (value) => notifier.seleccionarBanco(value),
+          decoration: InputDecoration(
+            border: const OutlineInputBorder(),
+            hintText:
+                state.cargandoBancos
+                    ? 'Cargando bancos…'
+                    : 'Seleccione un banco',
+            // Un combo vacío y deshabilitado no explica por qué.
+            helperText:
+                state.empresaSeleccionada != null &&
+                        !state.cargandoBancos &&
+                        state.error == null &&
+                        bancos.isEmpty
+                    ? 'Esta empresa no tiene bancos disponibles.'
+                    : null,
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 12,
+              vertical: 12,
+            ),
           ),
           isExpanded: true,
         ),
+        if (state.error != null &&
+            state.errorEn == OperacionCarga.bancos &&
+            !state.cargandoBancos) ...[
+          const SizedBox(height: 8),
+          MensajeError(
+            error: state.error,
+            compacto: true,
+            onReintentar: notifier.reintentarUltimaCarga,
+          ),
+        ],
       ],
     );
   }
@@ -595,13 +782,17 @@ class _DepositoChequeIdentificarScreenState
         ),
         SizedBox(height: 8),
         TextFormField(
-          initialValue: state.importeTotal.toStringAsFixed(2),
-          keyboardType: TextInputType.number,
+          controller: _importeCtrl,
+          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          inputFormatters: [
+            FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]')),
+          ],
           decoration: const InputDecoration(
             border: OutlineInputBorder(),
+            hintText: '0.00',
             contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 12),
           ),
-          onChanged: (v) => notifier.setImporteTotal(double.tryParse(v) ?? 0.0),
+          onChanged: (v) => notifier.setImporteTotal(_leerImporte(v)),
         ),
       ],
     );
@@ -693,6 +884,7 @@ class _DepositoChequeIdentificarScreenState
         ),
         SizedBox(height: 8),
         TextFormField(
+          controller: _obsCtrl,
           maxLines: 2,
           decoration: const InputDecoration(
             border: OutlineInputBorder(),
@@ -705,21 +897,15 @@ class _DepositoChequeIdentificarScreenState
     );
   }
 
-  bool _isGuardarEnabled(dynamic state) {
-    final bancoSeleccionado = state.bancoSeleccionado != null;
-    final importeValido = state.importeTotal > 0;
-    final empresaSeleccionada = state.empresaSeleccionada != null;
-    final monedaSeleccionada =
-        state.monedaSeleccionada != null && state.monedaSeleccionada != '';
-    final imagen =
-        kIsWeb ? ref.read(imageBytesIdentificarProvider) : state.imagenDeposito;
-    final imagenCargada = imagen != null;
-    return bancoSeleccionado &&
-        importeValido &&
-        empresaSeleccionada &&
-        monedaSeleccionada &&
-        imagenCargada;
-  }
+  /// Indicador junto a la etiqueta de un combo que se está cargando.
+  Widget _cargandoCampo() => const Padding(
+    padding: EdgeInsets.only(left: 8),
+    child: SizedBox(
+      width: 12,
+      height: 12,
+      child: CircularProgressIndicator(strokeWidth: 2),
+    ),
+  );
 
   Widget _buildImageUploader(
     BuildContext context,
@@ -739,19 +925,6 @@ class _DepositoChequeIdentificarScreenState
     final hasImage =
         (kIsWeb && imageBytes != null) ||
         (!kIsWeb && state.imagenDeposito != null);
-
-    Future<void> pickImage(ImageSource source) async {
-      final picker = ImagePicker();
-      final pickedFile = await picker.pickImage(source: source);
-      if (pickedFile != null) {
-        if (kIsWeb) {
-          final bytes = await pickedFile.readAsBytes();
-          ref.read(imageBytesIdentificarProvider.notifier).state = bytes;
-        } else {
-          notifier.setImagenDeposito(File(pickedFile.path));
-        }
-      }
-    }
 
     void showImageSourceActionSheet(BuildContext ctx) {
       showModalBottomSheet(
@@ -776,7 +949,7 @@ class _DepositoChequeIdentificarScreenState
                     title: const Text('Galería'),
                     onTap: () {
                       Navigator.pop(ctx2);
-                      pickImage(ImageSource.gallery);
+                      _elegirImagen(ImageSource.gallery);
                     },
                   ),
                   ListTile(
@@ -784,7 +957,7 @@ class _DepositoChequeIdentificarScreenState
                     title: const Text('Cámara'),
                     onTap: () {
                       Navigator.pop(ctx2);
-                      pickImage(ImageSource.camera);
+                      _elegirImagen(ImageSource.camera);
                     },
                   ),
                 ],
@@ -819,7 +992,7 @@ class _DepositoChequeIdentificarScreenState
       if (!kIsWeb && ResponsiveUtilsBosque.isMobile(context)) {
         showImageSourceActionSheet(context);
       } else {
-        pickImage(ImageSource.gallery);
+        _elegirImagen(ImageSource.gallery);
       }
     }
 
@@ -869,19 +1042,20 @@ class _DepositoChequeIdentificarScreenState
         children: [
           Padding(
             padding: const EdgeInsets.all(12.0),
+            // cacheWidth: se muestra a lo ancho de la pantalla, no hace falta
+            // decodificar la foto completa.
             child: Image.memory(
               imageBytes,
               width: double.infinity,
               fit: BoxFit.contain,
+              cacheWidth: 1200,
             ),
           ),
           Positioned(
             right: 8,
             top: 8,
             child: GestureDetector(
-              onTap: () {
-                ref.read(imageBytesIdentificarProvider.notifier).state = null;
-              },
+              onTap: _quitarImagen,
               child: CircleAvatar(
                 radius: ResponsiveUtilsBosque.getResponsiveValue(
                   context: context,
@@ -914,13 +1088,14 @@ class _DepositoChequeIdentificarScreenState
               state.imagenDeposito!,
               width: double.infinity,
               fit: BoxFit.contain,
+              cacheWidth: 1200,
             ),
           ),
           Positioned(
             right: 8,
             top: 8,
             child: GestureDetector(
-              onTap: () => notifier.setImagenDeposito(null),
+              onTap: _quitarImagen,
               child: CircleAvatar(
                 radius: ResponsiveUtilsBosque.getResponsiveValue(
                   context: context,

@@ -21,63 +21,80 @@ import 'package:intl/intl.dart';
 class DepositoChequesImpl implements DepositoChequesRepository {
   final Dio _dio = DioClient.getInstance();
 
+  /// POST de un listado. `204` es «sin registros» y devuelve `[]`; cualquier
+  /// otro fallo se lanza como [DepositoChequesException] con el mensaje del
+  /// backend o uno por tipo de error (no se disfraza de lista vacía).
+  Future<List<T>> _postLista<T>({
+    required String endpoint,
+    required Map<String, dynamic> data,
+    required T Function(dynamic json) desdeJson,
+    required String errorPorDefecto,
+  }) async {
+    final Response response;
+    try {
+      response = await _dio.post(endpoint, data: data);
+    } on DioException catch (e) {
+      throw DepositoChequesException(
+        DioClient.handleDioError(e, errorPorDefecto),
+      );
+    }
+
+    if (response.statusCode != 200 || response.data == null) return [];
+    try {
+      // El backend retorna: { message, data: [ ... ], status }
+      final crudos = (response.data['data'] ?? []) as List<dynamic>;
+      return crudos.map(desdeJson).toList();
+    } catch (_) {
+      throw DepositoChequesException(errorPorDefecto);
+    }
+  }
+
+  /// Mensaje de una descarga de bytes (PDF, imagen). Con `responseType.bytes`
+  /// el JSON de error del backend llega como bytes y `handleDioError` no lo ve.
+  String _mensajeDeBytes(DioException e, String porDefecto) {
+    final datos = e.response?.data;
+    if (datos is List<int>) {
+      try {
+        final cuerpo = jsonDecode(utf8.decode(datos));
+        if (cuerpo is Map && cuerpo['message'] != null) {
+          final msg = cuerpo['message'].toString();
+          if (msg.isNotEmpty) return msg;
+        }
+      } catch (_) {
+        // No era JSON: se sigue con el mensaje por tipo de error.
+      }
+    }
+    return DioClient.handleDioError(e, porDefecto);
+  }
+
+  /// Mensaje de un fallo de escritura, sin exponer el cuerpo crudo de la
+  /// respuesta.
+  String _mensaje(Object e, String porDefecto) {
+    if (e is DepositoChequesException) return e.mensaje;
+    if (e is DioException) return DioClient.handleDioError(e, porDefecto);
+    return porDefecto;
+  }
+
   @override
   Future<List<BancoXCuentaEntity>> getBancos(int codEmpresa) async {
-    try {
-      final response = await _dio.post(
-        AppConstants.deplstBancos,
-        data: {'codEmpresa': codEmpresa},
-      );
-
-      // El backend retorna: { message, data: [ ... ], status }
-      if (response.statusCode == 200 && response.data != null) {
-        final data = response.data['data'] ?? [];
-        final items =
-            (data as List<dynamic>)
-                .map((json) => BancoXCuentaModel.fromJson(json))
-                .toList();
-        return items.map((model) => model.toEntity()).toList();
-      } else {
-        // Si el backend responde con error, retorna lista vacía en vez de lanzar excepción
-        return [];
-      }
-    } on DioException {
-      // Si hay error de red o servidor, retorna lista vacía
-      return [];
-    } catch (e) {
-      // Si hay cualquier otro error, retorna lista vacía
-      return [];
-    }
+    final modelos = await _postLista<BancoXCuentaModel>(
+      endpoint: AppConstants.deplstBancos,
+      data: {'codEmpresa': codEmpresa},
+      desdeJson: (json) => BancoXCuentaModel.fromJson(json),
+      errorPorDefecto: 'No se pudieron cargar los bancos.',
+    );
+    return modelos.map((m) => m.toEntity()).toList();
   }
 
   @override
   Future<List<EmpresaEntity>> getEmpresas() async {
-    try {
-      final response = await _dio.post(AppConstants.deplstEmpresas, data: {});
-
-      // El backend retorna: { message, data: [ ... ], status }
-      if (response.statusCode == 200 && response.data != null) {
-        final data = response.data['data'] ?? [];
-        final items =
-            (data as List<dynamic>)
-                .map((json) => EmpresaModel.fromJson(json))
-                .toList();
-
-        return items.map((model) => model.toEntity()).toList();
-      } else {
-        throw Exception('Error al obtener las empresas');
-      }
-    } on DioException catch (e) {
-      // Manejar errores de red o del servidor
-      String errorMessage = 'Error de conexión: ${e.message}';
-      if (e.response != null && e.response!.data != null) {
-        errorMessage =
-            'Error del servidor: ${e.response!.statusCode} - ${e.response!.data.toString()}';
-      }
-      throw Exception(errorMessage);
-    } catch (e) {
-      throw Exception('Error desconocido getEmpresas: ${e.toString()}');
-    }
+    final modelos = await _postLista<EmpresaModel>(
+      endpoint: AppConstants.deplstEmpresas,
+      data: {},
+      desdeJson: (json) => EmpresaModel.fromJson(json),
+      errorPorDefecto: 'No se pudieron cargar las empresas.',
+    );
+    return modelos.map((m) => m.toEntity()).toList();
   }
 
   @override
@@ -85,60 +102,24 @@ class DepositoChequesImpl implements DepositoChequesRepository {
     int codEmpresa,
     String codCliente,
   ) async {
-    try {
-      final response = await _dio.post(
-        AppConstants.deplstNotaRemision,
-        data: {'codEmpresaBosque': codEmpresa, 'codCliente': codCliente},
-      );
-
-      // El backend retorna: { message, data: [ ... ], status }
-      if (response.statusCode == 200 && response.data != null) {
-        final data = response.data['data'] ?? [];
-        final items =
-            (data as List<dynamic>)
-                .map((json) => NotaRemisionModel.fromJson(json))
-                .toList();
-        return items.map((model) => model.toEntity()).toList();
-      } else {
-        // Si el backend responde con error, retorna lista vacía en vez de lanzar excepción
-        return [];
-      }
-    } on DioException {
-      // Si hay error de red o servidor, retorna lista vacía
-      return [];
-    } catch (e) {
-      // Si hay cualquier otro error, retorna lista vacía
-      return [];
-    }
+    final modelos = await _postLista<NotaRemisionModel>(
+      endpoint: AppConstants.deplstNotaRemision,
+      data: {'codEmpresaBosque': codEmpresa, 'codCliente': codCliente},
+      desdeJson: (json) => NotaRemisionModel.fromJson(json),
+      errorPorDefecto: 'No se pudieron cargar las notas de remisión.',
+    );
+    return modelos.map((m) => m.toEntity()).toList();
   }
 
   @override
   Future<List<SocioNegocioEntity>> getSociosNegocio(int codEmpresa) async {
-    try {
-      final response = await _dio.post(
-        AppConstants.deplstSocioNegocio,
-        data: {'codEmpresa': codEmpresa},
-      );
-
-      // El backend retorna: { message, data: [ ... ], status }
-      if (response.statusCode == 200 && response.data != null) {
-        final data = response.data['data'] ?? [];
-        final items =
-            (data as List<dynamic>)
-                .map((json) => SocioNegocioModel.fromJson(json))
-                .toList();
-        return items.map((model) => model.toEntity()).toList();
-      } else {
-        // Si el backend responde con error, retorna lista vacía en vez de lanzar excepción
-        return [];
-      }
-    } on DioException {
-      // Si hay error de red o servidor, retorna lista vacía
-      return [];
-    } catch (e) {
-      // Si hay cualquier otro error, retorna lista vacía
-      return [];
-    }
+    final modelos = await _postLista<SocioNegocioModel>(
+      endpoint: AppConstants.deplstSocioNegocio,
+      data: {'codEmpresa': codEmpresa},
+      desdeJson: (json) => SocioNegocioModel.fromJson(json),
+      errorPorDefecto: 'No se pudieron cargar los clientes.',
+    );
+    return modelos.map((m) => m.toEntity()).toList();
   }
 
   @override
@@ -171,28 +152,37 @@ class DepositoChequesImpl implements DepositoChequesRepository {
             contentType: MediaType('image', 'jpeg'),
           );
         } else {
-          throw Exception('Formato de imagen no soportado');
+          throw const DepositoChequesException(
+            'El formato de la imagen no es compatible.',
+          );
         }
         // Añadir la imagen como un archivo
         formData.files.add(MapEntry('file', multipartFile));
       }
 
-      // Realizar la solicitud POST
+      // Con la foto, el servidor la decodifica y la vuelve a guardar antes de
+      // responder: los 30 s globales de recepción no alcanzan en red lenta. En
+      // web el tope total de la petición es connect + receive.
       final response = await _dio.post(
         AppConstants.depRegister,
         data: formData,
+        options: Options(
+          sendTimeout: const Duration(seconds: 60),
+          receiveTimeout: const Duration(seconds: 120),
+        ),
       );
 
       return response.statusCode == 200 || response.statusCode == 201;
     } on DioException catch (e) {
-      String errorMessage = 'Error de conexión: ${e.message}';
-      if (e.response != null && e.response!.data != null) {
-        errorMessage =
-            'Error del servidor: ${e.response!.statusCode} - ${e.response!.data.toString()}';
-      }
-      throw Exception(errorMessage);
-    } catch (e) {
-      throw Exception('Error desconocido registrarDeposito: ${e.toString()}');
+      throw DepositoChequesException(
+        DioClient.handleDioError(e, 'No se pudo registrar el depósito.'),
+      );
+    } on DepositoChequesException {
+      rethrow;
+    } catch (_) {
+      throw const DepositoChequesException(
+        'No se pudo registrar el depósito.',
+      );
     }
   }
 
@@ -202,22 +192,18 @@ class DepositoChequesImpl implements DepositoChequesRepository {
     try {
       final response = await _dio.post(
         AppConstants.depRegisterNotaRemision,
-        data:
-            model
-                .toJson(), // Asegúrate de que EntregaEntity tenga un método toJson()
+        data: model.toJson(),
       );
 
       return response.statusCode == 200 || response.statusCode == 201;
     } on DioException catch (e) {
-      // Manejar errores de red o del servidor
-      String errorMessage = 'Error de conexión: ${e.message}';
-      if (e.response != null && e.response!.data != null) {
-        errorMessage =
-            'Error del servidor: ${e.response!.statusCode} - ${e.response!.data.toString()}';
-      }
-      throw Exception(errorMessage);
-    } catch (e) {
-      throw Exception('Error desconocido guardarNotaRemision: ${e.toString()}');
+      throw DepositoChequesException(
+        DioClient.handleDioError(e, 'No se pudo guardar la nota de remisión.'),
+      );
+    } catch (_) {
+      throw const DepositoChequesException(
+        'No se pudo guardar la nota de remisión.',
+      );
     }
   }
 
@@ -238,36 +224,18 @@ class DepositoChequesImpl implements DepositoChequesRepository {
     };
     if (fechaInicio != null) {
       data['fechaInicio'] = DateFormat('yyyy-MM-dd').format(fechaInicio);
-    } else {
-      data.remove('fechaInicio');
     }
     if (fechaFin != null) {
       data['fechaFin'] = DateFormat('yyyy-MM-dd').format(fechaFin);
-    } else {
-      data.remove('fechaFin');
     }
 
-    try {
-      final response = await _dio.post(
-        AppConstants.depListarDepositos,
-        data: data,
-      );
-      if (response.statusCode == 200 && response.data != null) {
-        final data = response.data['data'] ?? [];
-        final items =
-            (data as List<dynamic>)
-                .map((json) => DepositoChequeModel.fromJson(json))
-                .toList();
-
-        return items.map((model) => model.toEntity()).toList();
-      } else {
-        return [];
-      }
-    } on DioException {
-      return [];
-    } catch (e) {
-      return [];
-    }
+    final modelos = await _postLista<DepositoChequeModel>(
+      endpoint: AppConstants.depListarDepositos,
+      data: data,
+      desdeJson: (json) => DepositoChequeModel.fromJson(json),
+      errorPorDefecto: 'No se pudieron cargar los depósitos.',
+    );
+    return modelos.map((m) => m.toEntity()).toList();
   }
 
   @override
@@ -279,42 +247,22 @@ class DepositoChequesImpl implements DepositoChequesRepository {
   ) async {
     final Map<String, dynamic> data = {
       'idBxC': idBxC,
-      'fechaInicio': fechaInicio,
-      'fechaFin': fechaFin,
       'codCliente': codCliente,
     };
     if (fechaInicio != null) {
       data['fechaInicio'] = DateFormat('yyyy-MM-dd').format(fechaInicio);
-    } else {
-      data.remove('fechaInicio');
     }
     if (fechaFin != null) {
       data['fechaFin'] = DateFormat('yyyy-MM-dd').format(fechaFin);
-    } else {
-      data.remove('fechaFin');
     }
 
-    try {
-      final response = await _dio.post(
-        AppConstants.depListDepositosIde,
-        data: data,
-      );
-      if (response.statusCode == 200 && response.data != null) {
-        final data = response.data['data'] ?? [];
-        final items =
-            (data as List<dynamic>)
-                .map((json) => DepositoChequeModel.fromJson(json))
-                .toList();
-
-        return items.map((model) => model.toEntity()).toList();
-      } else {
-        return [];
-      }
-    } on DioException {
-      return [];
-    } catch (e) {
-      return [];
-    }
+    final modelos = await _postLista<DepositoChequeModel>(
+      endpoint: AppConstants.depListDepositosIde,
+      data: data,
+      desdeJson: (json) => DepositoChequeModel.fromJson(json),
+      errorPorDefecto: 'No se pudieron cargar los depósitos por identificar.',
+    );
+    return modelos.map((m) => m.toEntity()).toList();
   }
 
   @override
@@ -338,25 +286,24 @@ class DepositoChequesImpl implements DepositoChequesRepository {
         ),
       );
 
-      if (response.statusCode == 200) {
-        // Verificar que tenemos datos y son del tipo correcto
-        if (response.data is List<int>) {
-          final pdfBytes = Uint8List.fromList(response.data);
-
-          // Verificar que los datos parecen ser un PDF
-          if (pdfBytes.isNotEmpty) {
-            return pdfBytes;
-          } else {
-            throw Exception('El PDF recibido está vacío');
-          }
-        } else {
-          throw Exception('Formato inesperado: ${response.data.runtimeType}');
-        }
-      } else {
-        throw Exception('Error obteniendo PDF: ${response.statusCode}');
+      if (response.statusCode == 200 && response.data is List<int>) {
+        final pdfBytes = Uint8List.fromList(response.data);
+        if (pdfBytes.isNotEmpty) return pdfBytes;
+        throw const DepositoChequesException('El PDF recibido está vacío.');
       }
-    } catch (e) {
-      throw Exception('Error en la solicitud: $e');
+      throw const DepositoChequesException(
+        'No se pudo generar el PDF del depósito.',
+      );
+    } on DioException catch (e) {
+      throw DepositoChequesException(
+        _mensajeDeBytes(e, 'No se pudo generar el PDF del depósito.'),
+      );
+    } on DepositoChequesException {
+      rethrow;
+    } catch (_) {
+      throw const DepositoChequesException(
+        'No se pudo generar el PDF del depósito.',
+      );
     }
   }
 
@@ -374,30 +321,32 @@ class DepositoChequesImpl implements DepositoChequesRepository {
       );
 
       if (response.statusCode == 200) {
-        if (response.data is List<int>) {
-          final bytes = Uint8List.fromList(response.data as List<int>);
-
-          // Verificar que tenemos datos
-          if (bytes.isNotEmpty) {
-            return bytes;
-          } else {
-            throw Exception('La imagen recibida está vacía');
-          }
-        } else if (response.data is Uint8List) {
-          final bytes = response.data as Uint8List;
-          if (bytes.isNotEmpty) {
-            return bytes;
-          } else {
-            throw Exception('La imagen recibida está vacía');
-          }
+        final Uint8List? bytes;
+        if (response.data is Uint8List) {
+          bytes = response.data as Uint8List;
+        } else if (response.data is List<int>) {
+          bytes = Uint8List.fromList(response.data as List<int>);
         } else {
-          throw Exception('Formato inesperado: ${response.data.runtimeType}');
+          bytes = null;
         }
-      } else {
-        throw Exception('Error obteniendo imagen: ${response.statusCode}');
+        if (bytes != null && bytes.isNotEmpty) return bytes;
+        throw const DepositoChequesException(
+          'La imagen recibida está vacía.',
+        );
       }
-    } catch (e) {
-      throw Exception('Error en la solicitud: $e');
+      throw const DepositoChequesException(
+        'No se pudo descargar la imagen del depósito.',
+      );
+    } on DioException catch (e) {
+      throw DepositoChequesException(
+        _mensajeDeBytes(e, 'No se pudo descargar la imagen del depósito.'),
+      );
+    } on DepositoChequesException {
+      rethrow;
+    } catch (_) {
+      throw const DepositoChequesException(
+        'No se pudo descargar la imagen del depósito.',
+      );
     }
   }
 
@@ -408,22 +357,14 @@ class DepositoChequesImpl implements DepositoChequesRepository {
     try {
       final response = await _dio.post(
         AppConstants.depActualizarNotaRemision,
-        data:
-            model
-                .toJson(), // Asegúrate de que EntregaEntity tenga un método toJson()
+        data: model.toJson(),
       );
 
       return response.statusCode == 200 || response.statusCode == 201;
-    } on DioException catch (e) {
-      // Manejar errores de red o del servidor
-      String errorMessage = 'Error de conexión: ${e.message}';
-      if (e.response != null && e.response!.data != null) {
-        errorMessage =
-            'Error del servidor: ${e.response!.statusCode} - ${e.response!.data.toString()}';
-      }
-      throw Exception(errorMessage);
     } catch (e) {
-      throw Exception('Error desconocido: ${e.toString()}');
+      throw DepositoChequesException(
+        _mensaje(e, 'No se pudo actualizar el depósito.'),
+      );
     }
   }
 
@@ -434,22 +375,14 @@ class DepositoChequesImpl implements DepositoChequesRepository {
     try {
       final response = await _dio.post(
         AppConstants.depRechazarNotaRemision,
-        data:
-            model
-                .toJson(), // Asegúrate de que EntregaEntity tenga un método toJson()
+        data: model.toJson(),
       );
 
       return response.statusCode == 200 || response.statusCode == 201;
-    } on DioException catch (e) {
-      // Manejar errores de red o del servidor
-      String errorMessage = 'Error de conexión: ${e.message}';
-      if (e.response != null && e.response!.data != null) {
-        errorMessage =
-            'Error del servidor: ${e.response!.statusCode} - ${e.response!.data.toString()}';
-      }
-      throw Exception(errorMessage);
     } catch (e) {
-      throw Exception('Error desconocido: ${e.toString()}');
+      throw DepositoChequesException(
+        _mensaje(e, 'No se pudo rechazar el depósito.'),
+      );
     }
   }
 }

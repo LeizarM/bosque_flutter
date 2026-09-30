@@ -60,6 +60,14 @@ abstract final class Esquina {
   static const double pastilla = 999;
 }
 
+/// Borde de una superficie que agrupa contenido (filtros, tabla, tarjetas):
+/// radio [Esquina.media] y un trazo tenue del tema.
+RoundedRectangleBorder contornoSuperficie(ColorScheme cs, {Color? color}) =>
+    RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(Esquina.media),
+      side: BorderSide(color: color ?? cs.outlineVariant),
+    );
+
 /// Cifras de ancho fijo.
 ///
 /// Sin esto, `43` y `11` ocupan distinto y una columna de números queda con los

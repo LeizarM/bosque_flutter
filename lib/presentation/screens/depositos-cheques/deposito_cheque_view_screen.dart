@@ -1,20 +1,35 @@
+import 'package:bosque_flutter/core/ui/aviso.dart';
+import 'package:bosque_flutter/core/ui/estados_vista.dart';
+import 'package:bosque_flutter/core/ui/tokens_bosque.dart';
+import 'package:bosque_flutter/core/utils/formatear_fecha.dart';
+import 'package:bosque_flutter/core/utils/formato_moneda.dart';
 import 'package:bosque_flutter/core/utils/pdf_service.dart';
 import 'package:bosque_flutter/domain/entities/banco_cuenta_entity.dart';
-import 'package:bosque_flutter/presentation/widgets/shared/aviso.dart';
+import 'package:bosque_flutter/domain/entities/deposito_cheque_entity.dart';
+import 'package:bosque_flutter/domain/entities/socio_negocio_entity.dart';
 import 'package:bosque_flutter/presentation/widgets/shared/permission_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/state/depositos_cheques_provider.dart';
-import '../../../core/utils/responsive_utils_bosque.dart';
+import 'lista_depositos.dart';
 
-final depositosChequesViewProvider =
-    StateNotifierProvider<DepositosChequesNotifier, DepositosChequesState>(
-      (ref) => DepositosChequesNotifier(ref),
-    );
+// autoDispose: cada visita empieza con estado fresco (sin lista ni filtros
+// de la visita anterior). Se mantiene viva mientras la pantalla la observa.
+final depositosChequesViewProvider = StateNotifierProvider.autoDispose<
+  DepositosChequesNotifier,
+  DepositosChequesState
+>((ref) => DepositosChequesNotifier(ref));
 
-class DepositoChequeViewScreen extends ConsumerWidget {
+class DepositoChequeViewScreen extends ConsumerStatefulWidget {
   const DepositoChequeViewScreen({super.key});
 
+  @override
+  ConsumerState<DepositoChequeViewScreen> createState() =>
+      _DepositoChequeViewScreenState();
+}
+
+class _DepositoChequeViewScreenState
+    extends ConsumerState<DepositoChequeViewScreen> {
   static final estadosDeposito = const [
     {'label': 'Todos', 'value': 'Todos'},
     {'label': 'Verificado', 'value': 'Verificado'},
@@ -22,143 +37,266 @@ class DepositoChequeViewScreen extends ConsumerWidget {
     {'label': 'Rechazado', 'value': 'Rechazado'},
   ];
 
+  bool _yaBusco = false;
+  bool _empresasPedidas = false;
+
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  void initState() {
+    super.initState();
+    // Sin red en el constructor del notifier: las empresas se piden aquí. El
+    // rango de 30 días evita que Buscar traiga todo el historial.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final notifier = ref.read(depositosChequesViewProvider.notifier);
+      _empresasPedidas = true;
+      notifier.cargarEmpresasSiFalta();
+      notifier.aplicarRangoPorDefecto(dias: 30);
+    });
+  }
+
+  void _buscar() {
+    setState(() => _yaBusco = true);
+    ref.read(depositosChequesViewProvider.notifier).buscarDepositos();
+  }
+
+  // Repite justo la carga que falló (empresas, bancos o clientes).
+  void _reintentarFiltros() =>
+      ref.read(depositosChequesViewProvider.notifier).reintentarUltimaCarga();
+
+  // Tope de ancho del contenido: en pantallas muy grandes las filas dejan de
+  // estirarse y se pierde el hilo entre un extremo y otro.
+  static const double _anchoMaximo = 1680;
+
+  @override
+  Widget build(BuildContext context) {
     final state = ref.watch(depositosChequesViewProvider);
     final notifier = ref.read(depositosChequesViewProvider.notifier);
 
-    // Valores responsive
-    final isDesktop = ResponsiveUtilsBosque.isDesktop(context); // Used below
-    final isTablet = ResponsiveUtilsBosque.isTablet(context);
-    final isMobile = ResponsiveUtilsBosque.isMobile(context);
+    // Fallo de empresas/bancos/clientes: se muestra junto a los filtros.
+    final errorFiltros =
+        (state.error != null &&
+                state.errorEn != null &&
+                state.errorEn != OperacionCarga.listado)
+            ? state.error
+            : null;
 
-    return Stack(
-      children: [
-        Opacity(
-          opacity: state.cargando ? 0.5 : 1.0,
-          child: IgnorePointer(
-            ignoring: state.cargando,
-            child: SingleChildScrollView(
-              padding: EdgeInsets.all(isDesktop ? 32 : (isMobile ? 16 : 24)),
+    // Se mide el ancho disponible y no el de la ventana: dentro del dashboard
+    // el menú lateral se come su parte. Sin bloqueo global: los filtros y las
+    // acciones por fila siguen usables mientras algo carga.
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final ancho = constraints.maxWidth;
+        final relleno =
+            ancho >= 1000 ? Esp.xxl : (ancho >= 600 ? Esp.xl : Esp.l);
+        return SingleChildScrollView(
+          padding: EdgeInsets.all(relleno),
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: _anchoMaximo),
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  // Encabezado
-                  Row(
-                    children: [
-                      Icon(
-                        Icons.account_balance_wallet_outlined,
-                        size: isDesktop ? 32 : 28,
-                        color: Theme.of(context).colorScheme.primary,
-                      ),
-                      SizedBox(width: isDesktop ? 12 : 8),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Consulta de Depósitos',
-                              style: TextStyle(
-                                fontSize: isDesktop ? 22 : (isMobile ? 18 : 20),
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            SizedBox(height: 2),
-                            Text(
-                              'Busque y visualice los depósitos registrados',
-                              style: TextStyle(
-                                fontSize: isDesktop ? 15 : (isMobile ? 13 : 14),
-                                color: Theme.of(
-                                  context,
-                                ).colorScheme.onSurface.withValues(alpha: 0.6),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                  SizedBox(height: isDesktop ? 24 : 16),
-                  Divider(),
-                  SizedBox(height: isDesktop ? 12 : 8),
-
-                  // Criterios de búsqueda
-                  Text(
-                    'Criterios de Búsqueda',
-                    style: TextStyle(
-                      fontWeight: FontWeight.w600,
-                      fontSize: isDesktop ? 16 : 14,
-                    ),
-                  ),
-                  SizedBox(height: isDesktop ? 16 : 12),
-
-                  // Primera fila de filtros (o columna en móvil)
-                  if (isDesktop || isTablet)
-                    _buildDesktopFiltersRow1(context, state, notifier)
-                  else
-                    _buildMobileFilters1(context, state, notifier),
-
-                  SizedBox(height: isDesktop ? 16 : 12),
-
-                  // Segunda fila de filtros (o columna en móvil)
-                  if (isDesktop || isTablet)
-                    _buildDesktopFiltersRow2(context, state, notifier)
-                  else
-                    _buildMobileFilters2(context, state, notifier),
-
-                  SizedBox(height: isDesktop ? 32 : 24),
-
-                  // Resultados
+                  _buildEncabezado(context),
+                  const SizedBox(height: Esp.xl),
+                  _buildFiltros(context, state, notifier, errorFiltros),
+                  const SizedBox(height: Esp.xl),
                   _buildResultsHeader(context, state),
-
-                  SizedBox(height: isDesktop ? 12 : 8),
-
-                  // Tabla
-                  _DepositosTable(),
+                  // Barra de la búsqueda en curso; el alto queda reservado
+                  // para que el contenido no salte al aparecer.
+                  SizedBox(
+                    height: 4,
+                    child:
+                        state.buscando ? const LinearProgressIndicator() : null,
+                  ),
+                  const SizedBox(height: Esp.s),
+                  _DepositosTable(yaBusco: _yaBusco, onReintentar: _buscar),
                 ],
               ),
             ),
           ),
+        );
+      },
+    );
+  }
+
+  Widget _buildEncabezado(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final t = Theme.of(context).textTheme;
+    return Row(
+      children: [
+        DecoratedBox(
+          decoration: BoxDecoration(
+            color: cs.primaryContainer,
+            borderRadius: BorderRadius.circular(Esquina.media),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(Esp.m),
+            child: Icon(
+              Icons.account_balance_wallet_outlined,
+              color: cs.onPrimaryContainer,
+            ),
+          ),
         ),
-        if (state.cargando)
-          Positioned.fill(child: Center(child: CircularProgressIndicator())),
+        const SizedBox(width: Esp.m),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Consulta de Depósitos',
+                style: t.titleLarge?.copyWith(fontWeight: Peso.dato),
+              ),
+              Text(
+                'Busque y visualice los depósitos registrados',
+                style: t.bodyMedium?.copyWith(color: cs.onSurfaceVariant),
+              ),
+            ],
+          ),
+        ),
       ],
     );
   }
 
-  // Métodos para construir la UI según el tipo de dispositivo
-
-  Widget _buildDesktopFiltersRow1(
+  Widget _buildFiltros(
     BuildContext context,
     DepositosChequesState state,
     DepositosChequesNotifier notifier,
+    Object? errorFiltros,
   ) {
-    return Row(
+    final cs = Theme.of(context).colorScheme;
+    return Card(
+      elevation: 0,
+      margin: EdgeInsets.zero,
+      shape: contornoSuperficie(cs),
+      child: Padding(
+        padding: const EdgeInsets.all(Esp.l),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              children: [
+                Icon(Icons.tune, size: 20, color: cs.primary),
+                const SizedBox(width: Esp.s),
+                Text(
+                  'Criterios de búsqueda',
+                  style: Theme.of(
+                    context,
+                  ).textTheme.titleMedium?.copyWith(fontWeight: Peso.titulo),
+                ),
+              ],
+            ),
+            const SizedBox(height: Esp.l),
+            LayoutBuilder(
+              builder:
+                  (context, c) =>
+                      _buildCampos(context, c.maxWidth, state, notifier),
+            ),
+            if (errorFiltros != null) ...[
+              const SizedBox(height: Esp.m),
+              MensajeError(
+                error: errorFiltros,
+                compacto: true,
+                onReintentar: _reintentarFiltros,
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Los campos en una rejilla de 12 columnas: cada uno ocupa `span`. Con
+  /// espacio amplio o medio van cuatro por fila; en tablet, dos; en móvil,
+  /// uno (las fechas, de a dos).
+  Widget _buildCampos(
+    BuildContext context,
+    double ancho,
+    DepositosChequesState state,
+    DepositosChequesNotifier notifier,
+  ) {
+    // Hacia abajo: la suma de una fila nunca pasa del ancho, así no salta de
+    // línea por un error de redondeo.
+    double de(int span) {
+      final columna = (ancho - Esp.m * 11) / 12;
+      return (columna * span + Esp.m * (span - 1)).floorToDouble();
+    }
+
+    final movil = ancho < 600;
+    // Desde 680 (media pantalla de escritorio) van cuatro por fila y dos filas
+    // en total: deja más lugar a los resultados.
+    final (empresa, banco, fecha, cliente, estado, buscar) =
+        ancho >= 1000
+            ? (3, 3, 3, 5, 3, 4)
+            : ancho >= 680
+            ? (3, 3, 3, 3, 3, 6)
+            : (ancho >= 600 ? (6, 6, 6, 6, 6, 12) : (12, 12, 6, 12, 12, 12));
+
+    final botonBuscar = FilledButton.icon(
+      style: FilledButton.styleFrom(minimumSize: const Size(0, 48)),
+      onPressed: _buscar,
+      icon: const Icon(Icons.search),
+      label: const Text('Buscar/Actualizar'),
+    );
+
+    return Wrap(
+      spacing: Esp.m,
+      runSpacing: Esp.m,
       children: [
-        // Empresa - Usamos IDs en lugar de objetos
-        Expanded(child: _buildEmpresaDropdown(context, state, notifier)),
-        const SizedBox(width: 16),
-        // Banco
-        Expanded(child: _buildBancoDropdown(context, state, notifier)),
-        const SizedBox(width: 16),
-        // Desde
-        Expanded(
+        SizedBox(
+          width: de(empresa),
+          child: _buildEmpresaDropdown(context, state, notifier),
+        ),
+        SizedBox(
+          width: de(banco),
+          child: _buildBancoDropdown(context, state, notifier),
+        ),
+        SizedBox(
+          width: de(fecha),
           child: _DatePickerField(
             label: 'Desde',
             date: state.fechaDesde,
             onChanged: notifier.setFechaDesde,
           ),
         ),
-        const SizedBox(width: 16),
-        // Hasta
-        Expanded(
+        SizedBox(
+          width: de(fecha),
           child: _DatePickerField(
             label: 'Hasta',
             date: state.fechaHasta,
             onChanged: notifier.setFechaHasta,
           ),
         ),
+        SizedBox(
+          width: de(cliente),
+          child: _buildClienteDropdown(context, state, notifier),
+        ),
+        SizedBox(width: de(estado), child: _buildEstadoDropdown(state, notifier)),
+        // Alto de un campo, para que el botón quede alineado con ellos.
+        SizedBox(
+          width: de(buscar),
+          height: 56,
+          child:
+              movil
+                  ? botonBuscar
+                  : Align(alignment: Alignment.centerRight, child: botonBuscar),
+        ),
       ],
+    );
+  }
+
+  Widget _buildEstadoDropdown(
+    DepositosChequesState state,
+    DepositosChequesNotifier notifier,
+  ) {
+    return DropdownButtonFormField<String>(
+      value: state.selectedEstado ?? 'Todos',
+      decoration: const InputDecoration(labelText: 'Estado'),
+      items: [
+        for (final e in estadosDeposito)
+          DropdownMenuItem<String>(value: e['value'], child: Text(e['label']!)),
+      ],
+      onChanged: notifier.setEstado,
+      isExpanded: true,
     );
   }
 
@@ -167,11 +305,23 @@ class DepositoChequeViewScreen extends ConsumerWidget {
     DepositosChequesState state,
     DepositosChequesNotifier notifier,
   ) {
-    // Si empresas aún no se ha cargado, mostrar un placeholder
+    // Si empresas aún no se ha cargado, mostrar un placeholder. Si falló, no
+    // dejar «Cargando...» para siempre: el campo mismo permite reintentar
+    // (el aviso de error se pierde si luego se hace otra búsqueda).
     if (state.empresas.isEmpty) {
-      return InputDecorator(
-        decoration: const InputDecoration(labelText: 'Empresa'),
-        child: const Text('Cargando...', style: TextStyle(color: Colors.grey)),
+      final fallo = _empresasPedidas && !state.cargandoEmpresas;
+      return InkWell(
+        onTap: fallo ? notifier.cargarEmpresas : null,
+        child: InputDecorator(
+          decoration: InputDecoration(
+            labelText: 'Empresa',
+            suffixIcon: fallo ? const Icon(Icons.refresh) : null,
+          ),
+          child: Text(
+            fallo ? 'No disponible. Toque para reintentar' : 'Cargando...',
+            style: const TextStyle(color: Colors.grey),
+          ),
+        ),
       );
     }
 
@@ -259,245 +409,64 @@ class DepositoChequeViewScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildMobileFilters1(
-    BuildContext context,
-    DepositosChequesState state,
-    DepositosChequesNotifier notifier,
-  ) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        // Empresa
-        _buildEmpresaDropdown(context, state, notifier),
-        const SizedBox(height: 12),
-        // Banco
-        _buildBancoDropdown(context, state, notifier),
-        const SizedBox(height: 12),
-        // Desde y Hasta en una fila
-        Row(
-          children: [
-            Expanded(
-              child: _DatePickerField(
-                label: 'Desde',
-                date: state.fechaDesde,
-                onChanged: notifier.setFechaDesde,
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: _DatePickerField(
-                label: 'Hasta',
-                date: state.fechaHasta,
-                onChanged: notifier.setFechaHasta,
-              ),
-            ),
-          ],
-        ),
-      ],
-    );
-  }
-
-  Widget _buildDesktopFiltersRow2(
-    BuildContext context,
-    DepositosChequesState state,
-    DepositosChequesNotifier notifier,
-  ) {
-    final colorScheme = Theme.of(context).colorScheme;
-    return Row(
-      children: [
-        // Cliente
-        Expanded(
-          flex: 2,
-          child: _buildClienteDropdown(context, state, notifier),
-        ),
-        const SizedBox(width: 16),
-        // Estado
-        Expanded(
-          child: DropdownButtonFormField<String>(
-            value: state.selectedEstado ?? 'Todos',
-            decoration: const InputDecoration(labelText: 'Estado'),
-            items:
-                estadosDeposito
-                    .map(
-                      (e) => DropdownMenuItem<String>(
-                        value: e['value'],
-                        child: Text(e['label']!),
-                      ),
-                    )
-                    .toList(),
-            onChanged: notifier.setEstado,
-            isExpanded: true,
-          ),
-        ),
-        const SizedBox(width: 16),
-        // Botón Buscar
-        ElevatedButton.icon(
-          style: ElevatedButton.styleFrom(
-            backgroundColor: colorScheme.primary,
-            foregroundColor: colorScheme.onPrimary,
-            padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 18),
-          ),
-          onPressed: notifier.buscarDepositos,
-          icon: Icon(Icons.search, color: colorScheme.onPrimary),
-          label: Text(
-            'Buscar/Actualizar',
-            style: TextStyle(color: colorScheme.onPrimary),
-          ),
-        ),
-      ],
-    );
-  }
-
   Widget _buildClienteDropdown(
     BuildContext context,
     DepositosChequesState state,
     DepositosChequesNotifier notifier,
   ) {
     final clienteSeleccionado = state.clienteSeleccionado;
-    return GestureDetector(
+    final nombre = clienteSeleccionado?.nombreCompleto ?? 'Todos';
+    return InkWell(
+      borderRadius: BorderRadius.circular(Esquina.chica),
       onTap: () async {
-        final seleccionado = await _showClienteSearchDialog(
-          context,
-          state.clientes,
-          clienteSeleccionado,
+        // Sin empresa elegida (o con los clientes aún en camino) la lista está
+        // vacía: no tiene sentido abrir el diálogo.
+        if (state.clientes.isEmpty) {
+          mostrarAviso(
+            context,
+            state.cargandoClientes
+                ? 'Cargando clientes...'
+                : 'Elija una empresa para filtrar por cliente.',
+            tono: TonoAviso.aviso,
+          );
+          return;
+        }
+        final seleccionado = await showDialog<SocioNegocioEntity>(
+          context: context,
+          builder:
+              (_) => _ClienteFiltroDialog(
+                clientes: state.clientes,
+                seleccionado: clienteSeleccionado,
+              ),
         );
         if (seleccionado != null) {
-          notifier.seleccionarCliente(seleccionado);
+          // Aquí el cliente es solo un filtro: las notas de remisión solo
+          // sirven al registro, no hace falta pedirlas.
+          notifier.seleccionarCliente(seleccionado, cargarNotas: false);
         }
       },
-      child: AbsorbPointer(
-        child: TextFormField(
-          decoration: const InputDecoration(
-            labelText: 'Cliente',
-            suffixIcon: Icon(Icons.search),
-          ),
-          controller: TextEditingController(
-            text: clienteSeleccionado?.nombreCompleto ?? 'Todos',
-          ),
-          readOnly: true,
-        ),
-      ),
-    );
-  }
-
-  Future<dynamic> _showClienteSearchDialog(
-    BuildContext context,
-    List<dynamic> clientes,
-    dynamic clienteSeleccionado,
-  ) async {
-    TextEditingController searchController = TextEditingController();
-    List<dynamic> filtered = List.from(clientes);
-    return await showDialog(
-      context: context,
-      builder: (context) {
-        return StatefulBuilder(
-          builder: (context, setState) {
-            return AlertDialog(
-              title: const Text('Buscar cliente'),
-              content: SizedBox(
-                width: 400,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    TextField(
-                      controller: searchController,
-                      decoration: const InputDecoration(
-                        labelText: 'Buscar por nombre...',
-                        prefixIcon: Icon(Icons.search),
-                      ),
-                      onChanged: (value) {
-                        setState(() {
-                          filtered =
-                              clientes
-                                  .where(
-                                    (c) => (c.nombreCompleto ?? '')
-                                        .toLowerCase()
-                                        .contains(value.toLowerCase()),
-                                  )
-                                  .toList();
-                        });
-                      },
-                    ),
-                    const SizedBox(height: 12),
-                    Expanded(
-                      child: ListView.builder(
-                        shrinkWrap: true,
-                        itemCount: filtered.length,
-                        itemBuilder: (context, index) {
-                          final c = filtered[index];
-                          return ListTile(
-                            title: Text(c.nombreCompleto ?? ''),
-                            selected:
-                                clienteSeleccionado?.codCliente == c.codCliente,
-                            onTap: () => Navigator.of(context).pop(c),
-                          );
-                        },
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.of(context).pop(),
-                  child: const Text('Cancelar'),
-                ),
-                TextButton(
-                  onPressed: () => Navigator.of(context).pop(clientes.first),
-                  child: const Text('Todos'),
-                ),
-              ],
-            );
-          },
-        );
-      },
-    );
-  }
-
-  Widget _buildMobileFilters2(
-    BuildContext context,
-    DepositosChequesState state,
-    DepositosChequesNotifier notifier,
-  ) {
-    final colorScheme = Theme.of(context).colorScheme;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        // Cliente
-        _buildClienteDropdown(context, state, notifier),
-        const SizedBox(height: 12),
-        // Estado
-        DropdownButtonFormField<String>(
-          value: state.selectedEstado ?? 'Todos',
-          decoration: const InputDecoration(labelText: 'Estado'),
-          items:
-              estadosDeposito
-                  .map(
-                    (e) => DropdownMenuItem<String>(
-                      value: e['value'],
-                      child: Text(e['label']!),
+      child: InputDecorator(
+        decoration: InputDecoration(
+          labelText: 'Cliente',
+          suffixIcon:
+              state.cargandoClientes
+                  ? const Padding(
+                    padding: EdgeInsets.all(12),
+                    child: SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2),
                     ),
                   )
-                  .toList(),
-          onChanged: notifier.setEstado,
-          isExpanded: true,
+                  : const Icon(Icons.search),
         ),
-        const SizedBox(height: 16),
-        // Botón Buscar
-        ElevatedButton.icon(
-          style: ElevatedButton.styleFrom(
-            backgroundColor: colorScheme.primary,
-            foregroundColor: colorScheme.onPrimary,
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-          ),
-          onPressed: notifier.buscarDepositos,
-          icon: Icon(Icons.search, color: colorScheme.onPrimary),
-          label: Text(
-            'Buscar/Actualizar',
-            style: TextStyle(color: colorScheme.onPrimary),
-          ),
+        child: Text(
+          nombre,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: Theme.of(context).textTheme.bodyLarge,
         ),
-      ],
+      ),
     );
   }
 
@@ -505,134 +474,162 @@ class DepositoChequeViewScreen extends ConsumerWidget {
     BuildContext context,
     DepositosChequesState state,
   ) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final isDesktop = ResponsiveUtilsBosque.isDesktop(context);
-    final isMobile = ResponsiveUtilsBosque.isMobile(context);
-
-    if (isDesktop) {
-      return Row(
-        children: [
-          Text(
-            'Resultados',
-            style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
-          ),
-          const Spacer(),
-          ElevatedButton.icon(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: colorScheme.surface,
-              foregroundColor: colorScheme.primary,
-              side: BorderSide(color: colorScheme.primary),
-              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+    final cs = Theme.of(context).colorScheme;
+    final t = Theme.of(context).textTheme;
+    final total = state.totalRegistros;
+    return Wrap(
+      alignment: WrapAlignment.spaceBetween,
+      crossAxisAlignment: WrapCrossAlignment.center,
+      spacing: Esp.m,
+      runSpacing: Esp.s,
+      children: [
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              'Resultados',
+              style: t.titleMedium?.copyWith(fontWeight: Peso.titulo),
             ),
-            onPressed:
-                state.depositos.isEmpty
-                    ? null // Deshabilitar si no hay datos
-                    : () {
-                      // Crear mapa de filtros aplicados
-                      final filtros = {
-                        'Empresa': state.empresaSeleccionada?.nombre ?? 'Todos',
-                        'Cliente':
-                            state.clienteSeleccionado?.nombreCompleto ??
-                            'Todos',
-                        'Banco':
-                            state.bancoSeleccionado?.nombreBanco ?? 'Todos',
-                        'Estado': state.selectedEstado ?? 'Todos',
-                        'Desde': state.fechaDesde,
-                        'Hasta': state.fechaHasta,
-                      };
-
-                      // Llamar al servicio PDF
-                      PdfService.generateAndViewDepositosPdf(
-                        context: context,
-                        title: 'Consulta de Depósitos',
-                        depositos: state.depositos,
-                        filtros: filtros,
-                      );
-                    },
-            icon: const Icon(Icons.picture_as_pdf_outlined),
-            label: const Text('Exportar PDF'),
-          ),
-          const SizedBox(width: 16),
-          Text(
-            '${state.totalRegistros} registros encontrados',
-            style: TextStyle(
-              color: Theme.of(
-                context,
-              ).colorScheme.onSurface.withValues(alpha: 0.6),
-            ),
-          ),
-        ],
-      );
-    } else {
-      // Similar para móvil
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Text(
-                'Resultados',
-                style: TextStyle(
-                  fontWeight: FontWeight.w600,
-                  fontSize: isMobile ? 14 : 16,
-                ),
+            const SizedBox(width: Esp.s),
+            DecoratedBox(
+              decoration: BoxDecoration(
+                color: cs.secondaryContainer,
+                borderRadius: BorderRadius.circular(Esquina.pastilla),
               ),
-              const Spacer(),
-              Text(
-                '${state.totalRegistros} registros',
-                style: TextStyle(
-                  color: colorScheme.onSurface.withValues(alpha: 0.6),
-                  fontSize: isMobile ? 13 : 14,
-                ),
-              ),
-            ],
-          ),
-          SizedBox(height: 8),
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton.icon(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: colorScheme.surface,
-                foregroundColor: colorScheme.primary,
-                side: BorderSide(color: colorScheme.primary),
+              child: Padding(
                 padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 10,
+                  horizontal: Esp.m,
+                  vertical: Esp.xs,
+                ),
+                child: Text(
+                  total == 1
+                      ? '1 registro'
+                      : '${FormatoMoneda.entero.format(total)} registros',
+                  style: t.labelMedium?.copyWith(
+                    fontWeight: Peso.titulo,
+                    color: cs.onSecondaryContainer,
+                  ),
                 ),
               ),
-              onPressed:
-                  state.depositos.isEmpty
-                      ? null // Deshabilitar si no hay datos
-                      : () {
-                        // Crear mapa de filtros aplicados
-                        final filtros = {
-                          'Empresa':
-                              state.empresaSeleccionada?.nombre ?? 'Todos',
-                          'Cliente':
-                              state.clienteSeleccionado?.nombreCompleto ??
-                              'Todos',
-                          'Banco':
-                              state.bancoSeleccionado?.nombreBanco ?? 'Todos',
-                          'Estado': state.selectedEstado ?? 'Todos',
-                          'Desde': state.fechaDesde,
-                          'Hasta': state.fechaHasta,
-                        };
-
-                        // Llamar al servicio PDF
-                        PdfService.generateAndViewDepositosPdf(
-                          context: context,
-                          title: 'Consulta de Depósitos',
-                          depositos: state.depositos,
-                          filtros: filtros,
-                        );
-                      },
-              icon: const Icon(Icons.picture_as_pdf_outlined, size: 18),
-              label: const Text('Exportar PDF'),
             ),
-          ),
-        ],
-      );
-    }
+          ],
+        ),
+        // Sin datos no hay qué exportar.
+        OutlinedButton.icon(
+          onPressed:
+              state.depositos.isEmpty ? null : () => _exportarPdf(state),
+          icon: const Icon(Icons.picture_as_pdf_outlined, size: 18),
+          label: const Text('Exportar PDF'),
+        ),
+      ],
+    );
+  }
+
+  void _exportarPdf(DepositosChequesState state) {
+    final filtros = {
+      'Empresa': state.empresaSeleccionada?.nombre ?? 'Todos',
+      'Cliente': state.clienteSeleccionado?.nombreCompleto ?? 'Todos',
+      'Banco': state.bancoSeleccionado?.nombreBanco ?? 'Todos',
+      'Estado': state.selectedEstado ?? 'Todos',
+      'Desde': state.fechaDesde,
+      'Hasta': state.fechaHasta,
+    };
+    PdfService.generateAndViewDepositosPdf(
+      context: context,
+      title: 'Consulta de Depósitos',
+      depositos: state.depositos,
+      filtros: filtros,
+    );
+  }
+}
+
+/// Diálogo para elegir el cliente-filtro. Es un widget propio (y no un
+/// `StatefulBuilder` con el controller creado fuera) para que el controller
+/// del buscador se libere con el diálogo.
+class _ClienteFiltroDialog extends StatefulWidget {
+  const _ClienteFiltroDialog({
+    required this.clientes,
+    required this.seleccionado,
+  });
+
+  final List<SocioNegocioEntity> clientes;
+  final SocioNegocioEntity? seleccionado;
+
+  @override
+  State<_ClienteFiltroDialog> createState() => _ClienteFiltroDialogState();
+}
+
+class _ClienteFiltroDialogState extends State<_ClienteFiltroDialog> {
+  final TextEditingController _busqueda = TextEditingController();
+  late List<SocioNegocioEntity> _filtrados = widget.clientes;
+
+  @override
+  void dispose() {
+    _busqueda.dispose();
+    super.dispose();
+  }
+
+  void _filtrar(String texto) {
+    final q = texto.toLowerCase();
+    setState(() {
+      _filtrados =
+          widget.clientes
+              .where((c) => c.nombreCompleto.toLowerCase().contains(q))
+              .toList();
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final clientes = widget.clientes;
+    return AlertDialog(
+      title: const Text('Buscar cliente'),
+      content: SizedBox(
+        width: 400,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: _busqueda,
+              decoration: const InputDecoration(
+                labelText: 'Buscar por nombre...',
+                prefixIcon: Icon(Icons.search),
+              ),
+              onChanged: _filtrar,
+            ),
+            const SizedBox(height: 12),
+            Expanded(
+              child: ListView.builder(
+                shrinkWrap: true,
+                itemCount: _filtrados.length,
+                itemBuilder: (context, index) {
+                  final c = _filtrados[index];
+                  return ListTile(
+                    title: Text(c.nombreCompleto),
+                    selected: widget.seleccionado?.codCliente == c.codCliente,
+                    onTap: () => Navigator.of(context).pop(c),
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Cancelar'),
+        ),
+        // `first` es la opción «Todos»; con la lista vacía no hay qué elegir.
+        TextButton(
+          onPressed:
+              clientes.isEmpty
+                  ? null
+                  : () => Navigator.of(context).pop(clientes.first),
+          child: const Text('Todos'),
+        ),
+      ],
+    );
   }
 }
 
@@ -673,10 +670,8 @@ class _DatePickerFieldState extends State<_DatePickerField> {
     super.dispose();
   }
 
-  String _getDateText(DateTime? date) {
-    if (date == null) return '';
-    return "${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}";
-  }
+  String _getDateText(DateTime? date) =>
+      date == null ? '' : FormatearFecha.formatearFecha(date);
 
   void _clearDate() {
     _controller.clear();
@@ -684,1103 +679,460 @@ class _DatePickerFieldState extends State<_DatePickerField> {
     FocusScope.of(context).unfocus();
   }
 
+  Future<void> _elegir() async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: widget.date ?? DateTime.now(),
+      firstDate: DateTime(2000),
+      lastDate: DateTime(2100),
+    );
+    // Puede haberse salido de la pantalla con el selector abierto.
+    if (picked == null || !mounted) return;
+    _controller.text = _getDateText(picked);
+    widget.onChanged(picked);
+  }
+
   @override
   Widget build(BuildContext context) {
-    final isMobile = ResponsiveUtilsBosque.isMobile(context);
-
+    // Un solo ícono a la derecha: con fecha, borrarla; sin fecha, el
+    // calendario. Volver a elegir es tocar el campo.
     return TextFormField(
       readOnly: true,
       controller: _controller,
-      style: TextStyle(fontSize: isMobile ? 13 : null),
       decoration: InputDecoration(
         labelText: widget.label,
-        labelStyle: TextStyle(fontSize: isMobile ? 13 : null),
-        contentPadding: EdgeInsets.symmetric(
-          vertical: isMobile ? 10 : 12,
-          horizontal: isMobile ? 10 : 12,
-        ),
-        suffixIcon: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (widget.date != null)
-              IconButton(
-                icon: Icon(
-                  Icons.clear,
-                  color: Colors.redAccent,
-                  size: isMobile ? 18 : 20,
-                ),
-                tooltip: 'Borrar fecha',
-                onPressed: _clearDate,
-                padding: EdgeInsets.all(isMobile ? 4 : 8),
-                constraints: BoxConstraints(),
-              ),
-            IconButton(
-              icon: Icon(
-                Icons.calendar_month,
-                color: Theme.of(context).colorScheme.primary,
-                size: isMobile ? 18 : 20,
-              ),
-              onPressed: () async {
-                final picked = await showDatePicker(
-                  context: context,
-                  initialDate: widget.date ?? DateTime.now(),
-                  firstDate: DateTime(2000),
-                  lastDate: DateTime(2100),
-                  builder: (context, child) {
-                    // Hacemos el DatePicker responsive
-                    return Theme(
-                      data: Theme.of(context).copyWith(
-                        dialogTheme: DialogThemeData(
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                        ),
-                      ),
-                      child: child!,
-                    );
-                  },
-                );
-                if (picked != null) {
-                  _controller.text = _getDateText(picked);
-                  widget.onChanged(picked);
-                }
-              },
-              padding: EdgeInsets.all(isMobile ? 4 : 8),
-              constraints: BoxConstraints(),
-            ),
-          ],
-        ),
+        suffixIcon:
+            widget.date != null
+                ? IconButton(
+                  icon: const Icon(Icons.clear, size: 20),
+                  tooltip: 'Borrar fecha',
+                  onPressed: _clearDate,
+                )
+                : const Icon(Icons.calendar_month_outlined, size: 20),
       ),
-      onTap: () async {
-        // Si ya hay una fecha, mostrar el date picker
-        final picked = await showDatePicker(
-          context: context,
-          initialDate: widget.date ?? DateTime.now(),
-          firstDate: DateTime(2000),
-          lastDate: DateTime(2100),
-          builder: (context, child) {
-            // Hacemos el DatePicker responsive
-            return Theme(
-              data: Theme.of(context).copyWith(
-                dialogTheme: DialogThemeData(
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                ),
-              ),
-              child: child!,
-            );
-          },
-        );
-        if (picked != null) {
-          _controller.text = _getDateText(picked);
-          widget.onChanged(picked);
-        }
-      },
+      onTap: _elegir,
     );
   }
 }
 
 class _DepositosTable extends ConsumerStatefulWidget {
+  const _DepositosTable({
+    required this.yaBusco,
+    required this.onReintentar,
+  });
+
+  /// La persona ya pidió una búsqueda (antes de eso no hay «sin resultados»).
+  final bool yaBusco;
+
+  /// El último fallo fue del listado y no de un filtro.
+  final VoidCallback onReintentar;
+
   @override
   _DepositosTableState createState() => _DepositosTableState();
 }
 
 class _DepositosTableState extends ConsumerState<_DepositosTable> {
-  late ScrollController horizontalController;
+  // Depósitos cuyo diálogo de edición se está preparando (carga de bancos):
+  // evita abrir dos diálogos con un doble clic.
+  final Set<int> _editando = {};
 
-  @override
-  void initState() {
-    super.initState();
-    horizontalController = ScrollController();
+  Widget _spinnerPequeno() => const SizedBox(
+    width: 18,
+    height: 18,
+    child: CircularProgressIndicator(strokeWidth: 2),
+  );
 
-    // Remover la lógica de clearState automática
-    // ya que ahora manejamos esto específicamente en la otra pantalla
-  }
-
-  @override
-  void dispose() {
-    horizontalController.dispose();
-    super.dispose();
-  }
-
-  Widget _buildEstadoBadge(String estado, bool isMobile) {
-    Color bgColor;
-    Color textColor;
-    IconData icon;
-
-    switch (estado.toLowerCase()) {
-      case 'verificado':
-        bgColor = const Color(0xFFD4EDDA);
-        textColor = const Color(0xFF155724);
-        icon = Icons.check_circle_outline;
-        break;
-      case 'rechazado':
-        bgColor = const Color(0xFFF8D7DA);
-        textColor = const Color(0xFF721C24);
-        icon = Icons.cancel_outlined;
-        break;
-      case 'pendiente':
-      default:
-        bgColor = const Color(0xFFFFF3CD);
-        textColor = const Color(0xFF856404);
-        icon = Icons.hourglass_empty;
-        break;
-    }
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: bgColor,
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 13, color: textColor),
-          const SizedBox(width: 4),
-          Text(
-            estado.isEmpty ? 'Pendiente' : estado,
-            style: TextStyle(
-              fontSize: isMobile ? 11 : 12,
-              fontWeight: FontWeight.w600,
-              color: textColor,
+  Widget _emptyTablePlaceholder(DepositosChequesState state, Object? error) {
+    final cs = Theme.of(context).colorScheme;
+    final Widget contenido;
+    if (state.buscando) {
+      // Buscando y aún sin datos: un esqueleto del alto de unas filas reserva
+      // el lugar y la página no salta cuando llegan.
+      contenido = const SizedBox(
+        height: 312,
+        child: EsqueletoLista(filas: 4, altoFila: 64),
+      );
+    } else if (error != null) {
+      // Un fallo del listado no se disfraza de «sin depósitos».
+      contenido = SizedBox(
+        height: 280,
+        child: MensajeError(error: error, onReintentar: widget.onReintentar),
+      );
+    } else {
+      contenido = Padding(
+        padding: const EdgeInsets.symmetric(
+          vertical: Esp.xxl,
+          horizontal: Esp.l,
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              widget.yaBusco ? Icons.search_off : Icons.manage_search,
+              size: 48,
+              color: cs.onSurfaceVariant.withValues(alpha: 0.6),
             ),
-          ),
-        ],
-      ),
+            const SizedBox(height: Esp.s),
+            Text(
+              widget.yaBusco
+                  ? 'No se encontraron depósitos'
+                  : 'Use los filtros y pulse «Buscar/Actualizar» para consultar depósitos.',
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                fontWeight: Peso.titulo,
+                color: cs.onSurfaceVariant,
+              ),
+            ),
+            if (widget.yaBusco) ...[
+              const SizedBox(height: Esp.xs),
+              Text(
+                'Pruebe con otro rango de fechas o quite algún filtro.',
+                textAlign: TextAlign.center,
+                style: context.apagado(),
+              ),
+            ],
+          ],
+        ),
+      );
+    }
+    return Card(
+      elevation: 0,
+      margin: EdgeInsets.zero,
+      shape: contornoSuperficie(cs),
+      child: contenido,
     );
   }
 
-  Widget _emptyTablePlaceholder() {
-    final colorScheme = Theme.of(context).colorScheme;
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 48),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.search_off,
-            size: 48,
-            color: colorScheme.onSurface.withValues(alpha: 0.3),
+  /// Abre el diálogo de edición: primero los bancos de la empresa del depósito
+  /// (con caché en el notifier), con guarda contra doble clic.
+  Future<void> _editarDeposito(DepositoChequeEntity d) async {
+    if (!_editando.add(d.idDeposito)) return;
+    setState(() {});
+    final notifier = ref.read(depositosChequesViewProvider.notifier);
+    final List<BancoXCuentaEntity> bancos;
+    try {
+      bancos = await notifier.bancosDeEmpresa(d.codEmpresa);
+    } catch (e) {
+      if (mounted) {
+        mostrarAviso(
+          context,
+          'No se pudieron cargar los bancos: ${textoParaUsuario(e)}',
+          tono: TonoAviso.error,
+        );
+      }
+      return;
+    } finally {
+      _editando.remove(d.idDeposito);
+      if (mounted) setState(() {});
+    }
+    if (!mounted) return;
+
+    if (bancos.isEmpty) {
+      mostrarAviso(
+        context,
+        'No hay bancos disponibles para esta empresa',
+        tono: TonoAviso.aviso,
+      );
+      return;
+    }
+
+    await showDialog<void>(
+      context: context,
+      builder:
+          (_) => _EditarDepositoDialog(
+            deposito: d,
+            bancos: bancos,
+            onGuardar:
+                (nroTransaccion, banco) =>
+                    notifier.actualizarDepositoTransaccionYBanco(
+                      deposito: d,
+                      nuevoNroTransaccion: nroTransaccion,
+                      nuevoBanco: banco,
+                      context: context,
+                    ),
           ),
-          const SizedBox(height: 8),
-          Text(
-            'No se encontraron depósitos',
-            style: TextStyle(
-              color: colorScheme.onSurface.withValues(alpha: 0.6),
+    );
+  }
+
+  Future<void> _rechazarDeposito(DepositoChequeEntity d) async {
+    // Mostrar diálogo de confirmación
+    final confirmar = await showDialog<bool>(
+      context: context,
+      builder:
+          (dialogContext) => AlertDialog(
+            title: const Text('Confirmar rechazo'),
+            content: const Text(
+              '¿Está seguro que desea rechazar este depósito?',
             ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(dialogContext, false),
+                child: const Text('Cancelar'),
+              ),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Theme.of(dialogContext).colorScheme.error,
+                  foregroundColor: Theme.of(dialogContext).colorScheme.onError,
+                ),
+                onPressed: () => Navigator.pop(dialogContext, true),
+                child: const Text('Rechazar'),
+              ),
+            ],
           ),
-        ],
-      ),
+    );
+
+    // Si el usuario confirma, rechazar el depósito. El notifier marca la fila
+    // como ocupada y avisa el resultado.
+    if (confirmar != true || !mounted) return;
+    await ref
+        .read(depositosChequesViewProvider.notifier)
+        .rechazarDepositoCheque(deposito: d, context: context);
+  }
+
+  /// Acciones de una fila. Cada botón se deshabilita y muestra su spinner
+  /// mientras su operación corre; ya no hay bloqueo global de la pantalla. El
+  /// color queda para lo que advierte: solo «Rechazar» lo lleva.
+  Widget _accionesFila(
+    DepositoChequeEntity d,
+    DepositosChequesState state,
+    ColorScheme colorScheme, {
+    required bool compacto,
+  }) {
+    final notifier = ref.read(depositosChequesViewProvider.notifier);
+    final id = d.idDeposito;
+    // Editar y rechazar comparten la marca por fila del notifier; `_editando`
+    // cubre además la carga de bancos previa al diálogo.
+    final filaOcupada =
+        state.filasOcupadas.contains(id) || _editando.contains(id);
+
+    Widget boton({
+      required IconData icono,
+      required String tooltip,
+      required bool ocupado,
+      required VoidCallback accion,
+      Color? color,
+    }) => IconButton(
+      visualDensity: compacto ? VisualDensity.compact : VisualDensity.standard,
+      icon:
+          ocupado
+              ? _spinnerPequeno()
+              : Icon(icono, size: 20, color: color ?? colorScheme.onSurfaceVariant),
+      tooltip: tooltip,
+      onPressed: ocupado ? null : accion,
+    );
+
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        boton(
+          icono: Icons.image_outlined,
+          tooltip: 'Ver imagen',
+          ocupado: state.imagenesEnCurso.contains(id),
+          accion: () => notifier.descargarImagenDeposito(id, context),
+        ),
+        boton(
+          icono: Icons.description_outlined,
+          tooltip: 'Ver documento',
+          ocupado: state.pdfsEnCurso.contains(id),
+          accion: () => notifier.descargarPdfDeposito(id, context),
+        ),
+        PermissionWidget(
+          buttonName: 'btnNroTransac',
+          child: boton(
+            icono: Icons.edit_outlined,
+            tooltip: 'Editar',
+            ocupado: filaOcupada,
+            accion: () => _editarDeposito(d),
+          ),
+        ),
+        boton(
+          icono: Icons.close,
+          tooltip: 'Rechazar',
+          ocupado: filaOcupada,
+          accion: () => _rechazarDeposito(d),
+          color: colorScheme.error,
+        ),
+      ],
     );
   }
 
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(depositosChequesViewProvider);
+    final notifier = ref.read(depositosChequesViewProvider.notifier);
     final colorScheme = Theme.of(context).colorScheme;
-    final columns = const [
-      'ID',
-      'Cliente',
-      'Banco',
-      'Empresa',
-      'Vendedor',
-      'Importe',
-      'Moneda',
-      'Fecha Ingreso',
-      'Num. Transaccion',
-      'Estado',
-      'Deposito Registrado Por',
-      'Acciones',
-    ];
     final page = state.page;
     final rowsPerPage = state.rowsPerPage;
-    final depositos = state.depositos;
     final total = state.totalRegistros;
-    final start = total == 0 ? 0 : (page * rowsPerPage) + 1;
-    final end = ((page + 1) * rowsPerPage).clamp(0, total);
-    final paged = depositos.skip(page * rowsPerPage).take(rowsPerPage).toList();
+    final paged =
+        state.depositos.skip(page * rowsPerPage).take(rowsPerPage).toList();
+    // Fallo del listado (no de un filtro), ya sin búsqueda en curso.
+    final errorBusqueda =
+        (state.error != null && state.errorEn == OperacionCarga.listado)
+            ? state.error
+            : null;
 
-    // Valores responsive
-    final isDesktop = ResponsiveUtilsBosque.isDesktop(context);
-    final isMobile = ResponsiveUtilsBosque.isMobile(context);
+    final paginacion = PaginacionDepositos(
+      pagina: page,
+      filasPorPagina: rowsPerPage,
+      total: total,
+      onPagina: notifier.setPage,
+      onFilasPorPagina: notifier.setRowsPerPage,
+    );
 
-    return Card(
-      elevation: 0,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          // Tabla con scroll horizontal y vertical
-          if (paged.isEmpty)
-            _emptyTablePlaceholder()
-          else
-            SizedBox(
-              height: isDesktop ? 400 : (isMobile ? 350 : 380),
-              child: RawScrollbar(
-                thumbVisibility: true,
-                controller: horizontalController,
-                thickness: isDesktop ? 8 : 6,
-                radius: const Radius.circular(5),
-                thumbColor: colorScheme.outline,
-                child: SingleChildScrollView(
-                  controller: horizontalController,
-                  scrollDirection: Axis.horizontal,
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  child: ConstrainedBox(
-                    constraints: BoxConstraints(
-                      minWidth: MediaQuery.of(context).size.width,
-                    ),
-                    child: SingleChildScrollView(
-                      scrollDirection: Axis.vertical,
-                      physics: const AlwaysScrollableScrollPhysics(),
-                      child: DataTable(
-                        columnSpacing: isDesktop ? 20 : (isMobile ? 12 : 16),
-                        horizontalMargin: isDesktop ? 20 : (isMobile ? 12 : 16),
-                        headingRowHeight: isDesktop ? 50 : 45,
-                        // ignore: deprecated_member_use
-                        dataRowHeight: isDesktop ? 60 : 55,
-                        dividerThickness: 1,
-                        columns:
-                            columns
-                                .map(
-                                  (col) => DataColumn(
-                                    label: Container(
-                                      padding: EdgeInsets.symmetric(
-                                        horizontal: isDesktop ? 8.0 : 4.0,
-                                      ),
-                                      child: Text(
-                                        col,
-                                        style: TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                          fontSize:
-                                              isDesktop
-                                                  ? 14
-                                                  : (isMobile ? 12 : 13),
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                )
-                                .toList(),
-                        rows:
-                            paged
-                                .map(
-                                  (d) => DataRow(
-                                    cells: [
-                                      // ID
-                                      DataCell(
-                                        Container(
-                                          padding: const EdgeInsets.symmetric(
-                                            horizontal: 8,
-                                            vertical: 4,
-                                          ),
-                                          decoration: BoxDecoration(
-                                            color:
-                                                colorScheme
-                                                    .surfaceContainerHighest,
-                                            borderRadius: BorderRadius.circular(
-                                              6,
-                                            ),
-                                          ),
-                                          child: Text(
-                                            '#${d.idDeposito}',
-                                            style: TextStyle(
-                                              fontSize: isMobile ? 11 : 13,
-                                              fontWeight: FontWeight.w600,
-                                              color:
-                                                  colorScheme.onSurfaceVariant,
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                      // Cliente
-                                      DataCell(
-                                        SizedBox(
-                                          width: isDesktop ? 130 : 100,
-                                          child: Text(
-                                            d.codCliente,
-                                            style: TextStyle(
-                                              fontSize: isMobile ? 12 : 13,
-                                              fontWeight: FontWeight.w500,
-                                            ),
-                                            overflow: TextOverflow.ellipsis,
-                                            maxLines: 1,
-                                          ),
-                                        ),
-                                      ),
-                                      // Banco
-                                      DataCell(
-                                        Row(
-                                          mainAxisSize: MainAxisSize.min,
-                                          children: [
-                                            Icon(
-                                              Icons.account_balance,
-                                              size: 14,
-                                              color: colorScheme.primary
-                                                  .withValues(alpha: 0.7),
-                                            ),
-                                            const SizedBox(width: 4),
-                                            SizedBox(
-                                              width: isDesktop ? 110 : 80,
-                                              child: Text(
-                                                d.nombreBanco,
-                                                style: TextStyle(
-                                                  fontSize: isMobile ? 12 : 13,
-                                                ),
-                                                overflow: TextOverflow.ellipsis,
-                                                maxLines: 1,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                      // Empresa
-                                      DataCell(
-                                        SizedBox(
-                                          width: isDesktop ? 110 : 80,
-                                          child: Text(
-                                            d.nombreEmpresa,
-                                            style: TextStyle(
-                                              fontSize: isMobile ? 12 : 13,
-                                            ),
-                                            overflow: TextOverflow.ellipsis,
-                                            maxLines: 1,
-                                          ),
-                                        ),
-                                      ),
-                                      // Vendedor
-                                      DataCell(
-                                        d.nombreVendedor.isEmpty
-                                            ? Text(
-                                              '—',
-                                              style: TextStyle(
-                                                fontSize: isMobile ? 12 : 13,
-                                                color: colorScheme.onSurface
-                                                    .withValues(alpha: 0.35),
-                                                fontStyle: FontStyle.italic,
-                                              ),
-                                            )
-                                            : Container(
-                                              padding:
-                                                  const EdgeInsets.symmetric(
-                                                    horizontal: 8,
-                                                    vertical: 3,
-                                                  ),
-                                              decoration: BoxDecoration(
-                                                color:
-                                                    colorScheme
-                                                        .secondaryContainer,
-                                                borderRadius:
-                                                    BorderRadius.circular(20),
-                                              ),
-                                              child: Row(
-                                                mainAxisSize: MainAxisSize.min,
-                                                children: [
-                                                  Icon(
-                                                    Icons.person_outline,
-                                                    size: 13,
-                                                    color:
-                                                        colorScheme
-                                                            .onSecondaryContainer,
-                                                  ),
-                                                  const SizedBox(width: 4),
-                                                  ConstrainedBox(
-                                                    constraints: BoxConstraints(
-                                                      maxWidth:
-                                                          isDesktop ? 110 : 80,
-                                                    ),
-                                                    child: Text(
-                                                      d.nombreVendedor,
-                                                      style: TextStyle(
-                                                        fontSize:
-                                                            isMobile ? 11 : 12,
-                                                        color:
-                                                            colorScheme
-                                                                .onSecondaryContainer,
-                                                        fontWeight:
-                                                            FontWeight.w500,
-                                                      ),
-                                                      overflow:
-                                                          TextOverflow.ellipsis,
-                                                      maxLines: 1,
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
-                                            ),
-                                      ),
-                                      // Importe
-                                      DataCell(
-                                        Text(
-                                          d.importe.toStringAsFixed(2),
-                                          style: TextStyle(
-                                            fontSize: isMobile ? 12 : 13,
-                                            fontWeight: FontWeight.w600,
-                                            fontFeatures: const [
-                                              FontFeature.tabularFigures(),
-                                            ],
-                                          ),
-                                          textAlign: TextAlign.right,
-                                        ),
-                                      ),
-                                      // Moneda
-                                      DataCell(
-                                        Container(
-                                          padding: const EdgeInsets.symmetric(
-                                            horizontal: 8,
-                                            vertical: 3,
-                                          ),
-                                          decoration: BoxDecoration(
-                                            color:
-                                                colorScheme.tertiaryContainer,
-                                            borderRadius: BorderRadius.circular(
-                                              6,
-                                            ),
-                                          ),
-                                          child: Text(
-                                            d.moneda,
-                                            style: TextStyle(
-                                              fontSize: isMobile ? 11 : 12,
-                                              fontWeight: FontWeight.bold,
-                                              color:
-                                                  colorScheme
-                                                      .onTertiaryContainer,
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                      // Fecha Ingreso
-                                      DataCell(
-                                        d.fechaI != null
-                                            ? Row(
-                                              mainAxisSize: MainAxisSize.min,
-                                              children: [
-                                                Icon(
-                                                  Icons.calendar_today,
-                                                  size: 13,
-                                                  color: colorScheme.onSurface
-                                                      .withValues(alpha: 0.5),
-                                                ),
-                                                const SizedBox(width: 4),
-                                                Text(
-                                                  "${d.fechaI!.day.toString().padLeft(2, '0')}/${d.fechaI!.month.toString().padLeft(2, '0')}/${d.fechaI!.year}",
-                                                  style: TextStyle(
-                                                    fontSize:
-                                                        isMobile ? 12 : 13,
-                                                  ),
-                                                ),
-                                              ],
-                                            )
-                                            : Text(
-                                              '—',
-                                              style: TextStyle(
-                                                color: colorScheme.onSurface
-                                                    .withValues(alpha: 0.35),
-                                              ),
-                                            ),
-                                      ),
-                                      // Nro. Transacción
-                                      DataCell(
-                                        d.nroTransaccion.isEmpty
-                                            ? Text(
-                                              '—',
-                                              style: TextStyle(
-                                                color: colorScheme.onSurface
-                                                    .withValues(alpha: 0.35),
-                                                fontStyle: FontStyle.italic,
-                                              ),
-                                            )
-                                            : Text(
-                                              d.nroTransaccion,
-                                              style: TextStyle(
-                                                fontSize: isMobile ? 12 : 13,
-                                                fontFamily: 'monospace',
-                                              ),
-                                            ),
-                                      ),
-                                      // Estado
-                                      DataCell(
-                                        _buildEstadoBadge(
-                                          d.esPendiente,
-                                          isMobile,
-                                        ),
-                                      ),
-                                      // Registrado Por
-                                      DataCell(
-                                        SizedBox(
-                                          width: isDesktop ? 160 : 130,
-                                          child: Row(
-                                            mainAxisSize: MainAxisSize.min,
-                                            children: [
-                                              Icon(
-                                                Icons.badge_outlined,
-                                                size: 14,
-                                                color: colorScheme.onSurface
-                                                    .withValues(alpha: 0.45),
-                                              ),
-                                              const SizedBox(width: 4),
-                                              Expanded(
-                                                child: Text(
-                                                  d.nombreCompleto,
-                                                  style: TextStyle(
-                                                    fontSize:
-                                                        isMobile ? 12 : 13,
-                                                  ),
-                                                  overflow:
-                                                      TextOverflow.ellipsis,
-                                                  maxLines: 1,
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                      ),
-                                      DataCell(
-                                        Container(
-                                          constraints: const BoxConstraints(
-                                            minWidth: 160,
-                                          ),
-                                          child:
-                                              d.esPendiente == "Rechazado"
-                                                  ? Text(
-                                                    "No disponible",
-                                                    style: TextStyle(
-                                                      fontStyle:
-                                                          FontStyle.italic,
-                                                      color: colorScheme
-                                                          .onSurface
-                                                          .withValues(
-                                                            alpha: 0.5,
-                                                          ),
-                                                      fontSize:
-                                                          isMobile ? 12 : null,
-                                                    ),
-                                                  )
-                                                  : Row(
-                                                    mainAxisSize:
-                                                        MainAxisSize.min,
-                                                    children: [
-                                                      IconButton(
-                                                        icon: Icon(
-                                                          Icons.image,
-                                                          color:
-                                                              colorScheme
-                                                                  .secondary,
-                                                          size: 20,
-                                                        ),
-                                                        tooltip: 'Ver imagen',
-                                                        onPressed: () {
-                                                          try {
-                                                            ref
-                                                                .read(
-                                                                  depositosChequesViewProvider
-                                                                      .notifier,
-                                                                )
-                                                                .descargarImagenDeposito(
-                                                                  d.idDeposito,
-                                                                  context,
-                                                                );
-                                                          } catch (e) {
-                                                            mostrarAviso(
-                                                              context,
-                                                              'Error al descargar imagen: $e',
-                                                              tono:
-                                                                  TonoAviso
-                                                                      .error,
-                                                            );
-                                                          }
-                                                        },
-                                                      ),
-                                                      IconButton(
-                                                        icon: Icon(
-                                                          Icons.description,
-                                                          color:
-                                                              colorScheme
-                                                                  .primary,
-                                                          size: 20,
-                                                        ),
-                                                        tooltip:
-                                                            'Ver documento',
-                                                        onPressed: () {
-                                                          try {
-                                                            // Llamar al método que descarga el PDF específico
-                                                            ref
-                                                                .read(
-                                                                  depositosChequesViewProvider
-                                                                      .notifier,
-                                                                )
-                                                                .descargarPdfDeposito(
-                                                                  d.idDeposito,
-                                                                  context,
-                                                                );
-                                                          } catch (e) {
-                                                            // Mostrar un mensaje de error
-                                                            mostrarAviso(
-                                                              context,
-                                                              'Error al descargar el PDF: $e',
-                                                              tono:
-                                                                  TonoAviso
-                                                                      .error,
-                                                            );
-                                                          }
-                                                        },
-                                                      ),
-
-                                                      PermissionWidget(
-                                                        buttonName:
-                                                            'btnNroTransac',
-                                                        child: IconButton(
-                                                          icon: Icon(
-                                                            Icons.edit,
-                                                            color:
-                                                                colorScheme
-                                                                    .tertiary,
-                                                            size: 20,
-                                                          ),
-                                                          tooltip: 'Editar',
-                                                          onPressed: () async {
-                                                            final notifier = ref
-                                                                .read(
-                                                                  depositosChequesViewProvider
-                                                                      .notifier,
-                                                                );
-                                                            // Cargar bancos para la empresa del depósito seleccionado
-                                                            final bancos =
-                                                                await notifier
-                                                                    .repo
-                                                                    .getBancos(
-                                                                      d.codEmpresa,
-                                                                    );
-
-                                                            // Valor inicial para el dropdown
-                                                            BancoXCuentaEntity?
-                                                            bancoSeleccionado;
-                                                            try {
-                                                              bancoSeleccionado =
-                                                                  bancos.firstWhere(
-                                                                    (b) =>
-                                                                        b.idBxC ==
-                                                                        d.idBxC,
-                                                                  );
-                                                            } catch (e) {
-                                                              bancoSeleccionado =
-                                                                  bancos.isNotEmpty
-                                                                      ? bancos
-                                                                          .first
-                                                                      : null;
-                                                            }
-
-                                                            if (bancos
-                                                                .isEmpty) {
-                                                              mostrarAviso(
-                                                                context,
-                                                                'No hay bancos disponibles para esta empresa',
-                                                                tono:
-                                                                    TonoAviso
-                                                                        .aviso,
-                                                              );
-                                                              return;
-                                                            }
-
-                                                            // Mostrar diálogo para editar
-                                                            await showDialog(
-                                                              context: context,
-                                                              builder: (
-                                                                dialogContext,
-                                                              ) {
-                                                                // Controlador para el campo de texto
-                                                                final controller =
-                                                                    TextEditingController(
-                                                                      text:
-                                                                          d.nroTransaccion,
-                                                                    );
-
-                                                                // Variable local para el banco seleccionado en el diálogo
-                                                                BancoXCuentaEntity?
-                                                                localBancoSeleccionado =
-                                                                    bancoSeleccionado;
-
-                                                                // Usamos StatefulBuilder para manejar estado local del diálogo
-                                                                return StatefulBuilder(
-                                                                  builder: (
-                                                                    context,
-                                                                    setState,
-                                                                  ) {
-                                                                    return AlertDialog(
-                                                                      title: Text(
-                                                                        'Editar depósito',
-                                                                      ),
-                                                                      content: Column(
-                                                                        mainAxisSize:
-                                                                            MainAxisSize.min,
-                                                                        children: [
-                                                                          TextField(
-                                                                            decoration: InputDecoration(
-                                                                              labelText:
-                                                                                  'Nro. Transacción',
-                                                                              border:
-                                                                                  OutlineInputBorder(),
-                                                                            ),
-                                                                            controller:
-                                                                                controller,
-                                                                          ),
-                                                                          SizedBox(
-                                                                            height:
-                                                                                16,
-                                                                          ),
-                                                                          DropdownButtonFormField<
-                                                                            BancoXCuentaEntity
-                                                                          >(
-                                                                            decoration: InputDecoration(
-                                                                              labelText:
-                                                                                  'Banco',
-                                                                              border:
-                                                                                  OutlineInputBorder(),
-                                                                            ),
-                                                                            value:
-                                                                                localBancoSeleccionado,
-                                                                            isExpanded:
-                                                                                true,
-                                                                            items:
-                                                                                bancos.map((
-                                                                                  banco,
-                                                                                ) {
-                                                                                  return DropdownMenuItem(
-                                                                                    value:
-                                                                                        banco,
-                                                                                    child: Text(
-                                                                                      banco.nombreBanco,
-                                                                                    ),
-                                                                                  );
-                                                                                }).toList(),
-                                                                            onChanged: (
-                                                                              value,
-                                                                            ) {
-                                                                              setState(
-                                                                                () =>
-                                                                                    localBancoSeleccionado =
-                                                                                        value,
-                                                                              );
-                                                                            },
-                                                                          ),
-                                                                        ],
-                                                                      ),
-                                                                      actions: [
-                                                                        TextButton(
-                                                                          onPressed:
-                                                                              () => Navigator.pop(
-                                                                                dialogContext,
-                                                                              ),
-                                                                          child: Text(
-                                                                            'Cancelar',
-                                                                          ),
-                                                                        ),
-                                                                        ElevatedButton(
-                                                                          style: ElevatedButton.styleFrom(
-                                                                            backgroundColor:
-                                                                                Theme.of(
-                                                                                  context,
-                                                                                ).colorScheme.primary,
-                                                                            foregroundColor:
-                                                                                Theme.of(
-                                                                                  context,
-                                                                                ).colorScheme.onPrimary,
-                                                                          ),
-                                                                          onPressed: () async {
-                                                                            if (localBancoSeleccionado !=
-                                                                                null) {
-                                                                              await notifier.actualizarDepositoTransaccionYBanco(
-                                                                                deposito:
-                                                                                    d,
-                                                                                nuevoNroTransaccion:
-                                                                                    controller.text,
-                                                                                nuevoBanco:
-                                                                                    localBancoSeleccionado!,
-                                                                                context:
-                                                                                    context,
-                                                                              );
-                                                                              Navigator.pop(
-                                                                                dialogContext,
-                                                                              );
-                                                                            } else {
-                                                                              mostrarAviso(
-                                                                                context,
-                                                                                'Debe seleccionar un banco',
-                                                                                tono:
-                                                                                    TonoAviso.aviso,
-                                                                              );
-                                                                            }
-                                                                          },
-                                                                          child: Text(
-                                                                            'Guardar',
-                                                                          ),
-                                                                        ),
-                                                                      ],
-                                                                    );
-                                                                  },
-                                                                );
-                                                              },
-                                                            );
-                                                          },
-                                                        ),
-                                                      ),
-
-                                                      IconButton(
-                                                        icon: Icon(
-                                                          Icons.close,
-                                                          color:
-                                                              colorScheme.error,
-                                                          size: 20,
-                                                        ),
-                                                        tooltip: 'Rechazar',
-                                                        onPressed: () async {
-                                                          // Mostrar diálogo de confirmación
-                                                          final confirmar = await showDialog<
-                                                            bool
-                                                          >(
-                                                            context: context,
-                                                            builder:
-                                                                (
-                                                                  context,
-                                                                ) => AlertDialog(
-                                                                  title: Text(
-                                                                    'Confirmar rechazo',
-                                                                  ),
-                                                                  content: Text(
-                                                                    '¿Está seguro que desea rechazar este depósito?',
-                                                                  ),
-                                                                  actions: [
-                                                                    TextButton(
-                                                                      onPressed:
-                                                                          () => Navigator.pop(
-                                                                            context,
-                                                                            false,
-                                                                          ),
-                                                                      child: Text(
-                                                                        'Cancelar',
-                                                                      ),
-                                                                    ),
-                                                                    ElevatedButton(
-                                                                      style: ElevatedButton.styleFrom(
-                                                                        backgroundColor:
-                                                                            Theme.of(
-                                                                              context,
-                                                                            ).colorScheme.error,
-                                                                        foregroundColor:
-                                                                            Theme.of(
-                                                                              context,
-                                                                            ).colorScheme.onError,
-                                                                      ),
-                                                                      onPressed:
-                                                                          () => Navigator.pop(
-                                                                            context,
-                                                                            true,
-                                                                          ),
-                                                                      child: Text(
-                                                                        'Rechazar',
-                                                                      ),
-                                                                    ),
-                                                                  ],
-                                                                ),
-                                                          );
-
-                                                          // Si el usuario confirma, rechazar el depósito
-                                                          if (confirmar ==
-                                                              true) {
-                                                            final notifier = ref
-                                                                .read(
-                                                                  depositosChequesViewProvider
-                                                                      .notifier,
-                                                                );
-                                                            await notifier
-                                                                .rechazarDepositoCheque(
-                                                                  deposito: d,
-                                                                  context:
-                                                                      context,
-                                                                );
-                                                          }
-                                                        },
-                                                      ),
-                                                    ],
-                                                  ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                )
-                                .toList(),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        // Con datos previos, el fallo se avisa sin ocultarlos.
+        if (errorBusqueda != null && paged.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.only(bottom: Esp.s),
+            child: MensajeError(
+              error: errorBusqueda,
+              compacto: true,
+              onReintentar: widget.onReintentar,
             ),
-
-          // Paginación - adaptada para móvil y desktop
-          _buildPagination(context, state, start, end, total),
-        ],
-      ),
+          ),
+        if (paged.isEmpty) ...[
+          _emptyTablePlaceholder(state, errorBusqueda),
+          // Página fuera de rango con datos: hay que poder volver.
+          if (total > 0) ...[const SizedBox(height: Esp.s), paginacion],
+        ] else
+          ListaDepositos(
+            depositos: paged,
+            acciones:
+                (d, {required compacto}) =>
+                    _accionesFila(d, state, colorScheme, compacto: compacto),
+            pie: paginacion,
+          ),
+      ],
     );
   }
+}
 
-  Widget _buildPagination(
-    BuildContext context,
-    DepositosChequesState state,
-    int start,
-    int end,
-    int total,
-  ) {
-    final isMobile = ResponsiveUtilsBosque.isMobile(context);
+/// Diálogo de edición de nro. de transacción y banco. Es un widget propio para
+/// que el controller y el estado «guardando» vivan (y se liberen) con el
+/// diálogo.
+class _EditarDepositoDialog extends StatefulWidget {
+  const _EditarDepositoDialog({
+    required this.deposito,
+    required this.bancos,
+    required this.onGuardar,
+  });
 
-    if (isMobile) {
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(8, 12, 8, 4),
-            child: Text(
-              'Mostrando $start a $end de $total depósitos',
-              style: TextStyle(fontSize: 13),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(8, 4, 8, 8),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                IconButton(
-                  icon: const Icon(Icons.first_page, size: 20),
-                  onPressed:
-                      state.page > 0
-                          ? () => ref
-                              .read(depositosChequesViewProvider.notifier)
-                              .setPage(0)
-                          : null,
-                  padding: EdgeInsets.zero,
-                  constraints: BoxConstraints(),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.chevron_left, size: 20),
-                  onPressed:
-                      state.page > 0
-                          ? () => ref
-                              .read(depositosChequesViewProvider.notifier)
-                              .setPage(state.page - 1)
-                          : null,
-                  padding: EdgeInsets.zero,
-                  constraints: BoxConstraints(),
-                ),
-                SizedBox(width: 8),
-                DropdownButton<int>(
-                  value: state.rowsPerPage,
-                  isDense: true,
-                  items:
-                      const [10, 20, 50]
-                          .map(
-                            (e) => DropdownMenuItem(
-                              value: e,
-                              child: Text(e.toString()),
-                            ),
-                          )
-                          .toList(),
-                  onChanged:
-                      (v) => ref
-                          .read(depositosChequesViewProvider.notifier)
-                          .setRowsPerPage(v),
-                ),
-                SizedBox(width: 8),
-                IconButton(
-                  icon: const Icon(Icons.chevron_right, size: 20),
-                  onPressed:
-                      end < total
-                          ? () => ref
-                              .read(depositosChequesViewProvider.notifier)
-                              .setPage(state.page + 1)
-                          : null,
-                  padding: EdgeInsets.zero,
-                  constraints: BoxConstraints(),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.last_page, size: 20),
-                  onPressed:
-                      end < total
-                          ? () => ref
-                              .read(depositosChequesViewProvider.notifier)
-                              .setPage((total / state.rowsPerPage).ceil() - 1)
-                          : null,
-                  padding: EdgeInsets.zero,
-                  constraints: BoxConstraints(),
-                ),
-              ],
-            ),
-          ),
-        ],
-      );
+  final DepositoChequeEntity deposito;
+  final List<BancoXCuentaEntity> bancos;
+
+  /// Devuelve `true` si el cambio se aplicó (entonces el diálogo se cierra).
+  final Future<bool> Function(String nroTransaccion, BancoXCuentaEntity banco)
+  onGuardar;
+
+  @override
+  State<_EditarDepositoDialog> createState() => _EditarDepositoDialogState();
+}
+
+class _EditarDepositoDialogState extends State<_EditarDepositoDialog> {
+  late final TextEditingController _nroController = TextEditingController(
+    text: widget.deposito.nroTransaccion,
+  );
+  late BancoXCuentaEntity? _banco = _bancoInicial();
+  bool _guardando = false;
+
+  // El banco actual del depósito; si ya no está en la lista, el primero.
+  BancoXCuentaEntity? _bancoInicial() {
+    for (final b in widget.bancos) {
+      if (b.idBxC == widget.deposito.idBxC) return b;
+    }
+    return widget.bancos.isNotEmpty ? widget.bancos.first : null;
+  }
+
+  @override
+  void dispose() {
+    _nroController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _guardar() async {
+    final banco = _banco;
+    if (banco == null) {
+      mostrarAviso(context, 'Debe seleccionar un banco', tono: TonoAviso.aviso);
+      return;
+    }
+    setState(() => _guardando = true);
+    final ok = await widget.onGuardar(_nroController.text.trim(), banco);
+    if (!mounted) return;
+    if (ok) {
+      Navigator.pop(context);
     } else {
-      return Padding(
-        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
-        child: Row(
+      // El notifier ya avisó el motivo; el diálogo queda abierto.
+      setState(() => _guardando = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    // Mientras guarda no se puede cerrar (ni con el fondo ni con Cancelar):
+    // el resultado se decide con el `bool` de la operación.
+    return PopScope(
+      canPop: !_guardando,
+      child: AlertDialog(
+        title: const Text('Editar depósito'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            Text('Mostrando $start a $end de $total depósitos'),
-            const Spacer(),
-            IconButton(
-              icon: const Icon(Icons.first_page),
-              onPressed:
-                  state.page > 0
-                      ? () => ref
-                          .read(depositosChequesViewProvider.notifier)
-                          .setPage(0)
-                      : null,
+            TextField(
+              decoration: const InputDecoration(
+                labelText: 'Nro. Transacción',
+                border: OutlineInputBorder(),
+              ),
+              controller: _nroController,
+              enabled: !_guardando,
             ),
-            IconButton(
-              icon: const Icon(Icons.chevron_left),
-              onPressed:
-                  state.page > 0
-                      ? () => ref
-                          .read(depositosChequesViewProvider.notifier)
-                          .setPage(state.page - 1)
-                      : null,
-            ),
-            IconButton(
-              icon: const Icon(Icons.chevron_right),
-              onPressed:
-                  end < total
-                      ? () => ref
-                          .read(depositosChequesViewProvider.notifier)
-                          .setPage(state.page + 1)
-                      : null,
-            ),
-            IconButton(
-              icon: const Icon(Icons.last_page),
-              onPressed:
-                  end < total
-                      ? () => ref
-                          .read(depositosChequesViewProvider.notifier)
-                          .setPage((total / state.rowsPerPage).ceil() - 1)
-                      : null,
-            ),
-            const SizedBox(width: 16),
-            DropdownButton<int>(
-              value: state.rowsPerPage,
+            const SizedBox(height: 16),
+            DropdownButtonFormField<BancoXCuentaEntity>(
+              decoration: const InputDecoration(
+                labelText: 'Banco',
+                border: OutlineInputBorder(),
+              ),
+              value: _banco,
+              isExpanded: true,
               items:
-                  const [10, 20, 50]
+                  widget.bancos
                       .map(
-                        (e) => DropdownMenuItem(
-                          value: e,
-                          child: Text(e.toString()),
+                        (banco) => DropdownMenuItem(
+                          value: banco,
+                          child: Text(banco.nombreBanco),
                         ),
                       )
                       .toList(),
               onChanged:
-                  (v) => ref
-                      .read(depositosChequesViewProvider.notifier)
-                      .setRowsPerPage(v),
+                  _guardando ? null : (value) => setState(() => _banco = value),
             ),
           ],
         ),
-      );
-    }
+        actions: [
+          TextButton(
+            onPressed: _guardando ? null : () => Navigator.pop(context),
+            child: const Text('Cancelar'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: colorScheme.primary,
+              foregroundColor: colorScheme.onPrimary,
+            ),
+            onPressed: _guardando ? null : _guardar,
+            child:
+                _guardando
+                    ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                    : const Text('Guardar'),
+          ),
+        ],
+      ),
+    );
   }
 }
