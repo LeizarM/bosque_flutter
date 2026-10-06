@@ -4,20 +4,14 @@ import 'package:bosque_flutter/core/utils/formato_moneda.dart';
 import 'package:bosque_flutter/domain/entities/deposito_cheque_entity.dart';
 import 'package:flutter/material.dart';
 
-/// Widgets de presentación del listado de depósitos: tabla en anchos grandes,
-/// filas compactas en los medios (media pantalla de escritorio) y tarjetas en
-/// los chicos. No conocen el estado ni el notifier; las acciones por fila
-/// llegan ya construidas.
+/// Widgets de presentación del listado de depósitos: tabla con una columna por
+/// dato en anchos grandes y medios, y tarjetas en los chicos. No conocen el
+/// estado ni el notifier; las acciones por fila llegan ya construidas.
 
 /// Ancho del área de resultados desde el cual se usa tabla. Se mide el ancho
 /// del contenedor y no el de la ventana: dentro del dashboard el menú lateral
 /// se come su parte.
-const double anchoMinimoTabla = 1040;
-
-/// Desde este ancho se usan filas compactas de 3 líneas. Una tarjeta mide unos
-/// 290 px de alto y una fila compacta unos 75: a media pantalla de escritorio
-/// se ven cuatro veces más registros.
-const double anchoMinimoCompacta = 720;
+const double anchoMinimoTabla = 720;
 
 /// Ancho mínimo de una tarjeta; decide cuántas caben por fila.
 const double anchoMinimoTarjeta = 340;
@@ -39,9 +33,8 @@ Color _tinteRechazado(ColorScheme cs) => Color.alphaBlend(
 bool depositoRechazado(DepositoChequeEntity d) =>
     d.esPendiente.trim().toLowerCase() == 'rechazado';
 
-/// Elige tabla, filas compactas o tarjetas según el ancho que hay. [pie] (la
-/// paginación) va dentro de la tabla o de la lista compacta, y debajo de las
-/// tarjetas.
+/// Elige tabla o tarjetas según el ancho que hay. [pie] (la paginación) va
+/// dentro de la tabla, y debajo de las tarjetas.
 class ListaDepositos extends StatelessWidget {
   const ListaDepositos({
     super.key,
@@ -66,14 +59,6 @@ class ListaDepositos extends StatelessWidget {
             pie: pie,
           );
         }
-        if (constraints.maxWidth >= anchoMinimoCompacta) {
-          return _ListaCompacta(
-            key: const ValueKey('lista-compacta'),
-            depositos: depositos,
-            acciones: acciones,
-            pie: pie,
-          );
-        }
         return _TarjetasDepositos(
           key: const ValueKey('lista-tarjetas'),
           ancho: constraints.maxWidth,
@@ -87,8 +72,14 @@ class ListaDepositos extends StatelessWidget {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// TABLA
+// TABLA (una columna por dato)
 // ═══════════════════════════════════════════════════════════════════════════
+
+/// Ancho con el que la tabla se dibuja entera. Con menos espacio no se
+/// aprietan las columnas: la tabla conserva este ancho y se desplaza en
+/// horizontal. La barra va abajo, sobre la paginación; con 50 filas por página
+/// queda al final de ellas.
+const double _anchoCuerpoTabla = 1520;
 
 class _Col {
   const _Col(this.titulo, {this.ancho, this.flex = 1, this.derecha = false});
@@ -101,17 +92,21 @@ class _Col {
   final bool derecha;
 }
 
-// Doce campos en ocho columnas: lo secundario va en una segunda línea de la
-// misma celda, así la tabla cabe sin scroll horizontal.
+// Una columna por dato, como en la tabla de siempre. Las de texto largo
+// reparten el ancho sobrante por `flex` y pasan hasta a tres líneas.
 const _columnas = [
-  _Col('ID', ancho: 72),
-  _Col('Cliente / Banco', flex: 4),
-  _Col('Empresa / Vendedor', flex: 2),
-  _Col('Importe', ancho: 128, derecha: true),
-  _Col('Fecha', ancho: 100),
-  _Col('Transacción / Registró', flex: 3),
-  _Col('Estado', ancho: 120),
-  _Col('Acciones', ancho: 168),
+  _Col('ID', ancho: 70),
+  _Col('Cliente', flex: 3),
+  _Col('Banco', flex: 4),
+  _Col('Empresa', flex: 2),
+  _Col('Vendedor', flex: 3),
+  _Col('Importe', ancho: 100, derecha: true),
+  _Col('Moneda', ancho: 56),
+  _Col('Fecha Ingreso', ancho: 112),
+  _Col('Nro. Transacción', flex: 3),
+  _Col('Estado', ancho: 112),
+  _Col('Registrado Por', flex: 3),
+  _Col('Acciones', ancho: 164),
 ];
 
 /// Una fila con las celdas alineadas a [_columnas]; sirve a cabecera y datos.
@@ -119,7 +114,7 @@ Widget _fila(List<Widget> celdas) {
   assert(celdas.length == _columnas.length);
   final hijos = <Widget>[];
   for (var i = 0; i < _columnas.length; i++) {
-    if (i > 0) hijos.add(const SizedBox(width: Esp.m));
+    if (i > 0) hijos.add(const SizedBox(width: Esp.s));
     final c = _columnas[i];
     final celda = Align(
       alignment: c.derecha ? Alignment.centerRight : Alignment.centerLeft,
@@ -134,7 +129,7 @@ Widget _fila(List<Widget> celdas) {
   return Row(children: hijos);
 }
 
-class _TablaDepositos extends StatelessWidget {
+class _TablaDepositos extends StatefulWidget {
   const _TablaDepositos({
     super.key,
     required this.depositos,
@@ -147,11 +142,50 @@ class _TablaDepositos extends StatelessWidget {
   final Widget pie;
 
   @override
+  State<_TablaDepositos> createState() => _TablaDepositosState();
+}
+
+class _TablaDepositosState extends State<_TablaDepositos> {
+  final _horizontal = ScrollController();
+
+  @override
+  void dispose() {
+    _horizontal.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final estiloCabecera = Theme.of(context).textTheme.labelLarge?.copyWith(
       fontWeight: Peso.titulo,
       color: cs.onSurfaceVariant,
+    );
+
+    final cuerpo = Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Container(
+          color: cs.surfaceContainerHighest.withValues(alpha: 0.6),
+          padding: const EdgeInsets.symmetric(
+            horizontal: Esp.l,
+            vertical: Esp.m,
+          ),
+          child: _fila([
+            for (final c in _columnas)
+              Text(
+                c.titulo,
+                style: estiloCabecera,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+          ]),
+        ),
+        for (final d in widget.depositos) ...[
+          Divider(height: 1, color: cs.outlineVariant),
+          _FilaDeposito(deposito: d, acciones: widget.acciones),
+        ],
+      ],
     );
 
     return Card(
@@ -162,33 +196,46 @@ class _TablaDepositos extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Container(
-            color: cs.surfaceContainerHighest.withValues(alpha: 0.6),
-            padding: const EdgeInsets.symmetric(
-              horizontal: Esp.l,
-              vertical: Esp.m,
-            ),
-            child: _fila([
-              for (final c in _columnas)
-                Text(
-                  c.titulo,
-                  style: estiloCabecera,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+          LayoutBuilder(
+            builder: (context, constraints) {
+              if (constraints.maxWidth >= _anchoCuerpoTabla) return cuerpo;
+              return ScrollbarTheme(
+                data: ScrollbarThemeData(
+                  thickness: const WidgetStatePropertyAll(10),
+                  radius: const Radius.circular(5),
+                  thumbColor: WidgetStatePropertyAll(
+                    cs.primary.withValues(alpha: 0.6),
+                  ),
+                  trackColor: WidgetStatePropertyAll(
+                    cs.outlineVariant.withValues(alpha: 0.5),
+                  ),
+                  trackVisibility: const WidgetStatePropertyAll(true),
                 ),
-            ]),
+                child: Scrollbar(
+                  controller: _horizontal,
+                  thumbVisibility: true,
+                  child: SingleChildScrollView(
+                    controller: _horizontal,
+                    scrollDirection: Axis.horizontal,
+                    // Un margen bajo la última fila: la barra queda en su propia
+                    // franja y no se encima al texto.
+                    child: Padding(
+                      padding: const EdgeInsets.only(bottom: Esp.l),
+                      child: SizedBox(width: _anchoCuerpoTabla, child: cuerpo),
+                    ),
+                  ),
+                ),
+              );
+            },
           ),
-          for (final d in depositos) ...[
-            Divider(height: 1, color: cs.outlineVariant),
-            _FilaDeposito(deposito: d, acciones: acciones),
-          ],
+          // La paginación no se desplaza con las columnas.
           Divider(height: 1, color: cs.outlineVariant),
           Padding(
             padding: const EdgeInsets.symmetric(
               horizontal: Esp.m,
               vertical: Esp.xs,
             ),
-            child: pie,
+            child: widget.pie,
           ),
         ],
       ),
@@ -206,6 +253,7 @@ class _FilaDeposito extends StatelessWidget {
   Widget build(BuildContext context) {
     final d = deposito;
     final cs = Theme.of(context).colorScheme;
+    final t = Theme.of(context).textTheme;
     final rechazado = depositoRechazado(d);
 
     return Container(
@@ -214,189 +262,75 @@ class _FilaDeposito extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: Esp.l, vertical: Esp.s),
       child: _fila([
         _Insignia('#${d.idDeposito}'),
-        _DosLineas(
-          principal: d.codCliente,
-          estiloPrincipal: Theme.of(
-            context,
-          ).textTheme.bodyMedium?.copyWith(fontWeight: Peso.titulo),
-          icono: Icons.account_balance_outlined,
-          secundaria: d.nombreBanco,
-          acento: _Acento.primario,
+        _Texto(
+          d.codCliente,
+          estilo: t.bodyMedium?.copyWith(fontWeight: Peso.titulo),
+          lineas: 3,
         ),
-        _DosLineas(
-          principal: d.nombreEmpresa,
-          icono: Icons.person_outline,
-          secundaria: d.nombreVendedor,
-          acento: _Acento.terciario,
-        ),
-        _Importe(d),
+        _Texto(d.nombreBanco, lineas: 3),
+        _Texto(d.nombreEmpresa, lineas: 3),
+        d.nombreVendedor.isEmpty
+            ? const _SinDato()
+            : _Dato(
+              Icons.person_outline,
+              d.nombreVendedor,
+              destacado: true,
+              lineas: 3,
+            ),
+        _Importe(d, mostrarUnidad: false),
+        _MonedaChip(d.moneda),
         _Fecha(d.fechaI),
-        _DosLineas(
-          principal: d.nroTransaccion.isEmpty ? '—' : d.nroTransaccion,
-          estiloPrincipal: _estiloTransaccion(context, vacia: d.nroTransaccion.isEmpty),
-          icono: Icons.badge_outlined,
-          secundaria: d.nombreCompleto,
-        ),
+        d.nroTransaccion.isEmpty
+            ? const _SinDato()
+            : _Texto(d.nroTransaccion, estilo: _estiloTransaccion(context)),
         EstadoDepositoChip(d.esPendiente),
+        d.nombreCompleto.isEmpty
+            ? const _SinDato()
+            : _Dato(Icons.badge_outlined, d.nombreCompleto, lineas: 3),
         rechazado ? const _NoDisponible() : acciones(d, compacto: true),
       ]),
     );
   }
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// FILAS COMPACTAS (media pantalla de escritorio)
-// ═══════════════════════════════════════════════════════════════════════════
-
-class _ListaCompacta extends StatelessWidget {
-  const _ListaCompacta({
-    super.key,
-    required this.depositos,
-    required this.acciones,
-    required this.pie,
-  });
-
-  final List<DepositoChequeEntity> depositos;
-  final ConstructorAcciones acciones;
-  final Widget pie;
+/// El dato no viene: un guion apagado.
+class _SinDato extends StatelessWidget {
+  const _SinDato();
 
   @override
-  Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    return Card(
-      elevation: 0,
-      margin: EdgeInsets.zero,
-      clipBehavior: Clip.antiAlias,
-      shape: contornoSuperficie(cs),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          for (var i = 0; i < depositos.length; i++) ...[
-            if (i > 0) Divider(height: 1, color: cs.outlineVariant),
-            _FilaCompacta(deposito: depositos[i], acciones: acciones),
-          ],
-          Divider(height: 1, color: cs.outlineVariant),
-          Padding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: Esp.m,
-              vertical: Esp.xs,
-            ),
-            child: pie,
-          ),
-        ],
-      ),
-    );
-  }
+  Widget build(BuildContext context) => Text(
+    '—',
+    style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
+  );
 }
 
-/// Un depósito en tres líneas y cuatro zonas: quién y dónde (flexible),
-/// cuánto y cuándo, estado y transacción, y las acciones. Los anchos fijos
-/// dejan el resto al texto largo (cliente, banco).
-class _FilaCompacta extends StatelessWidget {
-  const _FilaCompacta({required this.deposito, required this.acciones});
+/// La moneda en su propia columna: una etiqueta neutra, sin competir con los
+/// colores de estado.
+class _MonedaChip extends StatelessWidget {
+  const _MonedaChip(this.moneda);
 
-  final DepositoChequeEntity deposito;
-  final ConstructorAcciones acciones;
+  final String moneda;
 
   @override
   Widget build(BuildContext context) {
-    final d = deposito;
     final cs = Theme.of(context).colorScheme;
-    final rechazado = depositoRechazado(d);
-
-    return Container(
-      color: rechazado ? _tinteRechazado(cs) : null,
-      padding: const EdgeInsets.symmetric(horizontal: Esp.l, vertical: Esp.s),
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    _Insignia('#${d.idDeposito}'),
-                    const SizedBox(width: Esp.s),
-                    Expanded(
-                      child: _Texto(
-                        d.codCliente,
-                        estilo: Theme.of(context).textTheme.bodyMedium
-                            ?.copyWith(fontWeight: Peso.titulo),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 2),
-                _Dato(
-                  Icons.account_balance_outlined,
-                  d.nombreBanco,
-                  acento: _Acento.primario,
-                ),
-                const SizedBox(height: 2),
-                Row(
-                  children: [
-                    Expanded(
-                      child: _Dato(Icons.business_outlined, d.nombreEmpresa),
-                    ),
-                    if (d.nombreVendedor.isNotEmpty) ...[
-                      const SizedBox(width: Esp.s),
-                      Expanded(
-                        child: _Dato(
-                          Icons.person_outline,
-                          d.nombreVendedor,
-                          acento: _Acento.terciario,
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
-              ],
+    return FittedBox(
+      fit: BoxFit.scaleDown,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: cs.surfaceContainerHighest,
+          borderRadius: BorderRadius.circular(Esquina.chica),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: Esp.s, vertical: 3),
+          child: Text(
+            FormatoMoneda.unidad(moneda),
+            style: Theme.of(context).textTheme.labelMedium?.copyWith(
+              fontWeight: Peso.dato,
+              color: cs.onSurface,
             ),
           ),
-          const SizedBox(width: Esp.m),
-          SizedBox(
-            width: 124,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                _Importe(d),
-                const SizedBox(height: Esp.xs),
-                _Fecha(d.fechaI),
-              ],
-            ),
-          ),
-          const SizedBox(width: Esp.m),
-          SizedBox(
-            width: 132,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                EstadoDepositoChip(d.esPendiente),
-                const SizedBox(height: Esp.xs),
-                _Texto(
-                  d.nroTransaccion.isEmpty ? '—' : d.nroTransaccion,
-                  estilo: _estiloTransaccion(
-                    context,
-                    vacia: d.nroTransaccion.isEmpty,
-                  ),
-                ),
-                if (d.nombreCompleto.isNotEmpty)
-                  _Dato(Icons.badge_outlined, d.nombreCompleto),
-              ],
-            ),
-          ),
-          const SizedBox(width: Esp.s),
-          SizedBox(
-            width: 164,
-            child: Align(
-              alignment: Alignment.centerRight,
-              child: rechazado ? const _NoDisponible() : acciones(d, compacto: true),
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -510,7 +444,6 @@ class _TarjetaDeposito extends StatelessWidget {
             _Dato(
                   Icons.account_balance_outlined,
                   d.nombreBanco,
-                  acento: _Acento.primario,
                 ),
             const SizedBox(height: Esp.m),
             Row(
@@ -538,7 +471,7 @@ class _TarjetaDeposito extends StatelessWidget {
             const SizedBox(height: Esp.m),
             _Campo('Empresa', d.nombreEmpresa),
             if (d.nombreVendedor.isNotEmpty)
-              _Campo('Vendedor', d.nombreVendedor, acento: _Acento.terciario),
+              _Campo('Vendedor', d.nombreVendedor, destacado: true),
             if (d.nroTransaccion.isNotEmpty)
               _Campo('Nro. transacción', d.nroTransaccion, resaltado: true),
             _Campo('Registrado por', d.nombreCompleto),
@@ -645,12 +578,15 @@ class _Insignia extends StatelessWidget {
       ),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: Esp.s, vertical: 3),
-        child: Text(
-          texto,
-          style: Theme.of(context).textTheme.labelMedium?.copyWith(
-            fontWeight: Peso.titulo,
-            color: cs.onSurfaceVariant,
-            fontFeatures: cifrasTabulares,
+        child: FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Text(
+            texto,
+            style: Theme.of(context).textTheme.labelMedium?.copyWith(
+              fontWeight: Peso.titulo,
+              color: cs.onSurfaceVariant,
+              fontFeatures: cifrasTabulares,
+            ),
           ),
         ),
       ),
@@ -678,46 +614,44 @@ class _Texto extends StatelessWidget {
   }
 }
 
-/// Color de acento de una etiqueta: familias del tema que se separan con las
-/// nueve semillas, y distintas de las de estado (que son de fondo pleno).
-enum _Acento { primario, terciario }
-
-/// Línea de apoyo con ícono: banco, vendedor, quién registró.
+/// Línea de apoyo con ícono: quién registró y, en las tarjetas, el banco.
 ///
-/// Son datos de apoyo pero los que más se consultan: 13 px en tono pleno y el
-/// ícono en el color de acento, no en gris. Con [acento] (banco: primario,
-/// vendedor: terciario) van además en negrita dentro de una etiqueta con
-/// relleno tenue y borde del mismo color, que se ve aun en una lista densa sin
-/// competir con el color de los estados.
+/// Son datos de apoyo pero se consultan: 13 px en tono pleno y el ícono en el
+/// color de acento, no en gris. Con [destacado] (el vendedor) va además en
+/// negrita dentro de una etiqueta con relleno tenue y borde del color
+/// terciario del tema, que se ve aun en una lista densa sin competir con el
+/// color de los estados (los de estado son de fondo pleno).
 class _Dato extends StatelessWidget {
-  const _Dato(this.icono, this.texto, {this.acento});
+  const _Dato(this.icono, this.texto, {this.destacado = false, this.lineas = 1});
 
   final IconData icono;
   final String texto;
-  final _Acento? acento;
+  final bool destacado;
+
+  /// Líneas máximas del texto; en la tabla, tres.
+  final int lineas;
 
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    final a = acento;
     final estilo = Theme.of(context).textTheme.bodySmall?.copyWith(
       fontSize: 13,
-      fontWeight: a != null ? Peso.dato : FontWeight.w500,
+      fontWeight: destacado ? Peso.dato : FontWeight.w500,
       color: cs.onSurface,
     );
 
-    if (a == null) {
+    if (!destacado) {
       return Row(
         children: [
           Icon(icono, size: 15, color: cs.primary),
           const SizedBox(width: Esp.xs),
-          Expanded(child: _Texto(texto, estilo: estilo)),
+          Expanded(child: _Texto(texto, estilo: estilo, lineas: lineas)),
         ],
       );
     }
     if (texto.isEmpty) return const SizedBox.shrink();
 
-    final color = a == _Acento.primario ? cs.primary : cs.tertiary;
+    final color = cs.tertiary;
     final oscuro = cs.brightness == Brightness.dark;
     // La etiqueta mide lo que mide su texto (hasta el ancho disponible).
     return Align(
@@ -735,46 +669,11 @@ class _Dato extends StatelessWidget {
             children: [
               Icon(icono, size: 15, color: color),
               const SizedBox(width: Esp.xs),
-              Flexible(child: _Texto(texto, estilo: estilo)),
+              Flexible(child: _Texto(texto, estilo: estilo, lineas: lineas)),
             ],
           ),
         ),
       ),
-    );
-  }
-}
-
-/// Celda de dos líneas: dato principal y, debajo, uno de apoyo con ícono (si
-/// viene vacío, la celda queda de una sola línea).
-class _DosLineas extends StatelessWidget {
-  const _DosLineas({
-    required this.principal,
-    required this.icono,
-    required this.secundaria,
-    this.estiloPrincipal,
-    this.acento,
-  });
-
-  final String principal;
-  final TextStyle? estiloPrincipal;
-  final IconData icono;
-  final String secundaria;
-
-  /// Si viene, la línea de apoyo va como etiqueta con ese acento (ver [_Dato]).
-  final _Acento? acento;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _Texto(principal, estilo: estiloPrincipal),
-        if (secundaria.isNotEmpty) ...[
-          const SizedBox(height: 2),
-          _Dato(icono, secundaria, acento: acento),
-        ],
-      ],
     );
   }
 }
@@ -785,7 +684,7 @@ class _Campo extends StatelessWidget {
     this.etiqueta,
     this.valor, {
     this.resaltado = false,
-    this.acento,
+    this.destacado = false,
   });
 
   final String etiqueta;
@@ -794,8 +693,8 @@ class _Campo extends StatelessWidget {
   /// El valor va con el estilo del número de transacción.
   final bool resaltado;
 
-  /// Si viene, el valor va como etiqueta con ese acento (ver [_Dato]).
-  final _Acento? acento;
+  /// El valor va como etiqueta de color (ver [_Dato]).
+  final bool destacado;
 
   @override
   Widget build(BuildContext context) {
@@ -808,8 +707,8 @@ class _Campo extends StatelessWidget {
           SizedBox(width: 112, child: Text(etiqueta, style: context.apagado())),
           Expanded(
             child:
-                acento != null
-                    ? _Dato(Icons.person_outline, valor, acento: acento)
+                destacado
+                    ? _Dato(Icons.person_outline, valor, destacado: true)
                     : _Texto(
                       valor.isEmpty ? '—' : valor,
                       estilo:
@@ -826,9 +725,13 @@ class _Campo extends StatelessWidget {
 }
 
 class _Importe extends StatelessWidget {
-  const _Importe(this.deposito);
+  const _Importe(this.deposito, {this.mostrarUnidad = true});
 
   final DepositoChequeEntity deposito;
+
+  /// Con la unidad («Bs 570.00») o solo la cifra, cuando la moneda va en su
+  /// propia columna.
+  final bool mostrarUnidad;
 
   @override
   Widget build(BuildContext context) {
@@ -836,7 +739,9 @@ class _Importe extends StatelessWidget {
       fit: BoxFit.scaleDown,
       alignment: Alignment.centerRight,
       child: Text(
-        FormatoMoneda.conUnidad(deposito.moneda, deposito.importe),
+        mostrarUnidad
+            ? FormatoMoneda.conUnidad(deposito.moneda, deposito.importe)
+            : FormatoMoneda.monto.format(deposito.importe),
         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
           fontWeight: Peso.dato,
           fontFeatures: cifrasTabulares,

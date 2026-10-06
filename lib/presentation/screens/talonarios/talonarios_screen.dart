@@ -17,6 +17,7 @@ import 'package:bosque_flutter/presentation/screens/talonarios/talonarios_alta_l
 import 'package:bosque_flutter/presentation/screens/talonarios/talonarios_entrega_lote_screen.dart';
 import 'package:bosque_flutter/presentation/screens/talonarios/talonarios_catalogos_screen.dart';
 import 'package:bosque_flutter/presentation/widgets/shared/permission_widget.dart';
+import 'package:bosque_flutter/presentation/widgets/talonarios/dialogo_cambio_empresa.dart';
 import 'package:bosque_flutter/presentation/widgets/talonarios/reportes_talonarios.dart';
 import 'package:bosque_flutter/presentation/widgets/talonarios/formulario_talonario.dart';
 import 'package:bosque_flutter/presentation/widgets/talonarios/talonarios_comunes.dart';
@@ -73,6 +74,10 @@ class _TalonariosScreenState extends ConsumerState<TalonariosScreen> {
   /// lado no hay forma de deshacerlo.
   final Set<BigInt> _enCurso = <BigInt>{};
 
+  /// Modo para elegir varios y cambiarles la empresa de una vez.
+  bool _seleccionando = false;
+  final Set<BigInt> _seleccion = <BigInt>{};
+
   static const Map<int, String> _estados = {
     1: 'Adquirido',
     2: 'Entregado',
@@ -88,6 +93,8 @@ class _TalonariosScreenState extends ConsumerState<TalonariosScreen> {
     // family cada toque instanciaría otro FutureProvider en loading —cinco
     // chips, cinco parpadeos de pantalla completa y el scroll perdido.
     final async = ref.watch(talonariosProvider(_filtroServidor));
+    final datos = async.valueOrNull;
+    final visibles = datos == null ? const <TalonarioEntity>[] : _filtrar(datos);
 
     return LayoutBuilder(
       builder: (context, cajon) {
@@ -110,8 +117,9 @@ class _TalonariosScreenState extends ConsumerState<TalonariosScreen> {
           body: SafeArea(
             child: Column(
               children: [
-                _cabecera(aire, async.valueOrNull),
-                _filtros(aire, async.valueOrNull),
+                _cabecera(aire, datos),
+                _filtros(aire, datos),
+                if (_seleccionando) _barraSeleccion(aire, visibles),
                 const Divider(height: 1),
                 Expanded(child: _contenido(async, aire)),
               ],
@@ -207,6 +215,19 @@ class _TalonariosScreenState extends ConsumerState<TalonariosScreen> {
                         context,
                         talonarios: datos ?? const [],
                       ),
+                ),
+              ),
+              // Cambiar la empresa de varios a la vez: se filtra, se tilda y se
+              // aplica. Es una edición, así que va con el botón de editar.
+              PermissionWidget(
+                buttonName: TalonariosBotones.editar,
+                child: IconButton(
+                  tooltip:
+                      _seleccionando
+                          ? 'Salir de la selección'
+                          : 'Seleccionar varios para cambiarles la empresa',
+                  icon: Icon(_seleccionando ? Icons.close : Icons.checklist),
+                  onPressed: _alternarSeleccion,
                 ),
               ),
               // Tipos de recibo y grupos. Se administran poco —7 y 3 filas—
@@ -465,7 +486,7 @@ class _TalonariosScreenState extends ConsumerState<TalonariosScreen> {
         if (aire == Aire.amplio) {
           return Column(
             children: [
-              const CabeceraTablaTalonarios(),
+              CabeceraTablaTalonarios(conSeleccion: _seleccionando),
               Expanded(
                 child: RefreshIndicator(
                   onRefresh: () async => refrescarTalonarios(ref),
@@ -477,8 +498,12 @@ class _TalonariosScreenState extends ConsumerState<TalonariosScreen> {
                       return FilaTablaTalonario(
                         talonario: t,
                         par: i.isEven,
-                        onTap: () => _verHistorial(t),
-                        acciones: _acciones(t),
+                        onTap: _alAbrir(t),
+                        acciones: _seleccionando ? null : _acciones(t),
+                        seleccionado:
+                            _seleccionando
+                                ? _seleccion.contains(t.codTalonario)
+                                : null,
                       );
                     },
                   ),
@@ -506,8 +531,10 @@ class _TalonariosScreenState extends ConsumerState<TalonariosScreen> {
               final t = lista[i];
               return TarjetaTalonario(
                 talonario: t,
-                onTap: () => _verHistorial(t),
-                acciones: _acciones(t),
+                onTap: _alAbrir(t),
+                acciones: _seleccionando ? null : _acciones(t),
+                seleccionado:
+                    _seleccionando ? _seleccion.contains(t.codTalonario) : null,
               );
             },
           ),
@@ -525,6 +552,95 @@ class _TalonariosScreenState extends ConsumerState<TalonariosScreen> {
           t.datoTipo.toLowerCase().contains(_busqueda) ||
           t.datoDestinatario.toLowerCase().contains(_busqueda);
     }).toList();
+  }
+
+  // ── Selección para cambiar la empresa ─────────────────────────────────────
+
+  void _alternarSeleccion() => setState(() {
+    _seleccionando = !_seleccionando;
+    _seleccion.clear();
+  });
+
+  /// Un toque abre el historial, salvo en modo selección, donde tilda la fila.
+  VoidCallback _alAbrir(TalonarioEntity t) =>
+      _seleccionando
+          ? () => setState(() {
+            if (!_seleccion.remove(t.codTalonario)) {
+              _seleccion.add(t.codTalonario);
+            }
+          })
+          : () => _verHistorial(t);
+
+  /// Cuenta y actúa solo sobre lo que se ve: si tras elegir se cambió un
+  /// filtro, lo tildado que quedó fuera de la lista no se toca.
+  Widget _barraSeleccion(Aire aire, List<TalonarioEntity> visibles) {
+    final elegidos =
+        visibles.where((t) => _seleccion.contains(t.codTalonario)).toList();
+    final todos = visibles.isNotEmpty && elegidos.length == visibles.length;
+
+    return Container(
+      width: double.infinity,
+      color: context.cs.secondaryContainer,
+      padding: EdgeInsets.symmetric(
+        horizontal: aire.esChico ? Esp.m : Esp.xl,
+        vertical: Esp.s,
+      ),
+      child: Wrap(
+        crossAxisAlignment: WrapCrossAlignment.center,
+        spacing: Esp.m,
+        runSpacing: Esp.xs,
+        children: [
+          Text(
+            elegidos.length == 1
+                ? '1 seleccionado'
+                : '${elegidos.length} seleccionados',
+            style: Theme.of(context).textTheme.titleSmall?.copyWith(
+              color: context.cs.onSecondaryContainer,
+            ),
+          ),
+          TextButton(
+            onPressed:
+                visibles.isEmpty
+                    ? null
+                    : () => setState(() {
+                      final ids = visibles.map((t) => t.codTalonario);
+                      if (todos) {
+                        _seleccion.removeAll(ids);
+                      } else {
+                        _seleccion.addAll(ids);
+                      }
+                    }),
+            child: Text(
+              todos
+                  ? 'Quitar selección'
+                  : 'Seleccionar los ${visibles.length} visibles',
+            ),
+          ),
+          FilledButton.icon(
+            onPressed: elegidos.isEmpty ? null : () => _cambiarEmpresa(elegidos),
+            icon: const Icon(Icons.business_outlined, size: 18),
+            label: const Text('Cambiar empresa'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _cambiarEmpresa(List<TalonarioEntity> elegidos) async {
+    final cambiados = await mostrarCambioEmpresa(context, talonarios: elegidos);
+    if (cambiados == null || !mounted) return;
+
+    refrescarTalonarios(ref);
+    setState(() {
+      _seleccionando = false;
+      _seleccion.clear();
+    });
+    mostrarAviso(
+      context,
+      cambiados == 1
+          ? 'Empresa actualizada en 1 talonario'
+          : 'Empresa actualizada en $cambiados talonarios',
+    );
   }
 
   // ── Acciones de una fila ──────────────────────────────────────────────────

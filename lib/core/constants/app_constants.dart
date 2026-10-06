@@ -1112,6 +1112,10 @@ class AppConstants {
   // Entrega masiva: todo o nada
   static const String talEntregarLote = '/talonarios/entregar-lote';
 
+  // Cambio de empresa de uno o varios talonarios: todo o nada
+  static const String talCambiarEmpresaLote =
+      '/talonarios/cambiar-empresa-lote';
+
   // Reportes del módulo. Devuelven bytes de PDF, no ApiResponse: se piden con
   // DioClient.descargarReportePdf y no con postAndReturn*.
   static const String talRptInventario = '/talonarios/reporte-inventario';

@@ -371,13 +371,16 @@ void main() {
   }
 
   // Modo de lista que corresponde a cada ancho de ventana (el área de
-  // resultados mide la ventana menos el relleno de la página).
+  // resultados mide la ventana menos el relleno de la página). La tabla tiene
+  // siempre una columna por dato; con menos de 1520 px de área no se aprietan
+  // las columnas: la tabla se desplaza en horizontal.
   final modoPorAncho = {
     390.0: 'lista-tarjetas',
     700.0: 'lista-tarjetas',
-    800.0: 'lista-compacta',
-    1000.0: 'lista-compacta',
+    800.0: 'lista-tabla',
+    1000.0: 'lista-tabla',
     1400.0: 'lista-tabla',
+    1800.0: 'lista-tabla',
   };
 
   modoPorAncho.forEach((ancho, modo) {
@@ -389,7 +392,6 @@ void main() {
       expect(errores, isEmpty, reason: 'a $ancho');
       expect(find.textContaining('Banco Mercantil'), findsWidgets);
       expect(find.text('12 registros'), findsOneWidget);
-      // Nunca scroll horizontal ni DataTable.
       expect(find.byType(DataTable), findsNothing);
       expect(find.byKey(ValueKey(modo)), findsOneWidget, reason: 'a $ancho');
       expect(
@@ -400,7 +402,7 @@ void main() {
   });
 
   // El texto ampliado es donde primero se rompen los anchos fijos.
-  for (final ancho in [390.0, 800.0, 1400.0]) {
+  for (final ancho in [390.0, 800.0, 1400.0, 1800.0]) {
     testWidgets('el listado con texto al 150% no desborda a ${ancho.toInt()}', (
       tester,
     ) async {
@@ -414,17 +416,87 @@ void main() {
     });
   }
 
-  testWidgets('a media pantalla se ven muchas más filas que con tarjetas', (
+  const columnas = [
+    'ID',
+    'Cliente',
+    'Banco',
+    'Empresa',
+    'Vendedor',
+    'Importe',
+    'Moneda',
+    'Fecha Ingreso',
+    'Nro. Transacción',
+    'Estado',
+    'Registrado Por',
+    'Acciones',
+  ];
+
+  testWidgets('cada dato tiene su propia columna', (tester) async {
+    final errores = await buscarConDatos(tester, 1800);
+    expect(errores, isEmpty);
+
+    final tabla = find.byKey(const ValueKey('lista-tabla'));
+    for (final c in columnas) {
+      expect(
+        find.descendant(of: tabla, matching: find.text(c)),
+        findsOneWidget,
+        reason: 'columna $c',
+      );
+    }
+    // Nada de celdas dobles.
+    for (final c in [
+      'Cliente / Banco',
+      'Empresa / Vendedor',
+      'Transacción / Registró',
+    ]) {
+      expect(find.text(c), findsNothing, reason: c);
+    }
+
+    // Importe (solo la cifra) y moneda, cada uno en su columna.
+    expect(find.text('12,345,678.90'), findsOneWidget);
+    expect(find.text('Bs'), findsNWidgets(10), reason: 'una moneda por fila');
+    // Banco y vendedor con su texto completo en su propia celda.
+    expect(
+      find.descendant(of: tabla, matching: find.textContaining('Banco Mercantil')),
+      findsOneWidget,
+    );
+    expect(find.text('Vendedor Con Nombre Y Apellido Largos'), findsOneWidget);
+    expect(find.text('Ana'), findsOneWidget);
+    expect(find.text('TRX-2026-09-000123456789'), findsOneWidget);
+  });
+
+  testWidgets('con poco ancho la tabla conserva sus columnas y se desplaza', (
     tester,
   ) async {
-    final errores = await buscarConDatos(tester, 900);
+    final errores = await buscarConDatos(tester, 1000);
     expect(errores, isEmpty);
-    expect(find.byKey(const ValueKey('lista-compacta')), findsOneWidget);
 
-    // Dos filas seguidas ocupan poco: con tarjetas de ~290 px serían ~580.
-    final arriba = tester.getTopLeft(find.text('#1')).dy;
-    final dosFilasDespues = tester.getTopLeft(find.text('#3')).dy;
-    expect(dosFilasDespues - arriba, lessThan(200));
+    final tabla = find.byKey(const ValueKey('lista-tabla'));
+    expect(
+      find.descendant(of: tabla, matching: find.byType(Scrollbar)),
+      findsOneWidget,
+      reason: 'barra de desplazamiento horizontal',
+    );
+    // Las doce columnas siguen ahí, aunque algunas queden fuera de pantalla.
+    for (final c in columnas) {
+      expect(
+        find.descendant(of: tabla, matching: find.text(c)),
+        findsOneWidget,
+        reason: 'columna $c',
+      );
+    }
+  });
+
+  testWidgets('con ancho de sobra no hay desplazamiento horizontal', (
+    tester,
+  ) async {
+    await buscarConDatos(tester, 1800);
+
+    final tabla = find.byKey(const ValueKey('lista-tabla'));
+    expect(
+      find.descendant(of: tabla, matching: find.byType(Scrollbar)),
+      findsNothing,
+    );
   });
 
   testWidgets('el filtro a media pantalla ocupa dos filas', (tester) async {

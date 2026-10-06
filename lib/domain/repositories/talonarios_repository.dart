@@ -111,6 +111,19 @@ abstract class TalonariosRepository {
     required BigInt audUsuario,
   });
 
+  // ==================== CAMBIO DE EMPRESA ====================
+
+  /// Cambia la empresa de uno o varios talonarios. TODO O NADA.
+  ///
+  /// Un solo endpoint para uno y para muchos. Los que ya están en esa empresa
+  /// pasan sin escribirse. Mueve los recibos ya emitidos al reporte de SAP de
+  /// la otra empresa: es para corregir una empresa mal cargada.
+  Future<List<BigInt>> cambiarEmpresaLote({
+    required List<BigInt> codTalonarios,
+    required BigInt codEmpresa,
+    required BigInt audUsuario,
+  });
+
   // ==================== REPORTES ====================
   //
   // Devuelven los bytes del PDF ya armado por Jasper en el backend. La pantalla

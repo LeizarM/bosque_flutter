@@ -142,7 +142,10 @@ class BancosExportService extends BaseApiRepository {
   }
 
   // ─────────────────────────────────────────────────────────────────────────────
-  // Ganadero y Mercantil: Excel/CSV simple, cabeceras en fila 1
+  // Ganadero, Mercantil y Global: Excel nativo (.xlsx), sin problemas de
+  // separador ni de codificación (UTF-8 interno), igual en todas las versiones
+  // de Office. Antes generaba .csv con sep=; que en algunos Excel rompía los
+  // acentos y Ñ al entrar en conflicto con el BOM UTF-8.
   // ─────────────────────────────────────────────────────────────────────────────
   Future<void> _exportarExcelSimple(
     List<Map<String, dynamic>> datos,
@@ -153,27 +156,60 @@ class BancosExportService extends BaseApiRepository {
     String empresa = '',
   ]) async {
     if (datos.isEmpty) return;
-    final sb = StringBuffer();
-    // Fila 1: cabeceras
+
+    var excel = Excel.createExcel();
+    Sheet sheet = excel[nombreHoja];
+    if (excel.tables.containsKey('Sheet1')) {
+      excel.delete('Sheet1');
+    }
+
     final cols =
         datos.first.keys
             .where((k) => !k.startsWith('_') && k != '_liquidoInterno')
             .toList();
-    sb.writeln(cols.map(_escaparCsv).join(';'));
-    // Datos desde fila 2
-    for (final row in datos) {
-      sb.writeln(
-        cols.map((c) => _escaparCsv(row[c]?.toString() ?? '')).join(';'),
+
+    // Fila 1 (rowIndex 0): Cabeceras en negrita
+    final headerStyle = CellStyle(bold: true);
+    for (int c = 0; c < cols.length; c++) {
+      var cell = sheet.cell(
+        CellIndex.indexByColumnRow(columnIndex: c, rowIndex: 0),
       );
+      cell.value = TextCellValue(cols[c]);
+      cell.cellStyle = headerStyle;
     }
 
-    final sufijo = empresa.isNotEmpty ? '-$empresa' : '';
-    await _descargar(
-      sb.toString(),
-      '$prefijo-$mes-$anio$sufijo.csv',
-      'text/csv;charset=utf-8',
-      bom: true,
-    );
+    // Datos desde fila 2 (rowIndex 1)
+    for (int r = 0; r < datos.length; r++) {
+      final row = datos[r];
+      for (int c = 0; c < cols.length; c++) {
+        var cell = sheet.cell(
+          CellIndex.indexByColumnRow(columnIndex: c, rowIndex: 1 + r),
+        );
+        cell.value = TextCellValue(row[cols[c]]?.toString() ?? '');
+      }
+    }
+
+    // Ajuste automático de ancho: mide el texto más largo de cada columna
+    // (cabecera + todos los datos). Límite de 10 (mínimo) a 60 (máximo).
+    for (int c = 0; c < cols.length; c++) {
+      double maxLen = cols[c].length.toDouble();
+      for (final row in datos) {
+        final val = row[cols[c]]?.toString() ?? '';
+        if (val.length > maxLen) maxLen = val.length.toDouble();
+      }
+      // Factor ~1.2 para compensar el padding interno de Excel
+      sheet.setColumnWidth(c, (maxLen * 1.2).clamp(10.0, 60.0));
+    }
+
+    final bytes = excel.encode();
+    if (bytes != null) {
+      final sufijo = empresa.isNotEmpty ? '-$empresa' : '';
+      await _descargarBytes(
+        bytes,
+        '$prefijo-$mes-$anio$sufijo.xlsx',
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      );
+    }
   }
 
   // ─────────────────────────────────────────────────────────────────────────────

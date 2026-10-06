@@ -135,12 +135,15 @@ class _SeccionPlantillas extends ConsumerWidget {
     WidgetRef ref,
     BioHrsEntity t,
   ) async {
+    // La SP (p_abm_BioHrs, ACCION='D') bloquea el borrado si algún horario
+    // semanal todavía usa esta plantilla — devuelve un error nombrando en
+    // cuántos días y en cuáles, que avisarError muestra tal cual. Este
+    // diálogo ya no necesita advertir sobre esa consecuencia porque ahora
+    // simplemente no va a pasar.
     final ok = await confirmar(
       context,
       titulo: 'Eliminar plantilla',
-      mensaje:
-          '¿Eliminar "${t.nombre}"? Si algún horario semanal la usa, se '
-          'queda sin turno asignado ese día.',
+      mensaje: '¿Eliminar "${t.nombre}"?',
       accion: 'Eliminar',
       destructiva: true,
     );

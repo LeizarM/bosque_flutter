@@ -94,11 +94,16 @@ class TarjetaTalonario extends StatelessWidget {
     required this.talonario,
     this.onTap,
     this.acciones,
+    this.seleccionado,
   });
 
   final TalonarioEntity talonario;
   final VoidCallback? onTap;
   final Widget? acciones;
+
+  /// Null = no hay modo de selección y no se dibuja la casilla. La casilla
+  /// dispara [onTap], que en ese modo alterna la selección.
+  final bool? seleccionado;
 
   @override
   Widget build(BuildContext context) {
@@ -107,7 +112,10 @@ class TarjetaTalonario extends StatelessWidget {
       // `Card` trae elevacion, y una sombra por fila es caro de rasterizar en
       // web: con 480 filas el scroll se traba. Superficie plana con borde: el
       // estilo Material 3 y una fraccion del costo por frame.
-      color: context.cs.surfaceContainerLow,
+      color:
+          seleccionado == true
+              ? context.cs.secondaryContainer
+              : context.cs.surfaceContainerLow,
       borderRadius: BorderRadius.circular(Esquina.media),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
@@ -119,6 +127,8 @@ class TarjetaTalonario extends StatelessWidget {
           ),
           child: Row(
             children: [
+              if (seleccionado != null)
+                Checkbox(value: seleccionado, onChanged: (_) => onTap?.call()),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -152,7 +162,8 @@ class TarjetaTalonario extends StatelessWidget {
                     ),
                     const SizedBox(height: Esp.xs),
                     Text(
-                      '${t.datoTipo}  ·  folios ${t.numeracionInicial}–${t.numeracionFinal}',
+                      '${t.datoTipo}  ·  folios ${t.numeracionInicial}–${t.numeracionFinal}'
+                      '${t.datoEmpresa.isEmpty ? '' : '  ·  ${t.datoEmpresa}'}',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: context.apagado(),
@@ -197,15 +208,20 @@ class TarjetaTalonario extends StatelessWidget {
 /// Anchos de las columnas. Fijos para que cabecera y filas queden alineadas
 /// sin medir nada.
 abstract final class _Col {
+  static const double seleccion = 48;
   static const double nro = 120;
   static const double folios = 150;
+  static const double empresa = 110;
   static const double estado = 130;
   static const double acciones = 52;
 }
 
 /// La cabecera de la tabla. Va **fuera** del scroll, para que no se vaya.
 class CabeceraTablaTalonarios extends StatelessWidget {
-  const CabeceraTablaTalonarios({super.key});
+  const CabeceraTablaTalonarios({super.key, this.conSeleccion = false});
+
+  /// Deja el hueco de la casilla, para que siga alineada con las filas.
+  final bool conSeleccion;
 
   @override
   Widget build(BuildContext context) {
@@ -220,11 +236,14 @@ class CabeceraTablaTalonarios extends StatelessWidget {
       color: context.cs.surfaceContainerHighest,
       child: Row(
         children: [
+          if (conSeleccion) const SizedBox(width: _Col.seleccion),
           SizedBox(width: _Col.nro, child: Text('NÚMERO', style: estilo)),
           const SizedBox(width: Esp.m),
           Expanded(flex: 3, child: Text('TIPO', style: estilo)),
           const SizedBox(width: Esp.m),
           SizedBox(width: _Col.folios, child: Text('FOLIOS', style: estilo)),
+          const SizedBox(width: Esp.m),
+          SizedBox(width: _Col.empresa, child: Text('EMPRESA', style: estilo)),
           const SizedBox(width: Esp.m),
           SizedBox(width: _Col.estado, child: Text('ESTADO', style: estilo)),
           const SizedBox(width: Esp.m),
@@ -247,6 +266,7 @@ class FilaTablaTalonario extends StatelessWidget {
     required this.par,
     this.onTap,
     this.acciones,
+    this.seleccionado,
   });
 
   final TalonarioEntity talonario;
@@ -257,6 +277,10 @@ class FilaTablaTalonario extends StatelessWidget {
   final VoidCallback? onTap;
   final Widget? acciones;
 
+  /// Null = no hay modo de selección y no se dibuja la casilla. La casilla
+  /// dispara [onTap], que en ese modo alterna la selección.
+  final bool? seleccionado;
+
   @override
   Widget build(BuildContext context) {
     final t = talonario;
@@ -264,7 +288,11 @@ class FilaTablaTalonario extends StatelessWidget {
       onTap: onTap,
       child: Container(
         color:
-            par ? null : context.cs.surfaceContainerLow.withValues(alpha: 0.5),
+            seleccionado == true
+                ? context.cs.secondaryContainer.withValues(alpha: 0.5)
+                : par
+                ? null
+                : context.cs.surfaceContainerLow.withValues(alpha: 0.5),
         // Solo horizontal: el alto lo fija el `itemExtent` de la lista, y el
         // `Row` centra. Con padding vertical, el `PopupMenuButton` de acciones
         // —que mide 48 por el mínimo táctil— más 24 de padding se pasaba del
@@ -273,6 +301,14 @@ class FilaTablaTalonario extends StatelessWidget {
         alignment: Alignment.centerLeft,
         child: Row(
           children: [
+            if (seleccionado != null)
+              SizedBox(
+                width: _Col.seleccion,
+                child: Checkbox(
+                  value: seleccionado,
+                  onChanged: (_) => onTap?.call(),
+                ),
+              ),
             SizedBox(
               width: _Col.nro,
               child: Text(
@@ -302,6 +338,16 @@ class FilaTablaTalonario extends StatelessWidget {
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: context.numero(),
+              ),
+            ),
+            const SizedBox(width: Esp.m),
+            SizedBox(
+              width: _Col.empresa,
+              child: Text(
+                t.datoEmpresa.isEmpty ? '—' : t.datoEmpresa,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: t.datoEmpresa.isEmpty ? context.apagado() : null,
               ),
             ),
             const SizedBox(width: Esp.m),

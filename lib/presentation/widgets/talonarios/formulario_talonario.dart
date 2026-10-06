@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'package:bosque_flutter/core/state/rrhh_provider.dart';
 import 'package:bosque_flutter/core/state/talonarios_provider.dart';
 import 'package:bosque_flutter/core/state/user_provider.dart';
 import 'package:bosque_flutter/core/ui/aviso.dart';
@@ -12,14 +13,15 @@ import 'package:bosque_flutter/domain/entities/talonario_entity.dart';
 
 /// Edita un talonario suelto.
 ///
-/// **Solo tres campos son editables**, y no es una decisión de esta pantalla:
-/// `p_abm_tmto_Talonario` con `ACCION='U'` ignora a propósito `costoBs`,
-/// `numeracionInicial`, `numeracionFinal` y `codEmpresa`. Cambiar el rango de
-/// folios de un talonario que ya circuló invalidaría su historial de eventos
-/// —y el wizard viejo ya los tenía comentados, por lo mismo.
+/// **Tipo, número, observación y empresa son editables.** El rango de folios y
+/// el costo no: `p_abm_tmto_Talonario` con `ACCION='U'` los ignora a propósito,
+/// porque cambiarlos en un talonario que ya circuló invalidaría su historial
+/// de eventos —y el wizard viejo ya los tenía comentados, por lo mismo.
 ///
 /// Esos datos se muestran igual, en solo lectura y con el motivo escrito:
 /// esconderlos deja a quien mira preguntándose dónde están.
+///
+/// La empresa va por `ACCION='E'`, aparte del `U`: mueve los recibos de SAP.
 class FormularioTalonario extends ConsumerStatefulWidget {
   const FormularioTalonario({super.key, required this.talonario});
 
@@ -33,6 +35,7 @@ class FormularioTalonario extends ConsumerStatefulWidget {
 class _FormularioTalonarioState extends ConsumerState<FormularioTalonario> {
   final _formKey = GlobalKey<FormState>();
   late BigInt _codTipoRecibo = widget.talonario.codTipoRecibo;
+  late BigInt _codEmpresa = widget.talonario.codEmpresa;
   late final _nro = TextEditingController(text: widget.talonario.nroTalonario);
   late final _observacion = TextEditingController(
     text: widget.talonario.observacion,
@@ -54,26 +57,40 @@ class _FormularioTalonarioState extends ConsumerState<FormularioTalonario> {
       _ocupado = true;
       _error = null;
     });
+    var datosGuardados = false;
     try {
       final t = widget.talonario;
-      await ref
-          .read(talonariosRepositoryProvider)
-          .registrarTalonario(
-            TalonarioEntity(
-              codTalonario: t.codTalonario,
-              codTipoRecibo: _codTipoRecibo,
-              nroTalonario: _nro.text.trim(),
-              // Van los valores actuales: el SP los ignora en el UPDATE, pero
-              // mandar ceros sería mentirle al modelo.
-              costoBs: t.costoBs,
-              numeracionInicial: t.numeracionInicial,
-              numeracionFinal: t.numeracionFinal,
-              estado: t.estado,
-              codEmpresa: t.codEmpresa,
-              observacion: _observacion.text.trim(),
-              audUsuario: BigInt.from(ref.read(userProvider)?.codUsuario ?? 0),
-            ),
-          );
+      final repo = ref.read(talonariosRepositoryProvider);
+      final aud = BigInt.from(ref.read(userProvider)?.codUsuario ?? 0);
+
+      await repo.registrarTalonario(
+        TalonarioEntity(
+          codTalonario: t.codTalonario,
+          codTipoRecibo: _codTipoRecibo,
+          nroTalonario: _nro.text.trim(),
+          // Van los valores actuales: el SP los ignora en el UPDATE, pero
+          // mandar ceros sería mentirle al modelo.
+          costoBs: t.costoBs,
+          numeracionInicial: t.numeracionInicial,
+          numeracionFinal: t.numeracionFinal,
+          estado: t.estado,
+          codEmpresa: t.codEmpresa,
+          observacion: _observacion.text.trim(),
+          audUsuario: aud,
+        ),
+      );
+      datosGuardados = true;
+
+      // Después del UPDATE y no antes: su falla probable es un número repetido,
+      // y así ese error no deja la empresa ya cambiada. Si falla esta, el
+      // reintento es seguro: ambas llamadas repiten sin efecto.
+      if (_codEmpresa != t.codEmpresa) {
+        await repo.cambiarEmpresaLote(
+          codTalonarios: [t.codTalonario],
+          codEmpresa: _codEmpresa,
+          audUsuario: aud,
+        );
+      }
       if (!mounted) return;
       refrescarTalonarios(ref);
       Navigator.pop(context);
@@ -81,7 +98,10 @@ class _FormularioTalonarioState extends ConsumerState<FormularioTalonario> {
     } catch (e) {
       // Se queda abierto con todo intacto: el error más probable es un
       // nroTalonario repetido, y perder el formulario por eso sería absurdo.
+      // Si el UPDATE ya entró, el listado se refresca igual: lo que muestra
+      // detrás ya no es lo que hay.
       if (!mounted) return;
+      if (datosGuardados) refrescarTalonarios(ref);
       setState(() {
         _error = e;
         _ocupado = false;
@@ -93,6 +113,9 @@ class _FormularioTalonarioState extends ConsumerState<FormularioTalonario> {
   Widget build(BuildContext context) {
     final t = widget.talonario;
     final tipos = ref.watch(tiposReciboProvider);
+    final empresas = ref.watch(empresasProvider);
+    // Sin entregas no hay recibos emitidos que mover en SAP.
+    final avisaSap = _codEmpresa != t.codEmpresa && t.entregas > 0;
 
     return AlertDialog(
       title: Text('Editar ${t.nroTalonario}'),
@@ -135,6 +158,43 @@ class _FormularioTalonarioState extends ConsumerState<FormularioTalonario> {
                         onElegir:
                             (v) => setState(
                               () => _codTipoRecibo = v ?? _codTipoRecibo,
+                            ),
+                      ),
+                ),
+                const SizedBox(height: Esp.m),
+
+                empresas.when(
+                  loading: () => const LinearProgressIndicator(minHeight: 2),
+                  error:
+                      (e, _) => MensajeError(
+                        error: e,
+                        compacto: true,
+                        onReintentar:
+                            () => ref.read(empresasProvider.notifier).refresh(),
+                      ),
+                  data:
+                      (lista) => ComboBuscable<int>(
+                        etiqueta: 'Empresa',
+                        valor: _codEmpresa.toInt(),
+                        opciones:
+                            lista
+                                .map(
+                                  (e) => DropdownMenuEntry(
+                                    value: e.codEmpresa,
+                                    label: e.nombre,
+                                  ),
+                                )
+                                .toList(),
+                        ayuda:
+                            avisaSap
+                                ? 'Sus recibos emitidos pasan al reporte de '
+                                    'SAP de la otra empresa.'
+                                : null,
+                        onElegir:
+                            (v) => setState(
+                              () =>
+                                  _codEmpresa =
+                                      v == null ? _codEmpresa : BigInt.from(v),
                             ),
                       ),
                 ),
@@ -217,13 +277,12 @@ class _FormularioTalonarioState extends ConsumerState<FormularioTalonario> {
           const SizedBox(height: Esp.s),
           _dato('Folios', '${t.numeracionInicial} – ${t.numeracionFinal}'),
           _dato('Costo', 'Bs ${t.costoBs.toStringAsFixed(2)}'),
-          _dato('Empresa', t.datoEmpresa.isEmpty ? '—' : t.datoEmpresa),
           _dato('Estado', t.estadoActual),
           const SizedBox(height: Esp.s),
           Text(
-            'El rango de folios, el costo y la empresa no se modifican: este '
-            'talonario ya tiene $movimientos movimientos registrados y '
-            'cambiarlos invalidaría su historial.',
+            'El rango de folios y el costo no se modifican: este talonario ya '
+            'tiene $movimientos movimientos registrados y cambiarlos '
+            'invalidaría su historial.',
             style: context.apagado(),
           ),
         ],

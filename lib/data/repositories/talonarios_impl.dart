@@ -327,6 +327,26 @@ class TalonariosImpl extends BaseApiRepository implements TalonariosRepository {
     );
   }
 
+  // ==================== CAMBIO DE EMPRESA ====================
+
+  @override
+  Future<List<BigInt>> cambiarEmpresaLote({
+    required List<BigInt> codTalonarios,
+    required BigInt codEmpresa,
+    required BigInt audUsuario,
+  }) async {
+    return postAndReturnFullResponse<List<BigInt>>(
+      endpoint: AppConstants.talCambiarEmpresaLote,
+      data: {
+        'codTalonarios': codTalonarios.map((e) => e.toInt()).toList(),
+        'codEmpresa': codEmpresa.toInt(),
+        'audUsuario': audUsuario.toInt(),
+      },
+      fromJson: _idsDeLaRespuesta,
+      errorMessage: 'Error al cambiar la empresa de los talonarios',
+    );
+  }
+
   /// El envelope trae data como lista de números; los pasa a BigInt.
   static List<BigInt> _idsDeLaRespuesta(Map<String, dynamic> json) {
     final lista = json['data'] as List<dynamic>?;
