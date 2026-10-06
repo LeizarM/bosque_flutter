@@ -53,10 +53,9 @@ class CajaFuerteScreen extends ConsumerWidget {
         mostrarAviso(
           context,
           cuantas == 1
-              ? 'Registrada, y la tarea quedó completada. La ves abajo, en '
-                  '"Registrado hoy".'
-              : '$cuantas llegadas registradas, y la tarea quedó completada. '
-                  'Las ves abajo, en "Registrado hoy".',
+              ? 'Registrada. La ves abajo, en "Registrado hoy".'
+              : '$cuantas llegadas registradas. Las ves abajo, en '
+                  '"Registrado hoy".',
         );
         notifier.limpiarFormulario();
         ref.invalidate(llegadasCajaFuerteDeHoyProvider(idBitTarea));
@@ -165,9 +164,11 @@ class CajaFuerteScreen extends ConsumerWidget {
           },
         ),
         ),
-        // Guardar cierra la tarea y se hace una sola vez: abajo, fijo, al
-        // final del recorrido de lectura. Antes quedaba al final del scroll
-        // y con varios registros había que ir a buscarlo.
+        // "Guardar" es lo que graba las llegadas del formulario: abajo, fijo,
+        // al final del recorrido de lectura. Antes decía "Guardar y cerrar
+        // tarea", pero cerrar la tarea no es un paso aparte: guardar ya marca
+        // la ocurrencia del día como hecha, y se puede volver a guardar en el
+        // mismo día (Marcelo, 2026-10-05: el texto sobraba).
         bottomNavigationBar: BarraAccionTareas(
           resumen: Text(
             state.filas.length == 1
@@ -195,7 +196,7 @@ class CajaFuerteScreen extends ConsumerWidget {
                     )
                     : const Icon(Icons.check, size: 18),
             label: Text(
-              state.guardando ? 'Guardando…' : 'Guardar y cerrar tarea',
+              state.guardando ? 'Guardando…' : 'Guardar',
             ),
           ),
         ),

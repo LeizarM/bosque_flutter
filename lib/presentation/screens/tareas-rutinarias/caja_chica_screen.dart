@@ -138,11 +138,6 @@ class CajaChicaScreen extends ConsumerWidget {
     final notifier = ref.read(cajaChicaFlujoProvider(params).notifier);
 
     ref.listen(cajaChicaFlujoProvider(params), (previo, actual) {
-      if (actual.finalizado && previo?.finalizado != true) {
-        HapticFeedback.mediumImpact();
-        mostrarAviso(context, 'Caja chica finalizada — tarea completada.');
-        cerrarRuta(context, true);
-      }
       if (actual.mensajeError != null &&
           actual.mensajeError != previo?.mensajeError) {
         HapticFeedback.lightImpact();
@@ -229,29 +224,23 @@ class CajaChicaScreen extends ConsumerWidget {
                     ),
           ),
         ),
-        // Un solo FAB. Antes eran dos apilados —"Registrar egreso" y
-        // "Finalizar"— que juntos tapaban el final de la lista y ponían al
-        // mismo peso visual la acción que se repite muchas veces y la que se
-        // hace una sola vez y cierra la tarea. Finalizar se fue a la barra de
-        // abajo, al lado del saldo, que es el dato con el que se decide.
+        // Un solo FAB: registrar un egreso es lo único que se hace aquí, y
+        // cada uno se guarda en el momento. "Finalizar y cerrar tarea" se fue
+        // el 2026-10-05: solo marcaba la ocurrencia del día como hecha, y eso
+        // ahora lo hace el propio egreso (archivo SQL 78).
         floatingActionButton: FloatingActionButton.extended(
           heroTag: 'agregarEgreso',
           onPressed: () => _abrirFormularioEgreso(context, ref, params),
           icon: const Icon(Icons.remove_circle_outline),
           label: const Text('Registrar egreso'),
         ),
-        bottomNavigationBar: _BarraSaldo(
-          state: state,
-          // Sin una lectura buena no se finaliza nada.
-          onFinalizar:
-              !state.cargado || state.finalizando ? null : notifier.finalizar,
-        ),
+        bottomNavigationBar: _BarraSaldo(state: state),
       ),
     );
   }
 }
 
-/// Barra fija con la plata del lote y el botón que cierra la tarea.
+/// Barra fija con la plata del lote.
 ///
 /// El saldo vivía en una tira de 28px bajo el título del AppBar, en 11px: es
 /// el número con el que se decide si se puede pagar el próximo egreso, o sea
@@ -265,13 +254,11 @@ class CajaChicaScreen extends ConsumerWidget {
 /// "de 1.000, con 12 egresos".
 class _BarraSaldo extends StatelessWidget {
   final CajaChicaFlujoState state;
-  final VoidCallback? onFinalizar;
 
-  const _BarraSaldo({required this.state, required this.onFinalizar});
+  const _BarraSaldo({required this.state});
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
     // Sin plata no se puede registrar el próximo egreso: el saldo pasa al tono
     // de alerta del módulo en vez de quedar igual que cuando sobra.
     final sinSaldo = state.saldoActual <= 0;
@@ -302,23 +289,6 @@ class _BarraSaldo extends StatelessWidget {
             destacado: true,
           ),
         ],
-      ),
-      accion: FilledButton.icon(
-        onPressed: onFinalizar,
-        icon:
-            state.finalizando
-                ? SizedBox(
-                  width: 16,
-                  height: 16,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    color: scheme.onPrimary,
-                  ),
-                )
-                : const Icon(Icons.check),
-        label: Text(
-          state.finalizando ? 'Finalizando…' : 'Finalizar y cerrar tarea',
-        ),
       ),
     );
   }

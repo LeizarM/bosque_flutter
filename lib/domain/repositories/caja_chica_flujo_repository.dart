@@ -19,13 +19,11 @@ abstract class CajaChicaFlujoRepository {
     String moneda = 'BS',
   });
 
-  Future<void> finalizar(int idBitTarea);
-
   /// Cierra el lote vigente de la sucursal (del cargo actual del empleado
   /// dueño de esta ocurrencia) y abre el siguiente con su saldo inicial ya
   /// sembrado — reemplaza la mitad "esto reiniciara su caja chica" del
   /// legacy "Generar PDF" (el reporte en sí lo migra un esfuerzo aparte).
-  /// Acción independiente de [finalizar]: no cierra la tarea del día.
+  /// No cierra la ocurrencia del día: eso lo hace registrar un egreso.
   Future<void> cerrarLote(int idBitTarea);
 
   /// "Ver Cajas Chicas" del legacy — histórico de lotes de la sucursal de

@@ -53,15 +53,6 @@ class CajaChicaFlujoImpl extends BaseApiRepository
   }
 
   @override
-  Future<void> finalizar(int idBitTarea) async {
-    await postAndReturnId(
-      endpoint: AppConstants.tarCajaChicaFinalizar,
-      data: {'idBitTarea': idBitTarea},
-      errorMessage: 'No se pudo finalizar la caja chica.',
-    );
-  }
-
-  @override
   Future<void> cerrarLote(int idBitTarea) async {
     await postAndReturnId(
       endpoint: AppConstants.tarCajaChicaCerrarLote,

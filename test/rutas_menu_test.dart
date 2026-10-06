@@ -41,6 +41,8 @@ void main() {
     // encontrada»: por eso ahora están todas, no solo las que ya fallaron.
     'tacTareas/Tareas': 'MisTareasRutinariasScreen',
     'tacTareas/Bitacora': 'BitacoraTareasScreen',
+    // codVista 166 — 'Planilla Incapacidad' (padre 87).
+    'tacTareas/PlanillaIncapacidad': 'PlanillaIncapacidadScreen',
     // "Mi Equipo" (vista 155) sale del menú con el archivo SQL 59 y pasa a ser
     // un botón en Mis tareas. La redirección se queda mientras haya una base
     // sin el 59: con el ítem todavía en el menú y sin redirección, sería otra

@@ -37,6 +37,7 @@ export 'package:bosque_flutter/presentation/screens/tareas-rutinarias/cierre_ope
 export 'package:bosque_flutter/presentation/screens/tareas-rutinarias/traspaso_entre_sistemas_screen.dart';
 export 'package:bosque_flutter/presentation/screens/tareas-rutinarias/traspaso_efectivo_tesbase_screen.dart';
 export 'package:bosque_flutter/presentation/screens/tareas-rutinarias/bitacora_tareas_screen.dart';
+export 'package:bosque_flutter/presentation/screens/planilla-incapacidad/planilla_incapacidad_screen.dart';
 export 'package:bosque_flutter/presentation/screens/tareas-rutinarias/coches_screen.dart';
 export 'package:bosque_flutter/presentation/screens/tareas-rutinarias/dependientes_jefe_screen.dart';
 export 'package:bosque_flutter/presentation/screens/tareas-rutinarias/mis_tareas_rutinarias_screen.dart';

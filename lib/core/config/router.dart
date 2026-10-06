@@ -724,6 +724,18 @@ final routerProvider = Provider<GoRouter>((ref) {
                     const BitacoraTareasScreen(),
                   ),
             ),
+            // Planilla de Incapacidad: tb_vista 166 'tacTareas/PlanillaIncapacidad',
+            // bajo la 87.
+            GoRoute(
+              path: '/dashboard/tacTareas/PlanillaIncapacidad',
+              name: 'tacTareasPlanillaIncapacidad',
+              builder:
+                  (context, state) => _pantallaConTitulo(
+                    context,
+                    'Bosque - Planilla de Incapacidad',
+                    const PlanillaIncapacidadScreen(),
+                  ),
+            ),
             // Tarea 289 - "Verificar Traspaso de Efectivo Entre Sistemas"
             // (idATR 11, TesBase). Igual que Caja AXA: la genera el Job, asi
             // que la ocurrencia ya existe y llega desde la tarjeta.
@@ -1144,6 +1156,12 @@ final routerProvider = Provider<GoRouter>((ref) {
         GoRoute(
           path: '/tacTareas/Bitacora',
           redirect: (context, state) => '/dashboard/tacTareas/Bitacora',
+        ),
+        // Planilla de Incapacidad (vista 166 bajo la 87).
+        GoRoute(
+          path: '/tacTareas/PlanillaIncapacidad',
+          redirect:
+              (context, state) => '/dashboard/tacTareas/PlanillaIncapacidad',
         ),
 
         GoRoute(

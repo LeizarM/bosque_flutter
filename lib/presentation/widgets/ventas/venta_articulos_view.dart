@@ -1250,18 +1250,14 @@ class _VentasArticulosViewState extends ConsumerState<VentasArticulosView>
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
-        FittedBox(
-          fit: BoxFit.scaleDown,
-          alignment: Alignment.centerLeft,
-          child: Text.rich(
-            _resaltar(articulo.codArticulo),
-            maxLines: 1,
-            style: TextStyle(
-              fontFeatures: _tabular,
-              fontSize: 12,
-              fontWeight: FontWeight.w500,
-              color: colorScheme.onSurface,
-            ),
+        _codigoCopiable(
+          articulo.codArticulo,
+          texto: _resaltar(articulo.codArticulo),
+          estilo: TextStyle(
+            fontFeatures: _tabular,
+            fontSize: 12,
+            fontWeight: FontWeight.w500,
+            color: colorScheme.onSurface,
           ),
         ),
         const SizedBox(height: 4),
@@ -1276,6 +1272,54 @@ class _VentasArticulosViewState extends ConsumerState<VentasArticulosView>
           ],
         ),
       ],
+    );
+  }
+
+  /// Código del artículo que se copia al tocarlo (con su ícono al lado).
+  /// En una sola línea: si no entra, se achica.
+  Widget _codigoCopiable(
+    String codigo, {
+    required TextStyle estilo,
+    InlineSpan? texto,
+    double icono = 12,
+  }) {
+    final color = estilo.color ?? Theme.of(context).colorScheme.onSurface;
+    return Material(
+      type: MaterialType.transparency,
+      child: Tooltip(
+        message: 'Copiar código',
+        child: InkWell(
+          borderRadius: BorderRadius.circular(6),
+          onTap: () {
+            Clipboard.setData(ClipboardData(text: codigo));
+            HapticFeedback.selectionClick();
+            mostrarAviso(context, 'Código copiado');
+          },
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(0, 1, 2, 1),
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerLeft,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text.rich(
+                    texto ?? TextSpan(text: codigo),
+                    maxLines: 1,
+                    style: estilo,
+                  ),
+                  const SizedBox(width: 4),
+                  Icon(
+                    Icons.copy_rounded,
+                    size: icono,
+                    color: color.withValues(alpha: 0.6),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
     );
   }
 
@@ -1823,9 +1867,10 @@ class _VentasArticulosViewState extends ConsumerState<VentasArticulosView>
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
+                        _codigoCopiable(
                           a.codArticulo,
-                          style: _cifra(
+                          icono: 14,
+                          estilo: _cifra(
                             12.5,
                             peso: FontWeight.w500,
                             color: cs.primary,

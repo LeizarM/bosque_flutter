@@ -297,11 +297,14 @@ class EstadoTareas extends StatelessWidget {
 /// En escritorio el resumen va a la izquierda y el botón a la derecha con un
 /// ancho razonable: un botón de 1400 px no se lee como botón. En un cajón
 /// angosto el botón ocupa todo el ancho, debajo del resumen.
+///
+/// Sin [accion] queda solo el resumen fijo abajo: Caja Chica la usa así
+/// desde que se fue "Finalizar y cerrar tarea" (cada egreso ya se guarda solo).
 class BarraAccionTareas extends StatelessWidget {
   final Widget? resumen;
-  final Widget accion;
+  final Widget? accion;
 
-  const BarraAccionTareas({super.key, this.resumen, required this.accion});
+  const BarraAccionTareas({super.key, this.resumen, this.accion});
 
   @override
   Widget build(BuildContext context) {
@@ -329,22 +332,23 @@ class BarraAccionTareas extends StatelessWidget {
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      if (resumen != null) ...[
-                        resumen!,
+                      if (resumen != null) resumen!,
+                      if (resumen != null && accion != null)
                         const SizedBox(height: Esp.s),
-                      ],
-                      accion,
+                      if (accion != null) accion!,
                     ],
                   );
                 }
                 return Row(
                   children: [
                     Expanded(child: resumen ?? const SizedBox.shrink()),
-                    const SizedBox(width: Esp.l),
-                    ConstrainedBox(
-                      constraints: const BoxConstraints(minWidth: 240),
-                      child: accion,
-                    ),
+                    if (accion != null) ...[
+                      const SizedBox(width: Esp.l),
+                      ConstrainedBox(
+                        constraints: const BoxConstraints(minWidth: 240),
+                        child: accion,
+                      ),
+                    ],
                   ],
                 );
               },

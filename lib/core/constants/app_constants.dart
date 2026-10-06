@@ -635,6 +635,12 @@ class AppConstants {
   static const String planillaPdfExtendida = '/planilla/pdfPlanillaExtendida';
   static const String planillaPdfPapeletaPago = '/planilla/pdfPapeletaPago';
 
+  // Planilla de Incapacidad (tb_vista 166 'tacTareas/PlanillaIncapacidad').
+  static const String planillaIncapacidadListar =
+      '/planillaIncapacidad/listarPlanillaIncapacidad';
+  static const String planillaIncapacidadRevisar =
+      '/planillaIncapacidad/revisarPlanillaIncapacidad';
+
   // ==========================================================================
   // ROL DE TURNOS DE SABADO (modulo trs_)
   // ==========================================================================
@@ -1446,8 +1452,6 @@ class AppConstants {
       '/tareas-rutinarias/caja-chica/listar-del-lote';
   static const String tarCajaChicaRegistrarEgreso =
       '/tareas-rutinarias/caja-chica/registrar-egreso';
-  static const String tarCajaChicaFinalizar =
-      '/tareas-rutinarias/caja-chica/finalizar';
   // Cierra el lote vigente de la sucursal y abre uno nuevo con su saldo
   // inicial ya sembrado — reemplaza la mitad "reiniciar caja chica" del
   // legacy "Generar PDF" (el reporte en sí se migra aparte).

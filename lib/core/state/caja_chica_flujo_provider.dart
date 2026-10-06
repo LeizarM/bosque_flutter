@@ -13,17 +13,15 @@ class CajaChicaFlujoState {
   final List<CajaChicaEntity> items;
   final bool cargando;
 
-  /// Si alguna lectura terminó bien; evita mostrar «sin movimientos» con
-  /// «Finalizar» habilitado tras una lectura fallida.
+  /// Si alguna lectura terminó bien; evita mostrar «sin movimientos» tras una
+  /// lectura fallida.
   final bool cargado;
 
   /// Por qué falló la última lectura; queda hasta la próxima buena.
   final Object? errorCarga;
   final bool guardando;
-  final bool finalizando;
   final bool cerrandoLote;
   final String? mensajeError;
-  final bool finalizado;
 
   const CajaChicaFlujoState({
     this.items = const [],
@@ -31,10 +29,8 @@ class CajaChicaFlujoState {
     this.cargado = false,
     this.errorCarga,
     this.guardando = false,
-    this.finalizando = false,
     this.cerrandoLote = false,
     this.mensajeError,
-    this.finalizado = false,
   });
 
   CajaChicaFlujoState copyWith({
@@ -43,20 +39,16 @@ class CajaChicaFlujoState {
     bool? cargado,
     Object? errorCarga = _igual,
     bool? guardando,
-    bool? finalizando,
     bool? cerrandoLote,
     String? mensajeError,
-    bool? finalizado,
   }) => CajaChicaFlujoState(
     items: items ?? this.items,
     cargando: cargando ?? this.cargando,
     cargado: cargado ?? this.cargado,
     errorCarga: identical(errorCarga, _igual) ? this.errorCarga : errorCarga,
     guardando: guardando ?? this.guardando,
-    finalizando: finalizando ?? this.finalizando,
     cerrandoLote: cerrandoLote ?? this.cerrandoLote,
     mensajeError: mensajeError,
-    finalizado: finalizado ?? this.finalizado,
   );
 
   double get saldoActual => items.isEmpty ? 0 : (items.last.saldo ?? 0);
@@ -133,18 +125,8 @@ class CajaChicaFlujoNotifier extends StateNotifier<CajaChicaFlujoState> {
     }
   }
 
-  Future<void> finalizar() async {
-    state = state.copyWith(finalizando: true);
-    try {
-      await _repo.finalizar(_params.idBitTarea);
-      state = state.copyWith(finalizando: false, finalizado: true);
-    } catch (e) {
-      state = state.copyWith(finalizando: false, mensajeError: e.toString());
-    }
-  }
-
   /// Cierra el lote vigente y abre uno nuevo (con saldo inicial sembrado).
-  /// A diferencia de [finalizar], no completa la tarea; recarga el lote nuevo.
+  /// No toca la ocurrencia del día; recarga el lote nuevo.
   /// Devuelve `true` si cerró; el error queda en [CajaChicaFlujoState.mensajeError].
   Future<bool> cerrarLote() async {
     state = state.copyWith(cerrandoLote: true);
