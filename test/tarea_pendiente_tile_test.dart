@@ -55,6 +55,66 @@ void main() {
     ),
   );
 
+  testWidgets(
+    'un arqueo ya hecho no se vuelve a abrir: solo PDF y observación',
+    (tester) async {
+      // Marcelo, 2026-10-05: "una vez que realiza esas tareas que ya no la
+      // vuelva hacer. Máximo agregar una observación y en arqueo de caja que
+      // pueda imprimir el pdf".
+      var abrio = 0, pdf = 0, observacion = 0;
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: SingleChildScrollView(
+              child: SizedBox(
+                width: 460,
+                child: TareaPendienteTile(
+                  tarea: tarea(idATR: 2, fueRealizado: 13, nombre: 'Arqueo'),
+                  onTap: () => abrio++,
+                  onObservacion: () => observacion++,
+                  onVerPdf: () => pdf++,
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+
+      expect(find.byIcon(Icons.chevron_right), findsNothing);
+      await tester.tap(find.text('Arqueo'));
+      expect(abrio, 0);
+
+      await tester.tap(find.text('Ver PDF'));
+      await tester.tap(find.text('Observación'));
+      expect(pdf, 1);
+      expect(observacion, 1);
+    },
+  );
+
+  testWidgets('un traspaso hecho no tiene PDF, solo observación', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: SingleChildScrollView(
+            child: SizedBox(
+              width: 460,
+              child: TareaPendienteTile(
+                tarea: tarea(idATR: 12, fueRealizado: 13),
+                onTap: () {},
+                onObservacion: () {},
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    expect(find.text('Ver PDF'), findsNothing);
+    expect(find.text('Observación'), findsOneWidget);
+  });
+
   testWidgets('una tarea simple se responde con una sola pulsación', (
     tester,
   ) async {

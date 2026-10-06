@@ -72,7 +72,12 @@ class ArqueoDelCierre {
 
   bool get cuadra => diferencia.abs() <= 0.01;
 
-  ArqueoDelCierre comoRevisado() => ArqueoDelCierre(
+  ArqueoDelCierre comoRevisado() => _conRevisado(true);
+
+  /// La marca quitada: el visto bueno se dio por error (2026-10-05).
+  ArqueoDelCierre comoSinRevisar() => _conRevisado(false);
+
+  ArqueoDelCierre _conRevisado(bool valor) => ArqueoDelCierre(
     idAC: idAC,
     fecha: fecha,
     hora: hora,
@@ -83,7 +88,7 @@ class ArqueoDelCierre {
     total: total,
     diferencia: diferencia,
     obs: obs,
-    revisado: true,
+    revisado: valor,
   );
 }
 
@@ -117,7 +122,12 @@ class LlegadaDelCierre {
     this.verificada = false,
   });
 
-  LlegadaDelCierre comoVerificada() => LlegadaDelCierre(
+  LlegadaDelCierre comoVerificada() => _conVerificada(true);
+
+  /// La marca quitada: se verificó por error (2026-10-05).
+  LlegadaDelCierre comoSinVerificar() => _conVerificada(false);
+
+  LlegadaDelCierre _conVerificada(bool valor) => LlegadaDelCierre(
     idRp: idRp,
     hora: hora,
     persona: persona,
@@ -128,7 +138,7 @@ class LlegadaDelCierre {
     tipo: tipo,
     sucursal: sucursal,
     obs: obs,
-    verificada: true,
+    verificada: valor,
   );
 }
 

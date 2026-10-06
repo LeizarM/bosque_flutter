@@ -6,6 +6,7 @@ import 'package:bosque_flutter/core/state/dependientes_jefe_provider.dart';
 import 'package:bosque_flutter/core/state/user_provider.dart';
 import 'package:bosque_flutter/core/theme/tareas_colors.dart';
 import 'package:bosque_flutter/core/ui/aviso.dart';
+import 'package:bosque_flutter/core/ui/cerrar_ruta.dart';
 import 'package:bosque_flutter/domain/entities/bit_tarea_ruti_entity.dart';
 import 'package:bosque_flutter/presentation/screens/estructura-organizacional/tareas_rutinarias_catalogo_screen.dart';
 import 'package:bosque_flutter/presentation/widgets/shared/permission_widget.dart';
@@ -107,14 +108,18 @@ class _MisTareasRutinariasScreenState
     }
   }
 
-  void _navegarPorTipo(BuildContext context, BitTareaRutiEntity tarea) {
+  Future<void> _navegarPorTipo(
+    BuildContext context,
+    BitTareaRutiEntity tarea,
+  ) async {
     // fueRealizado==12 es "en curso"/pendiente de hacer (ver hallazgo de
     // WizardTareas.xhtml: los botones de Arqueo/Coches se deshabilitan
-    // cuando fueRealizado!=12). Ya completada, no se vuelve a navegar.
+    // cuando fueRealizado!=12). Ya completada, no se vuelve a navegar: lo
+    // que queda es agregarle una observación (y en el arqueo, ver su PDF).
     if (tarea.fueRealizado == 13) {
       mostrarAviso(
         context,
-        'Esta tarea ya fue completada.',
+        'Esta tarea ya está hecha. Solo puedes agregarle una observación.',
         tono: TonoAviso.aviso,
       );
       return;
@@ -126,99 +131,84 @@ class _MisTareasRutinariasScreenState
     // Los case 4/6/7 quedan por si alguien da de alta una tarea NUEVA de ese
     // tipo desde el ABM: esa sí la seguiría generando el Job (no estaría marcada
     // esARequerimiento) y tiene que poder abrirse desde la lista.
+    final String ruta;
+    final Map<String, Object?> extra;
     switch (tarea.idATR) {
       case 6:
-        context.push(
-          '/dashboard/tacTareas/Coches',
-          extra: {
-            'idTarRuti': tarea.idTarRuti,
-            'idBitTarea': tarea.idBitTarea,
-            'nombreTarea': tarea.nombreTareaRutinaria ?? 'Coches',
-          },
-        );
+        ruta = '/dashboard/tacTareas/Coches';
+        extra = {
+          'idTarRuti': tarea.idTarRuti,
+          'idBitTarea': tarea.idBitTarea,
+          'nombreTarea': tarea.nombreTareaRutinaria ?? 'Coches',
+        };
         break;
       case 4:
-        context.push(
-          '/dashboard/tacTareas/CajaFuerte',
-          extra: {
-            'idTarRuti': tarea.idTarRuti,
-            'idBitTarea': tarea.idBitTarea,
-            'nombreTarea': tarea.nombreTareaRutinaria ?? 'Caja Fuerte',
-          },
-        );
+        ruta = '/dashboard/tacTareas/CajaFuerte';
+        extra = {
+          'idTarRuti': tarea.idTarRuti,
+          'idBitTarea': tarea.idBitTarea,
+          'nombreTarea': tarea.nombreTareaRutinaria ?? 'Caja Fuerte',
+        };
         break;
       case 2:
-        context.push(
-          '/dashboard/tacTareas/ArqueoCaja',
-          extra: {
-            'idTarRuti': tarea.idTarRuti,
-            'idBitTarea': tarea.idBitTarea,
-            'nombreTarea': tarea.nombreTareaRutinaria ?? 'Arqueo de Caja',
-          },
-        );
+        ruta = '/dashboard/tacTareas/ArqueoCaja';
+        extra = {
+          'idTarRuti': tarea.idTarRuti,
+          'idBitTarea': tarea.idBitTarea,
+          'nombreTarea': tarea.nombreTareaRutinaria ?? 'Arqueo de Caja',
+        };
         break;
       case 7:
-        context.push(
-          '/dashboard/tacTareas/CajaChica',
-          extra: {
-            'idBitTarea': tarea.idBitTarea,
-            'nombreTarea': tarea.nombreTareaRutinaria ?? 'Caja Chica',
-          },
-        );
+        ruta = '/dashboard/tacTareas/CajaChica';
+        extra = {
+          'idBitTarea': tarea.idBitTarea,
+          'nombreTarea': tarea.nombreTareaRutinaria ?? 'Caja Chica',
+        };
         break;
       case 3:
         // La misma revisión del día que la tarea 39, pero cerrando SU
         // ocurrencia: "Verficar Arqueo de Caja" y las de Cierre de Operaciones
         // que quedaron pendientes. Desde el archivo SQL 63 no hay otra ruta.
-        context.push(
-          '/dashboard/tacTareas/VerificarCierre',
-          extra: {
-            'idBitTarea': tarea.idBitTarea,
-            'nombreTarea':
-                tarea.nombreTareaRutinaria ?? 'Cierre de Operaciones',
-            // La revisión abre en el día de la ocurrencia, no en hoy.
-            'fecha': tarea.fechaPresentacion,
-            'modo': 'cierre',
-          },
-        );
+        ruta = '/dashboard/tacTareas/VerificarCierre';
+        extra = {
+          'idBitTarea': tarea.idBitTarea,
+          'nombreTarea': tarea.nombreTareaRutinaria ?? 'Cierre de Operaciones',
+          // La revisión abre en el día de la ocurrencia, no en hoy.
+          'fecha': tarea.fechaPresentacion,
+          'modo': 'cierre',
+        };
         break;
       case 12:
-        context.push(
-          '/dashboard/tacTareas/TraspasoCajaAxa',
-          extra: {
-            'idBitTarea': tarea.idBitTarea,
-            'nombreTarea':
-                tarea.nombreTareaRutinaria ?? 'Verificar traspaso Caja AXA',
-            'fecha': tarea.fechaPresentacion,
-          },
-        );
+        ruta = '/dashboard/tacTareas/TraspasoCajaAxa';
+        extra = {
+          'idBitTarea': tarea.idBitTarea,
+          'nombreTarea':
+              tarea.nombreTareaRutinaria ?? 'Verificar traspaso Caja AXA',
+          'fecha': tarea.fechaPresentacion,
+        };
         break;
       case 5:
-        context.push(
-          '/dashboard/tacTareas/VerificarCierre',
-          extra: {
-            'idBitTarea': tarea.idBitTarea,
-            'fecha': tarea.fechaPresentacion,
-            'nombreTarea':
-                tarea.nombreTareaRutinaria ?? 'Verificar Cierre de Operaciones',
-          },
-        );
+        ruta = '/dashboard/tacTareas/VerificarCierre';
+        extra = {
+          'idBitTarea': tarea.idBitTarea,
+          'fecha': tarea.fechaPresentacion,
+          'nombreTarea':
+              tarea.nombreTareaRutinaria ?? 'Verificar Cierre de Operaciones',
+        };
         break;
       case 11:
         // Verificar Traspaso de Efectivo Entre Sistemas: TesBase
         // (ttes_TesBase, tesorería), NO tac_traspasoMovCaja. La de Caja AXA es
         // el case 12, arriba. Los nombres se parecen tanto que ya se
         // confundieron una vez — ver el archivo SQL 51.
-        context.push(
-          '/dashboard/tacTareas/TraspasoEfectivoTesBase',
-          extra: {
-            'idBitTarea': tarea.idBitTarea,
-            'nombreTarea':
-                tarea.nombreTareaRutinaria ??
-                'Verificar traspaso de efectivo entre sistemas',
-            'fecha': tarea.fechaPresentacion,
-          },
-        );
+        ruta = '/dashboard/tacTareas/TraspasoEfectivoTesBase';
+        extra = {
+          'idBitTarea': tarea.idBitTarea,
+          'nombreTarea':
+              tarea.nombreTareaRutinaria ??
+              'Verificar traspaso de efectivo entre sistemas',
+          'fecha': tarea.fechaPresentacion,
+        };
         break;
       case 8:
       case 9:
@@ -230,13 +220,73 @@ class _MisTareasRutinariasScreenState
           'Este tipo de tarea se gestiona todavía desde el sistema anterior.',
           tono: TonoAviso.aviso,
         );
-        break;
+        return;
       default:
         // Tarea simple: no navega a ningún lado. Se responde con los tres
         // botones de su propia tarjeta (ver [_marcarSimple]), así que la
         // tarjeta ni siquiera le pasa un onTap — este caso solo existe por si
         // llega un idATR desconocido.
-        break;
+        return;
+    }
+
+    await context.push(ruta, extra: extra);
+
+    // Al volver, la lista se lee de nuevo. Sin esto, la tarea recién hecha
+    // seguía apareciendo como pendiente (el provider sigue vivo mientras esta
+    // pantalla está debajo en la pila) y su botón la abría otra vez: así se
+    // grababa un segundo arqueo para la misma tarea (Marcelo, 2026-10-05: "una
+    // vez que realiza esas tareas que ya no la vuelva hacer").
+    if (mounted) await ref.read(bitTareaRutiProvider.notifier).cargar();
+  }
+
+  /// idBitTarea cuyo PDF de arqueo se está generando.
+  int? _pdfArqueoDe;
+
+  /// El PDF del arqueo ya hecho: lo único, además de una observación, que se
+  /// puede pedir de esa tarea. El servidor busca el arqueo por la tarea.
+  Future<void> _verPdfArqueo(BitTareaRutiEntity tarea) async {
+    if (_pdfArqueoDe != null) return;
+    setState(() => _pdfArqueoDe = tarea.idBitTarea);
+    try {
+      final bytes = await DioClient.descargarReportePdf(
+        endpoint: AppConstants.tarArqueoCajaReportePdf,
+        data: {'idBitTarea': tarea.idBitTarea},
+      );
+      if (!mounted) return;
+      final fecha = tarea.fechaPresentacion;
+      await mostrarPdf(
+        context,
+        bytes: bytes,
+        titulo: 'Arqueo de caja',
+        nombreArchivo:
+            fecha == null
+                ? 'arqueo_caja.pdf'
+                : 'arqueo_caja_${FormatearFecha.formatearFecha(fecha).replaceAll('/', '-')}.pdf',
+      );
+    } catch (e) {
+      if (!mounted) return;
+      HapticFeedback.lightImpact();
+      final motivo = e.toString().replaceFirst('Exception: ', '').trim();
+      mostrarAviso(
+        context,
+        motivo.isEmpty ? 'No se pudo generar el PDF del arqueo.' : motivo,
+        tono: TonoAviso.error,
+      );
+    } finally {
+      if (mounted) setState(() => _pdfArqueoDe = null);
+    }
+  }
+
+  /// Agregar una observación a una tarea ya hecha. Se agrega, no se reemplaza:
+  /// lo que ya tenía se muestra arriba, de solo lectura.
+  Future<void> _agregarObservacion(BitTareaRutiEntity tarea) async {
+    final agregada = await showDialog<bool>(
+      context: context,
+      builder: (_) => _DialogoObservacion(tarea: tarea),
+    );
+    if (agregada == true && mounted) {
+      HapticFeedback.selectionClick();
+      mostrarAviso(context, 'Observación agregada.', tono: TonoAviso.exito);
     }
   }
 
@@ -319,6 +369,9 @@ class _MisTareasRutinariasScreenState
               tarea: t,
               onTap: () => _navegarPorTipo(context, t),
               onMarcar: (valor) => _marcarSimple(t, valor),
+              onObservacion: () => _agregarObservacion(t),
+              onVerPdf: t.idATR == 2 ? () => _verPdfArqueo(t) : null,
+              generandoPdf: _pdfArqueoDe == t.idBitTarea,
               guardando: _guardandoId == t.idBitTarea,
               compacta: compacta,
             ),
@@ -362,68 +415,56 @@ class _MisTareasRutinariasScreenState
     return filas;
   }
 
-  List<Object> _agruparPorUrgencia(List<BitTareaRutiEntity> items) {
-    // El plazo lo decide la base (fn_tac_fechaLimite, archivo SQL 65) y lo
-    // resuelve BitTareaRutiEntity.fueraDePlazo: una ocurrencia vence
-    // fechaPresentacion + los días de plazo de su tarea, no siempre el mismo
-    // día. La comparación sigue siendo a granularidad de DÍA — está explicada
-    // en la entidad, que es ahora el único lugar donde vive el criterio.
-    final hoy = DateTime.now();
-    // Sin grupo "Completadas": a esta funcion ya no le llega ninguna respondida
-    // (ver el filtro `_sinResponder` en build). Quedaba un encabezado que no
-    // podia aparecer nunca.
-    final vencidas = <BitTareaRutiEntity>[];
-    final pendientes = <BitTareaRutiEntity>[];
-
-    for (final t in items) {
-      if (t.fueraDePlazo(hoy)) {
-        vencidas.add(t);
-      } else {
-        pendientes.add(t);
-      }
-    }
-
-    final filas = <Object>[];
-    void agregarGrupo(
-      String titulo,
-      IconData icono,
-      Color Function(BuildContext) tono,
-      List<BitTareaRutiEntity> grupo,
-    ) {
-      if (grupo.isEmpty) return;
-      filas.add(_Encabezado(titulo, icono, tono, grupo.length));
-      filas.addAll(grupo.map(_Fila.new));
-    }
-
-    agregarGrupo(
-      'Vencidas',
-      Icons.error_outline,
-      TareasColors.vencidoTexto,
-      vencidas,
-    );
-    agregarGrupo(
-      'Pendientes',
-      Icons.schedule_outlined,
-      TareasColors.pendienteTexto,
-      pendientes,
-    );
-    return filas;
+  List<Object> _agruparPorUrgencia(
+    List<BitTareaRutiEntity> items,
+    List<BitTareaRutiEntity> hechas,
+  ) {
+    // Las vencidas ya no llegan aquí: se filtran en [porResponder] (Marcelo,
+    // 2026-10-05: "estas tareas que ya vencieron que no se muestren, en
+    // reporte se verá que no cumplió"). Los encabezados se conservan porque
+    // la planilla de escritorio se arma a partir de ellos.
+    //
+    // "Hechas" va abajo: son las de pantalla propia ya completadas y todavía
+    // en su plazo, que solo admiten una observación y, el arqueo, su PDF
+    // (ver [hechaEnPlazo]).
+    return [
+      if (items.isNotEmpty) ...[
+        _Encabezado(
+          'Pendientes',
+          Icons.schedule_outlined,
+          TareasColors.pendienteTexto,
+          items.length,
+        ),
+        ...items.map(_Fila.new),
+      ],
+      if (hechas.isNotEmpty) ...[
+        _Encabezado(
+          'Hechas',
+          Icons.task_alt,
+          TareasColors.realizadoTexto,
+          hechas.length,
+        ),
+        ...hechas.map(_Fila.new),
+      ],
+    ];
   }
 
-  /// Lo que se busca con la mirada al entrar: cuántas vencidas y cuántas
-  /// pendientes quedan. Mientras no se leyó, nada: un "0 pendientes"
-  /// provisorio se lee como "estás al día".
-  String? _resumenEncabezado(bool cargado, List<BitTareaRutiEntity> porHacer) {
+  /// Lo que se busca con la mirada al entrar: cuántas quedan por responder y,
+  /// si hay, cuántas vencieron sin responder. Esas ya no están en la lista
+  /// —no se pueden responder— pero se cuentan: si no, quien tiene cuarenta
+  /// vencidas y ninguna pendiente leería "Estás al día". Mientras no se leyó,
+  /// nada: un "0 pendientes" provisorio se lee como "estás al día".
+  String? _resumenEncabezado(bool cargado, int pendientes, int vencidas) {
     if (!cargado) return null;
-    if (porHacer.isEmpty) return 'Estás al día';
-    final hoy = DateTime.now();
-    final vencidas = porHacer.where((t) => t.fueraDePlazo(hoy)).length;
-    final pendientes = porHacer.length - vencidas;
-    return [
-      if (vencidas > 0) vencidas == 1 ? '1 vencida' : '$vencidas vencidas',
+    final partes = [
       if (pendientes > 0)
         pendientes == 1 ? '1 pendiente' : '$pendientes pendientes',
-    ].join(' · ');
+      if (vencidas > 0)
+        vencidas == 1
+            ? '1 venció sin responder'
+            : '$vencidas vencieron sin responder',
+    ];
+    return partes.isEmpty ? 'Estás al día' : partes.join(' · ');
   }
 
   @override
@@ -440,8 +481,16 @@ class _MisTareasRutinariasScreenState
     final mias =
         state.items.where((t) => perteneceAMiLista(t, miCodEmpleado)).toList();
 
-    // Lo unico que llega a la pantalla: lo que falta hacer.
-    final porHacer = mias.where(_sinResponder).toList();
+    // Lo unico que llega a la pantalla: lo que falta hacer y TODAVIA se puede
+    // hacer. Las vencidas sin responder solo se cuentan (ver [porResponder]).
+    final hoy = DateTime.now();
+    final porHacer = mias.where((t) => porResponder(t, hoy)).toList();
+    final vencidasSinResponder =
+        mias.where(_sinResponder).length - porHacer.length;
+
+    // Las que ya se hicieron y siguen en su plazo: quedan a la vista solo para
+    // lo que todavía admiten (ver [hechaEnPlazo]).
+    final hechas = mias.where((t) => hechaEnPlazo(t, hoy)).toList();
 
     // Las frecuencias que esta persona REALMENTE tiene pendientes, con su
     // conteo. No se ofrecen las seis del catálogo: un chip "Bimestral (0)" es
@@ -481,7 +530,18 @@ class _MisTareasRutinariasScreenState
     // "Vencida" seguidas se leía como una pared roja sin estructura. Agrupar
     // por urgencia real (vencidas primero, siempre) le da al ojo un punto de
     // entrada: "esto ya" vs "esto viene" vs "esto ya quedó atrás".
-    final filas = _agruparPorUrgencia(propias);
+    final hechasVisibles =
+        hechas
+            .where(
+              (t) => frecuenciaActiva == null || t.idFrec == frecuenciaActiva,
+            )
+            .toList()
+          ..sort((a, b) {
+            final fa = a.fechaPresentacion ?? DateTime(2100);
+            final fb = b.fechaPresentacion ?? DateTime(2100);
+            return fa.compareTo(fb);
+          });
+    final filas = _agruparPorUrgencia(propias, hechasVisibles);
 
 
     return TareasScope(
@@ -491,7 +551,11 @@ class _MisTareasRutinariasScreenState
         builder: (context, cajon) => Scaffold(
         appBar: AppBarTareas(
           titulo: 'Mis tareas rutinarias',
-          subtitulo: _resumenEncabezado(state.cargado, porHacer),
+          subtitulo: _resumenEncabezado(
+            state.cargado,
+            porHacer.length,
+            vencidasSinResponder,
+          ),
           insignia: InsigniaTarea.modulo(context, Icons.checklist_rtl),
           acciones: [
             // "Mi equipo" dejó de ser un ítem del menú (archivo SQL 59) y un
@@ -669,13 +733,14 @@ class _MisTareasRutinariasScreenState
                           error: state.errorCarga,
                           onReintentar: notifier.cargar,
                         ))
-                    : propias.isEmpty
+                    : filas.isEmpty
                     ? _EstadoVacio(
                       key: const ValueKey('vacio'),
                       // "Estas al dia" solo si REALMENTE tiene tareas y las respondio
                       // todas. A quien nunca le asignaron ninguna hay que
                       // decirle eso, no felicitarlo.
                       tieneAsignadas: mias.isNotEmpty,
+                      vencidas: vencidasSinResponder,
                     )
                     : esTabla
                     // En una resolucion de escritorio esto es una planilla de
@@ -720,6 +785,13 @@ class _MisTareasRutinariasScreenState
                                     guardando: _guardandoId == t.idBitTarea,
                                     onAbrir: () => _navegarPorTipo(context, t),
                                     onMarcar: (valor) => _marcarSimple(t, valor),
+                                    onObservacion: () => _agregarObservacion(t),
+                                    onVerPdf:
+                                        t.idATR == 2
+                                            ? () => _verPdfArqueo(t)
+                                            : null,
+                                    generandoPdf:
+                                        _pdfArqueoDe == t.idBitTarea,
                                   );
                                 },
                               ),
@@ -866,6 +938,32 @@ class _BotonMiEquipo extends ConsumerWidget {
 bool _sinResponder(BitTareaRutiEntity t) =>
     t.fueRealizado == null || t.fueRealizado == 12;
 
+/// Si una ocurrencia se muestra en "Mis tareas": sin responder y todavía en
+/// plazo.
+///
+/// Las vencidas no se muestran (Marcelo, 2026-10-05). Es lo que hacía el
+/// sistema anterior —las sacaba de la consulta— y lo que pide la regla del
+/// plazo (archivo SQL 66): mostrarlas sería ofrecer un botón que el servidor
+/// rechaza. El incumplimiento no se pierde: la bitácora de cumplimiento
+/// (`p_list_tac_BitTareaRuti` 'B') cuenta toda pendiente con la fecha pasada
+/// como "no realizada".
+bool porResponder(BitTareaRutiEntity t, DateTime hoy) =>
+    _sinResponder(t) && !t.fueraDePlazo(hoy);
+
+/// Si una ocurrencia ya hecha se sigue mostrando, en el grupo "Hechas".
+///
+/// Solo las de pantalla propia (arqueo, traspasos, revisión del cierre…) y
+/// solo mientras dure su plazo: el mismo tiempo que habrían estado como
+/// pendientes. Una tarea hecha ya no se vuelve a hacer; lo único que admite es
+/// una observación y, el arqueo, ver su PDF (Marcelo, 2026-10-05: "una vez que
+/// realiza esas tareas que ya no la vuelva hacer. Máximo agregar una
+/// observación"). Las simples no entran: ya muestran su respuesta al
+/// responderla y el historial está en el PDF.
+bool hechaEnPlazo(BitTareaRutiEntity t, DateTime hoy) =>
+    t.fueRealizado == 13 &&
+    TareaPendienteTile.tipoDeAccion(t.idATR) != null &&
+    !t.fueraDePlazo(hoy);
+
 /// Si una ocurrencia es de la lista de esta persona, respondida o no.
 ///
 /// Cada condición tapa algo que llegó a verse en pantalla:
@@ -915,10 +1013,32 @@ class _EstadoVacio extends StatelessWidget {
   /// realizado; la segunda es neutra.
   final bool tieneAsignadas;
 
-  const _EstadoVacio({super.key, required this.tieneAsignadas});
+  /// Las que vencieron sin responder. Con alguna, la pantalla vacía NO es
+  /// "Estás al día": no queda nada que se pueda hacer, pero no porque se haya
+  /// hecho todo.
+  final int vencidas;
+
+  const _EstadoVacio({
+    super.key,
+    required this.tieneAsignadas,
+    this.vencidas = 0,
+  });
 
   @override
   Widget build(BuildContext context) {
+    if (vencidas > 0) {
+      return EstadoTareas(
+        icono: Icons.event_busy_outlined,
+        titulo: 'No tienes tareas por responder',
+        detalle:
+            vencidas == 1
+                ? 'Una tarea venció sin responderse. Ya no se puede '
+                    'responder y queda en la bitácora como no cumplida.'
+                : '$vencidas tareas vencieron sin responderse. Ya no se '
+                    'pueden responder y quedan en la bitácora como no '
+                    'cumplidas.',
+      );
+    }
     return tieneAsignadas
         ? const EstadoTareas(
           icono: Icons.task_alt,
@@ -944,7 +1064,7 @@ const _anchosTareas = <AnchoCol>[
   AnchoCol.fijo(310), // respuesta
 ];
 
-/// El corte de grupo ("Vencidas (22)") dentro de la planilla.
+/// El corte de grupo ("Pendientes (3)") dentro de la planilla.
 ///
 /// Ocupa la fila entera y no una columna: es el unico corte de jerarquia que
 /// tiene esta pantalla, y partirlo en columnas lo volveria un dato mas.
@@ -992,6 +1112,11 @@ class _FilaTablaTarea extends StatelessWidget {
   final VoidCallback onAbrir;
   final void Function(int fueRealizado) onMarcar;
 
+  /// Ya hecha: lo único que admite. Ver [AccionesTareaHecha].
+  final VoidCallback onObservacion;
+  final VoidCallback? onVerPdf;
+  final bool generandoPdf;
+
   const _FilaTablaTarea({
     super.key,
     required this.tarea,
@@ -999,6 +1124,9 @@ class _FilaTablaTarea extends StatelessWidget {
     required this.guardando,
     required this.onAbrir,
     required this.onMarcar,
+    required this.onObservacion,
+    this.onVerPdf,
+    this.generandoPdf = false,
   });
 
   @override
@@ -1063,6 +1191,17 @@ class _FilaTablaTarea extends StatelessWidget {
                 child: CircularProgressIndicator(strokeWidth: 2.4),
               ),
             )
+            // Hecha: ya no se abre. En lugar del botón de la pantalla, lo único
+            // que admite.
+            : esEspecial && completada
+            ? Align(
+              alignment: Alignment.centerLeft,
+              child: AccionesTareaHecha(
+                onObservacion: onObservacion,
+                onVerPdf: onVerPdf,
+                generandoPdf: generandoPdf,
+              ),
+            )
             : esEspecial
             ? Align(
               alignment: Alignment.centerLeft,
@@ -1080,6 +1219,157 @@ class _FilaTablaTarea extends StatelessWidget {
               habilitado: !guardando,
               onElegir: onMarcar,
             ),
+      ],
+    );
+  }
+}
+
+/// El diálogo "Observación" de una tarea ya hecha.
+///
+/// Lo que la tarea ya tiene se muestra arriba, de solo lectura: lo nuevo se
+/// agrega al final (el servidor le pone fecha y hora), no se edita ni se borra
+/// lo anterior. Si el servidor rechaza, el motivo se muestra aquí mismo y el
+/// diálogo no se cierra, para no perder lo escrito.
+class _DialogoObservacion extends ConsumerStatefulWidget {
+  final BitTareaRutiEntity tarea;
+
+  const _DialogoObservacion({required this.tarea});
+
+  @override
+  ConsumerState<_DialogoObservacion> createState() =>
+      _DialogoObservacionState();
+}
+
+class _DialogoObservacionState extends ConsumerState<_DialogoObservacion> {
+  final _texto = TextEditingController();
+  bool _guardando = false;
+  String? _error;
+
+  @override
+  void dispose() {
+    _texto.dispose();
+    super.dispose();
+  }
+
+  Future<void> _agregar() async {
+    final obs = _texto.text.trim();
+    if (obs.isEmpty) {
+      setState(() => _error = 'Escribe la observación que quieres agregar.');
+      return;
+    }
+    setState(() {
+      _guardando = true;
+      _error = null;
+    });
+    final motivo = await ref
+        .read(bitTareaRutiProvider.notifier)
+        .agregarObservacion(widget.tarea.idBitTarea, obs);
+    if (!mounted) return;
+    if (motivo == null) {
+      // cerrarRuta y no pop: el campo tiene el foco y cerrar la ruta con el
+      // foco adentro es el error "inactive element: Focus" de la web.
+      cerrarRuta(context, true);
+      return;
+    }
+    setState(() {
+      _guardando = false;
+      _error = motivo;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final tema = Theme.of(context);
+    final scheme = tema.colorScheme;
+    final previa = widget.tarea.obs?.trim() ?? '';
+
+    return AlertDialog(
+      title: const Text('Agregar observación'),
+      content: SizedBox(
+        width: 460,
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                widget.tarea.nombreTareaRutinaria ?? 'Tarea rutinaria',
+                style: tema.textTheme.bodyMedium?.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: Esp.xs),
+              Text(
+                'La tarea ya está hecha y no se vuelve a hacer. La '
+                'observación se agrega al final de las que tenga, con la '
+                'fecha y la hora.',
+                style: tema.textTheme.bodySmall?.copyWith(
+                  color: scheme.onSurfaceVariant,
+                ),
+              ),
+              if (previa.isNotEmpty) ...[
+                const SizedBox(height: Esp.m),
+                Text(
+                  'Ya tiene',
+                  style: tema.textTheme.labelMedium?.copyWith(
+                    color: scheme.onSurfaceVariant,
+                  ),
+                ),
+                const SizedBox(height: Esp.xs),
+                Container(
+                  width: double.infinity,
+                  constraints: const BoxConstraints(maxHeight: 120),
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: scheme.surfaceContainerHighest.withValues(
+                      alpha: 0.5,
+                    ),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: SingleChildScrollView(
+                    child: SelectableText(
+                      previa,
+                      style: tema.textTheme.bodySmall,
+                    ),
+                  ),
+                ),
+              ],
+              const SizedBox(height: Esp.m),
+              TextField(
+                controller: _texto,
+                autofocus: true,
+                enabled: !_guardando,
+                minLines: 3,
+                maxLines: 6,
+                maxLength: 500,
+                textCapitalization: TextCapitalization.sentences,
+                decoration: InputDecoration(
+                  labelText: 'Observación',
+                  border: const OutlineInputBorder(),
+                  errorText: _error,
+                  errorMaxLines: 3,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: _guardando ? null : () => cerrarRuta(context, false),
+          child: const Text('Cancelar'),
+        ),
+        FilledButton(
+          onPressed: _guardando ? null : _agregar,
+          child:
+              _guardando
+                  ? const SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                  : const Text('Agregar'),
+        ),
       ],
     );
   }

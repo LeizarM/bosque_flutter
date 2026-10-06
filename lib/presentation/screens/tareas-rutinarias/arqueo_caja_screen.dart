@@ -299,6 +299,13 @@ class _ArqueoCajaScreenState extends ConsumerState<ArqueoCajaScreen> {
                 ),
           ),
     );
+    if (!context.mounted) return;
+    // Un cuadro de aire entre cerrar el dialogo del PDF y cerrar la
+    // pantalla: al irse el dialogo el foco vuelve solo a un campo del
+    // arqueo, y cerrar en el mismo cuadro lo destruye recien enfocado
+    // (el porque completo esta en cerrar_ruta.dart).
+    FocusManager.instance.primaryFocus?.unfocus();
+    await WidgetsBinding.instance.endOfFrame;
     if (context.mounted) cerrarRuta(context, true);
   }
 
@@ -557,14 +564,7 @@ class _ArqueoCajaScreenState extends ConsumerState<ArqueoCajaScreen> {
                                             child: Row(
                                               children: [
                                                 Expanded(
-                                                  child: Text(
-                                                    (fila['bd'] as String?) ??
-                                                        '',
-                                                    style:
-                                                        Theme.of(
-                                                          context,
-                                                        ).textTheme.bodySmall,
-                                                  ),
+                                                  child: _CajaSap(fila: fila),
                                                 ),
                                                 Text(
                                                   FormatoMoneda.monto.format(
@@ -1678,6 +1678,49 @@ class _FilaVale extends ConsumerWidget {
           SizedBox(width: _accionVale, child: borrar),
         ],
       ),
+    );
+  }
+}
+
+/// Una fila del movimiento de caja SAP: la empresa y, debajo, qué caja es.
+///
+/// Cada empresa tiene más de una cuenta de caja en la sucursal, y con solo el
+/// nombre de la empresa las filas parecían duplicadas (Marcelo, 2026-10-05).
+/// El nombre de la caja y la cuenta los manda el archivo SQL 72; si todavía no
+/// llegan —backend o SQL anteriores—, la fila queda como antes.
+class _CajaSap extends StatelessWidget {
+  final Map<String, dynamic> fila;
+
+  const _CajaSap({required this.fila});
+
+  @override
+  Widget build(BuildContext context) {
+    final tema = Theme.of(context);
+    // La etiqueta viene del sistema anterior con dos puntos al final
+    // ("ESPPAPEL:").
+    final empresa = ((fila['bd'] as String?) ?? '')
+        .trim()
+        .replaceFirst(RegExp(r':\s*$'), '');
+    final caja = ((fila['nombreCaja'] as String?) ?? '').trim();
+    final cuenta = (fila['codigoCuentaCajaSap'] ?? '').toString().trim();
+    final detalle = [
+      if (caja.isNotEmpty) caja,
+      if (cuenta.isNotEmpty) 'cuenta $cuenta',
+    ].join(' · ');
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(empresa, style: tema.textTheme.bodySmall),
+        if (detalle.isNotEmpty)
+          Text(
+            detalle,
+            style: tema.textTheme.labelSmall?.copyWith(
+              color: tema.colorScheme.onSurfaceVariant,
+            ),
+          ),
+      ],
     );
   }
 }

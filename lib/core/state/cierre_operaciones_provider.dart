@@ -441,19 +441,28 @@ class CierreOperacionesNotifier extends StateNotifier<CierreOperacionesState> {
     }
   }
 
-  /// El visto bueno a un arqueo.
-  Future<void> marcarArqueoRevisado(int idAC) async {
+  /// El visto bueno a un arqueo, o quitárselo con [revisado] en false: a
+  /// veces se marca uno por error y "tiene que volver a como estaba"
+  /// (Marcelo, 2026-10-05). Con la marca quitada, el arqueo vuelve a contar
+  /// como pendiente y el día no se puede cerrar hasta revisarlo de nuevo.
+  Future<void> marcarArqueoRevisado(int idAC, {bool revisado = true}) async {
     final clave = 'arqueo:$idAC';
     if (state.guardando.contains(clave)) return;
     state = state.copyWith(guardando: {...state.guardando, clave});
     try {
-      await _repo.marcarArqueoRevisado(idAC, idBitTarea: _id);
+      await _repo.marcarArqueoRevisado(
+        idAC,
+        idBitTarea: _id,
+        revisado: revisado,
+      );
       if (!mounted) return;
       state = state.copyWith(
         guardando: _sin(clave),
         arqueos: state.arqueos.conFilas([
           for (final a in state.arqueos.filas)
-            a.idAC == idAC ? a.comoRevisado() : a,
+            a.idAC == idAC
+                ? (revisado ? a.comoRevisado() : a.comoSinRevisar())
+                : a,
         ]),
       );
     } catch (e) {
@@ -465,19 +474,29 @@ class CierreOperacionesNotifier extends StateNotifier<CierreOperacionesState> {
     }
   }
 
-  /// La verificación de una llegada a caja fuerte.
-  Future<void> marcarLlegadaVerificada(int idRp) async {
+  /// La verificación de una llegada a caja fuerte, o quitarla con
+  /// [verificada] en false (ver [marcarArqueoRevisado]).
+  Future<void> marcarLlegadaVerificada(
+    int idRp, {
+    bool verificada = true,
+  }) async {
     final clave = 'llegada:$idRp';
     if (state.guardando.contains(clave)) return;
     state = state.copyWith(guardando: {...state.guardando, clave});
     try {
-      await _repo.marcarLlegadaVerificada(idRp, idBitTarea: _id);
+      await _repo.marcarLlegadaVerificada(
+        idRp,
+        idBitTarea: _id,
+        verificada: verificada,
+      );
       if (!mounted) return;
       state = state.copyWith(
         guardando: _sin(clave),
         cajaFuerte: state.cajaFuerte.conFilas([
           for (final l in state.cajaFuerte.filas)
-            l.idRp == idRp ? l.comoVerificada() : l,
+            l.idRp == idRp
+                ? (verificada ? l.comoVerificada() : l.comoSinVerificar())
+                : l,
         ]),
       );
     } catch (e) {

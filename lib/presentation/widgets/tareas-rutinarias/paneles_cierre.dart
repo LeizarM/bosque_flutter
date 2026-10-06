@@ -394,13 +394,53 @@ const _anchosArqueos = <AnchoCol>[
   AnchoCol.fijo(120), // diferencia
   AnchoCol.flexible(2), // observación
   AnchoCol.fijo(40), // PDF
-  AnchoCol.fijo(172), // revisado
+  AnchoCol.fijo(196), // revisado, con el boton de deshacer
 ];
+
+/// La píldora de "hecho" con su botón para deshacerlo al lado.
+///
+/// Marcar es un toque, y equivocarse también: sin esto, un visto bueno dado
+/// por error no tenía vuelta atrás (Marcelo, 2026-10-05: "a veces se equivocan
+/// y tiene que volver a como estaba"). No pide confirmación: deshacer es la
+/// corrección, y si también fue un error se vuelve a marcar.
+class _ConDeshacer extends StatelessWidget {
+  final Widget pildora;
+  final String tooltip;
+  final VoidCallback? onDeshacer;
+
+  const _ConDeshacer({
+    required this.pildora,
+    required this.tooltip,
+    this.onDeshacer,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    if (onDeshacer == null) return pildora;
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        pildora,
+        const SizedBox(width: 2),
+        IconButton(
+          onPressed: onDeshacer,
+          tooltip: tooltip,
+          icon: const Icon(Icons.undo, size: 18),
+          visualDensity: VisualDensity.compact,
+        ),
+      ],
+    );
+  }
+}
 
 class ContenidoArqueos extends StatelessWidget {
   final List<ArqueoDelCierre> filas;
   final bool Function(int idAC) guardando;
   final void Function(int idAC) onRevisar;
+
+  /// Quitar el visto bueno. Sin esto, la píldora "Revisado" queda sola,
+  /// como antes.
+  final void Function(int idAC)? onQuitarRevisado;
   final void Function(int idAC) onPdf;
 
   const ContenidoArqueos({
@@ -408,6 +448,7 @@ class ContenidoArqueos extends StatelessWidget {
     required this.filas,
     required this.guardando,
     required this.onRevisar,
+    this.onQuitarRevisado,
     required this.onPdf,
   });
 
@@ -420,11 +461,16 @@ class ContenidoArqueos extends StatelessWidget {
       );
     }
     if (a.revisado) {
-      return PildoraTareas(
-        texto: 'Revisado',
-        icono: Icons.check,
-        fondo: TareasColors.realizado(context),
-        color: TareasColors.realizadoTexto(context),
+      return _ConDeshacer(
+        tooltip: 'Quitar la marca de revisado',
+        onDeshacer:
+            onQuitarRevisado == null ? null : () => onQuitarRevisado!(a.idAC),
+        pildora: PildoraTareas(
+          texto: 'Revisado',
+          icono: Icons.check,
+          fondo: TareasColors.realizado(context),
+          color: TareasColors.realizadoTexto(context),
+        ),
       );
     }
     return FilledButton.tonal(
@@ -787,7 +833,7 @@ const _anchosCajaFuerte = <AnchoCol>[
   AnchoCol.flexible(2), // destino
   AnchoCol.fijo(52), // hora
   AnchoCol.fijo(96), // tipo
-  AnchoCol.fijo(184), // verificada
+  AnchoCol.fijo(208), // verificada, con el boton de deshacer
 ];
 
 class ContenidoCajaFuerte extends StatelessWidget {
@@ -795,11 +841,15 @@ class ContenidoCajaFuerte extends StatelessWidget {
   final bool Function(int idRp) guardando;
   final void Function(int idRp) onVerificar;
 
+  /// Quitar la verificación. Sin esto, la píldora "Verificada" queda sola.
+  final void Function(int idRp)? onQuitarVerificada;
+
   const ContenidoCajaFuerte({
     super.key,
     required this.filas,
     required this.guardando,
     required this.onVerificar,
+    this.onQuitarVerificada,
   });
 
   String _hora(DateTime? d) => d == null ? '—' : FormatearFecha.formatearHora(d);
@@ -813,11 +863,18 @@ class ContenidoCajaFuerte extends StatelessWidget {
       );
     }
     if (l.verificada) {
-      return PildoraTareas(
-        texto: 'Verificada',
-        icono: Icons.check,
-        fondo: TareasColors.realizado(context),
-        color: TareasColors.realizadoTexto(context),
+      return _ConDeshacer(
+        tooltip: 'Quitar la marca de verificada',
+        onDeshacer:
+            onQuitarVerificada == null
+                ? null
+                : () => onQuitarVerificada!(l.idRp),
+        pildora: PildoraTareas(
+          texto: 'Verificada',
+          icono: Icons.check,
+          fondo: TareasColors.realizado(context),
+          color: TareasColors.realizadoTexto(context),
+        ),
       );
     }
     return FilledButton.tonal(

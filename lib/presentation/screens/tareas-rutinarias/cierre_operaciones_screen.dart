@@ -287,6 +287,10 @@ class _CierreOperacionesScreenState
                   HapticFeedback.selectionClick();
                   n.marcarArqueoRevisado(id);
                 },
+                onQuitarRevisado: (id) {
+                  HapticFeedback.selectionClick();
+                  n.marcarArqueoRevisado(id, revisado: false);
+                },
                 onPdf:
                     (id) => _verPdf(
                       () => n.pdfArqueo(id),
@@ -361,6 +365,10 @@ class _CierreOperacionesScreenState
                 onVerificar: (id) {
                   HapticFeedback.selectionClick();
                   n.marcarLlegadaVerificada(id);
+                },
+                onQuitarVerificada: (id) {
+                  HapticFeedback.selectionClick();
+                  n.marcarLlegadaVerificada(id, verificada: false);
                 },
               ),
         );

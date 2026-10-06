@@ -4,6 +4,7 @@ import 'dart:math' as math;
 
 import 'package:bosque_flutter/core/state/tarea_rutinaria_provider.dart';
 import 'package:bosque_flutter/core/theme/tareas_colors.dart';
+import 'package:bosque_flutter/core/ui/cerrar_ruta.dart';
 import 'package:bosque_flutter/core/utils/nombres_parecidos.dart';
 import 'package:bosque_flutter/domain/entities/tarea_rutinaria_entity.dart';
 import 'package:bosque_flutter/presentation/widgets/tareas-rutinarias/tarea_pendiente_tile.dart';
@@ -285,7 +286,7 @@ class _ElegirTareaDelCatalogoDialogState
       ),
       actions: [
         TextButton(
-          onPressed: () => Navigator.of(context).pop(),
+          onPressed: () => cerrarRuta(context),
           child: const Text('Cancelar'),
         ),
         FilledButton(
@@ -293,7 +294,7 @@ class _ElegirTareaDelCatalogoDialogState
               _seleccionadas.isEmpty
                   ? null
                   : () {
-                    Navigator.of(context).pop();
+                    cerrarRuta(context);
                     widget.onElegidas(_seleccionadas.toList(), _desde);
                   },
           child: Text(

@@ -83,16 +83,29 @@ class _RepoFalso implements CierreOperacionesRepository {
   }) async => _responder('tareas', fecha, todasSucursales, tareasDe);
 
   @override
-  Future<void> marcarArqueoRevisado(int idAC, {required int idBitTarea}) async {
-    marcados.add('arqueo:$idAC ocurrencia=$idBitTarea');
+  Future<void> marcarArqueoRevisado(
+    int idAC, {
+    required int idBitTarea,
+    bool revisado = true,
+  }) async {
+    marcados.add(
+      revisado
+          ? 'arqueo:$idAC ocurrencia=$idBitTarea'
+          : 'arqueo:$idAC quitado ocurrencia=$idBitTarea',
+    );
   }
 
   @override
   Future<void> marcarLlegadaVerificada(
     int idRp, {
     required int idBitTarea,
+    bool verificada = true,
   }) async {
-    marcados.add('llegada:$idRp ocurrencia=$idBitTarea');
+    marcados.add(
+      verificada
+          ? 'llegada:$idRp ocurrencia=$idBitTarea'
+          : 'llegada:$idRp quitado ocurrencia=$idBitTarea',
+    );
   }
 
   @override
@@ -334,6 +347,48 @@ void main() {
 
       expect(repo.marcados, ['llegada:5 ocurrencia=900']);
       expect(notifier.state.puedeCerrar, isTrue);
+    });
+
+    test('quitar el visto bueno deja el arqueo otra vez por revisar', () async {
+      // Marcelo, 2026-10-05: "a veces se equivocan y tiene que volver a como
+      // estaba". Desmarcado, el día vuelve a no poder cerrarse.
+      final repo = _RepoFalso()..arqueosDe = [_arqueo(idAC: 7)];
+      final notifier = _abrir(repo);
+      addTearDown(notifier.dispose);
+      await _dejarCargar();
+      _confirmarLoQueFalta(notifier);
+
+      await notifier.marcarArqueoRevisado(7);
+      expect(notifier.state.puedeCerrar, isTrue);
+
+      await notifier.marcarArqueoRevisado(7, revisado: false);
+
+      expect(repo.marcados, [
+        'arqueo:7 ocurrencia=900',
+        'arqueo:7 quitado ocurrencia=900',
+      ]);
+      expect(notifier.state.puedeCerrar, isFalse);
+      expect(notifier.state.faltaParaCerrar, ['1 arqueo por revisar']);
+    });
+
+    test('y quitar la verificación de una llegada, igual', () async {
+      final repo = _RepoFalso()..cajaFuerteDe = [const LlegadaDelCierre(idRp: 5)];
+      final notifier = _abrir(repo);
+      addTearDown(notifier.dispose);
+      await _dejarCargar();
+      _confirmarLoQueFalta(notifier);
+
+      await notifier.marcarLlegadaVerificada(5);
+      expect(notifier.state.puedeCerrar, isTrue);
+
+      await notifier.marcarLlegadaVerificada(5, verificada: false);
+
+      expect(repo.marcados, [
+        'llegada:5 ocurrencia=900',
+        'llegada:5 quitado ocurrencia=900',
+      ]);
+      expect(notifier.state.puedeCerrar, isFalse);
+      expect(notifier.state.faltaParaCerrar, ['1 llegada por verificar']);
     });
 
     test('una sección vacía se revisa con su interruptor', () async {

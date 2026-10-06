@@ -1301,6 +1301,9 @@ class AppConstants {
       '/tareas-rutinarias/registrar-bit-tarea-ruti';
   static const String tarEliminarBitTareaRuti =
       '/tareas-rutinarias/eliminar-bit-tarea-ruti';
+  // Lo único que se le hace a una tarea ya hecha (archivo SQL 75).
+  static const String tarAgregarObservacionTarea =
+      '/tareas-rutinarias/agregar-observacion';
   static const String tarObtenerBitTareaRuti =
       '/tareas-rutinarias/obtener-bit-tarea-ruti';
 
@@ -1423,6 +1426,12 @@ class AppConstants {
   // este verifica que el idBitTarea sea de quien llama.
   static const String tarCajaFuerteReportePdf =
       '/tareas-rutinarias/caja-fuerte/reporte-pdf';
+
+  // Lo que ya se registro hoy en caja fuerte, para mostrarlo en la misma
+  // pantalla donde se carga. Misma consulta que el panel del supervisor, pero
+  // con la ocurrencia propia como permiso en vez del boton plCajaFuerte.
+  static const String tarCajaFuerteDelDia =
+      '/tareas-rutinarias/caja-fuerte/del-dia';
 
   // Flujo especial: Caja Chica (idATR=7) — p_cajaChica_*.
   static const String tarCajaChicaListarDelLote =

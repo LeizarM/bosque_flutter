@@ -6,6 +6,7 @@ import 'package:bosque_flutter/core/state/tareas_por_cargo_provider.dart';
 import 'package:bosque_flutter/core/state/user_provider.dart';
 import 'package:bosque_flutter/core/theme/tareas_colors.dart';
 import 'package:bosque_flutter/core/constants/tareas_breakpoints.dart';
+import 'package:bosque_flutter/core/ui/cerrar_ruta.dart';
 import 'package:bosque_flutter/core/utils/formatear_fecha.dart';
 import 'package:bosque_flutter/domain/entities/accion_tarea_rutinaria_entity.dart';
 import 'package:bosque_flutter/domain/entities/cargo_entity.dart';
@@ -623,7 +624,7 @@ class _EditarTareaDialogState extends ConsumerState<_EditarTareaDialog> {
       ),
       actions: [
         TextButton(
-          onPressed: () => Navigator.of(context).pop(),
+          onPressed: () => cerrarRuta(context),
           child: const Text('Cancelar'),
         ),
         FilledButton(
@@ -648,7 +649,7 @@ class _EditarTareaDialogState extends ConsumerState<_EditarTareaDialog> {
                         );
                     if (ok) HapticFeedback.mediumImpact();
                     if (context.mounted) {
-                      Navigator.of(context).pop();
+                      cerrarRuta(context);
                       if (ok) {
                         widget.onGuardado();
                         mostrarAviso(context, 'Tarea actualizada.');
@@ -784,7 +785,7 @@ class _AccionesTareaRutinariaDialogState
       ),
       actions: [
         TextButton(
-          onPressed: () => Navigator.of(context).pop(),
+          onPressed: () => cerrarRuta(context),
           child: const Text('Cerrar'),
         ),
       ],

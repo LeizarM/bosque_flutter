@@ -34,4 +34,13 @@ class BitTareaRutiImpl extends BaseApiRepository
       errorMessage: 'No se pudo eliminar la bitácora de tarea rutinaria.',
     );
   }
+
+  @override
+  Future<void> agregarObservacion(int idBitTarea, String obs) async {
+    await postAndReturnId(
+      endpoint: AppConstants.tarAgregarObservacionTarea,
+      data: {'idBitTarea': idBitTarea, 'obs': obs},
+      errorMessage: 'No se pudo agregar la observación.',
+    );
+  }
 }

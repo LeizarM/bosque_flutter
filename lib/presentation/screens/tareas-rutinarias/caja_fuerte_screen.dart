@@ -3,16 +3,15 @@ import 'package:bosque_flutter/core/constants/tareas_breakpoints.dart';
 import 'package:bosque_flutter/core/state/caja_fuerte_provider.dart';
 import 'package:bosque_flutter/core/theme/tareas_colors.dart';
 import 'package:bosque_flutter/core/ui/aviso.dart';
+import 'package:bosque_flutter/core/utils/formatear_fecha.dart';
+import 'package:bosque_flutter/core/utils/formato_moneda.dart';
 import 'package:bosque_flutter/domain/entities/llegada_caja_fuerte_entity.dart';
 import 'package:bosque_flutter/core/theme/tareas_tema.dart';
-import 'package:bosque_flutter/core/ui/ofrecer_pdf.dart';
-import 'package:bosque_flutter/data/repositories/caja_fuerte_impl.dart';
 import 'package:bosque_flutter/core/ui/tokens_bosque.dart';
 import 'package:bosque_flutter/presentation/widgets/tareas-rutinarias/pagina_tareas.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:bosque_flutter/core/ui/cerrar_ruta.dart';
 import 'package:bosque_flutter/presentation/widgets/tareas-rutinarias/tabla_modulo.dart';
 
 /// Reemplaza dlgCajaFuerte del legacy ("REPORTAR DINERO PARA CAJA FUERTE").
@@ -41,24 +40,26 @@ class CajaFuerteScreen extends ConsumerWidget {
       if (actual.filasGuardadas != null &&
           actual.filasGuardadas != previo?.filasGuardadas) {
         HapticFeedback.mediumImpact();
-        // El PDF del kardex, en el mismo momento del registro y no después
-        // desde el panel del supervisor: en el legacy ese reporte era el paso
-        // con el que el movimiento entraba a archivo, y el chofer que lo carga
-        // no tiene el botón plCajaFuerte para ir a buscarlo (Marcelo,
-        // 2026-09-07). El endpoint propio verifica que la ocurrencia sea suya.
-        () async {
-          await ofrecerPdf(
-            context,
-            tituloDialogo: 'Caja fuerte registrada',
-            mensaje:
-                '${actual.filasGuardadas} llegada(s) registrada(s) y tarea completada. '
-                '¿Quieres el PDF del kardex de hoy, para archivo?',
-            titulo: 'Caja fuerte',
-            nombreArchivo: 'caja_fuerte.pdf',
-            generar: () => CajaFuerteImpl().reportePdf(idBitTarea: idBitTarea),
-          );
-          if (context.mounted) cerrarRuta(context, true);
-        }();
+        // Ni PDF ni cierre de la pantalla (Marcelo, 2026-10-05: "que me
+        // aparezcan ya los registrados en el día o que me diga algo que fue
+        // registrado, y eso del pdf quítalo, no es necesario en esa
+        // pantalla"). Lo guardado se ve abajo, en "Registrado hoy", releído
+        // del servidor: así se muestra como quedó en la base y no como se
+        // escribió.
+        //
+        // El formulario se limpia: si las filas recién guardadas se quedaran,
+        // tocar "Guardar" otra vez registraría lo mismo dos veces.
+        final cuantas = actual.filasGuardadas!;
+        mostrarAviso(
+          context,
+          cuantas == 1
+              ? 'Registrada, y la tarea quedó completada. La ves abajo, en '
+                  '"Registrado hoy".'
+              : '$cuantas llegadas registradas, y la tarea quedó completada. '
+                  'Las ves abajo, en "Registrado hoy".',
+        );
+        notifier.limpiarFormulario();
+        ref.invalidate(llegadasCajaFuerteDeHoyProvider(idBitTarea));
       }
       if (actual.mensajeError != null &&
           actual.mensajeError != previo?.mensajeError) {
@@ -157,6 +158,8 @@ class CajaFuerteScreen extends ConsumerWidget {
                         },
                       ),
                     ),
+                const SizedBox(height: Esp.l),
+                _RegistradasHoy(idBitTarea: idBitTarea, esTabla: esTabla),
               ],
             );
           },
@@ -203,6 +206,191 @@ class CajaFuerteScreen extends ConsumerWidget {
 
 /// Los anchos de la planilla de Caja Fuerte. Compartidos por el encabezado y
 /// todas las filas: ahi esta la alineacion.
+/// Lo que YA quedó registrado hoy, releído del servidor.
+///
+/// Antes, después de guardar, no quedaba rastro de lo cargado: el formulario
+/// volvía a estar vacío y la única señal era un aviso que se va solo (Marcelo,
+/// 2026-10-05: "que me aparezcan ya los registrados en el día").
+///
+/// Es de SOLO LECTURA. Corregir una llegada ya registrada no es trabajo de
+/// esta pantalla, y mostrarla editable prometería algo que el backend de este
+/// flujo no hace.
+class _RegistradasHoy extends ConsumerWidget {
+  final int idBitTarea;
+  final bool esTabla;
+
+  const _RegistradasHoy({required this.idBitTarea, required this.esTabla});
+
+  String _hora(DateTime? d) =>
+      d == null ? '—' : FormatearFecha.formatearHora(d);
+
+  String _texto(String? v) {
+    final limpio = v?.trim() ?? '';
+    return limpio.isEmpty ? '—' : limpio;
+  }
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final tema = Theme.of(context);
+    final asinc = ref.watch(llegadasCajaFuerteDeHoyProvider(idBitTarea));
+
+    return asinc.when(
+      loading:
+          () => Row(
+            children: [
+              const SizedBox(
+                width: 16,
+                height: 16,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              ),
+              const SizedBox(width: 10),
+              Text(
+                'Buscando lo registrado hoy…',
+                style: tema.textTheme.bodySmall,
+              ),
+            ],
+          ),
+      // Un error acá no es un vacío: decirlo y ofrecer reintentar, en vez de
+      // dejar la pantalla como si no se hubiera registrado nada.
+      error:
+          (e, _) => Row(
+            children: [
+              Icon(
+                Icons.error_outline,
+                size: 18,
+                color: TareasColors.vencidoTexto(context),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  'No se pudo leer lo registrado hoy.',
+                  style: tema.textTheme.bodySmall,
+                ),
+              ),
+              TextButton(
+                onPressed:
+                    () => ref.invalidate(
+                      llegadasCajaFuerteDeHoyProvider(idBitTarea),
+                    ),
+                child: const Text('Reintentar'),
+              ),
+            ],
+          ),
+      data: (filas) {
+        if (filas.isEmpty) {
+          return Text(
+            'Todavía no hay llegadas registradas hoy.',
+            style: tema.textTheme.bodySmall?.copyWith(
+              color: tema.colorScheme.onSurfaceVariant,
+            ),
+          );
+        }
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.only(bottom: Esp.s, left: 4),
+              child: Text(
+                filas.length == 1
+                    ? 'Registrado hoy · 1 llegada'
+                    : 'Registrado hoy · ${filas.length} llegadas',
+                style: tema.textTheme.titleSmall,
+              ),
+            ),
+            if (esTabla)
+              MarcoTabla(
+                child: Column(
+                  children: [
+                    const EncabezadoTabla(
+                      anchos: _anchosRegistradas,
+                      titulos: [
+                        'Hora',
+                        'Cliente',
+                        'Importe',
+                        'Tipo',
+                        'Destino',
+                        'Observación',
+                      ],
+                      aLaDerecha: {2},
+                    ),
+                    for (final l in filas)
+                      FilaTabla(
+                        anchos: _anchosRegistradas,
+                        borde: Border(
+                          top: BorderSide(color: tema.colorScheme.outlineVariant),
+                        ),
+                        celdas: [
+                          Text(_hora(l.hora), style: tema.textTheme.bodySmall),
+                          Text(_texto(l.cliente)),
+                          Text(
+                            FormatoMoneda.conUnidad(l.moneda, l.importe),
+                            textAlign: TextAlign.right,
+                          ),
+                          Text(_texto(l.tipo)),
+                          Text(_texto(l.destino)),
+                          Text(_texto(l.obs)),
+                        ],
+                      ),
+                  ],
+                ),
+              )
+            else
+              for (final l in filas)
+                Card(
+                  margin: const EdgeInsets.only(bottom: Esp.s),
+                  child: Padding(
+                    padding: const EdgeInsets.all(12),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                _texto(l.cliente),
+                                style: tema.textTheme.titleSmall,
+                              ),
+                            ),
+                            Text(
+                              FormatoMoneda.conUnidad(l.moneda, l.importe),
+                              style: tema.textTheme.titleSmall,
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          '${_hora(l.hora)} · ${_texto(l.tipo)} · ${_texto(l.destino)}',
+                          style: tema.textTheme.bodySmall?.copyWith(
+                            color: tema.colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                        if ((l.obs ?? '').trim().isNotEmpty) ...[
+                          const SizedBox(height: 4),
+                          Text(l.obs!.trim(), style: tema.textTheme.bodySmall),
+                        ],
+                      ],
+                    ),
+                  ),
+                ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+/// Las columnas de la lista de arriba. No se reusan las del formulario: aquí
+/// no hay columna para quitar la fila, y sí una de hora.
+const _anchosRegistradas = <AnchoCol>[
+  AnchoCol.fijo(72), // hora
+  AnchoCol.flexible(3), // cliente
+  AnchoCol.fijo(132), // importe
+  AnchoCol.fijo(120), // tipo
+  AnchoCol.flexible(2), // destino
+  AnchoCol.flexible(2), // observacion
+];
+
 const _anchosCajaFuerte = <AnchoCol>[
   AnchoCol.flexible(3), // cliente
   AnchoCol.fijo(104), // moneda — ver la nota de isExpanded mas abajo

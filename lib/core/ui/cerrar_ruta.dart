@@ -27,7 +27,16 @@ import 'package:flutter/material.dart';
 /// `primaryFocus` y no `FocusScope.of(context).unfocus()`: el que hay que
 /// soltar es el nodo que REALMENTE tiene el foco, que puede estar en un scope
 /// hijo (un campo dentro de un `Form` dentro de la hoja).
+/// **Y no cierra lo que no se puede cerrar.** Los flujos que se abren desde el
+/// menú —Caja Fuerte, Coches, Caja Chica— entran con `go`, así que su pantalla
+/// es la ÚNICA página de la pila y no hay nada atrás. El `pop` de ahí revienta
+/// con "You have popped the last page off of the stack, there are no pages left
+/// to show" (Marcelo, 2026-10-05, al cerrar la tarea de Caja Fuerte desde el
+/// menú). Cuando no hay a dónde volver, la pantalla se queda: la tarea ya quedó
+/// cerrada en el servidor y el aviso lo dice.
 void cerrarRuta<T extends Object?>(BuildContext context, [T? resultado]) {
   FocusManager.instance.primaryFocus?.unfocus();
-  Navigator.of(context).pop<T>(resultado);
+  final navegador = Navigator.of(context);
+  if (!navegador.canPop()) return;
+  navegador.pop<T>(resultado);
 }

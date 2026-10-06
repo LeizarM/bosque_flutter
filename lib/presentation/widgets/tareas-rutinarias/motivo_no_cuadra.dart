@@ -1,4 +1,5 @@
 // Destino final: lib/presentation/widgets/tareas-rutinarias/motivo_no_cuadra.dart
+import 'package:bosque_flutter/core/ui/cerrar_ruta.dart';
 import 'package:flutter/material.dart';
 
 /// Pregunta qué no cuadró antes de marcar un traspaso.
@@ -46,7 +47,7 @@ class _DialogoMotivoState extends State<_DialogoMotivo> {
 
   void _guardar() {
     if (_formulario.currentState?.validate() != true) return;
-    Navigator.of(context).pop(_campo.text.trim());
+    cerrarRuta(context, _campo.text.trim());
   }
 
   @override
@@ -74,7 +75,7 @@ class _DialogoMotivoState extends State<_DialogoMotivo> {
     ),
     actions: [
       TextButton(
-        onPressed: () => Navigator.of(context).pop(),
+        onPressed: () => cerrarRuta(context),
         child: const Text('Cancelar'),
       ),
       FilledButton(onPressed: _guardar, child: const Text('Guardar')),

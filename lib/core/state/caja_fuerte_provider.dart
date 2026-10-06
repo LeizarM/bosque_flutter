@@ -1,4 +1,5 @@
 import 'package:bosque_flutter/data/repositories/caja_fuerte_impl.dart';
+import 'package:bosque_flutter/domain/entities/cierre_operaciones_entity.dart';
 import 'package:bosque_flutter/domain/entities/llegada_caja_fuerte_entity.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -40,6 +41,17 @@ class CajaFuerteNotifier extends StateNotifier<CajaFuerteState> {
   void agregarFila() {
     state = state.copyWith(
       filas: [...state.filas, LlegadaCajaFuerteEntity(id: '${_contador++}')],
+    );
+  }
+
+  /// Deja el formulario como recién abierto, con una fila vacía.
+  ///
+  /// Se llama después de guardar: lo registrado pasa a verse en la lista del
+  /// día, y si las filas se quedaran en el formulario, volver a tocar
+  /// "Guardar" registraría lo mismo una segunda vez.
+  void limpiarFormulario() {
+    state = state.copyWith(
+      filas: [LlegadaCajaFuerteEntity(id: '${_contador++}')],
     );
   }
 
@@ -112,6 +124,21 @@ class CajaFuerteNotifier extends StateNotifier<CajaFuerteState> {
 }
 
 final _cajaFuerteRepoProvider = Provider((ref) => CajaFuerteImpl());
+
+/// Lo que ya quedó registrado hoy, por ocurrencia.
+///
+/// Va como `FutureProvider` aparte y no dentro de [CajaFuerteState] porque son
+/// dos cosas distintas: el estado tiene el formulario que se está llenando
+/// —filas que todavía no existen en la base— y esto es lo que la base ya
+/// guardó. Mezclarlos obligaría a recargar el servidor cada vez que alguien
+/// escribe una letra en el formulario.
+///
+/// Se refresca con `ref.invalidate` después de guardar.
+final llegadasCajaFuerteDeHoyProvider = FutureProvider.autoDispose
+    .family<List<LlegadaDelCierre>, int>(
+      (ref, idBitTarea) =>
+          ref.read(_cajaFuerteRepoProvider).registradasHoy(idBitTarea),
+    );
 
 final cajaFuerteProvider =
     StateNotifierProvider.autoDispose<CajaFuerteNotifier, CajaFuerteState>(

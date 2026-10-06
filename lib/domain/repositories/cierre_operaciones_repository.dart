@@ -46,9 +46,20 @@ abstract class CierreOperacionesRepository {
     bool todasSucursales = false,
   });
 
-  Future<void> marcarArqueoRevisado(int idAC, {required int idBitTarea});
+  /// Con [revisado] en false le quita la marca: a veces se da por error
+  /// (Marcelo, 2026-10-05).
+  Future<void> marcarArqueoRevisado(
+    int idAC, {
+    required int idBitTarea,
+    bool revisado = true,
+  });
 
-  Future<void> marcarLlegadaVerificada(int idRp, {required int idBitTarea});
+  /// Con [verificada] en false le quita la marca.
+  Future<void> marcarLlegadaVerificada(
+    int idRp, {
+    required int idBitTarea,
+    bool verificada = true,
+  });
 
   // Los traspasos no se marcan desde aquí: son de la tarea del cajero
   // ("Verificar traspaso Caja AXA", 295), que tiene su propia pantalla.

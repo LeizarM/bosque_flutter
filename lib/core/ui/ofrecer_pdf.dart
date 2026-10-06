@@ -1,4 +1,5 @@
 import 'package:bosque_flutter/core/ui/aviso.dart';
+import 'package:bosque_flutter/core/ui/cerrar_ruta.dart';
 import 'package:bosque_flutter/core/ui/visor_pdf.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -39,8 +40,14 @@ Future<void> ofrecerPdf(
                 title: Text(tituloDialogo),
                 content: Text(mensaje),
                 actions: [
+                  // `cerrarRuta` y no `Navigator.pop`: este diálogo se abre
+                  // encima de una pantalla con campos de texto, y al cerrarse
+                  // el foco vuelve al campo que lo tenía. Si quien llamó cierra
+                  // además su propia pantalla —Caja Fuerte lo hace—, ese campo
+                  // se destruye recién enfocado y Flutter web revienta al
+                  // pedirle su rectángulo (ver cerrar_ruta.dart).
                   TextButton(
-                    onPressed: generando ? null : () => Navigator.of(ctx).pop(),
+                    onPressed: generando ? null : () => cerrarRuta(ctx),
                     child: const Text('Ahora no'),
                   ),
                   FilledButton.icon(
@@ -53,7 +60,7 @@ Future<void> ofrecerPdf(
                               try {
                                 final bytes = await generar();
                                 if (!ctx.mounted) return;
-                                Navigator.of(ctx).pop();
+                                cerrarRuta(ctx);
                                 await mostrarPdf(
                                   context,
                                   bytes: bytes,

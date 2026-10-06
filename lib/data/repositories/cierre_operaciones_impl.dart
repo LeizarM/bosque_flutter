@@ -77,13 +77,25 @@ class CierreOperacionesImpl extends BaseApiRepository
   );
 
   @override
-  Future<void> marcarArqueoRevisado(int idAC, {required int idBitTarea}) async {
+  Future<void> marcarArqueoRevisado(
+    int idAC, {
+    required int idBitTarea,
+    bool revisado = true,
+  }) async {
     await postAndReturnId(
       endpoint: AppConstants.tarVerificarCierreMarcarArqueoRevisado,
       // La ocurrencia viaja porque es el permiso: el servidor comprueba que
-      // quien marca tenga la tarea de revisión de ese día.
-      data: {'idAC': idAC, 'idBitTarea': idBitTarea},
-      errorMessage: 'No se pudo marcar el arqueo como revisado.',
+      // quien marca tenga la tarea de revisión de ese día. Quitar la marca
+      // usa el mismo permiso.
+      data: {
+        'idAC': idAC,
+        'idBitTarea': idBitTarea,
+        'fueRevisado': revisado ? 1 : 0,
+      },
+      errorMessage:
+          revisado
+              ? 'No se pudo marcar el arqueo como revisado.'
+              : 'No se pudo quitar la marca de revisado.',
     );
   }
 
@@ -91,11 +103,19 @@ class CierreOperacionesImpl extends BaseApiRepository
   Future<void> marcarLlegadaVerificada(
     int idRp, {
     required int idBitTarea,
+    bool verificada = true,
   }) async {
     await postAndReturnId(
       endpoint: AppConstants.tarVerificarCierreMarcarLlegadaVerificada,
-      data: {'idRp': idRp, 'fueVerificado': 1, 'idBitTarea': idBitTarea},
-      errorMessage: 'No se pudo marcar la llegada como verificada.',
+      data: {
+        'idRp': idRp,
+        'fueVerificado': verificada ? 1 : 0,
+        'idBitTarea': idBitTarea,
+      },
+      errorMessage:
+          verificada
+              ? 'No se pudo marcar la llegada como verificada.'
+              : 'No se pudo quitar la marca de verificada.',
     );
   }
 

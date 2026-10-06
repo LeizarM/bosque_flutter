@@ -4,6 +4,8 @@ import 'dart:typed_data';
 
 import 'package:bosque_flutter/core/network/base_api_repository.dart';
 import 'package:bosque_flutter/core/network/dio_client.dart';
+import 'package:bosque_flutter/data/models/cierre_operaciones_model.dart';
+import 'package:bosque_flutter/domain/entities/cierre_operaciones_entity.dart';
 import 'package:bosque_flutter/domain/entities/llegada_caja_fuerte_entity.dart';
 import 'package:bosque_flutter/domain/repositories/caja_fuerte_repository.dart';
 
@@ -37,6 +39,14 @@ class CajaFuerteImpl extends BaseApiRepository implements CajaFuerteRepository {
     );
     return resultado.toInt();
   }
+
+  @override
+  Future<List<LlegadaDelCierre>> registradasHoy(int idBitTarea) =>
+      postAndReturnList(
+        endpoint: AppConstants.tarCajaFuerteDelDia,
+        data: {'idBitTarea': idBitTarea},
+        fromJson: CierreOperacionesModel.llegada,
+      );
 
   /// PDF del kardex de caja fuerte de hoy, para archivo. El backend resuelve
   /// la sucursal del propio [idBitTarea] y comprueba que la ocurrencia sea de

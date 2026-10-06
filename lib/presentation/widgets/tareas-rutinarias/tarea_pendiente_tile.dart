@@ -46,6 +46,13 @@ class TareaPendienteTile extends StatelessWidget {
   /// entran alrededor de un 40% más de tareas sin scrollear.
   final bool compacta;
 
+  /// Una tarea especial ya hecha no se vuelve a abrir: la tarjeta deja de ser
+  /// un enlace y muestra lo único que admite (ver [AccionesTareaHecha]).
+  /// Sin [onObservacion], la tarjeta hecha queda de solo lectura.
+  final VoidCallback? onObservacion;
+  final VoidCallback? onVerPdf;
+  final bool generandoPdf;
+
   const TareaPendienteTile({
     super.key,
     required this.tarea,
@@ -53,6 +60,9 @@ class TareaPendienteTile extends StatelessWidget {
     this.onMarcar,
     this.guardando = false,
     this.compacta = false,
+    this.onObservacion,
+    this.onVerPdf,
+    this.generandoPdf = false,
   });
 
   /// null cuando la tarea no tiene un flujo especial — el caso más común
@@ -180,6 +190,8 @@ class TareaPendienteTile extends StatelessWidget {
     final estado = _estado(context);
     final esEspecial = tipo != null;
     final puedeMarcar = !esEspecial && onMarcar != null;
+    // Especial y hecha: ya no navega, ni con el tap ni con el chevron.
+    final hecha = esEspecial && tarea.fueRealizado == 13;
 
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -197,7 +209,7 @@ class TareaPendienteTile extends StatelessWidget {
           // Solo las especiales navegan. En una tarea simple el tap en la
           // tarjeta no hace nada: la acción está en los tres botones, y un
           // InkWell que abre un modal era justamente lo lento.
-          onTap: esEspecial ? onTap : null,
+          onTap: esEspecial && !hecha ? onTap : null,
           child: Padding(
             padding:
                 compacta
@@ -247,7 +259,7 @@ class TareaPendienteTile extends StatelessWidget {
                         ),
                       ),
                     ),
-                    if (esEspecial)
+                    if (esEspecial && !hecha)
                       Icon(Icons.chevron_right, color: scheme.outline),
                   ],
                 ),
@@ -296,11 +308,75 @@ class TareaPendienteTile extends StatelessWidget {
                     onElegir: onMarcar!,
                   ),
                 ],
+                if (hecha && onObservacion != null) ...[
+                  SizedBox(height: compacta ? 6 : 8),
+                  AccionesTareaHecha(
+                    onObservacion: onObservacion!,
+                    onVerPdf: onVerPdf,
+                    generandoPdf: generandoPdf,
+                  ),
+                ],
               ],
             ),
           ),
         ),
       ),
+    );
+  }
+}
+
+/// Lo único que se puede hacer con una tarea de pantalla propia ya hecha:
+/// agregarle una observación y, si es un arqueo, ver su PDF (Marcelo,
+/// 2026-10-05: "una vez que realiza esas tareas que ya no la vuelva hacer.
+/// Máximo agregar una observación y en arqueo de caja que pueda imprimir el
+/// pdf solamente de que lo hizo").
+///
+/// Pública porque la usan la tarjeta y la fila de la planilla de "Mis
+/// tareas": si cada una tuviera su copia, un día ofrecerían cosas distintas.
+class AccionesTareaHecha extends StatelessWidget {
+  final VoidCallback onObservacion;
+
+  /// null = la tarea no tiene PDF (todas menos el arqueo).
+  final VoidCallback? onVerPdf;
+
+  /// Mientras se genera el PDF: el botón queda inerte y muestra que trabaja.
+  final bool generandoPdf;
+
+  const AccionesTareaHecha({
+    super.key,
+    required this.onObservacion,
+    this.onVerPdf,
+    this.generandoPdf = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Wrap(
+      spacing: 8,
+      runSpacing: 4,
+      crossAxisAlignment: WrapCrossAlignment.center,
+      children: [
+        if (onVerPdf != null)
+          OutlinedButton.icon(
+            onPressed: generandoPdf ? null : onVerPdf,
+            style: const ButtonStyle(visualDensity: VisualDensity.compact),
+            icon:
+                generandoPdf
+                    ? const SizedBox(
+                      width: 14,
+                      height: 14,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                    : const Icon(Icons.picture_as_pdf_outlined, size: 16),
+            label: const Text('Ver PDF'),
+          ),
+        TextButton.icon(
+          onPressed: onObservacion,
+          style: const ButtonStyle(visualDensity: VisualDensity.compact),
+          icon: const Icon(Icons.edit_note, size: 18),
+          label: const Text('Observación'),
+        ),
+      ],
     );
   }
 }

@@ -4,6 +4,7 @@ import 'package:bosque_flutter/core/state/bitacora_tareas_provider.dart';
 import 'package:bosque_flutter/core/theme/tareas_colors.dart';
 import 'package:bosque_flutter/core/theme/tareas_tema.dart';
 import 'package:bosque_flutter/core/ui/aviso.dart';
+import 'package:bosque_flutter/core/ui/cerrar_ruta.dart';
 import 'package:bosque_flutter/core/ui/rango_fechas.dart';
 import 'package:bosque_flutter/core/ui/visor_pdf.dart';
 import 'package:bosque_flutter/core/utils/fecha_sql.dart';
@@ -423,7 +424,7 @@ class _BarraCumplimiento extends ConsumerWidget {
                             ),
                           const Spacer(),
                           FilledButton(
-                            onPressed: () => Navigator.of(context).pop(),
+                            onPressed: () => cerrarRuta(context),
                             child: const Text('Listo'),
                           ),
                         ],
@@ -1027,7 +1028,7 @@ void _mostrarDetalle(
                   icon: const Icon(Icons.manage_search),
                   label: const Text('Ver por qué le llegó esta tarea'),
                   onPressed: () {
-                    Navigator.of(ctx).pop();
+                    cerrarRuta(ctx);
                     ref
                         .read(bitacoraPorQueProvider.notifier)
                         .consultarPara(

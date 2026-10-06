@@ -96,6 +96,20 @@ class BitTareaRutiNotifier extends StateNotifier<BitTareaRutiState> {
     }
   }
 
+  /// Agrega una observación a una tarea ya hecha y recarga la lista. Devuelve
+  /// null si salió bien, o el motivo del rechazo tal como lo dio el servidor,
+  /// para mostrarlo en el mismo diálogo donde se escribió.
+  Future<String?> agregarObservacion(int idBitTarea, String obs) async {
+    try {
+      await _repo.agregarObservacion(idBitTarea, obs);
+    } catch (e) {
+      final motivo = e.toString().replaceFirst('Exception: ', '').trim();
+      return motivo.isEmpty ? 'No se pudo agregar la observación.' : motivo;
+    }
+    if (mounted) await cargar();
+    return null;
+  }
+
   Future<bool> eliminar(int idBitTarea, int audUsuario) async {
     state = state.copyWith(cargando: true);
     try {
