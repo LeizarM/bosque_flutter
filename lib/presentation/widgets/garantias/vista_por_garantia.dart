@@ -207,9 +207,16 @@ class _VistaPorGarantiaState extends ConsumerState<VistaPorGarantia> {
                       () => ref.invalidate(garantiasFiltradasProvider(filtro)),
                 ),
             data: (todas) {
-              final visibles = [
+              final filtradas = [
                 for (final g in todas)
                   if (_pasaEstado(g, estado) && _coincide(g, texto)) g,
+              ];
+              // Las cerradas al final, como los clientes con todo cerrado en
+              // «Por cliente»: arriba queda lo que se sigue gestionando. Cada
+              // grupo conserva el orden del servidor (cliente y expiracion).
+              final visibles = [
+                ...filtradas.where((g) => !g.estaCerrada),
+                ...filtradas.where((g) => g.estaCerrada),
               ];
               if (visibles.isEmpty) {
                 return _SinResultados(

@@ -338,12 +338,12 @@ void main() {
       _sinErrores(tester);
 
       for (final t in [
-        Glosario.vigentes,
+        Glosario.garantiasCliente,
         Glosario.valorVigente,
         Glosario.lineaVigente,
         Glosario.lineaSap,
         Glosario.saldoSap,
-        Glosario.proximoVencimiento,
+        Glosario.vencimientoCliente,
       ]) {
         expect(find.byTooltip(t.ayuda), findsWidgets, reason: t.nombre);
       }
@@ -650,6 +650,155 @@ void main() {
     }
   });
 
+  // ── «Por cliente»: que cada fila diga en que estan sus garantias ─────────────
+  group('vista por cliente', () {
+    // ADI0229: una vigente, una caducada y una cerrada. ACNO: una caducada que
+    // vencio el 12/05/2025, nada vigente.
+    _RepoFalso repo() => _RepoFalso(
+      listaDato: [
+        _garantia,
+        _garantiaCerrada,
+        GarantiaVistaModel.fromJson(
+          _garantiaJson(
+            codGarantia: 164,
+            estado: 'CADUCADO',
+            diasParaVencer: -45,
+            fechaExpiracion: '2026-08-07 00:00:00',
+          ),
+        ).toEntity(),
+        GarantiaVistaModel.fromJson(
+          _garantiaJson(
+            codGarantia: 170,
+            codClienteSAP: 'AC00592',
+            estado: 'CADUCADO',
+            diasParaVencer: -146,
+            fechaExpiracion: '2025-05-12 00:00:00',
+          ),
+        ).toEntity(),
+      ],
+    );
+
+    testWidgets('la planilla dice cuantas hay de cada estado y por que las '
+        'sumas estan vacias', (tester) async {
+      await _dibujarPantalla(tester, const Size(1440, 900), repo());
+      _sinErrores(tester);
+
+      expect(find.text('3 garantías'), findsOneWidget);
+      expect(find.text('1 garantía'), findsOneWidget);
+      expect(find.text('1 vigente'), findsOneWidget);
+      expect(find.text('1 caducada'), findsNWidgets(2));
+      expect(find.text('1 cerrada'), findsOneWidget);
+      // ACNO no tiene vigentes: lo dice en vez de dos rayas, y cuenta cuando
+      // vencio la ultima.
+      expect(find.text('Sin garantías vigentes que sumar'), findsOneWidget);
+      expect(find.text('—'), findsNothing);
+      expect(find.text('Venció hace 146${espacioFijo}días'), findsOneWidget);
+      expect(find.text('12/05/2025'), findsOneWidget);
+      // El encabezado ya no dice solo cuantas vigentes hay.
+      expect(
+        find.textContaining(
+          '2${espacioFijo}caducadas$espacioFijo· 1${espacioFijo}cerrada',
+        ),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('«Con cerradas» deja los clientes con alguna cerrada y abre su '
+        'panel en ellas', (tester) async {
+      await _dibujarPantalla(tester, const Size(1440, 900), repo());
+      expect(find.text('ACNO'), findsOneWidget);
+
+      await _tocar(tester, find.widgetWithText(ChoiceChip, 'Con cerradas (1)'));
+      _sinErrores(tester);
+      expect(find.text('ACNO'), findsNothing);
+      expect(find.text(_nombreLargo), findsOneWidget);
+
+      await _tocar(tester, find.text(_nombreLargo));
+      _sinErrores(tester);
+      final cerradas = tester.widget<ChoiceChip>(
+        find.widgetWithText(ChoiceChip, 'Cerradas (1)'),
+      );
+      expect(cerradas.selected, isTrue);
+      expect(find.text('N° 163'), findsOneWidget);
+      expect(find.text('N° 162'), findsNothing);
+    });
+
+    testWidgets('los clientes con todo cerrado van al final', (tester) async {
+      // El servidor los manda por nombre: ADDY antes que ACNO. ADDY tiene su
+      // unica garantia cerrada; ACNO, una caducada que sigue abierta.
+      GarantiaResumenClienteEntity cliente(String cod, String nombre) =>
+          GarantiaResumenClienteModel.fromJson({
+            'codClienteSAP': cod,
+            'datoCliente': nombre,
+            'cantGarantias': 1,
+            'cantVigentes': 0,
+            'montoGarantia': 0,
+            'montoCredito': 0,
+            'proximoVencimiento': null,
+            'diasParaVencer': null,
+            'creditLine': 0,
+            'balance': 0,
+          }).toEntity();
+      await _dibujarPantalla(
+        tester,
+        const Size(1440, 900),
+        _RepoFalso(
+          resumenDato: [
+            cliente('ADI0229', _nombreLargo),
+            cliente('AC00592', 'ACNO'),
+          ],
+          listaDato: [
+            _garantiaCerrada,
+            GarantiaVistaModel.fromJson(
+              _garantiaJson(
+                codGarantia: 170,
+                codClienteSAP: 'AC00592',
+                estado: 'CADUCADO',
+                diasParaVencer: -146,
+                fechaExpiracion: '2025-05-12 00:00:00',
+              ),
+            ).toEntity(),
+          ],
+        ),
+      );
+      _sinErrores(tester);
+      expect(
+        tester.getTopLeft(find.text('ACNO')).dy,
+        lessThan(tester.getTopLeft(find.text(_nombreLargo)).dy),
+      );
+      expect(find.text('Cerrada'), findsOneWidget);
+    });
+
+    testWidgets('mientras se cuentan, «Con cerradas» espera deshabilitado', (
+      tester,
+    ) async {
+      await _dibujarPantalla(
+        tester,
+        const Size(1440, 900),
+        _RepoFalso(lista: _Estado.espera),
+      );
+      _sinErrores(tester);
+      final chip = tester.widget<ChoiceChip>(
+        find.widgetWithText(ChoiceChip, 'Con cerradas (…)'),
+      );
+      expect(chip.onSelected, isNull);
+      // Sin la cuenta, lo que no es vigente se muestra junto.
+      expect(find.text('2 no vigentes'), findsOneWidget);
+    });
+
+    testWidgets('en el telefono la tarjeta dice lo mismo', (tester) async {
+      // Alta para que la lista dibuje las dos tarjetas.
+      await _dibujarPantalla(tester, const Size(360, 1600), repo());
+      _sinErrores(tester);
+      expect(find.text('1 cerrada'), findsOneWidget);
+      expect(
+        find.textContaining('Sin garantías vigentes que sumar'),
+        findsOneWidget,
+      );
+      expect(find.text('Venció hace 146${espacioFijo}días'), findsOneWidget);
+    });
+  });
+
   group('vista por garantia', () {
     final n = DateTime.now();
     final hoy = DateTime(n.year, n.month, n.day);
@@ -685,9 +834,11 @@ void main() {
       expect(find.text('Vencen en los próximos 30 días'), findsOneWidget);
       expect(find.text('Filtrar por fechas'), findsNothing);
 
+      // Sin filtro vuelve a la lista completa. No hace falta pedirla: es la
+      // misma que cuenta los estados de «Por cliente» y sigue en cache.
       await _tocar(tester, find.byTooltip('Quitar el filtro de fechas'));
-      expect(repo.ultimoListado?.vencDesde, isNull);
       expect(find.text('Filtrar por fechas'), findsOneWidget);
+      expect(find.text('N° 162'), findsOneWidget);
     });
 
     testWidgets('el rango de registro va por la fecha de registro', (
@@ -714,6 +865,25 @@ void main() {
 
       await _tocar(tester, find.text('Quitar filtros'));
       expect(find.text('N° 162'), findsOneWidget);
+    });
+
+    testWidgets('las cerradas van al final, en la tabla y en las tarjetas', (
+      tester,
+    ) async {
+      // El servidor manda la cerrada (163) primero.
+      for (final tam in const [Size(1280, 800), Size(360, 1200)]) {
+        await _dibujarPorGarantia(
+          tester,
+          tam,
+          _RepoFalso(listaDato: [_garantiaCerrada, _garantia]),
+        );
+        _sinErrores(tester);
+        expect(
+          tester.getTopLeft(find.text('N° 162')).dy,
+          lessThan(tester.getTopLeft(find.text('N° 163')).dy),
+          reason: 'a ${tam.width} px',
+        );
+      }
     });
 
     testWidgets('la barra de vigencia pinta el tramo transcurrido', (
@@ -956,7 +1126,16 @@ class _RepoFalso implements GarantiasRepository {
     this.pendientes = _Estado.datos,
     this.garantiaDato,
     this.accionesDato,
+    this.listaDato,
+    this.resumenDato,
   });
+
+  /// Lo que devuelve `obtenerResumenClientes` con datos (por defecto [_resumen]).
+  final List<GarantiaResumenClienteEntity>? resumenDato;
+
+  /// Lo que devuelve `listarGarantias` con datos, filtrado por cliente como el
+  /// servidor. Por defecto [_garantia] y [_garantiaCerrada], para cualquiera.
+  final List<GarantiaVistaEntity>? listaDato;
 
   /// La garantia que devuelve `obtenerGarantia` con datos (por defecto,
   /// [_garantia]: vigente, por vencer y sin traspaso).
@@ -1002,7 +1181,7 @@ class _RepoFalso implements GarantiasRepository {
   @override
   Future<List<GarantiaResumenClienteEntity>> obtenerResumenClientes({
     String? buscar,
-  }) => _segun(resumen, _resumen, const []);
+  }) => _segun(resumen, resumenDato ?? _resumen, const []);
 
   @override
   Future<List<GarantiaVistaEntity>> listarGarantias({
@@ -1021,7 +1200,15 @@ class _RepoFalso implements GarantiasRepository {
       regDesde: regDesde,
       regHasta: regHasta,
     );
-    return _segun(lista, [_garantia, _garantiaCerrada], const []);
+    final datos =
+        listaDato
+            ?.where(
+              (g) =>
+                  codClienteSAP == null ||
+                  g.garantia.codClienteSAP == codClienteSAP,
+            )
+            .toList();
+    return _segun(lista, datos ?? [_garantia, _garantiaCerrada], const []);
   }
 
   @override
@@ -1114,13 +1301,14 @@ const _textoLargo =
 
 Map<String, dynamic> _garantiaJson({
   int codGarantia = 162,
+  String codClienteSAP = 'ADI0229',
   String estado = 'VIGENTE',
   int traspasada = 0,
   int diasParaVencer = 14,
   String fechaExpiracion = '2026-10-05 00:00:00',
 }) => {
   'codGarantia': codGarantia,
-  'codClienteSAP': 'ADI0229',
+  'codClienteSAP': codClienteSAP,
   'montoGarantia': 1250000.5,
   'montoCredito': 14000,
   'tiempoPago': 30,

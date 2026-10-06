@@ -26,19 +26,24 @@ import 'package:bosque_flutter/presentation/widgets/garantias/piezas_garantias.d
 import 'package:bosque_flutter/presentation/widgets/shared/permission_widget.dart';
 
 /// Abre el panel con las garantias de [cliente] (boton btnSCGarCbr).
+///
+/// [estado] (VIGENTE, CADUCADO o CERRADO) lo abre ya filtrado: desde «Con
+/// cerradas» de la pantalla principal se ven primero sus cerradas.
 Future<void> abrirGarantiasCliente(
   BuildContext context,
-  GarantiaResumenClienteEntity cliente,
-) => abrirPanel<void>(
+  GarantiaResumenClienteEntity cliente, {
+  String? estado,
+}) => abrirPanel<void>(
   context,
   anchoMaximo: 1080,
-  contenido: (_) => _GarantiasCliente(cliente: cliente),
+  contenido: (_) => _GarantiasCliente(cliente: cliente, estadoInicial: estado),
 );
 
 class _GarantiasCliente extends ConsumerStatefulWidget {
-  const _GarantiasCliente({required this.cliente});
+  const _GarantiasCliente({required this.cliente, this.estadoInicial});
 
   final GarantiaResumenClienteEntity cliente;
+  final String? estadoInicial;
 
   @override
   ConsumerState<_GarantiasCliente> createState() => _GarantiasClienteState();
@@ -46,7 +51,7 @@ class _GarantiasCliente extends ConsumerStatefulWidget {
 
 class _GarantiasClienteState extends ConsumerState<_GarantiasCliente> {
   /// VIGENTE, CADUCADO, CERRADO o null (todas).
-  String? _estado;
+  late String? _estado = widget.estadoInicial;
 
   GarantiaResumenClienteEntity get _c => widget.cliente;
 

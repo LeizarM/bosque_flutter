@@ -53,14 +53,18 @@ abstract final class BtnGarantias {
 /// guarda moneda y el legacy tampoco la mostraba.
 String monto(num? v) => v == null ? '--' : FormatoMoneda.monto.format(v);
 
+/// Espacio que no se corta: un numero y su palabra («3 caducadas», «1600
+/// días») quedan en la misma linea aunque el texto salte.
+const String espacioFijo = ' ';
+
 /// «faltan 23 días», «vence hoy», «venció hace 4 días».
 String cuentaRegresiva(int? dias) {
   if (dias == null) return 'Sin vencimiento';
   if (dias == 0) return 'Vence hoy';
-  if (dias == 1) return 'Falta 1 día';
-  if (dias > 1) return 'Faltan $dias días';
+  if (dias == 1) return 'Falta 1${espacioFijo}día';
+  if (dias > 1) return 'Faltan $dias${espacioFijo}días';
   final n = -dias;
-  return n == 1 ? 'Venció ayer' : 'Venció hace $n días';
+  return n == 1 ? 'Venció ayer' : 'Venció hace $n${espacioFijo}días';
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -330,24 +334,31 @@ abstract final class Glosario {
         'genera desde «Traspaso» en la pantalla principal.',
   );
 
-  // ── Del resumen por cliente: suman sus garantias VIGENTES ─────────────────
-  static const Termino vigentes = (
-    nombre: 'Vigentes',
-    ayuda: 'Cuántas de sus garantías están dentro de su plazo, sobre el total.',
+  // ── Del resumen por cliente: los montos suman sus garantias VIGENTES ──────
+  static const Termino garantiasCliente = (
+    nombre: 'Garantías',
+    ayuda:
+        'Cuántas garantías tiene y en qué estado está cada una: vigentes '
+        '(dentro de su plazo), caducadas (vencidas, pero siguen abiertas) y '
+        'cerradas.',
   );
   static const Termino valorVigente = (
     nombre: 'Valor en garantía',
-    ayuda: 'Suma del valor de sus garantías vigentes.',
+    ayuda:
+        'Suma del valor de sus garantías vigentes. Las caducadas y las '
+        'cerradas no suman.',
   );
   static const Termino lineaVigente = (
     nombre: 'Línea aprobada',
     ayuda:
-        'Suma de las líneas aprobadas de sus garantías vigentes. Es la que se '
-        'compara con la línea en SAP.',
+        'Suma de las líneas aprobadas de sus garantías vigentes (las caducadas '
+        'y las cerradas no suman). Es la que se compara con la línea en SAP.',
   );
-  static const Termino proximoVencimiento = (
-    nombre: 'Próximo vencimiento',
-    ayuda: 'Cuándo vence la primera de sus garantías vigentes.',
+  static const Termino vencimientoCliente = (
+    nombre: 'Vencimiento',
+    ayuda:
+        'Si tiene garantías vigentes, cuándo vence la primera. Si no tiene, '
+        'cuándo venció la última, o si están todas cerradas.',
   );
 
   /// Los que explica la guia, en este orden.

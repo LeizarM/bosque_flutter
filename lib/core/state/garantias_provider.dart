@@ -109,6 +109,96 @@ final garantiasFiltradasProvider = FutureProvider.autoDispose
           );
     });
 
+/// Las garantias de un cliente contadas por estado. El resumen del backend
+/// (`/garantias/resumen-clientes`, rama R) solo cuenta las vigentes; sin esto
+/// la grilla decia «0 de 1» sin decir si la otra estaba caducada o cerrada.
+@immutable
+class EstadosCliente {
+  const EstadosCliente({
+    this.vigentes = 0,
+    this.caducadas = 0,
+    this.cerradas = 0,
+    this.ultimoVencimiento,
+    this.diasDesdeUltimo,
+  });
+
+  final int vigentes;
+  final int caducadas;
+  final int cerradas;
+
+  /// La expiracion mas reciente entre sus caducadas: cuando vencio la ultima.
+  final DateTime? ultimoVencimiento;
+
+  /// Dias de esa expiracion respecto de hoy, como los calcula el servidor
+  /// (negativo: ya paso).
+  final int? diasDesdeUltimo;
+
+  int get total => vigentes + caducadas + cerradas;
+
+  EstadosCliente _con(GarantiaVistaEntity g) {
+    if (g.estaCerrada) return _copia(cerradas: cerradas + 1);
+    if (g.estaVigente) return _copia(vigentes: vigentes + 1);
+    final fin = g.garantia.fechaExpiracion;
+    final masReciente =
+        fin != null &&
+        (ultimoVencimiento == null || fin.isAfter(ultimoVencimiento!));
+    return _copia(
+      caducadas: caducadas + 1,
+      ultimoVencimiento: masReciente ? fin : ultimoVencimiento,
+      diasDesdeUltimo: masReciente ? g.diasParaVencer : diasDesdeUltimo,
+    );
+  }
+
+  EstadosCliente _copia({
+    int? vigentes,
+    int? caducadas,
+    int? cerradas,
+    DateTime? ultimoVencimiento,
+    int? diasDesdeUltimo,
+  }) => EstadosCliente(
+    vigentes: vigentes ?? this.vigentes,
+    caducadas: caducadas ?? this.caducadas,
+    cerradas: cerradas ?? this.cerradas,
+    ultimoVencimiento: ultimoVencimiento ?? this.ultimoVencimiento,
+    diasDesdeUltimo: diasDesdeUltimo ?? this.diasDesdeUltimo,
+  );
+
+  /// Una entrada por CardCode.
+  static Map<String, EstadosCliente> porCliente(
+    Iterable<GarantiaVistaEntity> garantias,
+  ) {
+    final r = <String, EstadosCliente>{};
+    for (final g in garantias) {
+      final cod = g.garantia.codClienteSAP;
+      r[cod] = (r[cod] ?? const EstadosCliente())._con(g);
+    }
+    return r;
+  }
+
+  /// La suma de todos los clientes, para el encabezado.
+  static EstadosCliente suma(Iterable<EstadosCliente> todos) => todos.fold(
+    const EstadosCliente(),
+    (s, e) => s._copia(
+      vigentes: s.vigentes + e.vigentes,
+      caducadas: s.caducadas + e.caducadas,
+      cerradas: s.cerradas + e.cerradas,
+    ),
+  );
+}
+
+/// [EstadosCliente] de cada cliente, por CardCode.
+///
+/// Sale de la misma lista que la vista «Por garantía» sin filtros: es una sola
+/// lectura en cache para las dos vistas, y no hizo falta tocar el backend ni
+/// el procedimiento.
+final estadosPorClienteProvider =
+    FutureProvider.autoDispose<Map<String, EstadosCliente>>((ref) async {
+      final todas = await ref.watch(
+        garantiasFiltradasProvider(const FiltroGarantias()).future,
+      );
+      return EstadosCliente.porCliente(todas);
+    });
+
 /// Las garantias de un cliente, por su CardCode.
 final garantiasClienteProvider = FutureProvider.autoDispose
     .family<List<GarantiaVistaEntity>, String>((ref, codClienteSAP) {

@@ -10,7 +10,11 @@
 /// - **El vencimiento se lee como plazo**, no como fecha: «Faltan 12 días» en
 ///   vez de una fecha y dos iconos que habia que interpretar.
 /// - **Se puede filtrar** por lo que importa en cobranza: clientes con
-///   vigentes, los que vencen en 30 dias y los que no cuadran con SAP.
+///   vigentes, los que vencen en 30 dias, los que no cuadran con SAP y los que
+///   tienen garantias cerradas.
+/// - **Cada fila dice en que estado estan sus garantias** (vigentes,
+///   caducadas, cerradas) y, si no tiene vigentes, cuando vencio la ultima. El
+///   legacy mostraba «0 de 1» y celdas vacias que habia que interpretar.
 ///
 /// Todo lo que escribe vive en los paneles de `widgets/garantias/`; esta
 /// pantalla solo lista, filtra y abre.
@@ -26,6 +30,7 @@ import 'package:bosque_flutter/core/ui/piezas_bosque.dart';
 import 'package:bosque_flutter/core/ui/tokens_bosque.dart';
 import 'package:bosque_flutter/domain/entities/cliente_sap_entity.dart';
 import 'package:bosque_flutter/domain/entities/garantia_resumen_cliente_entity.dart';
+import 'package:bosque_flutter/domain/entities/garantia_vista_entity.dart';
 import 'package:bosque_flutter/presentation/widgets/garantias/detalle_garantia.dart';
 import 'package:bosque_flutter/presentation/widgets/garantias/dialogos_garantias.dart';
 import 'package:bosque_flutter/presentation/widgets/garantias/formularios_garantia.dart';
@@ -50,18 +55,35 @@ final _modoProvider = StateProvider.autoDispose<_Modo>(
 );
 
 /// Que clientes se muestran.
-enum _Vista { todos, conVigentes, porVencer, distintaDeSap }
+enum _Vista { todos, conVigentes, porVencer, distintaDeSap, conCerradas }
 
 final _vistaProvider = StateProvider.autoDispose<_Vista>((ref) => _Vista.todos);
 final _busquedaProvider = StateProvider.autoDispose<String>((ref) => '');
 final _paginaProvider = StateProvider.autoDispose<int>((ref) => 0);
 final _filasPorPaginaProvider = StateProvider.autoDispose<int>((ref) => 25);
 
-bool _pasaVista(GarantiaResumenClienteEntity c, _Vista v) => switch (v) {
+/// Todas las garantias del cliente estan cerradas: ya no hay nada que
+/// gestionar con el. False mientras [estados] no llega.
+bool _todasCerradas(
+  GarantiaResumenClienteEntity c,
+  Map<String, EstadosCliente>? estados,
+) {
+  final e = estados?[c.codClienteSAP];
+  return e != null && e.cerradas > 0 && e.cerradas == e.total;
+}
+
+/// [estados] es null mientras se cuentan (o si el usuario no puede leerlos):
+/// entonces «Con cerradas» no deja pasar a nadie y su chip va deshabilitado.
+bool _pasaVista(
+  GarantiaResumenClienteEntity c,
+  _Vista v,
+  Map<String, EstadosCliente>? estados,
+) => switch (v) {
   _Vista.todos => true,
   _Vista.conVigentes => !c.sinVigentes,
   _Vista.porVencer => c.porVencer,
   _Vista.distintaDeSap => c.difiereDeSap,
+  _Vista.conCerradas => (estados?[c.codClienteSAP]?.cerradas ?? 0) > 0,
 };
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -89,6 +111,8 @@ class _GarantiasScreenState extends ConsumerState<GarantiasScreen> {
 
   void _recargar() {
     ref.invalidate(resumenClientesProvider);
+    // La lista de garantias: la vista «Por garantía» y la cuenta por estado.
+    ref.invalidate(garantiasFiltradasProvider);
     ref.invalidate(traspasosPendientesProvider);
   }
 
@@ -144,6 +168,14 @@ class _GarantiasScreenState extends ConsumerState<GarantiasScreen> {
 
     final modo = ref.watch(_modoProvider);
 
+    // Cuantas caducadas y cerradas tiene cada cliente. Lee /garantias/listar,
+    // que pide el mismo boton que ver las garantias de un cliente: sin el, la
+    // grilla muestra solo lo que trae el resumen.
+    final estados =
+        permisos.verCliente
+            ? ref.watch(estadosPorClienteProvider).valueOrNull
+            : null;
+
     // GarantiasScope: tipografia y colores de estado del modulo (ver
     // GarantiasTema). Los paneles lo reciben tambien, desde abrirPanel.
     return GarantiasScope(
@@ -158,6 +190,10 @@ class _GarantiasScreenState extends ConsumerState<GarantiasScreen> {
                 _Cabecera(
                   aire: aire,
                   clientes: todos,
+                  totales:
+                      estados == null
+                          ? null
+                          : EstadosCliente.suma(estados.values),
                   permisos: permisos,
                   pendientesTraspaso: pendientes,
                   cargando: resumen.isLoading,
@@ -186,11 +222,17 @@ class _GarantiasScreenState extends ConsumerState<GarantiasScreen> {
                     ],
                   ),
               data: (todos) {
-                final visibles =
-                    todos
-                        .where((c) => c.coincideCon(busqueda))
-                        .where((c) => _pasaVista(c, vista))
-                        .toList();
+                final filtrados = todos
+                    .where((c) => c.coincideCon(busqueda))
+                    .where((c) => _pasaVista(c, vista, estados));
+                // Primero los clientes con algo abierto (vigente o caducada) y
+                // al final los que tienen todo cerrado: lo que se sigue
+                // gestionando queda arriba. Cada grupo conserva el orden
+                // alfabetico del servidor.
+                final visibles = [
+                  ...filtrados.where((c) => !_todasCerradas(c, estados)),
+                  ...filtrados.where((c) => _todasCerradas(c, estados)),
+                ];
 
                 // «Por garantía» lee /garantias/listar, que exige el mismo boton
                 // que ver las garantias de un cliente.
@@ -220,6 +262,8 @@ class _GarantiasScreenState extends ConsumerState<GarantiasScreen> {
                         buscarCtrl: _buscarCtrl,
                         vista: vista,
                         todos: todos,
+                        estados: estados,
+                        conCerradas: permisos.verCliente,
                         abiertos: _filtrosAbiertos,
                         onAbrir:
                             () => setState(
@@ -245,12 +289,22 @@ class _GarantiasScreenState extends ConsumerState<GarantiasScreen> {
                         child: _Listado(
                           aire: aire,
                           filas: visibles,
+                          estados: estados,
                           totalSinFiltrar: todos.length,
                           hayFiltro:
                               busqueda.trim().isNotEmpty ||
                               vista != _Vista.todos,
                           permisos: permisos,
-                          onVer: (c) => abrirGarantiasCliente(context, c),
+                          // Desde «Con cerradas», el panel abre en ellas.
+                          onVer:
+                              (c) => abrirGarantiasCliente(
+                                context,
+                                c,
+                                estado:
+                                    vista == _Vista.conCerradas
+                                        ? GarantiaVistaEntity.cerrado
+                                        : null,
+                              ),
                           onNueva: (c) => _nueva(cliente: c),
                           onLimpiarFiltros: _limpiarFiltros,
                         ),
@@ -345,6 +399,7 @@ class _Cabecera extends StatelessWidget {
   const _Cabecera({
     required this.aire,
     required this.clientes,
+    required this.totales,
     required this.permisos,
     required this.pendientesTraspaso,
     required this.cargando,
@@ -356,6 +411,9 @@ class _Cabecera extends StatelessWidget {
 
   final Aire aire;
   final List<GarantiaResumenClienteEntity> clientes;
+
+  /// Garantias de todos los clientes por estado; null mientras se cuentan.
+  final EstadosCliente? totales;
   final _Permisos permisos;
 
   /// Garantias que esperan el traspaso; null si no se consulto.
@@ -371,13 +429,23 @@ class _Cabecera extends StatelessWidget {
     if (clientes.isEmpty) return 'Garantías de los clientes, con su plazo';
     final vigentes = clientes.fold<int>(0, (s, c) => s + c.cantVigentes);
     final porVencer = clientes.where((c) => c.porVencer).length;
+    final caducadas = totales?.caducadas ?? 0;
+    final cerradas = totales?.cerradas ?? 0;
     final partes = [
       '${clientes.length} ${clientes.length == 1 ? "cliente" : "clientes"}',
       '$vigentes ${vigentes == 1 ? "garantía vigente" : "garantías vigentes"}',
       if (porVencer > 0)
         '$porVencer ${porVencer == 1 ? "vence" : "vencen"} en 30 días o menos',
+      // Con todo vencido, «0 garantías vigentes» solo parecia un error.
+      if (caducadas > 0)
+        '$caducadas ${caducadas == 1 ? "caducada" : "caducadas"}',
+      if (cerradas > 0) '$cerradas ${cerradas == 1 ? "cerrada" : "cerradas"}',
     ];
-    return partes.join(' · ');
+    // Cada parte entera en una linea: si el texto salta, salta despues de un
+    // «·» y no entre «3» y «caducadas».
+    return partes
+        .map((p) => p.replaceAll(' ', espacioFijo))
+        .join('$espacioFijo· ');
   }
 
   @override
@@ -548,6 +616,8 @@ class _BarraFiltros extends StatelessWidget {
     required this.buscarCtrl,
     required this.vista,
     required this.todos,
+    required this.estados,
+    required this.conCerradas,
     required this.abiertos,
     required this.onAbrir,
     required this.onBuscar,
@@ -558,6 +628,10 @@ class _BarraFiltros extends StatelessWidget {
   final TextEditingController buscarCtrl;
   final _Vista vista;
   final List<GarantiaResumenClienteEntity> todos;
+  final Map<String, EstadosCliente>? estados;
+
+  /// Si se ofrece «Con cerradas» (el usuario puede leer las garantias).
+  final bool conCerradas;
   final bool abiertos;
   final VoidCallback onAbrir;
   final ValueChanged<String> onBuscar;
@@ -590,7 +664,8 @@ class _BarraFiltros extends StatelessWidget {
       ),
     );
 
-    int cuantos(_Vista v) => todos.where((c) => _pasaVista(c, v)).length;
+    int cuantos(_Vista v) =>
+        todos.where((c) => _pasaVista(c, v, estados)).length;
     final chips = Wrap(
       spacing: Esp.s,
       runSpacing: Esp.s,
@@ -614,13 +689,29 @@ class _BarraFiltros extends StatelessWidget {
             'Clientes cuya línea aprobada por garantías no coincide con la '
                 'línea de crédito en SAP. En la lista aparecen resaltados.',
           ),
-        ])
-          ChoiceChip(
-            label: Text('$texto (${cuantos(v)})'),
-            tooltip: ayuda,
-            selected: vista == v,
-            onSelected: (_) => onVista(v),
+          (
+            _Vista.conCerradas,
+            'Con cerradas',
+            'Clientes con al menos una garantía cerrada. Al abrir uno, se ven '
+                'primero sus garantías cerradas.',
           ),
+        ])
+          if (v != _Vista.conCerradas || conCerradas)
+            ChoiceChip(
+              // Las cerradas se cuentan con una segunda lectura: hasta que
+              // llega, el chip espera en vez de decir «0».
+              label: Text(
+                v == _Vista.conCerradas && estados == null
+                    ? '$texto (…)'
+                    : '$texto (${cuantos(v)})',
+              ),
+              tooltip: ayuda,
+              selected: vista == v,
+              onSelected:
+                  v == _Vista.conCerradas && estados == null
+                      ? null
+                      : (_) => onVista(v),
+            ),
       ],
     );
 
@@ -697,6 +788,7 @@ class _Listado extends ConsumerWidget {
   const _Listado({
     required this.aire,
     required this.filas,
+    required this.estados,
     required this.totalSinFiltrar,
     required this.hayFiltro,
     required this.permisos,
@@ -707,6 +799,7 @@ class _Listado extends ConsumerWidget {
 
   final Aire aire;
   final List<GarantiaResumenClienteEntity> filas;
+  final Map<String, EstadosCliente>? estados;
   final int totalSinFiltrar;
   final bool hayFiltro;
   final _Permisos permisos;
@@ -762,6 +855,7 @@ class _Listado extends ConsumerWidget {
             (context, i) => _TarjetaCliente(
               n: i + 1,
               c: filas[i],
+              e: estados?[filas[i].codClienteSAP],
               permisos: permisos,
               onVer: onVer,
               onNueva: onNueva,
@@ -784,6 +878,7 @@ class _Listado extends ConsumerWidget {
         Expanded(
           child: _TablaClientes(
             filas: filas.sublist(desde, hasta),
+            estados: estados,
             primerNumero: desde + 1,
             permisos: permisos,
             padding: padding,
@@ -819,14 +914,18 @@ class _Listado extends ConsumerWidget {
 /// vistazo. Cada encabezado lleva su ⓘ con la explicacion; «Cliente» no la
 /// necesita.
 const List<(Termino, int, bool)> _columnas = [
-  ((nombre: 'Cliente', ayuda: ''), 6, false),
-  (Glosario.vigentes, 2, false),
+  ((nombre: 'Cliente', ayuda: ''), 5, false),
+  (Glosario.garantiasCliente, 3, false),
   (Glosario.valorVigente, 3, true),
   (Glosario.lineaVigente, 3, true),
   (Glosario.lineaSap, 3, true),
   (Glosario.saldoSap, 3, true),
-  (Glosario.proximoVencimiento, 3, false),
+  (Glosario.vencimientoCliente, 3, false),
 ];
+
+/// Lo que dicen «Valor en garantía» y «Línea aprobada» de un cliente sin
+/// vigentes. Antes eran dos rayas que no decian por que.
+const String _sinVigentesQueSumar = 'Sin garantías vigentes que sumar';
 
 /// Solo la flecha: «Nueva garantía para este cliente» vive en su panel. Antes
 /// cada fila repetia un «+» y una flecha, ruido en veinte filas iguales.
@@ -837,6 +936,7 @@ const double _anchoNumero = 40;
 class _TablaClientes extends StatelessWidget {
   const _TablaClientes({
     required this.filas,
+    required this.estados,
     required this.primerNumero,
     required this.permisos,
     required this.padding,
@@ -844,6 +944,7 @@ class _TablaClientes extends StatelessWidget {
   });
 
   final List<GarantiaResumenClienteEntity> filas;
+  final Map<String, EstadosCliente>? estados;
 
   /// Numero de la primera fila de la pagina en la lista filtrada.
   final int primerNumero;
@@ -913,6 +1014,7 @@ class _TablaClientes extends StatelessWidget {
                   (context, i) => _FilaCliente(
                     n: primerNumero + i,
                     c: filas[i],
+                    e: estados?[filas[i].codClienteSAP],
                     permisos: permisos,
                     onVer: onVer,
                   ),
@@ -928,12 +1030,16 @@ class _FilaCliente extends StatelessWidget {
   const _FilaCliente({
     required this.n,
     required this.c,
+    required this.e,
     required this.permisos,
     required this.onVer,
   });
 
   final int n;
   final GarantiaResumenClienteEntity c;
+
+  /// Sus garantias por estado; null mientras se cuentan.
+  final EstadosCliente? e;
   final _Permisos permisos;
   final ValueChanged<GarantiaResumenClienteEntity> onVer;
 
@@ -952,8 +1058,6 @@ class _FilaCliente extends StatelessWidget {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final marcada = c.difiereDeSap;
-    // Sin vigentes, las sumas son 0 por definicion: «—» dice «no hay» sin
-    // llenar la fila de ceros que compiten con las cifras reales.
     final sinVig = c.sinVigentes;
 
     return Container(
@@ -1002,36 +1106,34 @@ class _FilaCliente extends StatelessWidget {
                   ],
                 ),
               ),
-              _celda(
-                _columnas[1].$2,
-                Text(
-                  '${c.cantVigentes} de ${c.cantGarantias}',
-                  style: context.cifra(
-                    color: sinVig ? cs.onSurfaceVariant : null,
+              _celda(_columnas[1].$2, _ConteoEstados(c: c, e: e)),
+              // Sin vigentes, las dos sumas son 0 por definicion: una sola
+              // celda lo dice en palabras.
+              if (sinVig)
+                _celda(
+                  _columnas[2].$2 + _columnas[3].$2,
+                  Text(
+                    _sinVigentesQueSumar,
+                    textAlign: TextAlign.end,
+                    style: context.apagado(),
                   ),
+                  derecha: true,
+                )
+              else ...[
+                _celda(
+                  _columnas[2].$2,
+                  Text(monto(c.montoGarantia), style: context.cifra()),
+                  derecha: true,
                 ),
-              ),
-              _celda(
-                _columnas[2].$2,
-                Text(
-                  sinVig ? '—' : monto(c.montoGarantia),
-                  style: context.cifra(
-                    color: sinVig ? cs.onSurfaceVariant : null,
+                _celda(
+                  _columnas[3].$2,
+                  Text(
+                    monto(c.montoCredito),
+                    style: context.cifra(fuerte: true),
                   ),
+                  derecha: true,
                 ),
-                derecha: true,
-              ),
-              _celda(
-                _columnas[3].$2,
-                Text(
-                  sinVig ? '—' : monto(c.montoCredito),
-                  style: context.cifra(
-                    fuerte: !sinVig,
-                    color: sinVig ? cs.onSurfaceVariant : null,
-                  ),
-                ),
-                derecha: true,
-              ),
+              ],
               _celda(
                 _columnas[4].$2,
                 ComparacionSap(aprobada: c.montoCredito, sap: c.creditLine),
@@ -1042,13 +1144,7 @@ class _FilaCliente extends StatelessWidget {
                 Text(monto(c.balance), style: context.cifra()),
                 derecha: true,
               ),
-              _celda(
-                _columnas[6].$2,
-                CuentaRegresiva(
-                  dias: c.diasParaVencer,
-                  fecha: c.proximoVencimiento,
-                ),
-              ),
+              _celda(_columnas[6].$2, _VencimientoCliente(c: c, e: e)),
               SizedBox(
                 width: _anchoAcciones,
                 child:
@@ -1078,6 +1174,7 @@ class _TarjetaCliente extends StatelessWidget {
   const _TarjetaCliente({
     required this.n,
     required this.c,
+    required this.e,
     required this.permisos,
     required this.onVer,
     required this.onNueva,
@@ -1085,6 +1182,9 @@ class _TarjetaCliente extends StatelessWidget {
 
   final int n;
   final GarantiaResumenClienteEntity c;
+
+  /// Sus garantias por estado; null mientras se cuentan.
+  final EstadosCliente? e;
   final _Permisos permisos;
   final ValueChanged<GarantiaResumenClienteEntity> onVer;
   final ValueChanged<GarantiaResumenClienteEntity> onNueva;
@@ -1180,25 +1280,14 @@ class _TarjetaCliente extends StatelessWidget {
                   runSpacing: Esp.xs,
                   children: [
                     Tooltip(
-                      message: Glosario.vigentes.ayuda,
+                      message: Glosario.garantiasCliente.ayuda,
                       triggerMode: TooltipTriggerMode.tap,
-                      child: EtiquetaGarantia(
-                        texto:
-                            '${c.cantVigentes} de ${c.cantGarantias} '
-                            '${c.cantGarantias == 1 ? "vigente" : "vigentes"}',
-                        tono:
-                            c.sinVigentes
-                                ? TonoEtiqueta.neutro
-                                : TonoEtiqueta.exito,
-                      ),
+                      child: _ConteoEstados(c: c, e: e),
                     ),
                     Tooltip(
-                      message: Glosario.proximoVencimiento.ayuda,
+                      message: Glosario.vencimientoCliente.ayuda,
                       triggerMode: TooltipTriggerMode.tap,
-                      child: CuentaRegresiva(
-                        dias: c.diasParaVencer,
-                        fecha: c.proximoVencimiento,
-                      ),
+                      child: _VencimientoCliente(c: c, e: e),
                     ),
                   ],
                 ),
@@ -1210,20 +1299,28 @@ class _TarjetaCliente extends StatelessWidget {
                   spacing: Esp.xl,
                   runSpacing: Esp.m,
                   children: [
-                    cifra(
-                      Glosario.valorVigente,
-                      Text(
-                        sinVig ? '—' : monto(c.montoGarantia),
-                        style: context.cifra(),
+                    if (sinVig)
+                      SizedBox(
+                        width: double.infinity,
+                        child: Text(
+                          '$_sinVigentesQueSumar: valor en garantía y línea '
+                          'aprobada en cero.',
+                          style: context.apagado(),
+                        ),
+                      )
+                    else ...[
+                      cifra(
+                        Glosario.valorVigente,
+                        Text(monto(c.montoGarantia), style: context.cifra()),
                       ),
-                    ),
-                    cifra(
-                      Glosario.lineaVigente,
-                      Text(
-                        sinVig ? '—' : monto(c.montoCredito),
-                        style: context.cifra(fuerte: !sinVig),
+                      cifra(
+                        Glosario.lineaVigente,
+                        Text(
+                          monto(c.montoCredito),
+                          style: context.cifra(fuerte: true),
+                        ),
                       ),
-                    ),
+                    ],
                     cifra(
                       Glosario.lineaSap,
                       ComparacionSap(
@@ -1257,5 +1354,118 @@ class _TarjetaCliente extends StatelessWidget {
         ),
       ),
     );
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// PIEZAS DE LA FILA
+// ═══════════════════════════════════════════════════════════════════════════
+
+/// Cuantas garantias tiene el cliente y en que estado: «3 garantías» y debajo
+/// «● 1 vigente ● 1 caducada ● 1 cerrada», con los colores de estado.
+///
+/// Las vigentes salen del resumen; caducadas y cerradas de [e]. Mientras [e]
+/// no llega, el resto se cuenta junto como «no vigentes».
+class _ConteoEstados extends StatelessWidget {
+  const _ConteoEstados({required this.c, required this.e});
+
+  final GarantiaResumenClienteEntity c;
+  final EstadosCliente? e;
+
+  @override
+  Widget build(BuildContext context) {
+    final n = c.cantGarantias;
+    final partes = [
+      (c.cantVigentes, 'vigente', 'vigentes', Semantica.exito),
+      if (e case final e?) ...[
+        (e.caducadas, 'caducada', 'caducadas', Semantica.peligro),
+        (e.cerradas, 'cerrada', 'cerradas', Semantica.neutro),
+      ] else
+        (n - c.cantVigentes, 'no vigente', 'no vigentes', Semantica.neutro),
+    ].where((p) => p.$1 > 0);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          '$n ${n == 1 ? 'garantía' : 'garantías'}',
+          style: Theme.of(
+            context,
+          ).textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w600),
+        ),
+        const SizedBox(height: 2),
+        Wrap(
+          spacing: Esp.s,
+          runSpacing: 2,
+          children: [
+            for (final (k, uno, varios, s) in partes)
+              _PuntoEstado(texto: '$k ${k == 1 ? uno : varios}', s: s),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+class _PuntoEstado extends StatelessWidget {
+  const _PuntoEstado({required this.texto, required this.s});
+
+  final String texto;
+  final Semantica s;
+
+  @override
+  Widget build(BuildContext context) => Row(
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      Container(
+        width: 7,
+        height: 7,
+        decoration: BoxDecoration(
+          color: GarantiasColores.pleno(context, s),
+          shape: BoxShape.circle,
+        ),
+      ),
+      const SizedBox(width: 4),
+      Flexible(
+        child: Text(
+          texto,
+          style: context.apagado()?.copyWith(
+            color: GarantiasColores.texto(context, s),
+          ),
+        ),
+      ),
+    ],
+  );
+}
+
+/// La columna «Vencimiento»: con vigentes, la cuenta regresiva de la primera;
+/// sin vigentes, cuando vencio la ultima caducada, o «Todas cerradas».
+class _VencimientoCliente extends StatelessWidget {
+  const _VencimientoCliente({required this.c, required this.e});
+
+  final GarantiaResumenClienteEntity c;
+  final EstadosCliente? e;
+
+  @override
+  Widget build(BuildContext context) {
+    if (!c.sinVigentes) {
+      return CuentaRegresiva(
+        dias: c.diasParaVencer,
+        fecha: c.proximoVencimiento,
+      );
+    }
+    final e = this.e;
+    if (e != null && e.ultimoVencimiento != null) {
+      return CuentaRegresiva(
+        dias: e.diasDesdeUltimo,
+        fecha: e.ultimoVencimiento,
+      );
+    }
+    final texto =
+        e != null && e.cerradas > 0
+            ? (e.cerradas == 1 ? 'Cerrada' : 'Todas cerradas')
+            : 'Sin vigentes';
+    return Text(texto, style: context.apagado());
   }
 }
