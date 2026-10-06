@@ -46,6 +46,13 @@ void main() {
     // sin el 59: con el ítem todavía en el menú y sin redirección, sería otra
     // «Página no encontrada».
     'tacTareas/Dependientes': 'DependientesJefeScreen',
+    // codVista 42 — 'Cheques' (padre 41 'modCheques'). La direccion es la del
+    // JSF viejo, tal cual: el menu y los permisos siguen sirviendo.
+    'tchCheque/cheque': 'ChequesScreen',
+    // codVista 43 — 'Bancos' (padre 140). Misma regla: la direccion del JSF.
+    'tchBanco/banco': 'BancosScreen',
+    // codVista 77 — 'Verificar Cheques' (padre 41 'modCheques'). Misma regla.
+    'tchCheque/verificarDepositos': 'VerificarChequesScreen',
   };
 
   late Set<String> paths;

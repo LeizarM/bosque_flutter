@@ -289,6 +289,10 @@ class AppConstants {
   static const String rrhhRegistrarRelacionLaboral = '/rrhh/registroRelEmp';
   static const String bncGetBancos = '/banco/bancosX';
   static const String bncGetBancosPlanilla = '/banco/bancosPlanilla';
+  // Escrituras de bancos (vista 43). 201, data = codBanco. Las lecturas de
+  // arriba devuelven una lista pelada y su forma no cambia.
+  static const String bncRegistrar = '/banco/registrar';
+  static const String bncEliminar = '/banco/eliminar';
   static const String rrhhGetCuentaBancoXEmpleado =
       '/rrhh/obtenerNroCuentaBanco';
   static const String rrhhRegistrarCuentaBancaria = '/rrhh/registroCuentaBanco';
@@ -1865,4 +1869,192 @@ class AppConstants {
   // misma direccion de la pantalla JSF, asi el item de menu y los permisos
   // que los usuarios ya tienen siguen sirviendo sin tocar tb_vista.
   static const String rutaGarantias = 'tcbrGarantia/garantia';
+
+  // ========================= CHEQUES (tch) ===============================
+  // Contrato: API_CHEQUES.md del proyecto de migracion. Todos POST, tambien
+  // las lecturas. El usuario de auditoria sale del token: nunca se manda
+  // audUsuario. Los botones de la vista 42 los exige el servidor (403 sin
+  // ellos); la pantalla solo los usa para dibujar. Un 400 trae el mensaje de
+  // negocio en message, varios errores separados por salto de linea.
+  static const String _cheque = '/cheque';
+
+  // --- Apoyo y catalogos ---
+  static const String chqCatalogos = '$_cheque/catalogos';
+  // Sin cuerpo. Las empresas del combo «Empresa» de la pantalla (hoy IMPEXPAP
+  // y ESPPAPEL), ordenadas por codEmpresa. De ahi salen sucursales, clientes y
+  // la empresa del cheque nuevo: NUNCA la empresa de la sesion de login.
+  static const String chqEmpresas = '$_cheque/empresas';
+  // Cuerpo opcional {id: codEmpresa}. data = long; 0 = el usuario no tiene
+  // sucursal en esa empresa.
+  static const String chqSucursalInicial = '$_cheque/sucursal-inicial';
+  // Cuerpo {id: codEmpresa}: las sucursales de esa empresa que el usuario puede
+  // ver.
+  static const String chqSucursales = '$_cheque/sucursales';
+  // Cuerpo {id: codEmpresa}.
+  static const String chqClientes = '$_cheque/clientes';
+  // Sin cuerpo. «Actualizar datos SAP»: trae los clientes nuevos de SAP (las
+  // cuatro empresas a la vez). Exige btnNuevoCH. 201, data = cuantos clientes
+  // nuevos; message = la frase para el usuario.
+  static const String chqActualizarClientesSap =
+      '$_cheque/clientes/actualizar-sap';
+  // Cuerpo {id: codSucursal}.
+  static const String chqPersonalEntregan = '$_cheque/personal/entregan';
+  static const String chqPersonalCustodia = '$_cheque/personal/custodia';
+
+  // --- Cheques ---
+  static const String chqListar = '$_cheque/listar';
+  // Cuerpo {id: codCheque}. Exige btnDetalleCH.
+  static const String chqDetalle = '$_cheque/detalle';
+  // 201, data = codCheque.
+  static const String chqRegistrar = '$_cheque/registrar';
+  // Solo consulta, no escribe ni necesita sucursal. Cuerpo {codEmpresa,
+  // nroTalonario, reciboManual}; data = {valido, mensaje?, detalle?}. Un par
+  // incorrecto es valido=false con el motivo en mensaje (200, no 400); el 400
+  // es solo para una empresa ausente o que no figura en /cheque/empresas.
+  static const String chqTalonarioValidar = '$_cheque/talonario/validar';
+
+  // --- Acciones del detalle (201, data = codAccion) ---
+  static const String chqAccionFechaCobro = '$_cheque/accion/fecha-cobro';
+  static const String chqAccionDevolver = '$_cheque/accion/devolver';
+  static const String chqAccionCerrar = '$_cheque/accion/cerrar';
+  // Cuerpo {id: codAccion}. Exige btnEliminarSegCH.
+  static const String chqAccionEliminar = '$_cheque/accion/eliminar';
+
+  // --- Traspaso y custodia. Cuerpo {id: codSucursal} salvo donde se indica ---
+  static const String chqTraspasoPendientes = '$_cheque/traspaso/pendientes';
+  // 201, data = cuantos se traspasaron (400 si ninguno).
+  static const String chqTraspaso = '$_cheque/traspaso';
+  static const String chqCustodiaCheques = '$_cheque/custodia/cheques';
+  // Cuerpo CustodiaChequeRequest. 201, data = cuantos.
+  static const String chqCustodia = '$_cheque/custodia';
+  static const String chqDarCustodiaCheques = '$_cheque/dar-custodia/cheques';
+  // Cuerpo {codSucursal, fecha}.
+  static const String chqDarCustodiaEntregas =
+      '$_cheque/dar-custodia/entregas';
+  // Cuerpo DarCustodiaRequest. 201, data = codAccion nuevo.
+  static const String chqDarCustodia = '$_cheque/dar-custodia';
+
+  // --- Reportes: application/pdf en bytes crudos. Se bajan con
+  // DioClient.descargarReportePdf, no con BaseApiRepository.postAndReturn*; un
+  // error de negocio o de permiso llega como JSON y ese metodo rescata su
+  // mensaje. Todos piden codEmpresa y codSucursal, y los dos salen de la
+  // pantalla (empresa activa del combo y sucursal de la grilla), nunca del
+  // login. Las fechas viajan yyyy-MM-dd y las claves opcionales se omiten. ---
+  // {codEmpresa, codSucursal, fechaDesde?, fechaHasta?}. Exige btnRpt1CH.
+  static const String chqReporteRecibidos = '$_cheque/reporte/recibidos';
+  // {codEmpresa, codSucursal, fechaDesde?, fechaHasta?, estado?, codCliente?}.
+  // Exige btnRpt2CH.
+  static const String chqReporteCobranzas = '$_cheque/reporte/cobranzas';
+  // {codEmpresa, codSucursal, fecha?, codEmpleado?}. Exige btnRpt3CH.
+  static const String chqReporteCustodio = '$_cheque/reporte/custodio';
+  // {codEmpresa, codSucursal}: el ultimo cheque que registro ESTE usuario en la
+  // sucursal (400 si no hay). Exige btnRpt4CH.
+  static const String chqReporteUltimoRecibo = '$_cheque/reporte/ultimo-recibo';
+  // {codEmpresa, codSucursal}: la nomina del ultimo traspaso. Exige
+  // btnTraspasoCH.
+  static const String chqReporteTraspaso = '$_cheque/reporte/traspaso';
+  // {codEmpresa, codSucursal, codAccion}. Exige btnRpt5CH.
+  static const String chqReporteReimpresionTraspaso =
+      '$_cheque/reporte/reimpresion-traspaso';
+  // Esta NO es un PDF: cuerpo {codSucursal, fecha}, data = [{codAccion, hora}]
+  // con los traspasos de ese dia (204 = ninguno). Exige btnRpt5CH.
+  static const String chqTraspasoHoras = '$_cheque/traspaso/horas';
+
+  // --- Documento PDF del cheque. Un PDF por cheque y sin boton de ACL: como en
+  // el legacy lo ve y lo usa cualquiera que vea la fila. El servidor lo guarda
+  // como <codCheque>.pdf y lo baja como <codCheque>_.pdf. ---
+  // Cuerpo {codCheque}. data = {existe, nombreArchivo, tamanoBytes?,
+  // fechaModificacion?}.
+  static const String chqPdfEstado = '$_cheque/pdf/estado';
+  // multipart/form-data: parte de texto codCheque y el archivo en la parte
+  // archivo. data = {nombreArchivo, tamanoBytes, reemplazo}. Un PDF nuevo
+  // reemplaza al anterior.
+  static const String chqPdfSubir = '$_cheque/pdf/subir';
+  // Cuerpo {codCheque}. Responde application/pdf en bytes crudos (se baja con
+  // DioClient.descargarReportePdf); sin archivo, un error con su mensaje.
+  static const String chqPdfDescargar = '$_cheque/pdf/descargar';
+
+  // --- Paneles del detalle: notas de remision, transacciones bancarias y
+  // postergaciones. Seccion «Paneles del detalle» de API_CHEQUES.md. Listar,
+  // registrar y eliminar de cada una. Leer no pide boton (basta ver la sucursal
+  // del cheque). Registrar pide btnNuevoNRCH en las tres y eliminar una nota,
+  // btnEliminarNRCH; eliminar una transaccion o una postergacion y todo el PDF
+  // de la postergacion no tienen boton, como en el legacy. ---
+  // Cuerpo {codCheque}. data = [{fila, codCheque, notaRemision, nroFactura,
+  // fechaFactura, audUsuario, audFecha}].
+  static const String chqNotaRemisionListar = '$_cheque/nota-remision/listar';
+  // Cuerpo {codCheque, notaRemision, nroFactura, fechaFactura}. 201, data = 1.
+  static const String chqNotaRemisionRegistrar =
+      '$_cheque/nota-remision/registrar';
+  // Cuerpo {codCheque, notaRemision}. 201, data = cuantas filas elimino (si la
+  // nota estaba repetida, todas, como el legacy).
+  static const String chqNotaRemisionEliminar =
+      '$_cheque/nota-remision/eliminar';
+  // Cuerpo {codCheque}. data = [{fila, codCheque, nroTransaccion, codBanco,
+  // fechaTransaccion, datoBanco}].
+  static const String chqTransaccionListar = '$_cheque/transaccion/listar';
+  // Cuerpo {codCheque, nroTransaccion, codBanco, fechaTransaccion}. 201, data = 1.
+  static const String chqTransaccionRegistrar =
+      '$_cheque/transaccion/registrar';
+  // Cuerpo {codCheque, nroTransaccion}. 201, data = filas eliminadas.
+  static const String chqTransaccionEliminar = '$_cheque/transaccion/eliminar';
+  // Cuerpo {codCheque}. data = [{fila, codPostergacion, codCheque, fecha,
+  // observacion, nombreArchivo, audUsuario, audFecha, tienePdf}]; tienePdf es
+  // true, false o null (la carpeta de PDF del servidor no esta disponible).
+  static const String chqPostergacionListar = '$_cheque/postergacion/listar';
+  // Cuerpo {codCheque, fecha, observacion}. 201, data = codPostergacion.
+  static const String chqPostergacionRegistrar =
+      '$_cheque/postergacion/registrar';
+  // Cuerpo {codCheque, codPostergacion}: la postergacion tiene que ser de ese
+  // cheque. 201, data = codPostergacion. No borra el PDF.
+  static const String chqPostergacionEliminar =
+      '$_cheque/postergacion/eliminar';
+  // Cuerpo {codPostergacion}. data = {existe, nombreArchivo, tamanoBytes?,
+  // fechaModificacion?}, la misma forma que chqPdfEstado.
+  static const String chqPostergacionPdfEstado =
+      '$_cheque/postergacion/pdf/estado';
+  // multipart/form-data: parte de texto codPostergacion y el archivo en la
+  // parte archivo. data = {nombreArchivo, tamanoBytes, reemplazo}.
+  static const String chqPostergacionPdfSubir =
+      '$_cheque/postergacion/pdf/subir';
+  // Cuerpo {codPostergacion}. Responde application/pdf en bytes crudos; sin
+  // archivo, un error con su mensaje. Se baja como Posterg_<cod>_.pdf.
+  static const String chqPostergacionPdfDescargar =
+      '$_cheque/postergacion/pdf/descargar';
+
+  // --- Verificar cheques (vista 77). Sin boton de ACL: el servidor exige solo
+  // el rol. Contrato: seccion «Verificar Cheques» de API_CHEQUES.md. ---
+  // Cuerpo {fechaBanco?, pagina, tamanio}. data = {total, pagina, tamanio,
+  // filas}: las verificaciones, paginadas por el servidor.
+  static const String chqVerificacionListar = '$_cheque/verificacion/listar';
+  // Cuerpo {estado?, soloCobranzaHoy?, pagina, tamanio}. El modal «Cheques
+  // pendientes sin regularizar». Misma forma de pagina.
+  static const String chqVerificacionPendientes =
+      '$_cheque/verificacion/pendientes';
+  // Cuerpo {id: codCheque}. data = {cheque, fechaBanco}; 400 si el cheque ya
+  // tiene una verificacion valida o esta cerrado.
+  static const String chqVerificacionPreparar =
+      '$_cheque/verificacion/preparar';
+  // Cuerpo {codvd, codCheque, codBanco, fechaBanco, observacion}. 201, data =
+  // codvd. codvd 0 = alta.
+  static const String chqVerificacionRegistrar =
+      '$_cheque/verificacion/registrar';
+  // Cuerpo {id: codvd}. 201, data = codvd, y el message dice si ya estaba
+  // anulada. No borra: pasa la verificacion a Anulada.
+  static const String chqVerificacionAnular = '$_cheque/verificacion/anular';
+
+  // --- Direccion de pantalla ---
+  // tb_vista codVista 42, TAL CUAL esta en la base (padre 41 'modCheques'): la
+  // misma direccion de la pantalla JSF, asi el item de menu y los permisos que
+  // los usuarios ya tienen siguen sirviendo sin tocar tb_vista.
+  static const String rutaCheques = 'tchCheque/cheque';
+
+  // tb_vista codVista 43 (padre 140), tal cual esta en la base: la pantalla de
+  // Bancos del JSF viejo. Mismo motivo que la de arriba.
+  static const String rutaBancos = 'tchBanco/banco';
+
+  // tb_vista codVista 77 (padre 41 'modCheques'), tal cual esta en la base: la
+  // pantalla «Verificar Cheques» del JSF viejo (verificarDepositos.xhtml). No
+  // tiene botones en tb_vistaBtn: el menu decide quien la ve.
+  static const String rutaVerificarCheques = 'tchCheque/verificarDepositos';
 }

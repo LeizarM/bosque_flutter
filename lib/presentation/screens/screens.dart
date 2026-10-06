@@ -68,6 +68,11 @@ export 'package:bosque_flutter/presentation/screens/precios/parametros_precios_s
 export 'package:bosque_flutter/presentation/screens/precios/porcentajes_screen.dart';
 // Modulo de garantias de cobranza (tcbr): reemplaza a tcbrGarantia/garantia.xhtml.
 export 'package:bosque_flutter/presentation/screens/garantias/garantias_screen.dart';
+// Modulo de cheques (tch): reemplaza a tchCheque/cheque.xhtml.
+export 'package:bosque_flutter/presentation/screens/cheques/cheques_screen.dart';
+export 'package:bosque_flutter/presentation/screens/bancos/bancos_screen.dart';
+// Verificar Cheques (tch_verificacionDeposito): reemplaza a tchCheque/verificarDepositos.xhtml.
+export 'package:bosque_flutter/presentation/screens/verificaciones/verificar_cheques_screen.dart';
 export 'package:bosque_flutter/presentation/screens/comisiones/comisiones_screen.dart';
 export 'package:bosque_flutter/presentation/screens/prestamos/prestamos_screen.dart';
 export 'package:bosque_flutter/presentation/screens/talonarios/talonarios_screen.dart';

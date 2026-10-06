@@ -494,6 +494,45 @@ final routerProvider = Provider<GoRouter>((ref) {
                     const GarantiasScreen(),
                   ),
             ),
+            // MODULO DE CHEQUES (tch). Reemplaza al JSF legacy (codVista 42,
+            // 'tchCheque/cheque', padre 41 'modCheques') con la direccion tal
+            // cual: el item de menu y los permisos que los usuarios ya tienen
+            // siguen sirviendo sin tocar tb_vista.
+            GoRoute(
+              path: '/dashboard/${AppConstants.rutaCheques}',
+              name: 'tchCheque',
+              builder:
+                  (context, state) => _pantallaConTitulo(
+                    context,
+                    'Bosque - Cheques',
+                    const ChequesScreen(),
+                  ),
+            ),
+            // Bancos (tch_banco). Reemplaza a tchBanco/banco.xhtml (codVista 43,
+            // padre 140) con la direccion tal cual, por el mismo motivo.
+            GoRoute(
+              path: '/dashboard/${AppConstants.rutaBancos}',
+              name: 'tchBanco',
+              builder:
+                  (context, state) => _pantallaConTitulo(
+                    context,
+                    'Bosque - Bancos',
+                    const BancosScreen(),
+                  ),
+            ),
+            // Verificar Cheques (tch_verificacionDeposito). Reemplaza a
+            // tchCheque/verificarDepositos.xhtml (codVista 77, padre 41) con la
+            // direccion tal cual, por el mismo motivo.
+            GoRoute(
+              path: '/dashboard/${AppConstants.rutaVerificarCheques}',
+              name: 'tchVerificarCheques',
+              builder:
+                  (context, state) => _pantallaConTitulo(
+                    context,
+                    'Bosque - Verificar Cheques',
+                    const VerificarChequesScreen(),
+                  ),
+            ),
             // Tareas Rutinarias — reutiliza la vista legacy 78
             // ('tacTareas/Tareas'), misma regla de siempre: la ruta es
             // EXACTAMENTE tb_vista.direccion. Los 134 usuarios que ya
@@ -1055,6 +1094,25 @@ final routerProvider = Provider<GoRouter>((ref) {
           path: '/${AppConstants.rutaGarantias}',
           redirect:
               (context, state) => '/dashboard/${AppConstants.rutaGarantias}',
+        ),
+        // MODULO DE CHEQUES (tch): el sidebar navega a '/' + tb_vista.direccion,
+        // sin /dashboard.
+        GoRoute(
+          path: '/${AppConstants.rutaCheques}',
+          redirect:
+              (context, state) => '/dashboard/${AppConstants.rutaCheques}',
+        ),
+        // BANCOS (tch_banco): igual que el de cheques.
+        GoRoute(
+          path: '/${AppConstants.rutaBancos}',
+          redirect: (context, state) => '/dashboard/${AppConstants.rutaBancos}',
+        ),
+        // VERIFICAR CHEQUES (tch_verificacionDeposito): igual que el de cheques.
+        GoRoute(
+          path: '/${AppConstants.rutaVerificarCheques}',
+          redirect:
+              (context, state) =>
+                  '/dashboard/${AppConstants.rutaVerificarCheques}',
         ),
         // TAREAS RUTINARIAS
         GoRoute(
