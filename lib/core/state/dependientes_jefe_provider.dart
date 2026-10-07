@@ -124,19 +124,18 @@ class DependientesJefeNotifier extends StateNotifier<DependientesJefeState> {
           .where((d) => state.seleccionados.contains(d.claveSeleccion))
           .toList();
 
+  /// Descripción, frecuencia, al menos un dependiente y el orden de las
+  /// fechas los valida p_registrar_tac_tareaRutinariaConCargos (errores 10,
+  /// 11, 13 y 18): las reglas de registro van en SQL.
   Future<bool> registrarTarea({
     required String descripcion,
-    required int idFrec,
+    int? idFrec,
     int? idArea,
     required DateTime fechaPartida,
     int? idATR,
     DateTime? fechaInicioAsignacion,
     DateTime? fechaFinAsignacion,
   }) async {
-    if (state.seleccionados.isEmpty) {
-      state = state.copyWith(mensajeError: 'Elige al menos un dependiente.');
-      return false;
-    }
     state = state.copyWith(guardando: true);
     try {
       final cargos =
@@ -168,7 +167,10 @@ class DependientesJefeNotifier extends StateNotifier<DependientesJefeState> {
       );
       return true;
     } catch (e) {
-      state = state.copyWith(guardando: false, mensajeError: e.toString());
+      state = state.copyWith(
+        guardando: false,
+        mensajeError: e.toString().replaceFirst('Exception: ', ''),
+      );
       return false;
     }
   }

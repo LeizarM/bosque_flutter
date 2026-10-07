@@ -104,21 +104,15 @@ class TraspasoEntreSistemasNotifier
     await cargar();
   }
 
-  /// Marca una fila. [obs] es obligatoria cuando no cuadra; el servidor
-  /// también lo exige, esto solo evita el viaje.
+  /// Marca una fila. Que [obs] sea obligatoria cuando no cuadra lo exige el
+  /// servidor (error 23 de p_abm_tac_TraspasoMovCaja 'V'), no la app: las
+  /// reglas de registro van en SQL.
   Future<bool> verificar({
     required int idBitTarea,
     required TraspasoMovCajaEntity fila,
     required bool cuadra,
     String? obs,
   }) async {
-    if (!cuadra && (obs == null || obs.trim().isEmpty)) {
-      state = state.copyWith(
-        error: 'Escribe qué fue lo que no cuadró antes de guardar.',
-      );
-      return false;
-    }
-
     state = state.copyWith(guardando: fila.idTrasp);
     try {
       await _repo.verificar(
@@ -139,7 +133,10 @@ class TraspasoEntreSistemasNotifier
       );
       return true;
     } catch (e) {
-      state = state.copyWith(limpiarGuardando: true, error: '$e');
+      state = state.copyWith(
+        limpiarGuardando: true,
+        error: e.toString().replaceFirst('Exception: ', ''),
+      );
       return false;
     }
   }

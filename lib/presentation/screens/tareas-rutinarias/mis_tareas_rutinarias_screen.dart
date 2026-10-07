@@ -1251,12 +1251,10 @@ class _DialogoObservacionState extends ConsumerState<_DialogoObservacion> {
     super.dispose();
   }
 
+  /// Que no esté vacía y su largo máximo los valida p_abm_tac_BitTareaRuti
+  /// 'O' (errores 40 y 44): las reglas de registro van en SQL.
   Future<void> _agregar() async {
     final obs = _texto.text.trim();
-    if (obs.isEmpty) {
-      setState(() => _error = 'Escribe la observación que quieres agregar.');
-      return;
-    }
     setState(() {
       _guardando = true;
       _error = null;
@@ -1341,7 +1339,9 @@ class _DialogoObservacionState extends ConsumerState<_DialogoObservacion> {
                 enabled: !_guardando,
                 minLines: 3,
                 maxLines: 6,
-                maxLength: 500,
+                // 2000 es lo que cabe en la columna obs; el máximo por
+                // observación lo pone el servidor (error 44).
+                inputFormatters: [LengthLimitingTextInputFormatter(2000)],
                 textCapitalization: TextCapitalization.sentences,
                 decoration: InputDecoration(
                   labelText: 'Observación',

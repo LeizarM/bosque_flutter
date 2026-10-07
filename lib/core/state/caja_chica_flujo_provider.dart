@@ -102,7 +102,7 @@ class CajaChicaFlujoNotifier extends StateNotifier<CajaChicaFlujoState> {
   Future<bool> registrarEgreso({
     required double montoEg,
     required String descripcion,
-    required int codEmpDestino,
+    int? codEmpDestino,
     int? numFactura,
     int? numVale,
   }) async {
@@ -120,7 +120,10 @@ class CajaChicaFlujoNotifier extends StateNotifier<CajaChicaFlujoState> {
       await cargar();
       return true;
     } catch (e) {
-      state = state.copyWith(guardando: false, mensajeError: e.toString());
+      state = state.copyWith(
+        guardando: false,
+        mensajeError: e.toString().replaceFirst('Exception: ', ''),
+      );
       return false;
     }
   }

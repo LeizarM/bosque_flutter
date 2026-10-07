@@ -27,19 +27,21 @@ class ArqueoCajaImpl extends BaseApiRepository implements ArqueoCajaRepository {
         'saldoMovSap': saldoMovSap,
         'tc': tc,
         'obs': obs,
+        // Solo se dejan de mandar los ceros, que no son nada. Un negativo viaja
+        // igual: lo rechaza el servidor con su mensaje (errores 24 y 25), y
+        // los vales sin monto los descarta él. Las reglas viven en SQL.
         'cortes':
             cantidadPorCorte.entries
-                .where((e) => e.value > 0)
+                .where((e) => e.value != 0)
                 .map((e) => {'idCorte': e.key, 'cantidad': e.value})
                 .toList(),
         'documentacion':
             montoPorDoc.entries
-                .where((e) => e.value > 0)
+                .where((e) => e.value != 0)
                 .map((e) => {'idDoc': e.key, 'monto': e.value})
                 .toList(),
         'vales':
             vales
-                .where((v) => v.esValido)
                 .map(
                   (v) => {
                     'numVale': v.numVale,

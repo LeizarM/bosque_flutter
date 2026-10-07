@@ -208,7 +208,10 @@ class _CrearTareaPorCargoSheetState
   /// `ref.listen` para el caso de éxito (la pantalla de un cargo puntual sí
   /// lo tiene) o si tiene que avisar ella misma (el catálogo no lo tiene).
   Future<void> _guardar() async {
-    if (!_formKey.currentState!.validate()) return;
+    // Descripción, frecuencia y que el fin no sea anterior al inicio los
+    // valida p_registrar_tac_tareaRutinariaConCargos (errores 10, 11 y 18):
+    // las reglas de registro van en SQL. Aquí queda solo lo que el servidor
+    // no puede ver: el interruptor "permanente" de esta hoja.
 
     // Red de seguridad para quien no miró el aviso de arriba. No bloquea:
     // dos tareas pueden llamarse igual o parecido por buenos motivos (el
@@ -261,31 +264,13 @@ class _CrearTareaPorCargoSheetState
       if (seguir != true) return;
     }
 
-    if (_idFrec == null) {
-      HapticFeedback.lightImpact();
-      if (mounted) {
-        mostrarAviso(context, 'Elige una frecuencia.', tono: TonoAviso.aviso);
-      }
-      return;
-    }
-
-    // El SP tambien lo rechaza (error 18), pero ahi el aviso llega despues de
-    // un viaje al servidor y sin decir cual de los cargos fallo.
+    // Sin fecha de fin, al servidor le llega una asignación permanente: no
+    // tiene cómo saber que el interruptor dice lo contrario.
     if (!_permanente && _fechaFinAsignacion == null) {
       HapticFeedback.lightImpact();
       mostrarAviso(
         context,
         'Elige la fecha de fin, o márcala como permanente.',
-        tono: TonoAviso.aviso,
-      );
-      return;
-    }
-    if (_fechaFinAsignacion != null &&
-        _fechaFinAsignacion!.isBefore(_fechaInicioAsignacion)) {
-      HapticFeedback.lightImpact();
-      mostrarAviso(
-        context,
-        'La fecha de fin no puede ser anterior a la de inicio.',
         tono: TonoAviso.aviso,
       );
       return;
@@ -296,7 +281,7 @@ class _CrearTareaPorCargoSheetState
       for (final codCargo in widget.codCargos) {
         await _repo.registrarPorCargoAdmin(
           descripcion: _descripcionCtrl.text.trim(),
-          idFrec: _idFrec!,
+          idFrec: _idFrec,
           fechaPartida: _fechaPartida,
           cargos: [
             {
@@ -314,7 +299,13 @@ class _CrearTareaPorCargoSheetState
       }
       if (mounted) cerrarRuta(context, true);
     } catch (e) {
-      if (mounted) mostrarAviso(context, e.toString(), tono: TonoAviso.error);
+      if (mounted) {
+        mostrarAviso(
+          context,
+          e.toString().replaceFirst('Exception: ', ''),
+          tono: TonoAviso.error,
+        );
+      }
     } finally {
       if (mounted) setState(() => _guardando = false);
     }
@@ -379,11 +370,6 @@ class _CrearTareaPorCargoSheetState
                   labelText: 'Qué hay que hacer',
                   border: OutlineInputBorder(),
                 ),
-                validator:
-                    (v) =>
-                        (v == null || v.trim().isEmpty)
-                            ? 'Describe la tarea.'
-                            : null,
                 // Se avisa MIENTRAS escribe, no al guardar: decirlo después
                 // de llenar frecuencia, fechas y vigencia llega tarde, y la
                 // salida barata (cancelar y usar el catálogo) ya se sintió

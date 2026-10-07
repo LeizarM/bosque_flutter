@@ -140,7 +140,9 @@ class PrestamosAppBar extends ConsumerWidget implements PreferredSizeWidget {
     WidgetRef ref,
     String reporte,
   ) {
-    if (reporte == 'personal' || reporte == 'mayor_general') {
+    if (reporte == 'personal' ||
+        reporte == 'mayor_general' ||
+        reporte == 'mayor_global_resumido') {
       showPrestamosReportesDialog(context, reporte);
     } else {
       generarReporteGlobalDirecto(context, reporte);

@@ -100,7 +100,8 @@ class _ReportesPrestamosDialogState
 
   bool get _requiereFechas {
     return widget.tipoReporte == 'personal' ||
-        widget.tipoReporte == 'mayor_general';
+        widget.tipoReporte == 'mayor_general' ||
+        widget.tipoReporte == 'mayor_global_resumido';
   }
 
   bool get _requiereEmpleado {

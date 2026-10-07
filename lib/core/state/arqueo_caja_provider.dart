@@ -216,7 +216,10 @@ class ArqueoCajaNotifier extends StateNotifier<ArqueoCajaState> {
       state = state.copyWith(guardando: false, completado: true, idAC: idAC);
       return true;
     } catch (e) {
-      state = state.copyWith(guardando: false, mensajeError: e.toString());
+      state = state.copyWith(
+        guardando: false,
+        mensajeError: e.toString().replaceFirst('Exception: ', ''),
+      );
       return false;
     }
   }

@@ -61,7 +61,7 @@ class TareasPorCargoNotifier extends StateNotifier<TareasPorCargoState> {
   /// el backend lo fuerza server-side).
   Future<bool> crearTarea({
     required String descripcion,
-    required int idFrec,
+    int? idFrec,
     int? idArea,
     required DateTime fechaPartida,
     int? idATR,
@@ -85,7 +85,10 @@ class TareasPorCargoNotifier extends StateNotifier<TareasPorCargoState> {
       await cargar();
       return true;
     } catch (e) {
-      state = state.copyWith(guardando: false, mensajeError: e.toString());
+      state = state.copyWith(
+        guardando: false,
+        mensajeError: e.toString().replaceFirst('Exception: ', ''),
+      );
       return false;
     }
   }
@@ -114,7 +117,10 @@ class TareasPorCargoNotifier extends StateNotifier<TareasPorCargoState> {
       await cargar();
       return true;
     } catch (e) {
-      state = state.copyWith(guardando: false, mensajeError: e.toString());
+      state = state.copyWith(
+        guardando: false,
+        mensajeError: e.toString().replaceFirst('Exception: ', ''),
+      );
       return false;
     }
   }
@@ -205,7 +211,10 @@ class TareasPorCargoNotifier extends StateNotifier<TareasPorCargoState> {
       await cargar();
       return true;
     } catch (e) {
-      state = state.copyWith(guardando: false, mensajeError: e.toString());
+      state = state.copyWith(
+        guardando: false,
+        mensajeError: e.toString().replaceFirst('Exception: ', ''),
+      );
       return false;
     }
   }

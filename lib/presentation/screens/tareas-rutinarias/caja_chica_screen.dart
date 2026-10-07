@@ -758,8 +758,11 @@ class _FormularioEgreso extends ConsumerStatefulWidget {
   ConsumerState<_FormularioEgreso> createState() => _FormularioEgresoState();
 }
 
+/// Sin validaciones propias: monto mayor a cero, descripción, a quién se
+/// entregó y que alcance el saldo los decide p_abm_tac_CajaChica 'R' (errores
+/// 10 a 14), y su mensaje sale en el aviso. Marcelo, 2026-10-06: las reglas
+/// de registro van en SQL, para cambiarlas sin recompilar la app.
 class _FormularioEgresoState extends ConsumerState<_FormularioEgreso> {
-  final _formKey = GlobalKey<FormState>();
   double? _monto;
   final _descripcionCtrl = TextEditingController();
   int? _codEmpDestino;
@@ -775,11 +778,6 @@ class _FormularioEgresoState extends ConsumerState<_FormularioEgreso> {
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(cajaChicaFlujoProvider(widget.params));
-    // Guarda de UX en vivo: además del validator (que ya rechaza el submit),
-    // esto deshabilita el botón apenas lo tipeado supera el saldo — sin
-    // esperar a que la persona presione "Registrar" para enterarse. El
-    // backend (p_cajaChica_registrarEgreso) sigue siendo la barrera real.
-    final superaSaldo = (_monto ?? 0) > state.saldoActual;
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -805,7 +803,6 @@ class _FormularioEgresoState extends ConsumerState<_FormularioEgreso> {
             bottom: MediaQuery.viewInsetsOf(context).bottom + 20,
           ),
           child: Form(
-            key: _formKey,
             child: SingleChildScrollView(
               keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
               child: Column(
@@ -835,50 +832,8 @@ class _FormularioEgresoState extends ConsumerState<_FormularioEgreso> {
                       decimal: true,
                     ),
                     textInputAction: TextInputAction.next,
-                    // Antes el tope de saldo sólo se sabía DESPUÉS de guardar,
-                    // vía el error del backend ("Saldo insuficiente"). Con
-                    // autovalidate, este mismo validator ya revalida en cada
-                    // tecla y muestra el error en vivo — el chequeo del backend
-                    // (p_cajaChica_registrarEgreso) queda de respaldo, no se
-                    // quita.
-                    autovalidateMode: AutovalidateMode.onUserInteraction,
                     onChanged:
                         (v) => setState(() => _monto = double.tryParse(v)),
-                    validator: (v) {
-                      final monto = double.tryParse(v ?? '') ?? 0;
-                      if (monto <= 0) return 'Ingresa un monto válido.';
-                      if (monto > state.saldoActual) {
-                        return 'Supera el saldo disponible '
-                            '(${FormatoMoneda.monto.format(state.saldoActual)}).';
-                      }
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 4),
-                  // El legacy avisa esto mismo junto al formulario — el backend
-                  // ya rechaza montoEg<=0 (p_abm_tac_CajaChica ACCION='R'), aquí
-                  // solo se hace visible la regla ANTES de que la persona
-                  // intente guardar.
-                  Row(
-                    children: [
-                      Icon(
-                        Icons.info_outline,
-                        size: 14,
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      ),
-                      const SizedBox(width: 6),
-                      Expanded(
-                        child: Text(
-                          'Los montos iguales o menores a cero no se guardan.',
-                          style: Theme.of(
-                            context,
-                          ).textTheme.bodySmall?.copyWith(
-                            color:
-                                Theme.of(context).colorScheme.onSurfaceVariant,
-                          ),
-                        ),
-                      ),
-                    ],
                   ),
                   const SizedBox(height: 12),
                   TextFormField(
@@ -888,11 +843,6 @@ class _FormularioEgresoState extends ConsumerState<_FormularioEgreso> {
                       border: OutlineInputBorder(),
                     ),
                     textInputAction: TextInputAction.next,
-                    validator:
-                        (v) =>
-                            (v == null || v.trim().isEmpty)
-                                ? 'Describe el gasto.'
-                                : null,
                   ),
                   const SizedBox(height: 12),
                   _EmpleadoDestinoField(
@@ -933,22 +883,9 @@ class _FormularioEgresoState extends ConsumerState<_FormularioEgreso> {
                     width: double.infinity,
                     child: FilledButton(
                       onPressed:
-                          (state.guardando || superaSaldo)
+                          state.guardando
                               ? null
                               : () async {
-                                if (!_formKey.currentState!.validate()) {
-                                  HapticFeedback.lightImpact();
-                                  return;
-                                }
-                                if (_codEmpDestino == null) {
-                                  HapticFeedback.lightImpact();
-                                  mostrarAviso(
-                                    context,
-                                    'Indica a quién se entregó el dinero.',
-                                    tono: TonoAviso.aviso,
-                                  );
-                                  return;
-                                }
                                 final ok = await ref
                                     .read(
                                       cajaChicaFlujoProvider(
@@ -956,14 +893,16 @@ class _FormularioEgresoState extends ConsumerState<_FormularioEgreso> {
                                       ).notifier,
                                     )
                                     .registrarEgreso(
-                                      montoEg: _monto!,
+                                      montoEg: _monto ?? 0,
                                       descripcion: _descripcionCtrl.text.trim(),
-                                      codEmpDestino: _codEmpDestino!,
+                                      codEmpDestino: _codEmpDestino,
                                       numFactura: _numFactura,
                                       numVale: _numVale,
                                     );
                                 if (ok && context.mounted) {
                                   cerrarRuta(context);
+                                } else {
+                                  HapticFeedback.lightImpact();
                                 }
                               },
                       child:

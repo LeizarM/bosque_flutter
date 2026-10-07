@@ -43,7 +43,7 @@ void main() {
     await t.pumpAndSettle();
 
     await t.enterText(
-      find.byType(TextFormField),
+      find.byType(TextField),
       'El formulario dice 1.200 y el sistema 1.020.',
     );
     await t.tap(find.text('Guardar'));
@@ -53,7 +53,12 @@ void main() {
     expect(respuesta, 'El formulario dice 1.200 y el sistema 1.020.');
   });
 
-  testWidgets('sin escribir nada no deja guardar', (t) async {
+  // Que no venga vacía lo decide el servidor (error 23 de
+  // p_abm_tac_TraspasoMovCaja 'V', archivo SQL 79), no el diálogo: las reglas
+  // de registro van en SQL. El diálogo devuelve lo que hay.
+  testWidgets('sin escribir nada devuelve vacío y decide el servidor', (
+    t,
+  ) async {
     await t.pumpWidget(app());
     await t.tap(find.text('abrir'));
     await t.pumpAndSettle();
@@ -61,8 +66,8 @@ void main() {
     await t.tap(find.text('Guardar'));
     await t.pumpAndSettle();
 
-    expect(respondio, isFalse, reason: 'el diálogo sigue abierto');
-    expect(find.text('Escribe qué fue lo que no cuadró.'), findsOneWidget);
+    expect(respondio, isTrue);
+    expect(respuesta, '');
   });
 
   testWidgets('cancelar no marca nada', (t) async {
@@ -70,7 +75,7 @@ void main() {
     await t.tap(find.text('abrir'));
     await t.pumpAndSettle();
 
-    await t.enterText(find.byType(TextFormField), 'a medio escribir');
+    await t.enterText(find.byType(TextField), 'a medio escribir');
     await t.tap(find.text('Cancelar'));
     await t.pumpAndSettle();
 

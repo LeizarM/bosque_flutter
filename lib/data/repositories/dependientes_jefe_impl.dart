@@ -79,7 +79,7 @@ class DependientesJefeImpl extends BaseApiRepository {
   /// (opcionales, null = "todas las sucursales"/"hoy"/"permanente").
   Future<BigInt> registrarTareaConCargos({
     required String descripcion,
-    required int idFrec,
+    int? idFrec,
     int? idArea,
     required DateTime fechaPartida,
     int? idATR,

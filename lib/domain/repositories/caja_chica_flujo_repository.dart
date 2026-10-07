@@ -9,14 +9,19 @@ abstract class CajaChicaFlujoRepository {
   /// Lanza una excepción con el mensaje del servidor (p.ej. "Saldo
   /// insuficiente...") si la validación falla — no hay caso de éxito
   /// silencioso con dato descartado, a diferencia del legacy.
+  ///
+  /// Manda lo que haya en el formulario, aunque falte algo: monto, descripción,
+  /// destinatario y saldo los valida p_abm_tac_CajaChica 'R' (errores 10 a 14),
+  /// para poder cambiar esas reglas sin recompilar. Sin [moneda], el servidor
+  /// pone 'BS'.
   Future<void> registrarEgreso({
     required int idBitTarea,
     required double montoEg,
     required String descripcion,
-    required int codEmpDestino,
+    int? codEmpDestino,
     int? numFactura,
     int? numVale,
-    String moneda = 'BS',
+    String? moneda,
   });
 
   /// Cierra el lote vigente de la sucursal (del cargo actual del empleado

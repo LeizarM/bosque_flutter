@@ -21,9 +21,10 @@ class TareasPorCargoImpl extends BaseApiRepository {
   /// restricción de subárbol (modo admin — el backend lo fuerza server-side,
   /// esto NO es una bandera que viaje desde aquí). [cargos]: mapas con
   /// codCargo (obligatorio) y opcionalmente codCargoSucursal/fechaInicio/fechaFin.
+  /// Sin [idFrec] el SP contesta "Elige una frecuencia" (error 11).
   Future<BigInt> registrarPorCargoAdmin({
     required String descripcion,
-    required int idFrec,
+    int? idFrec,
     int? idArea,
     required DateTime fechaPartida,
     int? idATR,

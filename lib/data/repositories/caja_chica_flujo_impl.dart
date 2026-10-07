@@ -32,10 +32,10 @@ class CajaChicaFlujoImpl extends BaseApiRepository
     required int idBitTarea,
     required double montoEg,
     required String descripcion,
-    required int codEmpDestino,
+    int? codEmpDestino,
     int? numFactura,
     int? numVale,
-    String moneda = 'BS',
+    String? moneda,
   }) async {
     await postAndReturnId(
       endpoint: AppConstants.tarCajaChicaRegistrarEgreso,

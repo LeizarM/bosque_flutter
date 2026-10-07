@@ -5,8 +5,9 @@ import 'package:flutter/material.dart';
 /// Pregunta qué no cuadró antes de marcar un traspaso.
 ///
 /// Devuelve la observación, o `null` si la persona canceló: cancelar a mitad
-/// de camino no deja la fila marcada como que no cuadra. El servidor también
-/// exige la observación (error 23 del SP); esto solo evita el viaje.
+/// de camino no deja la fila marcada como que no cuadra. Que no venga vacía
+/// lo exige el servidor (error 23 del SP), no este diálogo: las reglas de
+/// registro van en SQL. El tope de 300 es el largo de la columna.
 ///
 /// Lo usan las dos pantallas que marcan traspasos de Caja AXA: la tarea del
 /// cajero (295) y la revisión de Cierre de Operaciones.
@@ -37,7 +38,6 @@ class _DialogoMotivoState extends State<_DialogoMotivo> {
   late final TextEditingController _campo = TextEditingController(
     text: widget.inicial ?? '',
   );
-  final _formulario = GlobalKey<FormState>();
 
   @override
   void dispose() {
@@ -45,32 +45,21 @@ class _DialogoMotivoState extends State<_DialogoMotivo> {
     super.dispose();
   }
 
-  void _guardar() {
-    if (_formulario.currentState?.validate() != true) return;
-    cerrarRuta(context, _campo.text.trim());
-  }
+  void _guardar() => cerrarRuta(context, _campo.text.trim());
 
   @override
   Widget build(BuildContext context) => AlertDialog(
     title: const Text('¿Qué no cuadró?'),
-    content: Form(
-      key: _formulario,
-      child: TextFormField(
-        controller: _campo,
-        autofocus: true,
-        maxLength: 300,
-        maxLines: 3,
-        decoration: const InputDecoration(
-          labelText: 'Observación',
-          hintText:
-              'Ejemplo: el monto en el formulario dice 1.200 y '
-              'en el sistema 1.020.',
-        ),
-        validator:
-            (v) =>
-                (v == null || v.trim().isEmpty)
-                    ? 'Escribe qué fue lo que no cuadró.'
-                    : null,
+    content: TextField(
+      controller: _campo,
+      autofocus: true,
+      maxLength: 300,
+      maxLines: 3,
+      decoration: const InputDecoration(
+        labelText: 'Observación',
+        hintText:
+            'Ejemplo: el monto en el formulario dice 1.200 y '
+            'en el sistema 1.020.',
       ),
     ),
     actions: [

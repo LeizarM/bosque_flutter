@@ -2,7 +2,6 @@
 import 'package:bosque_flutter/core/state/dependientes_jefe_provider.dart';
 import 'package:bosque_flutter/core/state/frecuencia_provider.dart';
 import 'package:bosque_flutter/core/theme/tareas_colors.dart';
-import 'package:bosque_flutter/core/ui/aviso.dart';
 import 'package:bosque_flutter/core/utils/formatear_fecha.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -124,11 +123,6 @@ class _NuevaTareaFormSheetState extends ConsumerState<NuevaTareaFormSheet> {
                   hintText: 'Ej: Revisar cierre de caja del día',
                   border: OutlineInputBorder(),
                 ),
-                validator:
-                    (v) =>
-                        (v == null || v.trim().isEmpty)
-                            ? 'Describe la tarea.'
-                            : null,
               ),
               const SizedBox(height: 16),
               Text(
@@ -290,21 +284,14 @@ class _NuevaTareaFormSheetState extends ConsumerState<NuevaTareaFormSheet> {
                       dependientesState.guardando
                           ? null
                           : () async {
-                            if (!_formKey.currentState!.validate()) return;
-                            if (_idFrec == null) {
-                              HapticFeedback.lightImpact();
-                              mostrarAviso(
-                                context,
-                                'Elige una frecuencia.',
-                                tono: TonoAviso.aviso,
-                              );
-                              return;
-                            }
+                            // Descripción, frecuencia y fechas las valida el
+                            // SP (p_registrar_tac_tareaRutinariaConCargos): si
+                            // falta algo, su mensaje sale en el aviso.
                             final ok = await ref
                                 .read(dependientesJefeProvider.notifier)
                                 .registrarTarea(
                                   descripcion: _descripcionCtrl.text.trim(),
-                                  idFrec: _idFrec!,
+                                  idFrec: _idFrec,
                                   fechaPartida: _fechaPartida,
                                   fechaInicioAsignacion: _fechaInicioAsignacion,
                                   fechaFinAsignacion: _fechaFinAsignacion,

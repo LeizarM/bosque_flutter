@@ -59,10 +59,6 @@ class _ArqueoCajaScreenState extends ConsumerState<ArqueoCajaScreen> {
   final _obsCtrl = TextEditingController();
   final _obsFocus = FocusNode();
   bool _contextoAplicado = false;
-  // A pedido de Marcelo (2026-09-07): un descuadre > 0.10 Bs no bloquea el
-  // cierre, pero exige explicar por qué en la observación — no basta con el
-  // diálogo "¿seguro?" que ya existía para descuadres menores (0.01-0.10).
-  bool _mostrarErrorObs = false;
 
   @override
   void initState() {
@@ -179,21 +175,12 @@ class _ArqueoCajaScreenState extends ConsumerState<ArqueoCajaScreen> {
     WidgetRef ref,
     double diferencia,
   ) async {
-    // Descuadre > 0.10 Bs: no se bloquea el cierre, pero es obligatorio decir
-    // por qué falta o sobra — reemplaza el diálogo de confirmación por una
-    // exigencia real en el campo, no una simple advertencia descartable.
-    if (diferencia.abs() > 0.10 && _obsCtrl.text.trim().isEmpty) {
-      setState(() => _mostrarErrorObs = true);
-      HapticFeedback.lightImpact();
-      mostrarAviso(
-        context,
-        'El descuadre supera Bs 0.10 — indica una observación explicando la diferencia antes de cerrar.',
-        tono: TonoAviso.error,
-      );
-      _obsFocus.requestFocus();
-      return;
-    }
-    if (diferencia.abs() > 0.01 && diferencia.abs() <= 0.10) {
+    // Con descuadre solo se pregunta "¿seguro?". Desde cuánto la observación
+    // es obligatoria lo decide el servidor (error 29 de
+    // p_abm_tac_ArqueoCajaSucursales 'R', límite en tac_configuracion
+    // 'arqueoLimiteDescuadre'): Marcelo, 2026-10-06, "las validaciones de
+    // registro tienen que estar en SQL", para cambiarlas sin recompilar.
+    if (diferencia.abs() > 0.01) {
       final continuar = await showDialog<bool>(
         context: context,
         builder:
@@ -342,6 +329,13 @@ class _ArqueoCajaScreenState extends ConsumerState<ArqueoCajaScreen> {
           actual.mensajeError != previo?.mensajeError) {
         HapticFeedback.lightImpact();
         mostrarAviso(context, actual.mensajeError!, tono: TonoAviso.error);
+        // El rechazo más común es el descuadre sin explicar: se lleva el
+        // cursor a la observación. Si el texto del servidor cambia, solo se
+        // pierde este atajo, no la validación.
+        if (actual.mensajeError!.toLowerCase().contains('observaci') &&
+            _obsCtrl.text.trim().isEmpty) {
+          _obsFocus.requestFocus();
+        }
       }
     });
 
@@ -1126,22 +1120,13 @@ class _ArqueoCajaScreenState extends ConsumerState<ArqueoCajaScreen> {
                           maxLines: 2,
                           decoration: InputDecoration(
                             labelText:
-                                diferencia.abs() > 0.10
-                                    ? 'Observación (obligatoria — explica la diferencia)'
-                                    : 'Observación (opcional)',
+                                diferencia.abs() > 0.01
+                                    ? 'Observación — explica por qué falta o sobra'
+                                    : 'Observación',
                             isDense: true,
                             border: const OutlineInputBorder(),
-                            errorText:
-                                _mostrarErrorObs && _obsCtrl.text.trim().isEmpty
-                                    ? 'Debes explicar el descuadre antes de cerrar.'
-                                    : null,
                           ),
-                          onChanged: (v) {
-                            notifier.setObs(v);
-                            if (_mostrarErrorObs && v.trim().isNotEmpty) {
-                              setState(() => _mostrarErrorObs = false);
-                            }
-                          },
+                          onChanged: notifier.setObs,
                         ),
                       ),
                     ),
