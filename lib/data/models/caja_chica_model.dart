@@ -68,6 +68,10 @@ class CajaChicaModel {
   int audUsuario;
   DateTime? audFecha;
 
+  /// Solo de lectura (p_list_tac_CajaChica 'D'). No va en [toJson]: el
+  /// listado genérico lo mandaría como un parámetro que el SP no tiene.
+  String? nombreEmpDestino;
+
   CajaChicaModel({
     required this.idCC,
     this.idBitTarRuti,
@@ -85,6 +89,7 @@ class CajaChicaModel {
     this.lote,
     required this.audUsuario,
     this.audFecha,
+    this.nombreEmpDestino,
   });
 
   factory CajaChicaModel.fromJson(Map<String, dynamic> json) {
@@ -106,6 +111,7 @@ class CajaChicaModel {
       audUsuario: json["audUsuario"] ?? 0,
       audFecha:
           json["audFecha"] != null ? DateTime.tryParse(json["audFecha"]) : null,
+      nombreEmpDestino: json["nombreEmpDestino"] as String?,
     );
   }
 
@@ -146,6 +152,7 @@ class CajaChicaModel {
       lote: lote,
       audUsuario: audUsuario,
       audFecha: audFecha,
+      nombreEmpDestino: nombreEmpDestino,
     );
   }
 
@@ -167,6 +174,7 @@ class CajaChicaModel {
       lote: entity.lote,
       audUsuario: entity.audUsuario,
       audFecha: entity.audFecha,
+      nombreEmpDestino: entity.nombreEmpDestino,
     );
   }
 }

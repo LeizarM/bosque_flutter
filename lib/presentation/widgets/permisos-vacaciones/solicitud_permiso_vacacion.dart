@@ -443,6 +443,13 @@ class _SolicitudPermisoFormState extends ConsumerState<SolicitudPermisoForm> {
               // TABLA DE HORARIOS DINÁMICOS
               Consumer(
                 builder: (context, ref, child) {
+                  // BAJA POR ENFERMEDAD: los días se cuentan calendario (sin
+                  // horarios), por lo que no se consulta ni se muestra el
+                  // listado de horarios asignados.
+                  if (_tipoPermiso.trim().toLowerCase() == 'baja') {
+                    return const SizedBox.shrink();
+                  }
+
                   final asyncHorarios = ref.watch(
                     horarioEmpleadoProvider((
                       codEmpleado: widget.codEmpleado,

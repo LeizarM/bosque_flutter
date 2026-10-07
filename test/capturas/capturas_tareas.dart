@@ -302,7 +302,27 @@ List<Map<String, dynamic>> _tesBaseDelDia() => [
   {'codTes': 79, 'codCliente': 'C00412', 'datoCliente': 'COMERCIAL LA BELLOTA', 'nombre': 'ESPPAPEL', 'fechaRegistro': _f(_dias(-1)), 'observacion': 'Pasa de caja central a ESP', 'estado': 'CER', 'fechaFinalizacion': _f(_dias(-1))},
 ];
 
+// Un lote como el de la captura de Marcelo (07/10/2026), con a quién se
+// entregó cada egreso (archivo SQL 80). El ingreso no muestra destinatario.
+List<Map<String, dynamic>> _cajaChicaLote() {
+  var saldo = 200.0;
+  Map<String, dynamic> m(int id, int dias, String detalle, double eg, String? a, {int? factura}) {
+    saldo -= eg;
+    return {'idCC': id, 'idBitTarRuti': 1, 'montoIng': 0.0, 'montoEg': eg, 'saldo': saldo, 'numFactura': factura, 'moneda': 'BS', 'descripcion': detalle, 'fecha': _f(_dias(dias)), 'codSucursal': 3, 'lote': 30, 'audUsuario': 34, 'nombreEmpDestino': a};
+  }
+  return [
+    {'idCC': 1, 'idBitTarRuti': 1, 'montoIng': 200.0, 'montoEg': 0.0, 'saldo': 200.0, 'moneda': 'BS', 'descripcion': 'Ingreso de a Caja Chica automatico', 'fecha': _f(_dias(-20)), 'codSucursal': 3, 'lote': 30, 'audUsuario': 34, 'nombreEmpDestino': 'DIEGO SANDRO RUCK TORRICO'},
+    m(2, -20, 'COPIA DE LLAVE MONTACARGAS', 15, 'DIEGO SANDRO RUCK TORRICO'),
+    m(3, -19, 'PASAJE ENTREGA DE MATERIAL AL 07, 15 Y 16 DE SEPTIEMBRE', 18, 'JORGE LUIS SACK FERNANDEZ'),
+    m(4, -19, 'PASAJE ENTREGA DE MATERIAL AL 25, 26 DE AGOSTO Y DE 01, 03, 09 Y 10 DE SEPTIEMBRE.', 36, 'JAIME MARCELO GUZMAN'),
+    m(5, -13, 'RETEN COLCAPIRHUA ENTREGA EDICIONES NUEVO TIEMPO', 3, 'FERNANDO SANTOS SOTO'),
+    m(6, -9, 'FLORES PARA MISA', 15, null),
+    m(7, -7, 'AGUA PARA RADIADOR 6 LTS', 20, 'FERNANDO SANTOS SOTO', factura: 260230),
+  ];
+}
+
 final Map<String, Object? Function()> _respuestas = {
+  '/tareas-rutinarias/caja-chica/listar-del-lote': _cajaChicaLote,
   '/tareas-rutinarias/traspaso-efectivo-tesbase/dia-revisado': _tesBaseDia,
   '/tareas-rutinarias/traspaso-efectivo-tesbase/del-dia': _tesBaseDelDia,
   '/tareas-rutinarias/listar-dependientes-jefe': _dependientes,
@@ -487,6 +507,7 @@ void main() {
 
   testWidgets('caja chica', (t) async {
     await _capturar(t, 'caja_chica_escritorio', const CajaChicaScreen(idBitTarea: 1, nombreTarea: 'Caja Chica'));
+    await _capturar(t, 'caja_chica_telefono', const CajaChicaScreen(idBitTarea: 1, nombreTarea: 'Caja Chica'), tam: telefono);
   });
 
   testWidgets('caja fuerte', (t) async {

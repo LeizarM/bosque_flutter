@@ -394,6 +394,7 @@ class _LibroContable extends StatelessWidget {
   static const _anchos = <AnchoCol>[
     AnchoCol.fijo(96), // fecha
     AnchoCol.flexible(), // detalle
+    AnchoCol.fijo(230), // entregado a
     AnchoCol.fijo(120), // entradas
     AnchoCol.fijo(120), // salidas
     AnchoCol.fijo(128), // saldo
@@ -432,8 +433,15 @@ class _LibroContable extends StatelessWidget {
           children: [
             const EncabezadoTabla(
               anchos: _anchos,
-              titulos: ['Fecha', 'Detalle', 'Entradas', 'Salidas', 'Saldo'],
-              aLaDerecha: {2, 3, 4},
+              titulos: [
+                'Fecha',
+                'Detalle',
+                'Entregado a',
+                'Entradas',
+                'Salidas',
+                'Saldo',
+              ],
+              aLaDerecha: {3, 4, 5},
             ),
             Expanded(
               child: ListView.builder(
@@ -522,6 +530,7 @@ class _AsientoDelLibro extends StatelessWidget {
               ),
           ],
         ),
+        _Destinatario(nombre: esIngreso ? null : item.nombreEmpDestino),
         _Importe(
           valor: ing,
           color: TareasColors.realizadoTexto(context),
@@ -574,6 +583,7 @@ class _TotalesDelLibro extends StatelessWidget {
             context,
           ).textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w700),
         ),
+        const SizedBox.shrink(),
         _Importe(
           valor: totalIng,
           color: TareasColors.realizadoTexto(context),
@@ -597,6 +607,35 @@ class _TotalesDelLibro extends StatelessWidget {
   }
 }
 
+/// A quién se entregó el dinero de un egreso (p_list_tac_CajaChica 'D',
+/// archivo SQL 80). En el ingreso y en un egreso sin dato, una raya.
+class _Destinatario extends StatelessWidget {
+  final String? nombre;
+
+  const _Destinatario({required this.nombre});
+
+  @override
+  Widget build(BuildContext context) {
+    final texto = nombre?.trim() ?? '';
+    final tema = Theme.of(context);
+    if (texto.isEmpty) {
+      return Text(
+        '—',
+        style: tema.textTheme.bodyMedium?.copyWith(
+          color: tema.colorScheme.outline,
+        ),
+      );
+    }
+    return Text(
+      texto,
+      maxLines: 2,
+      overflow: TextOverflow.ellipsis,
+      style: tema.textTheme.bodySmall?.copyWith(
+        color: tema.colorScheme.onSurface,
+      ),
+    );
+  }
+}
 
 class _Importe extends StatelessWidget {
   final double valor;
@@ -667,6 +706,7 @@ class _AsientoCompacto extends StatelessWidget {
     final esIngreso = (item.montoIng ?? 0) > 0;
     final scheme = Theme.of(context).colorScheme;
     final meta = _metaLinea();
+    final destinatario = esIngreso ? '' : (item.nombreEmpDestino?.trim() ?? '');
     final colorImporte =
         esIngreso
             ? TareasColors.realizadoTexto(context)
@@ -703,6 +743,16 @@ class _AsientoCompacto extends StatelessWidget {
                   item.descripcion ?? (esIngreso ? 'Saldo inicial' : 'Egreso'),
                   style: Theme.of(context).textTheme.bodyMedium,
                 ),
+                if (destinatario.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 2),
+                    child: Text(
+                      'Entregado a $destinatario',
+                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                        color: scheme.onSurface,
+                      ),
+                    ),
+                  ),
                 if (meta != null)
                   Padding(
                     padding: const EdgeInsets.only(top: 2),

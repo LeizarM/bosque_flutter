@@ -17,6 +17,10 @@ class CajaChicaEntity {
   final int audUsuario;
   final DateTime? audFecha;
 
+  /// A quién se entregó el dinero. Solo de lectura: lo arma
+  /// p_list_tac_CajaChica 'D' (archivo SQL 80).
+  final String? nombreEmpDestino;
+
   CajaChicaEntity({
     required this.idCC,
     this.idBitTarRuti,
@@ -34,6 +38,7 @@ class CajaChicaEntity {
     this.lote,
     required this.audUsuario,
     this.audFecha,
+    this.nombreEmpDestino,
   });
 
   CajaChicaEntity copyWith({
@@ -53,6 +58,7 @@ class CajaChicaEntity {
     int? lote,
     int? audUsuario,
     DateTime? audFecha,
+    String? nombreEmpDestino,
   }) {
     return CajaChicaEntity(
       idCC: idCC ?? this.idCC,
@@ -71,6 +77,7 @@ class CajaChicaEntity {
       lote: lote ?? this.lote,
       audUsuario: audUsuario ?? this.audUsuario,
       audFecha: audFecha ?? this.audFecha,
+      nombreEmpDestino: nombreEmpDestino ?? this.nombreEmpDestino,
     );
   }
 }
