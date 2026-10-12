@@ -1992,8 +1992,7 @@ class AppConstants {
   static const String chqCustodia = '$_cheque/custodia';
   static const String chqDarCustodiaCheques = '$_cheque/dar-custodia/cheques';
   // Cuerpo {codSucursal, fecha}.
-  static const String chqDarCustodiaEntregas =
-      '$_cheque/dar-custodia/entregas';
+  static const String chqDarCustodiaEntregas = '$_cheque/dar-custodia/entregas';
   // Cuerpo DarCustodiaRequest. 201, data = codAccion nuevo.
   static const String chqDarCustodia = '$_cheque/dar-custodia';
 
