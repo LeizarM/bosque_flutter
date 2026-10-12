@@ -1,3 +1,4 @@
+import 'package:bosque_flutter/core/ui/mensaje_error_tareas.dart';
 import 'package:bosque_flutter/data/repositories/accion_tarea_rutinaria_impl.dart';
 import 'package:bosque_flutter/domain/entities/accion_tarea_rutinaria_entity.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -41,9 +42,11 @@ class AccionTareaRutinariaNotifier
     state = state.copyWith(cargando: true);
     try {
       final data = await _repo.obtener();
+      if (!mounted) return;
       state = state.copyWith(items: data, cargando: false);
     } catch (e) {
-      state = state.copyWith(cargando: false, mensajeError: e.toString());
+      if (!mounted) return;
+      state = state.copyWith(cargando: false, mensajeError: mensajeError(e));
     }
   }
 
@@ -51,6 +54,7 @@ class AccionTareaRutinariaNotifier
     state = state.copyWith(cargando: true);
     try {
       await _repo.registrar(item);
+      if (!mounted) return true;
       state = state.copyWith(
         cargando: false,
         mensajeExito:
@@ -61,7 +65,8 @@ class AccionTareaRutinariaNotifier
       await cargar();
       return true;
     } catch (e) {
-      state = state.copyWith(cargando: false, mensajeError: e.toString());
+      if (!mounted) return false;
+      state = state.copyWith(cargando: false, mensajeError: mensajeError(e));
       return false;
     }
   }
@@ -70,6 +75,7 @@ class AccionTareaRutinariaNotifier
     state = state.copyWith(cargando: true);
     try {
       await _repo.eliminar(idATR, audUsuario);
+      if (!mounted) return true;
       state = state.copyWith(
         cargando: false,
         mensajeExito: 'Acción de tarea rutinaria eliminada.',
@@ -77,7 +83,8 @@ class AccionTareaRutinariaNotifier
       await cargar();
       return true;
     } catch (e) {
-      state = state.copyWith(cargando: false, mensajeError: e.toString());
+      if (!mounted) return false;
+      state = state.copyWith(cargando: false, mensajeError: mensajeError(e));
       return false;
     }
   }

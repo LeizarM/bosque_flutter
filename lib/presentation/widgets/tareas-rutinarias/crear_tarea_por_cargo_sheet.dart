@@ -458,7 +458,15 @@ class _CrearTareaPorCargoSheetState
                     lastDate: DateTime(2100),
                   );
                   if (elegida != null) {
-                    setState(() => _fechaInicioAsignacion = elegida);
+                    setState(() {
+                      _fechaInicioAsignacion = elegida;
+                      // Un fin anterior al nuevo inicio no vale y dejaba el
+                      // selector de fin sin poder abrirse.
+                      final fin = _fechaFinAsignacion;
+                      if (fin != null && fin.isBefore(elegida)) {
+                        _fechaFinAsignacion = null;
+                      }
+                    });
                   }
                 },
                 icon: const Icon(Icons.event_available_outlined),

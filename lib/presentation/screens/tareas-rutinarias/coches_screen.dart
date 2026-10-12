@@ -11,40 +11,22 @@ import 'package:bosque_flutter/presentation/widgets/tareas-rutinarias/pagina_tar
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:bosque_flutter/core/ui/cerrar_ruta.dart';
 import 'package:bosque_flutter/presentation/widgets/tareas-rutinarias/tabla_modulo.dart';
 
-/// Reemplaza dlgCoches del legacy. A diferencia de WizardTareas.java (que
-/// cerraba la tarea al marcar CUALQUIER coche), aquí el backend
-/// (p_coches_marcarLlegada) recién cierra cuando el último coche pendiente
-/// queda con respuesta — ver hallazgo de code-review, 2026-09-03.
+/// Reemplaza dlgCoches del legacy. Desde el archivo SQL 96 no es una tarea:
+/// es la lista de autos de hoy de tu sucursal, una sola para todos los de la
+/// sucursal, y cada auto dice quién lo marcó.
 class CochesScreen extends ConsumerWidget {
-  final int idTarRuti;
-  final int idBitTarea;
   final String nombreTarea;
 
-  const CochesScreen({
-    super.key,
-    required this.idTarRuti,
-    required this.idBitTarea,
-    required this.nombreTarea,
-  });
+  const CochesScreen({super.key, required this.nombreTarea});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final params = (idTarRuti: idTarRuti, idBitTarea: idBitTarea);
-    final state = ref.watch(cochesProvider(params));
-    final notifier = ref.read(cochesProvider(params).notifier);
+    final state = ref.watch(cochesProvider);
+    final notifier = ref.read(cochesProvider.notifier);
 
-    ref.listen(cochesProvider(params), (previo, actual) {
-      if (actual.tareaCerrada && previo?.tareaCerrada != true) {
-        HapticFeedback.mediumImpact();
-        mostrarAviso(
-          context,
-          'Todos los coches quedaron revisados — tarea completada.',
-        );
-        cerrarRuta(context, true);
-      }
+    ref.listen(cochesProvider, (previo, actual) {
       if (actual.mensajeError != null &&
           actual.mensajeError != previo?.mensajeError) {
         HapticFeedback.lightImpact();
@@ -121,7 +103,7 @@ class CochesScreen extends ConsumerWidget {
                     : _Grilla(
                       key: const ValueKey('lista'),
                       items: state.items,
-                      guardandoIdCo: state.guardandoIdCo,
+                      guardandoIds: state.guardandoIds,
                       onMarcar: (idCo, llego, obs) {
                         HapticFeedback.selectionClick();
                         notifier.marcarLlegada(idCo, llego, obs: obs);
@@ -144,13 +126,13 @@ class CochesScreen extends ConsumerWidget {
 /// la pregunta que la pantalla tiene que contestar.
 class _Grilla extends StatelessWidget {
   final List<CocheDelDiaEntity> items;
-  final int? guardandoIdCo;
+  final Set<int> guardandoIds;
   final void Function(int idCo, int llego, String? obs) onMarcar;
 
   const _Grilla({
     super.key,
     required this.items,
-    required this.guardandoIdCo,
+    required this.guardandoIds,
     required this.onMarcar,
   });
 
@@ -176,7 +158,7 @@ class _Grilla extends StatelessWidget {
         itemBuilder:
             (context, i) => _CocheCard(
               coche: items[i],
-              guardando: guardandoIdCo == items[i].idCo,
+              guardando: guardandoIds.contains(items[i].idCo),
               onMarcar:
                   (llego, obs) => onMarcar(items[i].idCo, llego, obs),
             ),
@@ -199,7 +181,7 @@ class _Grilla extends StatelessWidget {
                   coche: items[i],
                   anchos: _anchos,
                   rayado: i.isOdd,
-                  guardando: guardandoIdCo == items[i].idCo,
+                  guardando: guardandoIds.contains(items[i].idCo),
                   onMarcar:
                       (llego, obs) => onMarcar(items[i].idCo, llego, obs),
                 ),
@@ -302,19 +284,13 @@ class _FilaTablaCocheState extends State<_FilaTablaCoche> {
                   ),
                 ],
               ),
-              // Lo que hizo OTRO con este mismo coche hoy (archivo SQL 45).
-              // Las listas se siembran por ocurrencia: si dos personas abren
-              // la pantalla el mismo dia, cada una tiene su copia y no ve la
-              // otra. Esto es para que nadie salga a mirar un vehiculo que ya
-              // fue revisado.
-              if (c.marcadoPorOtro)
+              // La lista es de toda la sucursal (archivo SQL 96): quien lo
+              // marco y a que hora.
+              if (_marcadoPor(c) != null)
                 Padding(
                   padding: const EdgeInsets.only(top: 3),
                   child: Text(
-                    c.otroCuando == null
-                        ? '${c.quienLoMarco} ya lo marco: ${c.queMarcoElOtro}'
-                        : '${c.quienLoMarco} ya lo marco: ${c.queMarcoElOtro}'
-                            ' (${FormatearFecha.formatearFechaHora(c.otroCuando!)})',
+                    _marcadoPor(c)!,
                     style: Theme.of(context).textTheme.labelSmall?.copyWith(
                       color: scheme.onSurfaceVariant,
                     ),
@@ -525,49 +501,23 @@ class _CocheCardState extends State<_CocheCard> {
                 ],
               ),
             ],
-            // Lo que hizo OTRO con este mismo coche hoy (archivo SQL 45).
-            //
-            // Las listas se siembran por ocurrencia: si dos personas abren la
-            // pantalla el mismo día, cada una tiene su copia y no ve la otra.
-            // Esto es para que nadie salga a mirar un vehículo que ya fue
-            // revisado. NO reemplaza la marca propia: cada uno cierra su tarea
-            // con las suyas, y por eso los botones siguen ahí abajo.
-            if (c.marcadoPorOtro) ...[
-              const SizedBox(height: 8),
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 7,
-                ),
-                decoration: BoxDecoration(
-                  color: scheme.surfaceContainerHighest,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Icon(
-                      c.otroLlego == 1
-                          ? Icons.how_to_reg_outlined
-                          : Icons.person_off_outlined,
-                      size: 15,
-                      color: scheme.onSurfaceVariant,
-                    ),
-                    const SizedBox(width: 6),
-                    Expanded(
-                      child: Text(
-                        c.otroCuando == null
-                            ? '${c.quienLoMarco} ya lo marcó como «${c.queMarcoElOtro}».'
-                            : '${c.quienLoMarco} ya lo marcó como «${c.queMarcoElOtro}» '
-                                '(${FormatearFecha.formatearFechaHora(c.otroCuando!)}).',
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: scheme.onSurfaceVariant,
-                        ),
+            // La lista es de toda la sucursal (archivo SQL 96): quién lo
+            // marcó. La hora ya está en la línea de arriba.
+            if (c.yaMarcado && (c.quienMarco?.trim().isNotEmpty ?? false)) ...[
+              const SizedBox(height: 4),
+              Row(
+                children: [
+                  Icon(Icons.person_outline, size: 15, color: scheme.primary),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      'Marcó ${c.quienMarco!.trim()}',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: scheme.onSurfaceVariant,
                       ),
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ],
             const SizedBox(height: 10),
@@ -701,4 +651,13 @@ class _BotonesLlegada extends StatelessWidget {
       ],
     );
   }
+}
+
+/// "Marcó Pérez Ana · 09:14", para la fila de la planilla. Null sin marca.
+String? _marcadoPor(CocheDelDiaEntity c) {
+  final quien = c.quienMarco?.trim() ?? '';
+  if (!c.yaMarcado || quien.isEmpty) return null;
+  return c.fecha == null
+      ? 'Marcó $quien'
+      : 'Marcó $quien · ${FormatearFecha.formatearHora(c.fecha!)}';
 }

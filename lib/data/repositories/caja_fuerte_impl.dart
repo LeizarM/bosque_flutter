@@ -1,9 +1,6 @@
 // Destino final: lib/data/repositories/caja_fuerte_impl.dart
 import 'package:bosque_flutter/core/constants/app_constants.dart';
-import 'dart:typed_data';
-
 import 'package:bosque_flutter/core/network/base_api_repository.dart';
-import 'package:bosque_flutter/core/network/dio_client.dart';
 import 'package:bosque_flutter/data/models/cierre_operaciones_model.dart';
 import 'package:bosque_flutter/domain/entities/cierre_operaciones_entity.dart';
 import 'package:bosque_flutter/domain/entities/llegada_caja_fuerte_entity.dart';
@@ -12,15 +9,11 @@ import 'package:bosque_flutter/domain/repositories/caja_fuerte_repository.dart';
 class CajaFuerteImpl extends BaseApiRepository implements CajaFuerteRepository {
   @override
   Future<int> registrar({
-    required int idTarRuti,
-    required int idBitTarea,
     required List<LlegadaCajaFuerteEntity> llegadas,
   }) async {
     final resultado = await postAndReturnId(
       endpoint: AppConstants.tarCajaFuerteRegistrar,
       data: {
-        'idTarRuti': idTarRuti,
-        'idBitTarea': idBitTarea,
         'llegadas':
             llegadas
                 .map(
@@ -41,19 +34,9 @@ class CajaFuerteImpl extends BaseApiRepository implements CajaFuerteRepository {
   }
 
   @override
-  Future<List<LlegadaDelCierre>> registradasHoy(int idBitTarea) =>
-      postAndReturnList(
-        endpoint: AppConstants.tarCajaFuerteDelDia,
-        data: {'idBitTarea': idBitTarea},
-        fromJson: CierreOperacionesModel.llegada,
-      );
-
-  /// PDF del kardex de caja fuerte de hoy, para archivo. El backend resuelve
-  /// la sucursal del propio [idBitTarea] y comprueba que la ocurrencia sea de
-  /// quien llama -- nunca se manda una sucursal desde el cliente.
-  Future<Uint8List> reportePdf({required int idBitTarea}) =>
-      DioClient.descargarReportePdf(
-        endpoint: AppConstants.tarCajaFuerteReportePdf,
-        data: {'idBitTarea': idBitTarea, 'todasSucursales': false},
-      );
+  Future<List<LlegadaDelCierre>> registradasHoy() => postAndReturnList(
+    endpoint: AppConstants.tarCajaFuerteDelDia,
+    data: const {},
+    fromJson: CierreOperacionesModel.llegada,
+  );
 }

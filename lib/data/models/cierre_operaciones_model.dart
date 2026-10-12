@@ -32,6 +32,10 @@ class CierreOperacionesModel {
     diferencia: _double(j['diferencia']),
     obs: _texto(j['obs']),
     revisado: _int(j['fueRevisado']) == 1,
+    // Sin la columna (el SQL 91 sin correr), todas son arqueos registrados.
+    hecho: _int(j['hecho']) != 0,
+    cargo: _texto(j['cargo']),
+    fueRealizado: _int(j['fueRealizado']),
   );
 
   static LlegadaDelCierre llegada(Map<String, dynamic> j) => LlegadaDelCierre(

@@ -1,6 +1,6 @@
 import 'dart:typed_data';
 
-import 'package:bosque_flutter/core/ui/mensajes_usuario.dart';
+import 'package:bosque_flutter/core/ui/mensaje_error_tareas.dart';
 import 'package:bosque_flutter/data/repositories/cierre_operaciones_impl.dart';
 import 'package:bosque_flutter/domain/entities/bitacora_tareas_entity.dart';
 import 'package:bosque_flutter/domain/entities/cierre_operaciones_entity.dart';
@@ -158,7 +158,10 @@ class CierreOperacionesState {
   bool get algoFallo => paneles.any((p) => panel(p).error != null);
 
   int get arqueosRevisados => arqueos.filas.where((a) => a.revisado).length;
-  int get arqueosSinRevisar => arqueos.filas.length - arqueosRevisados;
+
+  /// Los registrados. Los sin hacer (archivo SQL 91) solo se miran.
+  int get arqueosHechos => arqueos.filas.where((a) => a.hecho).length;
+  int get arqueosSinRevisar => arqueosHechos - arqueosRevisados;
 
   int get traspasosSinRevisar =>
       traspasos.filas.where((t) => t.fueVerificado == null).length;
@@ -205,8 +208,12 @@ class CierreOperacionesState {
     final datos = panel(p);
     if (!datos.cargado) return false;
     if (filasSinMarcar(p) > 0) return false;
-    return !(seMarcaFilaPorFila(p) && datos.filas.isNotEmpty);
+    return !(seMarcaFilaPorFila(p) && _hayQueMarcar(p));
   }
+
+  /// Si trae filas que se marcan: un arqueo sin hacer no se marca.
+  bool _hayQueMarcar(PanelCierre p) =>
+      p == PanelCierre.arqueos ? arqueosHechos > 0 : panel(p).filas.isNotEmpty;
 
   /// Una sección está revisada cuando se pudo leer y, o bien se marcaron todas
   /// sus filas, o bien la persona la dio por revisada.
@@ -214,7 +221,7 @@ class CierreOperacionesState {
     final datos = panel(p);
     if (!datos.cargado) return false;
     if (filasSinMarcar(p) > 0) return false;
-    if (seMarcaFilaPorFila(p) && datos.filas.isNotEmpty) return true;
+    if (seMarcaFilaPorFila(p) && _hayQueMarcar(p)) return true;
     return seccionesConfirmadas.contains(p);
   }
 
@@ -469,7 +476,7 @@ class CierreOperacionesNotifier extends StateNotifier<CierreOperacionesState> {
       if (!mounted) return;
       state = state.copyWith(
         guardando: _sin(clave),
-        mensajeError: textoParaUsuario(e),
+        mensajeError: mensajeError(e),
       );
     }
   }
@@ -503,7 +510,7 @@ class CierreOperacionesNotifier extends StateNotifier<CierreOperacionesState> {
       if (!mounted) return;
       state = state.copyWith(
         guardando: _sin(clave),
-        mensajeError: textoParaUsuario(e),
+        mensajeError: mensajeError(e),
       );
     }
   }
@@ -521,7 +528,7 @@ class CierreOperacionesNotifier extends StateNotifier<CierreOperacionesState> {
       state = state.copyWith(cerrando: false, cerradas: cantidad);
     } catch (e) {
       if (!mounted) return;
-      state = state.copyWith(cerrando: false, mensajeError: textoParaUsuario(e));
+      state = state.copyWith(cerrando: false, mensajeError: mensajeError(e));
     }
   }
 
@@ -557,7 +564,7 @@ class CierreOperacionesNotifier extends StateNotifier<CierreOperacionesState> {
       if (mounted) {
         state = state.copyWith(
           descargandoPdf: false,
-          mensajeError: textoParaUsuario(e),
+          mensajeError: mensajeError(e),
         );
       }
       return null;

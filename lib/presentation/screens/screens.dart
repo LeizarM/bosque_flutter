@@ -19,6 +19,8 @@ export 'package:bosque_flutter/presentation/screens/entregas/entregas_dashboard_
 export 'package:bosque_flutter/presentation/screens/entregas/entregas_home_screen.dart';
 export 'package:bosque_flutter/presentation/screens/entregas/pendientes_entrega_screen.dart';
 export 'package:bosque_flutter/presentation/screens/estructura-organizacional/estructura_organizacional_empresa_screen.dart';
+export 'package:bosque_flutter/presentation/screens/estructura-organizacional/cargos_por_revisar_screen.dart';
+export 'package:bosque_flutter/presentation/screens/estructura-organizacional/responsables_cierre_screen.dart';
 export 'package:bosque_flutter/presentation/screens/facturas-tigo/ver_factura.dart';
 export 'package:bosque_flutter/presentation/screens/ficha-trabajador/dependiente_screen.dart';
 export 'package:bosque_flutter/presentation/screens/ficha-trabajador/empleado_dependiente_screen.dart';
@@ -34,6 +36,8 @@ export 'package:bosque_flutter/presentation/screens/tareas-rutinarias/arqueo_caj
 export 'package:bosque_flutter/presentation/screens/tareas-rutinarias/caja_chica_screen.dart';
 export 'package:bosque_flutter/presentation/screens/tareas-rutinarias/caja_fuerte_screen.dart';
 export 'package:bosque_flutter/presentation/screens/tareas-rutinarias/cierre_operaciones_screen.dart';
+export 'package:bosque_flutter/presentation/screens/tareas-rutinarias/verificar_cierre_screen.dart';
+export 'package:bosque_flutter/presentation/screens/tareas-rutinarias/control_cierre_screen.dart';
 export 'package:bosque_flutter/presentation/screens/tareas-rutinarias/traspaso_entre_sistemas_screen.dart';
 export 'package:bosque_flutter/presentation/screens/tareas-rutinarias/traspaso_efectivo_tesbase_screen.dart';
 export 'package:bosque_flutter/presentation/screens/tareas-rutinarias/bitacora_tareas_screen.dart';

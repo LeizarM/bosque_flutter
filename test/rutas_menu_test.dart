@@ -55,6 +55,8 @@ void main() {
     'tchBanco/banco': 'BancosScreen',
     // codVista 77 — 'Verificar Cheques' (padre 41 'modCheques'). Misma regla.
     'tchCheque/verificarDepositos': 'VerificarChequesScreen',
+    // "Cargos por revisar" (padre 5, Recursos Humanos), archivo SQL 82.
+    'trhEstructuraOrganizacional/cargosPorRevisar': 'CargosPorRevisarScreen',
   };
 
   late Set<String> paths;

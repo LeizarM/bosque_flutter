@@ -9,6 +9,7 @@
 // funcionan con sus providers de verdad, sin backend ni login. Las fuentes son
 // las reales del proyecto: con la de prueba de Flutter cada letra es un
 // rectángulo y no se puede juzgar nada.
+import 'dart:convert';
 import 'dart:io';
 import 'dart:ui' as ui;
 
@@ -18,6 +19,7 @@ import 'package:bosque_flutter/core/theme/app_theme.dart';
 import 'package:bosque_flutter/domain/entities/cierre_operaciones_entity.dart';
 import 'package:bosque_flutter/domain/entities/login_entity.dart';
 import 'package:bosque_flutter/presentation/screens/screens.dart';
+import 'package:bosque_flutter/presentation/widgets/talonarios/uso_caja_chica.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
@@ -25,6 +27,11 @@ import 'package:flutter/services.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+
+/// Datos reales para mirar la pantalla de otras personas, desde un JSON que
+/// vive fuera del repo: `--dart-define=ESCENARIO=<ruta>`. Lista de
+/// {nombre, usuario, respuestas}; ver la prueba "escenario".
+const _archivoEscenario = String.fromEnvironment('ESCENARIO');
 
 const _salida = String.fromEnvironment(
   'CAPTURAS',
@@ -276,10 +283,21 @@ List<Map<String, dynamic>> _llegadasDeHoy() => [
   {'idRp': 2, 'fueVerificado': 1, 'persona': null, 'cliente': 'IMPRENTA OFFSET ANDINA', 'nombreSucursal': 'CENTRAL', 'moneda': 'USD', 'importe': 800.0, 'destino': null, 'horallegada': '${_f(_hoy).substring(0, 10)} 11:40:00', 'tipo': 'Cheque'},
 ];
 
+// Archivos 97 a 99: uno en uso de la sucursal, uno del responsable y uno en espera.
+List<Map<String, dynamic>> _talonariosCajaChica() => [
+  {'codTalonario': 1138, 'nroTalonario': 'VCC001', 'numeracionInicial': 1, 'numeracionFinal': 50, 'usados': 5, 'libres': 45, 'ultimoVale': 5, 'siguienteVale': 6, 'activo': true, 'titular': null},
+  {'codTalonario': 1187, 'nroTalonario': 'VCC050', 'numeracionInicial': 2451, 'numeracionFinal': 2500, 'usados': 0, 'libres': 50, 'ultimoVale': null, 'siguienteVale': 2451, 'activo': true, 'titular': 'DIEGO SANDRO RUCK TORRICO'},
+  {'codTalonario': 1139, 'nroTalonario': 'VCC002', 'numeracionInicial': 51, 'numeracionFinal': 100, 'usados': 0, 'libres': 50, 'ultimoVale': null, 'siguienteVale': 51, 'activo': false, 'titular': null},
+];
+
+List<Map<String, dynamic>> _reglasRecibo() => [
+  {'reciboObligatorio': true, 'titulo': 'Talonarios de tu sucursal', 'regla': 'El número de recibo es obligatorio: tiene que ser de un talonario en uso y no haberse usado antes. Los que están en espera se habilitan cuando el que está en uso llega a su último recibo, o cuando Talonarios lo devuelve o lo cierra. Un talonario entregado a una persona lo puede usar cualquiera de la sucursal.'},
+];
+
 List<Map<String, dynamic>> _cochesDelDia() => [
-  {'idCo': 1, 'idCoche': 11, 'placa': '2345-KLM', 'marca': 'Toyota', 'clase': 'Camioneta', 'color': 'Blanco', 'anio': 2019, 'descripcion': 'Hilux de reparto', 'llego': 1, 'obs': null, 'fecha': _f(_hoy), 'idTarRuti': 41, 'idBitTarRuti': 1},
-  {'idCo': 2, 'idCoche': 12, 'placa': '4410-PQR', 'marca': 'Nissan', 'clase': 'Furgón', 'color': 'Gris', 'anio': 2017, 'descripcion': 'Furgón de El Alto', 'llego': null, 'obs': null, 'fecha': _f(_hoy), 'idTarRuti': 41, 'idBitTarRuti': 1},
-  {'idCo': 3, 'idCoche': 13, 'placa': '1188-XYZ', 'marca': 'Suzuki', 'clase': 'Moto', 'color': 'Rojo', 'anio': 2021, 'descripcion': 'Moto de cobranza', 'llego': 0, 'obs': 'En taller por frenos', 'fecha': _f(_hoy), 'idTarRuti': 41, 'idBitTarRuti': 1},
+  {'idCo': 1, 'idCoche': 11, 'placa': '2345-KLM', 'marca': 'Toyota', 'clase': 'Camioneta', 'color': 'Blanco', 'anio': 2019, 'descripcion': 'Hilux de reparto', 'llego': 1, 'obs': null, 'fecha': _f(_hoy), 'idTarRuti': 41, 'quienMarco': 'QUISPE MAMANI RONALDO'},
+  {'idCo': 2, 'idCoche': 12, 'placa': '4410-PQR', 'marca': 'Nissan', 'clase': 'Furgón', 'color': 'Gris', 'anio': 2017, 'descripcion': 'Furgón de El Alto', 'llego': null, 'obs': null, 'fecha': null, 'idTarRuti': 41},
+  {'idCo': 3, 'idCoche': 13, 'placa': '1188-XYZ', 'marca': 'Suzuki', 'clase': 'Moto', 'color': 'Rojo', 'anio': 2021, 'descripcion': 'Moto de cobranza', 'llego': 0, 'obs': 'En taller por frenos', 'fecha': _f(_hoy), 'idTarRuti': 41, 'quienMarco': 'CASTAÑO ROJAS ANDRÉS'},
 ];
 
 List<Map<String, dynamic>> _dependientes() => [
@@ -321,8 +339,170 @@ List<Map<String, dynamic>> _cajaChicaLote() {
   ];
 }
 
+/// Verificar Cierre por responsables (archivo SQL 81): lo que le toca a uno.
+List<Map<String, dynamic>> _misSecciones() {
+  Map<String, dynamic> c(String s, String nombre, int? suc, String sucursal, {String? firmo, String? obs, int conBoton = 1, String? detalle}) => {
+    'seccion': s,
+    'nombreSeccion': nombre,
+    'codSucursal': suc,
+    'nombreSucursal': sucursal,
+    'fechaRevisada': _f(_hoy.subtract(const Duration(days: 1))),
+    'puedeAutorrevisar': 0,
+    'idFC': firmo == null ? null : 7,
+    'firmadoPor': firmo,
+    'fechaFirma': firmo == null ? null : '${_f(_hoy).substring(0, 10)} 09:12:00',
+    'obs': obs,
+    'conBoton': firmo == null ? conBoton : 0,
+    'detalle': firmo == null ? (detalle ?? 'Revísalo y firma.') : null,
+  };
+  return [
+    c('A', 'Arqueos de caja', 20, 'CENTRAL', detalle: 'Hay 2 problema(s) (2 arqueo(s) sin hacer): firma con tu observación.'),
+    c('A', 'Arqueos de caja', 22, 'EL ALTO', conBoton: 0, detalle: 'Falta 1 por revisar: se firma sola al terminar.'),
+    c('F', 'Caja fuerte', 20, 'CENTRAL', conBoton: 0, detalle: 'Faltan 2 por revisar: se firma sola al terminar.'),
+    c('T', 'Traspasos Caja AXA', null, 'Toda la empresa', firmo: 'OSCAR ZABALLA'),
+    c('C', 'Cheques', null, 'Toda la empresa'),
+    c('R', 'Tareas del día', null, 'Toda la empresa', firmo: 'PAOLA RODRIGO', obs: 'Se avisó a los jefes de área.'),
+  ];
+}
+
+List<Map<String, dynamic>> _tableroCierre() {
+  final filas = <Map<String, dynamic>>[];
+  const estados = ['A tiempo', 'A tiempo', 'Tarde', 'Sin firmar'];
+  for (var d = 0; d < 4; d++) {
+    final dia = _hoy.subtract(Duration(days: d));
+    for (final (i, s) in [('A', 'Arqueos de caja', 'CENTRAL'), ('A', 'Arqueos de caja', 'SANTA CRUZ'), ('F', 'Caja fuerte', 'COCHABAMBA'), ('R', 'Tareas del día', 'Toda la empresa')].indexed) {
+      final estado = d == 0 ? (i == 3 ? 'A tiempo' : 'Pendiente') : estados[(d + i) % 4];
+      final firmo = estado == 'A tiempo' || estado == 'Tarde';
+      filas.add({
+        'fechaTarea': _f(dia),
+        'fechaRevisada': _f(dia.subtract(const Duration(days: 1))),
+        'seccion': s.$1,
+        'nombreSeccion': s.$2,
+        'nombreSucursal': s.$3,
+        'estado': estado,
+        'firmadoPor': firmo ? (i == 3 ? 'OSCAR ZABALLA' : 'PAOLA RODRIGO') : null,
+        'fechaFirma': firmo ? '${_f(dia).substring(0, 10)} ${estado == 'Tarde' ? '23:10' : '10:05'}:00' : null,
+        'filas': 3,
+        'filasRevisadas': firmo ? 3 : 0,
+        'hallazgos': i == 1 ? 2 : 0,
+        'obs': i == 1 && firmo ? 'Santa Cruz no hizo el arqueo: la cajera estaba con permiso.' : null,
+        'responsables': i == 3 ? 'HANS ANEIVA, OSCAR ZABALLA, PAOLA RODRIGO' : 'HANS ANEIVA, PAOLA RODRIGO',
+      });
+    }
+  }
+  return filas;
+}
+
+List<Map<String, dynamic>> _resumenCierre() => [
+  {'codEmpleado': 139, 'persona': 'PAOLA JANNETH RODRIGO', 'leTocaban': 15, 'hechasATiempo': 9, 'hechasTarde': 2, 'porOtro': 1, 'noHechas': 3, 'pendientes': 3, 'autorrevisadas': 0, 'hallazgos': 4},
+  {'codEmpleado': 20, 'persona': 'HANS MARTIN ANEIVA', 'leTocaban': 15, 'hechasATiempo': 0, 'hechasTarde': 0, 'porOtro': 12, 'noHechas': 3, 'pendientes': 3, 'autorrevisadas': 0, 'hallazgos': 0},
+  {'codEmpleado': 50, 'persona': 'OSCAR RODOLFO ZABALLA', 'leTocaban': 8, 'hechasATiempo': 4, 'hechasTarde': 0, 'porOtro': 2, 'noHechas': 1, 'pendientes': 1, 'autorrevisadas': 0, 'hallazgos': 0},
+];
+
+/// Cargos por revisar (archivo SQL 82), con casos reales del 07/10/2026.
+List<Map<String, dynamic>> _senalesCargo() {
+  Map<String, dynamic> x(int emp, String persona, String cargo, String desde, String suc, int idTar, String tarea, int deSus, String motivo, {String? ultima, int noAplica = 0}) => {
+    'codEmpleado': emp, 'persona': persona, 'cargo': cargo, 'cargoDesde': desde, 'nombreSucursal': suc,
+    'idTarRuti': idTar, 'tarea': tarea, 'idFrec': 6, 'ocurrencias': 10, 'noAplica': noAplica,
+    'desde': _f(_hoy.subtract(const Duration(days: 12))), 'ultimaHecha': ultima, 'tareasDeLaPersona': deSus,
+    'motivo': motivo, 'idSC': null,
+  };
+  return [
+    x(301, 'TOMÁS JARANDILLA', 'RESPONSABLE DE ALMACEN', '2026-02-01 00:00:00', 'ACHOCALLA', 1, 'Arqueo de Caja', 3, 'Dejó de hacerla: la última vez fue el 07/09/2024.', ultima: '2024-09-07 00:00:00'),
+    x(301, 'TOMÁS JARANDILLA', 'RESPONSABLE DE ALMACEN', '2026-02-01 00:00:00', 'ACHOCALLA', 30, 'Verificar estado de las instalaciones', 3, 'Dejó de hacerla: la última vez fue el 06/07/2024.', ultima: '2024-07-06 00:00:00'),
+    x(301, 'TOMÁS JARANDILLA', 'RESPONSABLE DE ALMACEN', '2026-02-01 00:00:00', 'ACHOCALLA', 31, 'Verificar la limpieza de la Sucursal', 3, 'Dejó de hacerla: la última vez fue el 06/07/2024.', ultima: '2024-07-06 00:00:00'),
+    x(302, 'MANUEL ANGEL MAMANI', 'RESPONSABLE DE ALMACEN', '2026-02-01 00:00:00', 'CENTRAL', 1, 'Arqueo de Caja', 6, 'Dejó de hacerla: la última vez fue el 15/10/2022. En CENTRAL la hace RONALDO PEREZ.', ultima: '2022-10-15 00:00:00'),
+    x(211, 'DIEGO SANDRO RUCK TORRICO', 'ADMINISTRADOR REGIONAL CBBA', '2022-07-01 00:00:00', 'COCHABAMBA', 154, 'Amortizar en el sistema SAP los cheques que se hayan hecho efectivos.', 20, 'Nunca la hizo.'),
+    x(211, 'DIEGO SANDRO RUCK TORRICO', 'ADMINISTRADOR REGIONAL CBBA', '2022-07-01 00:00:00', 'COCHABAMBA', 164, 'Controlar los límites y montos de dinero de saldos en caja.', 20, 'Nunca la hizo.'),
+  ];
+}
+
+/// Respuestas que pisan a las de siempre en una captura (otro usuario).
+final Map<String, Object? Function()> _escenario = {};
+
+/// Diego Ruck (Cochabamba) con UNA celda: caja fuerte de su sucursal.
+final _ruck = LoginEntity(
+  token: 'x',
+  bearer: 'Bearer',
+  nombreCompleto: 'RUCK TORRICO DIEGO SANDRO',
+  cargo: 'ADMINISTRADOR REGIONAL CBBA',
+  tipoUsuario: 'lim',
+  codUsuario: 120,
+  codEmpleado: 211,
+  codEmpresa: 1,
+  codCiudad: 3,
+  login: 'druck',
+  versionApp: '1.0.1',
+  codSucursal: 23,
+  esAutorizador: 'N',
+  estado: 'A',
+  audUsuarioI: 34,
+  nombreSucursal: 'COCHABAMBA',
+  nombreCiudad: 'COCHABAMBA',
+  nombreEmpresa: 'IMPEXPAP',
+  npassword: '',
+  password: '',
+  password2: '',
+);
+
+Map<String, Object? Function()> _escenarioRuck() {
+  var id = 175260;
+  Map<String, dynamic> t(String nombre, int idTarRuti, int idATR, {int fueRealizado = 12}) => {
+    'idBitTarea': id++,
+    'fechaActivo': _f(_hoy),
+    'fechaPresentacion': _f(_hoy),
+    'idTarRuti': idTarRuti,
+    'nombreTareaRutinaria': nombre,
+    'codEmpleado': 211,
+    'descripCargo': 'ADMINISTRADOR REGIONAL CBBA',
+    'fechaCompletado': fueRealizado == 13 ? _f(_hoy) : null,
+    'fueRealizado': fueRealizado,
+    'obs': null,
+    'estado': 1,
+    'audUsuario': -1,
+    'audFecha': _f(_hoy),
+    'idATR': idATR,
+    'idFrec': 6,
+  };
+  final ayer = _f(_hoy.subtract(const Duration(days: 1))).substring(0, 10);
+  Map<String, dynamic> l(int idRp, String cliente, String moneda, double importe, String hora, {int verificada = 0}) => {
+    'idRp': idRp, 'fueVerificado': verificada, 'persona': 'Diego Ruck', 'cliente': cliente,
+    'nombreSucursal': 'COCHABAMBA', 'moneda': moneda, 'importe': importe, 'destino': 'Depósito BCP',
+    'horallegada': '$ayer $hora:00', 'tipo': 'Efectivo',
+  };
+  return {
+    '/tareas-rutinarias/obtener-bit-tarea-ruti': () => [
+      t('Verificar Cierre de Operaciones', 39, 5),
+      t('Arqueo de Caja', 1, 2),
+      t('Caja Chica', 42, 7, fueRealizado: 13),
+      t('Recepcionar y registrar los depósitos diarios en Bancos', 151, 1),
+      t('Recepcionar y registrar las cobranzas diarias ejecutadas por los cobradores', 153, 1),
+    ],
+    '/tareas-rutinarias/verificar-cierre/mis-secciones': () => [
+      {
+        'seccion': 'F', 'nombreSeccion': 'Caja fuerte', 'codSucursal': 23, 'nombreSucursal': 'COCHABAMBA',
+        'fechaRevisada': _f(_hoy.subtract(const Duration(days: 1))), 'puedeAutorrevisar': 1,
+        'idFC': null, 'firmadoPor': null, 'fechaFirma': null, 'obs': null,
+        'conBoton': 0, 'detalle': 'Faltan 2 por revisar: se firma sola al terminar.',
+      },
+    ],
+    '/tareas-rutinarias/verificar-cierre/llegadas-de-hoy': () => [
+      l(1, 'DISTRIBUIDORA EL VALLE S.R.L.', 'Bs', 12450.0, '10:20', verificada: 1),
+      l(2, 'LIBRERÍA LA PAZ CBBA', 'Bs', 3800.0, '12:05'),
+      l(3, 'IMPRENTA SAN MARTÍN', 'USD', 600.0, '16:40'),
+    ],
+  };
+}
+
 final Map<String, Object? Function()> _respuestas = {
+  '/tareas-rutinarias/senales-cargo/lista': _senalesCargo,
+  '/tareas-rutinarias/senales-cargo/de-mi-equipo': () => _senalesCargo().where((x) => x['codEmpleado'] != 211).toList(),
+  '/tareas-rutinarias/verificar-cierre/mis-secciones': _misSecciones,
+  '/tareas-rutinarias/verificar-cierre/tablero': _tableroCierre,
+  '/tareas-rutinarias/verificar-cierre/tablero-resumen': _resumenCierre,
   '/tareas-rutinarias/caja-chica/listar-del-lote': _cajaChicaLote,
+  '/tareas-rutinarias/caja-chica/talonarios': _talonariosCajaChica,
+  '/tareas-rutinarias/caja-chica/reglas-recibo': _reglasRecibo,
   '/tareas-rutinarias/traspaso-efectivo-tesbase/dia-revisado': _tesBaseDia,
   '/tareas-rutinarias/traspaso-efectivo-tesbase/del-dia': _tesBaseDelDia,
   '/tareas-rutinarias/listar-dependientes-jefe': _dependientes,
@@ -385,6 +565,9 @@ Future<void> _capturar(
   final clave = GlobalKey();
   await tester.pumpWidget(
     ProviderScope(
+      // Una llave por captura: sin ella, dos capturas seguidas reusan el
+      // mismo contenedor y la segunda muestra los datos de la primera.
+      key: ValueKey(nombre),
       overrides: [
         userProvider.overrideWith(
           (ref) => UserStateNotifier.sinStorage(usuario ?? _usuario),
@@ -433,18 +616,35 @@ void main() {
       0,
       InterceptorsWrapper(
         onRequest: (options, handler) {
-          final datos = _respuestas[options.path];
+          final datos = _escenario[options.path] ?? _respuestas[options.path];
           if (datos == null) {
             _pedidosSinRespuesta.add(options.path);
             return handler.resolve(
               Response(requestOptions: options, statusCode: 204),
             );
           }
+          final valor = datos();
+          // {'__status': 403} simula un rechazo del servidor (por ejemplo,
+          // quien no es jefe pidiendo "Mi equipo").
+          if (valor is Map && valor['__status'] is int) {
+            final status = valor['__status'] as int;
+            return handler.reject(
+              DioException(
+                requestOptions: options,
+                response: Response(
+                  requestOptions: options,
+                  statusCode: status,
+                  data: {'message': valor['message'] ?? 'Rechazado', 'status': status},
+                ),
+                type: DioExceptionType.badResponse,
+              ),
+            );
+          }
           handler.resolve(
             Response(
               requestOptions: options,
               statusCode: 200,
-              data: {'message': 'ok', 'data': datos(), 'status': 200},
+              data: {'message': 'ok', 'data': valor, 'status': 200},
             ),
           );
         },
@@ -506,16 +706,22 @@ void main() {
   });
 
   testWidgets('caja chica', (t) async {
-    await _capturar(t, 'caja_chica_escritorio', const CajaChicaScreen(idBitTarea: 1, nombreTarea: 'Caja Chica'));
-    await _capturar(t, 'caja_chica_telefono', const CajaChicaScreen(idBitTarea: 1, nombreTarea: 'Caja Chica'), tam: telefono);
+    await _capturar(t, 'caja_chica_escritorio', const CajaChicaScreen(nombreTarea: 'Caja Chica'));
+    await _capturar(t, 'caja_chica_telefono', const CajaChicaScreen(nombreTarea: 'Caja Chica'), tam: telefono);
+  });
+
+  testWidgets('caja chica formulario', (t) async {
+    Future<void> abrir(WidgetTester t) => t.tap(find.text('Registrar egreso'));
+    await _capturar(t, 'caja_chica_formulario_escritorio', const CajaChicaScreen(nombreTarea: 'Caja Chica'), antes: abrir);
+    await _capturar(t, 'caja_chica_formulario_telefono', const CajaChicaScreen(nombreTarea: 'Caja Chica'), tam: telefono, antes: abrir);
   });
 
   testWidgets('caja fuerte', (t) async {
-    await _capturar(t, 'caja_fuerte_escritorio', const CajaFuerteScreen(idTarRuti: 40, idBitTarea: 1, nombreTarea: 'Kardex Caja Fuerte'));
+    await _capturar(t, 'caja_fuerte_escritorio', const CajaFuerteScreen(nombreTarea: 'Kardex Caja Fuerte'));
   });
 
   testWidgets('coches', (t) async {
-    await _capturar(t, 'coches_escritorio', const CochesScreen(idTarRuti: 41, idBitTarea: 1, nombreTarea: 'Revisión de Autos'));
+    await _capturar(t, 'coches_escritorio', const CochesScreen(nombreTarea: 'Revisión de Autos'));
   });
 
   testWidgets('cierre', (t) async {
@@ -526,6 +732,159 @@ void main() {
 
   testWidgets('verificar cierre', (t) async {
     await _capturar(t, 'verificar_cierre_escritorio', const CierreOperacionesScreen(idBitTarea: 1, nombreTarea: 'Verificar Cierre de Operaciones', modo: ModoCierre.verificacion), usuario: _admin);
+  });
+
+  testWidgets('verificar cierre por responsables', (t) async {
+    const pantalla = VerificarCierreScreen(idBitTarea: 1, nombreTarea: 'Verificar Cierre de Operaciones');
+    await _capturar(t, 'verificar_responsables_escritorio', pantalla);
+    await _capturar(t, 'verificar_responsables_telefono', pantalla, tam: telefono);
+    await _capturar(t, 'control_cierre_escritorio', const ControlCierreScreen());
+    await _capturar(t, 'control_cierre_telefono', const ControlCierreScreen(), tam: telefono);
+  });
+
+  testWidgets('asi lo ve ruck', (t) async {
+    _escenario
+      ..clear()
+      ..addAll(_escenarioRuck());
+    addTearDown(_escenario.clear);
+    await _capturar(t, 'ruck_mis_tareas', const MisTareasRutinariasScreen(), usuario: _ruck);
+    await _capturar(t, 'ruck_mis_tareas_telefono', const MisTareasRutinariasScreen(), tam: telefono, usuario: _ruck);
+    const pantalla = VerificarCierreScreen(idBitTarea: 175260, nombreTarea: 'Verificar Cierre de Operaciones');
+    await _capturar(t, 'ruck_verificar', pantalla, usuario: _ruck);
+    await _capturar(t, 'ruck_verificar_telefono', pantalla, tam: telefono, usuario: _ruck);
+  });
+
+  testWidgets('cargos por revisar', (t) async {
+    await _capturar(t, 'cargos_por_revisar_escritorio', const CargosPorRevisarScreen(), usuario: _admin, antes: (t) async {
+      await t.tap(find.text('TOMÁS JARANDILLA'));
+    });
+    await _capturar(t, 'cargos_por_revisar_telefono', const CargosPorRevisarScreen(), tam: telefono, usuario: _admin, antes: (t) async {
+      await t.tap(find.text('MANUEL ANGEL MAMANI'));
+    });
+  });
+
+  testWidgets('escenario', (t) async {
+    if (_archivoEscenario.isEmpty) return;
+    final personas = (jsonDecode(File(_archivoEscenario).readAsStringSync()) as List)
+        .cast<Map<String, dynamic>>();
+    addTearDown(_escenario.clear);
+    for (final p in personas) {
+      final u = p['usuario'] as Map<String, dynamic>;
+      final usuario = LoginEntity(
+        token: 'x',
+        bearer: 'Bearer',
+        nombreCompleto: u['nombreCompleto'] as String,
+        cargo: u['cargo'] as String,
+        tipoUsuario: 'lim',
+        codUsuario: u['codUsuario'] as int,
+        codEmpleado: u['codEmpleado'] as int,
+        codEmpresa: 1,
+        codCiudad: 1,
+        login: u['login'] as String,
+        versionApp: '1.0.1',
+        codSucursal: u['codSucursal'] as int,
+        esAutorizador: 'N',
+        estado: 'A',
+        audUsuarioI: 34,
+        nombreSucursal: u['nombreSucursal'] as String,
+        nombreCiudad: u['nombreCiudad'] as String,
+        nombreEmpresa: 'IMPEXPAP',
+        npassword: '',
+        password: '',
+        password2: '',
+      );
+      _escenario
+        ..clear()
+        ..addAll({
+          for (final e in (p['respuestas'] as Map<String, dynamic>).entries)
+            e.key: () => e.value,
+        });
+      final nombre = p['nombre'] as String;
+      // 'mis_tareas', 'control_cierre', 'responsables_cierre' o
+      // 'verificar_cierre:<idBitTarea>'. La
+      // de verificar va alta: es larga y se quiere ver entera.
+      for (final pantalla in (p['pantallas'] as List?)?.cast<String>() ?? ['mis_tareas']) {
+        final (sufijo, widget, alto) = switch (pantalla) {
+          'mis_tareas' => ('mis_tareas', const MisTareasRutinariasScreen() as Widget, 900.0),
+          'control_cierre' => ('control_cierre', const ControlCierreScreen() as Widget, 1500.0),
+          'responsables_cierre' => ('responsables_cierre', const ResponsablesCierreScreen() as Widget, 1100.0),
+          _ when pantalla.startsWith('verificar_cierre:') => (
+            'verificar_cierre',
+            VerificarCierreScreen(
+              idBitTarea: int.parse(pantalla.split(':')[1]),
+              nombreTarea: 'Verificar Cierre de Operaciones',
+            ) as Widget,
+            2600.0,
+          ),
+          // Caja chica con su talonario y el uso de un talonario (archivo 93).
+          _ when pantalla.startsWith('caja_chica') => (
+            'caja_chica',
+            const CajaChicaScreen(nombreTarea: 'Caja Chica') as Widget,
+            900.0,
+          ),
+          _ when pantalla.startsWith('uso_caja_chica:') => (
+            'uso_caja_chica',
+            Scaffold(
+              body: SingleChildScrollView(
+                padding: const EdgeInsets.all(16),
+                child: UsoEnCajaChica(codTalonario: BigInt.parse(pantalla.split(':')[1])),
+              ),
+            ) as Widget,
+            1100.0,
+          ),
+          _ => throw ArgumentError('Pantalla desconocida: $pantalla'),
+        };
+        await _capturar(t, '${nombre}_$sufijo', widget, tam: Size(1440, alto), usuario: usuario);
+        await _capturar(t, '${nombre}_${sufijo}_telefono', widget, tam: Size(412, alto * 1.6), usuario: usuario);
+        if (sufijo == 'caja_chica') {
+          await _capturar(t, '${nombre}_${sufijo}_egreso', widget, tam: Size(412, alto), usuario: usuario,
+              antes: (t) async => t.tap(find.text('Registrar egreso')));
+        }
+        // La matriz también con el diálogo del primer cargo sin secciones.
+        if (pantalla == 'responsables_cierre') {
+          await _capturar(t, '${nombre}_${sufijo}_agregar', widget, tam: Size(1440, alto), usuario: usuario,
+              antes: (t) async {
+            await t.tap(find.text('Agregar secciones').first);
+            await t.pumpAndSettle();
+            await t.tap(find.widgetWithText(ChoiceChip, 'Cheques'));
+          });
+          // El catálogo de secciones y el formulario de una nueva (archivo 86).
+          await _capturar(t, '${nombre}_${sufijo}_secciones', widget, tam: Size(1440, alto), usuario: usuario,
+              antes: (t) async {
+            await t.tap(find.text('Secciones').first);
+          });
+          await _capturar(t, '${nombre}_${sufijo}_nueva', widget, tam: Size(1440, alto), usuario: usuario,
+              antes: (t) async {
+            await t.tap(find.text('Secciones').first);
+            await t.pumpAndSettle();
+            await t.tap(find.text('Nueva sección'));
+          });
+          await _capturar(t, '${nombre}_${sufijo}_fuentes', widget, tam: Size(1440, alto), usuario: usuario,
+              antes: (t) async {
+            await t.tap(find.text('Secciones').first);
+            await t.pumpAndSettle();
+            await t.tap(find.text('Nueva sección'));
+            await t.pumpAndSettle();
+            await t.tap(find.byType(DropdownButtonFormField<String>));
+          });
+          // El registro de fuentes y el alta de una (archivo 87).
+          await _capturar(t, '${nombre}_${sufijo}_registro', widget, tam: Size(1440, alto), usuario: usuario,
+              antes: (t) async {
+            await t.tap(find.text('Secciones').first);
+            await t.pumpAndSettle();
+            await t.tap(find.text('Fuentes'));
+          });
+          await _capturar(t, '${nombre}_${sufijo}_registrar', widget, tam: Size(1440, alto), usuario: usuario,
+              antes: (t) async {
+            await t.tap(find.text('Secciones').first);
+            await t.pumpAndSettle();
+            await t.tap(find.text('Fuentes'));
+            await t.pumpAndSettle();
+            await t.tap(find.text('Registrar fuente'));
+          });
+        }
+      }
+    }
   });
 
   testWidgets('dependientes', (t) async {

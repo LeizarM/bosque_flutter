@@ -70,9 +70,6 @@ class _TraspasoEntreSistemasScreenState
       }
     });
 
-    final ancho = MediaQuery.sizeOf(context).width;
-    final enTabla = ancho >= TareasBreakpoints.wideMax;
-
     return TareasScope(
       child: Scaffold(
       appBar: AppBarTareas(
@@ -113,13 +110,24 @@ class _TraspasoEntreSistemasScreenState
                 : state.diaVacio
                 ? _SinTraspasos(
                   fecha: state.fecha,
-                  onSinNovedad: () => _cerrarSinNovedad(context, ref),
+                  // Mientras viaja el cierre, un segundo toque no lo repite.
+                  onSinNovedad:
+                      state.cargando
+                          ? null
+                          : () => _cerrarSinNovedad(context, ref),
                 )
-                : _Grilla(
-                  filas: state.filas,
-                  enTabla: enTabla,
-                  guardando: state.guardando,
-                  onMarcar: (fila, cuadra) => _marcar(context, ref, fila, cuadra),
+                // El ancho del cajón y no el de la ventana: el menú lateral
+                // del dashboard también ocupa lugar.
+                : LayoutBuilder(
+                  builder:
+                      (context, cajon) => _Grilla(
+                        filas: state.filas,
+                        enTabla: cajon.maxWidth >= TareasBreakpoints.wideMax,
+                        guardando: state.guardando,
+                        onMarcar:
+                            (fila, cuadra) =>
+                                _marcar(context, ref, fila, cuadra),
+                      ),
                 ),
         ),
       ),
@@ -149,7 +157,7 @@ class _TraspasoEntreSistemasScreenState
       firstDate: DateTime(2020),
       lastDate: DateTime.now(),
     );
-    if (elegida == null) return;
+    if (elegida == null || !mounted) return;
     HapticFeedback.selectionClick();
     await ref.read(prov.notifier).cambiarFecha(elegida);
   }
@@ -168,6 +176,7 @@ class _TraspasoEntreSistemasScreenState
       // marcada como que no cuadra.
       if (obs == null) return;
     }
+    if (!mounted) return;
     await ref
         .read(traspasoEntreSistemasProvider(widget.fecha).notifier)
         .verificar(
@@ -205,7 +214,7 @@ class _TraspasoEntreSistemasScreenState
             ],
           ),
     );
-    if (confirmado != true) return;
+    if (confirmado != true || !mounted) return;
 
     final ok = await ref
         .read(traspasoEntreSistemasProvider(widget.fecha).notifier)
@@ -230,7 +239,7 @@ const _anchos = <AnchoCol>[
 class _Grilla extends StatelessWidget {
   final List<TraspasoMovCajaEntity> filas;
   final bool enTabla;
-  final int? guardando;
+  final Set<int> guardando;
   final void Function(TraspasoMovCajaEntity, bool) onMarcar;
 
   const _Grilla({
@@ -249,7 +258,7 @@ class _Grilla extends StatelessWidget {
         itemBuilder:
             (_, i) => _TarjetaTraspaso(
               fila: filas[i],
-              guardando: guardando == filas[i].idTrasp,
+              guardando: guardando.contains(filas[i].idTrasp),
               onMarcar: onMarcar,
             ),
       );
@@ -277,7 +286,7 @@ class _Grilla extends StatelessWidget {
               itemBuilder:
                   (_, i) => _FilaTraspaso(
                     fila: filas[i],
-                    guardando: guardando == filas[i].idTrasp,
+                    guardando: guardando.contains(filas[i].idTrasp),
                     onMarcar: onMarcar,
                   ),
             ),
@@ -549,7 +558,7 @@ class _TarjetaTraspaso extends StatelessWidget {
 /// Lo que se ve cuando SAP no devolvió nada para la fecha.
 class _SinTraspasos extends StatelessWidget {
   final DateTime fecha;
-  final VoidCallback onSinNovedad;
+  final VoidCallback? onSinNovedad;
 
   const _SinTraspasos({required this.fecha, required this.onSinNovedad});
 

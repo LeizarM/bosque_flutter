@@ -511,29 +511,40 @@ class _Resumen extends ConsumerWidget {
         ),
     ];
 
+    // Alto mínimo y no fijo: con letra grande las tarjetas crecen en vez de
+    // desbordar. IntrinsicHeight las deja a todas del alto de la más alta.
     if (amplia) {
-      return SizedBox(
-        height: 96,
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            for (var i = 0; i < tarjetas.length; i++) ...[
-              if (i > 0) const SizedBox(width: 8),
-              Expanded(flex: i == 0 ? 2 : 1, child: tarjetas[i]),
+      return IntrinsicHeight(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(minHeight: 96),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              for (var i = 0; i < tarjetas.length; i++) ...[
+                if (i > 0) const SizedBox(width: 8),
+                Expanded(flex: i == 0 ? 2 : 1, child: tarjetas[i]),
+              ],
             ],
-          ],
+          ),
         ),
       );
     }
 
-    return SizedBox(
-      height: 92,
-      child: ListView.separated(
-        scrollDirection: Axis.horizontal,
-        itemCount: tarjetas.length,
-        separatorBuilder: (_, _) => const SizedBox(width: 8),
-        itemBuilder:
-            (_, i) => SizedBox(width: i == 0 ? 180 : 140, child: tarjetas[i]),
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: IntrinsicHeight(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(minHeight: 92),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              for (var i = 0; i < tarjetas.length; i++) ...[
+                if (i > 0) const SizedBox(width: 8),
+                SizedBox(width: i == 0 ? 180 : 140, child: tarjetas[i]),
+              ],
+            ],
+          ),
+        ),
       ),
     );
   }

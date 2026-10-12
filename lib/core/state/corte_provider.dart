@@ -1,3 +1,4 @@
+import 'package:bosque_flutter/core/ui/mensaje_error_tareas.dart';
 import 'package:bosque_flutter/data/repositories/corte_impl.dart';
 import 'package:bosque_flutter/domain/entities/corte_entity.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -39,9 +40,11 @@ class CorteNotifier extends StateNotifier<CorteState> {
     state = state.copyWith(cargando: true);
     try {
       final data = await _repo.obtener();
+      if (!mounted) return;
       state = state.copyWith(items: data, cargando: false);
     } catch (e) {
-      state = state.copyWith(cargando: false, mensajeError: e.toString());
+      if (!mounted) return;
+      state = state.copyWith(cargando: false, mensajeError: mensajeError(e));
     }
   }
 

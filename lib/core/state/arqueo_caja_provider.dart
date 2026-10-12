@@ -1,5 +1,6 @@
 import 'dart:typed_data';
 
+import 'package:bosque_flutter/core/ui/mensaje_error_tareas.dart';
 import 'package:bosque_flutter/data/repositories/arqueo_caja_impl.dart';
 import 'package:bosque_flutter/domain/entities/corte_entity.dart';
 import 'package:bosque_flutter/domain/entities/vale_arqueo_entity.dart';
@@ -141,6 +142,7 @@ class ArqueoCajaNotifier extends StateNotifier<ArqueoCajaState> {
         _repo.tipoCambio(),
         _repo.arqueoAnterior(idBitTarea),
       ]);
+      if (!mounted) return;
       final desglose = resultados[0];
       final tipoCambio = resultados[1];
       final anteriorLista = resultados[2];
@@ -172,6 +174,7 @@ class ArqueoCajaNotifier extends StateNotifier<ArqueoCajaState> {
     } catch (e) {
       // El contexto es una ayuda, no un bloqueo: si falla, el formulario sigue
       // usable con entrada manual.
+      if (!mounted) return;
       state = state.copyWith(cargandoContexto: false);
     }
   }
@@ -213,13 +216,12 @@ class ArqueoCajaNotifier extends StateNotifier<ArqueoCajaState> {
         montoPorDoc: state.montoPorDoc,
         vales: state.vales,
       );
+      if (!mounted) return true;
       state = state.copyWith(guardando: false, completado: true, idAC: idAC);
       return true;
     } catch (e) {
-      state = state.copyWith(
-        guardando: false,
-        mensajeError: e.toString().replaceFirst('Exception: ', ''),
-      );
+      if (!mounted) return false;
+      state = state.copyWith(guardando: false, mensajeError: mensajeError(e));
       return false;
     }
   }

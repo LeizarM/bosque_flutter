@@ -21,6 +21,10 @@ class CajaChicaEntity {
   /// p_list_tac_CajaChica 'D' (archivo SQL 80).
   final String? nombreEmpDestino;
 
+  /// El talonario del vale. Solo de lectura: lo graba p_abm_tac_CajaChica 'R'
+  /// y lo trae p_list_tac_CajaChica 'D' (archivo SQL 94).
+  final String? nroTalonario;
+
   CajaChicaEntity({
     required this.idCC,
     this.idBitTarRuti,
@@ -39,6 +43,7 @@ class CajaChicaEntity {
     required this.audUsuario,
     this.audFecha,
     this.nombreEmpDestino,
+    this.nroTalonario,
   });
 
   CajaChicaEntity copyWith({
@@ -59,6 +64,7 @@ class CajaChicaEntity {
     int? audUsuario,
     DateTime? audFecha,
     String? nombreEmpDestino,
+    String? nroTalonario,
   }) {
     return CajaChicaEntity(
       idCC: idCC ?? this.idCC,
@@ -78,6 +84,7 @@ class CajaChicaEntity {
       audUsuario: audUsuario ?? this.audUsuario,
       audFecha: audFecha ?? this.audFecha,
       nombreEmpDestino: nombreEmpDestino ?? this.nombreEmpDestino,
+      nroTalonario: nroTalonario ?? this.nroTalonario,
     );
   }
 }

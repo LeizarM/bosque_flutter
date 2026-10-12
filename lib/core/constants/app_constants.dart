@@ -1114,6 +1114,8 @@ class AppConstants {
   static const String talRegistrarEvento = '/talonarios/registrar-evento';
   static const String talEliminarEvento = '/talonarios/eliminar-evento';
   static const String talListarEventos = '/talonarios/listar-eventos';
+  // En qué egreso de caja chica se usó cada vale (archivo SQL 93).
+  static const String talUsoCajaChica = '/talonarios/uso-caja-chica';
 
   // Entrega masiva: todo o nada
   static const String talEntregarLote = '/talonarios/entregar-lote';
@@ -1426,24 +1428,9 @@ class AppConstants {
   static const String tarTraspasarTarea =
       '/tareas-rutinarias/admin/traspasar-tarea';
 
-  // Abrir un flujo a requerimiento (archivo SQL 40). Caja Fuerte, Coches, Caja
-  // Chica y Cierre de Operaciones ya no son tareas rutinarias: el Job dejo de
-  // generarlas y ahora son submodulos de la vista 87. La ocurrencia
-  // (tac_bitTareaRuti) nace cuando alguien entra a hacer el trabajo, y este
-  // endpoint la crea o devuelve la de hoy si ya existe. El empleado lo resuelve
-  // el backend desde el token.
-  static const String tarAbrirFlujo = '/tareas-rutinarias/abrir-flujo';
-
-  // PDF del kardex de caja fuerte de HOY para el propio chofer que lo acaba
-  // de registrar (RptCajaFuerteCO). Distinto de la variante bajo
-  // /verificar-cierre/, que es del supervisor y exige el boton plCajaFuerte:
-  // este verifica que el idBitTarea sea de quien llama.
-  static const String tarCajaFuerteReportePdf =
-      '/tareas-rutinarias/caja-fuerte/reporte-pdf';
-
   // Lo que ya se registro hoy en caja fuerte, para mostrarlo en la misma
   // pantalla donde se carga. Misma consulta que el panel del supervisor, pero
-  // con la ocurrencia propia como permiso en vez del boton plCajaFuerte.
+  // con la vista de Caja Fuerte como permiso en vez del boton plCajaFuerte.
   static const String tarCajaFuerteDelDia =
       '/tareas-rutinarias/caja-fuerte/del-dia';
 
@@ -1470,6 +1457,14 @@ class AppConstants {
   // server-side), nunca de un valor tipeado a mano.
   static const String tarCajaChicaReportePdf =
       '/tareas-rutinarias/caja-chica/reporte-pdf';
+  // Talonarios de vales de caja chica de tu sucursal, para proponer el recibo
+  // que sigue (archivo SQL 93).
+  static const String tarCajaChicaTalonarios =
+      '/tareas-rutinarias/caja-chica/talonarios';
+  // Las reglas del número de recibo en palabras, escritas por el SP con su
+  // configuración (archivo SQL 99).
+  static const String tarCajaChicaReglasRecibo =
+      '/tareas-rutinarias/caja-chica/reglas-recibo';
 
   // Flujo especial: Cierre de Operaciones (idATR 3 y 5) — la revisión del día.
   // Reemplaza el diálogo dlgRevArqueo del sistema anterior: arqueos, traspasos
@@ -1510,6 +1505,66 @@ class AppConstants {
       '/tareas-rutinarias/verificar-cierre/marcar-llegada-verificada';
   static const String tarVerificarCierreConfirmar =
       '/tareas-rutinarias/verificar-cierre/confirmar';
+  // Verificar Cierre por responsables (archivo SQL 81): cada uno firma sus
+  // celdas, y el tablero muestra solo las de quien mira.
+  static const String tarVerificarCierreMisSecciones =
+      '/tareas-rutinarias/verificar-cierre/mis-secciones';
+  static const String tarVerificarCierreFirmarSeccion =
+      '/tareas-rutinarias/verificar-cierre/firmar-seccion';
+  static const String tarVerificarCierreAnularFirma =
+      '/tareas-rutinarias/verificar-cierre/anular-firma';
+  static const String tarVerificarCierreTablero =
+      '/tareas-rutinarias/verificar-cierre/tablero';
+  static const String tarVerificarCierreTableroResumen =
+      '/tareas-rutinarias/verificar-cierre/tablero-resumen';
+  // Secciones del cierre con fuente (archivo SQL 86).
+  static const String tarVerificarCierreFilasSeccion =
+      '/tareas-rutinarias/verificar-cierre/filas-seccion';
+  static const String tarVerificarCierreMarcarFila =
+      '/tareas-rutinarias/verificar-cierre/marcar-fila';
+  static const String tarCierreSecciones =
+      '/tareas-rutinarias/verificar-cierre/responsables/secciones';
+  static const String tarCierreFuentes =
+      '/tareas-rutinarias/verificar-cierre/responsables/fuentes';
+  static const String tarCierreGuardarSeccion =
+      '/tareas-rutinarias/verificar-cierre/responsables/guardar-seccion';
+  static const String tarCierreQuitarSeccion =
+      '/tareas-rutinarias/verificar-cierre/responsables/quitar-seccion';
+
+  // Fuentes del cierre (archivo SQL 87): el registro, desde la app.
+  static const String tarCierreFuentesTodas =
+      '/tareas-rutinarias/verificar-cierre/responsables/fuentes-todas';
+  static const String tarCierreFuentesCandidatas =
+      '/tareas-rutinarias/verificar-cierre/responsables/fuentes-candidatas';
+  static const String tarCierreGuardarFuente =
+      '/tareas-rutinarias/verificar-cierre/responsables/guardar-fuente';
+  static const String tarCierreEstadoFuente =
+      '/tareas-rutinarias/verificar-cierre/responsables/estado-fuente';
+  static const String tarCierreBorrarFuente =
+      '/tareas-rutinarias/verificar-cierre/responsables/borrar-fuente';
+
+  // Responsables del cierre (archivo SQL 81): la matriz de la 39.
+  static const String tarCierreResponsablesLista =
+      '/tareas-rutinarias/verificar-cierre/responsables/lista';
+  static const String tarCierreResponsablesCandidatos =
+      '/tareas-rutinarias/verificar-cierre/responsables/candidatos';
+  static const String tarCierreResponsablesSucursales =
+      '/tareas-rutinarias/verificar-cierre/responsables/sucursales';
+  static const String tarCierreResponsablesAgregar =
+      '/tareas-rutinarias/verificar-cierre/responsables/agregar';
+  static const String tarCierreResponsablesCambiar =
+      '/tareas-rutinarias/verificar-cierre/responsables/cambiar';
+  static const String tarCierreResponsablesQuitar =
+      '/tareas-rutinarias/verificar-cierre/responsables/quitar';
+  // Cargos por revisar (archivo SQL 82): quién no hace sus tareas.
+  static const String tarSenalesCargoLista =
+      '/tareas-rutinarias/senales-cargo/lista';
+  static const String tarSenalesCargoDeMiEquipo =
+      '/tareas-rutinarias/senales-cargo/de-mi-equipo';
+  static const String tarSenalesCargoEstaBien =
+      '/tareas-rutinarias/senales-cargo/esta-bien';
+  static const String tarSenalesCargoVolverAMostrar =
+      '/tareas-rutinarias/senales-cargo/volver-a-mostrar';
   // PDF consolidado "Cierre de Operaciones" (RptCierreOperaciones del
   // legacy, botón de cabecera de dlgRevArqueo, solo idATR=5) — junta los 6
   // flujos del día (arqueos, vales, caja fuerte, traspasos, cheques SAP,

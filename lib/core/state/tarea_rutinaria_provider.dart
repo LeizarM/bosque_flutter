@@ -1,3 +1,4 @@
+import 'package:bosque_flutter/core/ui/mensaje_error_tareas.dart';
 import 'package:bosque_flutter/data/repositories/tarea_rutinaria_impl.dart';
 import 'package:bosque_flutter/domain/entities/tarea_rutinaria_entity.dart';
 import 'package:bosque_flutter/domain/repositories/tarea_rutinaria_repository.dart';
@@ -49,9 +50,11 @@ class TareaRutinariaNotifier extends StateNotifier<TareaRutinariaState> {
     state = state.copyWith(cargando: true);
     try {
       final data = await _repo.obtener();
+      if (!mounted) return;
       state = state.copyWith(items: data, cargando: false, cargado: true);
     } catch (e) {
-      state = state.copyWith(cargando: false, mensajeError: e.toString());
+      if (!mounted) return;
+      state = state.copyWith(cargando: false, mensajeError: mensajeError(e));
     }
   }
 
@@ -59,6 +62,7 @@ class TareaRutinariaNotifier extends StateNotifier<TareaRutinariaState> {
     state = state.copyWith(cargando: true);
     try {
       await _repo.registrar(item);
+      if (!mounted) return true;
       state = state.copyWith(
         cargando: false,
         mensajeExito:
@@ -69,7 +73,8 @@ class TareaRutinariaNotifier extends StateNotifier<TareaRutinariaState> {
       await cargar();
       return true;
     } catch (e) {
-      state = state.copyWith(cargando: false, mensajeError: e.toString());
+      if (!mounted) return false;
+      state = state.copyWith(cargando: false, mensajeError: mensajeError(e));
       return false;
     }
   }
@@ -78,6 +83,7 @@ class TareaRutinariaNotifier extends StateNotifier<TareaRutinariaState> {
     state = state.copyWith(cargando: true);
     try {
       await _repo.eliminar(idTarRuti, audUsuario);
+      if (!mounted) return true;
       state = state.copyWith(
         cargando: false,
         mensajeExito: 'Tarea rutinaria eliminada.',
@@ -85,7 +91,8 @@ class TareaRutinariaNotifier extends StateNotifier<TareaRutinariaState> {
       await cargar();
       return true;
     } catch (e) {
-      state = state.copyWith(cargando: false, mensajeError: e.toString());
+      if (!mounted) return false;
+      state = state.copyWith(cargando: false, mensajeError: mensajeError(e));
       return false;
     }
   }

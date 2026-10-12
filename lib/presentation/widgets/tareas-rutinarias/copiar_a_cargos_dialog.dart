@@ -1,6 +1,7 @@
 // Destino final: lib/presentation/widgets/tareas-rutinarias/copiar_a_cargos_dialog.dart
 import 'package:bosque_flutter/core/state/rrhh_provider.dart';
 import 'package:bosque_flutter/core/state/tar_ru_x_cargo_provider.dart';
+import 'package:bosque_flutter/core/ui/mensaje_error_tareas.dart';
 import 'package:bosque_flutter/domain/entities/cargo_entity.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -104,7 +105,7 @@ class _CopiarACargosDialogState extends ConsumerState<CopiarACargosDialog> {
         height: (altoDisponible * 0.5).clamp(260, 420),
         child: cargosAsync.when(
           loading: () => const Center(child: CircularProgressIndicator()),
-          error: (e, _) => Center(child: Text('Error: $e')),
+          error: (e, _) => Center(child: Text(mensajeError(e))),
           data: (jerarquia) {
             if (widget.idTarRuti != null &&
                 asignacionesState.cargando &&
@@ -182,8 +183,10 @@ class _CopiarACargosDialogState extends ConsumerState<CopiarACargosDialog> {
         ),
       ),
       actions: [
+        // Inactivo mientras guarda: cerrar aquí y otra vez al terminar cerraba
+        // también la pantalla de abajo.
         TextButton(
-          onPressed: () => cerrarRuta(context),
+          onPressed: _guardando ? null : () => cerrarRuta(context),
           child: const Text('Cancelar'),
         ),
         FilledButton(
@@ -192,10 +195,19 @@ class _CopiarACargosDialogState extends ConsumerState<CopiarACargosDialog> {
                   ? null
                   : () async {
                     setState(() => _guardando = true);
-                    final ok = await widget.onCopiado(_seleccionados.toList());
+                    var ok = false;
+                    try {
+                      ok = await widget.onCopiado(_seleccionados.toList());
+                    } finally {
+                      // Si falló, que se pueda reintentar o cancelar.
+                      if (!ok && mounted) setState(() => _guardando = false);
+                    }
                     if (ok) HapticFeedback.mediumImpact();
-                    if (context.mounted) cerrarRuta(context);
-                    if (!ok) return;
+                    // Solo si sigue arriba: si no, el pop cerraría otra ruta.
+                    if (context.mounted &&
+                        ModalRoute.isCurrentOf(context) == true) {
+                      cerrarRuta(context);
+                    }
                   },
           child: Text(
             _guardando ? 'Copiando…' : 'Asignar (${_seleccionados.length})',

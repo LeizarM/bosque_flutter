@@ -5,11 +5,13 @@ import 'package:bosque_flutter/core/constants/tareas_breakpoints.dart';
 import 'package:bosque_flutter/core/state/caja_chica_flujo_provider.dart';
 import 'package:bosque_flutter/core/theme/tareas_colors.dart';
 import 'package:bosque_flutter/core/ui/aviso.dart';
+import 'package:bosque_flutter/core/ui/mensaje_error_tareas.dart';
 import 'package:bosque_flutter/core/ui/visor_pdf.dart';
 import 'package:bosque_flutter/core/utils/formatear_fecha.dart';
 import 'package:bosque_flutter/core/utils/formato_moneda.dart';
 import 'package:bosque_flutter/data/repositories/caja_chica_flujo_impl.dart';
 import 'package:bosque_flutter/domain/entities/caja_chica_entity.dart';
+import 'package:bosque_flutter/domain/entities/talonario_caja_chica_entity.dart';
 import 'package:bosque_flutter/core/theme/tareas_tema.dart';
 import 'package:bosque_flutter/core/ui/ofrecer_pdf.dart';
 import 'package:bosque_flutter/core/ui/tokens_bosque.dart';
@@ -25,33 +27,24 @@ import 'package:bosque_flutter/presentation/widgets/tareas-rutinarias/tabla_modu
 /// el backend rechaza el egreso ANTES de guardar nada y explica por qué —
 /// ver p_cajaChica_registrarEgreso.
 class CajaChicaScreen extends ConsumerWidget {
-  final int idBitTarea;
   final String nombreTarea;
 
-  const CajaChicaScreen({
-    super.key,
-    required this.idBitTarea,
-    required this.nombreTarea,
-  });
+  const CajaChicaScreen({super.key, required this.nombreTarea});
 
   Future<void> _abrirFormularioEgreso(
     BuildContext context,
     WidgetRef ref,
-    CajaChicaParams params,
   ) async {
     await showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      builder: (_) => _FormularioEgreso(params: params),
+      builder: (_) => const _FormularioEgreso(),
     );
   }
 
   /// "Ver Cajas Chicas" del legacy — histórico de lotes de esta sucursal.
   void _abrirHistorialLotes(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (_) => _HistorialLotesDialog(idBitTarea: idBitTarea),
-    );
+    showDialog(context: context, builder: (_) => const _HistorialLotesDialog());
   }
 
   /// Reemplaza la mitad "esto reiniciara su caja chica" del "Generar PDF"
@@ -62,7 +55,6 @@ class CajaChicaScreen extends ConsumerWidget {
   Future<void> _confirmarCerrarLote(
     BuildContext context,
     WidgetRef ref,
-    CajaChicaParams params,
     double saldoActual,
   ) async {
     final confirmar = await showDialog<bool>(
@@ -90,15 +82,13 @@ class CajaChicaScreen extends ConsumerWidget {
     );
     if (confirmar != true || !context.mounted) return;
 
-    // El lote y la sucursal se leen ANTES de cerrar: después, el provider ya
+    // El lote se lee ANTES de cerrar: después, el provider ya
     // recargó con el lote NUEVO (vacío) y el que se acaba de archivar no está
     // más en pantalla — pedir el PDF con esos datos daría el lote equivocado.
-    final filas = ref.read(cajaChicaFlujoProvider(params)).items;
+    final filas = ref.read(cajaChicaFlujoProvider).items;
     final loteCerrado = filas.isEmpty ? null : filas.first.lote;
-    final codSucursal = filas.isEmpty ? null : filas.first.codSucursal;
 
-    final ok =
-        await ref.read(cajaChicaFlujoProvider(params).notifier).cerrarLote();
+    final ok = await ref.read(cajaChicaFlujoProvider.notifier).cerrarLote();
     // Si falló, el listener de errores de la pantalla ya muestra el aviso
     // (mensajeError) — no hace falta duplicarlo aquí.
     if (!ok || !context.mounted) return;
@@ -108,7 +98,7 @@ class CajaChicaScreen extends ConsumerWidget {
     // El PDF del lote recién cerrado, en el mismo momento del cierre: en el
     // legacy ese reporte era el paso con el que la caja chica entraba a
     // archivo, no un extra a buscar después en el histórico.
-    if (loteCerrado != null && codSucursal != null) {
+    if (loteCerrado != null) {
       await ofrecerPdf(
         context,
         tituloDialogo: 'Lote cerrado',
@@ -118,10 +108,7 @@ class CajaChicaScreen extends ConsumerWidget {
         titulo: 'Caja chica — Lote $loteCerrado',
         nombreArchivo: 'caja_chica_lote_$loteCerrado.pdf',
         generar:
-            () => CajaChicaFlujoImpl().generarReportePdf(
-              lote: loteCerrado,
-              codSucursal: codSucursal,
-            ),
+            () => CajaChicaFlujoImpl().generarReportePdf(lote: loteCerrado),
       );
     } else {
       mostrarAviso(
@@ -133,11 +120,10 @@ class CajaChicaScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final params = (idBitTarea: idBitTarea);
-    final state = ref.watch(cajaChicaFlujoProvider(params));
-    final notifier = ref.read(cajaChicaFlujoProvider(params).notifier);
+    final state = ref.watch(cajaChicaFlujoProvider);
+    final notifier = ref.read(cajaChicaFlujoProvider.notifier);
 
-    ref.listen(cajaChicaFlujoProvider(params), (previo, actual) {
+    ref.listen(cajaChicaFlujoProvider, (previo, actual) {
       if (actual.mensajeError != null &&
           actual.mensajeError != previo?.mensajeError) {
         HapticFeedback.lightImpact();
@@ -172,12 +158,8 @@ class CajaChicaScreen extends ConsumerWidget {
               onPressed:
                   state.cerrandoLote
                       ? null
-                      : () => _confirmarCerrarLote(
-                        context,
-                        ref,
-                        params,
-                        state.saldoActual,
-                      ),
+                      : () =>
+                          _confirmarCerrarLote(context, ref, state.saldoActual),
             ),
             IconButton(
               icon: const Icon(Icons.history),
@@ -230,7 +212,7 @@ class CajaChicaScreen extends ConsumerWidget {
         // ahora lo hace el propio egreso (archivo SQL 78).
         floatingActionButton: FloatingActionButton.extended(
           heroTag: 'agregarEgreso',
-          onPressed: () => _abrirFormularioEgreso(context, ref, params),
+          onPressed: () => _abrirFormularioEgreso(context, ref),
           icon: const Icon(Icons.remove_circle_outline),
           label: const Text('Registrar egreso'),
         ),
@@ -262,6 +244,8 @@ class _BarraSaldo extends StatelessWidget {
     // Sin plata no se puede registrar el próximo egreso: el saldo pasa al tono
     // de alerta del módulo en vez de quedar igual que cuando sobra.
     final sinSaldo = state.saldoActual <= 0;
+    // Archivo SQL 93: con talonario entregado, el vale sale de ahí.
+    final enUso = state.talonarioEnUso;
     final tono =
         sinSaldo
             ? TareasColors.vencidoTexto(context)
@@ -288,6 +272,17 @@ class _BarraSaldo extends StatelessWidget {
             color: tono,
             destacado: true,
           ),
+          if (enUso != null)
+            _Cifra(
+              etiqueta: 'Próximo recibo · ${enUso.nroTalonario}',
+              valor: '${enUso.siguienteVale}',
+            )
+          else if (state.sinVales)
+            _Cifra(
+              etiqueta: 'Talonario de caja chica',
+              valor: 'Sin recibos',
+              color: TareasColors.vencidoTexto(context),
+            ),
         ],
       ),
     );
@@ -384,10 +379,7 @@ class _LibroContable extends StatelessWidget {
   final List<CajaChicaEntity> items;
   final bool esAncho;
 
-  const _LibroContable({
-    required this.items,
-    required this.esAncho,
-  });
+  const _LibroContable({required this.items, required this.esAncho});
 
   /// Los anchos son los MISMOS para encabezado, asientos y totales: ahi esta
   /// toda la alineacion de la tabla.
@@ -468,6 +460,12 @@ class _LibroContable extends StatelessWidget {
   }
 }
 
+/// " (VCC001)": el talonario del que salió el vale (archivo SQL 94).
+String _delTalonario(CajaChicaEntity item) {
+  final t = item.nroTalonario?.trim() ?? '';
+  return t.isEmpty ? '' : ' ($t)';
+}
+
 /// Un renglon del libro.
 class _AsientoDelLibro extends StatelessWidget {
   final CajaChicaEntity item;
@@ -490,7 +488,8 @@ class _AsientoDelLibro extends StatelessWidget {
     final meta = <String>[
       if (item.numFactura != null && item.numFactura! > 0)
         'Factura N.${item.numFactura}',
-      if (item.numVale != null && item.numVale! > 0) 'Vale N.${item.numVale}',
+      if (item.numVale != null && item.numVale! > 0)
+        'Recibo N.${item.numVale}${_delTalonario(item)}',
     ].join(' - ');
 
     return FilaTabla(
@@ -503,9 +502,7 @@ class _AsientoDelLibro extends StatelessWidget {
               : null,
       celdas: [
         Text(
-          item.fecha == null
-              ? '-'
-              : FormatearFecha.formatearFecha(item.fecha!),
+          item.fecha == null ? '-' : FormatearFecha.formatearFecha(item.fecha!),
           style: Theme.of(
             context,
           ).textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
@@ -696,7 +693,7 @@ class _AsientoCompacto extends StatelessWidget {
       partes.add('Factura Nº${item.numFactura}');
     }
     if (item.numVale != null && item.numVale! > 0) {
-      partes.add('Vale Nº${item.numVale}');
+      partes.add('Recibo Nº${item.numVale}${_delTalonario(item)}');
     }
     return partes.isEmpty ? null : partes.join(' · ');
   }
@@ -748,9 +745,9 @@ class _AsientoCompacto extends StatelessWidget {
                     padding: const EdgeInsets.only(top: 2),
                     child: Text(
                       'Entregado a $destinatario',
-                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                        color: scheme.onSurface,
-                      ),
+                      style: Theme.of(
+                        context,
+                      ).textTheme.labelSmall?.copyWith(color: scheme.onSurface),
                     ),
                   ),
                 if (meta != null)
@@ -800,9 +797,7 @@ class _AsientoCompacto extends StatelessWidget {
 }
 
 class _FormularioEgreso extends ConsumerStatefulWidget {
-  final CajaChicaParams params;
-
-  const _FormularioEgreso({required this.params});
+  const _FormularioEgreso();
 
   @override
   ConsumerState<_FormularioEgreso> createState() => _FormularioEgresoState();
@@ -818,16 +813,38 @@ class _FormularioEgresoState extends ConsumerState<_FormularioEgreso> {
   int? _codEmpDestino;
   int? _numFactura;
   int? _numVale;
+  final _valeCtrl = TextEditingController();
+
+  /// Si la persona escribió otro vale, ya no se le propone el del talonario.
+  bool _valeEscrito = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _proponerVale(ref.read(cajaChicaFlujoProvider));
+    ref.listenManual(cajaChicaFlujoProvider, (_, s) => _proponerVale(s));
+  }
+
+  /// El vale que sigue del talonario (archivo SQL 93). Es una propuesta: si
+  /// no corresponde, el SP lo rechaza y dice por qué.
+  void _proponerVale(CajaChicaFlujoState s) {
+    if (_valeEscrito) return;
+    final siguiente = s.talonarioEnUso?.siguienteVale;
+    final texto = siguiente?.toString() ?? '';
+    if (_valeCtrl.text != texto) _valeCtrl.text = texto;
+    _numVale = siguiente;
+  }
 
   @override
   void dispose() {
     _descripcionCtrl.dispose();
+    _valeCtrl.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final state = ref.watch(cajaChicaFlujoProvider(widget.params));
+    final state = ref.watch(cajaChicaFlujoProvider);
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -845,136 +862,327 @@ class _FormularioEgresoState extends ConsumerState<_FormularioEgreso> {
             borderRadius: BorderRadius.circular(2),
           ),
         ),
-        Padding(
-          padding: EdgeInsets.only(
-            left: 20,
-            right: 20,
-            top: 4,
-            bottom: MediaQuery.viewInsetsOf(context).bottom + 20,
-          ),
-          child: Form(
-            child: SingleChildScrollView(
-              keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    'Registrar egreso',
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w700,
+        // Sin Flexible el scroll no tiene alto y la hoja desborda con el
+        // teclado abierto.
+        Flexible(
+          child: Padding(
+            padding: EdgeInsets.only(
+              left: 20,
+              right: 20,
+              top: 4,
+              bottom: MediaQuery.viewInsetsOf(context).bottom + 20,
+            ),
+            child: Form(
+              child: SingleChildScrollView(
+                keyboardDismissBehavior:
+                    ScrollViewKeyboardDismissBehavior.onDrag,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      'Registrar egreso',
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    'Saldo disponible: ${FormatoMoneda.monto.format(state.saldoActual)}',
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    const SizedBox(height: 4),
+                    Text(
+                      'Saldo disponible: ${FormatoMoneda.monto.format(state.saldoActual)}',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 16),
-                  TextFormField(
-                    decoration: const InputDecoration(
-                      labelText: 'Monto',
-                      border: OutlineInputBorder(),
+                    const SizedBox(height: 16),
+                    TextFormField(
+                      decoration: const InputDecoration(
+                        labelText: 'Monto',
+                        border: OutlineInputBorder(),
+                      ),
+                      keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true,
+                      ),
+                      textInputAction: TextInputAction.next,
+                      onChanged:
+                          (v) => setState(() => _monto = double.tryParse(v)),
                     ),
-                    keyboardType: const TextInputType.numberWithOptions(
-                      decimal: true,
+                    const SizedBox(height: 12),
+                    TextFormField(
+                      controller: _descripcionCtrl,
+                      decoration: const InputDecoration(
+                        labelText: 'Descripción',
+                        border: OutlineInputBorder(),
+                      ),
+                      textInputAction: TextInputAction.next,
                     ),
-                    textInputAction: TextInputAction.next,
-                    onChanged:
-                        (v) => setState(() => _monto = double.tryParse(v)),
-                  ),
-                  const SizedBox(height: 12),
-                  TextFormField(
-                    controller: _descripcionCtrl,
-                    decoration: const InputDecoration(
-                      labelText: 'Descripción',
-                      border: OutlineInputBorder(),
+                    const SizedBox(height: 12),
+                    _EmpleadoDestinoField(
+                      onSeleccionado:
+                          (codEmpleado) =>
+                              setState(() => _codEmpDestino = codEmpleado),
                     ),
-                    textInputAction: TextInputAction.next,
-                  ),
-                  const SizedBox(height: 12),
-                  _EmpleadoDestinoField(
-                    onSeleccionado:
-                        (codEmpleado) =>
-                            setState(() => _codEmpDestino = codEmpleado),
-                  ),
-                  const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: TextFormField(
+                    const SizedBox(height: 12),
+                    // Angosto, uno debajo del otro: las dos etiquetas no entran
+                    // lado a lado en un teléfono.
+                    LayoutBuilder(
+                      builder: (context, caja) {
+                        final factura = TextFormField(
                           decoration: const InputDecoration(
-                            labelText: 'N° factura (opcional)',
+                            labelText: 'Número de factura (opcional)',
                             border: OutlineInputBorder(),
                           ),
                           keyboardType: TextInputType.number,
                           textInputAction: TextInputAction.next,
                           onChanged: (v) => _numFactura = int.tryParse(v),
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: TextFormField(
-                          decoration: const InputDecoration(
-                            labelText: 'N° vale (opcional)',
-                            border: OutlineInputBorder(),
+                        );
+                        // "Número de recibo", como en el módulo Talonarios.
+                        final recibo = TextFormField(
+                          controller: _valeCtrl,
+                          decoration: InputDecoration(
+                            labelText:
+                                state.reciboObligatorio
+                                    ? 'Número de recibo'
+                                    : 'Número de recibo (opcional)',
+                            border: const OutlineInputBorder(),
                           ),
                           keyboardType: TextInputType.number,
                           textInputAction: TextInputAction.done,
-                          onChanged: (v) => _numVale = int.tryParse(v),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 20),
-                  SizedBox(
-                    width: double.infinity,
-                    child: FilledButton(
-                      onPressed:
-                          state.guardando
-                              ? null
-                              : () async {
-                                final ok = await ref
-                                    .read(
-                                      cajaChicaFlujoProvider(
-                                        widget.params,
-                                      ).notifier,
-                                    )
-                                    .registrarEgreso(
-                                      montoEg: _monto ?? 0,
-                                      descripcion: _descripcionCtrl.text.trim(),
-                                      codEmpDestino: _codEmpDestino,
-                                      numFactura: _numFactura,
-                                      numVale: _numVale,
-                                    );
-                                if (ok && context.mounted) {
-                                  cerrarRuta(context);
-                                } else {
-                                  HapticFeedback.lightImpact();
-                                }
-                              },
-                      child:
-                          state.guardando
-                              ? SizedBox(
-                                width: 16,
-                                height: 16,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  color:
-                                      Theme.of(context).colorScheme.onPrimary,
-                                ),
-                              )
-                              : const Text('Registrar'),
+                          onChanged: (v) {
+                            _valeEscrito = true;
+                            _numVale = int.tryParse(v);
+                          },
+                        );
+                        if (caja.maxWidth < 440) {
+                          return Column(
+                            children: [
+                              factura,
+                              const SizedBox(height: 12),
+                              recibo,
+                            ],
+                          );
+                        }
+                        return Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(child: factura),
+                            const SizedBox(width: 10),
+                            Expanded(child: recibo),
+                          ],
+                        );
+                      },
                     ),
-                  ),
-                ],
+                    _ReglasRecibo(state: state),
+                    const SizedBox(height: 20),
+                    SizedBox(
+                      width: double.infinity,
+                      child: FilledButton(
+                        onPressed:
+                            state.guardando
+                                ? null
+                                : () async {
+                                  final ok = await ref
+                                      .read(cajaChicaFlujoProvider.notifier)
+                                      .registrarEgreso(
+                                        montoEg: _monto ?? 0,
+                                        descripcion:
+                                            _descripcionCtrl.text.trim(),
+                                        codEmpDestino: _codEmpDestino,
+                                        numFactura: _numFactura,
+                                        numVale: _numVale,
+                                      );
+                                  if (ok && context.mounted) {
+                                    cerrarRuta(context);
+                                  } else {
+                                    HapticFeedback.lightImpact();
+                                  }
+                                },
+                        child:
+                            state.guardando
+                                ? SizedBox(
+                                  width: 16,
+                                  height: 16,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color:
+                                        Theme.of(context).colorScheme.onPrimary,
+                                  ),
+                                )
+                                : const Text('Registrar'),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
         ),
       ],
+    );
+  }
+}
+
+/// Las reglas del número de recibo, a la vista al registrar (Marcelo,
+/// 2026-10-12: "bien explícitas"). El título y la regla los escribe el SP con
+/// su configuración (archivo SQL 99); aquí solo se listan los talonarios.
+class _ReglasRecibo extends StatelessWidget {
+  final CajaChicaFlujoState state;
+
+  const _ReglasRecibo({required this.state});
+
+  static String _nombre(TalonarioCajaChica t) =>
+      t.titular.isEmpty ? t.nroTalonario : '${t.nroTalonario} de ${t.titular}';
+
+  static String _enUso(TalonarioCajaChica t) =>
+      '${_nombre(t)} · folios ${t.desde}–${t.hasta} · sigue el '
+      '${t.siguienteVale} · quedan ${t.hasta - t.siguienteVale! + 1}';
+
+  @override
+  Widget build(BuildContext context) {
+    final reglas = state.reglas;
+    final talonarios = state.talonarios;
+    if (reglas == null && talonarios.isEmpty && state.errorTalonarios == null) {
+      return const SizedBox.shrink();
+    }
+
+    // Sin el 97 no hay activo: el que propone la app hace de "en uso".
+    final enUso = [
+      for (final t in talonarios)
+        if (t.activo && t.siguienteVale != null) t,
+    ];
+    final propuesto = state.talonarioEnUso;
+    if (enUso.isEmpty && propuesto != null) enUso.add(propuesto);
+    final enEspera = [
+      for (final t in talonarios)
+        if (t.siguienteVale != null && !enUso.contains(t)) t,
+    ];
+    final terminados = [
+      for (final t in talonarios)
+        if (t.siguienteVale == null) t,
+    ];
+
+    final sinRecibos = talonarios.isNotEmpty && enUso.isEmpty;
+    final falta = reglas != null && talonarios.isEmpty && reglas.obligatorio;
+    final cs = Theme.of(context).colorScheme;
+    final aviso = sinRecibos || falta;
+    final fondo = aviso ? cs.tertiaryContainer : cs.surfaceContainerHighest;
+    final letra = aviso ? cs.onTertiaryContainer : cs.onSurfaceVariant;
+    final titulo =
+        reglas?.titulo ??
+        (talonarios.isEmpty
+            ? 'Sin talonario de caja chica'
+            : sinRecibos
+            ? 'Sin recibos libres'
+            : 'Talonarios de tu sucursal');
+    final chico = Theme.of(context).textTheme.bodySmall?.copyWith(color: letra);
+
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.only(top: Esp.m),
+      padding: const EdgeInsets.all(Esp.m),
+      decoration: BoxDecoration(
+        color: fondo,
+        borderRadius: BorderRadius.circular(Esquina.chica),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                aviso
+                    ? Icons.warning_amber_rounded
+                    : Icons.receipt_long_outlined,
+                size: 18,
+                color: letra,
+              ),
+              const SizedBox(width: Esp.s),
+              Expanded(
+                child: Text(
+                  titulo,
+                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w600,
+                    color: letra,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          for (final t in enUso)
+            _LineaTalonario(
+              etiqueta: 'En uso',
+              texto: _enUso(t),
+              color: TareasColors.realizadoTexto(context),
+              estilo: chico,
+            ),
+          if (enEspera.isNotEmpty)
+            _LineaTalonario(
+              etiqueta: 'En espera',
+              texto: enEspera.map(_nombre).join(', '),
+              color: letra,
+              estilo: chico,
+            ),
+          if (terminados.isNotEmpty)
+            _LineaTalonario(
+              etiqueta: 'Terminados',
+              texto: terminados.map(_nombre).join(', '),
+              color: letra,
+              estilo: chico,
+            ),
+          if (state.errorTalonarios != null)
+            Padding(
+              padding: const EdgeInsets.only(top: Esp.s),
+              child: Text(
+                'No se pudo leer los talonarios de tu sucursal. Al registrar, '
+                'el servidor igual revisa el número de recibo.',
+                style: chico,
+              ),
+            ),
+          if (reglas != null && reglas.regla.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.only(top: Esp.s),
+              child: Text(reglas.regla, style: chico),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+/// "En uso   VCC001 · folios 1–50 · sigue el 6": la etiqueta en una columna
+/// fija, para que los talonarios se lean alineados.
+class _LineaTalonario extends StatelessWidget {
+  final String etiqueta;
+  final String texto;
+  final Color color;
+  final TextStyle? estilo;
+
+  const _LineaTalonario({
+    required this.etiqueta,
+    required this.texto,
+    required this.color,
+    required this.estilo,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(top: Esp.s),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 76,
+            child: Text(
+              etiqueta,
+              style: estilo?.copyWith(
+                fontWeight: FontWeight.w700,
+                color: color,
+              ),
+            ),
+          ),
+          Expanded(child: Text(texto, style: estilo)),
+        ],
+      ),
     );
   }
 }
@@ -1031,8 +1239,8 @@ class _EmpleadoDestinoFieldState extends State<_EmpleadoDestinoField> {
 
     final cargoDesc =
         ((emp['empleadoCargo'] as Map<String, dynamic>?)?['cargoSucursal']
-                    as Map<String, dynamic>?)?['cargo']
-                as Map<String, dynamic>?;
+                as Map<String, dynamic>?)?['cargo']
+            as Map<String, dynamic>?;
     final desc = (cargoDesc?['descripcion'] as String?)?.trim() ?? '';
 
     if (nombre.isEmpty) return 'Empleado ${emp['codEmpleado']}';
@@ -1154,9 +1362,7 @@ class _EmpleadoDestinoFieldState extends State<_EmpleadoDestinoField> {
 
 /// "Ver Cajas Chicas" del legacy — histórico de lotes de esta sucursal.
 class _HistorialLotesDialog extends StatefulWidget {
-  final int idBitTarea;
-
-  const _HistorialLotesDialog({required this.idBitTarea});
+  const _HistorialLotesDialog();
 
   @override
   State<_HistorialLotesDialog> createState() => _HistorialLotesDialogState();
@@ -1183,7 +1389,7 @@ class _HistorialLotesDialogState extends State<_HistorialLotesDialog> {
       _error = null;
     });
     try {
-      final lotes = await _repo.obtenerHistorialLotes(widget.idBitTarea);
+      final lotes = await _repo.obtenerHistorialLotes();
       if (mounted) {
         setState(() {
           _lotes = lotes;
@@ -1193,7 +1399,7 @@ class _HistorialLotesDialogState extends State<_HistorialLotesDialog> {
     } catch (e) {
       if (mounted) {
         setState(() {
-          _error = e.toString();
+          _error = mensajeError(e);
           _cargando = false;
         });
       }
@@ -1211,29 +1417,14 @@ class _HistorialLotesDialogState extends State<_HistorialLotesDialog> {
   }
 
   /// "Generar PDF" del legacy (RptCajaChica), por fila del histórico.
-  /// codSucursal viene de esta misma fila — ya resuelta server-side por
-  /// /caja-chica/historial-lotes a partir del cargo vigente del empleado
-  /// dueño de la ocurrencia, nunca de un valor tipeado a mano aquí.
+  /// Solo viaja el lote: el backend saca la sucursal de tu cargo vigente.
   Future<void> _generarPdf(Map<String, dynamic> lote) async {
     final numLote = (lote['lote'] as num?)?.toInt();
-    final codSucursal = (lote['codSucursal'] as num?)?.toInt();
     if (numLote == null) return;
-    if (codSucursal == null) {
-      HapticFeedback.lightImpact();
-      mostrarAviso(
-        context,
-        'No se pudo determinar la sucursal de este lote.',
-        tono: TonoAviso.error,
-      );
-      return;
-    }
 
     setState(() => _generandoLote = numLote);
     try {
-      final bytes = await _repo.generarReportePdf(
-        lote: numLote,
-        codSucursal: codSucursal,
-      );
+      final bytes = await _repo.generarReportePdf(lote: numLote);
       if (!mounted) return;
       HapticFeedback.selectionClick();
       await mostrarPdf(
@@ -1247,7 +1438,7 @@ class _HistorialLotesDialogState extends State<_HistorialLotesDialog> {
       HapticFeedback.lightImpact();
       mostrarAviso(
         context,
-        'No se pudo generar el reporte: $e',
+        'No se pudo generar el reporte: ${mensajeError(e)}',
         tono: TonoAviso.error,
       );
     } finally {

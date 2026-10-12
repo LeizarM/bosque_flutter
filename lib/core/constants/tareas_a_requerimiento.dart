@@ -11,16 +11,13 @@
 ///     Caja Fuerte            11.003 ocurrencias, 64,2% cerradas
 ///     Revisar Autos           3.259 ocurrencias, 72,0% cerradas
 ///
-/// Ahora son submódulos de la vista 87 y se entra por el menú. La ocurrencia se
-/// sigue creando —todas sus tablas cuelgan de ella— pero recién cuando alguien
-/// entra a hacer el trabajo (`AperturaFlujo`).
+/// Ahora son submódulos de la vista 87 y se entra por el menú. Desde el archivo
+/// SQL 96 ya no tienen ocurrencia: trabajan por la sucursal de quien entra, y
+/// sus asignaciones por cargo quedaron inactivas. Las ocurrencias viejas son
+/// historial; esta lista las deja fuera de "Mis tareas rutinarias".
 ///
-/// **Estos ids tienen que coincidir con tres lugares más**, y si se desincronizan
-/// el síntoma es silencioso (una pantalla que abre en el vacío o una tarea que se
-/// genera dos veces):
-///   * `tac_tareaRutinaria.esARequerimiento = 1` (archivo SQL 40, Parte B)
-///   * `TareasRutinariasController.BOTON_POR_FLUJO` (el permiso por botón)
-///   * el catálogo del archivo SQL 41 (las vistas hijas de la 87)
+/// Los ids tienen que coincidir con `tac_tareaRutinaria.esARequerimiento = 1`
+/// (archivo SQL 40) y con `TAREA_*` de `TareasRutinariasController`.
 class TareasARequerimiento {
   const TareasARequerimiento._();
 

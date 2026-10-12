@@ -1,3 +1,4 @@
+import 'package:bosque_flutter/core/ui/mensaje_error_tareas.dart';
 import 'package:bosque_flutter/data/repositories/traspaso_efectivo_tesbase_impl.dart';
 import 'package:bosque_flutter/domain/entities/traspaso_efectivo_tesbase_entity.dart';
 import 'package:bosque_flutter/domain/repositories/traspaso_efectivo_tesbase_repository.dart';
@@ -200,6 +201,7 @@ class TraspasoEfectivoTesBaseNotifier
     state = state.copyWith(cerrando: fila.codTes);
     try {
       await _repo.cerrar(codTes: fila.codTes, idBitTarRuti: idBitTarea);
+      if (!mounted) return true;
       // Se recarga en vez de tocar la lista en memoria: otra persona pudo
       // cerrar o registrar otras mientras tanto.
       await cargar();
@@ -212,6 +214,7 @@ class TraspasoEfectivoTesBaseNotifier
     } catch (e) {
       // Incluye el caso de que otra persona la haya cerrado primero: recargar
       // deja la lista como está de verdad.
+      if (!mounted) return false;
       await cargar();
       if (!mounted) return false;
       state = state.copyWith(limpiarCerrando: true, error: _texto(e));
@@ -231,6 +234,7 @@ class TraspasoEfectivoTesBaseNotifier
       return true;
     } catch (e) {
       // El servidor rechaza si apareció una pendiente desde la última lectura.
+      if (!mounted) return false;
       await cargar();
       if (!mounted) return false;
       state = state.copyWith(cerrandoDia: false, error: _texto(e));
@@ -238,8 +242,7 @@ class TraspasoEfectivoTesBaseNotifier
     }
   }
 
-  static String _texto(Object e) =>
-      e.toString().replaceFirst(RegExp(r'^Exception:\s*'), '');
+  static String _texto(Object e) => mensajeError(e);
 }
 
 final _traspasoEfectivoTesBaseRepoProvider =

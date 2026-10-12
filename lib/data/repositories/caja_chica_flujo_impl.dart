@@ -5,7 +5,9 @@ import 'package:bosque_flutter/core/constants/app_constants.dart';
 import 'package:bosque_flutter/core/network/base_api_repository.dart';
 import 'package:bosque_flutter/core/network/dio_client.dart';
 import 'package:bosque_flutter/data/models/caja_chica_model.dart';
+import 'package:bosque_flutter/data/models/talonario_caja_chica_model.dart';
 import 'package:bosque_flutter/domain/entities/caja_chica_entity.dart';
+import 'package:bosque_flutter/domain/entities/talonario_caja_chica_entity.dart';
 import 'package:bosque_flutter/domain/repositories/caja_chica_flujo_repository.dart';
 
 /// Tope de espera solo para el PDF (RptCajaChica, sin subreportes — el más
@@ -18,10 +20,10 @@ const Duration _esperaReporteCajaChica = Duration(minutes: 1);
 class CajaChicaFlujoImpl extends BaseApiRepository
     implements CajaChicaFlujoRepository {
   @override
-  Future<List<CajaChicaEntity>> listarDelLote({required int idBitTarea}) async {
+  Future<List<CajaChicaEntity>> listarDelLote() async {
     final modelos = await postAndReturnList<CajaChicaModel>(
       endpoint: AppConstants.tarCajaChicaListarDelLote,
-      data: {'idBitTarea': idBitTarea},
+      data: const {},
       fromJson: (json) => CajaChicaModel.fromJson(json),
     );
     return modelos.map((e) => e.toEntity()).toList();
@@ -29,7 +31,6 @@ class CajaChicaFlujoImpl extends BaseApiRepository
 
   @override
   Future<void> registrarEgreso({
-    required int idBitTarea,
     required double montoEg,
     required String descripcion,
     int? codEmpDestino,
@@ -40,7 +41,6 @@ class CajaChicaFlujoImpl extends BaseApiRepository
     await postAndReturnId(
       endpoint: AppConstants.tarCajaChicaRegistrarEgreso,
       data: {
-        'idBitTarea': idBitTarea,
         'montoEg': montoEg,
         'descripcion': descripcion,
         'codEmpDestino': codEmpDestino,
@@ -53,21 +53,40 @@ class CajaChicaFlujoImpl extends BaseApiRepository
   }
 
   @override
-  Future<void> cerrarLote(int idBitTarea) async {
+  Future<void> cerrarLote() async {
     await postAndReturnId(
       endpoint: AppConstants.tarCajaChicaCerrarLote,
-      data: {'idBitTarea': idBitTarea},
+      data: const {},
       errorMessage: 'No se pudo cerrar el lote de caja chica.',
     );
   }
 
   @override
-  Future<List<Map<String, dynamic>>> obtenerHistorialLotes(int idBitTarea) {
+  Future<List<Map<String, dynamic>>> obtenerHistorialLotes() {
     return postAndReturnList<Map<String, dynamic>>(
       endpoint: AppConstants.tarCajaChicaHistorialLotes,
-      data: {'idBitTarea': idBitTarea},
+      data: const {},
       fromJson: (json) => json,
     );
+  }
+
+  @override
+  Future<List<TalonarioCajaChica>> talonarios() {
+    return postAndReturnList<TalonarioCajaChica>(
+      endpoint: AppConstants.tarCajaChicaTalonarios,
+      data: const {},
+      fromJson: talonarioCajaChicaDeJson,
+    );
+  }
+
+  @override
+  Future<ReglasReciboCajaChica?> reglasRecibo() async {
+    final filas = await postAndReturnList<ReglasReciboCajaChica>(
+      endpoint: AppConstants.tarCajaChicaReglasRecibo,
+      data: const {},
+      fromJson: reglasReciboDeJson,
+    );
+    return filas.isEmpty ? null : filas.first;
   }
 
   @override
@@ -80,12 +99,10 @@ class CajaChicaFlujoImpl extends BaseApiRepository
   }
 
   @override
-  Future<Uint8List> generarReportePdf({
-    required int lote,
-    required int codSucursal,
-  }) => DioClient.descargarReportePdf(
-    endpoint: AppConstants.tarCajaChicaReportePdf,
-    receiveTimeout: _esperaReporteCajaChica,
-    data: {'lote': lote, 'codSucursal': codSucursal},
-  );
+  Future<Uint8List> generarReportePdf({required int lote}) =>
+      DioClient.descargarReportePdf(
+        endpoint: AppConstants.tarCajaChicaReportePdf,
+        receiveTimeout: _esperaReporteCajaChica,
+        data: {'lote': lote},
+      );
 }

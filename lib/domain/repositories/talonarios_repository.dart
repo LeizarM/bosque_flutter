@@ -1,6 +1,7 @@
 import 'dart:typed_data';
 
 import 'package:bosque_flutter/data/models/talonario_lote_model.dart';
+import 'package:bosque_flutter/domain/entities/talonario_caja_chica_entity.dart';
 import 'package:bosque_flutter/domain/entities/talonario_detalle_entity.dart';
 import 'package:bosque_flutter/domain/entities/talonario_entity.dart';
 import 'package:bosque_flutter/domain/entities/talonario_grupo_entity.dart';
@@ -90,6 +91,10 @@ abstract class TalonariosRepository {
 
   /// Historial de un talonario, del evento más viejo al más nuevo.
   Future<List<TalonarioDetalleEntity>> listarEventos(BigInt codTalonario);
+
+  /// Los vales de un talonario de caja chica, uno por número, con el egreso
+  /// en que se usó cada uno (archivo SQL 93). Vacío si no es de caja chica.
+  Future<List<ValeCajaChica>> usoEnCajaChica(BigInt codTalonario);
 
   /// [TalonarioDetalleEntity.codEstado]: 2 Entregado, 3 Devuelto, 4 Cerrado.
   /// El 1 (Adquirido) lo genera el alta del talonario.

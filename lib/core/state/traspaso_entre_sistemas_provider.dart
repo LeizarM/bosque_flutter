@@ -1,3 +1,4 @@
+import 'package:bosque_flutter/core/ui/mensaje_error_tareas.dart';
 import 'package:bosque_flutter/data/repositories/traspaso_mov_caja_impl.dart';
 import 'package:bosque_flutter/domain/entities/traspaso_mov_caja_entity.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -19,9 +20,9 @@ class TraspasoEntreSistemasState {
   /// "SAP dice que no hubo nada".
   final bool cargado;
 
-  /// Mientras una fila viaja, para que dos toques no manden dos escrituras.
-  /// Es el `idTrasp`, o `-1` si la fila aún no tiene id (se identifica por posición).
-  final int? guardando;
+  /// Las filas que viajan (`idTrasp`), para que dos toques no manden dos
+  /// escrituras. Un conjunto: terminar una fila no libera a otra que sigue.
+  final Set<int> guardando;
 
   final String? error;
 
@@ -33,7 +34,7 @@ class TraspasoEntreSistemasState {
     this.filas = const [],
     this.cargando = false,
     this.cargado = false,
-    this.guardando,
+    this.guardando = const {},
     this.error,
     this.aviso,
   });
@@ -50,8 +51,7 @@ class TraspasoEntreSistemasState {
     DateTime? fecha,
     bool? cargando,
     bool? cargado,
-    int? guardando,
-    bool limpiarGuardando = false,
+    Set<int>? guardando,
     String? error,
     String? aviso,
   }) {
@@ -60,7 +60,7 @@ class TraspasoEntreSistemasState {
       fecha: fecha ?? this.fecha,
       cargando: cargando ?? this.cargando,
       cargado: cargado ?? this.cargado,
-      guardando: limpiarGuardando ? null : (guardando ?? this.guardando),
+      guardando: guardando ?? this.guardando,
       // error y aviso NO se arrastran: son de un solo uso. Si se propagaran
       // con `?? this.x`, un error viejo reaparecería en cada recarga.
       error: error,
@@ -94,7 +94,7 @@ class TraspasoEntreSistemasNotifier
         cargando: false,
         cargado: false,
         filas: const [],
-        error: 'No se pudo leer los traspasos del sistema. $e',
+        error: 'No se pudo leer los traspasos del sistema. ${mensajeError(e)}',
       );
     }
   }
@@ -113,7 +113,8 @@ class TraspasoEntreSistemasNotifier
     required bool cuadra,
     String? obs,
   }) async {
-    state = state.copyWith(guardando: fila.idTrasp);
+    final id = fila.idTrasp;
+    state = state.copyWith(guardando: {...state.guardando, id});
     try {
       await _repo.verificar(
         idBitTarRuti: idBitTarea,
@@ -121,11 +122,13 @@ class TraspasoEntreSistemasNotifier
         cuadra: cuadra,
         obs: obs,
       );
+      if (!mounted) return true;
       // Se recarga en vez de parchear en memoria: la fila puede haber nacido
       // recién en el servidor y necesita su idTrasp para el próximo cambio.
       await cargar();
+      if (!mounted) return true;
       state = state.copyWith(
-        limpiarGuardando: true,
+        guardando: {...state.guardando}..remove(id),
         aviso:
             cuadra
                 ? 'Traspaso verificado.'
@@ -133,9 +136,10 @@ class TraspasoEntreSistemasNotifier
       );
       return true;
     } catch (e) {
+      if (!mounted) return false;
       state = state.copyWith(
-        limpiarGuardando: true,
-        error: e.toString().replaceFirst('Exception: ', ''),
+        guardando: {...state.guardando}..remove(id),
+        error: mensajeError(e),
       );
       return false;
     }
@@ -146,6 +150,7 @@ class TraspasoEntreSistemasNotifier
     state = state.copyWith(cargando: true);
     try {
       await _repo.sinNovedad(idBitTarRuti: idBitTarea, fecha: state.fecha);
+      if (!mounted) return true;
       state = state.copyWith(
         cargando: false,
         aviso: 'Día cerrado como sin novedad.',
@@ -154,13 +159,15 @@ class TraspasoEntreSistemasNotifier
     } catch (e) {
       // Llega aquí también si el servidor rechaza porque SÍ hay traspasos
       // (error 24): alguien intentó cerrar sin mirar, o la pantalla quedó vieja.
-      state = state.copyWith(cargando: false, error: '$e');
+      if (!mounted) return false;
+      state = state.copyWith(cargando: false, error: mensajeError(e));
       return false;
     }
   }
 
+  // error y aviso no se arrastran en copyWith: copiar el estado los limpia.
   void limpiarMensajes() {
-    state = state.copyWith(limpiarGuardando: true);
+    state = state.copyWith();
   }
 }
 

@@ -26,6 +26,9 @@ class BitTareaRutiEntity {
   // propósito: el criterio de "vencida" estaba copiado en tres lugares del
   // cliente, cada copia comparando contra el reloj del dispositivo.
   final DateTime? fechaLimite;
+  // La responde sola el arqueo (archivo SQL 84): Sí al registrarlo, No si el
+  // día pasa sin él. No se contesta a mano, así que no lleva botones.
+  final bool respondeSola;
 
   BitTareaRutiEntity({
     required this.idBitTarea,
@@ -45,6 +48,7 @@ class BitTareaRutiEntity {
     this.idFrec,
     this.diasPlazo,
     this.fechaLimite,
+    this.respondeSola = false,
   });
 
   /// El día hasta el que esta ocurrencia acepta respuesta.

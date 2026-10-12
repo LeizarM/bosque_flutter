@@ -68,6 +68,7 @@ class BitTareaRutiModel {
   int? idFrec;
   int? diasPlazo;
   DateTime? fechaLimite;
+  bool respondeSola;
 
   BitTareaRutiModel({
     required this.idBitTarea,
@@ -87,6 +88,7 @@ class BitTareaRutiModel {
     this.idFrec,
     this.diasPlazo,
     this.fechaLimite,
+    this.respondeSola = false,
   });
 
   factory BitTareaRutiModel.fromJson(Map<String, dynamic> json) {
@@ -121,6 +123,8 @@ class BitTareaRutiModel {
           json["fechaLimite"] != null
               ? DateTime.tryParse(json["fechaLimite"])
               : null,
+      // Archivo SQL 84. Un servidor anterior no la manda: botones, como antes.
+      respondeSola: json["respondeSola"] == 1 || json["respondeSola"] == true,
     );
   }
 
@@ -162,6 +166,7 @@ class BitTareaRutiModel {
       idFrec: idFrec,
       diasPlazo: diasPlazo,
       fechaLimite: fechaLimite,
+      respondeSola: respondeSola,
     );
   }
 

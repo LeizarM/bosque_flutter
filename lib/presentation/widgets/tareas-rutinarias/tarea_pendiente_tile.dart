@@ -104,10 +104,7 @@ class TareaPendienteTile extends StatelessWidget {
           etiqueta: 'Traspaso de efectivo',
         );
       case 12:
-        return (
-          icono: Icons.compare_arrows,
-          etiqueta: 'Traspaso Caja AXA',
-        );
+        return (icono: Icons.compare_arrows, etiqueta: 'Traspaso Caja AXA');
       default:
         return null;
     }
@@ -189,7 +186,8 @@ class TareaPendienteTile extends StatelessWidget {
     final tipo = tipoDeAccion(tarea.idATR);
     final estado = _estado(context);
     final esEspecial = tipo != null;
-    final puedeMarcar = !esEspecial && onMarcar != null;
+    // La que responde sola el arqueo (archivo SQL 84) tampoco lleva botones.
+    final puedeMarcar = !esEspecial && onMarcar != null && !tarea.respondeSola;
     // Especial y hecha: ya no navega, ni con el tap ni con el chevron.
     final hecha = esEspecial && tarea.fueRealizado == 13;
 
@@ -300,6 +298,10 @@ class TareaPendienteTile extends StatelessWidget {
                       ),
                   ],
                 ),
+                if (tarea.respondeSola && !estado.respondida) ...[
+                  SizedBox(height: compacta ? 8 : 10),
+                  MarcaSolaTarea(fueRealizado: tarea.fueRealizado),
+                ],
                 if (puedeMarcar) ...[
                   SizedBox(height: compacta ? 8 : 10),
                   RespuestaTarea(
@@ -321,6 +323,42 @@ class TareaPendienteTile extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+/// Una tarea Sí/No que responde sola el arqueo (archivo SQL 84): Sí al
+/// registrarlo, No si el día pasa sin él. La usan la tarjeta y la fila de la
+/// planilla de "Mis tareas".
+class MarcaSolaTarea extends StatelessWidget {
+  final int? fueRealizado;
+
+  const MarcaSolaTarea({super.key, required this.fueRealizado});
+
+  @override
+  Widget build(BuildContext context) {
+    final (texto, fondo, color) = switch (fueRealizado) {
+      13 => (
+        'Sí: hizo el arqueo',
+        TareasColors.realizado(context),
+        TareasColors.realizadoTexto(context),
+      ),
+      0 => (
+        'No: no hubo arqueo ese día',
+        TareasColors.vencido(context),
+        TareasColors.vencidoTexto(context),
+      ),
+      _ => (
+        'Se marca sola con tu arqueo',
+        TareasColors.noAplica(context),
+        TareasColors.noAplicaTexto(context),
+      ),
+    };
+    return PildoraTareas(
+      texto: texto,
+      fondo: fondo,
+      color: color,
+      icono: Icons.auto_mode,
     );
   }
 }

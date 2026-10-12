@@ -1,6 +1,6 @@
 // Destino final: lib/presentation/widgets/tareas-rutinarias/pagina_tareas.dart
 import 'package:bosque_flutter/core/theme/tareas_colors.dart';
-import 'package:bosque_flutter/core/ui/mensajes_usuario.dart';
+import 'package:bosque_flutter/core/ui/mensaje_error_tareas.dart';
 import 'package:bosque_flutter/core/ui/tokens_bosque.dart';
 import 'package:bosque_flutter/presentation/widgets/tareas-rutinarias/tarea_pendiente_tile.dart';
 import 'package:flutter/material.dart';
@@ -205,8 +205,8 @@ class EstadoTareas extends StatelessWidget {
 
   /// Una lectura que falló.
   ///
-  /// Con [error] y sin [detalle], el detalle es el error traducido para una
-  /// persona (`textoParaUsuario`), no el "DioException [bad response]…" crudo.
+  /// Con [error] y sin [detalle], el detalle es el mensaje del servidor o uno
+  /// en palabras si falló la red (`mensajeError`), nunca la DioException cruda.
   factory EstadoTareas.error({
     Key? key,
     required String titulo,
@@ -217,7 +217,7 @@ class EstadoTareas extends StatelessWidget {
     key: key,
     icono: Icons.cloud_off_outlined,
     titulo: titulo,
-    detalle: detalle ?? (error == null ? null : textoParaUsuario(error)),
+    detalle: detalle ?? (error == null ? null : mensajeError(error)),
     tono: TonoEstadoTareas.error,
     accion: FilledButton.tonalIcon(
       onPressed: onReintentar,

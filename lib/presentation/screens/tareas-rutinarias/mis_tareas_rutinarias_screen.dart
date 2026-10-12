@@ -129,26 +129,18 @@ class _MisTareasRutinariasScreenState
     // hasta aquí: perteneceAMiLista los deja fuera de la lista.
     //
     // Los case 4/6/7 quedan por si alguien da de alta una tarea NUEVA de ese
-    // tipo desde el ABM: esa sí la seguiría generando el Job (no estaría marcada
-    // esARequerimiento) y tiene que poder abrirse desde la lista.
+    // tipo desde el ABM: se abre el submódulo de su sucursal, que desde el
+    // archivo SQL 96 no usa la ocurrencia.
     final String ruta;
     final Map<String, Object?> extra;
     switch (tarea.idATR) {
       case 6:
         ruta = '/dashboard/tacTareas/Coches';
-        extra = {
-          'idTarRuti': tarea.idTarRuti,
-          'idBitTarea': tarea.idBitTarea,
-          'nombreTarea': tarea.nombreTareaRutinaria ?? 'Coches',
-        };
+        extra = {'nombreTarea': tarea.nombreTareaRutinaria ?? 'Coches'};
         break;
       case 4:
         ruta = '/dashboard/tacTareas/CajaFuerte';
-        extra = {
-          'idTarRuti': tarea.idTarRuti,
-          'idBitTarea': tarea.idBitTarea,
-          'nombreTarea': tarea.nombreTareaRutinaria ?? 'Caja Fuerte',
-        };
+        extra = {'nombreTarea': tarea.nombreTareaRutinaria ?? 'Caja Fuerte'};
         break;
       case 2:
         ruta = '/dashboard/tacTareas/ArqueoCaja';
@@ -160,10 +152,7 @@ class _MisTareasRutinariasScreenState
         break;
       case 7:
         ruta = '/dashboard/tacTareas/CajaChica';
-        extra = {
-          'idBitTarea': tarea.idBitTarea,
-          'nombreTarea': tarea.nombreTareaRutinaria ?? 'Caja Chica',
-        };
+        extra = {'nombreTarea': tarea.nombreTareaRutinaria ?? 'Caja Chica'};
         break;
       case 3:
         // La misma revisión del día que la tarea 39, pero cerrando SU
@@ -518,13 +507,15 @@ class _MisTareasRutinariasScreenState
 
     final propias =
         porHacer
-            .where((t) => frecuenciaActiva == null || t.idFrec == frecuenciaActiva)
+            .where(
+              (t) => frecuenciaActiva == null || t.idFrec == frecuenciaActiva,
+            )
             .toList()
           ..sort((a, b) {
-          final fa = a.fechaPresentacion ?? DateTime(2100);
-          final fb = b.fechaPresentacion ?? DateTime(2100);
-          return fa.compareTo(fb);
-        });
+            final fa = a.fechaPresentacion ?? DateTime(2100);
+            final fb = b.fechaPresentacion ?? DateTime(2100);
+            return fa.compareTo(fb);
+          });
 
     // Antes era una sola lista plana, ordenada solo por fecha — con varias
     // "Vencida" seguidas se leía como una pared roja sin estructura. Agrupar
@@ -543,339 +534,364 @@ class _MisTareasRutinariasScreenState
           });
     final filas = _agruparPorUrgencia(propias, hechasVisibles);
 
-
     return TareasScope(
       // El ancho del cajón decide si "Mi equipo" lleva su nombre o solo el
       // icono: el sidebar del dashboard se come 260 px.
       child: LayoutBuilder(
-        builder: (context, cajon) => Scaffold(
-        appBar: AppBarTareas(
-          titulo: 'Mis tareas rutinarias',
-          subtitulo: _resumenEncabezado(
-            state.cargado,
-            porHacer.length,
-            vencidasSinResponder,
-          ),
-          insignia: InsigniaTarea.modulo(context, Icons.checklist_rtl),
-          acciones: [
-            // "Mi equipo" dejó de ser un ítem del menú (archivo SQL 59) y un
-            // botón flotante: va aquí, y solo para quien puede usarlo.
-            _BotonMiEquipo(conTexto: !Aire.de(cajon.maxWidth).esChico),
-            // Mismo botón/permiso que ya gatea el catálogo desde Estructura
-            // Organizacional (cargos_screen.dart) — aquí solo se agrega un
-            // segundo acceso directo, sin tb_vista ni endpoint nuevo, para
-            // quien lo tenga concedido no tenga que salir del módulo Tareas
-            // para llegar a "Tareas Rutinarias por Cargo" (hallazgo de
-            // Marcelo, 2026-09-07: "no veo la parte de abm... en el mismo
-            // modulo").
-            PermissionWidget(
-              buttonName: 'btnTareasRutXCargo',
-              child: IconButton(
-                tooltip: 'Tareas rutinarias por cargo',
-                icon: const Icon(Icons.assignment_outlined),
-                onPressed: () {
-                  final codEmpresa = ref.read(userProvider)?.codEmpresa ?? 0;
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder:
-                          (_) => TareasRutinariasCatalogoScreen(
-                            codEmpresa: codEmpresa,
+        builder:
+            (context, cajon) => Scaffold(
+              appBar: AppBarTareas(
+                titulo: 'Mis tareas rutinarias',
+                subtitulo: _resumenEncabezado(
+                  state.cargado,
+                  porHacer.length,
+                  vencidasSinResponder,
+                ),
+                insignia: InsigniaTarea.modulo(context, Icons.checklist_rtl),
+                acciones: [
+                  // "Mi equipo" dejó de ser un ítem del menú (archivo SQL 59) y un
+                  // botón flotante: va aquí, y solo para quien puede usarlo.
+                  _BotonMiEquipo(conTexto: !Aire.de(cajon.maxWidth).esChico),
+                  // Mismo botón/permiso que ya gatea el catálogo desde Estructura
+                  // Organizacional (cargos_screen.dart) — aquí solo se agrega un
+                  // segundo acceso directo, sin tb_vista ni endpoint nuevo, para
+                  // quien lo tenga concedido no tenga que salir del módulo Tareas
+                  // para llegar a "Tareas Rutinarias por Cargo" (hallazgo de
+                  // Marcelo, 2026-09-07: "no veo la parte de abm... en el mismo
+                  // modulo").
+                  PermissionWidget(
+                    buttonName: 'btnTareasRutXCargo',
+                    child: IconButton(
+                      tooltip: 'Tareas rutinarias por cargo',
+                      icon: const Icon(Icons.assignment_outlined),
+                      onPressed: () {
+                        final codEmpresa =
+                            ref.read(userProvider)?.codEmpresa ?? 0;
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder:
+                                (_) => TareasRutinariasCatalogoScreen(
+                                  codEmpresa: codEmpresa,
+                                ),
                           ),
+                        );
+                      },
+                    ),
+                  ),
+                  IconButton(
+                    tooltip: 'Descargar mi historial en PDF',
+                    icon:
+                        _generandoPdf
+                            ? const SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                            : const Icon(Icons.picture_as_pdf_outlined),
+                    onPressed: _generandoPdf ? null : _descargarReporte,
+                  ),
+                  PermissionWidget(
+                    buttonName: 'btnEmpAll',
+                    child: IconButton(
+                      tooltip: 'Ver de todos los empleados',
+                      icon: const Icon(Icons.groups_outlined),
+                      onPressed:
+                          () => mostrarAviso(
+                            context,
+                            'El reporte por todos los empleados está en construcción.',
+                            tono: TonoAviso.aviso,
+                          ),
+                    ),
+                  ),
+                ],
+                // Ya no hay filtros de ESTADO: la pantalla es "lo que falta hacer"
+                // y punto. Queda solo el de frecuencia, y solo si hay mas de una.
+                bottom: PreferredSize(
+                  preferredSize: Size.fromHeight(
+                    frecuenciasPresentes.length > 1 ? 44 : 0,
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // La fila de frecuencia solo aparece si hay más de una: con
+                      // todas las tareas diarias, un único chip "Diario" no filtra
+                      // nada y solo roba una franja de pantalla.
+                      if (frecuenciasPresentes.length > 1)
+                        SizedBox(
+                          height: 44,
+                          child: ListView(
+                            scrollDirection: Axis.horizontal,
+                            padding: const EdgeInsets.symmetric(horizontal: 12),
+                            children: [
+                              Center(
+                                child: Padding(
+                                  padding: const EdgeInsets.only(right: 10),
+                                  child: Text(
+                                    'Frecuencia',
+                                    style: Theme.of(
+                                      context,
+                                    ).textTheme.labelMedium?.copyWith(
+                                      color:
+                                          Theme.of(context)
+                                              .appBarTheme
+                                              .foregroundColor
+                                              ?.withValues(alpha: 0.7) ??
+                                          Theme.of(
+                                            context,
+                                          ).colorScheme.onSurfaceVariant,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              Center(
+                                child: ChoiceChip(
+                                  selected: frecuenciaActiva == null,
+                                  onSelected:
+                                      (_) => setState(() => _frecuencia = null),
+                                  showCheckmark: false,
+                                  label: const Text('Todas'),
+                                  visualDensity: VisualDensity.compact,
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              for (final id in frecuenciasPresentes) ...[
+                                Center(
+                                  child: ChoiceChip(
+                                    selected: frecuenciaActiva == id,
+                                    // Volver a tocar el chip elegido lo desmarca:
+                                    // sin eso habría que ir hasta "Todas" para
+                                    // deshacer, que es un viaje de ida y vuelta por
+                                    // una fila que puede estar scrolleada.
+                                    onSelected:
+                                        (elegido) => setState(
+                                          () =>
+                                              _frecuencia = elegido ? id : null,
+                                        ),
+                                    showCheckmark: false,
+                                    visualDensity: VisualDensity.compact,
+                                    backgroundColor: TareasColors.frecuencia(
+                                      context,
+                                      id,
+                                    ),
+                                    label: Text(
+                                      '${TareaPendienteTile.nombreFrecuencia[id] ?? 'Otra'}'
+                                      ' (${porFrecuencia[id]})',
+                                      style: TextStyle(
+                                        color:
+                                            frecuenciaActiva == id
+                                                ? null
+                                                : TareasColors.frecuenciaTexto(
+                                                  context,
+                                                  id,
+                                                ),
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                              ],
+                            ],
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              ),
+              body: LayoutBuilder(
+                builder: (context, cajon) {
+                  // El ancho del cajón y no el de la ventana: el sidebar del
+                  // dashboard se come 260 px, y con MediaQuery la planilla
+                  // aparecía cuando ya no entraba.
+                  final anchoDisponible = cajon.maxWidth;
+                  final columnas = TareasBreakpoints.columnasLista(
+                    anchoDisponible,
+                  );
+                  final filasGrilla = _enFilasDe(filas, columnas);
+                  final esTabla = anchoDisponible >= TareasBreakpoints.splitMin;
+                  return RefreshIndicator(
+                    onRefresh: notifier.cargar,
+                    // AnimatedSwitcher: pasar de "cargando" a la lista (o al vacío) es un
+                    // cambio de estado real — un cross-fade evita el salto seco que se
+                    // siente como que la pantalla "parpadeó" en vez de haber cargado.
+                    child: AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 220),
+                      switchInCurve: Curves.easeOut,
+                      switchOutCurve: Curves.easeIn,
+                      child:
+                          !state.cargado
+                              ? (state.cargando
+                                  ? const Center(
+                                    key: ValueKey('cargando'),
+                                    child: CircularProgressIndicator(),
+                                  )
+                                  // Un error de lectura no es "no tienes tareas".
+                                  : EstadoTareas.error(
+                                    key: const ValueKey('error'),
+                                    titulo: 'No se pudieron leer tus tareas',
+                                    error: state.errorCarga,
+                                    onReintentar: notifier.cargar,
+                                  ))
+                              : filas.isEmpty
+                              ? _EstadoVacio(
+                                key: const ValueKey('vacio'),
+                                // "Estas al dia" solo si REALMENTE tiene tareas y las respondio
+                                // todas. A quien nunca le asignaron ninguna hay que
+                                // decirle eso, no felicitarlo.
+                                tieneAsignadas: mias.isNotEmpty,
+                                vencidas: vencidasSinResponder,
+                              )
+                              : esTabla
+                              // En una resolucion de escritorio esto es una planilla de
+                              // pendientes: una fila por tarea, la respuesta siempre en
+                              // la misma columna. Como tarjetas, los tres botones caian
+                              // en una posicion distinta en cada una y responder treinta
+                              // era perseguir el boton por la pantalla.
+                              ? Padding(
+                                key: const ValueKey('tabla'),
+                                padding: const EdgeInsets.fromLTRB(
+                                  Esp.l,
+                                  Esp.m,
+                                  Esp.l,
+                                  Esp.m,
+                                ),
+                                child: MarcoTabla(
+                                  child: Column(
+                                    children: [
+                                      const EncabezadoTabla(
+                                        anchos: _anchosTareas,
+                                        titulos: [
+                                          'Tarea',
+                                          'Vence',
+                                          'Frecuencia',
+                                          'Respuesta',
+                                        ],
+                                      ),
+                                      Expanded(
+                                        child: ListView.builder(
+                                          padding: EdgeInsets.zero,
+                                          itemCount: filas.length,
+                                          itemBuilder: (context, i) {
+                                            final fila = filas[i];
+                                            if (fila is _Encabezado) {
+                                              return _SeparadorGrupo(
+                                                encabezado: fila,
+                                              );
+                                            }
+                                            final t = (fila as _Fila).tarea;
+                                            return _FilaTablaTarea(
+                                              key: ValueKey(
+                                                'tarea-${t.idBitTarea}',
+                                              ),
+                                              tarea: t,
+                                              rayado: i.isOdd,
+                                              guardando:
+                                                  _guardandoId == t.idBitTarea,
+                                              onAbrir:
+                                                  () => _navegarPorTipo(
+                                                    context,
+                                                    t,
+                                                  ),
+                                              onMarcar:
+                                                  (valor) =>
+                                                      _marcarSimple(t, valor),
+                                              onObservacion:
+                                                  () => _agregarObservacion(t),
+                                              onVerPdf:
+                                                  t.idATR == 2
+                                                      ? () => _verPdfArqueo(t)
+                                                      : null,
+                                              generandoPdf:
+                                                  _pdfArqueoDe == t.idBitTarea,
+                                            );
+                                          },
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              )
+                              : ListView.builder(
+                                key: const ValueKey('lista'),
+                                padding: const EdgeInsets.fromLTRB(
+                                  Esp.xs,
+                                  Esp.s,
+                                  Esp.xs,
+                                  Esp.m,
+                                ),
+                                itemCount: filasGrilla.length,
+                                itemBuilder: (context, i) {
+                                  final fila = filasGrilla[i];
+                                  if (fila is _Encabezado) {
+                                    final color = fila.tono(context);
+                                    return Padding(
+                                      padding: EdgeInsets.fromLTRB(
+                                        16,
+                                        i == 0 ? 4 : 20,
+                                        16,
+                                        8,
+                                      ),
+                                      child: Row(
+                                        children: [
+                                          Icon(
+                                            fila.icono,
+                                            size: 16,
+                                            color: color,
+                                          ),
+                                          const SizedBox(width: 6),
+                                          Text(
+                                            '${fila.titulo} (${fila.cantidad})',
+                                            style: Theme.of(
+                                              context,
+                                            ).textTheme.labelLarge?.copyWith(
+                                              color: color,
+                                              fontWeight: FontWeight.w700,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    );
+                                  }
+                                  // Una fila de la grilla: entre 1 y `columnas` tarjetas.
+                                  // Con columnas==1 el Row tiene un solo hijo Expanded, o
+                                  // sea que en teléfono se comporta igual que antes.
+                                  final grupo = fila as List<_Fila>;
+                                  return Row(
+                                    // start y no stretch: stretch necesita alto acotado y
+                                    // la unica forma de dárselo seria IntrinsicHeight, que
+                                    // revienta si una tarjeta trae un LayoutBuilder (ver
+                                    // el doc de FranjaAcento). Las tarjetas ya salen del
+                                    // mismo alto porque el título va a una sola línea.
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      for (var c = 0; c < columnas; c++)
+                                        Expanded(
+                                          child:
+                                              c < grupo.length
+                                                  ? _tarjetaAnimada(
+                                                    grupo[c].tarea,
+                                                    i,
+                                                    // Densidad de escritorio en cuanto
+                                                    // hay más de una columna: es el mismo
+                                                    // umbral en el que la pantalla deja
+                                                    // de ser un teléfono.
+                                                    compacta: columnas > 1,
+                                                  )
+                                                  // Relleno para que la última fila
+                                                  // incompleta no estire sus tarjetas al
+                                                  // ancho de toda la pantalla.
+                                                  : const SizedBox.shrink(),
+                                        ),
+                                    ],
+                                  );
+                                },
+                              ),
                     ),
                   );
                 },
               ),
             ),
-            IconButton(
-              tooltip: 'Descargar mi historial en PDF',
-              icon:
-                  _generandoPdf
-                      ? const SizedBox(
-                        width: 18,
-                        height: 18,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                      : const Icon(Icons.picture_as_pdf_outlined),
-              onPressed: _generandoPdf ? null : _descargarReporte,
-            ),
-            PermissionWidget(
-              buttonName: 'btnEmpAll',
-              child: IconButton(
-                tooltip: 'Ver de todos los empleados',
-                icon: const Icon(Icons.groups_outlined),
-                onPressed:
-                    () => mostrarAviso(
-                      context,
-                      'El reporte por todos los empleados está en construcción.',
-                      tono: TonoAviso.aviso,
-                    ),
-              ),
-            ),
-          ],
-          // Ya no hay filtros de ESTADO: la pantalla es "lo que falta hacer"
-          // y punto. Queda solo el de frecuencia, y solo si hay mas de una.
-          bottom: PreferredSize(
-            preferredSize: Size.fromHeight(
-              frecuenciasPresentes.length > 1 ? 44 : 0,
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // La fila de frecuencia solo aparece si hay más de una: con
-                // todas las tareas diarias, un único chip "Diario" no filtra
-                // nada y solo roba una franja de pantalla.
-                if (frecuenciasPresentes.length > 1)
-                  SizedBox(
-                    height: 44,
-                    child: ListView(
-                      scrollDirection: Axis.horizontal,
-                      padding: const EdgeInsets.symmetric(horizontal: 12),
-                      children: [
-                        Center(
-                          child: Padding(
-                            padding: const EdgeInsets.only(right: 10),
-                            child: Text(
-                              'Frecuencia',
-                              style: Theme.of(
-                                context,
-                              ).textTheme.labelMedium?.copyWith(
-                                color:
-                                    Theme.of(context).appBarTheme.foregroundColor
-                                        ?.withValues(alpha: 0.7) ??
-                                    Theme.of(context).colorScheme.onSurfaceVariant,
-                              ),
-                            ),
-                          ),
-                        ),
-                        Center(
-                          child: ChoiceChip(
-                            selected: frecuenciaActiva == null,
-                            onSelected:
-                                (_) => setState(() => _frecuencia = null),
-                            showCheckmark: false,
-                            label: const Text('Todas'),
-                            visualDensity: VisualDensity.compact,
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        for (final id in frecuenciasPresentes) ...[
-                          Center(
-                            child: ChoiceChip(
-                              selected: frecuenciaActiva == id,
-                              // Volver a tocar el chip elegido lo desmarca:
-                              // sin eso habría que ir hasta "Todas" para
-                              // deshacer, que es un viaje de ida y vuelta por
-                              // una fila que puede estar scrolleada.
-                              onSelected:
-                                  (elegido) => setState(
-                                    () => _frecuencia = elegido ? id : null,
-                                  ),
-                              showCheckmark: false,
-                              visualDensity: VisualDensity.compact,
-                              backgroundColor: TareasColors.frecuencia(
-                                context,
-                                id,
-                              ),
-                              label: Text(
-                                '${TareaPendienteTile.nombreFrecuencia[id] ?? 'Otra'}'
-                                ' (${porFrecuencia[id]})',
-                                style: TextStyle(
-                                  color:
-                                      frecuenciaActiva == id
-                                          ? null
-                                          : TareasColors.frecuenciaTexto(
-                                            context,
-                                            id,
-                                          ),
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                        ],
-                      ],
-                    ),
-                  ),
-              ],
-            ),
-          ),
-        ),
-        body: LayoutBuilder(
-          builder: (context, cajon) {
-            // El ancho del cajón y no el de la ventana: el sidebar del
-            // dashboard se come 260 px, y con MediaQuery la planilla
-            // aparecía cuando ya no entraba.
-            final anchoDisponible = cajon.maxWidth;
-            final columnas = TareasBreakpoints.columnasLista(anchoDisponible);
-            final filasGrilla = _enFilasDe(filas, columnas);
-            final esTabla = anchoDisponible >= TareasBreakpoints.splitMin;
-            return RefreshIndicator(
-          onRefresh: notifier.cargar,
-          // AnimatedSwitcher: pasar de "cargando" a la lista (o al vacío) es un
-          // cambio de estado real — un cross-fade evita el salto seco que se
-          // siente como que la pantalla "parpadeó" en vez de haber cargado.
-          child: AnimatedSwitcher(
-            duration: const Duration(milliseconds: 220),
-            switchInCurve: Curves.easeOut,
-            switchOutCurve: Curves.easeIn,
-            child:
-                !state.cargado
-                    ? (state.cargando
-                        ? const Center(
-                          key: ValueKey('cargando'),
-                          child: CircularProgressIndicator(),
-                        )
-                        // Un error de lectura no es "no tienes tareas".
-                        : EstadoTareas.error(
-                          key: const ValueKey('error'),
-                          titulo: 'No se pudieron leer tus tareas',
-                          error: state.errorCarga,
-                          onReintentar: notifier.cargar,
-                        ))
-                    : filas.isEmpty
-                    ? _EstadoVacio(
-                      key: const ValueKey('vacio'),
-                      // "Estas al dia" solo si REALMENTE tiene tareas y las respondio
-                      // todas. A quien nunca le asignaron ninguna hay que
-                      // decirle eso, no felicitarlo.
-                      tieneAsignadas: mias.isNotEmpty,
-                      vencidas: vencidasSinResponder,
-                    )
-                    : esTabla
-                    // En una resolucion de escritorio esto es una planilla de
-                    // pendientes: una fila por tarea, la respuesta siempre en
-                    // la misma columna. Como tarjetas, los tres botones caian
-                    // en una posicion distinta en cada una y responder treinta
-                    // era perseguir el boton por la pantalla.
-                    ? Padding(
-                      key: const ValueKey('tabla'),
-                      padding: const EdgeInsets.fromLTRB(
-                        Esp.l,
-                        Esp.m,
-                        Esp.l,
-                        Esp.m,
-                      ),
-                      child: MarcoTabla(
-                        child: Column(
-                          children: [
-                            const EncabezadoTabla(
-                              anchos: _anchosTareas,
-                              titulos: [
-                                'Tarea',
-                                'Vence',
-                                'Frecuencia',
-                                'Respuesta',
-                              ],
-                            ),
-                            Expanded(
-                              child: ListView.builder(
-                                padding: EdgeInsets.zero,
-                                itemCount: filas.length,
-                                itemBuilder: (context, i) {
-                                  final fila = filas[i];
-                                  if (fila is _Encabezado) {
-                                    return _SeparadorGrupo(encabezado: fila);
-                                  }
-                                  final t = (fila as _Fila).tarea;
-                                  return _FilaTablaTarea(
-                                    key: ValueKey('tarea-${t.idBitTarea}'),
-                                    tarea: t,
-                                    rayado: i.isOdd,
-                                    guardando: _guardandoId == t.idBitTarea,
-                                    onAbrir: () => _navegarPorTipo(context, t),
-                                    onMarcar: (valor) => _marcarSimple(t, valor),
-                                    onObservacion: () => _agregarObservacion(t),
-                                    onVerPdf:
-                                        t.idATR == 2
-                                            ? () => _verPdfArqueo(t)
-                                            : null,
-                                    generandoPdf:
-                                        _pdfArqueoDe == t.idBitTarea,
-                                  );
-                                },
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    )
-                    : ListView.builder(
-                      key: const ValueKey('lista'),
-                      padding: const EdgeInsets.fromLTRB(
-                        Esp.xs,
-                        Esp.s,
-                        Esp.xs,
-                        Esp.m,
-                      ),
-                      itemCount: filasGrilla.length,
-                      itemBuilder: (context, i) {
-                        final fila = filasGrilla[i];
-                        if (fila is _Encabezado) {
-                          final color = fila.tono(context);
-                          return Padding(
-                            padding: EdgeInsets.fromLTRB(
-                              16,
-                              i == 0 ? 4 : 20,
-                              16,
-                              8,
-                            ),
-                            child: Row(
-                              children: [
-                                Icon(fila.icono, size: 16, color: color),
-                                const SizedBox(width: 6),
-                                Text(
-                                  '${fila.titulo} (${fila.cantidad})',
-                                  style: Theme.of(
-                                    context,
-                                  ).textTheme.labelLarge?.copyWith(
-                                    color: color,
-                                    fontWeight: FontWeight.w700,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          );
-                        }
-                        // Una fila de la grilla: entre 1 y `columnas` tarjetas.
-                        // Con columnas==1 el Row tiene un solo hijo Expanded, o
-                        // sea que en teléfono se comporta igual que antes.
-                        final grupo = fila as List<_Fila>;
-                        return Row(
-                          // start y no stretch: stretch necesita alto acotado y
-                          // la unica forma de dárselo seria IntrinsicHeight, que
-                          // revienta si una tarjeta trae un LayoutBuilder (ver
-                          // el doc de FranjaAcento). Las tarjetas ya salen del
-                          // mismo alto porque el título va a una sola línea.
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            for (var c = 0; c < columnas; c++)
-                              Expanded(
-                                child:
-                                    c < grupo.length
-                                        ? _tarjetaAnimada(
-                                          grupo[c].tarea,
-                                          i,
-                                          // Densidad de escritorio en cuanto
-                                          // hay más de una columna: es el mismo
-                                          // umbral en el que la pantalla deja
-                                          // de ser un teléfono.
-                                          compacta: columnas > 1,
-                                        )
-                                        // Relleno para que la última fila
-                                        // incompleta no estire sus tarjetas al
-                                        // ancho de toda la pantalla.
-                                        : const SizedBox.shrink(),
-                              ),
-                          ],
-                        );
-                      },
-                    ),
-          ),
-        );
-          },
-        ),
-      ),
       ),
     );
   }
@@ -978,10 +994,10 @@ bool hechaEnPlazo(BitTareaRutiEntity t, DateTime hoy) =>
 ///    esas filas seguían apareciendo como vencidas. Sin `estado` se muestra:
 ///    no se esconde una tarea por un dato que falta.
 ///  * **No es un flujo a requerimiento.** Caja Fuerte, Coches y Caja Chica se
-///    abren desde el menú y su ocurrencia se crea al entrar al submódulo. Si el
-///    trabajo quedaba a medias, la fila se quedaba aquí como pendiente de un
-///    botón que ya no lleva a ningún lado (Marcelo, 2026-09-14). El corte es
-///    por idTarRuti, nunca por idATR: ver [TareasARequerimiento].
+///    abren desde el menú y desde el archivo SQL 96 no tienen ocurrencia; las
+///    viejas quedan como historial y no se muestran aquí (Marcelo,
+///    2026-09-14). El corte es por idTarRuti, nunca por idATR: ver
+///    [TareasARequerimiento].
 bool perteneceAMiLista(BitTareaRutiEntity t, int? miCodEmpleado) =>
     miCodEmpleado != null &&
     t.codEmpleado == miCodEmpleado &&
@@ -1142,9 +1158,7 @@ class _FilaTablaTarea extends StatelessWidget {
     return FilaTabla(
       anchos: _anchosTareas,
       fondo:
-          rayado
-              ? scheme.surfaceContainerHighest.withValues(alpha: 0.3)
-              : null,
+          rayado ? scheme.surfaceContainerHighest.withValues(alpha: 0.3) : null,
       celdas: [
         Row(
           children: [
@@ -1207,12 +1221,16 @@ class _FilaTablaTarea extends StatelessWidget {
               alignment: Alignment.centerLeft,
               child: OutlinedButton.icon(
                 onPressed: onAbrir,
-                style: const ButtonStyle(
-                  visualDensity: VisualDensity.compact,
-                ),
+                style: const ButtonStyle(visualDensity: VisualDensity.compact),
                 icon: const Icon(Icons.open_in_new, size: 16),
                 label: Text(tipo.etiqueta),
               ),
+            )
+            // La responde sola el arqueo (archivo SQL 84): sin botones.
+            : tarea.respondeSola
+            ? Align(
+              alignment: Alignment.centerLeft,
+              child: MarcaSolaTarea(fueRealizado: tarea.fueRealizado),
             )
             : RespuestaTarea(
               seleccion: tarea.fueRealizado,

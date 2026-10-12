@@ -1,3 +1,4 @@
+import 'package:bosque_flutter/core/ui/mensaje_error_tareas.dart';
 import 'package:bosque_flutter/data/repositories/tareas_por_cargo_impl.dart';
 import 'package:bosque_flutter/data/repositories/tar_ru_x_cargo_impl.dart';
 import 'package:bosque_flutter/domain/entities/tar_ru_x_cargo_entity.dart';
@@ -50,9 +51,11 @@ class TareasPorCargoNotifier extends StateNotifier<TareasPorCargoState> {
     state = state.copyWith(cargando: true);
     try {
       final data = await _repo.obtenerPorCargo(codCargo);
+      if (!mounted) return;
       state = state.copyWith(items: data, cargando: false);
     } catch (e) {
-      state = state.copyWith(cargando: false, mensajeError: e.toString());
+      if (!mounted) return;
+      state = state.copyWith(cargando: false, mensajeError: mensajeError(e));
     }
   }
 
@@ -78,17 +81,15 @@ class TareasPorCargoNotifier extends StateNotifier<TareasPorCargoState> {
           {'codCargo': codCargo},
         ],
       );
-      state = state.copyWith(
-        guardando: false,
-        mensajeExito: 'Tarea creada y asignada a este cargo.',
-      );
+      if (!mounted) return true;
+      // Ocupado hasta que la lista se recarga: así no se manda dos veces.
       await cargar();
+      if (!mounted) return true;
+      state = state.copyWith(guardando: false, mensajeExito: 'Tarea creada y asignada a este cargo.');
       return true;
     } catch (e) {
-      state = state.copyWith(
-        guardando: false,
-        mensajeError: e.toString().replaceFirst('Exception: ', ''),
-      );
+      if (!mounted) return false;
+      state = state.copyWith(guardando: false, mensajeError: mensajeError(e));
       return false;
     }
   }
@@ -110,17 +111,15 @@ class TareasPorCargoNotifier extends StateNotifier<TareasPorCargoState> {
           ),
         );
       }
-      state = state.copyWith(
-        guardando: false,
-        mensajeExito: 'Tarea copiada a ${codCargosDestino.length} cargo(s).',
-      );
+      if (!mounted) return true;
+      // Ocupado hasta que la lista se recarga: así no se manda dos veces.
       await cargar();
+      if (!mounted) return true;
+      state = state.copyWith(guardando: false, mensajeExito: 'Tarea copiada a ${codCargosDestino.length} cargo(s).');
       return true;
     } catch (e) {
-      state = state.copyWith(
-        guardando: false,
-        mensajeError: e.toString().replaceFirst('Exception: ', ''),
-      );
+      if (!mounted) return false;
+      state = state.copyWith(guardando: false, mensajeError: mensajeError(e));
       return false;
     }
   }
@@ -137,6 +136,8 @@ class TareasPorCargoNotifier extends StateNotifier<TareasPorCargoState> {
     state = state.copyWith(guardando: true);
     var puestas = 0;
     final fallidas = <String>[];
+    // El motivo del servidor de la primera que falló, no solo su id.
+    String? motivo;
 
     for (final idTarRuti in idTarRutis) {
       try {
@@ -156,10 +157,13 @@ class TareasPorCargoNotifier extends StateNotifier<TareasPorCargoState> {
         puestas++;
       } catch (e) {
         fallidas.add('$idTarRuti');
+        motivo ??= mensajeError(e);
       }
     }
 
+    if (!mounted) return puestas > 0;
     await cargar();
+    if (!mounted) return puestas > 0;
 
     if (fallidas.isEmpty) {
       state = state.copyWith(
@@ -176,7 +180,8 @@ class TareasPorCargoNotifier extends StateNotifier<TareasPorCargoState> {
       guardando: false,
       mensajeError:
           'Se agregaron $puestas de ${idTarRutis.length}. '
-          'No se pudo con: ${fallidas.join(', ')}.',
+          '${fallidas.length == 1 ? 'Tarea' : 'Tareas'} '
+          '${fallidas.join(', ')}: $motivo',
     );
     return puestas > 0;
   }
@@ -204,17 +209,15 @@ class TareasPorCargoNotifier extends StateNotifier<TareasPorCargoState> {
           audUsuario: 0,
         ),
       );
-      state = state.copyWith(
-        guardando: false,
-        mensajeExito: 'Estado actualizado.',
-      );
+      if (!mounted) return true;
+      // Ocupado hasta que la lista se recarga: así no se manda dos veces.
       await cargar();
+      if (!mounted) return true;
+      state = state.copyWith(guardando: false, mensajeExito: 'Estado actualizado.');
       return true;
     } catch (e) {
-      state = state.copyWith(
-        guardando: false,
-        mensajeError: e.toString().replaceFirst('Exception: ', ''),
-      );
+      if (!mounted) return false;
+      state = state.copyWith(guardando: false, mensajeError: mensajeError(e));
       return false;
     }
   }

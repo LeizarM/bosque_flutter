@@ -56,6 +56,16 @@ class ArqueoDelCierre {
   /// Si ya tiene el visto bueno del supervisor.
   final bool revisado;
 
+  /// False: una tarea de arqueo de ese día que nadie registró (archivo SQL
+  /// 91). No tiene montos ni PDF, y no se marca.
+  final bool hecho;
+
+  /// El cargo de quien debía hacerlo (solo en las sin hacer).
+  final String? cargo;
+
+  /// Cómo quedó la tarea sin hacer: 0 no se hizo, 14 no aplica, otro pendiente.
+  final int? fueRealizado;
+
   const ArqueoDelCierre({
     required this.idAC,
     this.fecha,
@@ -68,6 +78,9 @@ class ArqueoDelCierre {
     this.diferencia = 0,
     this.obs,
     this.revisado = false,
+    this.hecho = true,
+    this.cargo,
+    this.fueRealizado,
   });
 
   bool get cuadra => diferencia.abs() <= 0.01;
@@ -89,6 +102,9 @@ class ArqueoDelCierre {
     diferencia: diferencia,
     obs: obs,
     revisado: valor,
+    hecho: hecho,
+    cargo: cargo,
+    fueRealizado: fueRealizado,
   );
 }
 

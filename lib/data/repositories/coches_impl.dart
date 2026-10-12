@@ -7,29 +7,25 @@ import 'package:bosque_flutter/domain/repositories/coches_repository.dart';
 
 class CochesImpl extends BaseApiRepository implements CochesRepository {
   @override
-  Future<List<CocheDelDiaEntity>> listarDelDia({
-    required int idTarRuti,
-    required int idBitTarea,
-  }) async {
+  Future<List<CocheDelDiaEntity>> listarDelDia() async {
     final modelos = await postAndReturnList<CocheDelDiaModel>(
       endpoint: AppConstants.tarCochesListarDelDia,
-      data: {'idTarRuti': idTarRuti, 'idBitTarea': idBitTarea},
+      data: const {},
       fromJson: (json) => CocheDelDiaModel.fromJson(json),
     );
     return modelos.map((e) => e.toEntity()).toList();
   }
 
   @override
-  Future<bool> marcarLlegada({
+  Future<void> marcarLlegada({
     required int idCo,
     required int llego,
     String? obs,
   }) async {
-    final resultado = await postAndReturnId(
+    await postAndReturnId(
       endpoint: AppConstants.tarCochesMarcarLlegada,
       data: {'idCo': idCo, 'llego': llego, 'obs': obs},
-      errorMessage: 'No se pudo registrar la llegada del coche.',
+      errorMessage: 'No se pudo registrar la llegada del auto.',
     );
-    return resultado == BigInt.one;
   }
 }

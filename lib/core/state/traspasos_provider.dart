@@ -1,5 +1,6 @@
 import 'package:bosque_flutter/core/constants/app_constants.dart';
 import 'package:bosque_flutter/core/network/base_api_repository.dart';
+import 'package:bosque_flutter/core/ui/mensaje_error_tareas.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// Traspaso de tareas rutinarias al cambiar el cargo de alguien. El generador
@@ -127,9 +128,11 @@ class TraspasosNotifier extends StateNotifier<TraspasosState> {
       final filas = await _repo.pendientes(
         desde: DateTime.now().subtract(Duration(days: dias)),
       );
+      if (!mounted) return;
       state = state.copyWith(cargando: false, items: _agrupar(filas));
     } catch (e) {
-      state = state.copyWith(cargando: false, mensajeError: e.toString());
+      if (!mounted) return;
+      state = state.copyWith(cargando: false, mensajeError: mensajeError(e));
     }
   }
 
@@ -195,11 +198,18 @@ class TraspasosNotifier extends StateNotifier<TraspasosState> {
         idTarRuti: idTarRuti,
         codCargoDestino: codCargoDestino,
       );
+      if (!mounted) return true;
       await cargar();
+      if (!mounted) return true;
       state = state.copyWith(limpiarCopiando: true);
       return true;
     } catch (e) {
-      state = state.copyWith(limpiarCopiando: true, mensajeError: e.toString());
+      // También el 409 (volvió a cambiar de cargo): su mensaje tal cual.
+      if (!mounted) return false;
+      state = state.copyWith(
+        limpiarCopiando: true,
+        mensajeError: mensajeError(e),
+      );
       return false;
     }
   }

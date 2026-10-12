@@ -1,3 +1,4 @@
+import 'package:bosque_flutter/core/ui/mensaje_error_tareas.dart';
 import 'package:bosque_flutter/data/repositories/caja_fuerte_impl.dart';
 import 'package:bosque_flutter/domain/entities/cierre_operaciones_entity.dart';
 import 'package:bosque_flutter/domain/entities/llegada_caja_fuerte_entity.dart';
@@ -71,28 +72,20 @@ class CajaFuerteNotifier extends StateNotifier<CajaFuerteState> {
     );
   }
 
-  Future<bool> registrar({
-    required int idTarRuti,
-    required int idBitTarea,
-  }) async {
+  Future<bool> registrar() async {
     // Se mandan todas las filas, tal como están. Qué fila está vacía (se
     // ignora), cuál está incompleta (rechaza) y que haya al menos una lo
     // decide p_abm_tac_Llegada 'R' (archivo SQL 79, errores 10, 11, 12 y 14):
     // las reglas de registro van en SQL, para cambiarlas sin recompilar.
     state = state.copyWith(guardando: true);
     try {
-      final cantidad = await _repo.registrar(
-        idTarRuti: idTarRuti,
-        idBitTarea: idBitTarea,
-        llegadas: state.filas,
-      );
+      final cantidad = await _repo.registrar(llegadas: state.filas);
+      if (!mounted) return true;
       state = state.copyWith(guardando: false, filasGuardadas: cantidad);
       return true;
     } catch (e) {
-      state = state.copyWith(
-        guardando: false,
-        mensajeError: e.toString().replaceFirst('Exception: ', ''),
-      );
+      if (!mounted) return false;
+      state = state.copyWith(guardando: false, mensajeError: mensajeError(e));
       return false;
     }
   }
@@ -100,7 +93,7 @@ class CajaFuerteNotifier extends StateNotifier<CajaFuerteState> {
 
 final _cajaFuerteRepoProvider = Provider((ref) => CajaFuerteImpl());
 
-/// Lo que ya quedó registrado hoy, por ocurrencia.
+/// Lo que ya quedó registrado hoy en tu sucursal.
 ///
 /// Va como `FutureProvider` aparte y no dentro de [CajaFuerteState] porque son
 /// dos cosas distintas: el estado tiene el formulario que se está llenando
@@ -109,10 +102,9 @@ final _cajaFuerteRepoProvider = Provider((ref) => CajaFuerteImpl());
 /// escribe una letra en el formulario.
 ///
 /// Se refresca con `ref.invalidate` después de guardar.
-final llegadasCajaFuerteDeHoyProvider = FutureProvider.autoDispose
-    .family<List<LlegadaDelCierre>, int>(
-      (ref, idBitTarea) =>
-          ref.read(_cajaFuerteRepoProvider).registradasHoy(idBitTarea),
+final llegadasCajaFuerteDeHoyProvider =
+    FutureProvider.autoDispose<List<LlegadaDelCierre>>(
+      (ref) => ref.read(_cajaFuerteRepoProvider).registradasHoy(),
     );
 
 final cajaFuerteProvider =

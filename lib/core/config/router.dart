@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:bosque_flutter/core/constants/app_constants.dart';
-import 'package:bosque_flutter/core/constants/tareas_a_requerimiento.dart';
 import 'package:bosque_flutter/core/network/dio_client.dart';
 import 'package:bosque_flutter/core/state/button_permissions_provider.dart';
 import 'package:bosque_flutter/core/state/rol_sabados_provider.dart';
@@ -14,7 +13,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:bosque_flutter/presentation/screens/screens.dart';
-import 'package:bosque_flutter/presentation/widgets/tareas-rutinarias/apertura_flujo.dart';
 
 // Controlador global para forzar redirecciones
 final GlobalKey<NavigatorState> _rootNavigatorKey = GlobalKey<NavigatorState>();
@@ -217,6 +215,12 @@ final routerProvider = Provider<GoRouter>((ref) {
               builder:
                   (context, state) =>
                       const EstructuraOrganizacionalEmpresaScreen(),
+            ),
+            // Cargos por revisar (archivo SQL 82): quién no hace sus tareas.
+            GoRoute(
+              path: '/dashboard/trhEstructuraOrganizacional/cargosPorRevisar',
+              name: 'trh_CargosPorRevisar',
+              builder: (context, state) => const CargosPorRevisarScreen(),
             ),
 
             GoRoute(
@@ -563,12 +567,10 @@ final routerProvider = Provider<GoRouter>((ref) {
                     const DependientesJefeScreen(),
                   ),
             ),
-            // Coches (41) y Caja Fuerte (40) — desde el archivo SQL 40/41 son
-            // submódulos con fila propia en tb_vista bajo la 87, así que se
-            // llega por el sidebar y NO desde "Mis tareas rutinarias" (el Job
-            // dejó de generarlas). Cuando se entra por el menú no viene ningún
-            // `extra`, así que AperturaFlujo pide al backend la ocurrencia del
-            // día antes de construir la pantalla.
+            // Revisar Autos (41), Caja Fuerte (40) y Caja Chica (42) son
+            // submódulos de la 87 y se llega por el sidebar. Desde el archivo
+            // SQL 96 no tienen ocurrencia: la pantalla abre directo y el backend
+            // saca la sucursal del cargo vigente de quien inició sesión.
             GoRoute(
               path: '/dashboard/tacTareas/Coches',
               name: 'tacTareasCoches',
@@ -579,19 +581,7 @@ final routerProvider = Provider<GoRouter>((ref) {
                 return _pantallaConTitulo(
                   context,
                   'Bosque - $nombreTarea',
-                  AperturaFlujo(
-                    idTarRuti: TareasARequerimiento.coches,
-                    nombreFlujo: nombreTarea,
-                    idBitTareaExistente: extra['idBitTarea'] as int?,
-                    construir:
-                        (idBitTarea) => CochesScreen(
-                          idTarRuti:
-                              (extra['idTarRuti'] as int?) ??
-                              TareasARequerimiento.coches,
-                          idBitTarea: idBitTarea,
-                          nombreTarea: nombreTarea,
-                        ),
-                  ),
+                  CochesScreen(nombreTarea: nombreTarea),
                 );
               },
             ),
@@ -605,19 +595,7 @@ final routerProvider = Provider<GoRouter>((ref) {
                 return _pantallaConTitulo(
                   context,
                   'Bosque - $nombreTarea',
-                  AperturaFlujo(
-                    idTarRuti: TareasARequerimiento.cajaFuerte,
-                    nombreFlujo: nombreTarea,
-                    idBitTareaExistente: extra['idBitTarea'] as int?,
-                    construir:
-                        (idBitTarea) => CajaFuerteScreen(
-                          idTarRuti:
-                              (extra['idTarRuti'] as int?) ??
-                              TareasARequerimiento.cajaFuerte,
-                          idBitTarea: idBitTarea,
-                          nombreTarea: nombreTarea,
-                        ),
-                  ),
+                  CajaFuerteScreen(nombreTarea: nombreTarea),
                 );
               },
             ),
@@ -649,16 +627,7 @@ final routerProvider = Provider<GoRouter>((ref) {
                 return _pantallaConTitulo(
                   context,
                   'Bosque - $nombreTarea',
-                  AperturaFlujo(
-                    idTarRuti: TareasARequerimiento.cajaChica,
-                    nombreFlujo: nombreTarea,
-                    idBitTareaExistente: extra['idBitTarea'] as int?,
-                    construir:
-                        (idBitTarea) => CajaChicaScreen(
-                          idBitTarea: idBitTarea,
-                          nombreTarea: nombreTarea,
-                        ),
-                  ),
+                  CajaChicaScreen(nombreTarea: nombreTarea),
                 );
               },
             ),
@@ -666,11 +635,9 @@ final routerProvider = Provider<GoRouter>((ref) {
             // su pantalla es la revisión del día y vive en la ruta de
             // "Verificar Cierre de Operaciones", más abajo.
             // Tarea 295 - "Verificar traspaso Caja AXA contra movimiento de
-            // caja" (idATR 12). NO usa AperturaFlujo, a diferencia de los
-            // submodulos de la vista 87: esta tarea es automatica, la genera
-            // el Job todos los dias, asi que la ocurrencia YA existe y su
-            // idBitTarea llega desde la tarjeta de "Mis tareas rutinarias".
-            // Abrir una a demanda duplicaria la del dia.
+            // caja" (idATR 12). Esta tarea es automatica, la genera el Job
+            // todos los dias, asi que la ocurrencia YA existe y su idBitTarea
+            // llega desde la tarjeta de "Mis tareas rutinarias".
             GoRoute(
               path: '/dashboard/tacTareas/TraspasoCajaAxa',
               name: 'tacTareasTraspasoCajaAxa',
@@ -817,17 +784,49 @@ final routerProvider = Provider<GoRouter>((ref) {
                     ),
                   );
                 }
+                // La 39 la hacen varios: cada uno firma sus secciones
+                // (archivo SQL 81). Las de idATR 3 siguen con la revisión
+                // completa de siempre.
                 return _pantallaConTitulo(
                   context,
                   'Bosque - $nombreTarea',
-                  CierreOperacionesScreen(
-                    idBitTarea: idBitTarea,
-                    nombreTarea: nombreTarea,
-                    modo: modo,
-                    fecha: extra['fecha'] as DateTime?,
-                  ),
+                  modo == ModoCierre.verificacion
+                      ? VerificarCierreScreen(
+                        idBitTarea: idBitTarea,
+                        nombreTarea: nombreTarea,
+                      )
+                      : CierreOperacionesScreen(
+                        idBitTarea: idBitTarea,
+                        nombreTarea: nombreTarea,
+                        modo: modo,
+                        fecha: extra['fecha'] as DateTime?,
+                      ),
                 );
               },
+            ),
+            // Lo que el equipo de un jefe no hace (archivo SQL 82). No es del
+            // menú: se abre desde "Mi equipo".
+            GoRoute(
+              path: '/dashboard/tacTareas/EquipoSinHacer',
+              name: 'tacTareasEquipoSinHacer',
+              builder:
+                  (context, state) => _pantallaConTitulo(
+                    context,
+                    'Bosque - Tareas que tu equipo no hace',
+                    const CargosPorRevisarScreen(deMiEquipo: true),
+                  ),
+            ),
+            // El tablero de Verificar Cierre. No es del menú: se abre desde la
+            // tarea 39 y muestra solo las celdas de quien mira.
+            GoRoute(
+              path: '/dashboard/tacTareas/ControlCierre',
+              name: 'tacTareasControlCierre',
+              builder:
+                  (context, state) => _pantallaConTitulo(
+                    context,
+                    'Bosque - Control del cierre',
+                    const ControlCierreScreen(),
+                  ),
             ),
           ],
         ),
@@ -930,6 +929,12 @@ final routerProvider = Provider<GoRouter>((ref) {
           redirect:
               (context, state) =>
                   '/dashboard/trhEstructuraOrganizacional/estructuraOrganizacional',
+        ),
+        GoRoute(
+          path: '/trhEstructuraOrganizacional/cargosPorRevisar',
+          redirect:
+              (context, state) =>
+                  '/dashboard/trhEstructuraOrganizacional/cargosPorRevisar',
         ),
 
         GoRoute(

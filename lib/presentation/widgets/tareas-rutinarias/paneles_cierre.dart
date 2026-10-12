@@ -1,13 +1,14 @@
 // Destino final: lib/presentation/widgets/tareas-rutinarias/paneles_cierre.dart
 import 'package:bosque_flutter/core/constants/tareas_breakpoints.dart';
+import 'package:bosque_flutter/core/ui/mensaje_error_tareas.dart';
 import 'package:bosque_flutter/core/state/cierre_operaciones_provider.dart';
 import 'package:bosque_flutter/core/theme/tareas_colors.dart';
-import 'package:bosque_flutter/core/ui/mensajes_usuario.dart';
 import 'package:bosque_flutter/core/ui/tokens_bosque.dart';
 import 'package:bosque_flutter/core/utils/formatear_fecha.dart';
 import 'package:bosque_flutter/core/utils/formato_moneda.dart';
 import 'package:bosque_flutter/domain/entities/bitacora_tareas_entity.dart';
 import 'package:bosque_flutter/domain/entities/cierre_operaciones_entity.dart';
+import 'package:bosque_flutter/domain/entities/firma_cierre_entity.dart';
 import 'package:bosque_flutter/domain/entities/traspaso_mov_caja_entity.dart';
 import 'package:bosque_flutter/presentation/widgets/tareas-rutinarias/estado_verificacion_traspaso.dart';
 import 'package:bosque_flutter/presentation/widgets/tareas-rutinarias/franja_acento.dart';
@@ -69,6 +70,10 @@ class PanelCierreCard extends StatelessWidget {
   final List<Widget> acciones;
   final WidgetBuilder contenido;
 
+  /// Debajo del contenido, también cuando la sección vino vacía: las firmas de
+  /// Verificar Cierre (archivo SQL 81).
+  final Widget? pie;
+
   const PanelCierreCard({
     super.key,
     required this.titulo,
@@ -84,6 +89,7 @@ class PanelCierreCard extends StatelessWidget {
     this.onRevisada,
     this.acciones = const [],
     required this.contenido,
+    this.pie,
   });
 
   @override
@@ -143,6 +149,7 @@ class PanelCierreCard extends StatelessWidget {
                 ),
               const SizedBox(height: Esp.m),
               cuerpo,
+              if (pie != null) ...[const SizedBox(height: Esp.m), pie!],
             ],
           ),
         ),
@@ -301,7 +308,7 @@ class _ErrorDePanel extends StatelessWidget {
               ],
             ),
             const SizedBox(height: Esp.xs),
-            Text(textoParaUsuario(error), style: context.apagado()),
+            Text(mensajeError(error), style: context.apagado()),
             Align(
               alignment: Alignment.centerRight,
               child: TextButton.icon(
@@ -342,6 +349,18 @@ class ContadorPanel extends StatelessWidget {
   );
 }
 
+/// El avance de los arqueos: revisados de los registrados. Si nadie registró
+/// ninguno, cuántos quedaron sin hacer (archivo SQL 91).
+Widget? contadorArqueos(List<ArqueoDelCierre> filas) {
+  final hechos = filas.where((a) => a.hecho).length;
+  if (hechos > 0) {
+    final revisados = filas.where((a) => a.revisado).length;
+    return ContadorPanel.avance(revisados, hechos, 'revisados');
+  }
+  if (filas.isEmpty) return null;
+  return ContadorPanel(texto: '${filas.length} sin hacer', completo: false);
+}
+
 /// Una tabla de sección: encabezado de columnas y filas separadas.
 class TablaCierre extends StatelessWidget {
   final List<AnchoCol> anchos;
@@ -380,6 +399,22 @@ class TablaCierre extends StatelessWidget {
 
 String _junto(List<String?> partes) =>
     partes.whereType<String>().where((p) => p.trim().isNotEmpty).join(' · ');
+
+/// La marca de una fila de otro día (archivo SQL 92): se ve, no se cambia.
+Widget _marcaDeConsulta(
+  BuildContext context,
+  bool marcada,
+  String si,
+  String no,
+) =>
+    marcada
+        ? PildoraTareas(
+          texto: si,
+          icono: Icons.check,
+          fondo: TareasColors.realizado(context),
+          color: TareasColors.realizadoTexto(context),
+        )
+        : Text(no, style: context.apagado());
 
 // ─────────────────────────────────────────────────────────────────────────────
 // ARQUEOS DE CAJA
@@ -443,6 +478,9 @@ class ContenidoArqueos extends StatelessWidget {
   final void Function(int idAC)? onQuitarRevisado;
   final void Function(int idAC) onPdf;
 
+  /// Otro día, solo para consultar: se ve el visto bueno, sin botones.
+  final bool soloLectura;
+
   const ContenidoArqueos({
     super.key,
     required this.filas,
@@ -450,9 +488,36 @@ class ContenidoArqueos extends StatelessWidget {
     required this.onRevisar,
     this.onQuitarRevisado,
     required this.onPdf,
+    this.soloLectura = false,
   });
 
+  /// Una tarea de arqueo que nadie registró: cómo quedó, sin botón.
+  Widget _sinHacer(BuildContext context, ArqueoDelCierre a) =>
+      switch (a.fueRealizado) {
+        0 => PildoraTareas(
+          texto: 'No se hizo',
+          icono: Icons.close,
+          fondo: TareasColors.vencido(context),
+          color: TareasColors.vencidoTexto(context),
+        ),
+        14 => PildoraTareas(
+          texto: 'No aplica',
+          fondo: TareasColors.noAplica(context),
+          color: TareasColors.noAplicaTexto(context),
+        ),
+        _ => PildoraTareas(
+          texto: 'Sin hacer',
+          icono: Icons.schedule,
+          fondo: TareasColors.pendiente(context),
+          color: TareasColors.pendienteTexto(context),
+        ),
+      };
+
   Widget _estado(BuildContext context, ArqueoDelCierre a) {
+    if (!a.hecho) return _sinHacer(context, a);
+    if (soloLectura) {
+      return _marcaDeConsulta(context, a.revisado, 'Revisado', 'Sin revisar');
+    }
     if (guardando(a.idAC)) {
       return const SizedBox(
         width: 18,
@@ -502,6 +567,11 @@ class ContenidoArqueos extends StatelessWidget {
         );
       }
       final numero = context.numero();
+      final guion = Text(
+        '—',
+        textAlign: TextAlign.right,
+        style: context.apagado(),
+      );
       return TablaCierre(
         anchos: _anchosArqueos,
         aLaDerecha: const {3, 4, 5},
@@ -518,51 +588,145 @@ class ContenidoArqueos extends StatelessWidget {
         ],
         filas: [
           for (final a in filas)
-            FilaTabla(
-              anchos: _anchosArqueos,
-              celdas: [
-                Text(
-                  a.encargado,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(fontWeight: Peso.titulo),
-                ),
-                Text(
-                  a.sucursal ?? '—',
-                  overflow: TextOverflow.ellipsis,
-                  style: context.apagado(),
-                ),
-                Text(a.hora ?? '—', style: numero),
-                Text(
-                  FormatoMoneda.bs(a.saldoSap),
-                  textAlign: TextAlign.right,
-                  style: numero,
-                ),
-                Text(
-                  FormatoMoneda.bs(a.total),
-                  textAlign: TextAlign.right,
-                  style: numero,
-                ),
-                _diferencia(context, a),
-                Text(
-                  a.obs ?? '',
-                  overflow: TextOverflow.ellipsis,
-                  style: context.apagado(),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.picture_as_pdf_outlined, size: 18),
-                  tooltip: 'Ver el PDF del arqueo',
-                  visualDensity: VisualDensity.compact,
-                  onPressed: () => onPdf(a.idAC),
-                ),
-                Align(alignment: Alignment.centerLeft, child: _estado(context, a)),
-              ],
-            ),
+            if (!a.hecho)
+              FilaTabla(
+                anchos: _anchosArqueos,
+                celdas: [
+                  _encargado(context, a),
+                  Text(
+                    a.sucursal ?? '—',
+                    overflow: TextOverflow.ellipsis,
+                    style: context.apagado(),
+                  ),
+                  Text('—', style: context.apagado()),
+                  guion,
+                  guion,
+                  guion,
+                  Text(
+                    a.obs ?? 'No registró el arqueo.',
+                    overflow: TextOverflow.ellipsis,
+                    maxLines: 2,
+                    style: context.apagado(),
+                  ),
+                  const SizedBox.shrink(),
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: _sinHacer(context, a),
+                  ),
+                ],
+              )
+            else
+              FilaTabla(
+                anchos: _anchosArqueos,
+                celdas: [
+                  Text(
+                    a.encargado,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(fontWeight: Peso.titulo),
+                  ),
+                  Text(
+                    a.sucursal ?? '—',
+                    overflow: TextOverflow.ellipsis,
+                    style: context.apagado(),
+                  ),
+                  Text(a.hora ?? '—', style: numero),
+                  Text(
+                    FormatoMoneda.bs(a.saldoSap),
+                    textAlign: TextAlign.right,
+                    style: numero,
+                  ),
+                  Text(
+                    FormatoMoneda.bs(a.total),
+                    textAlign: TextAlign.right,
+                    style: numero,
+                  ),
+                  _diferencia(context, a),
+                  Text(
+                    a.obs ?? '',
+                    overflow: TextOverflow.ellipsis,
+                    style: context.apagado(),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.picture_as_pdf_outlined, size: 18),
+                    tooltip: 'Ver el PDF del arqueo',
+                    visualDensity: VisualDensity.compact,
+                    onPressed: () => onPdf(a.idAC),
+                  ),
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: _estado(context, a),
+                  ),
+                ],
+              ),
         ],
       );
     },
   );
 
-  Widget _tarjeta(BuildContext context, ArqueoDelCierre a) => Padding(
+  /// Quién debía hacerlo y su cargo.
+  Widget _encargado(BuildContext context, ArqueoDelCierre a) => Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Text(
+        a.encargado,
+        overflow: TextOverflow.ellipsis,
+        style: const TextStyle(fontWeight: Peso.titulo),
+      ),
+      if (a.cargo != null)
+        Text(
+          a.cargo!,
+          overflow: TextOverflow.ellipsis,
+          style: context.apagado(),
+        ),
+    ],
+  );
+
+  Widget _tarjetaSinHacer(BuildContext context, ArqueoDelCierre a) => Padding(
+    padding: const EdgeInsets.only(bottom: Esp.s),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    a.encargado,
+                    style: const TextStyle(fontWeight: Peso.titulo),
+                  ),
+                  Text(
+                    _junto([a.sucursal, a.cargo, a.tarea]),
+                    style: context.apagado(),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: Esp.s),
+            _sinHacer(context, a),
+          ],
+        ),
+        if (a.obs != null)
+          Padding(
+            padding: const EdgeInsets.only(top: 2),
+            child: Text(
+              'Obs.: ${a.obs}',
+              style: context.apagado()?.copyWith(fontStyle: FontStyle.italic),
+            ),
+          ),
+        const Divider(height: Esp.m),
+      ],
+    ),
+  );
+
+  Widget _tarjeta(BuildContext context, ArqueoDelCierre a) {
+    if (!a.hecho) return _tarjetaSinHacer(context, a);
+    return _tarjetaHecho(context, a);
+  }
+
+  Widget _tarjetaHecho(BuildContext context, ArqueoDelCierre a) => Padding(
     padding: const EdgeInsets.only(bottom: Esp.s),
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -598,9 +762,14 @@ class ContenidoArqueos extends StatelessWidget {
               'Saldo SAP: ${FormatoMoneda.bs(a.saldoSap)}',
               style: context.numero(),
             ),
-            Text('Total: ${FormatoMoneda.bs(a.total)}', style: context.numero()),
             Text(
-              a.cuadra ? 'Cuadra' : 'Diferencia: ${FormatoMoneda.bs(a.diferencia)}',
+              'Total: ${FormatoMoneda.bs(a.total)}',
+              style: context.numero(),
+            ),
+            Text(
+              a.cuadra
+                  ? 'Cuadra'
+                  : 'Diferencia: ${FormatoMoneda.bs(a.diferencia)}',
               style: context.numero(
                 fuerte: true,
                 color:
@@ -663,7 +832,8 @@ class ContenidoTraspasos extends StatelessWidget {
 
   /// El nombre del sistema, con la marca de "SAP ya no lo devuelve".
   Widget _sistema(BuildContext context, TraspasoMovCajaEntity t) {
-    if (!t.soloEnBosque) return Text(t.bd ?? '—', overflow: TextOverflow.ellipsis);
+    if (!t.soloEnBosque)
+      return Text(t.bd ?? '—', overflow: TextOverflow.ellipsis);
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -844,17 +1014,30 @@ class ContenidoCajaFuerte extends StatelessWidget {
   /// Quitar la verificación. Sin esto, la píldora "Verificada" queda sola.
   final void Function(int idRp)? onQuitarVerificada;
 
+  /// Otro día, solo para consultar: se ve la verificación, sin botones.
+  final bool soloLectura;
+
   const ContenidoCajaFuerte({
     super.key,
     required this.filas,
     required this.guardando,
     required this.onVerificar,
     this.onQuitarVerificada,
+    this.soloLectura = false,
   });
 
-  String _hora(DateTime? d) => d == null ? '—' : FormatearFecha.formatearHora(d);
+  String _hora(DateTime? d) =>
+      d == null ? '—' : FormatearFecha.formatearHora(d);
 
   Widget _estado(BuildContext context, LlegadaDelCierre l) {
+    if (soloLectura) {
+      return _marcaDeConsulta(
+        context,
+        l.verificada,
+        'Verificada',
+        'Sin verificar',
+      );
+    }
     if (guardando(l.idRp)) {
       return const SizedBox(
         width: 18,
@@ -935,7 +1118,10 @@ class ContenidoCajaFuerte extends StatelessWidget {
                 ),
                 Text(_hora(l.hora), style: numero),
                 Text(l.tipo ?? '—', overflow: TextOverflow.ellipsis),
-                Align(alignment: Alignment.centerLeft, child: _estado(context, l)),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: _estado(context, l),
+                ),
               ],
             ),
         ],
@@ -1231,7 +1417,9 @@ class _ContenidoTareasState extends State<ContenidoTareas> {
                         ),
                         Align(
                           alignment: Alignment.centerLeft,
-                          child: PildoraCumplimiento(cumplimiento: t.cumplimiento),
+                          child: PildoraCumplimiento(
+                            cumplimiento: t.cumplimiento,
+                          ),
                         ),
                         Text(
                           t.nombreRespondio ?? '—',
@@ -1248,7 +1436,202 @@ class _ContenidoTareasState extends State<ContenidoTareas> {
     );
   }
 
-  Widget _tarjeta(BuildContext context, BitacoraCumplimientoEntity t) => Padding(
+  Widget _tarjeta(BuildContext context, BitacoraCumplimientoEntity t) =>
+      Padding(
+        padding: const EdgeInsets.only(bottom: Esp.s),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        t.nombreTareaRutinaria,
+                        style: const TextStyle(fontWeight: Peso.titulo),
+                      ),
+                      Text(
+                        _junto([
+                          t.nombreEmpleado,
+                          t.descripcionCargo,
+                          t.nombreSucursal,
+                        ]),
+                        style: context.apagado(),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: Esp.s),
+                PildoraCumplimiento(cumplimiento: t.cumplimiento),
+              ],
+            ),
+            if ((t.obs ?? '').trim().isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.only(top: 2),
+                child: Text(
+                  'Obs.: ${t.obs!.trim()}',
+                  style: context.apagado()?.copyWith(
+                    fontStyle: FontStyle.italic,
+                  ),
+                ),
+              ),
+            const Divider(height: Esp.m),
+          ],
+        ),
+      );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SECCIONES CON FUENTE (archivo SQL 86)
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// Las filas de una sección nueva, salidas de la consulta de otro módulo:
+/// título, detalle, monto, si es un hallazgo y su marca. Las columnas que la
+/// fuente no trae no se muestran.
+class ContenidoFilasSeccion extends StatelessWidget {
+  final List<FilaSeccion> filas;
+
+  /// Si cada fila se marca; si no, solo se miran y se firma la sección.
+  final bool marcaPorFila;
+  final bool Function(FilaSeccion fila) guardando;
+  final void Function(FilaSeccion fila) onRevisar;
+  final void Function(FilaSeccion fila) onQuitarRevisado;
+
+  /// Otro día, solo para consultar: se ve la marca, sin botones.
+  final bool soloLectura;
+
+  const ContenidoFilasSeccion({
+    super.key,
+    required this.filas,
+    required this.marcaPorFila,
+    required this.guardando,
+    required this.onRevisar,
+    required this.onQuitarRevisado,
+    this.soloLectura = false,
+  });
+
+  bool get _conSucursal => filas.any((f) => f.nombreSucursal != null);
+  bool get _conMonto => filas.any((f) => f.monto != null);
+
+  Widget _estado(BuildContext context, FilaSeccion f) {
+    if (soloLectura) {
+      return _marcaDeConsulta(context, f.revisada, 'Revisado', 'Sin revisar');
+    }
+    if (guardando(f)) {
+      return const SizedBox(
+        width: 18,
+        height: 18,
+        child: CircularProgressIndicator(strokeWidth: 2),
+      );
+    }
+    if (f.revisada) {
+      return _ConDeshacer(
+        tooltip: 'Quitar la marca de revisado',
+        onDeshacer: () => onQuitarRevisado(f),
+        pildora: PildoraTareas(
+          texto: 'Revisado',
+          icono: Icons.check,
+          tooltip: f.revisadaPor == null ? null : 'Lo revisó ${f.revisadaPor}',
+          fondo: TareasColors.realizado(context),
+          color: TareasColors.realizadoTexto(context),
+        ),
+      );
+    }
+    return FilledButton.tonal(
+      onPressed: () => onRevisar(f),
+      style: const ButtonStyle(visualDensity: VisualDensity.compact),
+      child: const Text('Marcar revisado'),
+    );
+  }
+
+  Widget _hallazgo(BuildContext context, FilaSeccion f) =>
+      f.hallazgo
+          ? Align(
+            alignment: Alignment.centerLeft,
+            child: _EtiquetaHallazgo(texto: f.motivo ?? 'Hallazgo'),
+          )
+          : Text('—', style: context.apagado());
+
+  Widget _titulo(BuildContext context, FilaSeccion f) => Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Text(
+        f.titulo,
+        overflow: TextOverflow.ellipsis,
+        maxLines: 2,
+        style: const TextStyle(fontWeight: Peso.titulo),
+      ),
+      if (f.detalle != null)
+        Text(
+          f.detalle!,
+          overflow: TextOverflow.ellipsis,
+          maxLines: 2,
+          style: context.apagado(),
+        ),
+    ],
+  );
+
+  @override
+  Widget build(BuildContext context) => LayoutBuilder(
+    builder: (context, cajon) {
+      if (cajon.maxWidth < _anchoDeTabla) {
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [for (final f in filas) _tarjeta(context, f)],
+        );
+      }
+      final anchos = <AnchoCol>[
+        const AnchoCol.flexible(3),
+        if (_conSucursal) const AnchoCol.fijo(140),
+        if (_conMonto) const AnchoCol.fijo(120),
+        const AnchoCol.flexible(2),
+        if (marcaPorFila) const AnchoCol.fijo(190),
+      ];
+      return TablaCierre(
+        anchos: anchos,
+        aLaDerecha: {if (_conMonto) _conSucursal ? 2 : 1},
+        titulos: [
+          'Qué',
+          if (_conSucursal) 'Sucursal',
+          if (_conMonto) 'Monto',
+          'Hallazgo',
+          if (marcaPorFila) '¿Revisado?',
+        ],
+        filas: [
+          for (final f in filas)
+            FilaTabla(
+              anchos: anchos,
+              celdas: [
+                _titulo(context, f),
+                if (_conSucursal)
+                  Text(
+                    f.nombreSucursal ?? '—',
+                    overflow: TextOverflow.ellipsis,
+                    style: context.apagado(),
+                  ),
+                if (_conMonto)
+                  Text(
+                    f.monto == null ? '—' : FormatoMoneda.monto.format(f.monto),
+                    textAlign: TextAlign.right,
+                    style: context.numero(),
+                  ),
+                _hallazgo(context, f),
+                if (marcaPorFila)
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: _estado(context, f),
+                  ),
+              ],
+            ),
+        ],
+      );
+    },
+  );
+
+  Widget _tarjeta(BuildContext context, FilaSeccion f) => Padding(
     padding: const EdgeInsets.only(bottom: Esp.s),
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1256,39 +1639,76 @@ class _ContenidoTareasState extends State<ContenidoTareas> {
         Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    t.nombreTareaRutinaria,
-                    style: const TextStyle(fontWeight: Peso.titulo),
-                  ),
-                  Text(
-                    _junto([
-                      t.nombreEmpleado,
-                      t.descripcionCargo,
-                      t.nombreSucursal,
-                    ]),
-                    style: context.apagado(),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(width: Esp.s),
-            PildoraCumplimiento(cumplimiento: t.cumplimiento),
+            Expanded(child: _titulo(context, f)),
+            if (marcaPorFila) ...[
+              const SizedBox(width: Esp.s),
+              _estado(context, f),
+            ],
           ],
         ),
-        if ((t.obs ?? '').trim().isNotEmpty)
-          Padding(
-            padding: const EdgeInsets.only(top: 2),
-            child: Text(
-              'Obs.: ${t.obs!.trim()}',
-              style: context.apagado()?.copyWith(fontStyle: FontStyle.italic),
-            ),
+        if (f.nombreSucursal != null || f.monto != null || f.hallazgo) ...[
+          const SizedBox(height: Esp.xs),
+          Wrap(
+            spacing: Esp.m,
+            runSpacing: Esp.xs,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            children: [
+              if (f.nombreSucursal != null)
+                Text(f.nombreSucursal!, style: context.apagado()),
+              if (f.monto != null)
+                Text(
+                  FormatoMoneda.monto.format(f.monto),
+                  style: context.numero(),
+                ),
+              if (f.hallazgo) _hallazgo(context, f),
+            ],
           ),
-        const Divider(height: Esp.m),
+        ],
       ],
     ),
   );
+}
+
+/// El motivo de un hallazgo, entero: lo escribe la fuente y puede ser largo,
+/// así que salta de línea en vez de salirse de su columna.
+class _EtiquetaHallazgo extends StatelessWidget {
+  final String texto;
+
+  const _EtiquetaHallazgo({required this.texto});
+
+  @override
+  Widget build(BuildContext context) {
+    final color = TareasColors.pendienteTexto(context);
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: TareasColors.pendiente(context),
+        borderRadius: BorderRadius.circular(Esquina.chica),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: Esp.s, vertical: 3),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.only(top: 1),
+              child: Icon(Icons.warning_amber_rounded, size: 14, color: color),
+            ),
+            const SizedBox(width: Esp.xs),
+            Flexible(
+              child: Text(
+                texto,
+                maxLines: 3,
+                overflow: TextOverflow.ellipsis,
+                style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                  color: color,
+                  fontWeight: Peso.titulo,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }

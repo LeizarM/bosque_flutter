@@ -20,6 +20,7 @@ import 'package:bosque_flutter/core/theme/tareas_tema.dart';
 import 'package:bosque_flutter/core/ui/tokens_bosque.dart';
 import 'package:bosque_flutter/presentation/widgets/tareas-rutinarias/franja_acento.dart';
 import 'package:bosque_flutter/presentation/widgets/tareas-rutinarias/pagina_tareas.dart';
+import 'package:bosque_flutter/presentation/screens/estructura-organizacional/responsables_cierre_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -225,6 +226,10 @@ class TareasRutinariasPorCargoScreen extends ConsumerWidget {
                               () => _abrirEditarTarea(context, ref, filas[i]),
                           onCopiar:
                               () => _abrirCopiarACargos(context, ref, filas[i]),
+                          onResponsables:
+                              _esCierre(filas[i])
+                                  ? () => _abrirResponsables(context, filas[i])
+                                  : null,
                         ),
                   ),
                 ),
@@ -316,24 +321,27 @@ class TareasRutinariasPorCargoScreen extends ConsumerWidget {
                         _abrirEditarTarea(context, ref, fila);
                       } else if (opcion == 'copiar') {
                         _abrirCopiarACargos(context, ref, fila);
+                      } else if (opcion == 'responsables') {
+                        _abrirResponsables(context, fila);
                       }
                     },
                     itemBuilder:
-                        (context) => const [
-                          PopupMenuItem(
+                        (context) => [
+                          const PopupMenuItem(
                             value: 'editar',
                             child: ListTile(
                               leading: Icon(Icons.edit_outlined),
                               title: Text('Editar'),
                             ),
                           ),
-                          PopupMenuItem(
+                          const PopupMenuItem(
                             value: 'copiar',
                             child: ListTile(
                               leading: Icon(Icons.copy_all_outlined),
                               title: Text('Copiar a otros cargos'),
                             ),
                           ),
+                          if (_esCierre(fila)) _itemResponsables,
                         ],
                   ),
                 ),
@@ -513,13 +521,42 @@ class TareasRutinariasPorCargoScreen extends ConsumerWidget {
             idTarRuti: idTarRuti,
             nombreTarea: (fila['descripcion'] as String?) ?? 'esta tarea',
             codEmpresa: cargo.codEmpresa,
-            onCopiado:
-                (destinos) => ref
-                    .read(
-                      tareasRutinariasPorCargoProvider(cargo.codCargo).notifier,
-                    )
-                    .copiarACargos(idTarRuti, destinos),
+            onCopiado: (destinos) async {
+              final ok = await ref
+                  .read(
+                    tareasRutinariasPorCargoProvider(cargo.codCargo).notifier,
+                  )
+                  .copiarACargos(idTarRuti, destinos);
+              // Sin secciones en la matriz, la 39 les llega en "No aplica".
+              if (ok && _esCierre(fila) && context.mounted) {
+                mostrarAviso(
+                  context,
+                  'Tarea copiada. Asígnales sus secciones en "Responsables del '
+                  'cierre": sin ellas la reciben en "No aplica".',
+                  tono: TonoAviso.aviso,
+                );
+              }
+              return ok;
+            },
           ),
+    );
+  }
+
+  /// Verificar Cierre: quién revisa qué lo decide la matriz, no la asignación.
+  static bool _esCierre(Map<String, dynamic> fila) =>
+      (fila['idATR'] as num?)?.toInt() == 5;
+
+  void _abrirResponsables(BuildContext context, Map<String, dynamic> fila) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder:
+            (_) => ResponsablesCierreScreen(
+              idTarRuti: (fila['idTarRuti'] as num).toInt(),
+              nombreTarea:
+                  (fila['descripcion'] as String?) ??
+                  'Verificar Cierre de Operaciones',
+            ),
+      ),
     );
   }
 
@@ -573,6 +610,9 @@ class _EditarTareaDialogState extends ConsumerState<_EditarTareaDialog> {
   @override
   Widget build(BuildContext context) {
     final frecuenciaState = ref.watch(frecuenciaProvider);
+    // Lo mantiene vivo mientras el diálogo exista: es autoDispose y, sin nadie
+    // que lo observe, se descartaba en pleno guardar.
+    ref.watch(tareaRutinariaProvider.select((s) => s.cargando));
     return AlertDialog(
       title: const Text('Editar tarea rutinaria'),
       content: SingleChildScrollView(
@@ -624,7 +664,7 @@ class _EditarTareaDialogState extends ConsumerState<_EditarTareaDialog> {
       ),
       actions: [
         TextButton(
-          onPressed: () => cerrarRuta(context),
+          onPressed: _guardando ? null : () => cerrarRuta(context),
           child: const Text('Cancelar'),
         ),
         FilledButton(
@@ -632,34 +672,43 @@ class _EditarTareaDialogState extends ConsumerState<_EditarTareaDialog> {
               _guardando
                   ? null
                   : () async {
+                    final idTarRuti =
+                        (widget.fila['idTarRuti'] as num).toInt();
                     setState(() => _guardando = true);
-                    final ok = await ref
-                        .read(tareaRutinariaProvider.notifier)
-                        .guardar(
-                          TareaRutinariaEntity(
-                            idTarRuti:
-                                (widget.fila['idTarRuti'] as num).toInt(),
-                            idFrec: _idFrec,
-                            idArea: (widget.fila['idArea'] as num?)?.toInt(),
-                            fechaPartida: _fechaPartida,
-                            idATR: (widget.fila['idATR'] as num?)?.toInt(),
-                            descripcion: _descripcionCtrl.text.trim(),
-                            audUsuario: 0,
-                          ),
-                        );
-                    if (ok) HapticFeedback.mediumImpact();
-                    if (context.mounted) {
-                      cerrarRuta(context);
+                    try {
+                      final ok = await ref
+                          .read(tareaRutinariaProvider.notifier)
+                          .guardar(
+                            TareaRutinariaEntity(
+                              idTarRuti: idTarRuti,
+                              idFrec: _idFrec,
+                              idArea: (widget.fila['idArea'] as num?)?.toInt(),
+                              fechaPartida: _fechaPartida,
+                              idATR: (widget.fila['idATR'] as num?)?.toInt(),
+                              descripcion: _descripcionCtrl.text.trim(),
+                              audUsuario: 0,
+                            ),
+                          );
+                      if (!context.mounted) return;
                       if (ok) {
+                        HapticFeedback.mediumImpact();
+                        // Si ya se cerró, el pop sería de otra ruta.
+                        if (ModalRoute.isCurrentOf(context) == true) {
+                          cerrarRuta(context);
+                        }
                         widget.onGuardado();
                         mostrarAviso(context, 'Tarea actualizada.');
                       } else {
+                        // El motivo del servidor; el diálogo sigue abierto.
                         mostrarAviso(
                           context,
-                          'No se pudo actualizar la tarea.',
+                          ref.read(tareaRutinariaProvider).mensajeError ??
+                              'No se pudo actualizar la tarea.',
                           tono: TonoAviso.error,
                         );
                       }
+                    } finally {
+                      if (mounted) setState(() => _guardando = false);
                     }
                   },
           child:
@@ -704,6 +753,14 @@ class _AccionesTareaRutinariaDialogState
     final state = ref.watch(accionTareaRutinariaProvider);
     final codUsuario = ref.watch(userProvider)?.codUsuario ?? 0;
     final anchoDisponible = MediaQuery.sizeOf(context).width;
+
+    ref.listen(accionTareaRutinariaProvider, (prev, next) {
+      if (next.mensajeError != null &&
+          next.mensajeError != prev?.mensajeError) {
+        HapticFeedback.lightImpact();
+        mostrarAviso(context, next.mensajeError!, tono: TonoAviso.error);
+      }
+    });
 
     return AlertDialog(
       title: const Text('Acciones de tarea rutinaria (catálogo)'),
@@ -916,12 +973,16 @@ class _FilaTablaTarea extends StatelessWidget {
   final VoidCallback onEditar;
   final VoidCallback onCopiar;
 
+  /// Solo en Verificar Cierre.
+  final VoidCallback? onResponsables;
+
   const _FilaTablaTarea({
     required this.fila,
     required this.guardando,
     required this.onToggle,
     required this.onEditar,
     required this.onCopiar,
+    this.onResponsables,
   });
 
   String _fmt(Object? v) {
@@ -975,25 +1036,38 @@ class _FilaTablaTarea extends StatelessWidget {
         ),
         PopupMenuButton<String>(
           tooltip: 'Más acciones',
-          onSelected: (o) => o == 'editar' ? onEditar() : onCopiar(),
-          itemBuilder: (context) => const [
-            PopupMenuItem(
+          onSelected: (o) => switch (o) {
+            'editar' => onEditar(),
+            'responsables' => onResponsables?.call(),
+            _ => onCopiar(),
+          },
+          itemBuilder: (context) => [
+            const PopupMenuItem(
               value: 'editar',
               child: ListTile(
                 leading: Icon(Icons.edit_outlined),
                 title: Text('Editar'),
               ),
             ),
-            PopupMenuItem(
+            const PopupMenuItem(
               value: 'copiar',
               child: ListTile(
                 leading: Icon(Icons.copy_all_outlined),
                 title: Text('Copiar a otros cargos'),
               ),
             ),
+            if (onResponsables != null) _itemResponsables,
           ],
         ),
       ],
     );
   }
 }
+
+const _itemResponsables = PopupMenuItem<String>(
+  value: 'responsables',
+  child: ListTile(
+    leading: Icon(Icons.how_to_reg_outlined),
+    title: Text('Responsables del cierre'),
+  ),
+);

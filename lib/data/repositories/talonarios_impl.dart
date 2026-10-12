@@ -5,6 +5,8 @@ import 'package:intl/intl.dart';
 import 'package:bosque_flutter/core/constants/app_constants.dart';
 import 'package:bosque_flutter/core/network/base_api_repository.dart';
 import 'package:bosque_flutter/core/network/dio_client.dart';
+import 'package:bosque_flutter/data/models/talonario_caja_chica_model.dart';
+import 'package:bosque_flutter/domain/entities/talonario_caja_chica_entity.dart';
 import 'package:bosque_flutter/data/models/talonario_detalle_model.dart';
 import 'package:bosque_flutter/data/models/talonario_grupo_model.dart';
 import 'package:bosque_flutter/data/models/talonario_lote_model.dart';
@@ -278,6 +280,15 @@ class TalonariosImpl extends BaseApiRepository implements TalonariosRepository {
       fromJson: (json) => TalonarioDetalleModel.fromJson(json),
     );
     return modelos.map((e) => e.toEntity()).toList();
+  }
+
+  @override
+  Future<List<ValeCajaChica>> usoEnCajaChica(BigInt codTalonario) {
+    return postAndReturnList<ValeCajaChica>(
+      endpoint: AppConstants.talUsoCajaChica,
+      data: {'codTalonario': codTalonario.toInt()},
+      fromJson: valeCajaChicaDeJson,
+    );
   }
 
   @override

@@ -21,6 +21,7 @@ import 'package:bosque_flutter/presentation/widgets/talonarios/dialogo_cambio_em
 import 'package:bosque_flutter/presentation/widgets/talonarios/reportes_talonarios.dart';
 import 'package:bosque_flutter/presentation/widgets/talonarios/formulario_talonario.dart';
 import 'package:bosque_flutter/presentation/widgets/talonarios/talonarios_comunes.dart';
+import 'package:bosque_flutter/presentation/widgets/talonarios/uso_caja_chica.dart';
 
 /// Listado de talonarios con su estado y el historial de cada uno.
 ///
@@ -877,15 +878,25 @@ class _TalonariosScreenState extends ConsumerState<TalonariosScreen> {
                                           detalle:
                                               'Este talonario todavía no registra eventos.',
                                         )
-                                        : ListView.separated(
+                                        : ListView(
                                           controller: scroll,
                                           padding: const EdgeInsets.all(Esp.m),
-                                          itemCount: lista.length,
-                                          separatorBuilder:
-                                              (_, __) =>
-                                                  const SizedBox(height: Esp.s),
-                                          itemBuilder:
-                                              (_, i) => _filaEvento(lista[i]),
+                                          children: [
+                                            // Archivo SQL 93: en qué egreso
+                                            // de caja chica se usó cada vale.
+                                            UsoEnCajaChica(
+                                              codTalonario: t.codTalonario,
+                                            ),
+                                            for (
+                                              var i = 0;
+                                              i < lista.length;
+                                              i++
+                                            ) ...[
+                                              if (i > 0)
+                                                const SizedBox(height: Esp.s),
+                                              _filaEvento(lista[i]),
+                                            ],
+                                          ],
                                         ),
                           ),
                         ),

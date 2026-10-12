@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:bosque_flutter/data/repositories/talonarios_impl.dart';
+import 'package:bosque_flutter/domain/entities/talonario_caja_chica_entity.dart';
 import 'package:bosque_flutter/domain/entities/talonario_detalle_entity.dart';
 import 'package:bosque_flutter/domain/entities/talonario_entity.dart';
 import 'package:bosque_flutter/domain/entities/talonario_grupo_entity.dart';
@@ -162,3 +163,17 @@ final eventosTalonarioProvider = FutureProvider.family<
   ref.watch(talonariosRefreshProvider);
   return ref.watch(talonariosRepositoryProvider).listarEventos(codTalonario);
 });
+
+/// En qué egreso de caja chica se usó cada vale (archivo SQL 93). Sin vales
+/// si el talonario no es de caja chica.
+final usoCajaChicaTalonarioProvider =
+    FutureProvider.family<UsoTalonarioCajaChica, BigInt>((
+      ref,
+      codTalonario,
+    ) async {
+      ref.watch(talonariosRefreshProvider);
+      final vales = await ref
+          .watch(talonariosRepositoryProvider)
+          .usoEnCajaChica(codTalonario);
+      return UsoTalonarioCajaChica(vales);
+    });

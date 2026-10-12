@@ -261,7 +261,9 @@ class _ArqueoCajaScreenState extends ConsumerState<ArqueoCajaScreen> {
                                     nombreArchivo: 'arqueo-de-caja-$idAC.pdf',
                                   );
                                 } catch (e) {
-                                  setDialogState(() => generandoPdf = false);
+                                  if (ctx.mounted) {
+                                    setDialogState(() => generandoPdf = false);
+                                  }
                                   if (!context.mounted) return;
                                   mostrarAviso(
                                     context,
@@ -304,6 +306,14 @@ class _ArqueoCajaScreenState extends ConsumerState<ArqueoCajaScreen> {
     final notifier = ref.read(arqueoCajaProvider.notifier);
 
     final cortesActivos = cortesState.items;
+    // Sin cortes o documentos el arqueo sumaría 0: se muestra el error, no el
+    // formulario vacío.
+    final errorLectura =
+        cortesActivos.isEmpty && cortesState.mensajeError != null
+            ? cortesState.mensajeError
+            : docsState.items.isEmpty && docsState.mensajeError != null
+            ? docsState.mensajeError
+            : null;
     final total = state.totalCon(cortesActivos);
     final diferencia = state.diferenciaCon(cortesActivos);
     final cuadrado = diferencia.abs() <= 0.01;
@@ -368,6 +378,15 @@ class _ArqueoCajaScreenState extends ConsumerState<ArqueoCajaScreen> {
             return (cortesState.cargando || docsState.cargando) &&
                     cortesActivos.isEmpty
                 ? const Center(child: CircularProgressIndicator())
+                : errorLectura != null
+                ? EstadoTareas.error(
+                  titulo: 'No se pudo leer los cortes y documentos del arqueo',
+                  detalle: errorLectura,
+                  onReintentar: () {
+                    ref.read(corteProvider.notifier).cargar();
+                    ref.read(documentacionProvider.notifier).cargar();
+                  },
+                )
                 : Center(
                   child: ConstrainedBox(
                     constraints: const BoxConstraints(
@@ -1211,7 +1230,7 @@ class _ArqueoCajaScreenState extends ConsumerState<ArqueoCajaScreen> {
                 ),
           accion: FilledButton.icon(
                     onPressed:
-                        state.guardando
+                        state.guardando || errorLectura != null
                             ? null
                             : () =>
                                 _confirmarYGuardar(context, ref, diferencia),
@@ -1294,20 +1313,23 @@ class _DatoContexto extends StatelessWidget {
       children: [
         Icon(icono, size: 15, color: color ?? scheme.onSurfaceVariant),
         const SizedBox(width: 6),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              etiqueta,
-              style: TextStyle(fontSize: 10, color: scheme.onSurfaceVariant),
-            ),
-            Text(
-              valor,
-              style: Theme.of(
-                context,
-              ).textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w600),
-            ),
-          ],
+        // Flexible: un cargo o nombre largo baja de línea en vez de desbordar.
+        Flexible(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                etiqueta,
+                style: TextStyle(fontSize: 10, color: scheme.onSurfaceVariant),
+              ),
+              Text(
+                valor,
+                style: Theme.of(
+                  context,
+                ).textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w600),
+              ),
+            ],
+          ),
         ),
       ],
     );

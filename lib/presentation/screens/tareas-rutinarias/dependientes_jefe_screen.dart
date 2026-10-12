@@ -1,6 +1,8 @@
 // Destino final: lib/presentation/screens/tareas-rutinarias/dependientes_jefe_screen.dart
 import 'package:bosque_flutter/core/constants/tareas_breakpoints.dart';
 import 'package:bosque_flutter/core/state/dependientes_jefe_provider.dart';
+import 'package:bosque_flutter/core/state/senales_cargo_provider.dart';
+import 'package:bosque_flutter/core/theme/tareas_colors.dart';
 import 'package:bosque_flutter/core/ui/aviso.dart';
 import 'package:bosque_flutter/presentation/widgets/tareas-rutinarias/dependiente_cargo_tile.dart';
 import 'package:bosque_flutter/presentation/widgets/tareas-rutinarias/nueva_tarea_form_sheet.dart';
@@ -10,6 +12,7 @@ import 'package:bosque_flutter/presentation/widgets/tareas-rutinarias/pagina_tar
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 /// Pantalla del jefe/gerente: elige a quiénes de su equipo asignar una tarea
 /// rutinaria y con qué frecuencia. Todo lo que aparece aquí ya viene filtrado
@@ -86,6 +89,7 @@ class DependientesJefeScreen extends ConsumerWidget {
                     : Column(
                       key: const ValueKey('contenido'),
                       children: [
+                        const _AvisoTareasSinHacer(),
                         _FiltrosBar(
                           profundidad: state.profundidad,
                           alcanceSucursal: state.alcanceSucursal,
@@ -139,9 +143,10 @@ class DependientesJefeScreen extends ConsumerWidget {
                                             seleccionado: state.seleccionados
                                                 .contains(d.claveSeleccion),
                                             onTap:
-                                                () => notifier.alternarSeleccion(
-                                                  d.claveSeleccion,
-                                                ),
+                                                () =>
+                                                    notifier.alternarSeleccion(
+                                                      d.claveSeleccion,
+                                                    ),
                                           ),
                                         );
                                       }
@@ -192,6 +197,54 @@ class DependientesJefeScreen extends ConsumerWidget {
                   label: Text('Asignar a ${state.seleccionados.length}'),
                 )
                 : null,
+      ),
+    );
+  }
+}
+
+/// Quién del equipo no hace sus tareas (archivo SQL 82): puede que su cargo
+/// no esté al día. Sin nada que avisar, no ocupa lugar.
+class _AvisoTareasSinHacer extends ConsumerWidget {
+  const _AvisoTareasSinHacer();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final s = ref.watch(senalesCargoProvider(true));
+    if (!s.senales.cargado || s.personas == 0) return const SizedBox.shrink();
+    final tono = TareasColors.pendienteTexto(context);
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(Esp.m, Esp.s, Esp.m, 0),
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: TareasColors.pendiente(context),
+          borderRadius: BorderRadius.circular(Esquina.media),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(Esp.m, Esp.s, Esp.s, Esp.s),
+          child: Row(
+            children: [
+              Icon(Icons.manage_search, color: tono),
+              const SizedBox(width: Esp.m),
+              Expanded(
+                child: Text(
+                  s.personas == 1
+                      ? '1 persona de tu equipo no hace algunas de sus tareas. '
+                          'Puede que su cargo no esté al día.'
+                      : '${s.personas} personas de tu equipo no hacen algunas '
+                          'de sus tareas. Puede que su cargo no esté al día.',
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodyMedium?.copyWith(color: tono),
+                ),
+              ),
+              TextButton(
+                onPressed:
+                    () => context.push('/dashboard/tacTareas/EquipoSinHacer'),
+                child: const Text('Revisar'),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

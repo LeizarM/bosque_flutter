@@ -1,15 +1,12 @@
 // Destino final: lib/domain/repositories/coches_repository.dart
 import 'package:bosque_flutter/domain/entities/coche_del_dia_entity.dart';
 
+/// Revisar Autos sin ocurrencia (archivo SQL 96): la lista es de la sucursal
+/// de quien inició sesión, y el backend la saca de su cargo vigente.
 abstract class CochesRepository {
-  Future<List<CocheDelDiaEntity>> listarDelDia({
-    required int idTarRuti,
-    required int idBitTarea,
-  });
+  Future<List<CocheDelDiaEntity>> listarDelDia();
 
-  /// true si esta marca dejó a todos los coches de la ocurrencia con
-  /// respuesta (y por lo tanto cerró la tarea rutinaria completa).
-  Future<bool> marcarLlegada({
+  Future<void> marcarLlegada({
     required int idCo,
     required int llego,
     String? obs,

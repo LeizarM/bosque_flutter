@@ -13,12 +13,10 @@
 //     las dos se abre a demanda. Si alguien "simplifica" esto a idATR, se
 //     llevaría puestas tareas de otro tipo sin que nadie se entere.
 //
-//  2. `AperturaFlujo` no puede construir la pantalla con un idBitTarea en 0: el
-//     flujo guardaría contra una ocurrencia que no existe. Tiene que decirlo.
+//  2. Desde el archivo SQL 96 estos flujos no tienen ocurrencia: la lista de
+//     autos es una por sucursal y día, y cada auto dice quién lo marcó.
 import 'package:bosque_flutter/core/constants/tareas_a_requerimiento.dart';
-import 'package:bosque_flutter/presentation/widgets/tareas-rutinarias/apertura_flujo.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:bosque_flutter/data/models/coche_del_dia_model.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
@@ -47,13 +45,16 @@ void main() {
       expect(TareasARequerimiento.cierreOperaciones, 2);
     });
 
-    test('las dos tareas de idATR 3 se abren desde "Mis tareas", no a demanda', () {
-      // "Verficar Arqueo de Caja" (3) porque nunca salió del generador, y
-      // "Cierre de Operaciones" (2) porque el archivo SQL 63 le sacó el ítem
-      // del menú: su pantalla ahora se abre con la ocurrencia de la tarea.
-      expect(TareasARequerimiento.contiene(3), isFalse);
-      expect(TareasARequerimiento.contiene(2), isFalse);
-    });
+    test(
+      'las dos tareas de idATR 3 se abren desde "Mis tareas", no a demanda',
+      () {
+        // "Verficar Arqueo de Caja" (3) porque nunca salió del generador, y
+        // "Cierre de Operaciones" (2) porque el archivo SQL 63 le sacó el ítem
+        // del menú: su pantalla ahora se abre con la ocurrencia de la tarea.
+        expect(TareasARequerimiento.contiene(3), isFalse);
+        expect(TareasARequerimiento.contiene(2), isFalse);
+      },
+    );
 
     test('el arqueo de caja y verificar cierre siguen siendo rutinarias', () {
       // Arqueo: idTarRuti 1 y 38 (97% y 88% de cumplimiento medido).
@@ -69,86 +70,38 @@ void main() {
     });
   });
 
-  group('AperturaFlujo', () {
-    Future<void> montar(WidgetTester tester, Widget hijo) => tester.pumpWidget(
-      ProviderScope(child: MaterialApp(home: hijo)),
-    );
+  group('Revisar Autos sin ocurrencia (archivo SQL 96)', () {
+    test('cada auto marcado dice quién lo marcó', () {
+      final auto =
+          CocheDelDiaModel.fromJson({
+            'idCo': 7,
+            'idCoche': 11,
+            'llego': 1,
+            'fecha': '2026-10-12T09:14:00',
+            'quienMarco': 'QUISPE MAMANI RONALDO',
+          }).toEntity();
 
-    testWidgets(
-      'con un idBitTarea que ya existe no pregunta nada al backend',
-      (tester) async {
-        // Es el caso de "Verificar cierre", que apunta a una ocurrencia concreta
-        // de otra persona: abrir una nueva sería trabajar sobre el registro
-        // equivocado.
-        var construidoCon = -1;
-        await montar(
-          tester,
-          AperturaFlujo(
-            idTarRuti: TareasARequerimiento.cajaFuerte,
-            nombreFlujo: 'Caja Fuerte',
-            idBitTareaExistente: 777,
-            construir: (id) {
-              construidoCon = id;
-              return const Scaffold(body: Text('pantalla del flujo'));
-            },
-          ),
-        );
-
-        expect(find.text('pantalla del flujo'), findsOneWidget);
-        expect(construidoCon, 777);
-        // Sin pumpAndSettle: si hubiera salido a la red habría un spinner.
-        expect(find.byType(CircularProgressIndicator), findsNothing);
-      },
-    );
-
-    testWidgets('sin ocurrencia resuelta NUNCA construye la pantalla', (
-      tester,
-    ) async {
-      // El invariante que importa: mientras no haya un idBitTarea real, la
-      // pantalla del flujo no se construye. Si se construyera, escribiría contra
-      // una ocurrencia inexistente y el trabajo se perdería sin error visible.
-      //
-      // Se verifica en los dos momentos —primer frame y después de que la
-      // apertura resuelve— porque el estado intermedio depende de cuánto tarda
-      // la red y aquí no hay backend.
-      final idsConstruidos = <int>[];
-      await montar(
-        tester,
-        AperturaFlujo(
-          idTarRuti: TareasARequerimiento.cajaChica,
-          nombreFlujo: 'Caja Chica',
-          construir: (id) {
-            idsConstruidos.add(id);
-            return const Scaffold(body: Text('no se debe ver'));
-          },
-        ),
-      );
-
-      expect(idsConstruidos, isEmpty);
-      expect(find.text('no se debe ver'), findsNothing);
-      expect(find.text('Caja Chica'), findsOneWidget);
-
-      await tester.pumpAndSettle();
-      expect(idsConstruidos, isEmpty);
+      expect(auto.yaMarcado, isTrue);
+      expect(auto.quienMarco, 'QUISPE MAMANI RONALDO');
     });
 
-    testWidgets('si no se puede abrir, ofrece reintentar y no entra igual', (
-      tester,
-    ) async {
-      await montar(
-        tester,
-        AperturaFlujo(
-          idTarRuti: TareasARequerimiento.coches,
-          nombreFlujo: 'Revisión de Autos',
-          construir: (_) => const Scaffold(body: Text('no se debe ver')),
-        ),
-      );
-      // Sin backend, la llamada falla; se deja resolver el future.
-      await tester.pumpAndSettle();
+    test('marcar no borra quién marcó antes de releer la lista', () {
+      final auto =
+          CocheDelDiaModel.fromJson({
+            'idCo': 7,
+            'llego': 1,
+            'quienMarco': 'QUISPE MAMANI RONALDO',
+          }).toEntity();
 
-      expect(find.text('no se debe ver'), findsNothing);
-      expect(find.text('No se pudo abrir Revisión de Autos'), findsOneWidget);
-      expect(find.text('Reintentar'), findsOneWidget);
+      final otraVez = auto.copyWith(llego: 0, obs: 'En taller');
+      expect(otraVez.llego, 0);
+      expect(otraVez.quienMarco, 'QUISPE MAMANI RONALDO');
+    });
+
+    test('un auto sin marcar no tiene quién', () {
+      final auto = CocheDelDiaModel.fromJson({'idCo': 8}).toEntity();
+      expect(auto.yaMarcado, isFalse);
+      expect(auto.quienMarco, isNull);
     });
   });
 }

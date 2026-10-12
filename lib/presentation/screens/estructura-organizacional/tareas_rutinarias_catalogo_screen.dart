@@ -1,10 +1,10 @@
 // Destino final: lib/presentation/screens/estructura-organizacional/tareas_rutinarias_catalogo_screen.dart
 import 'package:bosque_flutter/core/state/tarea_rutinaria_provider.dart';
-import 'package:bosque_flutter/core/state/tar_ru_x_cargo_provider.dart';
 import 'package:bosque_flutter/core/state/frecuencia_provider.dart';
 import 'package:bosque_flutter/core/constants/tareas_breakpoints.dart';
 import 'package:bosque_flutter/core/theme/tareas_colors.dart';
 import 'package:bosque_flutter/core/ui/aviso.dart';
+import 'package:bosque_flutter/core/ui/mensaje_error_tareas.dart';
 import 'package:bosque_flutter/data/repositories/tar_ru_x_cargo_impl.dart';
 import 'package:bosque_flutter/domain/entities/frecuencia_entity.dart';
 import 'package:bosque_flutter/domain/entities/tar_ru_x_cargo_entity.dart';
@@ -58,9 +58,8 @@ class _TareasRutinariasCatalogoScreenState
   /// Copiar desde el catálogo no tiene "un cargo propio" cuyo estado
   /// refrescar (a diferencia de TareasPorCargoNotifier.copiarACargos) — es
   /// el mismo INSERT (p_abm_tac_TarRuXCargo ACCION='I', uno por cargo
-  /// elegido), pero aquí alcanza con reponer tarRuXCargoProvider al final
-  /// para que el propio diálogo (que lo mira para calcular "disponibles")
-  /// vea el cambio si se reabre.
+  /// elegido). No recarga tarRuXCargoProvider: es autoDispose y el diálogo,
+  /// al reabrirse, lo vuelve a leer entero.
   Future<bool> _copiarACargos(int idTarRuti, List<int> destinos) async {
     try {
       final repo = TarRuXCargoImpl();
@@ -76,12 +75,13 @@ class _TareasRutinariasCatalogoScreenState
         );
       }
       if (mounted) {
-        ref.read(tarRuXCargoProvider.notifier).cargar();
         mostrarAviso(context, 'Tarea copiada a ${destinos.length} cargo(s).');
       }
       return true;
     } catch (e) {
-      if (mounted) mostrarAviso(context, e.toString(), tono: TonoAviso.error);
+      if (mounted) {
+        mostrarAviso(context, mensajeError(e), tono: TonoAviso.error);
+      }
       return false;
     }
   }

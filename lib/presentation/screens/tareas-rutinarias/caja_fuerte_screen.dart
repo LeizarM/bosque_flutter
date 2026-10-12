@@ -20,16 +20,9 @@ import 'package:bosque_flutter/presentation/widgets/tareas-rutinarias/tabla_modu
 /// WizardTareas.guardarCajaFuerte(); aquí se exige antes de poder tocar
 /// "Guardar" en vez de dejar mandar y recién avisar.
 class CajaFuerteScreen extends ConsumerWidget {
-  final int idTarRuti;
-  final int idBitTarea;
   final String nombreTarea;
 
-  const CajaFuerteScreen({
-    super.key,
-    required this.idTarRuti,
-    required this.idBitTarea,
-    required this.nombreTarea,
-  });
+  const CajaFuerteScreen({super.key, required this.nombreTarea});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -58,7 +51,7 @@ class CajaFuerteScreen extends ConsumerWidget {
                   '"Registrado hoy".',
         );
         notifier.limpiarFormulario();
-        ref.invalidate(llegadasCajaFuerteDeHoyProvider(idBitTarea));
+        ref.invalidate(llegadasCajaFuerteDeHoyProvider);
       }
       if (actual.mensajeError != null &&
           actual.mensajeError != previo?.mensajeError) {
@@ -158,17 +151,15 @@ class CajaFuerteScreen extends ConsumerWidget {
                       ),
                     ),
                 const SizedBox(height: Esp.l),
-                _RegistradasHoy(idBitTarea: idBitTarea, esTabla: esTabla),
+                _RegistradasHoy(esTabla: esTabla),
               ],
             );
           },
         ),
         ),
         // "Guardar" es lo que graba las llegadas del formulario: abajo, fijo,
-        // al final del recorrido de lectura. Antes decía "Guardar y cerrar
-        // tarea", pero cerrar la tarea no es un paso aparte: guardar ya marca
-        // la ocurrencia del día como hecha, y se puede volver a guardar en el
-        // mismo día (Marcelo, 2026-10-05: el texto sobraba).
+        // al final del recorrido de lectura. Se puede volver a guardar el mismo
+        // día; desde el archivo SQL 96 no hay tarea que cerrar.
         bottomNavigationBar: BarraAccionTareas(
           resumen: Text(
             state.filas.length == 1
@@ -180,10 +171,7 @@ class CajaFuerteScreen extends ConsumerWidget {
             onPressed:
                 state.guardando
                     ? null
-                    : () => notifier.registrar(
-                      idTarRuti: idTarRuti,
-                      idBitTarea: idBitTarea,
-                    ),
+                    : notifier.registrar,
             icon:
                 state.guardando
                     ? SizedBox(
@@ -217,10 +205,9 @@ class CajaFuerteScreen extends ConsumerWidget {
 /// esta pantalla, y mostrarla editable prometería algo que el backend de este
 /// flujo no hace.
 class _RegistradasHoy extends ConsumerWidget {
-  final int idBitTarea;
   final bool esTabla;
 
-  const _RegistradasHoy({required this.idBitTarea, required this.esTabla});
+  const _RegistradasHoy({required this.esTabla});
 
   String _hora(DateTime? d) =>
       d == null ? '—' : FormatearFecha.formatearHora(d);
@@ -233,7 +220,7 @@ class _RegistradasHoy extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final tema = Theme.of(context);
-    final asinc = ref.watch(llegadasCajaFuerteDeHoyProvider(idBitTarea));
+    final asinc = ref.watch(llegadasCajaFuerteDeHoyProvider);
 
     return asinc.when(
       loading:
@@ -270,9 +257,7 @@ class _RegistradasHoy extends ConsumerWidget {
               ),
               TextButton(
                 onPressed:
-                    () => ref.invalidate(
-                      llegadasCajaFuerteDeHoyProvider(idBitTarea),
-                    ),
+                    () => ref.invalidate(llegadasCajaFuerteDeHoyProvider),
                 child: const Text('Reintentar'),
               ),
             ],
@@ -681,6 +666,8 @@ class _FilaLlegada extends StatelessWidget {
                 Expanded(
                   child: DropdownButtonFormField<String>(
                     value: fila.moneda,
+                    // En media columna de un teléfono la etiqueta no entra.
+                    isExpanded: true,
                     decoration: const InputDecoration(
                       labelText: 'Moneda',
                       isDense: true,

@@ -1,3 +1,4 @@
+import 'package:bosque_flutter/core/ui/mensaje_error_tareas.dart';
 import 'package:bosque_flutter/data/repositories/dependientes_jefe_impl.dart';
 import 'package:bosque_flutter/domain/entities/dependiente_cargo_entity.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -77,13 +78,19 @@ class DependientesJefeNotifier extends StateNotifier<DependientesJefeState> {
     Future.microtask(() => cargar());
   }
 
+  // Número de la última lectura: al cambiar rápido de filtro, una respuesta
+  // vieja no pisa a la nueva.
+  int _pedido = 0;
+
   Future<void> cargar() async {
+    final pedido = ++_pedido;
     state = state.copyWith(cargando: true, seleccionados: {});
     try {
       final resultado = await _repo.listarDependientes(
         profundidad: state.profundidad,
         alcanceSucursal: state.alcanceSucursal,
       );
+      if (!mounted || pedido != _pedido) return;
       state = state.copyWith(
         cargando: false,
         autorizado: resultado.autorizado,
@@ -93,6 +100,7 @@ class DependientesJefeNotifier extends StateNotifier<DependientesJefeState> {
         errorCarga: null,
       );
     } catch (e) {
+      if (!mounted || pedido != _pedido) return;
       // Sin aviso flotante: la pantalla muestra el error en su lugar.
       state = state.copyWith(
         cargando: false,
@@ -158,6 +166,7 @@ class DependientesJefeNotifier extends StateNotifier<DependientesJefeState> {
         idATR: idATR,
         cargos: cargos,
       );
+      if (!mounted) return true;
 
       state = state.copyWith(
         guardando: false,
@@ -167,10 +176,8 @@ class DependientesJefeNotifier extends StateNotifier<DependientesJefeState> {
       );
       return true;
     } catch (e) {
-      state = state.copyWith(
-        guardando: false,
-        mensajeError: e.toString().replaceFirst('Exception: ', ''),
-      );
+      if (!mounted) return false;
+      state = state.copyWith(guardando: false, mensajeError: mensajeError(e));
       return false;
     }
   }

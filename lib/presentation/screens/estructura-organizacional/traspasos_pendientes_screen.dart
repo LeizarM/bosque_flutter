@@ -6,6 +6,7 @@ import 'package:bosque_flutter/core/theme/tareas_tema.dart';
 import 'package:bosque_flutter/core/ui/aviso.dart';
 import 'package:bosque_flutter/core/utils/formatear_fecha.dart';
 import 'package:bosque_flutter/presentation/widgets/tareas-rutinarias/franja_acento.dart';
+import 'package:bosque_flutter/presentation/widgets/tareas-rutinarias/pagina_tareas.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -40,9 +41,11 @@ class TraspasosPendientesScreen extends ConsumerWidget {
             ? (ancho - TareasBreakpoints.contentMaxWidthSplit) / 2
             : 0.0;
 
+    // Con la lista vacía el error ya se ve en lugar de la lista.
     ref.listen(traspasosProvider, (previo, actual) {
       if (actual.mensajeError != null &&
-          actual.mensajeError != previo?.mensajeError) {
+          actual.mensajeError != previo?.mensajeError &&
+          actual.items.isNotEmpty) {
         HapticFeedback.lightImpact();
         mostrarAviso(context, actual.mensajeError!, tono: TonoAviso.error);
       }
@@ -66,7 +69,14 @@ class TraspasosPendientesScreen extends ConsumerWidget {
               state.cargando && state.items.isEmpty
                   ? const Center(child: CircularProgressIndicator())
                   : state.items.isEmpty
-                  ? const _SinTraspasos()
+                  // Una lectura fallida no es "no hay cambios sin resolver".
+                  ? (state.mensajeError != null
+                      ? EstadoTareas.error(
+                        titulo: 'No se pudo leer los cambios de cargo',
+                        detalle: state.mensajeError,
+                        onReintentar: notifier.cargar,
+                      )
+                      : const _SinTraspasos())
                   : ListView(
                     padding: EdgeInsets.fromLTRB(
                       margen + 8,

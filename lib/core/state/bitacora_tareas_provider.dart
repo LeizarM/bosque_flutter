@@ -1,5 +1,6 @@
 import 'dart:typed_data';
 
+import 'package:bosque_flutter/core/ui/mensaje_error_tareas.dart';
 import 'package:bosque_flutter/data/repositories/bitacora_tareas_impl.dart';
 import 'package:bosque_flutter/domain/entities/bitacora_tareas_entity.dart';
 import 'package:bosque_flutter/domain/repositories/bitacora_tareas_repository.dart';
@@ -21,8 +22,7 @@ const _igual = Object();
 
 DateTime _soloDia(DateTime f) => DateTime(f.year, f.month, f.day);
 
-String _texto(Object e) =>
-    e.toString().replaceFirst(RegExp(r'^Exception:\s*'), '');
+String _texto(Object e) => mensajeError(e);
 
 // CUMPLIMIENTO
 
@@ -259,19 +259,23 @@ class BitacoraCumplimientoNotifier
     Future.microtask(cargar);
   }
 
+  // Número de la última lectura: una respuesta vieja no pisa a la nueva.
+  int _pedido = 0;
+
   Future<void> cargar() async {
+    final pedido = ++_pedido;
     final desde = state.desde;
     final hasta = state.hasta;
     state = state.copyWith(cargando: true);
     try {
       final filas = await _repo.cumplimiento(desde: desde, hasta: hasta);
-      if (!mounted) return;
+      if (!mounted || pedido != _pedido) return;
       // Si mientras tanto se eligió otro rango, esta respuesta ya no es la que
       // se está mirando.
       if (state.desde != desde || state.hasta != hasta) return;
       state = state.copyWith(filas: filas, cargando: false, cargado: true);
     } catch (e) {
-      if (!mounted) return;
+      if (!mounted || pedido != _pedido) return;
       state = state.copyWith(
         cargando: false,
         error: 'No se pudo leer la bitácora. ${_texto(e)}',
@@ -433,17 +437,21 @@ class BitacoraGeneracionNotifier extends StateNotifier<BitacoraGeneracionState> 
     Future.microtask(cargar);
   }
 
+  // Número de la última lectura: una respuesta vieja no pisa a la nueva.
+  int _pedido = 0;
+
   Future<void> cargar() async {
+    final pedido = ++_pedido;
     final desde = state.desde;
     final hasta = state.hasta;
     state = state.copyWith(cargando: true);
     try {
       final filas = await _repo.generacion(desde: desde, hasta: hasta);
-      if (!mounted) return;
+      if (!mounted || pedido != _pedido) return;
       if (state.desde != desde || state.hasta != hasta) return;
       state = state.copyWith(filas: filas, cargando: false, cargado: true);
     } catch (e) {
-      if (!mounted) return;
+      if (!mounted || pedido != _pedido) return;
       state = state.copyWith(
         cargando: false,
         error: 'No se pudo leer las corridas del generador. ${_texto(e)}',
@@ -546,7 +554,11 @@ class BitacoraPorQueNotifier extends StateNotifier<BitacoraPorQueState> {
     Future.microtask(consultar);
   }
 
+  // Número de la última consulta: una respuesta vieja no pisa a la nueva.
+  int _pedido = 0;
+
   Future<void> consultar() async {
+    final pedido = ++_pedido;
     final persona = state.persona;
     final fecha = state.fecha;
     state = state.copyWith(cargando: true);
@@ -555,11 +567,11 @@ class BitacoraPorQueNotifier extends StateNotifier<BitacoraPorQueState> {
         codEmpleado: persona?.codEmpleado,
         fecha: fecha,
       );
-      if (!mounted) return;
+      if (!mounted || pedido != _pedido) return;
       if (!identical(state.persona, persona) || state.fecha != fecha) return;
       state = state.copyWith(filas: filas, cargando: false, consultado: true);
     } catch (e) {
-      if (!mounted) return;
+      if (!mounted || pedido != _pedido) return;
       state = state.copyWith(
         filas: const [],
         cargando: false,

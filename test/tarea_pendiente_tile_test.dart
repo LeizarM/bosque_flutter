@@ -6,6 +6,7 @@
 // "No" tiene que verse distinta de una sin responder — ese era el bug real
 // detrás de "el filtro no está funcionando": `fueRealizado` vale 0 cuando se
 // responde No, y durante un tiempo eso se leía como pendiente.
+import 'package:bosque_flutter/data/models/bit_tarea_ruti_model.dart';
 import 'package:bosque_flutter/domain/entities/bit_tarea_ruti_entity.dart';
 import 'package:bosque_flutter/presentation/widgets/tareas-rutinarias/tarea_pendiente_tile.dart';
 import 'package:flutter/material.dart';
@@ -16,6 +17,7 @@ void main() {
     int? idATR,
     int? fueRealizado,
     int? idFrec,
+    bool respondeSola = false,
     String nombre = 'Administrar el correo electrónico que maneja la empresa',
   }) => BitTareaRutiEntity(
     idBitTarea: 1,
@@ -25,6 +27,7 @@ void main() {
     idFrec: idFrec,
     fueRealizado: fueRealizado,
     audUsuario: 0,
+    respondeSola: respondeSola,
   );
 
   Future<void> montar(
@@ -54,6 +57,36 @@ void main() {
       ),
     ),
   );
+
+  // Archivo SQL 84 (Marcelo, 2026-10-08): la 165 la responde el arqueo; no
+  // se contesta a mano.
+  test('el modelo lee respondeSola; sin el dato, lleva botones', () {
+    BitTareaRutiEntity de(Map<String, dynamic> j) =>
+        BitTareaRutiModel.fromJson({
+          'idBitTarea': 1,
+          'audUsuario': 0,
+          ...j,
+        }).toEntity();
+
+    expect(de({'respondeSola': 1}).respondeSola, isTrue);
+    expect(de({'respondeSola': 0}).respondeSola, isFalse);
+    expect(de({}).respondeSola, isFalse);
+  });
+
+  testWidgets('la que responde sola el arqueo no tiene Sí/No/No aplica', (
+    tester,
+  ) async {
+    var marcadas = 0;
+    await montar(
+      tester,
+      tarea(idATR: 1, respondeSola: true),
+      onMarcar: (_) => marcadas++,
+    );
+
+    expect(find.text('Se marca sola con tu arqueo'), findsOneWidget);
+    expect(find.text('No aplica'), findsNothing);
+    expect(marcadas, 0);
+  });
 
   testWidgets(
     'un arqueo ya hecho no se vuelve a abrir: solo PDF y observación',
@@ -119,11 +152,7 @@ void main() {
     tester,
   ) async {
     final elegidos = <int>[];
-    await montar(
-      tester,
-      tarea(fueRealizado: 12),
-      onMarcar: elegidos.add,
-    );
+    await montar(tester, tarea(fueRealizado: 12), onMarcar: elegidos.add);
 
     expect(find.text('Sí'), findsOneWidget);
     expect(find.text('No'), findsOneWidget);

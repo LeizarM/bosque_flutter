@@ -262,7 +262,8 @@ class _CierreOperacionesScreenState
       case PanelCierre.arqueos:
         return PanelCierreCard(
           titulo: 'Arqueos de caja',
-          detalle: 'Lo que cerró cada cajero, con su diferencia.',
+          detalle:
+              'Lo que cerró cada cajero, con su diferencia, y quién no lo hizo.',
           icono: Icons.point_of_sale,
           color: TareasColors.tipoTareaTexto(context, 2),
           datos: s.arqueos,
@@ -271,14 +272,7 @@ class _CierreOperacionesScreenState
           onReintentar: () => n.recargar(cual),
           revisada: revisada,
           onRevisada: confirmar,
-          contador:
-              s.arqueos.filas.isEmpty
-                  ? null
-                  : ContadorPanel.avance(
-                    s.arqueosRevisados,
-                    s.arqueos.filas.length,
-                    'revisados',
-                  ),
+          contador: contadorArqueos(s.arqueos.filas),
           contenido:
               (_) => ContenidoArqueos(
                 filas: s.arqueos.filas,
