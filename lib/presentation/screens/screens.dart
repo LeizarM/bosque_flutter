@@ -84,5 +84,6 @@ export 'package:bosque_flutter/presentation/screens/talonarios/talonarios_screen
 export 'package:bosque_flutter/presentation/screens/talonarios/talonarios_alta_lote_screen.dart';
 export 'package:bosque_flutter/presentation/screens/talonarios/talonarios_entrega_lote_screen.dart';
 export 'package:bosque_flutter/presentation/screens/talonarios/talonarios_catalogos_screen.dart';
+export 'package:bosque_flutter/presentation/screens/indemnizacion/indemnizacion_screen.dart';
 // Gestión de vehículos (tac_coche): el CRUD del catálogo de coches por sucursal.
 export 'package:bosque_flutter/presentation/screens/catalogo-coches/catalogo_coches_screen.dart';

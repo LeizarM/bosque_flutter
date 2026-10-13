@@ -98,7 +98,7 @@ class IndemnizacionScreen extends ConsumerWidget {
               onPressed: () {
                 notifier.cargar();
                 historialNotifier.cargar();
-                ref.read(retroactivoProvider.notifier).cargar();
+                //ref.read(retroactivoProvider.notifier).cargar();
               },
             ),
             IconButton(

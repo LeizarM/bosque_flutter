@@ -2130,4 +2130,34 @@ class AppConstants {
 
   // La `direccion` de tb_vista, tal cual: el sidebar navega a '/' + direccion.
   static const String rutaCatalogoCoches = 'tacCoche/Coche';
+
+  // ═══════════════════════════════════════════════════════════════════════════════
+  // RUTAS MODULO: INDEMNIZACIONES
+  // ═══════════════════════════════════════════════════════════════════════════════
+  static const String listarIndemnizaciones = '/indemnizacion/listar';
+  static const String listarHistorialIndemnizaciones =
+      '/indemnizacion/listar-historial';
+  static const String abmIndemnizacion = '/indemnizacion/abm';
+  static const String reporteIndemnizacion =
+      '/indemnizacion/reporteIndemnizacion';
+  static const String reporteIndemnizacionTodos =
+      '/indemnizacion/reporteIndemnizacionTodos';
+  static const String reporteIndemnizacionRRHH =
+      '/indemnizacion/reporteIndemnizacionRRHH';
+
+  // RUTAS MODULO: RETROACTIVOS
+  static const String listarRetroactivos = '/retroactivo/listar';
+  static const String listarDetalleRetroactivos =
+      '/retroactivo/listar-historial';
+  static const String insertarRetroactivo = '/retroactivo/insertar';
+  static const String insertarLoteRetroactivo = '/retroactivo/insertar-lote';
+  static const String anexarLoteRetroactivo = '/retroactivo/anexar-lote';
+  static const String actualizarRetroactivo = '/retroactivo/actualizar';
+  static const String eliminarRetroactivo = '/retroactivo/eliminar';
+  static const String insertarDetalleRetroactivo =
+      '/retroactivo/insertar-detalle';
+  static const String actualizarDetalleRetroactivo =
+      '/retroactivo/actualizar-detalle';
+  static const String eliminarDetalleRetroactivo =
+      '/retroactivo/eliminar-detalle';
 }

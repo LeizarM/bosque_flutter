@@ -390,6 +390,11 @@ final routerProvider = Provider<GoRouter>((ref) {
               name: 'tcrDocumento',
               builder: (context, state) => const CartasCiteScreen(),
             ),
+            GoRoute(
+              path: '/dashboard/tplIndemnizacion/Indemnizacion',
+              name: 'tplIndemnizacion',
+              builder: (context, state) => const IndemnizacionScreen(),
+            ),
             // Gestión de vehículos (tac_coche). La ruta es EXACTAMENTE
             // '/dashboard/' + tb_vista.direccion, que vive en AppConstants.
             GoRoute(
@@ -1180,6 +1185,12 @@ final routerProvider = Provider<GoRouter>((ref) {
           redirect:
               (context, state) => '/dashboard/tacTareas/PlanillaIncapacidad',
         ),
+        // INDEMNIZACIONES
+        GoRoute(
+          path: '/tplIndemnizacion/Indemnizacion',
+          redirect:
+              (context, state) => '/dashboard/tplIndemnizacion/Indemnizacion',
+        ),
         // GESTIÓN DE VEHÍCULOS (tac_coche): el sidebar navega a
         // '/' + tb_vista.direccion, sin /dashboard.
         GoRoute(
@@ -1187,6 +1198,11 @@ final routerProvider = Provider<GoRouter>((ref) {
           redirect:
               (context, state) =>
                   '/dashboard/${AppConstants.rutaCatalogoCoches}',
+        ),
+        // AGUINALDOS
+        GoRoute(
+          path: '/tplAguinaldo/aguinaldo',
+          redirect: (context, state) => '/dashboard/tplAguinaldo/aguinaldo',
         ),
 
         GoRoute(
