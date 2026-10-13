@@ -2131,6 +2131,41 @@ class AppConstants {
   // La `direccion` de tb_vista, tal cual: el sidebar navega a '/' + direccion.
   static const String rutaCatalogoCoches = 'tacCoche/Coche';
 
+  // ==================== ARCHIVO DE DOCUMENTOS (tarc_*) =====================
+  // Cajas del archivo físico, su contenido y hasta 3 fotos opcionales por caja.
+  // Todo lo protege en el backend la vista `tmtoDocumento/almacenar`.
+  static const String arcArchivosListar = '/archivo-documental/archivos/listar';
+  static const String arcArchivosRegistrar =
+      '/archivo-documental/archivos/registrar';
+  static const String arcArchivosEliminar =
+      '/archivo-documental/archivos/eliminar';
+  static const String arcTiposListar = '/archivo-documental/tipos/listar';
+  static const String arcTiposRegistrar = '/archivo-documental/tipos/registrar';
+  static const String arcTiposEliminar = '/archivo-documental/tipos/eliminar';
+  static const String arcCajasListar = '/archivo-documental/cajas/listar';
+  static const String arcCajasSiguienteNumero =
+      '/archivo-documental/cajas/siguiente-numero';
+  static const String arcCajasRegistrar = '/archivo-documental/cajas/registrar';
+  static const String arcCajasEliminar = '/archivo-documental/cajas/eliminar';
+  static const String arcContenidoListar = '/archivo-documental/contenido/listar';
+  static const String arcContenidoRegistrar =
+      '/archivo-documental/contenido/registrar';
+  static const String arcContenidoEliminar =
+      '/archivo-documental/contenido/eliminar';
+  static const String arcFotosListar = '/archivo-documental/fotos/listar';
+  static const String arcFotosSubir = '/archivo-documental/fotos/subir';
+  static const String arcFotosReemplazar = '/archivo-documental/fotos/reemplazar';
+  static const String arcFotosEliminar = '/archivo-documental/fotos/eliminar';
+  static const String arcFotosVer = '/archivo-documental/fotos/ver';
+  static const String arcEmpresas = '/archivo-documental/empresas';
+  static const String arcSucursales = '/archivo-documental/sucursales';
+  // Devuelve los bytes del PDF (POR_SUCURSAL, POR_TIPO o DETALLE).
+  static const String arcReporte = '/archivo-documental/reporte';
+
+  // La `direccion` de tb_vista, tal cual: «Almacenaje de Documentos» (vista 95,
+  // bajo Mantenimiento y Abasto > Facturas Manuales), que no tenía pantalla.
+  static const String rutaArchivoDocumental = 'tmtoDocumento/almacenar';
+
   // ═══════════════════════════════════════════════════════════════════════════════
   // RUTAS MODULO: INDEMNIZACIONES
   // ═══════════════════════════════════════════════════════════════════════════════

@@ -47,5 +47,9 @@
 		<true/>
 		<key>UIStatusBarHidden</key>
 		<false/>
+		<key>NSCameraUsageDescription</key>
+		<string>La app usa la cámara para fotografiar comprobantes y las cajas del archivo de documentos.</string>
+		<key>NSPhotoLibraryUsageDescription</key>
+		<string>La app abre tus fotos para adjuntar comprobantes y fotos de las cajas del archivo de documentos.</string>
 	</dict>
 </plist>

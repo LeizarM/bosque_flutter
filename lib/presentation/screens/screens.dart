@@ -87,3 +87,5 @@ export 'package:bosque_flutter/presentation/screens/talonarios/talonarios_catalo
 export 'package:bosque_flutter/presentation/screens/indemnizacion/indemnizacion_screen.dart';
 // Gestión de vehículos (tac_coche): el CRUD del catálogo de coches por sucursal.
 export 'package:bosque_flutter/presentation/screens/catalogo-coches/catalogo_coches_screen.dart';
+// Archivo de documentos (tarc_*): cajas del archivo físico, contenido y fotos.
+export 'package:bosque_flutter/presentation/screens/archivo-documental/archivo_documental_screen.dart';

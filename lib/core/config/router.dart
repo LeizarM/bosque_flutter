@@ -407,6 +407,17 @@ final routerProvider = Provider<GoRouter>((ref) {
                     const CatalogoCochesScreen(),
                   ),
             ),
+            // Archivo de documentos (tarc_*): cajas, contenido y fotos.
+            GoRoute(
+              path: '/dashboard/${AppConstants.rutaArchivoDocumental}',
+              name: 'tarcArchivo',
+              builder:
+                  (context, state) => _pantallaConTitulo(
+                    context,
+                    'Bosque - Almacenaje de documentos',
+                    const ArchivoDocumentalScreen(),
+                  ),
+            ),
 
             // MODULO DE PRECIOS (tpr).
             // Misma regla que Cartas CITE y Biometrico: la ruta es
@@ -1198,6 +1209,13 @@ final routerProvider = Provider<GoRouter>((ref) {
           redirect:
               (context, state) =>
                   '/dashboard/${AppConstants.rutaCatalogoCoches}',
+        ),
+        // ARCHIVO DE DOCUMENTOS (tarc_*): misma regla, sin /dashboard.
+        GoRoute(
+          path: '/${AppConstants.rutaArchivoDocumental}',
+          redirect:
+              (context, state) =>
+                  '/dashboard/${AppConstants.rutaArchivoDocumental}',
         ),
         // AGUINALDOS
         GoRoute(

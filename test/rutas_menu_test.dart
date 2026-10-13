@@ -60,6 +60,9 @@ void main() {
     // 'Gestion de Vehiculos' (hija de «Entregas»): el CRUD de tac_coche.
     // Distinta de 'tacTareas/Coches', que es el flujo de llegadas del día.
     'tacCoche/Coche': 'CatalogoCochesScreen',
+    // codVista 95 — 'Almacenaje de Documentos' (padre 61, Facturas Manuales). La
+    // direccion es la del JSF viejo, tal cual; ahí vive el módulo tarc_*.
+    'tmtoDocumento/almacenar': 'ArchivoDocumentalScreen',
   };
 
   late Set<String> paths;
