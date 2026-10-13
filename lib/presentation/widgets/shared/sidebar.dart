@@ -73,12 +73,16 @@ class _AppSidebarState extends ConsumerState<AppSidebar> {
       final savedExpandedState = await menuNotifier.loadExpandedState();
       await menuNotifier.loadMenuFromCacheOnly();
 
+      // El sidebar se puede desmontar mientras lee el caché (cambio de ancho,
+      // sesión que cierra): sin esto, `setState` y `ref` lanzan.
+      if (!mounted) return;
       setState(() {
         _expandedItems = savedExpandedState;
         _isInitialized = true;
       });
 
       WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
         final user = ref.read(userProvider);
         if (user != null) {
           menuNotifier.loadUserMenu(user.codUsuario);
