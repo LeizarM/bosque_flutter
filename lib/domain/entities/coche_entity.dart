@@ -1,5 +1,9 @@
 // Destino final: lib/domain/entities/coche_entity.dart
 class CocheEntity {
+  /// Estado de un vehículo en uso. Cualquier otro valor es inactivo.
+  static const int activo = 1;
+  static const int inactivo = 0;
+
   final int idCoche;
   final String? marca;
   final String? clase;
@@ -7,6 +11,9 @@ class CocheEntity {
   final int? anio;
   final String? color;
   final int? codSucursal;
+
+  /// Solo lectura: el nombre de la sucursal, que llega del JOIN del listado.
+  final String? nombreSucursal;
   final int? estado;
   final int audUsuario;
   final DateTime? audFecha;
@@ -19,10 +26,13 @@ class CocheEntity {
     this.anio,
     this.color,
     this.codSucursal,
+    this.nombreSucursal,
     this.estado,
     required this.audUsuario,
     this.audFecha,
   });
+
+  bool get esActivo => estado == activo;
 
   CocheEntity copyWith({
     int? idCoche,
@@ -32,6 +42,7 @@ class CocheEntity {
     int? anio,
     String? color,
     int? codSucursal,
+    String? nombreSucursal,
     int? estado,
     int? audUsuario,
     DateTime? audFecha,
@@ -44,6 +55,7 @@ class CocheEntity {
       anio: anio ?? this.anio,
       color: color ?? this.color,
       codSucursal: codSucursal ?? this.codSucursal,
+      nombreSucursal: nombreSucursal ?? this.nombreSucursal,
       estado: estado ?? this.estado,
       audUsuario: audUsuario ?? this.audUsuario,
       audFecha: audFecha ?? this.audFecha,

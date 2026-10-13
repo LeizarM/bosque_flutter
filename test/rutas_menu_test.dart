@@ -57,6 +57,9 @@ void main() {
     'tchCheque/verificarDepositos': 'VerificarChequesScreen',
     // "Cargos por revisar" (padre 5, Recursos Humanos), archivo SQL 82.
     'trhEstructuraOrganizacional/cargosPorRevisar': 'CargosPorRevisarScreen',
+    // 'Gestion de Vehiculos' (hija de «Entregas»): el CRUD de tac_coche.
+    // Distinta de 'tacTareas/Coches', que es el flujo de llegadas del día.
+    'tacCoche/Coche': 'CatalogoCochesScreen',
   };
 
   late Set<String> paths;

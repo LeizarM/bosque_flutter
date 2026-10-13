@@ -7,30 +7,33 @@ import 'package:bosque_flutter/domain/repositories/coche_repository.dart';
 
 class CocheImpl extends BaseApiRepository implements CocheRepository {
   @override
-  Future<List<CocheEntity>> obtener() async {
+  Future<List<CocheEntity>> obtener({int? codSucursal, int? estado}) async {
     final modelos = await postAndReturnList<CocheModel>(
-      endpoint: AppConstants.tarObtenerCoche,
-      fromJson: (json) => CocheModel.fromJson(json),
+      endpoint: AppConstants.cocheListar,
+      data: {
+        if (codSucursal != null) 'codSucursal': codSucursal,
+        if (estado != null) 'estado': estado,
+      },
+      fromJson: CocheModel.fromJson,
     );
     return modelos.map((e) => e.toEntity()).toList();
   }
 
   @override
-  Future<BigInt> registrar(CocheEntity item) async {
-    final model = CocheModel.fromEntity(item);
+  Future<BigInt> registrar(CocheEntity item) {
     return postAndReturnId(
-      endpoint: AppConstants.tarRegistrarCoche,
-      data: model.toJson(),
-      errorMessage: 'No se pudo guardar el coche.',
+      endpoint: AppConstants.cocheRegistrar,
+      data: CocheModel.fromEntity(item).toRegistroJson(),
+      errorMessage: 'No se pudo guardar el vehículo.',
     );
   }
 
   @override
   Future<void> eliminar(int idCoche, int audUsuario) async {
     await postAndReturnId(
-      endpoint: AppConstants.tarEliminarCoche,
+      endpoint: AppConstants.cocheEliminar,
       data: {'idCoche': idCoche, 'audUsuario': audUsuario},
-      errorMessage: 'No se pudo eliminar el coche.',
+      errorMessage: 'No se pudo eliminar el vehículo.',
     );
   }
 }

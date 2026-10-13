@@ -390,6 +390,18 @@ final routerProvider = Provider<GoRouter>((ref) {
               name: 'tcrDocumento',
               builder: (context, state) => const CartasCiteScreen(),
             ),
+            // Gestión de vehículos (tac_coche). La ruta es EXACTAMENTE
+            // '/dashboard/' + tb_vista.direccion, que vive en AppConstants.
+            GoRoute(
+              path: '/dashboard/${AppConstants.rutaCatalogoCoches}',
+              name: 'tacCoche',
+              builder:
+                  (context, state) => _pantallaConTitulo(
+                    context,
+                    'Bosque - Gestión de vehículos',
+                    const CatalogoCochesScreen(),
+                  ),
+            ),
 
             // MODULO DE PRECIOS (tpr).
             // Misma regla que Cartas CITE y Biometrico: la ruta es
@@ -1167,6 +1179,14 @@ final routerProvider = Provider<GoRouter>((ref) {
           path: '/tacTareas/PlanillaIncapacidad',
           redirect:
               (context, state) => '/dashboard/tacTareas/PlanillaIncapacidad',
+        ),
+        // GESTIÓN DE VEHÍCULOS (tac_coche): el sidebar navega a
+        // '/' + tb_vista.direccion, sin /dashboard.
+        GoRoute(
+          path: '/${AppConstants.rutaCatalogoCoches}',
+          redirect:
+              (context, state) =>
+                  '/dashboard/${AppConstants.rutaCatalogoCoches}',
         ),
 
         GoRoute(

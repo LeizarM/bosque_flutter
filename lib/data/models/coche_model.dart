@@ -57,6 +57,9 @@ class CocheModel {
   int? anio;
   String? color;
   int? codSucursal;
+
+  /// Solo lectura: lo trae el JOIN con `tb_sucursal` del listado de gestión.
+  String? nombreSucursal;
   int? estado;
   int audUsuario;
   DateTime? audFecha;
@@ -69,24 +72,32 @@ class CocheModel {
     this.anio,
     this.color,
     this.codSucursal,
+    this.nombreSucursal,
     this.estado,
     required this.audUsuario,
     this.audFecha,
   });
 
   factory CocheModel.fromJson(Map<String, dynamic> json) {
+    // `num` y no `int`: el backend serializa BIGINT/INT sin distinguir y un
+    // 25.0 de un proxy no debe tumbar el listado entero.
+    int? entero(String clave) => (json[clave] as num?)?.toInt();
+
     return CocheModel(
-      idCoche: json["idCoche"] ?? 0,
+      idCoche: entero("idCoche") ?? 0,
       marca: json["marca"],
       clase: json["clase"],
       placa: json["placa"],
-      anio: json["anio"],
+      anio: entero("anio"),
       color: json["color"],
-      codSucursal: json["codSucursal"],
-      estado: json["estado"],
-      audUsuario: json["audUsuario"] ?? 0,
+      codSucursal: entero("codSucursal"),
+      nombreSucursal: json["nombreSucursal"],
+      estado: entero("estado"),
+      audUsuario: entero("audUsuario") ?? 0,
       audFecha:
-          json["audFecha"] != null ? DateTime.tryParse(json["audFecha"]) : null,
+          json["audFecha"] != null
+              ? DateTime.tryParse(json["audFecha"].toString())
+              : null,
     );
   }
 
@@ -98,9 +109,24 @@ class CocheModel {
     "anio": anio,
     "color": color,
     "codSucursal": codSucursal,
+    "nombreSucursal": nombreSucursal,
     "estado": estado,
     "audUsuario": audUsuario,
     "audFecha": audFecha?.toIso8601String(),
+  };
+
+  /// El cuerpo de `/coches/registrar`: solo lo que el SP escribe. Sin
+  /// `nombreSucursal` (es de lectura) ni `audFecha` (la pone el servidor).
+  Map<String, dynamic> toRegistroJson() => {
+    "idCoche": idCoche,
+    "marca": marca,
+    "clase": clase,
+    "placa": placa,
+    "anio": anio,
+    "color": color,
+    "codSucursal": codSucursal,
+    "estado": estado,
+    "audUsuario": audUsuario,
   };
 
   CocheEntity toEntity() {
@@ -112,6 +138,7 @@ class CocheModel {
       anio: anio,
       color: color,
       codSucursal: codSucursal,
+      nombreSucursal: nombreSucursal,
       estado: estado,
       audUsuario: audUsuario,
       audFecha: audFecha,
@@ -127,6 +154,7 @@ class CocheModel {
       anio: entity.anio,
       color: entity.color,
       codSucursal: entity.codSucursal,
+      nombreSucursal: entity.nombreSucursal,
       estado: entity.estado,
       audUsuario: entity.audUsuario,
       audFecha: entity.audFecha,

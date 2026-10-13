@@ -2119,4 +2119,15 @@ class AppConstants {
   // pantalla «Verificar Cheques» del JSF viejo (verificarDepositos.xhtml). No
   // tiene botones en tb_vistaBtn: el menu decide quien la ve.
   static const String rutaVerificarCheques = 'tchCheque/verificarDepositos';
+
+  // ==================== COCHES (tac_coche): catálogo de vehículos =========
+  // CRUD propio, protegido en el backend por la vista `tacCoche/Coche` (hija de
+  // «Entregas», en DISTRIBUCIÓN). Son endpoints distintos de `tarObtenerCoche` y compañía,
+  // que cuelgan de tareas rutinarias y no validan ninguna vista.
+  static const String cocheListar = '/coches/listar';
+  static const String cocheRegistrar = '/coches/registrar';
+  static const String cocheEliminar = '/coches/eliminar';
+
+  // La `direccion` de tb_vista, tal cual: el sidebar navega a '/' + direccion.
+  static const String rutaCatalogoCoches = 'tacCoche/Coche';
 }
