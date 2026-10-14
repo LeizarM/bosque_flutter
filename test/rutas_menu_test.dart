@@ -63,6 +63,10 @@ void main() {
     // codVista 95 — 'Almacenaje de Documentos' (padre 61, Facturas Manuales). La
     // direccion es la del JSF viejo, tal cual; ahí vive el módulo tarc_*.
     'tmtoDocumento/almacenar': 'ArchivoDocumentalScreen',
+    // 'Recuperación de acceso' (padre 9, Administración), archivo SQL 05 de la recuperación.
+    'trecConfiguracion/Recuperacion': 'ConfiguracionRecuperacionScreen',
+    // 'Sesiones' (padre 9, Administración), archivo SQL 08 de la recuperación.
+    'trecSesion/Sesiones': 'SesionesScreen',
   };
 
   late Set<String> paths;

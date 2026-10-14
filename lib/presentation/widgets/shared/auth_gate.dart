@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:bosque_flutter/core/state/user_provider.dart';
 import 'package:bosque_flutter/core/utils/console_log.dart';
+import 'package:bosque_flutter/presentation/widgets/shared/vigilancia_sesion.dart';
 
 /// Deja pasar al dashboard sólo si hay un usuario válido.
 ///
@@ -86,7 +87,8 @@ class AuthGate extends ConsumerWidget {
           );
         }
 
-        return child;
+        // Con un usuario confirmado: lo saca si lo bloquean o le dan de baja.
+        return VigilanciaSesion(child: child);
       },
     );
   }

@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:bosque_flutter/core/network/dio_client.dart';
 import 'package:bosque_flutter/core/utils/version_app.dart';
 import 'package:bosque_flutter/domain/entities/empleado_entity.dart';
 import 'package:bosque_flutter/domain/entities/login_entity.dart';
@@ -105,7 +106,11 @@ class UserStateNotifier extends StateNotifier<LoginEntity?> {
     state = null;
     // Limpiar los datos del usuario y el token del almacenamiento.
     final storage = SecureStorage();
+    // El token se toma antes de borrarlo, para avisar la salida al servidor después.
+    // Tras un 401 ya no está (o quedó anulado) y no se avisa nada.
+    final actual = await storage.readTokenDetailed();
     await storage.clearSession();
+    if (actual.status == TokenReadStatus.ok) DioClient.avisarSalida(actual.token!);
 
     // NOTA: la limpieza del estado de permisos (buttonPermissionsProvider) la hace
     // el llamador que posee el `ref` real de la app (callback de 401 en router.dart

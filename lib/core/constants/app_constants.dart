@@ -31,6 +31,23 @@ class AppConstants {
   static const String APP_VERSION = "1.0.2";
 
   static const String loginEndpoint = '/auth/login';
+  // Chequeo periódico de VigilanciaSesion y aviso de salida: públicos en el backend, pero llevan el token.
+  static const String sesionEndpoint = '/auth/sesion';
+  static const String salirEndpoint = '/auth/salir';
+  // Pantalla Sesiones (solo ROLE_ADM). Literal de tb_vista.direccion (sql/08).
+  static const String rutaSesiones = 'trecSesion/Sesiones';
+  static const String sesionesAbiertas = '/sesiones/abiertas';
+  static const String sesionesHistorial = '/sesiones/historial';
+  static const String sesionesCerrar = '/sesiones/cerrar';
+  // Recuperación de acceso por correo: públicas como el login (DioClient no les pide token).
+  static const String recuperacionEndpoint = '/auth/recuperacion';
+  static const String recuperacionSolicitarEndpoint = '$recuperacionEndpoint/solicitar';
+  static const String recuperacionRestablecerEndpoint = '$recuperacionEndpoint/restablecer';
+  // Pantalla de administración de esa recuperación (solo ROLE_ADM). Literal de tb_vista.direccion (sql/05).
+  static const String rutaConfiguracionRecuperacion = 'trecConfiguracion/Recuperacion';
+  static const String configuracionRecuperacionListar = '/recuperacion-configuracion/listar';
+  static const String configuracionRecuperacionGuardar = '/recuperacion-configuracion/guardar';
+  static const String configuracionRecuperacionProbar = '/recuperacion-configuracion/probar';
   static const String menuEndpoint = '/view/vistaDinamica';
   static const String registroVistaUsuario = '/auth/registroVistaUsuario';
   static const String registroLogin =

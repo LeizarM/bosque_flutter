@@ -45,6 +45,14 @@ class SecureStorage {
   /// Timeout de seguridad para operaciones de lectura del storage
   static const _readTimeout = Duration(seconds: 3);
 
+  /// Token que el backend rechazó (401). Cuenta como ausente aunque su borrado
+  /// tarde o falle: si no, el router lo veía vigente y volvía al dashboard en bucle.
+  static String? _tokenAnulado;
+
+  static void anularToken(String? token) {
+    if (token != null && token.isNotEmpty) _tokenAnulado = token;
+  }
+
   /// Lectura segura con timeout para evitar cuelgues en dispositivos problemáticos
   Future<String?> _safeRead(String key) async {
     try {
@@ -118,6 +126,7 @@ class SecureStorage {
   /// Devuelve `true` sólo si el token se persistió (para detectar dispositivos
   /// donde el Keystore no puede escribir). La expiración es best-effort.
   Future<bool> saveToken(String token) async {
+    if (token == _tokenAnulado) _tokenAnulado = null;
     final ok = await _safeWrite(_tokenKey, token);
 
     // Intenta extraer la fecha de expiración del JWT
@@ -159,7 +168,7 @@ class SecureStorage {
     for (var intento = 0; intento < 2; intento++) {
       try {
         final value = await _storage.read(key: _tokenKey).timeout(_readTimeout);
-        if (value == null || value.isEmpty) {
+        if (value == null || value.isEmpty || value == _tokenAnulado) {
           return const TokenResult(TokenReadStatus.absent);
         }
         return TokenResult(TokenReadStatus.ok, value);
@@ -255,8 +264,8 @@ class SecureStorage {
       // transitorios (la ventana entre escribir el token y escribir su
       // expiración es un estado real que dura milisegundos). Por eso no se
       // memoriza ninguno: se vuelve a preguntar y listo.
-      if (token == null) {
-        return true; // No hay token, considerarlo expirado
+      if (token == null || token == _tokenAnulado) {
+        return true; // No hay token (o el backend ya lo rechazó): considerarlo expirado
       }
 
       if (expiry == null) {

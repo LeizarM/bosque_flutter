@@ -1,9 +1,9 @@
 import 'dart:convert';
-import 'dart:typed_data';
 import 'package:bosque_flutter/core/constants/app_constants.dart';
 import 'package:bosque_flutter/core/utils/console_log.dart';
 import 'package:bosque_flutter/core/utils/secure_storage.dart';
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 
 /// Mensaje amigable de sesión inválida mostrado al usuario (nunca el crudo).
 const String kSesionInvalidaMsg = 'Tu sesión expiró, inicia sesión nuevamente';
@@ -20,6 +20,91 @@ class DioClient {
   /// callback de sesión inválida invalida providers que vuelven a pedir datos.
   /// Se re-arma en cuanto una petición encuentra token.
   static bool _sesionInvalidaAvisada = false;
+
+  /// Por qué el backend cerró la sesión, para que el login lo muestre. Lo consume
+  /// el login al abrirse y se descarta al entrar de nuevo (no en cada pedido con
+  /// token: uno que leyó el token viejo en paralelo lo borraba antes de mostrarse).
+  static String? _motivoCierre;
+
+  /// El motivo del último cierre, una sola vez: lo consume la pantalla de login.
+  static String? tomarMotivoCierre() {
+    final motivo = _motivoCierre;
+    _motivoCierre = null;
+    return motivo;
+  }
+
+  /// El texto del 401 con `error: SESION_CERRADA` (JwtTokenFilter), o null si es otro 401.
+  /// Los pedidos de PDF o texto plano traen el cuerpo como bytes o String: también se leen.
+  static String? motivoSesionCerrada(Object? data) {
+    Object? cuerpo = data;
+    try {
+      if (cuerpo is List<int>) cuerpo = utf8.decode(cuerpo);
+      if (cuerpo is String && cuerpo.trimLeft().startsWith('{')) cuerpo = jsonDecode(cuerpo);
+    } catch (_) {
+      return null;
+    }
+    if (cuerpo is Map && cuerpo['error'] == 'SESION_CERRADA') {
+      final mensaje = cuerpo['mensaje']?.toString();
+      if (mensaje != null && mensaje.isNotEmpty) return mensaje;
+    }
+    return null;
+  }
+
+  /// Plataforma y versión de esta app, para la pantalla Sesiones del administrador.
+  /// Viajan solo en el login y en el chequeo de sesión (el backend los acepta en esas rutas).
+  static Map<String, String> encabezadosCliente() => {
+    'X-Plataforma': _plataforma(),
+    'X-Version-App': AppConstants.APP_VERSION,
+  };
+
+  static String _plataforma() {
+    if (kIsWeb) return 'web';
+    return switch (defaultTargetPlatform) {
+      TargetPlatform.android => 'android',
+      TargetPlatform.iOS => 'ios',
+      TargetPlatform.windows => 'windows',
+      TargetPlatform.macOS => 'macos',
+      TargetPlatform.linux => 'linux',
+      TargetPlatform.fuchsia => 'desconocida',
+    };
+  }
+
+  /// Avisa al backend que esta sesión terminó («Cerrar sesión»), con el token ya
+  /// retirado del almacenamiento. Va por un Dio aparte y sin esperar: si falla, el
+  /// token igual vence solo y la sesión queda como «sin señal».
+  static void avisarSalida(String token) {
+    Dio(
+      BaseOptions(
+        baseUrl: AppConstants.baseUrl,
+        connectTimeout: const Duration(seconds: 5),
+        receiveTimeout: const Duration(seconds: 5),
+        headers: {'Authorization': 'Bearer $token'},
+      ),
+    ).post<void>(AppConstants.salirEndpoint).catchError((Object e) {
+      console('No se pudo avisar la salida al servidor: $e');
+      return Response<void>(requestOptions: RequestOptions());
+    });
+  }
+
+  /// Guarda el motivo si el 401 es de sesión cerrada y lo devuelve.
+  static String? registrarSesionCerrada(Object? data) {
+    final motivo = motivoSesionCerrada(data);
+    if (motivo != null) _motivoCierre = motivo;
+    return motivo;
+  }
+
+  /// Pedido mínimo para que el backend revise si la sesión sigue valiendo y anote la
+  /// señal. Si ya no vale, el 401 de sesión cerrada lo resuelve onError (login con el motivo).
+  static Future<void> verificarSesion() async {
+    try {
+      await getInstance().post<void>(
+        AppConstants.sesionEndpoint,
+        options: Options(headers: encabezadosCliente()),
+      );
+    } on DioException {
+      // Sin red o backend sin el endpoint (404): se reintenta en el próximo chequeo.
+    }
+  }
 
   // 1. Instancia estática privada para el Singleton
   static Dio? _dioInstance;
@@ -43,9 +128,10 @@ class DioClient {
     _dioInstance!.interceptors.add(
       InterceptorsWrapper(
         onRequest: (options, handler) async {
-          // Los endpoints públicos (login) NO requieren token: se dejan pasar
-          // sin leer ni adjuntar nada (evita mandar un token viejo al login).
-          if (options.path.contains(AppConstants.loginEndpoint)) {
+          // Los endpoints públicos (login y recuperación de acceso) NO requieren
+          // token: se dejan pasar sin leer ni adjuntar nada.
+          if (options.path.contains(AppConstants.loginEndpoint) ||
+              options.path.contains(AppConstants.recuperacionEndpoint)) {
             return handler.next(options);
           }
 
@@ -119,6 +205,12 @@ class DioClient {
         onError: (DioException e, handler) async {
           if (e.response?.statusCode == 401) {
             console('Token expirado o inválido, limpiando sesión');
+            // Antes de borrar: cualquier pedido que encuentre el token ya ausente lleva
+            // al login, y el login tiene que encontrar el motivo ya registrado.
+            final motivo = registrarSesionCerrada(e.response?.data);
+            // El token queda anulado en memoria aunque el borrado tarde o falle (Keystore
+            // lento): sin esto, el router lo veía vigente y volvía al dashboard en bucle.
+            SecureStorage.anularToken(_tokenDe(e.requestOptions));
             await SecureStorage().clearSession();
 
             if (_onAuthError != null) {
@@ -135,7 +227,7 @@ class DioClient {
                 response: e.response,
                 type: e.type,
                 error: 'SESION_EXPIRADA',
-                message: kSesionInvalidaMsg,
+                message: motivo ?? kSesionInvalidaMsg,
               ),
             );
           }
@@ -145,6 +237,12 @@ class DioClient {
     );
 
     return _dioInstance!;
+  }
+
+  /// El token con que salió el pedido (el interceptor lo puso en el encabezado).
+  static String? _tokenDe(RequestOptions pedido) {
+    final valor = pedido.headers['Authorization']?.toString();
+    return valor != null && valor.startsWith('Bearer ') ? valor.substring(7) : null;
   }
 
   // 3. Centralizamos la extracción de un mensaje de error AMIGABLE.
@@ -168,7 +266,9 @@ class DioClient {
         return 'No se pudo verificar la conexión segura con el servidor.';
       case DioExceptionType.badResponse:
         final code = e.response?.statusCode;
-        if (code == 401) return kSesionInvalidaMsg;
+        if (code == 401) {
+          return motivoSesionCerrada(e.response?.data) ?? kSesionInvalidaMsg;
+        }
         if (code == 403) return 'No tienes permisos para realizar esta acción.';
         if (code != null && code >= 500) {
           return 'Ocurrió un error en el servidor. Inténtalo más tarde.';

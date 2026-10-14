@@ -1,5 +1,7 @@
 export 'package:bosque_flutter/presentation/screens/auth/change_password_screen.dart';
 export 'package:bosque_flutter/presentation/screens/biometrico/biometrico_screen.dart';
+export 'package:bosque_flutter/presentation/screens/configuracion-recuperacion/configuracion_recuperacion_screen.dart';
+export 'package:bosque_flutter/presentation/screens/sesiones/sesiones_screen.dart';
 export 'package:bosque_flutter/presentation/screens/control-combustible-maquina-montacarga/control_combustible_dashboard_screen.dart';
 export 'package:bosque_flutter/presentation/screens/control-combustible-maquina-montacarga/control_combustible_main_screen.dart';
 export 'package:bosque_flutter/presentation/screens/control-combustible-maquina-montacarga/control_combustible_reportes_screen.dart';

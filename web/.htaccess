@@ -1,0 +1,5 @@
+# Plesk no manda Cache-Control y el navegador guardaba index.html y assets por horas.
+# Con no-cache revalida cada archivo por ETag (304 si no cambio): tras publicar, F5 trae lo nuevo.
+<IfModule mod_headers.c>
+  Header set Cache-Control "no-cache"
+</IfModule>

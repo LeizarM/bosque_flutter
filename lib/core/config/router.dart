@@ -500,6 +500,25 @@ final routerProvider = Provider<GoRouter>((ref) {
                     const ParametrosPreciosScreen(),
                   ),
             ),
+            // Parámetros de la recuperación de acceso por correo (solo ROLE_ADM).
+            GoRoute(
+              path: '/dashboard/${AppConstants.rutaConfiguracionRecuperacion}',
+              name: 'trecConfiguracion',
+              builder:
+                  (context, state) => _pantallaConTitulo(
+                    context,
+                    'Bosque - Recuperación de acceso',
+                    const ConfiguracionRecuperacionScreen(),
+                  ),
+            ),
+            // Usuarios conectados, historial y cierre de sesiones (solo ROLE_ADM).
+            GoRoute(
+              path: '/dashboard/${AppConstants.rutaSesiones}',
+              name: 'trecSesion',
+              builder:
+                  (context, state) =>
+                      _pantallaConTitulo(context, 'Bosque - Sesiones', const SesionesScreen()),
+            ),
             // Porcentajes por familia y lista de precios: el margen sobre el
             // costo. Reemplaza a los dialogos dlgPorcen y dlgPorcGrupo.
             GoRoute(
@@ -1126,6 +1145,16 @@ final routerProvider = Provider<GoRouter>((ref) {
           redirect:
               (context, state) =>
                   '/dashboard/${AppConstants.rutaPreciosParametros}',
+        ),
+        GoRoute(
+          path: '/${AppConstants.rutaConfiguracionRecuperacion}',
+          redirect:
+              (context, state) =>
+                  '/dashboard/${AppConstants.rutaConfiguracionRecuperacion}',
+        ),
+        GoRoute(
+          path: '/${AppConstants.rutaSesiones}',
+          redirect: (context, state) => '/dashboard/${AppConstants.rutaSesiones}',
         ),
         GoRoute(
           path: '/${AppConstants.rutaPreciosPorcentajes}',

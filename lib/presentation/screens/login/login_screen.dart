@@ -39,19 +39,29 @@
 /// Todo eso se apaga si el sistema pide menos animación.
 library;
 
+import 'dart:async';
+
 import 'package:bosque_flutter/core/constants/app_constants.dart';
+import 'package:bosque_flutter/core/network/dio_client.dart';
+import 'package:bosque_flutter/core/state/recuperacion_acceso_provider.dart';
 import 'package:bosque_flutter/core/state/theme_mode_provider.dart';
 import 'package:bosque_flutter/core/state/user_provider.dart';
 import 'package:bosque_flutter/core/theme/app_theme.dart';
+import 'package:bosque_flutter/core/ui/mensajes_usuario.dart';
 import 'package:bosque_flutter/core/ui/tokens_bosque.dart';
+import 'package:bosque_flutter/core/utils/secure_storage.dart';
 import 'package:bosque_flutter/core/utils/version_app.dart';
 import 'package:bosque_flutter/data/repositories/auth_repository_impl.dart';
+import 'package:bosque_flutter/domain/entities/recuperacion_enviada_entity.dart';
 import 'package:bosque_flutter/domain/repositories/auth_repository.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
+
+part 'recuperar_acceso.dart';
 
 /// Mensaje mostrado cuando el dispositivo no puede persistir la sesión
 /// (Keystore que no escribe en ciertos Android). Evita el bucle de login.
@@ -141,9 +151,15 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
   _Tono _tono = _Tono.error;
   bool _obscurePassword = true;
 
+  /// En vez del formulario de entrada se muestra la recuperación de acceso.
+  bool _recuperando = false;
+
   @override
   void initState() {
     super.initState();
+
+    // Si el backend cerró la sesión (usuario bloqueado o inactivo), se dice por qué.
+    _message = DioClient.tomarMotivoCierre();
 
     // Ninguno de los dos arranca aquí: si el sistema pide menos animación hay
     // que saltearlos, y eso recién se puede leer en didChangeDependencies.
@@ -193,6 +209,35 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
     });
   }
 
+  void _abrirRecuperacion() {
+    setState(() {
+      _recuperando = true;
+      _message = null;
+    });
+  }
+
+  /// Vuelve al formulario de entrada. Si la recuperación terminó, trae el
+  /// usuario y el aviso de que ya puede entrar, y deja el foco en la contraseña.
+  void _cerrarRecuperacion({String? aviso, String? login}) {
+    setState(() {
+      _recuperando = false;
+      if (login != null) _userController.text = login;
+      if (aviso != null) {
+        _passwordController.clear();
+        _message = aviso;
+        _tono = _Tono.aviso;
+      }
+    });
+    if (aviso != null) _passwordFocus.requestFocus();
+  }
+
+  /// La app no deja entrar (versión vieja o no pudo guardar la sesión), pero el servidor ya abrió una:
+  /// se cierra con el token en memoria, para que no figure abierta en «Sesiones» todo lo que dura.
+  Future<void> _descartarSesion(String token) async {
+    DioClient.avisarSalida(token);
+    await SecureStorage().clearSession();
+  }
+
   void _login() async {
     if (_userController.text.isEmpty || _passwordController.text.isEmpty) {
       _mostrar('Completa todos los campos');
@@ -214,6 +259,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
 
       if (loginEntity != null) {
         if (!versionAppVigente(loginEntity.versionApp)) {
+          await _descartarSesion(loginEntity.token);
+          if (!mounted) return;
           // Aviso, no error: no hay nada mal escrito, hay que actualizar.
           _mostrar(
             'Tu versión de la app (${AppConstants.APP_VERSION}) está desactualizada. '
@@ -226,6 +273,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
           final ok = await ref.read(userProvider.notifier).setUser(loginEntity);
           if (!mounted) return;
           if (!ok) {
+            await _descartarSesion(loginEntity.token);
+            if (!mounted) return;
             _mostrar(_msgErrorPersistencia);
             return;
           }
@@ -239,6 +288,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
           if (!ok) {
             // El dispositivo no pudo guardar la sesión (Keystore). Evita el
             // bucle de login silencioso mostrando un mensaje claro.
+            await _descartarSesion(loginEntity.token);
+            if (!mounted) return;
             _mostrar(_msgErrorPersistencia);
             return;
           }
@@ -273,19 +324,28 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
 
     // El ancho del cajón y no el de la ventana: si algún día esto se monta
     // adentro de algo con márgenes, `MediaQuery` mentiría.
-    return Scaffold(
-      body: LayoutBuilder(
-        builder: (context, restricciones) {
-          final amplio = restricciones.maxWidth >= _anchoParaPartir;
+    // En recuperación, el gesto de volver regresa al formulario en vez de cerrar la app.
+    return PopScope(
+      canPop: !_recuperando,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) _cerrarRecuperacion();
+      },
+      child: Scaffold(
+        body: LayoutBuilder(
+          builder: (context, restricciones) {
+            final amplio = restricciones.maxWidth >= _anchoParaPartir;
 
-          return Stack(
-            fit: StackFit.expand,
-            children: [
-              _CampoDeAcento(amplio: amplio),
-              amplio ? _partido(tema) : _apilado(tema, restricciones.maxHeight),
-            ],
-          );
-        },
+            return Stack(
+              fit: StackFit.expand,
+              children: [
+                _CampoDeAcento(amplio: amplio),
+                amplio
+                    ? _partido(tema)
+                    : _apilado(tema, restricciones.maxHeight),
+              ],
+            );
+          },
+        ),
       ),
     );
   }
@@ -510,42 +570,28 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
         crossAxisAlignment: CrossAxisAlignment.stretch,
         mainAxisSize: MainAxisSize.min,
         children: [
-          _Entra(
-            control: _entrada,
-            desde: 0.26,
-            hasta: 0.82,
-            desplazamiento: 12,
-            child: Column(
-              // En escritorio el encabezado arranca contra el borde de los
-              // campos. En telefono la marca esta justo arriba y centrada: un
-              // titulo pegado a la izquierda debajo de un logo centrado se lee
-              // como dos composiciones apiladas en vez de una columna.
-              crossAxisAlignment:
-                  amplio ? CrossAxisAlignment.start : CrossAxisAlignment.center,
-              children: [
-                Text(
-                  'Bienvenido',
-                  style: t.headlineMedium?.copyWith(
-                    color: cs.onSurface,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: -0.6,
-                  ),
+          // Entrar y recuperar ocupan el mismo lugar; marca y fondo no se mueven.
+          AnimatedSwitcher(
+            duration:
+                MediaQuery.disableAnimationsOf(context)
+                    ? Duration.zero
+                    : const Duration(milliseconds: 220),
+            switchInCurve: Curves.easeOutCubic,
+            switchOutCurve: Curves.easeInCubic,
+            layoutBuilder:
+                (actual, previos) => Stack(
+                  alignment: Alignment.topCenter,
+                  children: [...previos, if (actual != null) actual],
                 ),
-                const SizedBox(height: Esp.xs),
-                Text(
-                  'Inicia sesión para continuar',
-                  style: t.bodyMedium?.copyWith(color: cs.onSurfaceVariant),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: Esp.xl),
-          _Entra(
-            control: _entrada,
-            desde: 0.34,
-            hasta: 0.92,
-            desplazamiento: 16,
-            child: _formulario(),
+            child:
+                _recuperando
+                    ? _Recuperacion(
+                      key: const ValueKey('recuperar'),
+                      amplio: amplio,
+                      loginInicial: _userController.text.trim(),
+                      onCerrar: _cerrarRecuperacion,
+                    )
+                    : _entrar(amplio: amplio, cs: cs, t: t),
           ),
           if (!amplio) ...[
             const SizedBox(height: Esp.xl),
@@ -580,6 +626,58 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
     );
   }
 
+  /// Encabezado y formulario de entrada, con su animación de llegada.
+  Widget _entrar({
+    required bool amplio,
+    required ColorScheme cs,
+    required TextTheme t,
+  }) {
+    return Column(
+      key: const ValueKey('entrar'),
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        _Entra(
+          control: _entrada,
+          desde: 0.26,
+          hasta: 0.82,
+          desplazamiento: 12,
+          child: Column(
+            // En escritorio el encabezado arranca contra el borde de los
+            // campos. En telefono la marca esta justo arriba y centrada: un
+            // titulo pegado a la izquierda debajo de un logo centrado se lee
+            // como dos composiciones apiladas en vez de una columna.
+            crossAxisAlignment:
+                amplio ? CrossAxisAlignment.start : CrossAxisAlignment.center,
+            children: [
+              Text(
+                'Bienvenido',
+                style: t.headlineMedium?.copyWith(
+                  color: cs.onSurface,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: -0.6,
+                ),
+              ),
+              const SizedBox(height: Esp.xs),
+              Text(
+                'Inicia sesión para continuar',
+                style: t.bodyMedium?.copyWith(color: cs.onSurfaceVariant),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: Esp.xl),
+        _Entra(
+          control: _entrada,
+          desde: 0.34,
+          hasta: 0.92,
+          desplazamiento: 16,
+          child: _formulario(),
+        ),
+      ],
+    );
+  }
+
   Widget _formulario() {
     final habilitado = !_isLoading;
 
@@ -611,6 +709,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
             onAlternarOculto:
                 () => setState(() => _obscurePassword = !_obscurePassword),
             onEnviar: _login,
+          ),
+          const SizedBox(height: Esp.xs),
+          Align(
+            alignment: Alignment.centerRight,
+            child: TextButton(
+              onPressed: habilitado ? _abrirRecuperacion : null,
+              child: const Text('¿Olvidaste tu contraseña?'),
+            ),
           ),
 
           // El aviso crece en lugar de aparecer de golpe: apareciendo empujaba
@@ -1140,6 +1246,13 @@ class _Campo extends StatelessWidget {
   final bool oculto;
   final VoidCallback? onAlternarOculto;
   final VoidCallback onEnviar;
+  // Solo los usa la recuperación: el código numérico, la regla de la clave nueva
+  // y el aviso en vivo de que la confirmación no coincide.
+  final TextInputType? teclado;
+  final List<TextInputFormatter>? formatos;
+  final String? ayuda;
+  final String? error;
+  final ValueChanged<String>? onCambio;
 
   const _Campo({
     required this.controlador,
@@ -1153,6 +1266,11 @@ class _Campo extends StatelessWidget {
     this.esClave = false,
     this.oculto = true,
     this.onAlternarOculto,
+    this.teclado,
+    this.formatos,
+    this.ayuda,
+    this.error,
+    this.onCambio,
   });
 
   @override
@@ -1174,11 +1292,16 @@ class _Campo extends StatelessWidget {
       obscureText: esClave && oculto,
       autofillHints: pistas,
       textInputAction: accion,
+      keyboardType: teclado,
+      inputFormatters: formatos,
+      onChanged: onCambio,
       onSubmitted: (_) => onEnviar(),
       style: TextStyle(color: cs.onSurface),
       cursorColor: cs.primary,
       decoration: InputDecoration(
         labelText: etiqueta,
+        helperText: ayuda,
+        errorText: error,
         filled: true,
         fillColor: cs.surfaceContainerHigh,
         prefixIcon: Icon(icono, size: 20),
@@ -1211,6 +1334,8 @@ class _Campo extends StatelessWidget {
         border: borde(cs.outlineVariant, 1),
         enabledBorder: borde(cs.outlineVariant, 1),
         focusedBorder: borde(cs.primary, 2),
+        errorBorder: borde(cs.error, 1),
+        focusedErrorBorder: borde(cs.error, 2),
       ),
     );
   }
@@ -1224,8 +1349,18 @@ class _Campo extends StatelessWidget {
 class _BotonEntrar extends StatefulWidget {
   final bool cargando;
   final VoidCallback onPresionar;
+  // La recuperación lo reutiliza con su propia acción.
+  final String texto;
+  final String textoCargando;
+  final IconData icono;
 
-  const _BotonEntrar({required this.cargando, required this.onPresionar});
+  const _BotonEntrar({
+    required this.cargando,
+    required this.onPresionar,
+    this.texto = 'Iniciar sesión',
+    this.textoCargando = 'Verificando',
+    this.icono = Icons.arrow_forward_rounded,
+  });
 
   @override
   State<_BotonEntrar> createState() => _BotonEntrarState();
@@ -1286,16 +1421,20 @@ class _BotonEntrarState extends State<_BotonEntrar> {
                         ),
                       ),
                       const SizedBox(width: Esp.m),
-                      const Text('Verificando'),
+                      Flexible(child: Text(widget.textoCargando)),
                     ],
                   )
-                  : const Row(
-                    key: ValueKey('listo'),
+                  // Flexible: con letra muy grande en un teléfono el rótulo
+                  // pasa a dos líneas en vez de salirse del botón.
+                  : Row(
+                    key: const ValueKey('listo'),
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Text('Iniciar sesión'),
-                      SizedBox(width: Esp.s),
-                      Icon(Icons.arrow_forward_rounded, size: 18),
+                      Flexible(
+                        child: Text(widget.texto, textAlign: TextAlign.center),
+                      ),
+                      const SizedBox(width: Esp.s),
+                      Icon(widget.icono, size: 18),
                     ],
                   ),
         ),

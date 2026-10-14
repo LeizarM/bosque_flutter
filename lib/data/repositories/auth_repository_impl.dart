@@ -27,9 +27,12 @@ class AuthRepositoryImpl implements AuthRepository {
       final response = await _dio.post(
         AppConstants.loginEndpoint,
         data: {'login': username, 'password2': password},
+        options: Options(headers: DioClient.encabezadosCliente()),
       );
       final loginModel = LoginModel.fromJson(response.data);
       if (loginModel.status == 'success' && loginModel.data != null) {
+        // Un motivo de cierre que quedó sin mostrar ya no corresponde a esta sesión nueva.
+        DioClient.tomarMotivoCierre();
         // Guardar el token si el login es exitoso
         await SecureStorage().saveToken(loginModel.data!.token);
         return (loginModel.toEntity(), loginModel.mensaje);
