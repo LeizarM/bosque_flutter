@@ -808,6 +808,9 @@ class _FormularioEgreso extends ConsumerStatefulWidget {
 /// 10 a 14), y su mensaje sale en el aviso. Marcelo, 2026-10-06: las reglas
 /// de registro van en SQL, para cambiarlas sin recompilar la app.
 class _FormularioEgresoState extends ConsumerState<_FormularioEgreso> {
+  // Hoy por defecto (archivo SQL 100). Que no sea anterior al último registro
+  // lo valida el SP; el calendario solo ofrece las fechas que él acepta.
+  DateTime _fecha = _hoy();
   double? _monto;
   final _descripcionCtrl = TextEditingController();
   int? _codEmpDestino;
@@ -840,6 +843,32 @@ class _FormularioEgresoState extends ConsumerState<_FormularioEgreso> {
     _descripcionCtrl.dispose();
     _valeCtrl.dispose();
     super.dispose();
+  }
+
+  static DateTime _hoy() {
+    final n = DateTime.now();
+    return DateTime(n.year, n.month, n.day);
+  }
+
+  Future<void> _elegirFecha(ReglasReciboCajaChica? reglas) async {
+    final hoy = _hoy();
+    final ultimo = reglas?.fechaMaxima ?? DateTime(hoy.year + 1, 12, 31);
+    var primero = reglas?.fechaMinima ?? DateTime(2020);
+    if (primero.isAfter(ultimo)) primero = ultimo;
+    final inicial =
+        _fecha.isBefore(primero)
+            ? primero
+            : _fecha.isAfter(ultimo)
+            ? ultimo
+            : _fecha;
+    final elegida = await showDatePicker(
+      context: context,
+      initialDate: inicial,
+      firstDate: primero,
+      lastDate: ultimo,
+      helpText: 'Fecha del egreso',
+    );
+    if (elegida != null && mounted) setState(() => _fecha = elegida);
   }
 
   @override
@@ -889,6 +918,19 @@ class _FormularioEgresoState extends ConsumerState<_FormularioEgreso> {
                       ),
                     ),
                     const SizedBox(height: 16),
+                    InkWell(
+                      onTap: () => _elegirFecha(state.reglas),
+                      borderRadius: BorderRadius.circular(4),
+                      child: InputDecorator(
+                        decoration: const InputDecoration(
+                          labelText: 'Fecha',
+                          border: OutlineInputBorder(),
+                          suffixIcon: Icon(Icons.event_outlined),
+                        ),
+                        child: Text(FormatearFecha.formatearFecha(_fecha)),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
                     TextFormField(
                       decoration: const InputDecoration(
                         labelText: 'Monto',
@@ -898,8 +940,9 @@ class _FormularioEgresoState extends ConsumerState<_FormularioEgreso> {
                         decimal: true,
                       ),
                       textInputAction: TextInputAction.next,
-                      onChanged:
-                          (v) => setState(() => _monto = double.tryParse(v)),
+                      // Sin setState: el monto no se muestra, y rearmar la hoja con
+                      // cada número traba el teclado en un celular de gama media.
+                      onChanged: (v) => _monto = double.tryParse(v),
                     ),
                     const SizedBox(height: 12),
                     TextFormField(
@@ -984,6 +1027,7 @@ class _FormularioEgresoState extends ConsumerState<_FormularioEgreso> {
                                         codEmpDestino: _codEmpDestino,
                                         numFactura: _numFactura,
                                         numVale: _numVale,
+                                        fecha: _fecha,
                                       );
                                   if (ok && context.mounted) {
                                     cerrarRuta(context);

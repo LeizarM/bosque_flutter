@@ -379,6 +379,8 @@ void main() {
 
     await t.tap(find.text('Agregar secciones'));
     await t.pumpAndSettle();
+    await t.tap(find.widgetWithText(ChoiceChip, 'Arqueos de caja'));
+    await t.pumpAndSettle();
     await t.tap(find.text('Asignar'));
     await t.pumpAndSettle();
 
@@ -387,6 +389,25 @@ void main() {
       find.text('Ese responsable ya revisa esa sección en esa sucursal.'),
       findsOneWidget,
     );
+    expect(repo.pedidos, isEmpty);
+  });
+
+  testWidgets('sin elegir la sección no asigna nada', (t) async {
+    // Antes venía elegida la primera (Arqueos) y se guardaba sin querer.
+    await _ancho(t, 1300);
+    final repo = _Repo([], [_claudia]);
+    await t.pumpWidget(_app(repo));
+    await t.pumpAndSettle();
+
+    await t.tap(find.text('Agregar secciones'));
+    await t.pumpAndSettle();
+    for (final chip in t.widgetList<ChoiceChip>(find.byType(ChoiceChip))) {
+      expect(chip.selected, isFalse);
+    }
+    await t.tap(find.text('Asignar'));
+    await t.pumpAndSettle();
+
+    expect(find.text('Elige qué sección revisa.'), findsOneWidget);
     expect(repo.pedidos, isEmpty);
   });
 

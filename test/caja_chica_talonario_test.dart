@@ -8,6 +8,7 @@ import 'dart:typed_data';
 
 import 'package:bosque_flutter/core/state/caja_chica_flujo_provider.dart';
 import 'package:bosque_flutter/core/state/talonarios_provider.dart';
+import 'package:bosque_flutter/core/utils/formatear_fecha.dart';
 import 'package:bosque_flutter/data/models/caja_chica_model.dart';
 import 'package:bosque_flutter/data/models/talonario_caja_chica_model.dart';
 import 'package:bosque_flutter/domain/entities/caja_chica_entity.dart';
@@ -116,6 +117,88 @@ void main() {
       expect(uso.ultimo, isNull);
       expect(uso.quedan, 50);
       expect(uso.saltados, isEmpty);
+    });
+  });
+
+  group('la fecha del egreso (archivo SQL 100)', () {
+    DateTime hoy() {
+      final n = DateTime.now();
+      return DateTime(n.year, n.month, n.day);
+    }
+
+    ReglasReciboCajaChica reglas({DateTime? desde, DateTime? hasta}) =>
+        ReglasReciboCajaChica(
+          titulo: 'Sin talonario de caja chica',
+          regla: 'El número de recibo es opcional.',
+          obligatorio: false,
+          fechaMinima: desde,
+          fechaMaxima: hasta,
+        );
+
+    testWidgets('es la de hoy por defecto y se manda', (t) async {
+      final repo = _CajaChica();
+      await _abrirFormulario(t, repo);
+
+      final campo = find.widgetWithText(InputDecorator, 'Fecha');
+      expect(campo, findsOneWidget);
+      expect(
+        find.descendant(
+          of: campo,
+          matching: find.text(FormatearFecha.formatearFecha(hoy())),
+        ),
+        findsOneWidget,
+      );
+      await _registrar(t);
+      expect(repo.fechasMandadas, [hoy()]);
+    });
+
+    testWidgets('el calendario ofrece solo las fechas que acepta el SP', (
+      t,
+    ) async {
+      final desde = hoy().subtract(const Duration(days: 3));
+      final repo = _CajaChica(reglas: reglas(desde: desde, hasta: hoy()));
+      await _abrirFormulario(t, repo);
+
+      await t.tap(find.widgetWithText(InputDecorator, 'Fecha'));
+      await t.pumpAndSettle();
+      final calendario = t.widget<DatePickerDialog>(
+        find.byType(DatePickerDialog),
+      );
+      expect(calendario.firstDate, desde);
+      expect(calendario.lastDate, hoy());
+
+      // Ayer, salvo el día 1: ahí el calendario abre en otro mes.
+      final elegida =
+          hoy().day > 1 ? hoy().subtract(const Duration(days: 1)) : hoy();
+      await t.tap(find.text('${elegida.day}').last);
+      await t.tap(find.text('OK').last);
+      await t.pumpAndSettle();
+      await _registrar(t);
+      expect(repo.fechasMandadas, [elegida]);
+    });
+
+    test('lee las fechas de la G y sin ellas quedan vacías', () {
+      final con = reglasReciboDeJson({
+        'titulo': 'Sin talonario de caja chica',
+        'reciboObligatorio': 0,
+        'fechaMinima': '2026-10-13',
+        'fechaMaxima': '2026-10-14',
+      });
+      expect(con.fechaMinima, DateTime(2026, 10, 13));
+      expect(con.fechaMaxima, DateTime(2026, 10, 14));
+      final sin = reglasReciboDeJson({'titulo': 'x', 'reciboObligatorio': 0});
+      expect(sin.fechaMinima, isNull);
+      expect(sin.fechaMaxima, isNull);
+    });
+
+    testWidgets('sin fechas del SP el calendario igual abre', (t) async {
+      final repo = _CajaChica(reglas: reglas());
+      await _abrirFormulario(t, repo);
+
+      await t.tap(find.widgetWithText(InputDecorator, 'Fecha'));
+      await t.pumpAndSettle();
+      expect(find.byType(DatePickerDialog), findsOneWidget);
+      expect(t.takeException(), isNull);
     });
   });
 
@@ -411,6 +494,7 @@ class _CajaChica implements CajaChicaFlujoRepository {
   final List<TalonarioCajaChica> _talonarios;
   final ReglasReciboCajaChica? reglas;
   final valesMandados = <int?>[];
+  final fechasMandadas = <DateTime?>[];
 
   @override
   Future<List<CajaChicaEntity>> listarDelLote() async => [
@@ -450,7 +534,11 @@ class _CajaChica implements CajaChicaFlujoRepository {
     int? numFactura,
     int? numVale,
     String? moneda,
-  }) async => valesMandados.add(numVale);
+    DateTime? fecha,
+  }) async {
+    valesMandados.add(numVale);
+    fechasMandadas.add(fecha);
+  }
 
   @override
   Future<void> cerrarLote() async {}

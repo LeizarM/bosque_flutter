@@ -44,10 +44,17 @@ class ReglasReciboCajaChica {
   /// Si el número de recibo es obligatorio para registrar.
   final bool obligatorio;
 
+  /// Entre qué fechas acepta un egreso la 'R' (archivo SQL 100): el último
+  /// registro del lote y hoy. Null si el SQL todavía no las manda.
+  final DateTime? fechaMinima;
+  final DateTime? fechaMaxima;
+
   const ReglasReciboCajaChica({
     required this.titulo,
     required this.regla,
     required this.obligatorio,
+    this.fechaMinima,
+    this.fechaMaxima,
   });
 }
 

@@ -37,6 +37,7 @@ class CajaChicaFlujoImpl extends BaseApiRepository
     int? numFactura,
     int? numVale,
     String? moneda,
+    DateTime? fecha,
   }) async {
     await postAndReturnId(
       endpoint: AppConstants.tarCajaChicaRegistrarEgreso,
@@ -47,6 +48,8 @@ class CajaChicaFlujoImpl extends BaseApiRepository
         'numFactura': numFactura,
         'numVale': numVale,
         'moneda': moneda,
+        // Solo el día, sin hora ni zona: "2026-10-14".
+        'fecha': fecha?.toIso8601String().substring(0, 10),
       },
       errorMessage: 'No se pudo registrar el egreso.',
     );

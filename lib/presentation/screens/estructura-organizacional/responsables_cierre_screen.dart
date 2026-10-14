@@ -623,7 +623,8 @@ class _DialogoResponsableState extends State<_DialogoResponsable> {
   final _busqueda = TextEditingController();
   bool _porCargo = true;
   CandidatoCierre? _elegido;
-  late SeccionCierre _seccion;
+  // Sin sección elegida de entrada: venía Arqueos y se guardaba sin querer.
+  SeccionCierre? _seccion;
   int? _codSucursal;
   bool _propio = false;
   bool _enviando = false;
@@ -633,7 +634,7 @@ class _DialogoResponsableState extends State<_DialogoResponsable> {
   void initState() {
     super.initState();
     _elegido = widget.candidato;
-    _seccion = widget.seccion ?? widget.secciones.first;
+    _seccion = widget.seccion;
   }
 
   @override
@@ -658,6 +659,11 @@ class _DialogoResponsableState extends State<_DialogoResponsable> {
       setState(() => _error = 'Elige a quién se le asigna.');
       return;
     }
+    final seccion = _seccion;
+    if (seccion == null) {
+      setState(() => _error = 'Elige qué sección revisa.');
+      return;
+    }
     // Un responsable que ya está en la matriz es un cargo o una persona: el
     // otro dato va nulo, sin mirar el candidato (que aquí no hay).
     final (cs, emp) =
@@ -671,8 +677,8 @@ class _DialogoResponsableState extends State<_DialogoResponsable> {
       _error = null;
     });
     final motivo = await widget.notifier.agregar(
-      seccion: _seccion.codigo,
-      codSucursal: _seccion.porSucursal ? _codSucursal : null,
+      seccion: seccion.codigo,
+      codSucursal: seccion.porSucursal ? _codSucursal : null,
       codCargoSucursal: cs,
       codEmpleado: emp,
       puedeAutorrevisar: _propio,
@@ -798,14 +804,14 @@ class _DialogoResponsableState extends State<_DialogoResponsable> {
                     for (final p in widget.secciones)
                       ChoiceChip(
                         label: Text(p.nombre),
-                        selected: _seccion.codigo == p.codigo,
+                        selected: _seccion?.codigo == p.codigo,
                         onSelected: (_) => setState(() => _seccion = p),
                       ),
                   ],
                 ),
                 const SizedBox(height: Esp.m),
               ],
-              if (_seccion.porSucursal)
+              if (_seccion?.porSucursal ?? false)
                 DropdownButtonFormField<int?>(
                   value: _codSucursal,
                   decoration: const InputDecoration(
@@ -825,7 +831,7 @@ class _DialogoResponsableState extends State<_DialogoResponsable> {
                   ],
                   onChanged: (v) => setState(() => _codSucursal = v),
                 )
-              else
+              else if (_seccion != null)
                 Text(
                   'Esta sección es de toda la empresa.',
                   style: context.apagado(),

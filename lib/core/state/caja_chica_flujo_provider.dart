@@ -185,6 +185,7 @@ class CajaChicaFlujoNotifier extends StateNotifier<CajaChicaFlujoState> {
     int? codEmpDestino,
     int? numFactura,
     int? numVale,
+    DateTime? fecha,
   }) async {
     state = state.copyWith(guardando: true);
     try {
@@ -194,6 +195,7 @@ class CajaChicaFlujoNotifier extends StateNotifier<CajaChicaFlujoState> {
         codEmpDestino: codEmpDestino,
         numFactura: numFactura,
         numVale: numVale,
+        fecha: fecha,
       );
       if (!mounted) return true;
       // `guardando` sigue en true hasta recargar: un segundo toque no graba

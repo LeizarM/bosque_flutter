@@ -16,7 +16,7 @@ abstract class CajaChicaFlujoRepository {
   /// Manda lo que haya en el formulario, aunque falte algo: monto, descripción,
   /// destinatario y saldo los valida p_abm_tac_CajaChica 'R' (errores 10 a 14),
   /// para poder cambiar esas reglas sin recompilar. Sin [moneda], el servidor
-  /// pone 'BS'.
+  /// pone 'BS'; sin [fecha], hoy (archivo SQL 100, que también la valida).
   Future<void> registrarEgreso({
     required double montoEg,
     required String descripcion,
@@ -24,6 +24,7 @@ abstract class CajaChicaFlujoRepository {
     int? numFactura,
     int? numVale,
     String? moneda,
+    DateTime? fecha,
   });
 
   /// Cierra el lote vigente de la sucursal y abre el siguiente con su saldo

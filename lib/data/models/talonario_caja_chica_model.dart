@@ -26,6 +26,8 @@ ReglasReciboCajaChica reglasReciboDeJson(Map<String, dynamic> j) =>
       regla: _texto(j['regla']),
       obligatorio:
           j['reciboObligatorio'] == true || _int(j['reciboObligatorio']) == 1,
+      fechaMinima: DateTime.tryParse(_texto(j['fechaMinima'])),
+      fechaMaxima: DateTime.tryParse(_texto(j['fechaMaxima'])),
     );
 
 /// Una fila de `p_list_tac_CajaChica` 'T'.
