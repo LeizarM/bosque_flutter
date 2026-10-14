@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:bosque_flutter/core/state/user_provider.dart';
 import 'package:bosque_flutter/core/utils/console_log.dart';
+import 'package:bosque_flutter/core/utils/secure_storage.dart';
 import 'package:bosque_flutter/presentation/widgets/shared/vigilancia_sesion.dart';
 
 /// Deja pasar al dashboard sólo si hay un usuario válido.
@@ -36,7 +37,10 @@ import 'package:bosque_flutter/presentation/widgets/shared/vigilancia_sesion.dar
 /// `asyncUserProvider` dice `null`, se consulta `userProvider`, que es sincrónico
 /// y no puede quedar atrasado respecto del login. Sólo si los dos coinciden en
 /// que no hay nadie se navega a `/login` — y ni siquiera entonces se toca el
-/// storage: cerrar sesión es responsabilidad de quien cierra sesión.
+/// storage: cerrar sesión es responsabilidad de quien cierra sesión. Lo único que
+/// se hace es anular en memoria el token que haya quedado sin usuario (por ejemplo,
+/// de un login que la app rechazó por versión): el `redirect` lo veía vigente y
+/// devolvía `/login` al dashboard, y la ruedita no terminaba nunca (14/10/2026).
 class AuthGate extends ConsumerWidget {
   final Widget child;
   const AuthGate({super.key, required this.child});
@@ -72,7 +76,10 @@ class AuthGate extends ConsumerWidget {
 
         if (efectivo == null) {
           // Ahora sí: las dos fuentes coinciden en que no hay sesión.
-          WidgetsBinding.instance.addPostFrameCallback((_) {
+          WidgetsBinding.instance.addPostFrameCallback((_) async {
+            // Un token vigente sin usuario guardado haría que el router devuelva /login al
+            // dashboard, en bucle. Anulado en memoria cuenta como vencido y el login pasa.
+            SecureStorage.anularToken(await SecureStorage().getToken());
             if (context.mounted) context.go('/login');
           });
           return const Scaffold(

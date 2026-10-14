@@ -55,13 +55,19 @@ class UserStateNotifier extends StateNotifier<LoginEntity?> {
   /// y no repetido en cada prueba; en producción nadie lo llama.
   UserStateNotifier.sinStorage(LoginEntity? inicial) : super(inicial);
 
+  /// Lo suben setUser y clearUser. Si el notifier nace en el login, la carga inicial lee
+  /// el storage de antes: sin esto pisaba al usuario recién entrado o borraba su sesión.
+  int _cambios = 0;
+
   Future<void> _loadUserFromStorage() async {
+    final inicio = _cambios;
     try {
       final storage = SecureStorage();
       final userDataJson = await storage.getUserData().timeout(
         const Duration(seconds: 4),
         onTimeout: () => null,
       );
+      if (_cambios != inicio) return;
       if (userDataJson != null) {
         try {
           final userDataMap = jsonDecode(userDataJson);
@@ -85,7 +91,7 @@ class UserStateNotifier extends StateNotifier<LoginEntity?> {
       }
     } catch (e) {
       // Timeout o error inesperado: dejar state en null (usuario no autenticado)
-      state = null;
+      if (_cambios == inicio) state = null;
     }
   }
 
@@ -94,6 +100,7 @@ class UserStateNotifier extends StateNotifier<LoginEntity?> {
   /// persistieron; `false` permite al login detectar dispositivos donde el
   /// Keystore no puede escribir y evitar un bucle de login silencioso.
   Future<bool> setUser(LoginEntity user) async {
+    _cambios++;
     state = user;
     final storage = SecureStorage();
     final userDataJson = jsonEncode(user.toJson());
@@ -103,6 +110,7 @@ class UserStateNotifier extends StateNotifier<LoginEntity?> {
   }
 
   Future<void> clearUser() async {
+    _cambios++;
     state = null;
     // Limpiar los datos del usuario y el token del almacenamiento.
     final storage = SecureStorage();

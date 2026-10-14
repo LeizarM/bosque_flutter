@@ -28,7 +28,7 @@ class AppConstants {
 
   // Se ve al pie del login. Entra si es igual o mayor a la versionApp que
   // devuelve p_list_Usuario: subir esa mínima es lo que obliga a actualizar.
-  static const String APP_VERSION = "1.0.2";
+  static const String APP_VERSION = "1.0.3";
 
   static const String loginEndpoint = '/auth/login';
   // Chequeo periódico de VigilanciaSesion y aviso de salida: públicos en el backend, pero llevan el token.
@@ -41,13 +41,19 @@ class AppConstants {
   static const String sesionesCerrar = '/sesiones/cerrar';
   // Recuperación de acceso por correo: públicas como el login (DioClient no les pide token).
   static const String recuperacionEndpoint = '/auth/recuperacion';
-  static const String recuperacionSolicitarEndpoint = '$recuperacionEndpoint/solicitar';
-  static const String recuperacionRestablecerEndpoint = '$recuperacionEndpoint/restablecer';
+  static const String recuperacionSolicitarEndpoint =
+      '$recuperacionEndpoint/solicitar';
+  static const String recuperacionRestablecerEndpoint =
+      '$recuperacionEndpoint/restablecer';
   // Pantalla de administración de esa recuperación (solo ROLE_ADM). Literal de tb_vista.direccion (sql/05).
-  static const String rutaConfiguracionRecuperacion = 'trecConfiguracion/Recuperacion';
-  static const String configuracionRecuperacionListar = '/recuperacion-configuracion/listar';
-  static const String configuracionRecuperacionGuardar = '/recuperacion-configuracion/guardar';
-  static const String configuracionRecuperacionProbar = '/recuperacion-configuracion/probar';
+  static const String rutaConfiguracionRecuperacion =
+      'trecConfiguracion/Recuperacion';
+  static const String configuracionRecuperacionListar =
+      '/recuperacion-configuracion/listar';
+  static const String configuracionRecuperacionGuardar =
+      '/recuperacion-configuracion/guardar';
+  static const String configuracionRecuperacionProbar =
+      '/recuperacion-configuracion/probar';
   static const String menuEndpoint = '/view/vistaDinamica';
   static const String registroVistaUsuario = '/auth/registroVistaUsuario';
   static const String registroLogin =
@@ -2166,14 +2172,16 @@ class AppConstants {
       '/archivo-documental/cajas/siguiente-numero';
   static const String arcCajasRegistrar = '/archivo-documental/cajas/registrar';
   static const String arcCajasEliminar = '/archivo-documental/cajas/eliminar';
-  static const String arcContenidoListar = '/archivo-documental/contenido/listar';
+  static const String arcContenidoListar =
+      '/archivo-documental/contenido/listar';
   static const String arcContenidoRegistrar =
       '/archivo-documental/contenido/registrar';
   static const String arcContenidoEliminar =
       '/archivo-documental/contenido/eliminar';
   static const String arcFotosListar = '/archivo-documental/fotos/listar';
   static const String arcFotosSubir = '/archivo-documental/fotos/subir';
-  static const String arcFotosReemplazar = '/archivo-documental/fotos/reemplazar';
+  static const String arcFotosReemplazar =
+      '/archivo-documental/fotos/reemplazar';
   static const String arcFotosEliminar = '/archivo-documental/fotos/eliminar';
   static const String arcFotosVer = '/archivo-documental/fotos/ver';
   static const String arcEmpresas = '/archivo-documental/empresas';
