@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:bosque_flutter/core/ui/cerrar_ruta.dart';
+import 'package:bosque_flutter/presentation/widgets/tareas-rutinarias/pagina_tareas.dart';
 
 /// Hoja inferior con los datos de la nueva tarea, una vez ya elegidos los
 /// dependientes. Separada de la lista de selección a propósito: dos
@@ -75,13 +76,8 @@ class _NuevaTareaFormSheetState extends ConsumerState<NuevaTareaFormSheet> {
     final frecuenciaState = ref.watch(frecuenciaProvider);
     final dependientesState = ref.watch(dependientesJefeProvider);
 
-    return Padding(
-      padding: EdgeInsets.only(
-        left: 20,
-        right: 20,
-        top: 20,
-        bottom: MediaQuery.viewInsetsOf(context).bottom + 20,
-      ),
+    return MargenTeclado(
+      padding: const EdgeInsets.all(20),
       child: Form(
         key: _formKey,
         child: SingleChildScrollView(

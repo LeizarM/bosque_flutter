@@ -23,7 +23,72 @@ import 'package:flutter/material.dart';
 /// **Se mide el cajón, no la ventana.** Todas estas pantallas se dibujan
 /// dentro del dashboard, al lado de un sidebar de 260 px: `MediaQuery` dice el
 /// ancho de la ventana y miente. Por eso las decisiones de ancho de este
-/// archivo usan `LayoutBuilder` y [Aire], igual que el resto de `core/ui`.
+/// archivo usan [AnchoDelCajon] y [Aire], igual que el resto de `core/ui`.
+
+/// Un `LayoutBuilder` que vuelve a armar su contenido solo si cambia el ancho.
+///
+/// `LayoutBuilder` lo rearma también cuando cambia el alto, y el teclado de
+/// Android lo cambia en cada cuadro al subir: en un celular de gama media eso
+/// rearmaba el formulario entero ~10 veces por toque y trababa la escritura.
+/// El builder recibe el contexto de este widget, así un cambio de tema o de
+/// idioma sí lo rearma.
+class AnchoDelCajon extends StatefulWidget {
+  final Widget Function(BuildContext context, BoxConstraints cajon) builder;
+
+  const AnchoDelCajon({super.key, required this.builder});
+
+  @override
+  State<AnchoDelCajon> createState() => _AnchoDelCajonState();
+}
+
+class _AnchoDelCajonState extends State<AnchoDelCajon> {
+  double? _ancho;
+  Widget? _hijo;
+
+  @override
+  void didUpdateWidget(AnchoDelCajon viejo) {
+    super.didUpdateWidget(viejo);
+    _hijo = null;
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _hijo = null;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (_, cajon) {
+        if (_hijo == null || cajon.maxWidth != _ancho) {
+          _ancho = cajon.maxWidth;
+          _hijo = widget.builder(this.context, cajon);
+        }
+        return _hijo!;
+      },
+    );
+  }
+}
+
+/// Deja lugar al teclado debajo de [child] sin rearmar [child].
+///
+/// Leer `MediaQuery.viewInsetsOf` en el `build` de una hoja la rearma entera en
+/// cada cuadro en que sube el teclado. Así solo se rearma este margen.
+class MargenTeclado extends StatelessWidget {
+  final EdgeInsets padding;
+  final Widget child;
+
+  const MargenTeclado({super.key, required this.padding, required this.child});
+
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding:
+        padding +
+        EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
+    child: child,
+  );
+}
 
 /// El margen de las páginas del módulo.
 ///
@@ -39,7 +104,7 @@ class MargenPaginaTareas extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return LayoutBuilder(
+    return AnchoDelCajon(
       builder: (context, cajon) {
         final h = Aire.de(cajon.maxWidth).esChico ? Esp.m : Esp.l;
         return Padding(
@@ -325,7 +390,7 @@ class BarraAccionTareas extends StatelessWidget {
               horizontal: Esp.l,
               vertical: Esp.m,
             ),
-            child: LayoutBuilder(
+            child: AnchoDelCajon(
               builder: (context, cajon) {
                 if (Aire.de(cajon.maxWidth).esChico) {
                   return Column(

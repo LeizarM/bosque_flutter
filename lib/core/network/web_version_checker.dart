@@ -1,18 +1,21 @@
 import 'dart:async';
-import 'dart:convert';
+import 'package:bosque_flutter/core/utils/web_reload.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dio/dio.dart';
 
-/// Verifica periódicamente si hay una nueva versión desplegada en web.
-/// Compara el build_number en /version.json con el capturado al inicio.
+/// Verifica cada minuto si se publicó otra versión en web.
+///
+/// Compara el build con el que arrancó la pestaña (`window.bosqueBuild`, de
+/// web/flutter_bootstrap.js) con el del index.html publicado. Antes leía
+/// `build_number` de version.json, que el build no trae: el aviso nunca salía.
 class WebVersionChecker extends StateNotifier<bool> {
   Timer? _timer;
-  String? _initialBuildNumber;
   final Dio _dio = Dio(
     BaseOptions(
       connectTimeout: const Duration(seconds: 5),
       receiveTimeout: const Duration(seconds: 5),
+      responseType: ResponseType.plain,
     ),
   );
 
@@ -21,39 +24,28 @@ class WebVersionChecker extends StateNotifier<bool> {
     if (kIsWeb) _init();
   }
 
-  Future<void> _init() async {
-    // Capturar build number actual al iniciar la app
-    _initialBuildNumber = await _fetchBuildNumber();
-    if (_initialBuildNumber == null) return;
-
-    // Chequear cada 60 segundos
-    _timer = Timer.periodic(const Duration(seconds: 60), (_) => _check());
+  void _init() {
+    final enEjecucion = buildWebEnEjecucion();
+    if (enEjecucion == null || enEjecucion.isEmpty) return;
+    _timer = Timer.periodic(
+      const Duration(seconds: 60),
+      (_) => _check(enEjecucion),
+    );
   }
 
-  Future<String?> _fetchBuildNumber() async {
+  Future<void> _check(String enEjecucion) async {
     try {
-      // Agregar timestamp para evitar cache del navegador
-      final response = await _dio.get(
-        'version.json',
+      // _t evita la caché del navegador.
+      final response = await _dio.get<String>(
+        'index.html',
         queryParameters: {'_t': DateTime.now().millisecondsSinceEpoch},
       );
-      final data =
-          response.data is String
-              ? jsonDecode(response.data) as Map<String, dynamic>
-              : response.data as Map<String, dynamic>;
-      return data['build_number'] as String?;
-    } catch (e) {
-      debugPrint('WebVersionChecker: Error fetching version.json: $e');
-      return null;
-    }
-  }
-
-  Future<void> _check() async {
-    if (_initialBuildNumber == null) return;
-    final remoteBuild = await _fetchBuildNumber();
-    if (remoteBuild != null && remoteBuild != _initialBuildNumber) {
+      final publicado = buildPublicadoDe(response.data ?? '');
+      if (!mounted || publicado == null || publicado == enEjecucion) return;
       state = true; // nueva versión disponible
       _timer?.cancel();
+    } catch (e) {
+      debugPrint('WebVersionChecker: no se pudo leer index.html: $e');
     }
   }
 
@@ -64,6 +56,11 @@ class WebVersionChecker extends StateNotifier<bool> {
     super.dispose();
   }
 }
+
+/// El build que trae un index.html publicado, o null si no lo trae.
+@visibleForTesting
+String? buildPublicadoDe(String indexHtml) =>
+    RegExp(r'bosqueBuild\s*=\s*"(\d+)"').firstMatch(indexHtml)?.group(1);
 
 /// `true` cuando hay una nueva versión desplegada.
 /// Solo activo en web.

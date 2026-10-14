@@ -114,7 +114,7 @@ class TareasRutinariasPorCargoScreen extends ConsumerWidget {
           switchOutCurve: Curves.easeIn,
           // El ancho del cajón y no el de la ventana: el sidebar del
           // dashboard se come 260 px.
-          child: LayoutBuilder(
+          child: AnchoDelCajon(
             builder:
                 (context, cajon) =>
                     _buildBody(context, ref, state, notifier, cajon.maxWidth),

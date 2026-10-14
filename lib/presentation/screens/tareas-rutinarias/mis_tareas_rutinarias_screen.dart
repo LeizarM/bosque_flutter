@@ -537,7 +537,7 @@ class _MisTareasRutinariasScreenState
     return TareasScope(
       // El ancho del cajón decide si "Mi equipo" lleva su nombre o solo el
       // icono: el sidebar del dashboard se come 260 px.
-      child: LayoutBuilder(
+      child: AnchoDelCajon(
         builder:
             (context, cajon) => Scaffold(
               appBar: AppBarTareas(
@@ -698,7 +698,7 @@ class _MisTareasRutinariasScreenState
                   ),
                 ),
               ),
-              body: LayoutBuilder(
+              body: AnchoDelCajon(
                 builder: (context, cajon) {
                   // El ancho del cajón y no el de la ventana: el sidebar del
                   // dashboard se come 260 px, y con MediaQuery la planilla

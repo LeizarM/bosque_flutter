@@ -161,7 +161,7 @@ class _ResumenPorPersona extends StatelessWidget {
   const _ResumenPorPersona({required this.filas});
 
   @override
-  Widget build(BuildContext context) => LayoutBuilder(
+  Widget build(BuildContext context) => AnchoDelCajon(
     builder: (context, cajon) {
       if (cajon.maxWidth < TareasBreakpoints.mediumMax) {
         return Column(

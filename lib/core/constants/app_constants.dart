@@ -26,7 +26,9 @@ class AppConstants {
     }
   }
 
-  static const String APP_VERSION = "1.0.1";
+  // Súbela cuando el backend deje de servir a la app anterior; después se sube
+  // la mínima de p_list_Usuario (sql/snippets/version_minima_app.sql).
+  static const String APP_VERSION = "1.0.2";
 
   static const String loginEndpoint = '/auth/login';
   static const String menuEndpoint = '/view/vistaDinamica';

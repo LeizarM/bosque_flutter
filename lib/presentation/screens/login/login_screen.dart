@@ -44,6 +44,7 @@ import 'package:bosque_flutter/core/state/theme_mode_provider.dart';
 import 'package:bosque_flutter/core/state/user_provider.dart';
 import 'package:bosque_flutter/core/theme/app_theme.dart';
 import 'package:bosque_flutter/core/ui/tokens_bosque.dart';
+import 'package:bosque_flutter/core/utils/version_app.dart';
 import 'package:bosque_flutter/data/repositories/auth_repository_impl.dart';
 import 'package:bosque_flutter/domain/repositories/auth_repository.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
@@ -212,7 +213,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
       if (!mounted) return;
 
       if (loginEntity != null) {
-        if (loginEntity.versionApp != AppConstants.APP_VERSION) {
+        if (!versionAppVigente(loginEntity.versionApp)) {
           // Aviso, no error: no hay nada mal escrito, hay que actualizar.
           _mostrar(
             'Tu versión de la app (${AppConstants.APP_VERSION}) está desactualizada. '

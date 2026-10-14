@@ -200,7 +200,7 @@ class _Encabezado extends StatelessWidget {
       ...acciones,
     ];
 
-    return LayoutBuilder(
+    return AnchoDelCajon(
       builder: (context, cajon) {
         // En un cajón angosto el contador y los botones no entran en la misma
         // línea que el título: van abajo, envueltos.
@@ -558,7 +558,7 @@ class ContenidoArqueos extends StatelessWidget {
   );
 
   @override
-  Widget build(BuildContext context) => LayoutBuilder(
+  Widget build(BuildContext context) => AnchoDelCajon(
     builder: (context, cajon) {
       if (cajon.maxWidth < _anchoDeTabla) {
         return Column(
@@ -857,7 +857,7 @@ class ContenidoTraspasos extends StatelessWidget {
       (valor ?? 0) == 0 ? '—' : '$unidad ${FormatoMoneda.monto.format(valor)}';
 
   @override
-  Widget build(BuildContext context) => LayoutBuilder(
+  Widget build(BuildContext context) => AnchoDelCajon(
     builder: (context, cajon) {
       if (cajon.maxWidth < _anchoDeTabla) {
         return Column(
@@ -1068,7 +1068,7 @@ class ContenidoCajaFuerte extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) => LayoutBuilder(
+  Widget build(BuildContext context) => AnchoDelCajon(
     builder: (context, cajon) {
       if (cajon.maxWidth < _anchoDeTabla) {
         return Column(
@@ -1231,7 +1231,7 @@ class ContenidoCheques extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) => LayoutBuilder(
+  Widget build(BuildContext context) => AnchoDelCajon(
     builder: (context, cajon) {
       if (cajon.maxWidth < TareasBreakpoints.mediumMax) {
         return Column(
@@ -1379,7 +1379,7 @@ class _ContenidoTareasState extends State<ContenidoTareas> {
             style: context.apagado(),
           )
         else
-          LayoutBuilder(
+          AnchoDelCajon(
             builder: (context, cajon) {
               if (cajon.maxWidth < TareasBreakpoints.wideMax) {
                 return Column(
@@ -1575,7 +1575,7 @@ class ContenidoFilasSeccion extends StatelessWidget {
   );
 
   @override
-  Widget build(BuildContext context) => LayoutBuilder(
+  Widget build(BuildContext context) => AnchoDelCajon(
     builder: (context, cajon) {
       if (cajon.maxWidth < _anchoDeTabla) {
         return Column(

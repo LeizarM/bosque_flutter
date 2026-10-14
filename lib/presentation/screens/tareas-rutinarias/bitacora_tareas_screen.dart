@@ -394,13 +394,8 @@ class _BarraCumplimiento extends ConsumerWidget {
               final s = ref.watch(bitacoraCumplimientoProvider);
               final n = ref.read(bitacoraCumplimientoProvider.notifier);
               return SafeArea(
-                child: Padding(
-                  padding: EdgeInsets.fromLTRB(
-                    16,
-                    0,
-                    16,
-                    16 + MediaQuery.viewInsetsOf(context).bottom,
-                  ),
+                child: MargenTeclado(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.stretch,

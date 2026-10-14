@@ -395,7 +395,7 @@ class _FilaSenal extends StatelessWidget {
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(Esp.l, Esp.m, Esp.m, Esp.m),
-      child: LayoutBuilder(
+      child: AnchoDelCajon(
         builder:
             (context, cajon) =>
                 cajon.maxWidth < 520

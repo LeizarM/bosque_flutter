@@ -40,6 +40,12 @@
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
         </activity>
+        <!-- Motor grafico anterior (Skia) en vez de Impeller: con GPU Mali de gama
+             media (Xiaomi, Redmi, Poco, Infinix, Tecno) Impeller traba la pantalla y
+             el teclado. Para volver a Impeller, borrar este meta-data. -->
+        <meta-data
+            android:name="io.flutter.embedding.android.EnableImpeller"
+            android:value="false" />
         <!-- Don't delete the meta-data below.
              This is used by the Flutter tool to generate GeneratedPluginRegistrant.java -->
         <meta-data

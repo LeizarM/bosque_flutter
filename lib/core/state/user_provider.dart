@@ -1,5 +1,5 @@
 import 'dart:convert';
-import 'package:bosque_flutter/core/constants/app_constants.dart';
+import 'package:bosque_flutter/core/utils/version_app.dart';
 import 'package:bosque_flutter/domain/entities/empleado_entity.dart';
 import 'package:bosque_flutter/domain/entities/login_entity.dart';
 import 'package:bosque_flutter/core/utils/secure_storage.dart';
@@ -18,8 +18,8 @@ final asyncUserProvider = FutureProvider<LoginEntity?>((ref) async {
       try {
         final userDataMap = jsonDecode(userDataJson);
         final userVersion = userDataMap['versionApp']?.toString();
-        if (userVersion != null && userVersion != AppConstants.APP_VERSION) {
-          // Si la versión no coincide, limpiar usuario y token
+        if (userVersion != null && !versionAppVigente(userVersion)) {
+          // App más vieja que la mínima del login: limpiar usuario y token
           await storage.deleteUserData();
           await storage.deleteToken();
           return null;
@@ -66,7 +66,7 @@ class UserStateNotifier extends StateNotifier<LoginEntity?> {
           final userDataMap = jsonDecode(userDataJson);
           // Validar versión de la app
           final userVersion = userDataMap['versionApp']?.toString();
-          if (userVersion != null && userVersion != AppConstants.APP_VERSION) {
+          if (userVersion != null && !versionAppVigente(userVersion)) {
             // Si la versión no coincide, limpiar usuario y token
             state = null;
             await storage.deleteUserData();

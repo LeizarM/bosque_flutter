@@ -26,7 +26,13 @@ class CajaFuerteScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final state = ref.watch(cajaFuerteProvider);
+    // Solo los ids de las filas: escribir reconstruye esa fila y no la pantalla
+    // entera con "Registrado hoy" (en un celular lento eso trababa el teclado).
+    final ids = ref
+        .watch(
+          cajaFuerteProvider.select((s) => s.filas.map((f) => f.id).join(' ')),
+        )
+        .split(' ');
     final notifier = ref.read(cajaFuerteProvider.notifier);
 
     ref.listen(cajaFuerteProvider, (previo, actual) {
@@ -66,7 +72,7 @@ class CajaFuerteScreen extends ConsumerWidget {
           titulo: nombreTarea,
           subtitulo:
               'Dinero que llega a caja fuerte hoy · '
-              '${state.filas.length == 1 ? '1 registro' : '${state.filas.length} registros'}',
+              '${ids.length == 1 ? '1 registro' : '${ids.length} registros'}',
           insignia: InsigniaTarea.deTipo(context, 4),
           acciones: [
             // Agregar una fila es una accion de la TABLA, no del formulario:
@@ -84,110 +90,158 @@ class CajaFuerteScreen extends ConsumerWidget {
         ),
         body: MargenPaginaTareas(
           abajo: false,
-          child: LayoutBuilder(
-          builder: (context, cajon) {
-            // En una resolucion de escritorio esto es una planilla: seis
-            // columnas por registro y una fila por cliente. Las tarjetas
-            // lado a lado se veian como tres formularios distintos, y para
-            // comparar dos importes habia que barrer la pantalla en zig-zag.
-            // El ancho del cajón y no el de la ventana (el sidebar se come
-            // 260 px). Sin tope centrado: la planilla usa todo el ancho.
-            final esTabla = cajon.maxWidth >= TareasBreakpoints.splitMin;
+          child: AnchoDelCajon(
+            builder: (context, cajon) {
+              // En una resolucion de escritorio esto es una planilla: seis
+              // columnas por registro y una fila por cliente. Las tarjetas
+              // lado a lado se veian como tres formularios distintos, y para
+              // comparar dos importes habia que barrer la pantalla en zig-zag.
+              // El ancho del cajón y no el de la ventana (el sidebar se come
+              // 260 px). Sin tope centrado: la planilla usa todo el ancho.
+              final esTabla = cajon.maxWidth >= TareasBreakpoints.splitMin;
 
-            return ListView(
-              keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-              padding: const EdgeInsets.only(bottom: Esp.xl),
-              children: [
-                if (esTabla)
-                  MarcoTabla(
-                    child: Column(
-                      children: [
-                        const EncabezadoTabla(
-                          anchos: _anchosCajaFuerte,
-                          titulos: [
-                            'Cliente',
-                            'Moneda',
-                            'Importe',
-                            'Tipo',
-                            'Destino',
-                            'Observación',
-                            '',
-                          ],
-                          aLaDerecha: {2},
-                        ),
-                        for (var i = 0; i < state.filas.length; i++)
-                          _FilaTablaLlegada(
-                            key: ValueKey(state.filas[i].id),
-                            fila: state.filas[i],
-                            rayado: i.isOdd,
-                            puedeQuitar: state.filas.length > 1,
-                            onCambio:
-                                (actualizar) => notifier.actualizarFila(
-                                  state.filas[i].id,
-                                  actualizar,
-                                ),
-                            onQuitar: () {
-                              HapticFeedback.selectionClick();
-                              notifier.quitarFila(state.filas[i].id);
-                            },
+              return ListView(
+                keyboardDismissBehavior:
+                    ScrollViewKeyboardDismissBehavior.onDrag,
+                padding: const EdgeInsets.only(bottom: Esp.xl),
+                children: [
+                  if (esTabla)
+                    MarcoTabla(
+                      child: Column(
+                        children: [
+                          const EncabezadoTabla(
+                            anchos: _anchosCajaFuerte,
+                            titulos: [
+                              'Cliente',
+                              'Moneda',
+                              'Importe',
+                              'Tipo',
+                              'Destino',
+                              'Observación',
+                              '',
+                            ],
+                            aLaDerecha: {2},
                           ),
-                      ],
-                    ),
-                  )
-                else
-                  for (final fila in state.filas)
-                    _FilaAnimada(
-                      key: ValueKey(fila.id),
-                      child: _FilaLlegada(
-                        fila: fila,
-                        puedeQuitar: state.filas.length > 1,
-                        onCambio:
-                            (actualizar) =>
-                                notifier.actualizarFila(fila.id, actualizar),
-                        onQuitar: () {
-                          HapticFeedback.selectionClick();
-                          notifier.quitarFila(fila.id);
-                        },
+                          for (var i = 0; i < ids.length; i++)
+                            _FilaCajaFuerte(
+                              key: ValueKey(ids[i]),
+                              id: ids[i],
+                              enTabla: true,
+                              rayado: i.isOdd,
+                              puedeQuitar: ids.length > 1,
+                            ),
+                        ],
                       ),
-                    ),
-                const SizedBox(height: Esp.l),
-                _RegistradasHoy(esTabla: esTabla),
-              ],
-            );
-          },
-        ),
+                    )
+                  else
+                    for (final id in ids)
+                      _FilaCajaFuerte(
+                        key: ValueKey(id),
+                        id: id,
+                        enTabla: false,
+                        rayado: false,
+                        puedeQuitar: ids.length > 1,
+                      ),
+                  const SizedBox(height: Esp.l),
+                  _RegistradasHoy(esTabla: esTabla),
+                ],
+              );
+            },
+          ),
         ),
         // "Guardar" es lo que graba las llegadas del formulario: abajo, fijo,
         // al final del recorrido de lectura. Se puede volver a guardar el mismo
         // día; desde el archivo SQL 96 no hay tarea que cerrar.
-        bottomNavigationBar: BarraAccionTareas(
-          resumen: Text(
-            state.filas.length == 1
-                ? '1 registro para guardar'
-                : '${state.filas.length} registros para guardar',
-            style: context.apagado(),
-          ),
-          accion: FilledButton.icon(
-            onPressed:
-                state.guardando
-                    ? null
-                    : notifier.registrar,
-            icon:
-                state.guardando
-                    ? SizedBox(
-                      width: 16,
-                      height: 16,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: Theme.of(context).colorScheme.onPrimary,
-                      ),
-                    )
-                    : const Icon(Icons.check, size: 18),
-            label: Text(
-              state.guardando ? 'Guardando…' : 'Guardar',
-            ),
-          ),
-        ),
+        bottomNavigationBar: const _BarraGuardar(),
+      ),
+    );
+  }
+}
+
+/// "Guardar" con su resumen. Mira solo si está guardando y cuántas filas hay.
+class _BarraGuardar extends ConsumerWidget {
+  const _BarraGuardar();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final (guardando, cuantas) = ref.watch(
+      cajaFuerteProvider.select((s) => (s.guardando, s.filas.length)),
+    );
+    return BarraAccionTareas(
+      resumen: Text(
+        cuantas == 1
+            ? '1 registro para guardar'
+            : '$cuantas registros para guardar',
+        style: context.apagado(),
+      ),
+      accion: FilledButton.icon(
+        onPressed:
+            guardando ? null : ref.read(cajaFuerteProvider.notifier).registrar,
+        icon:
+            guardando
+                ? SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: Theme.of(context).colorScheme.onPrimary,
+                  ),
+                )
+                : const Icon(Icons.check, size: 18),
+        label: Text(guardando ? 'Guardando…' : 'Guardar'),
+      ),
+    );
+  }
+}
+
+/// Una fila del formulario. Mira solo su propia llegada: al escribir en ella no
+/// se reconstruyen las demás.
+class _FilaCajaFuerte extends ConsumerWidget {
+  final String id;
+  final bool enTabla;
+  final bool rayado;
+  final bool puedeQuitar;
+
+  const _FilaCajaFuerte({
+    super.key,
+    required this.id,
+    required this.enTabla,
+    required this.rayado,
+    required this.puedeQuitar,
+  });
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final fila = ref.watch(
+      cajaFuerteProvider.select(
+        (s) => s.filas.where((f) => f.id == id).firstOrNull,
+      ),
+    );
+    if (fila == null) return const SizedBox.shrink();
+    final notifier = ref.read(cajaFuerteProvider.notifier);
+    void onCambio(
+      LlegadaCajaFuerteEntity Function(LlegadaCajaFuerteEntity) actualizar,
+    ) => notifier.actualizarFila(id, actualizar);
+    void onQuitar() {
+      HapticFeedback.selectionClick();
+      notifier.quitarFila(id);
+    }
+
+    if (enTabla) {
+      return _FilaTablaLlegada(
+        fila: fila,
+        rayado: rayado,
+        puedeQuitar: puedeQuitar,
+        onCambio: onCambio,
+        onQuitar: onQuitar,
+      );
+    }
+    return _FilaAnimada(
+      child: _FilaLlegada(
+        fila: fila,
+        puedeQuitar: puedeQuitar,
+        onCambio: onCambio,
+        onQuitar: onQuitar,
       ),
     );
   }
@@ -304,7 +358,9 @@ class _RegistradasHoy extends ConsumerWidget {
                       FilaTabla(
                         anchos: _anchosRegistradas,
                         borde: Border(
-                          top: BorderSide(color: tema.colorScheme.outlineVariant),
+                          top: BorderSide(
+                            color: tema.colorScheme.outlineVariant,
+                          ),
                         ),
                         celdas: [
                           Text(_hora(l.hora), style: tema.textTheme.bodySmall),
@@ -405,7 +461,6 @@ class _FilaTablaLlegada extends StatelessWidget {
   final VoidCallback onQuitar;
 
   const _FilaTablaLlegada({
-    super.key,
     required this.fila,
     required this.rayado,
     required this.puedeQuitar,
@@ -429,9 +484,7 @@ class _FilaTablaLlegada extends StatelessWidget {
       alineacion: CrossAxisAlignment.start,
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       fondo:
-          rayado
-              ? scheme.surfaceContainerHighest.withValues(alpha: 0.3)
-              : null,
+          rayado ? scheme.surfaceContainerHighest.withValues(alpha: 0.3) : null,
       celdas: [
         TextFormField(
           initialValue: fila.cliente,
@@ -453,8 +506,7 @@ class _FilaTablaLlegada extends StatelessWidget {
             DropdownMenuItem(value: 'BS', child: Text('Bs')),
             DropdownMenuItem(value: 'USD', child: Text(r'$us')),
           ],
-          onChanged:
-              (v) => onCambio((f) => f.copyWith(moneda: v ?? f.moneda)),
+          onChanged: (v) => onCambio((f) => f.copyWith(moneda: v ?? f.moneda)),
         ),
         TextFormField(
           initialValue: fila.importe?.toString() ?? '',
@@ -523,7 +575,7 @@ class _FilaTablaLlegada extends StatelessWidget {
 class _FilaAnimada extends StatelessWidget {
   final Widget child;
 
-  const _FilaAnimada({super.key, required this.child});
+  const _FilaAnimada({required this.child});
 
   @override
   Widget build(BuildContext context) {
@@ -674,8 +726,14 @@ class _FilaLlegada extends StatelessWidget {
                       border: OutlineInputBorder(),
                     ),
                     items: const [
-                      DropdownMenuItem(value: 'BS', child: Text('Bolivianos (Bs)')),
-                      DropdownMenuItem(value: 'USD', child: Text(r'Dólares ($us)')),
+                      DropdownMenuItem(
+                        value: 'BS',
+                        child: Text('Bolivianos (Bs)'),
+                      ),
+                      DropdownMenuItem(
+                        value: 'USD',
+                        child: Text(r'Dólares ($us)'),
+                      ),
                     ],
                     onChanged: (v) => onCambio((f) => f.copyWith(moneda: v)),
                   ),

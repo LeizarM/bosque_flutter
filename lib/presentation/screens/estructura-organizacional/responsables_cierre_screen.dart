@@ -198,7 +198,7 @@ class ResponsablesCierreScreen extends ConsumerWidget {
     );
 
     return [
-      LayoutBuilder(
+      AnchoDelCajon(
         builder: (context, cajon) {
           if (cajon.maxWidth < 900) {
             return Column(

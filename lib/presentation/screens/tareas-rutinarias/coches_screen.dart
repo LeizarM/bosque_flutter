@@ -145,7 +145,7 @@ class _Grilla extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return LayoutBuilder(
+    return AnchoDelCajon(
       builder: (context, cajon) {
     // El ancho del cajón y no el de la ventana: el sidebar del dashboard se
     // come 260 px. Sin tope centrado: la planilla usa todo el ancho.

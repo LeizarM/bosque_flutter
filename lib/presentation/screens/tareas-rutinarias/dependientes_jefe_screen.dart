@@ -100,7 +100,7 @@ class DependientesJefeScreen extends ConsumerWidget {
                           child:
                               state.dependientes.isEmpty
                                   ? const _EstadoSinDependientes()
-                                  : LayoutBuilder(
+                                  : AnchoDelCajon(
                                     builder: (context, cajon) {
                                       // Todo el ancho del cajón: en escritorio
                                       // dos columnas de cargos, en vez de una
@@ -295,7 +295,7 @@ class _FiltrosBar extends StatelessWidget {
       // dentro de un Wrap revienta en pantallas angostas (el Wrap da a sus
       // hijos un ancho no acotado). En mobile se apilan a ancho completo; en
       // tablet/desktop quedan lado a lado con un ancho fijo cómodo.
-      child: LayoutBuilder(
+      child: AnchoDelCajon(
         builder: (context, constraints) {
           // 300 px por selector: con 260 cada segmento quedaba en 130 px y
           // "Todo el subárbol" se partía en dos líneas. El corte sale de

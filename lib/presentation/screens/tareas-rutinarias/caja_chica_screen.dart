@@ -195,7 +195,7 @@ class CajaChicaScreen extends ConsumerWidget {
                     )
                     // El ancho del cajón y no el de la ventana: el sidebar del
                     // dashboard se come 260 px.
-                    : LayoutBuilder(
+                    : AnchoDelCajon(
                       key: const ValueKey('lista'),
                       builder:
                           (context, cajon) => _LibroContable(
@@ -865,13 +865,8 @@ class _FormularioEgresoState extends ConsumerState<_FormularioEgreso> {
         // Sin Flexible el scroll no tiene alto y la hoja desborda con el
         // teclado abierto.
         Flexible(
-          child: Padding(
-            padding: EdgeInsets.only(
-              left: 20,
-              right: 20,
-              top: 4,
-              bottom: MediaQuery.viewInsetsOf(context).bottom + 20,
-            ),
+          child: MargenTeclado(
+            padding: const EdgeInsets.fromLTRB(20, 4, 20, 20),
             child: Form(
               child: SingleChildScrollView(
                 keyboardDismissBehavior:
@@ -924,7 +919,7 @@ class _FormularioEgresoState extends ConsumerState<_FormularioEgreso> {
                     const SizedBox(height: 12),
                     // Angosto, uno debajo del otro: las dos etiquetas no entran
                     // lado a lado en un teléfono.
-                    LayoutBuilder(
+                    AnchoDelCajon(
                       builder: (context, caja) {
                         final factura = TextFormField(
                           decoration: const InputDecoration(

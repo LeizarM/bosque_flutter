@@ -103,7 +103,7 @@ class _CierreOperacionesScreenState
     });
 
     return TareasScope(
-      child: LayoutBuilder(
+      child: AnchoDelCajon(
         builder: (context, cajon) {
           final chico = Aire.de(cajon.maxWidth).esChico;
           return Scaffold(

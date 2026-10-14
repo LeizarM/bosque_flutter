@@ -111,7 +111,7 @@ class TraspasoEfectivoTesBaseScreen extends ConsumerWidget {
                 child: MargenPaginaTareas(
                   // El ancho del cajón, no el de la ventana: el sidebar del
                   // dashboard se come 260 px.
-                  child: LayoutBuilder(
+                  child: AnchoDelCajon(
                     builder:
                         (context, cajon) => _cuerpo(
                           context,

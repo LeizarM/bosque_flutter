@@ -1,5 +1,6 @@
 // Destino final: lib/presentation/widgets/tareas-rutinarias/fila_formulario_responsiva.dart
 import 'package:flutter/material.dart';
+import 'package:bosque_flutter/presentation/widgets/tareas-rutinarias/pagina_tareas.dart';
 
 /// Un campo dentro de [FilaFormularioResponsiva]: el widget ya armado por
 /// quien lo declara (TextFormField, DropdownButtonFormField, botón de
@@ -123,7 +124,7 @@ class FilaFormularioResponsiva extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Expanded(
-            child: LayoutBuilder(
+            child: AnchoDelCajon(
               builder: (context, constraints) {
                 final double anchoDisponible = constraints.maxWidth;
                 return Wrap(

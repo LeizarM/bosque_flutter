@@ -118,7 +118,7 @@ class _TraspasoEntreSistemasScreenState
                 )
                 // El ancho del cajón y no el de la ventana: el menú lateral
                 // del dashboard también ocupa lugar.
-                : LayoutBuilder(
+                : AnchoDelCajon(
                   builder:
                       (context, cajon) => _Grilla(
                         filas: state.filas,

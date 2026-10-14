@@ -1,5 +1,7 @@
 // ignore: avoid_web_libraries_in_flutter
 import 'dart:html' as html;
+import 'dart:js_interop';
+import 'dart:js_interop_unsafe';
 
 /// Recarga la app web limpiando service workers y cache.
 void hardReloadWeb() {
@@ -17,3 +19,7 @@ void hardReloadWeb() {
         html.window.location.reload();
       });
 }
+
+/// El build con el que arrancó esta pestaña (lo deja web/flutter_bootstrap.js).
+String? buildWebEnEjecucion() =>
+    globalContext['bosqueBuild']?.dartify()?.toString();

@@ -13,6 +13,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:bosque_flutter/core/ui/cerrar_ruta.dart';
+import 'package:bosque_flutter/presentation/widgets/tareas-rutinarias/pagina_tareas.dart';
 
 /// Una tarea del catálogo que se llama igual o parecido a lo que se escribe.
 typedef TareaParecida = ({
@@ -323,13 +324,8 @@ class _CrearTareaPorCargoSheetState
       ref.watch(tareaRutinariaProvider).items,
     ).parecidasA(_descripcionCtrl.text);
 
-    return Padding(
-      padding: EdgeInsets.only(
-        left: 20,
-        right: 20,
-        top: 20,
-        bottom: MediaQuery.viewInsetsOf(context).bottom + 20,
-      ),
+    return MargenTeclado(
+      padding: const EdgeInsets.all(20),
       child: Form(
         key: _formKey,
         child: SingleChildScrollView(

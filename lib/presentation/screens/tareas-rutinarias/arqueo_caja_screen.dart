@@ -10,6 +10,7 @@ import 'package:bosque_flutter/core/ui/aviso.dart';
 import 'package:bosque_flutter/core/ui/visor_pdf.dart';
 import 'package:bosque_flutter/core/utils/formatear_fecha.dart';
 import 'package:bosque_flutter/core/utils/formato_moneda.dart';
+import 'package:bosque_flutter/domain/entities/corte_entity.dart';
 import 'package:bosque_flutter/domain/entities/vale_arqueo_entity.dart';
 import 'package:bosque_flutter/presentation/widgets/tareas-rutinarias/fila_formulario_responsiva.dart';
 import 'package:bosque_flutter/presentation/widgets/tareas-rutinarias/franja_acento.dart';
@@ -236,8 +237,7 @@ class _ArqueoCajaScreenState extends ConsumerState<ArqueoCajaScreen> {
                   ),
                   actions: [
                     TextButton(
-                      onPressed:
-                          generandoPdf ? null : () => cerrarRuta(ctx),
+                      onPressed: generandoPdf ? null : () => cerrarRuta(ctx),
                       child: const Text('No, gracias'),
                     ),
                     FilledButton.icon(
@@ -302,7 +302,33 @@ class _ArqueoCajaScreenState extends ConsumerState<ArqueoCajaScreen> {
   Widget build(BuildContext context) {
     final cortesState = ref.watch(corteProvider);
     final docsState = ref.watch(documentacionProvider);
-    final state = ref.watch(arqueoCajaProvider);
+    // Solo lo que arma la página: los datos del sistema (llegan una vez) y qué
+    // vales hay. Cantidades, montos y totales los mira cada fila y la barra de
+    // abajo: escribir un número no reconstruye toda la pantalla.
+    final state = ref.watch(
+      arqueoCajaProvider.select(
+        (s) => (
+          cargandoContexto: s.cargandoContexto,
+          desgloseSap: s.desgloseSap,
+          saldoMovSap: s.saldoMovSap,
+          tc: s.tc,
+          tcAyer: s.tcAyer,
+          fechaHoyTc: s.fechaHoyTc,
+          fechaAyerTc: s.fechaAyerTc,
+          anterior: s.anterior,
+        ),
+      ),
+    );
+    final idsVales =
+        ref
+            .watch(
+              arqueoCajaProvider.select(
+                (s) => s.vales.map((v) => v.id).join(' '),
+              ),
+            )
+            .split(' ')
+            .where((id) => id.isNotEmpty)
+            .toList();
     final notifier = ref.read(arqueoCajaProvider.notifier);
 
     final cortesActivos = cortesState.items;
@@ -314,9 +340,6 @@ class _ArqueoCajaScreenState extends ConsumerState<ArqueoCajaScreen> {
             : docsState.items.isEmpty && docsState.mensajeError != null
             ? docsState.mensajeError
             : null;
-    final total = state.totalCon(cortesActivos);
-    final diferencia = state.diferenciaCon(cortesActivos);
-    final cuadrado = diferencia.abs() <= 0.01;
 
     // Autocompleta los controladores UNA sola vez, apenas llega el contexto
     // real del servidor — después el usuario puede seguir editando sin que
@@ -368,7 +391,7 @@ class _ArqueoCajaScreenState extends ConsumerState<ArqueoCajaScreen> {
           ].join(' · '),
           insignia: InsigniaTarea.deTipo(context, 2),
         ),
-        body: LayoutBuilder(
+        body: AnchoDelCajon(
           builder: (context, cajon) {
             // El ancho del cajón y no el de la ventana: el sidebar del
             // dashboard se come 260 px, y con MediaQuery las dos columnas
@@ -623,7 +646,9 @@ class _ArqueoCajaScreenState extends ConsumerState<ArqueoCajaScreen> {
                                               ),
                                               const Spacer(),
                                               Text(
-                                                FormatoMoneda.bs(state.saldoMovSap),
+                                                FormatoMoneda.bs(
+                                                  state.saldoMovSap,
+                                                ),
                                                 style: Theme.of(
                                                   context,
                                                 ).textTheme.titleSmall?.copyWith(
@@ -851,180 +876,14 @@ class _ArqueoCajaScreenState extends ConsumerState<ArqueoCajaScreen> {
                           acento: Theme.of(context).colorScheme.primary,
                           child: Column(
                             children: [
-                              ...cortesActivos.map((c) {
-                                final cantidad =
-                                    state.cantidadPorCorte[c.idCorte] ?? 0;
-                                final valorUnitario = c.corte ?? 0;
-                                final esDolares = c.tipoCorte == 'USD';
-                                final subtotalBs =
-                                    cantidad *
-                                    valorUnitario *
-                                    (esDolares ? state.tc : 1);
-                                return Padding(
-                                  padding: const EdgeInsets.only(bottom: 8),
-                                  child: Row(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.center,
-                                    children: [
-                                      // Badge de moneda — el legacy tiene una
-                                      // columna "TIPO CORTE" propia (Bolivianos/
-                                      // Dólares) además de la denominación;
-                                      // antes aquí la moneda solo se leía metida
-                                      // en el texto de la etiqueta.
-                                      Container(
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 6,
-                                          vertical: 2,
-                                        ),
-                                        margin: const EdgeInsets.only(right: 8),
-                                        decoration: BoxDecoration(
-                                          color:
-                                              esDolares
-                                                  ? Theme.of(context)
-                                                      .colorScheme
-                                                      .tertiaryContainer
-                                                  : Theme.of(context)
-                                                      .colorScheme
-                                                      .secondaryContainer,
-                                          borderRadius: BorderRadius.circular(
-                                            6,
-                                          ),
-                                        ),
-                                        child: Text(
-                                          esDolares ? '\$us' : 'Bs',
-                                          style: Theme.of(
-                                            context,
-                                          ).textTheme.labelSmall?.copyWith(
-                                            fontWeight: FontWeight.w700,
-                                            color:
-                                                esDolares
-                                                    ? Theme.of(context)
-                                                        .colorScheme
-                                                        .onTertiaryContainer
-                                                    : Theme.of(context)
-                                                        .colorScheme
-                                                        .onSecondaryContainer,
-                                          ),
-                                        ),
-                                      ),
-                                      Expanded(
-                                        flex: 3,
-                                        child: Text(
-                                          '${c.descripcion ?? ''} (${FormatoMoneda.monto.format(valorUnitario)})',
-                                          style:
-                                              Theme.of(
-                                                context,
-                                              ).textTheme.bodySmall,
-                                        ),
-                                      ),
-                                      Expanded(
-                                        flex: 2,
-                                        child: TextFormField(
-                                          decoration: const InputDecoration(
-                                            labelText: 'Cantidad',
-                                            isDense: true,
-                                            border: OutlineInputBorder(),
-                                          ),
-                                          keyboardType: TextInputType.number,
-                                          textInputAction: TextInputAction.next,
-                                          onChanged:
-                                              (v) => notifier.setCantidadCorte(
-                                                c.idCorte,
-                                                int.tryParse(v) ?? 0,
-                                              ),
-                                        ),
-                                      ),
-                                      SizedBox(
-                                        width: 84,
-                                        child: AnimatedSwitcher(
-                                          duration: const Duration(
-                                            milliseconds: 150,
-                                          ),
-                                          child: Text(
-                                            key: ValueKey(subtotalBs),
-                                            cantidad > 0
-                                                ? FormatoMoneda.monto.format(
-                                                  subtotalBs,
-                                                )
-                                                : '—',
-                                            textAlign: TextAlign.end,
-                                            style: Theme.of(
-                                              context,
-                                            ).textTheme.bodySmall?.copyWith(
-                                              fontWeight:
-                                                  cantidad > 0
-                                                      ? FontWeight.w700
-                                                      : FontWeight.normal,
-                                              color:
-                                                  cantidad > 0
-                                                      ? Theme.of(
-                                                        context,
-                                                      ).colorScheme.onSurface
-                                                      : Theme.of(
-                                                        context,
-                                                      ).colorScheme.outline,
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                );
-                              }),
+                              for (final c in cortesActivos)
+                                _FilaCorte(
+                                  key: ValueKey(c.idCorte),
+                                  corte: c,
+                                  tc: state.tc,
+                                ),
                               const Divider(height: 20),
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 12,
-                                  vertical: 10,
-                                ),
-                                decoration: BoxDecoration(
-                                  color:
-                                      Theme.of(
-                                        context,
-                                      ).colorScheme.primaryContainer,
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: Row(
-                                  children: [
-                                    Expanded(
-                                      child: Text(
-                                        'Subtotal cortes',
-                                        style: Theme.of(
-                                          context,
-                                        ).textTheme.titleSmall?.copyWith(
-                                          fontWeight: FontWeight.w800,
-                                          color:
-                                              Theme.of(
-                                                context,
-                                              ).colorScheme.onPrimaryContainer,
-                                        ),
-                                      ),
-                                    ),
-                                    AnimatedSwitcher(
-                                      duration: const Duration(
-                                        milliseconds: 150,
-                                      ),
-                                      child: Text(
-                                        key: ValueKey(state.cantidadPorCorte),
-                                        'Bs ${FormatoMoneda.monto.format(cortesActivos.fold<double>(0, (a, c) {
-                                          final cant = state.cantidadPorCorte[c.idCorte] ?? 0;
-                                          final factor = c.tipoCorte == 'USD' ? state.tc : 1;
-                                          return a + cant * (c.corte ?? 0) * factor;
-                                        }))}',
-                                        style: Theme.of(
-                                          context,
-                                        ).textTheme.titleSmall?.copyWith(
-                                          fontWeight: FontWeight.w800,
-                                          color:
-                                              Theme.of(
-                                                context,
-                                              ).colorScheme.onPrimaryContainer,
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
+                              _SubtotalCortes(cortes: cortesActivos),
                             ],
                           ),
                         ),
@@ -1092,22 +951,15 @@ class _ArqueoCajaScreenState extends ConsumerState<ArqueoCajaScreen> {
                               // El encabezado solo si hay vales Y hay ancho para
                               // la tabla: seis títulos de columna sin nada debajo
                               // es peor que no mostrar nada.
-                              if (esSplit && state.vales.isNotEmpty)
+                              if (esSplit && idsVales.isNotEmpty)
                                 const _EncabezadoVales(),
-                              ...state.vales.map(
-                                (v) => _FilaVale(
-                                  key: ValueKey(v.id),
-                                  vale: v,
+                              for (final id in idsVales)
+                                _FilaVale(
+                                  key: ValueKey(id),
+                                  id: id,
                                   enTabla: esSplit,
-                                  onCambio:
-                                      (actualizar) => notifier.actualizarVale(
-                                        v.id,
-                                        actualizar,
-                                      ),
-                                  onQuitar: () => notifier.quitarVale(v.id),
                                 ),
-                              ),
-                              if (state.vales.isEmpty)
+                              if (idsVales.isEmpty)
                                 Padding(
                                   padding: const EdgeInsets.only(bottom: 10),
                                   child: Text(
@@ -1133,19 +985,10 @@ class _ArqueoCajaScreenState extends ConsumerState<ArqueoCajaScreen> {
                             ],
                           ),
                         ),
-                        observacion: TextFormField(
+                        observacion: _CampoObservacion(
                           controller: _obsCtrl,
                           focusNode: _obsFocus,
-                          maxLines: 2,
-                          decoration: InputDecoration(
-                            labelText:
-                                diferencia.abs() > 0.01
-                                    ? 'Observación — explica por qué falta o sobra'
-                                    : 'Observación',
-                            isDense: true,
-                            border: const OutlineInputBorder(),
-                          ),
-                          onChanged: notifier.setObs,
+                          cortes: cortesActivos,
                         ),
                       ),
                     ),
@@ -1161,95 +1004,283 @@ class _ArqueoCajaScreenState extends ConsumerState<ArqueoCajaScreen> {
         // no solo al terminar.
         // La barra de accion del modulo: el cuadre a la izquierda y el boton
         // a la derecha. Antes el boton ocupaba todo el ancho de la pantalla.
-        bottomNavigationBar: BarraAccionTareas(
-          resumen: AnimatedContainer(
-                  duration: const Duration(milliseconds: 220),
-                  curve: Curves.easeOut,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 14,
-                    vertical: 10,
-                  ),
-                  decoration: BoxDecoration(
-                    color:
-                        cuadrado
-                            ? TareasColors.cuadrado(context)
-                            : TareasColors.descuadrado(context),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(
-                        cuadrado
-                            ? Icons.check_circle_outline
-                            : Icons.error_outline,
-                        size: 18,
-                        color:
-                            cuadrado
-                                ? TareasColors.cuadradoTexto(context)
-                                : TareasColors.descuadradoTexto(context),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: AnimatedSwitcher(
-                          duration: const Duration(milliseconds: 180),
-                          child: Text(
-                            'Total contado: ${FormatoMoneda.bs(total)}',
-                            key: ValueKey(FormatoMoneda.monto.format(total)),
-                            style: TextStyle(
-                              fontWeight: FontWeight.w700,
-                              color:
-                                  cuadrado
-                                      ? TareasColors.cuadradoTexto(context)
-                                      : TareasColors.descuadradoTexto(context),
-                            ),
-                          ),
-                        ),
-                      ),
-                      AnimatedSwitcher(
-                        duration: const Duration(milliseconds: 180),
-                        child: Text(
-                          cuadrado
-                              ? 'Cuadra'
-                              : 'Dif: ${FormatoMoneda.bs(diferencia)}',
-                          key: ValueKey(
-                            cuadrado
-                                ? 'cuadrado'
-                                : FormatoMoneda.monto.format(diferencia),
-                          ),
-                          style: TextStyle(
-                            fontWeight: FontWeight.w600,
-                            color:
-                                cuadrado
-                                    ? TareasColors.cuadradoTexto(context)
-                                    : TareasColors.descuadradoTexto(context),
-                          ),
-                        ),
-                      ),
-                    ],
+        bottomNavigationBar: _BarraArqueo(
+          cortes: cortesActivos,
+          bloqueado: errorLectura != null,
+          onCerrar:
+              (diferencia) => _confirmarYGuardar(context, ref, diferencia),
+        ),
+      ),
+    );
+  }
+}
+
+/// Un corte de billete o moneda. Mira solo su cantidad.
+class _FilaCorte extends ConsumerWidget {
+  final CorteEntity corte;
+  final double tc;
+
+  const _FilaCorte({super.key, required this.corte, required this.tc});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final c = corte;
+    final cantidad = ref.watch(
+      arqueoCajaProvider.select((s) => s.cantidadPorCorte[c.idCorte] ?? 0),
+    );
+    final valorUnitario = c.corte ?? 0;
+    final esDolares = c.tipoCorte == 'USD';
+    final subtotalBs = cantidad * valorUnitario * (esDolares ? tc : 1);
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          // La moneda en su propia insignia, como la columna "TIPO CORTE" del
+          // legacy.
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+            margin: const EdgeInsets.only(right: 8),
+            decoration: BoxDecoration(
+              color:
+                  esDolares
+                      ? Theme.of(context).colorScheme.tertiaryContainer
+                      : Theme.of(context).colorScheme.secondaryContainer,
+              borderRadius: BorderRadius.circular(6),
+            ),
+            child: Text(
+              esDolares ? '\$us' : 'Bs',
+              style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                fontWeight: FontWeight.w700,
+                color:
+                    esDolares
+                        ? Theme.of(context).colorScheme.onTertiaryContainer
+                        : Theme.of(context).colorScheme.onSecondaryContainer,
+              ),
+            ),
+          ),
+          Expanded(
+            flex: 3,
+            child: Text(
+              '${c.descripcion ?? ''} (${FormatoMoneda.monto.format(valorUnitario)})',
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+          ),
+          Expanded(
+            flex: 2,
+            child: TextFormField(
+              decoration: const InputDecoration(
+                labelText: 'Cantidad',
+                isDense: true,
+                border: OutlineInputBorder(),
+              ),
+              keyboardType: TextInputType.number,
+              textInputAction: TextInputAction.next,
+              onChanged:
+                  (v) => ref
+                      .read(arqueoCajaProvider.notifier)
+                      .setCantidadCorte(c.idCorte, int.tryParse(v) ?? 0),
+            ),
+          ),
+          SizedBox(
+            width: 84,
+            child: AnimatedSwitcher(
+              duration: const Duration(milliseconds: 150),
+              child: Text(
+                key: ValueKey(subtotalBs),
+                cantidad > 0 ? FormatoMoneda.monto.format(subtotalBs) : '—',
+                textAlign: TextAlign.end,
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  fontWeight:
+                      cantidad > 0 ? FontWeight.w700 : FontWeight.normal,
+                  color:
+                      cantidad > 0
+                          ? Theme.of(context).colorScheme.onSurface
+                          : Theme.of(context).colorScheme.outline,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// El subtotal de los cortes. Se reconstruye solo cuando cambia el número.
+class _SubtotalCortes extends ConsumerWidget {
+  final List<CorteEntity> cortes;
+
+  const _SubtotalCortes({required this.cortes});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final subtotal = ref.watch(
+      arqueoCajaProvider.select(
+        (s) => cortes.fold<double>(0, (a, c) {
+          final cant = s.cantidadPorCorte[c.idCorte] ?? 0;
+          final factor = c.tipoCorte == 'USD' ? s.tc : 1;
+          return a + cant * (c.corte ?? 0) * factor;
+        }),
+      ),
+    );
+    final scheme = Theme.of(context).colorScheme;
+    final estilo = Theme.of(context).textTheme.titleSmall?.copyWith(
+      fontWeight: FontWeight.w800,
+      color: scheme.onPrimaryContainer,
+    );
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: scheme.primaryContainer,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        children: [
+          Expanded(child: Text('Subtotal cortes', style: estilo)),
+          AnimatedSwitcher(
+            duration: const Duration(milliseconds: 150),
+            child: Text(
+              key: ValueKey(subtotal),
+              'Bs ${FormatoMoneda.monto.format(subtotal)}',
+              style: estilo,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// La observación. Su etiqueta cambia solo cuando el arqueo pasa de cuadrar a
+/// no cuadrar, no con cada número.
+class _CampoObservacion extends ConsumerWidget {
+  final TextEditingController controller;
+  final FocusNode focusNode;
+  final List<CorteEntity> cortes;
+
+  const _CampoObservacion({
+    required this.controller,
+    required this.focusNode,
+    required this.cortes,
+  });
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final descuadre = ref.watch(
+      arqueoCajaProvider.select((s) => s.diferenciaCon(cortes).abs() > 0.01),
+    );
+    return TextFormField(
+      controller: controller,
+      focusNode: focusNode,
+      maxLines: 2,
+      decoration: InputDecoration(
+        labelText:
+            descuadre
+                ? 'Observación — explica por qué falta o sobra'
+                : 'Observación',
+        isDense: true,
+        border: const OutlineInputBorder(),
+      ),
+      onChanged: ref.read(arqueoCajaProvider.notifier).setObs,
+    );
+  }
+}
+
+/// La barra de abajo: el total contado, si cuadra, y "Cerrar arqueo".
+///
+/// Siempre visible y no al final del scroll: es la respuesta a "por qué
+/// cerrar" mientras se llena el formulario. El color cambia en vivo.
+class _BarraArqueo extends ConsumerWidget {
+  final List<CorteEntity> cortes;
+  final bool bloqueado;
+  final void Function(double diferencia) onCerrar;
+
+  const _BarraArqueo({
+    required this.cortes,
+    required this.bloqueado,
+    required this.onCerrar,
+  });
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final (total, saldoSap, guardando) = ref.watch(
+      arqueoCajaProvider.select(
+        (s) => (s.totalCon(cortes), s.saldoMovSap, s.guardando),
+      ),
+    );
+    final diferencia = total - saldoSap;
+    final cuadrado = diferencia.abs() <= 0.01;
+    final colorTexto =
+        cuadrado
+            ? TareasColors.cuadradoTexto(context)
+            : TareasColors.descuadradoTexto(context);
+
+    return BarraAccionTareas(
+      resumen: AnimatedContainer(
+        duration: const Duration(milliseconds: 220),
+        curve: Curves.easeOut,
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        decoration: BoxDecoration(
+          color:
+              cuadrado
+                  ? TareasColors.cuadrado(context)
+                  : TareasColors.descuadrado(context),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Row(
+          children: [
+            Icon(
+              cuadrado ? Icons.check_circle_outline : Icons.error_outline,
+              size: 18,
+              color: colorTexto,
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: AnimatedSwitcher(
+                duration: const Duration(milliseconds: 180),
+                child: Text(
+                  'Total contado: ${FormatoMoneda.bs(total)}',
+                  key: ValueKey(FormatoMoneda.monto.format(total)),
+                  style: TextStyle(
+                    fontWeight: FontWeight.w700,
+                    color: colorTexto,
                   ),
                 ),
-          accion: FilledButton.icon(
-                    onPressed:
-                        state.guardando || errorLectura != null
-                            ? null
-                            : () =>
-                                _confirmarYGuardar(context, ref, diferencia),
-                    icon:
-                        state.guardando
-                            ? SizedBox(
-                              width: 16,
-                              height: 16,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                color: Theme.of(context).colorScheme.onPrimary,
-                              ),
-                            )
-                            : const Icon(Icons.check),
-                    label: Text(
-                      state.guardando ? 'Guardando…' : 'Cerrar arqueo',
-                    ),
-                  ),
+              ),
+            ),
+            AnimatedSwitcher(
+              duration: const Duration(milliseconds: 180),
+              child: Text(
+                cuadrado ? 'Cuadra' : 'Dif: ${FormatoMoneda.bs(diferencia)}',
+                key: ValueKey(
+                  cuadrado
+                      ? 'cuadrado'
+                      : FormatoMoneda.monto.format(diferencia),
+                ),
+                style: TextStyle(
+                  fontWeight: FontWeight.w600,
+                  color: colorTexto,
+                ),
+              ),
+            ),
+          ],
         ),
+      ),
+      accion: FilledButton.icon(
+        onPressed: guardando || bloqueado ? null : () => onCerrar(diferencia),
+        icon:
+            guardando
+                ? SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: Theme.of(context).colorScheme.onPrimary,
+                  ),
+                )
+                : const Icon(Icons.check),
+        label: Text(guardando ? 'Guardando…' : 'Cerrar arqueo'),
       ),
     );
   }
@@ -1450,10 +1481,14 @@ class _Seccion extends StatelessWidget {
                     Icon(icono, size: 18, color: acento),
                     const SizedBox(width: 8),
                   ],
-                  Text(
-                    titulo,
-                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                      fontWeight: FontWeight.w700,
+                  // Flexible: con letra grande o en un teléfono angosto el
+                  // título baja de renglón en vez de salirse del borde.
+                  Flexible(
+                    child: Text(
+                      titulo,
+                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
                   ),
                 ],
@@ -1531,9 +1566,7 @@ class _EncabezadoVales extends StatelessWidget {
 }
 
 class _FilaVale extends ConsumerWidget {
-  final ValeArqueoEntity vale;
-  final void Function(ValeArqueoEntity Function(ValeArqueoEntity)) onCambio;
-  final VoidCallback onQuitar;
+  final String id;
 
   /// `true` = un renglón de tabla, con las columnas alineadas contra las de
   /// los demás vales y contra [_EncabezadoVales]. `false` = los seis campos
@@ -1541,16 +1574,22 @@ class _FilaVale extends ConsumerWidget {
   /// cuando no hay ancho para seis columnas (teléfono, ventana chica).
   final bool enTabla;
 
-  const _FilaVale({
-    super.key,
-    required this.vale,
-    required this.onCambio,
-    required this.onQuitar,
-    this.enTabla = false,
-  });
+  const _FilaVale({super.key, required this.id, this.enTabla = false});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // Solo este vale: escribir en él no reconstruye los demás.
+    final vale = ref.watch(
+      arqueoCajaProvider.select(
+        (s) => s.vales.where((v) => v.id == id).firstOrNull,
+      ),
+    );
+    if (vale == null) return const SizedBox.shrink();
+    final notifier = ref.read(arqueoCajaProvider.notifier);
+    void onCambio(ValeArqueoEntity Function(ValeArqueoEntity) actualizar) =>
+        notifier.actualizarVale(id, actualizar);
+    void onQuitar() => notifier.quitarVale(id);
+
     final empresasAsync = ref.watch(empresasProvider);
 
     // Los seis campos se arman una sola vez y los dos layouts los reusan: si
@@ -1705,9 +1744,10 @@ class _CajaSap extends StatelessWidget {
     final tema = Theme.of(context);
     // La etiqueta viene del sistema anterior con dos puntos al final
     // ("ESPPAPEL:").
-    final empresa = ((fila['bd'] as String?) ?? '')
-        .trim()
-        .replaceFirst(RegExp(r':\s*$'), '');
+    final empresa = ((fila['bd'] as String?) ?? '').trim().replaceFirst(
+      RegExp(r':\s*$'),
+      '',
+    );
     final caja = ((fila['nombreCaja'] as String?) ?? '').trim();
     final cuenta = (fila['codigoCuentaCajaSap'] ?? '').toString().trim();
     final detalle = [
