@@ -26,8 +26,8 @@ class AppConstants {
     }
   }
 
-  // Súbela cuando el backend deje de servir a la app anterior; después se sube
-  // la mínima de p_list_Usuario (sql/snippets/version_minima_app.sql).
+  // Se ve al pie del login. Entra si es igual o mayor a la versionApp que
+  // devuelve p_list_Usuario: subir esa mínima es lo que obliga a actualizar.
   static const String APP_VERSION = "1.0.2";
 
   static const String loginEndpoint = '/auth/login';
