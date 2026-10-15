@@ -153,22 +153,29 @@ class _Firmas implements FirmaCierreRepository {
   final fechasFilas = <DateTime?>[];
   List<CeldaTablero> celdasTablero = [];
 
-  /// Las celdas de otras tareas (archivo 108), y con qué tarea se firmó.
-  final seccionesDe = <int, List<CeldaCierre>>{};
+  /// Con qué tarea y qué día (archivo 109) se firmó y se marcó cada fila.
   final tareasFirma = <int>[];
+  final diasFirma = <DateTime?>[];
+  final diasMarca = <DateTime?>[];
 
   _Firmas(this.celdas);
 
   @override
   Future<List<CeldaCierre>> misSecciones(int idBitTarea) async {
     if (falla != null) throw falla!;
-    return seccionesDe[idBitTarea] ?? celdas;
+    return celdas;
   }
 
   @override
-  Future<void> firmar(int idBitTarea, CeldaCierre celda, {String? obs}) async {
+  Future<void> firmar(
+    int idBitTarea,
+    CeldaCierre celda, {
+    String? obs,
+    DateTime? fecha,
+  }) async {
     if (rechazo != null) throw Exception(rechazo);
     tareasFirma.add(idBitTarea);
+    diasFirma.add(fecha);
     firmadas.add('${celda.clave} obs=$obs');
     celdas = [
       for (final c in celdas)
@@ -206,7 +213,9 @@ class _Firmas implements FirmaCierreRepository {
     CeldaCierre celda,
     FilaSeccion fila, {
     required bool revisada,
+    DateTime? fecha,
   }) async {
+    diasMarca.add(fecha);
     marcas.add('${celda.codigo} ${fila.clave} $revisada');
   }
 
@@ -831,7 +840,7 @@ void main() {
       expect(n.state.consultando, isTrue);
     });
 
-    testWidgets('se ve qué pasó ese día, sin marcar ni firmar', (t) async {
+    testWidgets('se ve qué se firmó ese día, y se marca y se firma ahí', (t) async {
       final paneles =
           _Paneles()..arqueosDe = (_) => [_arqueo(7, 'CENTRAL')];
       final firmas = _Firmas([
@@ -852,9 +861,9 @@ void main() {
           .consultarDia(_diaAnterior);
       await t.pumpAndSettle();
 
-      expect(find.textContaining('solo para consultar'), findsOneWidget);
-      expect(find.text('Marcar revisado'), findsNothing);
-      expect(find.text('Sin revisar'), findsOneWidget);
+      // Archivo 109: se marca ahí; la celda ya la firmó otro ese día.
+      expect(find.textContaining('queda con la fecha de hoy'), findsOneWidget);
+      expect(find.text('Marcar revisado'), findsOneWidget);
       expect(find.text('Firmar'), findsNothing);
       expect(find.textContaining('Firmó OSCAR ZABALLA'), findsOneWidget);
       expect(t.takeException(), isNull);
@@ -865,9 +874,10 @@ void main() {
     });
   });
 
-  // Marcelo, 14/10/2026: quien verifica el cierre "puede revisar de cualquier
-  // dia y poner como revisado/firmado". Se firma desde su tarea de ese día.
-  group('firmar otro día (archivo 108)', () {
+  // Marcelo, 14/10/2026: "porque no puedo marcar como revisado y firmar con la
+  // fecha de hoy?". Otro día se firma desde la tarea de hoy; el servidor guarda
+  // el retraso. Nadie elige con qué tarea.
+  group('firmar otro día (archivos 108 y 109)', () {
     CeldaTablero delDia(
       int? id,
       DateTime tarea, {
@@ -902,36 +912,63 @@ void main() {
       );
     });
 
-    test('al mirar ese día se marca y se firma con la tarea que lo revisa', () async {
+    test('se firma y se marca desde la tarea de hoy, mandando el día', () async {
       final paneles = _Paneles()..arqueosDe = (_) => [_arqueo(7, 'CENTRAL')];
       final firmas = _Firmas([
           _celda(PanelCierre.arqueos, 20, 'CENTRAL', _lunes),
+          _celda(
+            null,
+            null,
+            'Toda la empresa',
+            _lunes,
+            codigo: 'G',
+            nombre: 'Saldo de caja chica',
+          ),
         ])
-        ..celdasTablero = [delDia(800, DateTime(2026, 10, 5))]
-        ..seccionesDe[800] = [
-          _celda(PanelCierre.arqueos, 20, 'CENTRAL', _diaAnterior),
-          // De la misma tarea, pero de otro día: no es lo que se mira.
-          _celda(PanelCierre.arqueos, 21, 'COCHABAMBA', DateTime(2026, 10, 5)),
-        ];
+        // El 03/10 nadie lo firmó y no había tarea: igual se firma.
+        ..celdasTablero = [delDia(null, DateTime(2026, 10, 4))];
       final n = VerificarCierreNotifier(paneles, firmas, 900);
       await _dejarCargar();
       await _dejarCargar();
 
       await n.consultarDia(_diaAnterior);
-
-      expect(n.state.firmaElDia, isTrue);
-      final deEseDia = n.state.celdasDelDia('A');
-      expect(deEseDia.map((c) => c.nombreSucursal), ['CENTRAL']);
+      final celda = n.state.celdasDelDia('A').single;
+      expect(celda.fechaRevisada, _diaAnterior);
+      expect(celda.firmada, isFalse);
 
       await n.marcarArqueoRevisado(7);
-      await n.firmar(deEseDia.single);
-      expect(paneles.tareasMarca, [800]);
-      expect(firmas.tareasFirma, [800]);
+      await n.firmar(celda);
+      await n.marcarFila(
+        n.state.celdasDeCodigo('G').single,
+        FirmaCierreModel.fila({'clave': 'x', 'titulo': 'Vale 1'}),
+      );
+      expect(paneles.tareasMarca, [900]);
+      expect(firmas.tareasFirma, [900]);
+      expect(firmas.diasFirma, [_diaAnterior]);
+      expect(firmas.diasMarca, [_diaAnterior]);
 
-      // De vuelta en su día, con la tarea abierta.
+      // En su día no manda fecha: es el de la tarea.
       await n.consultarDia(null);
       await n.firmar(n.state.celdasDeCodigo('A').single);
-      expect(firmas.tareasFirma.last, 900);
+      expect(firmas.diasFirma.last, isNull);
+    });
+
+    test('la celda de ese día trae su firma del tablero, para anularla', () {
+      final s = VerificarCierreState(
+        celdas: PanelDatos<CeldaCierre>(
+          cargado: true,
+          filas: [_celda(PanelCierre.arqueos, 20, 'CENTRAL', _lunes)],
+        ),
+        diaConsulta: _diaAnterior,
+        firmasDelDia: PanelDatos<CeldaTablero>(
+          cargado: true,
+          filas: [_firmaDel(_diaAnterior, 'CENTRAL')],
+        ),
+      );
+      final celda = s.celdasDelDia('A').single;
+      expect(celda.firmada, isTrue);
+      expect(celda.idFC, 5);
+      expect(celda.firmadoPor, 'OSCAR ZABALLA');
     });
 
     testWidgets('ese día se ve con sus botones y dice que queda con fecha de hoy', (
@@ -940,12 +977,8 @@ void main() {
       final paneles =
           _Paneles()..arqueosDe = (_) => [_arqueo(7, 'CENTRAL')];
       final firmas = _Firmas([
-          _celda(PanelCierre.arqueos, 20, 'CENTRAL', _lunes),
-        ])
-        ..celdasTablero = [delDia(800, DateTime(2026, 10, 5))]
-        ..seccionesDe[800] = [
-          _celda(PanelCierre.arqueos, 20, 'CENTRAL', _diaAnterior),
-        ];
+        _celda(PanelCierre.arqueos, 20, 'CENTRAL', _lunes),
+      ])..celdasTablero = [delDia(null, DateTime(2026, 10, 4))];
       await t.binding.setSurfaceSize(const Size(1400, 1600));
       addTearDown(() => t.binding.setSurfaceSize(null));
       await t.pumpWidget(_app(firmas, paneles: paneles));
@@ -960,32 +993,9 @@ void main() {
 
       expect(find.textContaining('queda con la fecha de hoy'), findsOneWidget);
       expect(find.textContaining('solo para consultar'), findsNothing);
-      expect(find.textContaining('Firmar desde tu tarea'), findsNothing);
       expect(find.text('Marcar revisado'), findsOneWidget);
       expect(find.text('Firmar'), findsOneWidget);
       expect(t.takeException(), isNull);
-    });
-
-    testWidgets('si ese día no tenía la tarea, sigue solo para consultar', (
-      t,
-    ) async {
-      final firmas = _Firmas([
-        _celda(PanelCierre.arqueos, 20, 'CENTRAL', _lunes),
-      ])..celdasTablero = [delDia(null, DateTime(2026, 10, 5))];
-      await t.binding.setSurfaceSize(const Size(1400, 1600));
-      addTearDown(() => t.binding.setSurfaceSize(null));
-      await t.pumpWidget(_app(firmas));
-      await t.pumpAndSettle();
-      final contenedor = ProviderScope.containerOf(
-        t.element(find.byType(VerificarCierreScreen)),
-      );
-      await contenedor
-          .read(verificarCierreProvider(900).notifier)
-          .consultarDia(_diaAnterior);
-      await t.pumpAndSettle();
-
-      expect(find.textContaining('solo para consultar'), findsOneWidget);
-      expect(find.textContaining('Firmar desde tu tarea'), findsNothing);
     });
   });
 }
@@ -1007,6 +1017,7 @@ CeldaTablero _firmaDel(
   firmadoPor: estado == EstadoCelda.sinFirmar ? null : 'OSCAR ZABALLA',
   fechaFirma:
       estado == EstadoCelda.sinFirmar ? null : DateTime(2026, 10, 4, 9, 12),
+  idFC: estado == EstadoCelda.sinFirmar ? null : 5,
 );
 
 Widget _app(_Firmas firmas, {_Paneles? paneles}) => ProviderScope(

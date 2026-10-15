@@ -21,7 +21,12 @@ class FirmaCierreImpl extends BaseApiRepository
   );
 
   @override
-  Future<void> firmar(int idBitTarea, CeldaCierre celda, {String? obs}) async {
+  Future<void> firmar(
+    int idBitTarea,
+    CeldaCierre celda, {
+    String? obs,
+    DateTime? fecha,
+  }) async {
     await postAndReturnId(
       endpoint: AppConstants.tarVerificarCierreFirmarSeccion,
       data: {
@@ -29,6 +34,7 @@ class FirmaCierreImpl extends BaseApiRepository
         'seccion': celda.codigo,
         'codSucursal': celda.codSucursal,
         'obs': (obs == null || obs.trim().isEmpty) ? null : obs.trim(),
+        if (fecha != null) 'fecha': fechaParaSql(fecha),
       },
       errorMessage: 'No se pudo firmar la sección.',
     );
@@ -66,6 +72,7 @@ class FirmaCierreImpl extends BaseApiRepository
     CeldaCierre celda,
     FilaSeccion fila, {
     required bool revisada,
+    DateTime? fecha,
   }) async {
     final id = await postAndReturnId(
       endpoint: AppConstants.tarVerificarCierreMarcarFila,
@@ -75,6 +82,7 @@ class FirmaCierreImpl extends BaseApiRepository
         'codSucursal': celda.codSucursal,
         'clave': fila.clave,
         'marca': revisada ? 1 : 0,
+        if (fecha != null) 'fecha': fechaParaSql(fecha),
       },
       errorMessage: 'No se pudo marcar la fila.',
     );

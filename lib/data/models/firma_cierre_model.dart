@@ -56,6 +56,7 @@ class FirmaCierreModel {
     hallazgos: _int(j['hallazgos']),
     obs: _texto(j['obs']),
     responsables: _texto(j['responsables']),
+    idFC: _int(j['idFC']),
     idBitTarea: _int(j['idBitTarea']),
   );
 

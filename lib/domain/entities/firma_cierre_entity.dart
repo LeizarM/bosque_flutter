@@ -89,6 +89,27 @@ class CeldaCierre {
 
   /// Una sección nueva: sus filas salen de una fuente de otro módulo.
   bool get conFuente => seccion == null;
+
+  /// La misma celda en otro día (archivo SQL 109): su firma sale del tablero.
+  CeldaCierre enElDia(DateTime dia, CeldaTablero? t) => CeldaCierre(
+    seccion: seccion,
+    codigo: codigo,
+    nombreSeccion: nombreSeccion,
+    queRevisar: queRevisar,
+    marcaPorFila: marcaPorFila,
+    codSucursal: codSucursal,
+    nombreSucursal: nombreSucursal,
+    fechaRevisada: dia,
+    puedeAutorrevisar: puedeAutorrevisar,
+    idFC: t?.idFC,
+    firmadoPor: t?.firmadoPor,
+    fechaFirma: t?.fechaFirma,
+    filas: t?.filas,
+    filasRevisadas: t?.filasRevisadas,
+    hallazgos: t?.hallazgos,
+    obs: t?.obs,
+    conBoton: conBoton,
+  );
 }
 
 /// Una fila de una sección con fuente (archivo SQL 86): lo que devuelve la
@@ -177,6 +198,9 @@ class CeldaTablero {
   final String? obs;
   final String? responsables;
 
+  /// La firma de esa celda, para anularla (null: sin firmar).
+  final int? idFC;
+
   /// Tu Verificar Cierre que revisa ese día: desde ella se firma (archivo SQL
   /// 108). Null si ese día no tenías la tarea.
   final int? idBitTarea;
@@ -196,6 +220,7 @@ class CeldaTablero {
     this.hallazgos,
     this.obs,
     this.responsables,
+    this.idFC,
     this.idBitTarea,
   });
 }

@@ -112,7 +112,7 @@ class VerificarCierreScreen extends ConsumerWidget {
       helpText: 'Revisar otro día',
       initialDate: s.diaConsulta ?? tarea,
       firstDate: DateTime(2020),
-      // Hasta hoy: un día anterior se firma desde la tarea que lo revisa (SQL 108).
+      // Hasta hoy: otro día se firma desde esta tarea, con la fecha de hoy (SQL 109).
       lastDate: tarea.isAfter(hoy) ? tarea : hoy,
     );
     if (elegida == null) return;
@@ -125,9 +125,7 @@ class VerificarCierreScreen extends ConsumerWidget {
     if (dias.isEmpty) return 'Tus secciones del cierre';
     final otro = s.diaConsulta;
     if (otro != null) {
-      return s.firmaElDia
-          ? 'Revisas el ${_conDiaSemana(otro)} · con la fecha de hoy'
-          : 'Miras el ${_conDiaSemana(otro)} · solo consulta';
+      return 'Revisas el ${_conDiaSemana(otro)} · con la fecha de hoy';
     }
     final dia = _conDiaSemana(dias.first);
     final otros = dias.length > 1 ? ' y otro día' : '';
@@ -182,7 +180,6 @@ class _Cuerpo extends StatelessWidget {
               _FranjaOtroDia(
                 dia: state.diaConsulta!,
                 diaTarea: state.diasRevisados.first,
-                firma: state.firmaElDia,
                 onVolver: () {
                   HapticFeedback.selectionClick();
                   notifier.consultarDia(null);
@@ -230,13 +227,14 @@ class _Seccion extends StatelessWidget {
     final n = notifier;
     // Otro día: cómo quedaron sus firmas, sin botones (archivo SQL 92).
     // Otro día: si te tocaba revisarlo, sus celdas con botón (SQL 108).
-    final delDia = s.celdasDelDia(codigo);
-    final soloLectura = s.consultando && delDia.isEmpty;
     final Widget pie =
-        soloLectura
+        s.consultando && !s.firmasDelDia.cargado
             ? _FirmasDelDia(celdas: s.celdasDeCodigo(codigo), state: s)
             : _Firmas(
-              celdas: s.consultando ? delDia : s.celdasDeCodigo(codigo),
+              celdas:
+                  s.consultando
+                      ? s.celdasDelDia(codigo)
+                      : s.celdasDeCodigo(codigo),
               firmando: (c) => s.guardando.contains('firma:${c.clave}'),
               onFirmar: (c) => _firmar(context, c),
               onAnular: (c) => _anular(context, c),
@@ -269,7 +267,6 @@ class _Seccion extends StatelessWidget {
                 n.marcarArqueoRevisado(id, revisado: false);
               },
               onPdf: (id) => _verPdfArqueo(context, id),
-              soloLectura: soloLectura,
             ),
         pie: pie,
       ),
@@ -303,7 +300,6 @@ class _Seccion extends StatelessWidget {
                 HapticFeedback.selectionClick();
                 n.marcarLlegadaVerificada(id, verificada: false);
               },
-              soloLectura: soloLectura,
             ),
         pie: pie,
       ),
@@ -425,7 +421,6 @@ class _Seccion extends StatelessWidget {
               HapticFeedback.selectionClick();
               notifier.marcarFila(celdaDe(f), f, revisada: false);
             },
-            soloLectura: s.consultando && s.celdasDelDia(codigo).isEmpty,
           ),
       pie: pie,
     );
@@ -893,21 +888,17 @@ const _diasDeLaSemana = [
 String _conDiaSemana(DateTime d) =>
     '${_diasDeLaSemana[d.weekday - 1]} ${FormatearFecha.formatearFecha(d)}';
 
-/// Se está mirando otro día (archivo SQL 92). Si te tocaba revisarlo, se
-/// marca y se firma ahí con la fecha de hoy (108); si no, solo se consulta.
+/// Otro día (archivo SQL 92): se marca y se firma ahí, desde esta tarea, con la
+/// fecha de hoy; el servidor guarda el retraso y dice si no te tocaba (109).
 class _FranjaOtroDia extends StatelessWidget {
   final DateTime dia;
   final DateTime diaTarea;
   final VoidCallback onVolver;
 
-  /// Si ese día te tocaba revisarlo: se marca y se firma (SQL 108).
-  final bool firma;
-
   const _FranjaOtroDia({
     required this.dia,
     required this.diaTarea,
     required this.onVolver,
-    this.firma = false,
   });
 
   @override
@@ -927,12 +918,8 @@ class _FranjaOtroDia extends StatelessWidget {
           children: [
             Icon(Icons.history, size: 18, color: color),
             Text(
-              firma
-                  ? 'Estás revisando el ${_conDiaSemana(dia)}. Lo que marques '
-                      'y firmes queda con la fecha de hoy.'
-                  : 'Estás mirando el ${_conDiaSemana(dia)}, solo para '
-                      'consultar. Lo que marcas y firmas es del '
-                      '${_conDiaSemana(diaTarea)}.',
+              'Estás revisando el ${_conDiaSemana(dia)}. Lo que marques y '
+              'firmes queda con la fecha de hoy, con el retraso anotado.',
               style: TextStyle(color: color),
             ),
             TextButton(

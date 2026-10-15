@@ -7,7 +7,13 @@ abstract class FirmaCierreRepository {
   /// Las celdas que le tocan a quien abrió su tarea 39.
   Future<List<CeldaCierre>> misSecciones(int idBitTarea);
 
-  Future<void> firmar(int idBitTarea, CeldaCierre celda, {String? obs});
+  /// Con [fecha], otro día desde la tarea de hoy (archivo SQL 109).
+  Future<void> firmar(
+    int idBitTarea,
+    CeldaCierre celda, {
+    String? obs,
+    DateTime? fecha,
+  });
 
   Future<void> anular(int idFC, {required String motivo});
 
@@ -26,6 +32,7 @@ abstract class FirmaCierreRepository {
     CeldaCierre celda,
     FilaSeccion fila, {
     required bool revisada,
+    DateTime? fecha,
   });
 
   /// Sin fechas, los últimos 7 días.
