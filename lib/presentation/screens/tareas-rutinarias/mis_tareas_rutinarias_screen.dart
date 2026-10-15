@@ -1021,8 +1021,9 @@ class _Encabezado {
 }
 
 class _EstadoVacio extends StatelessWidget {
-  /// `true` = tiene tareas asignadas y ya las respondio todas.
-  /// `false` = no le asignaron ninguna todavia.
+  /// `true` = tiene tareas hoy y ya las respondio todas.
+  /// `false` = hoy no le toca ninguna (el servidor manda solo las del dia,
+  /// archivo SQL 104).
   ///
   /// "No queda nada por hacer" y "no hay nada" se ven igual y significan
   /// cosas opuestas: la primera es una buena noticia y lleva el tono de
@@ -1066,8 +1067,8 @@ class _EstadoVacio extends StatelessWidget {
         )
         : const EstadoTareas(
           icono: Icons.inbox_outlined,
-          titulo: 'Todavía no tienes tareas rutinarias',
-          detalle: 'Cuando te asignen una, va a aparecer aquí.',
+          titulo: 'No tienes tareas para hoy',
+          detalle: 'Cuando te toque una, va a aparecer aquí.',
         );
   }
 }

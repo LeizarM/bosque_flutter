@@ -85,8 +85,8 @@ class ResponsablesCierreScreen extends ConsumerWidget {
                         child: Text(
                           'Quién revisa cada sección del cierre y de qué '
                           'sucursal. Lo que no está asignado no lo revisa '
-                          'nadie, y quien tiene la tarea sin ninguna sección '
-                          'la recibe en "No aplica".',
+                          'nadie, y quien no tiene ninguna sección no recibe '
+                          'la tarea.',
                           style: context.apagado(),
                         ),
                       ),
@@ -332,8 +332,8 @@ class _AvisoSinSecciones extends StatelessWidget {
                 const SizedBox(width: Esp.s),
                 Expanded(
                   child: Text(
-                    'Tienen la tarea pero ninguna sección: cada día la reciben '
-                    'en "No aplica".',
+                    'Tienen la tarea asignada pero ninguna sección: no la '
+                    'reciben hasta que les agregues una.',
                     style: Theme.of(
                       context,
                     ).textTheme.titleSmall?.copyWith(color: tono),

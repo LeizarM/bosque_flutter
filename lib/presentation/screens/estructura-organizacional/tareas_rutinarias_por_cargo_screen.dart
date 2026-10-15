@@ -527,12 +527,12 @@ class TareasRutinariasPorCargoScreen extends ConsumerWidget {
                     tareasRutinariasPorCargoProvider(cargo.codCargo).notifier,
                   )
                   .copiarACargos(idTarRuti, destinos);
-              // Sin secciones en la matriz, la 39 les llega en "No aplica".
+              // Sin secciones en la matriz, la 39 no les llega (SQL 101).
               if (ok && _esCierre(fila) && context.mounted) {
                 mostrarAviso(
                   context,
                   'Tarea copiada. Asígnales sus secciones en "Responsables del '
-                  'cierre": sin ellas la reciben en "No aplica".',
+                  'cierre": sin ellas no la reciben.',
                   tono: TonoAviso.aviso,
                 );
               }

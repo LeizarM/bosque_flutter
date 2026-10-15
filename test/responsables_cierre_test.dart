@@ -3,7 +3,7 @@
 // Lo que estas pruebas cuidan (Marcelo, 2026-10-08):
 // - Quién revisa qué lo deciden RRHH o un administrador; las reglas (sección,
 //   sucursal, duplicados) son del servidor y su mensaje vuelve al diálogo.
-// - Un cargo con la tarea y sin secciones se avisa: la recibe en "No aplica".
+// - Un cargo con la tarea y sin secciones se avisa: no la recibe (SQL 101).
 // - Archivo 86: las columnas salen del catálogo; una sección quitada no se ve
 //   y una nueva sí. Crear, quitar y volver a pedir las decide el servidor.
 // - Archivo 87: el registro de fuentes se administra desde la app; una fuente
@@ -310,7 +310,7 @@ void main() {
     expect(find.text('Arqueos de caja'), findsOneWidget);
     expect(find.text('SUC 20'), findsOneWidget);
     expect(find.text('Asignada'), findsOneWidget);
-    expect(find.textContaining('Tienen la tarea pero ninguna'), findsOneWidget);
+    expect(find.textContaining('no la reciben hasta que les agregues una'), findsOneWidget);
     expect(
       find.text('SUPERVISOR DE COBRANZAS · CENTRAL (CLAUDIA GABRIELA QUIROGA)'),
       findsOneWidget,

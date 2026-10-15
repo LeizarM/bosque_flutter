@@ -78,7 +78,7 @@ class CandidatoCierre {
   String get claveResponsable =>
       esCargo ? 'C$codCargoSucursal' : 'P$codEmpleado';
 
-  /// Tiene la tarea asignada pero ninguna sección: su tarea queda en No aplica.
+  /// Tiene la tarea asignada pero ninguna sección: no la recibe (SQL 101).
   bool get sinSecciones => tieneLaTarea && secciones == 0;
 }
 

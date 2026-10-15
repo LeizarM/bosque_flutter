@@ -794,6 +794,32 @@ void main() {
       expect(n.state.consultando, isFalse);
     });
 
+    // Paola, 14/10: el saldo de caja chica revisa el mismo día y lo demás el
+    // anterior; elegir el anterior la dejaba en "solo consulta".
+    test('con dos días propios, elegir cualquiera de ellos no es consultar', () async {
+      final firmas = _Firmas([
+        _celda(PanelCierre.arqueos, 20, 'CENTRAL', _lunes),
+        _celda(
+          null,
+          null,
+          'Toda la empresa',
+          DateTime(2026, 10, 7),
+          codigo: 'G',
+          nombre: 'Saldo de caja chica',
+        ),
+      ]);
+      final n = VerificarCierreNotifier(_Paneles(), firmas, 900);
+      await _dejarCargar();
+      await _dejarCargar();
+
+      await n.consultarDia(_lunes);
+      expect(n.state.consultando, isFalse);
+      await n.consultarDia(DateTime(2026, 10, 7, 9));
+      expect(n.state.consultando, isFalse);
+      await n.consultarDia(_diaAnterior);
+      expect(n.state.consultando, isTrue);
+    });
+
     testWidgets('se ve qué pasó ese día, sin marcar ni firmar', (t) async {
       final paneles =
           _Paneles()..arqueosDe = (_) => [_arqueo(7, 'CENTRAL')];

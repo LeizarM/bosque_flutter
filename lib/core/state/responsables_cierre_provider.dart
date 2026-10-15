@@ -113,7 +113,7 @@ class ResponsablesCierreState {
     return lista;
   }
 
-  /// Cargos que tienen la tarea y ninguna sección: su tarea queda en No aplica.
+  /// Cargos que tienen la tarea y ninguna sección: no la reciben (SQL 101).
   List<CandidatoCierre> get sinSecciones =>
       candidatos.filas.where((c) => c.esCargo && c.sinSecciones).toList();
 

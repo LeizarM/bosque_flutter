@@ -202,13 +202,14 @@ class VerificarCierreNotifier extends StateNotifier<VerificarCierreState> {
     ]);
   }
 
-  /// Mira otro día, solo para consultar (archivo SQL 92); null o el día que
-  /// revisa la ocurrencia vuelven a lo que se firma. Lo de antes era de otro
-  /// día: se limpia mientras se lee.
+  /// Mira otro día, solo para consultar (archivo SQL 92); null o cualquiera
+  /// de los días que revisa la ocurrencia vuelven a lo que se firma (con el
+  /// saldo de caja chica, que revisa el mismo día, son dos). Lo de antes era
+  /// de otro día: se limpia mientras se lee.
   Future<void> consultarDia(DateTime? dia) async {
     final propios = state.diasRevisados;
     final nuevo =
-        dia == null || (propios.length == 1 && _mismoDia(dia, propios.first))
+        dia == null || propios.any((p) => _mismoDia(dia, p))
             ? null
             : DateTime(dia.year, dia.month, dia.day);
     if (nuevo == state.diaConsulta) return;
