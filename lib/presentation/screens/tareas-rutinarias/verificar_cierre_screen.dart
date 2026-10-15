@@ -89,7 +89,7 @@ class VerificarCierreScreen extends ConsumerWidget {
         body: SafeArea(
           child: MargenPaginaTareas(
             abajo: false,
-            child: _Cuerpo(state: s, notifier: n, idBitTarea: idBitTarea),
+            child: _Cuerpo(state: s, notifier: n),
           ),
         ),
         bottomNavigationBar:
@@ -124,7 +124,11 @@ class VerificarCierreScreen extends ConsumerWidget {
     final dias = s.diasRevisados;
     if (dias.isEmpty) return 'Tus secciones del cierre';
     final otro = s.diaConsulta;
-    if (otro != null) return 'Miras el ${_conDiaSemana(otro)} · solo consulta';
+    if (otro != null) {
+      return s.firmaElDia
+          ? 'Revisas el ${_conDiaSemana(otro)} · con la fecha de hoy'
+          : 'Miras el ${_conDiaSemana(otro)} · solo consulta';
+    }
     final dia = _conDiaSemana(dias.first);
     final otros = dias.length > 1 ? ' y otro día' : '';
     return 'Revisas el $dia$otros · ${s.firmadas} de ${s.total} firmadas';
@@ -135,13 +139,8 @@ class VerificarCierreScreen extends ConsumerWidget {
 class _Cuerpo extends StatelessWidget {
   final VerificarCierreState state;
   final VerificarCierreNotifier notifier;
-  final int idBitTarea;
 
-  const _Cuerpo({
-    required this.state,
-    required this.notifier,
-    required this.idBitTarea,
-  });
+  const _Cuerpo({required this.state, required this.notifier});
 
   @override
   Widget build(BuildContext context) {
@@ -183,7 +182,7 @@ class _Cuerpo extends StatelessWidget {
               _FranjaOtroDia(
                 dia: state.diaConsulta!,
                 diaTarea: state.diasRevisados.first,
-                paraFirmar: state.paraFirmarDesdeOtra(idBitTarea),
+                firma: state.firmaElDia,
                 onVolver: () {
                   HapticFeedback.selectionClick();
                   notifier.consultarDia(null);
@@ -230,11 +229,14 @@ class _Seccion extends StatelessWidget {
     final s = state;
     final n = notifier;
     // Otro día: cómo quedaron sus firmas, sin botones (archivo SQL 92).
+    // Otro día: si te tocaba revisarlo, sus celdas con botón (SQL 108).
+    final delDia = s.celdasDelDia(codigo);
+    final soloLectura = s.consultando && delDia.isEmpty;
     final Widget pie =
-        s.consultando
+        soloLectura
             ? _FirmasDelDia(celdas: s.celdasDeCodigo(codigo), state: s)
             : _Firmas(
-              celdas: s.celdasDeCodigo(codigo),
+              celdas: s.consultando ? delDia : s.celdasDeCodigo(codigo),
               firmando: (c) => s.guardando.contains('firma:${c.clave}'),
               onFirmar: (c) => _firmar(context, c),
               onAnular: (c) => _anular(context, c),
@@ -267,7 +269,7 @@ class _Seccion extends StatelessWidget {
                 n.marcarArqueoRevisado(id, revisado: false);
               },
               onPdf: (id) => _verPdfArqueo(context, id),
-              soloLectura: s.consultando,
+              soloLectura: soloLectura,
             ),
         pie: pie,
       ),
@@ -301,7 +303,7 @@ class _Seccion extends StatelessWidget {
                 HapticFeedback.selectionClick();
                 n.marcarLlegadaVerificada(id, verificada: false);
               },
-              soloLectura: s.consultando,
+              soloLectura: soloLectura,
             ),
         pie: pie,
       ),
@@ -423,7 +425,7 @@ class _Seccion extends StatelessWidget {
               HapticFeedback.selectionClick();
               notifier.marcarFila(celdaDe(f), f, revisada: false);
             },
-            soloLectura: s.consultando,
+            soloLectura: s.consultando && s.celdasDelDia(codigo).isEmpty,
           ),
       pie: pie,
     );
@@ -891,21 +893,21 @@ const _diasDeLaSemana = [
 String _conDiaSemana(DateTime d) =>
     '${_diasDeLaSemana[d.weekday - 1]} ${FormatearFecha.formatearFecha(d)}';
 
-/// Se está mirando otro día (archivo SQL 92). Si lo revisa otra tarea tuya,
-/// ofrece abrirla para firmar (108); si no, solo para consultar.
+/// Se está mirando otro día (archivo SQL 92). Si te tocaba revisarlo, se
+/// marca y se firma ahí con la fecha de hoy (108); si no, solo se consulta.
 class _FranjaOtroDia extends StatelessWidget {
   final DateTime dia;
   final DateTime diaTarea;
   final VoidCallback onVolver;
 
-  /// Tus tareas desde las que se firma lo que falta de ese día (SQL 108).
-  final List<CeldaTablero> paraFirmar;
+  /// Si ese día te tocaba revisarlo: se marca y se firma (SQL 108).
+  final bool firma;
 
   const _FranjaOtroDia({
     required this.dia,
     required this.diaTarea,
     required this.onVolver,
-    this.paraFirmar = const [],
+    this.firma = false,
   });
 
   @override
@@ -925,34 +927,14 @@ class _FranjaOtroDia extends StatelessWidget {
           children: [
             Icon(Icons.history, size: 18, color: color),
             Text(
-              paraFirmar.isEmpty
-                  ? 'Estás mirando el ${_conDiaSemana(dia)}, solo para '
+              firma
+                  ? 'Estás revisando el ${_conDiaSemana(dia)}. Lo que marques '
+                      'y firmes queda con la fecha de hoy.'
+                  : 'Estás mirando el ${_conDiaSemana(dia)}, solo para '
                       'consultar. Lo que marcas y firmas es del '
-                      '${_conDiaSemana(diaTarea)}.'
-                  : 'Estás mirando el ${_conDiaSemana(dia)}. Lo que falta de '
-                      'ese día se firma desde tu tarea que lo revisa.',
+                      '${_conDiaSemana(diaTarea)}.',
               style: TextStyle(color: color),
             ),
-            // Abre esa tarea en lugar de esta: ahí se marca y se firma.
-            for (final t in paraFirmar)
-              FilledButton.tonalIcon(
-                onPressed: () {
-                  HapticFeedback.selectionClick();
-                  context.pushReplacement(
-                    '/dashboard/tacTareas/VerificarCierre',
-                    extra: {
-                      'idBitTarea': t.idBitTarea,
-                      'fecha': t.fechaTarea,
-                      'nombreTarea':
-                          'Verificar Cierre del ${_conDiaSemana(t.fechaTarea)}',
-                    },
-                  );
-                },
-                icon: const Icon(Icons.draw_outlined, size: 18),
-                label: Text(
-                  'Firmar desde tu tarea del ${_conDiaSemana(t.fechaTarea)}',
-                ),
-              ),
             TextButton(
               onPressed: onVolver,
               child: Text(

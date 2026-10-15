@@ -198,9 +198,6 @@ class CeldaTablero {
     this.responsables,
     this.idBitTarea,
   });
-
-  bool get sinFirma =>
-      estado == EstadoCelda.pendiente || estado == EstadoCelda.sinFirmar;
 }
 
 /// El cumplimiento de una persona en el rango del tablero.

@@ -30,7 +30,6 @@ import 'package:bosque_flutter/presentation/screens/tareas-rutinarias/verificar_
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:go_router/go_router.dart';
 
 final _lunes = DateTime(2026, 10, 6);
 final _jueves = DateTime(2026, 9, 25);
@@ -97,7 +96,13 @@ class _Paneles implements CierreOperacionesRepository {
     int idAC, {
     required int idBitTarea,
     bool revisado = true,
-  }) async => alMarcar?.call(idAC, revisado);
+  }) async {
+    tareasMarca.add(idBitTarea);
+    alMarcar?.call(idAC, revisado);
+  }
+
+  /// Con qué tarea se marcó cada arqueo (archivo 108).
+  final tareasMarca = <int>[];
 
   @override
   Future<void> marcarLlegadaVerificada(
@@ -148,17 +153,22 @@ class _Firmas implements FirmaCierreRepository {
   final fechasFilas = <DateTime?>[];
   List<CeldaTablero> celdasTablero = [];
 
+  /// Las celdas de otras tareas (archivo 108), y con qué tarea se firmó.
+  final seccionesDe = <int, List<CeldaCierre>>{};
+  final tareasFirma = <int>[];
+
   _Firmas(this.celdas);
 
   @override
   Future<List<CeldaCierre>> misSecciones(int idBitTarea) async {
     if (falla != null) throw falla!;
-    return celdas;
+    return seccionesDe[idBitTarea] ?? celdas;
   }
 
   @override
   Future<void> firmar(int idBitTarea, CeldaCierre celda, {String? obs}) async {
     if (rechazo != null) throw Exception(rechazo);
+    tareasFirma.add(idBitTarea);
     firmadas.add('${celda.clave} obs=$obs');
     celdas = [
       for (final c in celdas)
@@ -892,66 +902,53 @@ void main() {
       );
     });
 
-    test(
-      'ofrece una tarea por cada una que revisa lo que falta, sin la abierta',
-      () {
-        final s = VerificarCierreState(
-          firmasDelDia: PanelDatos<CeldaTablero>(
-            cargado: true,
-            filas: [
-              delDia(801, DateTime(2026, 10, 6)),
-              delDia(800, DateTime(2026, 10, 5)),
-              delDia(800, DateTime(2026, 10, 5), sucursal: 'COCHABAMBA'),
-              // Ya firmada, ni la que está abierta, ni sin tarea ese día.
-              delDia(802, DateTime(2026, 10, 7), estado: EstadoCelda.tarde),
-              delDia(900, DateTime(2026, 10, 6)),
-              delDia(null, DateTime(2026, 10, 6)),
-            ],
-          ),
-        );
-        expect(s.paraFirmarDesdeOtra(900).map((c) => c.idBitTarea), [800, 801]);
-      },
-    );
-
-    testWidgets('el botón abre la tarea de ese día para firmar', (t) async {
+    test('al mirar ese día se marca y se firma con la tarea que lo revisa', () async {
+      final paneles = _Paneles()..arqueosDe = (_) => [_arqueo(7, 'CENTRAL')];
       final firmas = _Firmas([
-        _celda(PanelCierre.arqueos, 20, 'CENTRAL', _lunes),
-      ])..celdasTablero = [delDia(800, DateTime(2026, 10, 5))];
-      final abiertas = <Map<String, dynamic>>[];
-      final rutas = GoRouter(
-        initialLocation: '/v',
-        routes: [
-          GoRoute(
-            path: '/v',
-            builder:
-                (_, _) => const VerificarCierreScreen(
-                  idBitTarea: 900,
-                  nombreTarea: 'Verificar Cierre de Operaciones',
-                ),
-          ),
-          GoRoute(
-            path: '/dashboard/tacTareas/VerificarCierre',
-            builder: (_, estado) {
-              abiertas.add(estado.extra! as Map<String, dynamic>);
-              return const Scaffold(body: Text('la otra tarea'));
-            },
-          ),
-        ],
-      );
+          _celda(PanelCierre.arqueos, 20, 'CENTRAL', _lunes),
+        ])
+        ..celdasTablero = [delDia(800, DateTime(2026, 10, 5))]
+        ..seccionesDe[800] = [
+          _celda(PanelCierre.arqueos, 20, 'CENTRAL', _diaAnterior),
+          // De la misma tarea, pero de otro día: no es lo que se mira.
+          _celda(PanelCierre.arqueos, 21, 'COCHABAMBA', DateTime(2026, 10, 5)),
+        ];
+      final n = VerificarCierreNotifier(paneles, firmas, 900);
+      await _dejarCargar();
+      await _dejarCargar();
+
+      await n.consultarDia(_diaAnterior);
+
+      expect(n.state.firmaElDia, isTrue);
+      final deEseDia = n.state.celdasDelDia('A');
+      expect(deEseDia.map((c) => c.nombreSucursal), ['CENTRAL']);
+
+      await n.marcarArqueoRevisado(7);
+      await n.firmar(deEseDia.single);
+      expect(paneles.tareasMarca, [800]);
+      expect(firmas.tareasFirma, [800]);
+
+      // De vuelta en su día, con la tarea abierta.
+      await n.consultarDia(null);
+      await n.firmar(n.state.celdasDeCodigo('A').single);
+      expect(firmas.tareasFirma.last, 900);
+    });
+
+    testWidgets('ese día se ve con sus botones y dice que queda con fecha de hoy', (
+      t,
+    ) async {
+      final paneles =
+          _Paneles()..arqueosDe = (_) => [_arqueo(7, 'CENTRAL')];
+      final firmas = _Firmas([
+          _celda(PanelCierre.arqueos, 20, 'CENTRAL', _lunes),
+        ])
+        ..celdasTablero = [delDia(800, DateTime(2026, 10, 5))]
+        ..seccionesDe[800] = [
+          _celda(PanelCierre.arqueos, 20, 'CENTRAL', _diaAnterior),
+        ];
       await t.binding.setSurfaceSize(const Size(1400, 1600));
       addTearDown(() => t.binding.setSurfaceSize(null));
-      await t.pumpWidget(
-        ProviderScope(
-          overrides: [
-            cierreOperacionesRepoProvider.overrideWithValue(_Paneles()),
-            firmaCierreRepoProvider.overrideWithValue(firmas),
-            userProvider.overrideWith(
-              (ref) => UserStateNotifier.sinStorage(_usuario),
-            ),
-          ],
-          child: MaterialApp.router(routerConfig: rutas),
-        ),
-      );
+      await t.pumpWidget(_app(firmas, paneles: paneles));
       await t.pumpAndSettle();
       final contenedor = ProviderScope.containerOf(
         t.element(find.byType(VerificarCierreScreen)),
@@ -961,13 +958,11 @@ void main() {
           .consultarDia(_diaAnterior);
       await t.pumpAndSettle();
 
+      expect(find.textContaining('queda con la fecha de hoy'), findsOneWidget);
       expect(find.textContaining('solo para consultar'), findsNothing);
-      await t.tap(find.text('Firmar desde tu tarea del lunes 05/10/2026'));
-      await t.pumpAndSettle();
-
-      expect(find.text('la otra tarea'), findsOneWidget);
-      expect(abiertas.single['idBitTarea'], 800);
-      expect(abiertas.single['fecha'], DateTime(2026, 10, 5));
+      expect(find.textContaining('Firmar desde tu tarea'), findsNothing);
+      expect(find.text('Marcar revisado'), findsOneWidget);
+      expect(find.text('Firmar'), findsOneWidget);
       expect(t.takeException(), isNull);
     });
 

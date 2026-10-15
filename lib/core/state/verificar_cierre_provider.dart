@@ -53,6 +53,13 @@ class VerificarCierreState {
   /// Las firmas de ese otro día, del tablero.
   final PanelDatos<CeldaTablero> firmasDelDia;
 
+  /// Las celdas de ese otro día que te tocan, de tus tareas que lo revisan
+  /// (archivo SQL 108): se marcan y se firman ahí, con la fecha de hoy.
+  final PanelDatos<CeldaCierre> celdasDia;
+
+  /// De qué tarea tuya es cada una de esas celdas (por [CeldaCierre.clave]).
+  final Map<String, int> tareaDia;
+
   const VerificarCierreState({
     this.celdas = const PanelDatos<CeldaCierre>(cargando: true),
     this.arqueos = const PanelDatos<ArqueoDelCierre>(),
@@ -67,9 +74,17 @@ class VerificarCierreState {
     this.aviso,
     this.diaConsulta,
     this.firmasDelDia = const PanelDatos<CeldaTablero>(),
+    this.celdasDia = const PanelDatos<CeldaCierre>(),
+    this.tareaDia = const {},
   });
 
   bool get consultando => diaConsulta != null;
+
+  /// Mirando otro día, si tienes algo que firmar en él (SQL 108).
+  bool get firmaElDia => consultando && celdasDia.filas.isNotEmpty;
+
+  List<CeldaCierre> celdasDelDia(String codigo) =>
+      celdasDia.filas.where((c) => c.codigo == codigo).toList();
 
   /// Cómo quedó esa celda el día que se consulta; null si el tablero no la trae.
   CeldaTablero? firmaDelDia(CeldaCierre c) {
@@ -117,20 +132,6 @@ class VerificarCierreState {
 
   bool seccionFirmada(PanelCierre p) => celdasDe(p).every((c) => c.firmada);
 
-  /// Desde qué tareas tuyas se firma lo que falta del día que miras (archivo
-  /// SQL 108): una por cada Verificar Cierre que lo revisa, sin la abierta.
-  List<CeldaTablero> paraFirmarDesdeOtra(int abierta) {
-    final vistas = <int>{};
-    return [
-      for (final c in firmasDelDia.filas)
-        if (c.idBitTarea != null &&
-            c.idBitTarea != abierta &&
-            c.sinFirma &&
-            vistas.add(c.idBitTarea!))
-          c,
-    ]..sort((a, b) => a.fechaTarea.compareTo(b.fechaTarea));
-  }
-
   /// El día que revisa casi siempre es uno solo; con un feriado de una
   /// sucursal puede haber dos.
   List<DateTime> get diasRevisados =>
@@ -174,6 +175,8 @@ class VerificarCierreState {
     String? aviso,
     Object? diaConsulta = _igual,
     PanelDatos<CeldaTablero>? firmasDelDia,
+    PanelDatos<CeldaCierre>? celdasDia,
+    Map<String, int>? tareaDia,
   }) => VerificarCierreState(
     celdas: celdas ?? this.celdas,
     arqueos: arqueos ?? this.arqueos,
@@ -192,6 +195,8 @@ class VerificarCierreState {
             ? this.diaConsulta
             : diaConsulta as DateTime?,
     firmasDelDia: firmasDelDia ?? this.firmasDelDia,
+    celdasDia: celdasDia ?? this.celdasDia,
+    tareaDia: tareaDia ?? this.tareaDia,
   );
 }
 
@@ -214,9 +219,10 @@ class VerificarCierreNotifier extends StateNotifier<VerificarCierreState> {
       for (final c in state.conFuente) recargarGeneral(c),
       if (dia != null) _leerFirmasDelDia(dia),
     ]);
+    if (dia != null) await _leerCeldasDelDia(dia);
   }
 
-  /// Mira otro día, solo para consultar (archivo SQL 92); null o cualquiera
+  /// Mira otro día (archivo SQL 92; si te tocaba, se firma ahí, 108); null o cualquiera
   /// de los días que revisa la ocurrencia vuelven a lo que se firma (con el
   /// saldo de caja chica, que revisa el mismo día, son dos). Lo de antes era
   /// de otro día: se limpia mientras se lee.
@@ -236,12 +242,64 @@ class VerificarCierreNotifier extends StateNotifier<VerificarCierreState> {
       tareas: const PanelDatos<BitacoraCumplimientoEntity>(cargando: true),
       generales: const {},
       firmasDelDia: const PanelDatos<CeldaTablero>(),
+      celdasDia: const PanelDatos<CeldaCierre>(),
+      tareaDia: const {},
     );
     await Future.wait([
       for (final p in state.secciones) recargar(p),
       for (final c in state.conFuente) recargarGeneral(c),
       if (nuevo != null) _leerFirmasDelDia(nuevo),
     ]);
+    if (nuevo != null) await _leerCeldasDelDia(nuevo);
+  }
+
+  /// Las celdas de ese día que te tocan, de tus tareas que lo revisan (el
+  /// tablero dice cuáles, archivo SQL 108). Con ellas se marca y se firma ese
+  /// día; la firma queda con la fecha de hoy. Sin tarea tuya, solo se mira.
+  Future<void> _leerCeldasDelDia(DateTime dia) async {
+    final tareas = {
+      for (final t in state.firmasDelDia.filas)
+        if (t.idBitTarea != null) t.idBitTarea!,
+    };
+    final celdas = <CeldaCierre>[];
+    final deTarea = <String, int>{};
+    try {
+      for (final id in tareas) {
+        for (final c in await _firmas.misSecciones(id)) {
+          if (_mismoDia(c.fechaRevisada, dia) &&
+              !deTarea.containsKey(c.clave)) {
+            deTarea[c.clave] = id;
+            celdas.add(c);
+          }
+        }
+      }
+      if (!mounted || state.diaConsulta != dia) return;
+      state = state.copyWith(
+        celdasDia: PanelDatos<CeldaCierre>(filas: celdas, cargado: true),
+        tareaDia: deTarea,
+      );
+    } catch (e) {
+      if (mounted && state.diaConsulta == dia) {
+        state = state.copyWith(celdasDia: PanelDatos<CeldaCierre>(error: e));
+      }
+    }
+  }
+
+  Future<void> _releerDia() async {
+    final dia = state.diaConsulta;
+    if (dia == null) return;
+    await _leerFirmasDelDia(dia);
+    await _leerCeldasDelDia(dia);
+  }
+
+  /// Con qué tarea se marca o se firma: la abierta, o al mirar otro día la
+  /// tuya que lo revisa (SQL 108). Quien usa la pantalla no elige.
+  int _tareaPara(bool Function(CeldaCierre c) es) {
+    if (!state.consultando) return idBitTarea;
+    for (final c in state.celdasDia.filas) {
+      if (es(c)) return state.tareaDia[c.clave] ?? idBitTarea;
+    }
+    return idBitTarea;
   }
 
   /// Cómo quedaron las firmas de ese día, del tablero (solo trae las celdas
@@ -310,7 +368,12 @@ class VerificarCierreNotifier extends StateNotifier<VerificarCierreState> {
     FilaSeccion fila, {
     bool revisada = true,
   }) => _marcar('fila:${celda.codigo}:${fila.id}', () async {
-    await _firmas.marcarFila(idBitTarea, celda, fila, revisada: revisada);
+    final tarea = _tareaPara(
+      (c) =>
+          c.codigo == celda.codigo &&
+          c.codSucursal == (fila.codSucursalCelda ?? celda.codSucursal),
+    );
+    await _firmas.marcarFila(tarea, celda, fila, revisada: revisada);
     if (!mounted) return;
     final datos = state.general(celda.codigo);
     _ponerGeneral(
@@ -436,9 +499,16 @@ class VerificarCierreNotifier extends StateNotifier<VerificarCierreState> {
   /// El visto bueno de un arqueo, o quitarlo (ver [CierreOperacionesNotifier]).
   Future<void> marcarArqueoRevisado(int idAC, {bool revisado = true}) =>
       _marcar('arqueo:$idAC', () async {
+        final suc = _sucursalDe(
+          state.arqueos.filas,
+          (a) => a.idAC == idAC,
+          (a) => a.sucursal,
+        );
         await _paneles.marcarArqueoRevisado(
           idAC,
-          idBitTarea: idBitTarea,
+          idBitTarea: _tareaPara(
+            (c) => c.seccion == PanelCierre.arqueos && c.nombreSucursal == suc,
+          ),
           revisado: revisado,
         );
         state = state.copyWith(
@@ -453,9 +523,17 @@ class VerificarCierreNotifier extends StateNotifier<VerificarCierreState> {
 
   Future<void> marcarLlegadaVerificada(int idRp, {bool verificada = true}) =>
       _marcar('llegada:$idRp', () async {
+        final suc = _sucursalDe(
+          state.cajaFuerte.filas,
+          (l) => l.idRp == idRp,
+          (l) => l.sucursal,
+        );
         await _paneles.marcarLlegadaVerificada(
           idRp,
-          idBitTarea: idBitTarea,
+          idBitTarea: _tareaPara(
+            (c) =>
+                c.seccion == PanelCierre.cajaFuerte && c.nombreSucursal == suc,
+          ),
           verificada: verificada,
         );
         state = state.copyWith(
@@ -473,13 +551,16 @@ class VerificarCierreNotifier extends StateNotifier<VerificarCierreState> {
   Future<void> _marcar(String clave, Future<void> Function() hacer) async {
     if (state.guardando.contains(clave)) return;
     state = state.copyWith(guardando: {...state.guardando, clave});
-    final antes = {for (final c in state.celdas.filas) c.clave: c.firmada};
+    final dia = state.consultando;
+    List<CeldaCierre> vigentes() =>
+        dia ? state.celdasDia.filas : state.celdas.filas;
+    final antes = {for (final c in vigentes()) c.clave: c.firmada};
     try {
       await hacer();
       if (!mounted) return;
-      await _leerCeldas();
+      await (dia ? _releerDia() : _leerCeldas());
       if (!mounted) return;
-      final ahora = state.celdas.filas;
+      final ahora = vigentes();
       final firmada = ahora.where((c) => c.firmada && antes[c.clave] == false);
       final anulada = ahora.where((c) => !c.firmada && antes[c.clave] == true);
       state = state.copyWith(
@@ -506,7 +587,11 @@ class VerificarCierreNotifier extends StateNotifier<VerificarCierreState> {
   /// mostrarlo en el mismo diálogo sin perder lo escrito.
   Future<String?> firmar(CeldaCierre celda, {String? obs}) =>
       _escribir('firma:${celda.clave}', 'Sección firmada.', () {
-        return _firmas.firmar(idBitTarea, celda, obs: obs);
+        return _firmas.firmar(
+          _tareaPara((c) => c.clave == celda.clave),
+          celda,
+          obs: obs,
+        );
       });
 
   Future<String?> anular(CeldaCierre celda, {required String motivo}) {
@@ -528,7 +613,7 @@ class VerificarCierreNotifier extends StateNotifier<VerificarCierreState> {
       await hacer();
       if (!mounted) return null;
       state = state.copyWith(guardando: _sin(clave), aviso: aviso);
-      await _leerCeldas();
+      await (state.consultando ? _releerDia() : _leerCeldas());
       return null;
     } catch (e) {
       if (mounted) state = state.copyWith(guardando: _sin(clave));
@@ -556,6 +641,17 @@ class VerificarCierreNotifier extends StateNotifier<VerificarCierreState> {
   }
 
   Set<String> _sin(String clave) => {...state.guardando}..remove(clave);
+
+  static String? _sucursalDe<T>(
+    List<T> filas,
+    bool Function(T f) es,
+    String? Function(T f) sucursal,
+  ) {
+    for (final f in filas) {
+      if (es(f)) return sucursal(f);
+    }
+    return null;
+  }
 
   static String _nombre(CeldaCierre c) =>
       '${c.nombreSeccion.toLowerCase()} de ${c.nombreSucursal}';
