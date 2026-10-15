@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:bosque_flutter/core/state/lote_produccion_provider.dart';
 import 'package:bosque_flutter/core/state/user_provider.dart';
+import 'package:bosque_flutter/core/ui/confirmacion.dart';
 import 'package:bosque_flutter/core/utils/responsive_utils_bosque.dart';
 import 'package:bosque_flutter/domain/entities/empresa_entity.dart';
 import 'package:bosque_flutter/domain/entities/lote_produccion_entity.dart';
@@ -176,6 +177,36 @@ class _LoteProduccionRegistroScreenState
     );
   }
 
+  /// [preguntar] en falso cuando ya se eligió desde el aviso de artículo
+  /// faltante, que explica lo mismo.
+  Future<void> _sincronizarArticulos({bool preguntar = true}) async {
+    if (preguntar) {
+      final seguir = await confirmar(
+        context,
+        titulo: 'Actualizar artículos desde SAP',
+        detalle:
+            'Trae los artículos nuevos de SAP y actualiza el stock y la UTM de '
+            'los que ya están. Puede tardar varios minutos.\n\nÚselo cuando la '
+            'orden de fabricación pide un artículo que no aparece.',
+        textoConfirmar: 'Actualizar',
+      );
+      if (!seguir || !mounted) return;
+    }
+    final r =
+        await ref
+            .read(loteProduccionRegistroProvider(_audUsuario).notifier)
+            .sincronizarArticulosSap();
+    if (!mounted) return;
+    mostrarAviso(
+      context,
+      r.mensaje,
+      tono:
+          !r.ok
+              ? TonoAviso.error
+              : (r.pendientes.isEmpty ? TonoAviso.exito : TonoAviso.aviso),
+    );
+  }
+
   Future<void> _guardar() async {
     final notifier = ref.read(
       loteProduccionRegistroProvider(_audUsuario).notifier,
@@ -223,6 +254,15 @@ class _LoteProduccionRegistroScreenState
                 title: const Text('Artículo de salida no encontrado'),
                 content: Text(mensaje),
                 actions: [
+                  if (cod.isNotEmpty)
+                    TextButton.icon(
+                      icon: const Icon(Icons.sync_rounded, size: 18),
+                      label: const Text('Actualizar desde SAP'),
+                      onPressed: () {
+                        Navigator.pop(dialogContext);
+                        _sincronizarArticulos(preguntar: false);
+                      },
+                    ),
                   FilledButton(
                     onPressed: () => Navigator.pop(dialogContext),
                     child: const Text('Entendido'),
@@ -254,6 +294,30 @@ class _LoteProduccionRegistroScreenState
       appBar: AppBar(
         title: const Text('Registro Lote de Producción'),
         actions: [
+          if (st.isSincronizandoArticulos)
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 12),
+              child: Center(
+                child: SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                ),
+              ),
+            )
+          else if (isMobile)
+            IconButton(
+              tooltip: 'Actualizar artículos desde SAP',
+              icon: const Icon(Icons.sync_rounded),
+              onPressed: _sincronizarArticulos,
+            )
+          else
+            TextButton.icon(
+              onPressed: _sincronizarArticulos,
+              icon: const Icon(Icons.sync_rounded, size: 18),
+              label: const Text('Artículos SAP'),
+            ),
+          const SizedBox(width: 8),
           if (st.isSaving)
             const Padding(
               padding: EdgeInsets.symmetric(horizontal: 16),

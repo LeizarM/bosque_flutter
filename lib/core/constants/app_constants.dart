@@ -495,6 +495,8 @@ class AppConstants {
   static const String obtenerLotesProduccion =
       '/loteProduccion/newLoteProduccion';
   static const String obtenerArticulos = '/loteProduccion/articulos';
+  static const String sincronizarArticulosLote =
+      '/loteProduccion/sincronizarArticulosSap';
   static const String registrarLoteProduccion =
       '/loteProduccion/registroLoteProduccion';
   static const String registrarMaterialIngreso =

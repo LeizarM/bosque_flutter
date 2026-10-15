@@ -54,6 +54,7 @@ class LoteProduccionRegistroState {
   // UI flags
   final bool isLoading;
   final bool isSaving;
+  final bool isSincronizandoArticulos;
   final String? errorMessage;
   final String? successMessage;
 
@@ -90,6 +91,7 @@ class LoteProduccionRegistroState {
     this.cantHjs = 0,
     this.isLoading = false,
     this.isSaving = false,
+    this.isSincronizandoArticulos = false,
     this.errorMessage,
     this.successMessage,
     this.salidaArticuloErrorCodigo,
@@ -195,6 +197,7 @@ class LoteProduccionRegistroState {
     int? cantHjs,
     bool? isLoading,
     bool? isSaving,
+    bool? isSincronizandoArticulos,
     String? errorMessage,
     bool clearError = false,
     String? successMessage,
@@ -239,6 +242,8 @@ class LoteProduccionRegistroState {
       cantHjs: cantHjs ?? this.cantHjs,
       isLoading: isLoading ?? this.isLoading,
       isSaving: isSaving ?? this.isSaving,
+      isSincronizandoArticulos:
+          isSincronizandoArticulos ?? this.isSincronizandoArticulos,
       errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
       successMessage:
           clearSuccess ? null : (successMessage ?? this.successMessage),
@@ -454,6 +459,88 @@ class LoteProduccionRegistroNotifier
 
   /// Limpia la bandera de error de artículo de salida no encontrado.
   void clearSalidaError() => state = state.copyWith(clearSalidaError: true);
+
+  // ── Artículos desde SAP ────────────────────────────────────────────────────
+
+  /// Trae de SAP los artículos nuevos, recarga el catálogo y, si hay una orden
+  /// elegida, vuelve a buscar sus artículos de ingreso y salida.
+  /// [pendientes] son los códigos de la orden que siguen sin aparecer.
+  Future<({bool ok, String mensaje, List<String> pendientes})>
+  sincronizarArticulosSap() async {
+    if (state.isSincronizandoArticulos) {
+      return (
+        ok: false,
+        mensaje: 'La actualización ya está en curso.',
+        pendientes: <String>[],
+      );
+    }
+    state = state.copyWith(isSincronizandoArticulos: true);
+    try {
+      final antes = {for (final a in state.lstArticulos) a.codArticulo};
+      await _repo.sincronizarArticulosSap();
+      final articulos = await _repo.obtenerArticulos();
+      if (!mounted) {
+        return (ok: true, mensaje: '', pendientes: <String>[]);
+      }
+      // obtenerArticulos devuelve [] ante cualquier error: no vaciar el catálogo.
+      if (articulos.isNotEmpty) {
+        state = state.copyWith(lstArticulos: articulos);
+      }
+
+      final orden = state.ordenSeleccionada;
+      if (orden != null) {
+        if (state.articuloIngreso == null && orden.codArtEntrada.isNotEmpty) {
+          _preSeleccionarArticuloIngreso(orden.codArtEntrada);
+        }
+        if (state.articuloSalida == null && orden.codArtSalida.isNotEmpty) {
+          final art =
+              state.lstArticulos
+                  .where((a) => a.codArticulo == orden.codArtSalida)
+                  .firstOrNull;
+          if (art != null) {
+            state = state.copyWith(clearSalidaError: true);
+            seleccionarArticuloSalida(art);
+          }
+        }
+      }
+
+      final codigos = {for (final a in state.lstArticulos) a.codArticulo};
+      final nuevos = codigos.difference(antes).length;
+      final pendientes = <String>[
+        if (orden != null &&
+            orden.codArtEntrada.isNotEmpty &&
+            !codigos.contains(orden.codArtEntrada))
+          orden.codArtEntrada,
+        if (orden != null &&
+            orden.codArtSalida.isNotEmpty &&
+            !codigos.contains(orden.codArtSalida))
+          orden.codArtSalida,
+      ];
+
+      final base =
+          nuevos == 0
+              ? 'No había artículos nuevos en SAP; se actualizaron stock y UTM.'
+              : nuevos == 1
+              ? 'Se agregó 1 artículo nuevo desde SAP.'
+              : 'Se agregaron $nuevos artículos nuevos desde SAP.';
+      final mensaje =
+          pendientes.isEmpty
+              ? base
+              : '$base La orden pide ${pendientes.join(' y ')}, '
+                  '${pendientes.length == 1 ? 'que sigue' : 'que siguen'} sin '
+                  'estar en el catálogo: SAP solo trae los artículos cuya '
+                  'familia ya existe en Bosque.';
+      return (ok: true, mensaje: mensaje, pendientes: pendientes);
+    } catch (e) {
+      return (
+        ok: false,
+        mensaje: e.toString().replaceFirst('Exception: ', ''),
+        pendientes: <String>[],
+      );
+    } finally {
+      if (mounted) state = state.copyWith(isSincronizandoArticulos: false);
+    }
+  }
 
   // ── Selección manual de artículos ─────────────────────────────────────────
 
@@ -851,7 +938,11 @@ class LoteProduccionRegistroNotifier
   }
 
   void resetState() {
-    state = LoteProduccionRegistroState(fecha: DateTime.now());
+    // Limpiar no corta una sincronización en curso: el botón sigue bloqueado.
+    state = LoteProduccionRegistroState(
+      fecha: DateTime.now(),
+      isSincronizandoArticulos: state.isSincronizandoArticulos,
+    );
     _init();
   }
 

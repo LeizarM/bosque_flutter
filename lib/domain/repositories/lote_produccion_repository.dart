@@ -14,6 +14,10 @@ abstract class LoteProduccionRepository {
   /// Catálogo general de artículos (ingreso, salida, merma).
   Future<List<LoteProduccionEntity>> obtenerArticulos();
 
+  /// Trae de SAP los artículos nuevos a ese catálogo y refresca stock y UTM
+  /// (`p_abm_ArticuloProp 'F'`). Puede tardar varios minutos.
+  Future<void> sincronizarArticulosSap();
+
   /// Lista de máquinas de producción.
   Future<List<MaquinaProduccionEntity>> obtenerMaquinas();
 

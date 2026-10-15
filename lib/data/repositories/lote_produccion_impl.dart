@@ -54,6 +54,37 @@ class LoteProduccionImpl implements LoteProduccionRepository {
   }
 
   @override
+  Future<void> sincronizarArticulosSap() async {
+    try {
+      await _dio.post(
+        AppConstants.sincronizarArticulosLote,
+        data: const <String, dynamic>{},
+        // Como en Precios: la rama F puede tardar minutos y los 30 s por
+        // defecto cortarían la espera con el servidor todavía trabajando.
+        options: Options(receiveTimeout: const Duration(minutes: 10)),
+      );
+    } on DioException catch (e) {
+      final data = e.response?.data;
+      if (data is Map && data['message'] != null) {
+        throw Exception(data['message']);
+      }
+      if (e.type == DioExceptionType.receiveTimeout) {
+        throw Exception(
+          'La actualización desde SAP tardó más de diez minutos y se dejó de '
+          'esperar. Puede que el servidor la termine igual: vuelva a intentar '
+          'en unos minutos.',
+        );
+      }
+      throw Exception(
+        DioClient.handleDioError(
+          e,
+          'No se pudieron actualizar los artículos desde SAP.',
+        ),
+      );
+    }
+  }
+
+  @override
   Future<List<MaquinaProduccionEntity>> obtenerMaquinas() async {
     try {
       final response = await _dio.post(AppConstants.obtenerMaquinas, data: {});
