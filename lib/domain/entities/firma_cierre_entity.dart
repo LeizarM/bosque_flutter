@@ -177,6 +177,10 @@ class CeldaTablero {
   final String? obs;
   final String? responsables;
 
+  /// Tu Verificar Cierre que revisa ese día: desde ella se firma (archivo SQL
+  /// 108). Null si ese día no tenías la tarea.
+  final int? idBitTarea;
+
   const CeldaTablero({
     required this.fechaTarea,
     required this.fechaRevisada,
@@ -192,7 +196,11 @@ class CeldaTablero {
     this.hallazgos,
     this.obs,
     this.responsables,
+    this.idBitTarea,
   });
+
+  bool get sinFirma =>
+      estado == EstadoCelda.pendiente || estado == EstadoCelda.sinFirmar;
 }
 
 /// El cumplimiento de una persona en el rango del tablero.

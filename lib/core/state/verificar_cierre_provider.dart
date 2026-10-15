@@ -117,6 +117,20 @@ class VerificarCierreState {
 
   bool seccionFirmada(PanelCierre p) => celdasDe(p).every((c) => c.firmada);
 
+  /// Desde qué tareas tuyas se firma lo que falta del día que miras (archivo
+  /// SQL 108): una por cada Verificar Cierre que lo revisa, sin la abierta.
+  List<CeldaTablero> paraFirmarDesdeOtra(int abierta) {
+    final vistas = <int>{};
+    return [
+      for (final c in firmasDelDia.filas)
+        if (c.idBitTarea != null &&
+            c.idBitTarea != abierta &&
+            c.sinFirma &&
+            vistas.add(c.idBitTarea!))
+          c,
+    ]..sort((a, b) => a.fechaTarea.compareTo(b.fechaTarea));
+  }
+
   /// El día que revisa casi siempre es uno solo; con un feriado de una
   /// sucursal puede haber dos.
   List<DateTime> get diasRevisados =>

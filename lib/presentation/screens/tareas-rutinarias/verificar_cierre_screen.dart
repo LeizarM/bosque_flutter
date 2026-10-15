@@ -66,7 +66,7 @@ class VerificarCierreScreen extends ConsumerWidget {
           acciones: [
             // El calendario del sistema anterior: mirar un día anterior.
             IconButton(
-              tooltip: 'Mirar un día anterior',
+              tooltip: 'Revisar otro día',
               icon: const Icon(Icons.event_outlined),
               onPressed:
                   s.celdas.cargado && s.total > 0
@@ -89,7 +89,7 @@ class VerificarCierreScreen extends ConsumerWidget {
         body: SafeArea(
           child: MargenPaginaTareas(
             abajo: false,
-            child: _Cuerpo(state: s, notifier: n),
+            child: _Cuerpo(state: s, notifier: n, idBitTarea: idBitTarea),
           ),
         ),
         bottomNavigationBar:
@@ -106,13 +106,14 @@ class VerificarCierreScreen extends ConsumerWidget {
     VerificarCierreNotifier n,
   ) async {
     final tarea = s.diasRevisados.last;
+    final hoy = DateTime.now();
     final elegida = await showDatePicker(
       context: context,
-      helpText: 'Mirar un día anterior',
+      helpText: 'Revisar otro día',
       initialDate: s.diaConsulta ?? tarea,
       firstDate: DateTime(2020),
-      // El día de la tarea es el último: lo que viene no se revisa todavía.
-      lastDate: tarea,
+      // Hasta hoy: un día anterior se firma desde la tarea que lo revisa (SQL 108).
+      lastDate: tarea.isAfter(hoy) ? tarea : hoy,
     );
     if (elegida == null) return;
     HapticFeedback.selectionClick();
@@ -134,8 +135,13 @@ class VerificarCierreScreen extends ConsumerWidget {
 class _Cuerpo extends StatelessWidget {
   final VerificarCierreState state;
   final VerificarCierreNotifier notifier;
+  final int idBitTarea;
 
-  const _Cuerpo({required this.state, required this.notifier});
+  const _Cuerpo({
+    required this.state,
+    required this.notifier,
+    required this.idBitTarea,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -177,6 +183,7 @@ class _Cuerpo extends StatelessWidget {
               _FranjaOtroDia(
                 dia: state.diaConsulta!,
                 diaTarea: state.diasRevisados.first,
+                paraFirmar: state.paraFirmarDesdeOtra(idBitTarea),
                 onVolver: () {
                   HapticFeedback.selectionClick();
                   notifier.consultarDia(null);
@@ -884,16 +891,21 @@ const _diasDeLaSemana = [
 String _conDiaSemana(DateTime d) =>
     '${_diasDeLaSemana[d.weekday - 1]} ${FormatearFecha.formatearFecha(d)}';
 
-/// Se está mirando un día anterior: solo para consultar (archivo SQL 92).
+/// Se está mirando otro día (archivo SQL 92). Si lo revisa otra tarea tuya,
+/// ofrece abrirla para firmar (108); si no, solo para consultar.
 class _FranjaOtroDia extends StatelessWidget {
   final DateTime dia;
   final DateTime diaTarea;
   final VoidCallback onVolver;
 
+  /// Tus tareas desde las que se firma lo que falta de ese día (SQL 108).
+  final List<CeldaTablero> paraFirmar;
+
   const _FranjaOtroDia({
     required this.dia,
     required this.diaTarea,
     required this.onVolver,
+    this.paraFirmar = const [],
   });
 
   @override
@@ -913,10 +925,34 @@ class _FranjaOtroDia extends StatelessWidget {
           children: [
             Icon(Icons.history, size: 18, color: color),
             Text(
-              'Estás mirando el ${_conDiaSemana(dia)}, solo para consultar. '
-              'Lo que marcas y firmas es del ${_conDiaSemana(diaTarea)}.',
+              paraFirmar.isEmpty
+                  ? 'Estás mirando el ${_conDiaSemana(dia)}, solo para '
+                      'consultar. Lo que marcas y firmas es del '
+                      '${_conDiaSemana(diaTarea)}.'
+                  : 'Estás mirando el ${_conDiaSemana(dia)}. Lo que falta de '
+                      'ese día se firma desde tu tarea que lo revisa.',
               style: TextStyle(color: color),
             ),
+            // Abre esa tarea en lugar de esta: ahí se marca y se firma.
+            for (final t in paraFirmar)
+              FilledButton.tonalIcon(
+                onPressed: () {
+                  HapticFeedback.selectionClick();
+                  context.pushReplacement(
+                    '/dashboard/tacTareas/VerificarCierre',
+                    extra: {
+                      'idBitTarea': t.idBitTarea,
+                      'fecha': t.fechaTarea,
+                      'nombreTarea':
+                          'Verificar Cierre del ${_conDiaSemana(t.fechaTarea)}',
+                    },
+                  );
+                },
+                icon: const Icon(Icons.draw_outlined, size: 18),
+                label: Text(
+                  'Firmar desde tu tarea del ${_conDiaSemana(t.fechaTarea)}',
+                ),
+              ),
             TextButton(
               onPressed: onVolver,
               child: Text(

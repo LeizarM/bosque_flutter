@@ -56,6 +56,7 @@ class FirmaCierreModel {
     hallazgos: _int(j['hallazgos']),
     obs: _texto(j['obs']),
     responsables: _texto(j['responsables']),
+    idBitTarea: _int(j['idBitTarea']),
   );
 
   /// Una fila de una sección con fuente (p_list_tac_FirmaCierre G).
