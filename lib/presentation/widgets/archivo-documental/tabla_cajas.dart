@@ -9,6 +9,7 @@ import 'package:flutter/material.dart';
 
 import 'package:bosque_flutter/core/state/archivo_documental_provider.dart';
 import 'package:bosque_flutter/core/ui/tokens_bosque.dart';
+import 'package:bosque_flutter/domain/entities/caja_archivo_entity.dart';
 import 'package:bosque_flutter/presentation/widgets/archivo-documental/comun_archivo.dart';
 import 'package:bosque_flutter/presentation/widgets/archivo-documental/imagen_foto.dart';
 import 'package:bosque_flutter/presentation/widgets/archivo-documental/paleta_archivo.dart';
@@ -328,6 +329,7 @@ class _Contenido extends StatelessWidget {
       return Text('Caja vacía', style: tt.bodyMedium?.copyWith(color: context.cs.onSurfaceVariant));
     }
     final tipos = tiposPorFrecuencia(r.lineas);
+    final situacion = situacionDeCaja(r.caja);
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -346,10 +348,36 @@ class _Contenido extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 2),
-        Text(documentosLegible(r.lineas.length), style: context.apagado()),
+        Text.rich(
+          TextSpan(
+            children: [
+              TextSpan(text: documentosLegible(r.lineas.length)),
+              if (situacion != null)
+                TextSpan(
+                  text: '  ·  ${situacion.$1}',
+                  style: TextStyle(color: tonoDe(context, situacion.$2).fuerte, fontWeight: Peso.titulo),
+                ),
+            ],
+          ),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: context.apagado(),
+        ),
       ],
     );
   }
+}
+
+/// Lo que salió de la caja en pocas palabras y su color, o null si está completa en su lugar.
+(String, Color)? situacionDeCaja(CajaArchivoEntity c) {
+  if (c.destruida) return ('Caja destruida', TonosArchivo.destruido);
+  if (c.prestadaCompleta) return ('Prestada completa', TonosArchivo.prestamo);
+  final partes = [
+    if (c.prestados > 0) c.prestados == 1 ? '1 prestado' : '${c.prestados} prestados',
+    if (c.destruidos > 0) c.destruidos == 1 ? '1 destruido' : '${c.destruidos} destruidos',
+  ];
+  if (partes.isEmpty) return null;
+  return (partes.join(' · '), c.prestados > 0 ? TonosArchivo.prestamo : TonosArchivo.destruido);
 }
 
 /// La caja vista desde un teléfono: su etiqueta a la izquierda, el archivo y
@@ -441,8 +469,15 @@ class TarjetaCaja extends StatelessWidget {
                           DatoTono(
                             icono: Icons.photo_camera_outlined,
                             semilla: TonosArchivo.fotos,
-                            rotulo: 'Fotos',
+                            rotulo: 'Fotos y PDF',
                             valor: '${c.fotos}',
+                          ),
+                        if (situacionDeCaja(c) case (final texto, final semilla))
+                          DatoTono(
+                            icono: c.destruida ? Icons.delete_sweep_outlined : Icons.outbox_outlined,
+                            semilla: semilla,
+                            rotulo: 'Situación',
+                            valor: texto,
                           ),
                       ],
                     ),

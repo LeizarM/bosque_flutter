@@ -1,6 +1,7 @@
-/// Las fotos de una caja: opcionales, de 0 a 3, para reconocerla en el
-/// estante. Tres lugares fijos; tocar una foto la abre a pantalla completa. El
-/// permiso de cámara lo pide el sistema recién al tocar «Tomar foto».
+/// Las fotos y PDF de una caja: opcionales, de 0 a 3 entre los dos, para
+/// reconocerla en el estante o guardar su inventario. Tres lugares fijos; una
+/// foto se abre a pantalla completa y un PDF en el visor de PDF. El permiso de
+/// cámara lo pide el sistema recién al tocar «Tomar foto».
 library;
 
 import 'package:flutter/material.dart';
@@ -10,6 +11,7 @@ import 'package:bosque_flutter/core/state/archivo_documental_provider.dart';
 import 'package:bosque_flutter/core/ui/aviso.dart';
 import 'package:bosque_flutter/core/ui/confirmacion.dart';
 import 'package:bosque_flutter/core/ui/tokens_bosque.dart';
+import 'package:bosque_flutter/core/utils/tipo_imagen.dart';
 import 'package:bosque_flutter/domain/entities/caja_archivo_entity.dart';
 import 'package:bosque_flutter/domain/entities/foto_caja_entity.dart';
 import 'package:bosque_flutter/presentation/widgets/archivo-documental/comun_archivo.dart';
@@ -32,35 +34,43 @@ class _FotosCajaState extends ConsumerState<FotosCaja> {
   double? _avance;
 
   int get _codCaja => widget.caja.codCaja;
+  String get _caja => tituloCaja(widget.caja).toLowerCase();
 
+  /// Siempre se pregunta qué agregar: una foto o un PDF. La cámara solo aparece
+  /// donde existe (teléfono, o el navegador de un teléfono).
   Future<FotoElegida?> _elegir() async {
     final camara = ref.read(camaraDisponibleProvider);
-    OrigenFoto? origen = OrigenFoto.galeria;
-    if (camara) {
-      origen = await showModalBottomSheet<OrigenFoto>(
-        context: context,
-        useSafeArea: true,
-        builder:
-            (ctx) => Padding(
-              padding: const EdgeInsets.symmetric(vertical: Esp.s),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
+    final origen = await showModalBottomSheet<OrigenFoto>(
+      context: context,
+      useSafeArea: true,
+      builder:
+          (ctx) => Padding(
+            padding: const EdgeInsets.symmetric(vertical: Esp.s),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (camara)
                   ListTile(
                     leading: const IconoTono(Icons.photo_camera_outlined, TonosArchivo.fotos),
                     title: const Text('Tomar foto'),
                     onTap: () => Navigator.pop(ctx, OrigenFoto.camara),
                   ),
-                  ListTile(
-                    leading: const IconoTono(Icons.photo_library_outlined, TonosArchivo.documentos),
-                    title: const Text('Elegir de la galería'),
-                    onTap: () => Navigator.pop(ctx, OrigenFoto.galeria),
-                  ),
-                ],
-              ),
+                ListTile(
+                  leading: const IconoTono(Icons.photo_library_outlined, TonosArchivo.documentos),
+                  title: Text(camara ? 'Elegir de la galería' : 'Elegir una foto'),
+                  subtitle: const Text('JPG, PNG o WEBP'),
+                  onTap: () => Navigator.pop(ctx, OrigenFoto.galeria),
+                ),
+                ListTile(
+                  leading: const IconoTono(Icons.picture_as_pdf_outlined, TonosArchivo.peligro),
+                  title: const Text('Elegir un PDF'),
+                  subtitle: const Text('Por ejemplo, el inventario de la caja. Hasta 10 MB.'),
+                  onTap: () => Navigator.pop(ctx, OrigenFoto.pdf),
+                ),
+              ],
             ),
-      );
-    }
+          ),
+    );
     if (origen == null || !mounted) return null;
     try {
       return await ref.read(elegirFotoProvider)(origen);
@@ -105,52 +115,85 @@ class _FotosCajaState extends ConsumerState<FotosCaja> {
   }
 
   Future<void> _agregar(int lugar) async {
-    final foto = await _elegir();
-    if (foto == null || !mounted) return;
+    final elegido = await _elegir();
+    if (elegido == null || !mounted) return;
     final repo = ref.read(archivoDocumentalRepositoryProvider);
     await _escribir(
       lugar,
-      (progreso) => repo.subirFoto(_codCaja, foto.bytes, foto.nombre, alProgreso: progreso),
-      'Foto agregada a la ${tituloCaja(widget.caja).toLowerCase()}.',
+      (progreso) => repo.subirFoto(_codCaja, elegido.bytes, elegido.nombre, alProgreso: progreso),
+      esPdf(elegido.bytes) ? 'PDF agregado a la $_caja.' : 'Foto agregada a la $_caja.',
     );
   }
 
   Future<void> _reemplazar(FotoCajaEntity actual, int lugar) async {
-    final foto = await _elegir();
-    if (foto == null || !mounted) return;
+    final elegido = await _elegir();
+    if (elegido == null || !mounted) return;
     final repo = ref.read(archivoDocumentalRepositoryProvider);
     await _escribir(
       lugar,
-      (progreso) => repo.reemplazarFoto(actual.codFoto, foto.bytes, foto.nombre, alProgreso: progreso),
-      'Foto reemplazada.',
+      (progreso) => repo.reemplazarFoto(actual.codFoto, elegido.bytes, elegido.nombre, alProgreso: progreso),
+      actual.esPdf ? 'PDF reemplazado.' : 'Foto reemplazada.',
     );
   }
 
   Future<void> _eliminar(FotoCajaEntity actual, int lugar) async {
-    // Se confirma: la foto se borra del servidor para todos los usuarios.
+    final que = actual.esPdf ? 'el PDF ${actual.orden}' : 'la foto ${actual.orden}';
+    // Se confirma: el archivo se borra del servidor para todos los usuarios.
     final ok = await confirmar(
       context,
-      titulo: 'Eliminar la foto ${actual.orden}',
-      detalle: 'La foto se quita de la caja para todos los usuarios. Puedes agregar otra cuando quieras.',
-      textoConfirmar: 'Eliminar foto',
+      titulo: 'Eliminar $que',
+      detalle: 'Se quita de la caja para todos los usuarios. Puedes agregar otro cuando quieras.',
+      textoConfirmar: actual.esPdf ? 'Eliminar PDF' : 'Eliminar foto',
       destructiva: true,
     );
     if (!ok || !mounted) return;
     final repo = ref.read(archivoDocumentalRepositoryProvider);
-    await _escribir(lugar, (_) => repo.eliminarFoto(actual.codFoto), 'Foto eliminada.');
+    await _escribir(lugar, (_) => repo.eliminarFoto(actual.codFoto), actual.esPdf ? 'PDF eliminado.' : 'Foto eliminada.');
   }
 
-  Future<void> _ver(List<FotoCajaEntity> fotos, int indice) async {
-    final r = await verFotosDeCaja(context, caja: widget.caja, fotos: fotos, inicial: indice);
+  /// Un PDF se baja y se abre en el visor de PDF de la app (imprimir o compartir).
+  Future<void> _verPdf(FotoCajaEntity pdf, int lugar) async {
+    final repo = ref.read(archivoDocumentalRepositoryProvider);
+    final ver = ref.read(visorPdfArchivoProvider);
+    setState(() {
+      _lugarOcupado = lugar;
+      _avance = null;
+    });
+    try {
+      final bytes = await repo.verFoto(pdf.codFoto);
+      if (!mounted) return;
+      setState(() => _lugarOcupado = null);
+      await ver(
+        context,
+        bytes: bytes,
+        titulo: 'PDF ${pdf.orden} · ${tituloCaja(widget.caja)}',
+        nombreArchivo: 'caja-${widget.caja.numero}-${oGuion(widget.caja.nombreArchivo).toLowerCase()}-${pdf.orden}.pdf',
+      );
+    } catch (e) {
+      if (mounted) mostrarAviso(context, textoParaUsuario(e), tono: TonoAviso.error);
+    } finally {
+      if (mounted && _lugarOcupado == lugar) setState(() => _lugarOcupado = null);
+    }
+  }
+
+  /// Las fotos se pasan una tras otra en el visor; un PDF va al suyo.
+  Future<void> _ver(List<FotoCajaEntity> todas, int indice) async {
+    final elegida = todas[indice];
+    if (elegida.esPdf) return _verPdf(elegida, indice);
+    final fotos = [
+      for (final f in todas)
+        if (!f.esPdf) f,
+    ];
+    final r = await verFotosDeCaja(context, caja: widget.caja, fotos: fotos, inicial: fotos.indexOf(elegida));
     if (r == null || !mounted) return;
     final (accion, foto) = r;
-    final lugar = fotos.indexOf(foto);
+    final lugar = todas.indexOf(foto);
     if (accion == AccionFoto.reemplazar) await _reemplazar(foto, lugar);
     if (accion == AccionFoto.eliminar) await _eliminar(foto, lugar);
   }
 
-  String _rotulo(int orden) =>
-      'Foto $orden de ${FotoCajaEntity.maximo}, ${tituloCaja(widget.caja).toLowerCase()}, '
+  String _rotulo(FotoCajaEntity f) =>
+      '${f.esPdf ? 'PDF' : 'Foto'} ${f.orden} de ${FotoCajaEntity.maximo}, $_caja, '
       '${oGuion(widget.caja.nombreArchivo)}';
 
   @override
@@ -176,7 +219,7 @@ class _FotosCajaState extends ConsumerState<FotosCaja> {
         final ordenadas = [...lista]..sort((a, b) => a.orden.compareTo(b.orden));
         return LayoutBuilder(
           builder: (context, r) {
-            // Tres lugares siempre: las fotos, un «agregar» y lugares vacíos.
+            // Tres lugares siempre: las fotos y PDF, un «agregar» y lugares vacíos.
             final lado = ((r.maxWidth - 2 * Esp.m) / 3).clamp(80.0, 220.0);
             return Wrap(
               spacing: Esp.m,
@@ -191,7 +234,7 @@ class _FotosCajaState extends ConsumerState<FotosCaja> {
                             ? _Miniatura(
                               foto: ordenadas[i],
                               lado: lado,
-                              rotulo: _rotulo(ordenadas[i].orden),
+                              rotulo: _rotulo(ordenadas[i]),
                               ocupado: _lugarOcupado == i,
                               bloqueado: _lugarOcupado != null,
                               avance: _avance,
@@ -247,6 +290,42 @@ class _Avance extends StatelessWidget {
   }
 }
 
+/// Un PDF en su lugar: no hay miniatura que dibujar, así que se muestra como
+/// una hoja con su sello, en el rojo de los PDF.
+class _HojaPdf extends StatelessWidget {
+  const _HojaPdf({required this.lado});
+
+  final double lado;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = tonoDe(context, TonosArchivo.peligro);
+    return ColoredBox(
+      color: t.fondo,
+      child: Center(
+        child: FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Padding(
+            padding: const EdgeInsets.all(Esp.s),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.picture_as_pdf_outlined, size: lado * 0.34, color: t.fuerte),
+                const SizedBox(height: Esp.xs),
+                Text(
+                  'PDF',
+                  style: Theme.of(context).textTheme.titleSmall?.copyWith(color: t.texto, fontWeight: Peso.dato),
+                ),
+                Text('Tócalo para abrirlo', style: Theme.of(context).textTheme.labelSmall?.copyWith(color: t.texto)),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _Miniatura extends StatelessWidget {
   const _Miniatura({
     required this.foto,
@@ -273,7 +352,7 @@ class _Miniatura extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    final t = tonoDe(context, TonosArchivo.fotos);
+    final t = tonoDe(context, foto.esPdf ? TonosArchivo.peligro : TonosArchivo.fotos);
 
     return Semantics(
       label: rotulo,
@@ -290,7 +369,10 @@ class _Miniatura extends StatelessWidget {
           children: [
             InkWell(
               onTap: bloqueado ? null : onVer,
-              child: ImagenDeFoto(codFoto: foto.codFoto, ruta: foto.ruta, anchoLogico: lado),
+              child:
+                  foto.esPdf
+                      ? _HojaPdf(lado: lado)
+                      : ImagenDeFoto(codFoto: foto.codFoto, ruta: foto.ruta, anchoLogico: lado),
             ),
             Positioned(
               left: Esp.xs,
@@ -315,7 +397,7 @@ class _Miniatura extends StatelessWidget {
               right: Esp.xs,
               child: PopupMenuButton<int>(
                 enabled: !bloqueado,
-                tooltip: 'Acciones de la ${rotulo.split(',').first.toLowerCase()}',
+                tooltip: 'Acciones de${foto.esPdf ? 'l PDF' : ' la foto'} ${foto.orden}',
                 icon: CircleAvatar(
                   radius: 16,
                   backgroundColor: cs.surface.withValues(alpha: 0.88),
@@ -328,13 +410,17 @@ class _Miniatura extends StatelessWidget {
                 },
                 itemBuilder:
                     (_) => [
-                      const PopupMenuItem(
+                      PopupMenuItem(
                         value: 0,
                         child: ListTile(
                           dense: true,
                           contentPadding: EdgeInsets.zero,
-                          leading: IconoTono(Icons.zoom_out_map, TonosArchivo.fotos, lado: 28),
-                          title: Text('Ver en grande'),
+                          leading: IconoTono(
+                            foto.esPdf ? Icons.picture_as_pdf_outlined : Icons.zoom_out_map,
+                            foto.esPdf ? TonosArchivo.peligro : TonosArchivo.fotos,
+                            lado: 28,
+                          ),
+                          title: Text(foto.esPdf ? 'Abrir PDF' : 'Ver en grande'),
                         ),
                       ),
                       const PopupMenuItem(
@@ -417,7 +503,7 @@ class _LugarVacio extends StatelessWidget {
                 const IconoTono(Icons.add_a_photo_outlined, TonosArchivo.fotos, lado: 40),
                 const SizedBox(height: Esp.s),
                 Text(
-                  'Agregar foto',
+                  'Agregar foto o PDF',
                   textAlign: TextAlign.center,
                   style: Theme.of(context).textTheme.labelLarge?.copyWith(
                     color: t.texto,

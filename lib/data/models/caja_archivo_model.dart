@@ -16,6 +16,12 @@ class CajaArchivoModel {
   final int? anioHasta;
   final int? codFotoPortada;
   final String? rutaPortada;
+  final int? codPrestamoCaja;
+  final String? prestadaA;
+  final String? fechaPrestamo;
+  final String? fechaDestruccion;
+  final int prestados;
+  final int destruidos;
 
   const CajaArchivoModel({
     required this.codCaja,
@@ -33,6 +39,12 @@ class CajaArchivoModel {
     this.anioHasta,
     this.codFotoPortada,
     this.rutaPortada,
+    this.codPrestamoCaja,
+    this.prestadaA,
+    this.fechaPrestamo,
+    this.fechaDestruccion,
+    this.prestados = 0,
+    this.destruidos = 0,
   });
 
   factory CajaArchivoModel.fromJson(Map<String, dynamic> json) {
@@ -53,6 +65,12 @@ class CajaArchivoModel {
       anioHasta: entero('anioHasta'),
       codFotoPortada: entero('codFotoPortada'),
       rutaPortada: json['rutaPortada'] as String?,
+      codPrestamoCaja: entero('codPrestamoCaja'),
+      prestadaA: json['prestadaA'] as String?,
+      fechaPrestamo: json['fechaPrestamo'] as String?,
+      fechaDestruccion: json['fechaDestruccion'] as String?,
+      prestados: entero('prestados') ?? 0,
+      destruidos: entero('destruidos') ?? 0,
     );
   }
 
@@ -72,6 +90,12 @@ class CajaArchivoModel {
     'anioHasta': anioHasta,
     'codFotoPortada': codFotoPortada,
     'rutaPortada': rutaPortada,
+    'codPrestamoCaja': codPrestamoCaja,
+    'prestadaA': prestadaA,
+    'fechaPrestamo': fechaPrestamo,
+    'fechaDestruccion': fechaDestruccion,
+    'prestados': prestados,
+    'destruidos': destruidos,
   };
 
   Map<String, dynamic> toRegistroJson() => {
@@ -100,6 +124,12 @@ class CajaArchivoModel {
     anioHasta: anioHasta,
     codFotoPortada: codFotoPortada,
     rutaPortada: rutaPortada,
+    codPrestamoCaja: codPrestamoCaja,
+    prestadaA: prestadaA,
+    fechaPrestamo: fechaPrestamo,
+    fechaDestruccion: fechaDestruccion,
+    prestados: prestados,
+    destruidos: destruidos,
   );
 
   factory CajaArchivoModel.fromEntity(CajaArchivoEntity e) => CajaArchivoModel(
@@ -118,5 +148,11 @@ class CajaArchivoModel {
     anioHasta: e.anioHasta,
     codFotoPortada: e.codFotoPortada,
     rutaPortada: e.rutaPortada,
+    codPrestamoCaja: e.codPrestamoCaja,
+    prestadaA: e.prestadaA,
+    fechaPrestamo: e.fechaPrestamo,
+    fechaDestruccion: e.fechaDestruccion,
+    prestados: e.prestados,
+    destruidos: e.destruidos,
   );
 }

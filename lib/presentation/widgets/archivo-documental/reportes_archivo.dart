@@ -1,6 +1,7 @@
 /// Los reportes del archivo (jrxml en el backend): se elige cuál, se acota con
 /// filtros que arrancan con los de la pantalla y el PDF se ve antes de
-/// imprimirlo o compartirlo (`mostrarPdf`, igual en web y teléfono).
+/// imprimirlo o compartirlo (`mostrarPdf`, igual en web y teléfono). Son el
+/// inventario: lo destruido no figura (el reporte de una caja sí lo muestra).
 library;
 
 import 'package:flutter/material.dart';
@@ -144,6 +145,7 @@ class _ReportesArchivoState extends State<ReportesArchivo> {
       ReporteArchivo.porSucursal => 'por-sucursal',
       ReporteArchivo.porTipo => 'por-tipo',
       ReporteArchivo.detalle => 'detalle',
+      ReporteArchivo.porCaja => 'caja',
     };
     return 'archivo-documentos-$clave-${hoy.year}-${dos(hoy.month)}-${dos(hoy.day)}.pdf';
   }
@@ -183,7 +185,8 @@ class _ReportesArchivoState extends State<ReportesArchivo> {
                       ),
                     Text('Qué quieres ver', style: context.tituloSeccion()),
                     const SizedBox(height: Esp.s),
-                    for (final r in ReporteArchivo.values) ...[
+                    // El de una caja se pide desde la caja abierta: aquí no hay caja que elegir.
+                    for (final r in ReporteArchivo.values.where((r) => r != ReporteArchivo.porCaja)) ...[
                       _OpcionReporte(
                         reporte: r,
                         elegido: _reporte == r,
@@ -309,6 +312,11 @@ class _OpcionReporte extends StatelessWidget {
         Icons.list_alt_outlined,
         TonosArchivo.documentos,
         'Cada documento con su caja y su ubicación, caja por caja, para imprimir.',
+      ),
+      ReporteArchivo.porCaja => (
+        Icons.inventory_2_outlined,
+        TonosArchivo.caja,
+        'Lo que guarda una caja, con lo prestado y lo destruido.',
       ),
     };
     final t = tonoDe(context, semilla);

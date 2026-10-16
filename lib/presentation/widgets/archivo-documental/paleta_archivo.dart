@@ -31,6 +31,10 @@ abstract final class TonosArchivo {
   static const Color reportes = Color(0xFF0891B2);
   static const Color peligro = Color(0xFFDC2626);
 
+  /// Lo que salió de la caja (prestado) y lo que ya no existe (destruido).
+  static const Color prestamo = Color(0xFFD97706);
+  static const Color destruido = Color(0xFF475569);
+
   /// Archivos físicos (sucursales), por orden de alta.
   static const List<Color> archivos = [
     Color(0xFF0D9488),

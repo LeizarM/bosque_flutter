@@ -19,6 +19,10 @@ enum TipoImagen {
   final String subtipo;
 }
 
+/// Todo PDF empieza con «%PDF-», se llame como se llame el archivo.
+bool esPdf(Uint8List b) =>
+    b.length >= 5 && b[0] == 0x25 && b[1] == 0x50 && b[2] == 0x44 && b[3] == 0x46 && b[4] == 0x2D;
+
 /// Null si no es JPG, PNG ni WEBP (HEIC, GIF, un PDF renombrado...).
 TipoImagen? tipoDeImagen(Uint8List b) {
   if (b.length >= 3 && b[0] == 0xFF && b[1] == 0xD8 && b[2] == 0xFF) {

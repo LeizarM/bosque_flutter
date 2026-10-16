@@ -51,8 +51,9 @@ class CatalogosArchivo extends ConsumerWidget {
                     detalle:
                         (a) =>
                             '${(a.nombreSucursal ?? '').isEmpty ? 'Sin sucursal' : a.nombreSucursal} · '
-                            '${a.cajas} cajas · ${documentosLegible(a.lineas)}'
-                            '${(a.responsable ?? '').isEmpty ? '' : ' · ${a.responsable}'}',
+                            '${a.cajas} cajas · ${documentosLegible(a.lineas)}\n'
+                            '${(a.nombreResponsable ?? '').isEmpty ? 'Sin responsable asignado' : 'Responsable: ${a.nombreResponsable}'}'
+                            '${(a.fechaAsignacion ?? '').isEmpty ? '' : ' (desde ${a.fechaAsignacion})'}',
                     icono: (a) => IconoTono(Icons.warehouse_outlined, semillaDeArchivo(a.codArchivo, codigos)),
                     activo: (a) => a.esActivo,
                     nuevo: 'Nuevo archivo',
@@ -108,19 +109,20 @@ class CatalogosArchivo extends ConsumerWidget {
             (_) => _FichaCatalogo(
               titulo: a == null ? 'Nuevo archivo' : 'Editar ${a.nombre}',
               nombre: a?.nombre ?? '',
-              responsable: a?.responsable ?? '',
+              codEmpleado: a?.codEmpleado,
+              fechaAsignacion: a?.fechaAsignacion,
               conResponsable: true,
               conSucursal: true,
               codSucursal: a?.codSucursal,
               activo: a?.esActivo ?? true,
               onGuardar:
-                  (nombre, responsable, codSucursal, activo) => ref
+                  (nombre, codEmpleado, codSucursal, activo) => ref
                       .read(archivoDocumentalProvider.notifier)
                       .guardarArchivo(
                         ArchivoFisicoEntity(
                           codArchivo: a?.codArchivo ?? 0,
                           nombre: nombre,
-                          responsable: responsable,
+                          codEmpleado: codEmpleado,
                           codSucursal: codSucursal,
                           estado: activo ? ArchivoFisicoEntity.activo : ArchivoFisicoEntity.inactivo,
                         ),
@@ -270,13 +272,15 @@ class _Lista<T> extends StatelessWidget {
   }
 }
 
-/// Nombre, responsable y sucursal opcionales y activo. Guarda y cierra; si el
-/// servidor rechaza, muestra el motivo y queda abierta.
+/// Nombre, responsable (un empleado, obligatorio en el archivo), sucursal
+/// opcional y activo. Guarda y cierra; si el servidor rechaza, muestra el
+/// motivo y queda abierta.
 class _FichaCatalogo extends ConsumerStatefulWidget {
   const _FichaCatalogo({
     required this.titulo,
     required this.nombre,
-    this.responsable = '',
+    this.codEmpleado,
+    this.fechaAsignacion,
     this.conResponsable = false,
     this.conSucursal = false,
     this.codSucursal,
@@ -286,13 +290,15 @@ class _FichaCatalogo extends ConsumerStatefulWidget {
 
   final String titulo;
   final String nombre;
-  final String responsable;
+  final int? codEmpleado;
+
+  /// Desde cuándo es responsable (texto del servidor); null en un alta.
+  final String? fechaAsignacion;
   final bool conResponsable;
   final bool conSucursal;
   final int? codSucursal;
   final bool activo;
-  final Future<void> Function(String nombre, String? responsable, int? codSucursal, bool activo)
-  onGuardar;
+  final Future<void> Function(String nombre, int? codEmpleado, int? codSucursal, bool activo) onGuardar;
 
   @override
   ConsumerState<_FichaCatalogo> createState() => _FichaCatalogoState();
@@ -301,28 +307,29 @@ class _FichaCatalogo extends ConsumerStatefulWidget {
 class _FichaCatalogoState extends ConsumerState<_FichaCatalogo> {
   final _formulario = GlobalKey<FormState>();
   late final TextEditingController _nombre = TextEditingController(text: widget.nombre);
-  late final TextEditingController _responsable = TextEditingController(text: widget.responsable);
+  late int? _empleado = widget.codEmpleado;
   late bool _activo = widget.activo;
   late int? _sucursal = widget.codSucursal;
   bool _guardando = false;
+  bool _intento = false;
   String? _error;
 
   @override
   void dispose() {
     _nombre.dispose();
-    _responsable.dispose();
     super.dispose();
   }
 
   Future<void> _guardar() async {
-    if (!(_formulario.currentState?.validate() ?? false)) return;
+    setState(() => _intento = true);
+    final valido = _formulario.currentState?.validate() ?? false;
+    if (!valido || (widget.conResponsable && _empleado == null)) return;
     setState(() {
       _guardando = true;
       _error = null;
     });
     try {
-      final r = _responsable.text.trim();
-      await widget.onGuardar(_nombre.text.trim(), r.isEmpty ? null : r, _sucursal, _activo);
+      await widget.onGuardar(_nombre.text.trim(), _empleado, _sucursal, _activo);
       if (mounted) Navigator.of(context).pop();
     } catch (e) {
       if (mounted) {
@@ -359,13 +366,21 @@ class _FichaCatalogoState extends ConsumerState<_FichaCatalogo> {
                 decoration: const InputDecoration(labelText: 'Nombre *', border: OutlineInputBorder()),
                 validator: (v) => (v?.trim().isEmpty ?? true) ? 'Escribe el nombre.' : null,
               ),
-              if (widget.conResponsable)
-                TextFormField(
-                  controller: _responsable,
-                  enabled: !_guardando,
-                  maxLength: 100,
-                  decoration: const InputDecoration(labelText: 'Responsable', border: OutlineInputBorder()),
-                ),
+              if (widget.conResponsable) ...[
+                _comboResponsable(),
+                if (_intento && _empleado == null)
+                  Padding(
+                    padding: const EdgeInsets.only(top: Esp.xs, left: Esp.m),
+                    child: Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        'Elige al responsable del archivo.',
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.error),
+                      ),
+                    ),
+                  ),
+                const SizedBox(height: Esp.l),
+              ],
               if (widget.conSucursal) ...[
                 _comboSucursal(),
                 const SizedBox(height: Esp.s),
@@ -393,6 +408,42 @@ class _FichaCatalogoState extends ConsumerState<_FichaCatalogo> {
       ],
     ),
   );
+
+  /// Los empleados activos y, si ya no lo está, el responsable actual. La
+  /// fecha de asignación la pone el servidor cuando el responsable cambia.
+  Widget _comboResponsable() {
+    final empleados = ref.watch(empleadosArchivoProvider);
+    final asignado = (widget.fechaAsignacion ?? '').trim();
+    final ayuda =
+        _empleado != null && _empleado == widget.codEmpleado && asignado.isNotEmpty
+            ? 'Responsable desde el $asignado.'
+            : 'Se registra con la fecha y hora en que guardes.';
+    return empleados.when(
+      loading:
+          () => const InputDecorator(
+            decoration: InputDecoration(labelText: 'Responsable *', border: OutlineInputBorder()),
+            child: Text('Cargando empleados…'),
+          ),
+      error:
+          (e, _) => NotaDelDato(
+            texto: 'No se pudieron traer los empleados: ${textoParaUsuario(e)}',
+            tono: TonoNota.error,
+          ),
+      data: (lista) {
+        final opciones = [
+          for (final e in lista)
+            if (e.activo || e.codEmpleado == widget.codEmpleado) e,
+        ]..sort((a, b) => a.nombreCompleto.compareTo(b.nombreCompleto));
+        return ComboBuscable<int>(
+          etiqueta: 'Responsable *',
+          valor: _empleado,
+          ayuda: ayuda,
+          opciones: [for (final e in opciones) DropdownMenuEntry(value: e.codEmpleado, label: e.rotulo)],
+          onElegir: (v) => setState(() => _empleado = v),
+        );
+      },
+    );
+  }
 
   /// tb_sucursal se repite por empresa: el rótulo lleva empresa y ciudad.
   Widget _comboSucursal() {

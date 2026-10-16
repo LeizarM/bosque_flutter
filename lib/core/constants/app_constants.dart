@@ -2159,8 +2159,9 @@ class AppConstants {
   static const String rutaCatalogoCoches = 'tacCoche/Coche';
 
   // ==================== ARCHIVO DE DOCUMENTOS (tarc_*) =====================
-  // Cajas del archivo físico, su contenido y hasta 3 fotos opcionales por caja.
-  // Todo lo protege en el backend la vista `tmtoDocumento/almacenar`.
+  // Cajas del archivo físico, su contenido, hasta 3 fotos o PDF opcionales por
+  // caja, préstamos y la bitácora de destrucción. Todo lo protege en el backend
+  // la vista `tmtoDocumento/almacenar`.
   static const String arcArchivosListar = '/archivo-documental/archivos/listar';
   static const String arcArchivosRegistrar =
       '/archivo-documental/archivos/registrar';
@@ -2188,7 +2189,24 @@ class AppConstants {
   static const String arcFotosVer = '/archivo-documental/fotos/ver';
   static const String arcEmpresas = '/archivo-documental/empresas';
   static const String arcSucursales = '/archivo-documental/sucursales';
-  // Devuelve los bytes del PDF (POR_SUCURSAL, POR_TIPO o DETALLE).
+  static const String arcEmpleados = '/archivo-documental/empleados';
+  static const String arcEntregasListar = '/archivo-documental/entregas/listar';
+  static const String arcEntregasRegistrar =
+      '/archivo-documental/entregas/registrar';
+  static const String arcEntregasDevolver =
+      '/archivo-documental/entregas/devolver';
+  static const String arcEntregasAnular = '/archivo-documental/entregas/anular';
+  static const String arcPrestamosListar = '/archivo-documental/prestamos/listar';
+  static const String arcPrestamosDevolver =
+      '/archivo-documental/prestamos/devolver';
+  static const String arcPrestamosAnular = '/archivo-documental/prestamos/anular';
+  static const String arcDestruccionesListar =
+      '/archivo-documental/destrucciones/listar';
+  static const String arcDestruccionesRegistrar =
+      '/archivo-documental/destrucciones/registrar';
+  static const String arcDestruccionesAnular =
+      '/archivo-documental/destrucciones/anular';
+  // Devuelve los bytes del PDF (POR_SUCURSAL, POR_TIPO, DETALLE o POR_CAJA).
   static const String arcReporte = '/archivo-documental/reporte';
 
   // La `direccion` de tb_vista, tal cual: «Almacenaje de Documentos» (vista 95,

@@ -3,11 +3,13 @@ import 'package:bosque_flutter/domain/entities/archivo_fisico_entity.dart';
 class ArchivoFisicoModel {
   final int codArchivo;
   final String nombre;
-  final String? responsable;
   final int? codSucursal;
   final int estado;
   final int audUsuario;
   final DateTime? audFecha;
+  final int? codEmpleado;
+  final String? fechaAsignacion;
+  final String? nombreResponsable;
   final String? nombreSucursal;
   final String? ciudadSucursal;
   final int cajas;
@@ -16,11 +18,13 @@ class ArchivoFisicoModel {
   const ArchivoFisicoModel({
     required this.codArchivo,
     required this.nombre,
-    this.responsable,
     this.codSucursal,
     this.estado = ArchivoFisicoEntity.activo,
     this.audUsuario = 0,
     this.audFecha,
+    this.codEmpleado,
+    this.fechaAsignacion,
+    this.nombreResponsable,
     this.nombreSucursal,
     this.ciudadSucursal,
     this.cajas = 0,
@@ -33,11 +37,13 @@ class ArchivoFisicoModel {
     return ArchivoFisicoModel(
       codArchivo: entero('codArchivo') ?? 0,
       nombre: (json['nombre'] ?? '').toString(),
-      responsable: json['responsable'] as String?,
       codSucursal: entero('codSucursal'),
       estado: entero('estado') ?? ArchivoFisicoEntity.activo,
       audUsuario: entero('audUsuario') ?? 0,
       audFecha: DateTime.tryParse(json['audFecha']?.toString() ?? ''),
+      codEmpleado: entero('codEmpleado'),
+      fechaAsignacion: json['fechaAsignacion'] as String?,
+      nombreResponsable: json['nombreResponsable'] as String?,
       nombreSucursal: json['nombreSucursal'] as String?,
       ciudadSucursal: json['ciudadSucursal'] as String?,
       cajas: entero('cajas') ?? 0,
@@ -48,22 +54,24 @@ class ArchivoFisicoModel {
   Map<String, dynamic> toJson() => {
     'codArchivo': codArchivo,
     'nombre': nombre,
-    'responsable': responsable,
     'codSucursal': codSucursal,
     'estado': estado,
     'audUsuario': audUsuario,
     'audFecha': audFecha?.toIso8601String(),
+    'codEmpleado': codEmpleado,
+    'fechaAsignacion': fechaAsignacion,
+    'nombreResponsable': nombreResponsable,
     'nombreSucursal': nombreSucursal,
     'ciudadSucursal': ciudadSucursal,
     'cajas': cajas,
     'lineas': lineas,
   };
 
-  /// El cuerpo de `registrar`: solo lo que escribe el SP.
+  /// El cuerpo de `registrar`: solo lo que escribe el SP (la fecha de asignación la pone él).
   Map<String, dynamic> toRegistroJson() => {
     'codArchivo': codArchivo,
     'nombre': nombre,
-    'responsable': responsable,
+    'codEmpleado': codEmpleado,
     'codSucursal': codSucursal,
     'estado': estado,
     'audUsuario': audUsuario,
@@ -72,11 +80,13 @@ class ArchivoFisicoModel {
   ArchivoFisicoEntity toEntity() => ArchivoFisicoEntity(
     codArchivo: codArchivo,
     nombre: nombre,
-    responsable: responsable,
     codSucursal: codSucursal,
     estado: estado,
     audUsuario: audUsuario,
     audFecha: audFecha,
+    codEmpleado: codEmpleado,
+    fechaAsignacion: fechaAsignacion,
+    nombreResponsable: nombreResponsable,
     nombreSucursal: nombreSucursal,
     ciudadSucursal: ciudadSucursal,
     cajas: cajas,
@@ -87,11 +97,13 @@ class ArchivoFisicoModel {
       ArchivoFisicoModel(
         codArchivo: e.codArchivo,
         nombre: e.nombre,
-        responsable: e.responsable,
         codSucursal: e.codSucursal,
         estado: e.estado,
         audUsuario: e.audUsuario,
         audFecha: e.audFecha,
+        codEmpleado: e.codEmpleado,
+        fechaAsignacion: e.fechaAsignacion,
+        nombreResponsable: e.nombreResponsable,
         nombreSucursal: e.nombreSucursal,
         ciudadSucursal: e.ciudadSucursal,
         cajas: e.cajas,

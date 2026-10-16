@@ -14,6 +14,11 @@ class ContenidoCajaModel {
   final DateTime? audFecha;
   final String? nombreTipoDocumento;
   final String? nombreEmpresa;
+  final String situacion;
+  final int? codPrestamo;
+  final String? prestadoA;
+  final String? fechaPrestamo;
+  final String? fechaDestruccion;
 
   const ContenidoCajaModel({
     required this.codContenido,
@@ -29,6 +34,11 @@ class ContenidoCajaModel {
     this.audFecha,
     this.nombreTipoDocumento,
     this.nombreEmpresa,
+    this.situacion = ContenidoCajaEntity.enLaCaja,
+    this.codPrestamo,
+    this.prestadoA,
+    this.fechaPrestamo,
+    this.fechaDestruccion,
   });
 
   factory ContenidoCajaModel.fromJson(Map<String, dynamic> json) {
@@ -47,6 +57,11 @@ class ContenidoCajaModel {
       audFecha: DateTime.tryParse(json['audFecha']?.toString() ?? ''),
       nombreTipoDocumento: json['nombreTipoDocumento'] as String?,
       nombreEmpresa: json['nombreEmpresa'] as String?,
+      situacion: (json['situacion'] as String?) ?? ContenidoCajaEntity.enLaCaja,
+      codPrestamo: entero('codPrestamo'),
+      prestadoA: json['prestadoA'] as String?,
+      fechaPrestamo: json['fechaPrestamo'] as String?,
+      fechaDestruccion: json['fechaDestruccion'] as String?,
     );
   }
 
@@ -64,9 +79,15 @@ class ContenidoCajaModel {
     'audFecha': audFecha?.toIso8601String(),
     'nombreTipoDocumento': nombreTipoDocumento,
     'nombreEmpresa': nombreEmpresa,
+    'situacion': situacion,
+    'codPrestamo': codPrestamo,
+    'prestadoA': prestadoA,
+    'fechaPrestamo': fechaPrestamo,
+    'fechaDestruccion': fechaDestruccion,
   };
 
-  /// Sin los años: el SP los deriva de la gestión.
+  /// Sin los años ni la situación: el SP deriva unos de la gestión y la otra
+  /// de los préstamos y la bitácora de destrucción.
   Map<String, dynamic> toRegistroJson() => {
     'codContenido': codContenido,
     'codCaja': codCaja,
@@ -92,6 +113,11 @@ class ContenidoCajaModel {
     audFecha: audFecha,
     nombreTipoDocumento: nombreTipoDocumento,
     nombreEmpresa: nombreEmpresa,
+    situacion: situacion,
+    codPrestamo: codPrestamo,
+    prestadoA: prestadoA,
+    fechaPrestamo: fechaPrestamo,
+    fechaDestruccion: fechaDestruccion,
   );
 
   factory ContenidoCajaModel.fromEntity(ContenidoCajaEntity e) =>
@@ -109,5 +135,10 @@ class ContenidoCajaModel {
         audFecha: e.audFecha,
         nombreTipoDocumento: e.nombreTipoDocumento,
         nombreEmpresa: e.nombreEmpresa,
+        situacion: e.situacion,
+        codPrestamo: e.codPrestamo,
+        prestadoA: e.prestadoA,
+        fechaPrestamo: e.fechaPrestamo,
+        fechaDestruccion: e.fechaDestruccion,
       );
 }

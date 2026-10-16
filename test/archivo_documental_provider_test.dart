@@ -3,6 +3,10 @@ import 'dart:typed_data';
 import 'package:bosque_flutter/core/state/archivo_documental_provider.dart';
 import 'package:bosque_flutter/core/utils/tipo_imagen.dart';
 import 'package:bosque_flutter/domain/entities/caja_archivo_entity.dart';
+import 'package:bosque_flutter/domain/entities/contenido_caja_entity.dart';
+import 'package:bosque_flutter/domain/entities/entrega_documento_entity.dart';
+import 'package:bosque_flutter/domain/entities/foto_caja_entity.dart';
+import 'package:bosque_flutter/domain/entities/prestamo_documento_entity.dart';
 import 'package:bosque_flutter/domain/repositories/archivo_documental_repository.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -155,19 +159,89 @@ void main() {
     });
 
     test('rechaza GIF, HEIC y archivos vacíos con un motivo que se entiende', () {
-      expect(motivoFotoInvalida(con([0x47, 0x49, 0x46, 0x38])), contains('no es JPG, PNG ni WEBP'));
+      expect(motivoFotoInvalida(con([0x47, 0x49, 0x46, 0x38])), contains('ni un PDF'));
       expect(
         motivoFotoInvalida(con([0, 0, 0, 0x18, 0x66, 0x74, 0x79, 0x70, 0x68, 0x65, 0x69, 0x63])),
-        contains('no es JPG, PNG ni WEBP'),
+        contains('no es una foto JPG, PNG o WEBP'),
       );
-      expect(motivoFotoInvalida(Uint8List(0)), contains('vacía'));
+      expect(motivoFotoInvalida(Uint8List(0)), contains('vacío'));
       expect(motivoFotoInvalida(pngDePrueba), isNull);
     });
 
-    test('más de 8 MB no se sube: lo dice con el peso', () {
+    test('un PDF se reconoce por «%PDF-» y se acepta', () {
+      final pdf = con('%PDF-1.4'.codeUnits);
+      expect(esPdf(pdf), isTrue);
+      expect(esPdf(con('%PD'.codeUnits)), isFalse);
+      expect(tipoDeImagen(pdf), isNull, reason: 'un PDF no es una imagen');
+      expect(motivoFotoInvalida(pdf), isNull);
+    });
+
+    test('más de 10 MB no se sube: lo dice con el peso y si es foto o PDF', () {
       final grande = con([0xFF, 0xD8, 0xFF], largo: maximoBytesFoto + 1);
-      expect(motivoFotoInvalida(grande), contains('8,0 MB'));
+      expect(motivoFotoInvalida(grande), allOf(contains('La foto pesa 10,0 MB'), contains('máximo es 10 MB')));
       expect(motivoFotoInvalida(con([0xFF, 0xD8, 0xFF], largo: maximoBytesFoto)), isNull);
+      expect(motivoFotoInvalida(con('%PDF-1.7'.codeUnits, largo: maximoBytesFoto + 1)), startsWith('El PDF pesa'));
+    });
+  });
+
+  group('situación de las líneas', () {
+    test('una línea prestada se encuentra buscando a quién se le prestó', () {
+      const prestada = ContenidoCajaEntity(
+        codContenido: 9,
+        codCaja: 2,
+        codTipoDocumento: 10,
+        detalle: 'Facturas de compra',
+        situacion: ContenidoCajaEntity.prestada,
+        prestadoA: 'LLANQUE VICTOR',
+      );
+      const enCaja = ContenidoCajaEntity(codContenido: 10, codCaja: 2, codTipoDocumento: 10, detalle: 'Facturas de venta');
+      expect(FiltroArchivo.textoDeLinea(prestada), contains('llanque victor'));
+      expect(FiltroArchivo.textoDeLinea(enCaja), isNot(contains('llanque')));
+      expect(prestada.estaPrestada && !prestada.estaEnLaCaja, isTrue);
+      expect(enCaja.estaEnLaCaja, isTrue, reason: 'sin situación del servidor, la línea está en la caja');
+    });
+
+    test('prestar desde la caja es una entrega de esa caja: sin líneas, la caja completa', () {
+      const completa = PedidoMovimientoCaja(codCaja: 7, codEmpleado: 240, observacion: 'Auditoría');
+      expect(completa.cajaCompleta, isTrue);
+      expect(completa.aEntrega().toJson(), {
+        'codEmpleado': 240,
+        'cajas': [7],
+        'lineas': <int>[],
+        'observacion': 'Auditoría',
+      });
+      final sueltas = const PedidoMovimientoCaja(codCaja: 7, lineas: [3, 4], codEmpleado: 23).aEntrega();
+      expect(sueltas.cajas, isEmpty, reason: 'con líneas no se lleva la caja entera');
+      expect(sueltas.lineas, [3, 4]);
+    });
+
+    test('la destrucción no manda empleado', () {
+      expect(const PedidoMovimientoCaja(codCaja: 7, codEmpleado: 240).toJson(), {
+        'codCaja': 7,
+        'lineas': <int>[],
+        'observacion': null,
+      });
+    });
+
+    test('las entregas abiertas son las que tienen algo afuera, y sus renglones van por caja', () {
+      const s = ArchivoDocumentalState(
+        entregas: [
+          EntregaDocumentoEntity(codEntrega: 1, codEmpleado: 23, cajas: 1, documentos: 1, pendientes: 1),
+          EntregaDocumentoEntity(codEntrega: 2, codEmpleado: 23, documentos: 1),
+        ],
+        prestamos: [
+          PrestamoDocumentoEntity(codPrestamo: 5, codEntrega: 1, codCaja: 9, codContenido: 30, numeroCaja: 9, nombreArchivo: 'ACHOCALLA'),
+          PrestamoDocumentoEntity(codPrestamo: 4, codEntrega: 1, codCaja: 3, numeroCaja: 3, nombreArchivo: 'ACHOCALLA'),
+          PrestamoDocumentoEntity(codPrestamo: 6, codEntrega: 2, codCaja: 3, codContenido: 8, numeroCaja: 3),
+        ],
+      );
+      expect([for (final e in s.entregasAbiertas) e.codEntrega], [1]);
+      expect([for (final p in s.renglonesDe(1)) p.codPrestamo], [4, 5]);
+    });
+
+    test('una foto es PDF por la extensión que le puso el servidor', () {
+      expect(const FotoCajaEntity(codFoto: 1, codCaja: 2, orden: 1, ruta: 'archivo-cajas/caja-2-x.PDF').esPdf, isTrue);
+      expect(const FotoCajaEntity(codFoto: 1, codCaja: 2, orden: 1, ruta: 'archivo-cajas/caja-2-x.jpg').esPdf, isFalse);
     });
   });
 

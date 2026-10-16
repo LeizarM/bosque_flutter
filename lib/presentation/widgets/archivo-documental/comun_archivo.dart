@@ -322,14 +322,17 @@ class PieFicha extends StatelessWidget {
       const Divider(height: 1),
       Padding(
         padding: const EdgeInsets.all(Esp.l),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.end,
+        // Wrap y no Row: con letra grande en un teléfono el botón principal baja de línea en vez de desbordar.
+        child: Wrap(
+          alignment: WrapAlignment.end,
+          crossAxisAlignment: WrapCrossAlignment.center,
+          spacing: Esp.s,
+          runSpacing: Esp.s,
           children: [
             TextButton(
               onPressed: ocupado ? null : () => Navigator.of(context).pop(),
               child: const Text('Cancelar'),
             ),
-            const SizedBox(width: Esp.s),
             FilledButton.icon(
               style: estiloLleno(context, semilla),
               onPressed: ocupado ? null : onGuardar,

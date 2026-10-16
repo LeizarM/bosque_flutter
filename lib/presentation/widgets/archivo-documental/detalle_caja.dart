@@ -1,6 +1,7 @@
-/// Una caja abierta: dónde está, sus fotos y lo que guarda. Reemplaza al
-/// listado en todos los anchos (mismas acciones en teléfono y escritorio); los
-/// documentos que coinciden con la búsqueda vigente se marcan en verde.
+/// Una caja abierta: dónde está, sus fotos y PDF, lo que guarda y lo que salió
+/// de ella. Reemplaza al listado en todos los anchos (mismas acciones en
+/// teléfono y escritorio); los documentos que coinciden con la búsqueda vigente
+/// se marcan en verde y los prestados o destruidos llevan su chip.
 library;
 
 import 'package:flutter/material.dart';
@@ -8,12 +9,15 @@ import 'package:flutter/material.dart';
 import 'package:bosque_flutter/core/ui/tokens_bosque.dart';
 import 'package:bosque_flutter/domain/entities/caja_archivo_entity.dart';
 import 'package:bosque_flutter/domain/entities/contenido_caja_entity.dart';
+import 'package:bosque_flutter/domain/entities/destruccion_documento_entity.dart';
+import 'package:bosque_flutter/domain/entities/prestamo_documento_entity.dart';
 import 'package:bosque_flutter/presentation/widgets/archivo-documental/comun_archivo.dart';
 import 'package:bosque_flutter/presentation/widgets/archivo-documental/fotos_caja.dart';
 import 'package:bosque_flutter/presentation/widgets/archivo-documental/imagen_foto.dart';
+import 'package:bosque_flutter/presentation/widgets/archivo-documental/movimientos_archivo.dart';
 import 'package:bosque_flutter/presentation/widgets/archivo-documental/paleta_archivo.dart';
 
-enum AccionLinea { editar, eliminar }
+enum AccionLinea { editar, prestar, devolver, destruir, eliminar }
 
 class DetalleCaja extends StatelessWidget {
   const DetalleCaja({
@@ -26,11 +30,20 @@ class DetalleCaja extends StatelessWidget {
     required this.semillaArchivo,
     required this.semillaEmpresa,
     this.sucursal,
+    this.prestamos = const [],
+    this.destrucciones = const [],
+    this.generandoReporte = false,
     required this.onVolver,
     required this.onEditarCaja,
     required this.onEliminarCaja,
     required this.onAgregarLinea,
     required this.onAccionLinea,
+    required this.onPrestar,
+    required this.onDestruir,
+    required this.onReporte,
+    required this.onDevolver,
+    required this.onAnularPrestamo,
+    required this.onAnularDestruccion,
   });
 
   final CajaArchivoEntity caja;
@@ -47,17 +60,47 @@ class DetalleCaja extends StatelessWidget {
 
   /// «Sucursal 15 Achocalla · LA PAZ», si el archivo tiene una.
   final String? sucursal;
+
+  /// Los préstamos y destrucciones de esta caja.
+  final List<PrestamoDocumentoEntity> prestamos;
+  final List<DestruccionDocumentoEntity> destrucciones;
+
+  /// El PDF de la caja se está armando: su botón espera.
+  final bool generandoReporte;
   final VoidCallback onVolver;
   final VoidCallback onEditarCaja;
   final VoidCallback onEliminarCaja;
   final VoidCallback onAgregarLinea;
   final void Function(ContenidoCajaEntity linea, AccionLinea accion) onAccionLinea;
+  final VoidCallback onPrestar;
+  final VoidCallback onDestruir;
+  final VoidCallback onReporte;
+  final void Function(PrestamoDocumentoEntity p) onDevolver;
+  final void Function(PrestamoDocumentoEntity p) onAnularPrestamo;
+  final void Function(DestruccionDocumentoEntity d) onAnularDestruccion;
+
+  /// El préstamo de la caja completa, si está afuera.
+  PrestamoDocumentoEntity? get _prestamoCaja {
+    for (final p in prestamos) {
+      if (p.codPrestamo == caja.codPrestamoCaja) return p;
+    }
+    return null;
+  }
 
   @override
   Widget build(BuildContext context) {
     final tt = Theme.of(context).textTheme;
     final cs = Theme.of(context).colorScheme;
     final obs = (caja.observacion ?? '').trim();
+    final abiertos = [
+      for (final p in prestamos)
+        if (p.abierto) p,
+    ];
+    final devueltos = [
+      for (final p in prestamos)
+        if (!p.abierto) p,
+    ];
+    final movimientos = prestamos.length + destrucciones.length;
 
     return ListView(
       padding: EdgeInsets.fromLTRB(margen, Esp.m, margen, Esp.xxl),
@@ -170,11 +213,49 @@ class DetalleCaja extends StatelessWidget {
             _Dato(
               icono: Icons.photo_camera_outlined,
               semilla: TonosArchivo.fotos,
-              rotulo: 'Fotos',
+              rotulo: 'Fotos y PDF',
               valor: '${caja.fotos} de 3',
             ),
+            if (caja.prestados > 0)
+              _Dato(
+                icono: Icons.outbox_outlined,
+                semilla: TonosArchivo.prestamo,
+                rotulo: 'Afuera',
+                valor: caja.prestados == 1 ? '1 prestado' : '${caja.prestados} prestados',
+              ),
+            if (caja.destruidos > 0)
+              _Dato(
+                icono: Icons.delete_sweep_outlined,
+                semilla: TonosArchivo.destruido,
+                rotulo: 'Destruidos',
+                valor: documentosLegible(caja.destruidos),
+              ),
           ],
         ),
+        if (caja.destruida) ...[
+          const SizedBox(height: Esp.m),
+          _Aviso(
+            icono: Icons.delete_sweep_outlined,
+            semilla: TonosArchivo.destruido,
+            texto: 'Caja destruida el ${oGuion(caja.fechaDestruccion)}. Ya no se le agregan, prestan ni mueven documentos.',
+          ),
+        ] else if (caja.prestadaCompleta) ...[
+          const SizedBox(height: Esp.m),
+          _Aviso(
+            icono: Icons.outbox_outlined,
+            semilla: TonosArchivo.prestamo,
+            texto: 'La caja completa está prestada a ${oGuion(caja.prestadaA)} desde ${oGuion(caja.fechaPrestamo)}.',
+            accion:
+                _prestamoCaja == null
+                    ? null
+                    : FilledButton.tonalIcon(
+                      style: estiloTonal(context, TonosArchivo.ubicacion),
+                      onPressed: () => onDevolver(_prestamoCaja!),
+                      icon: const Icon(Icons.assignment_return_outlined, size: 18),
+                      label: const Text('Registrar devolución'),
+                    ),
+          ),
+        ],
         if (obs.isNotEmpty) ...[
           const SizedBox(height: Esp.m),
           _Observacion(texto: obs),
@@ -183,8 +264,10 @@ class DetalleCaja extends StatelessWidget {
         const _TituloSeccion(
           icono: Icons.photo_library_outlined,
           semilla: TonosArchivo.fotos,
-          titulo: 'Fotos',
-          detalle: 'Opcionales, hasta 3: ayudan a reconocer la caja en el estante. Tócalas para verlas en grande.',
+          titulo: 'Fotos y PDF',
+          detalle:
+              'Opcionales, hasta 3 entre fotos y PDF: las fotos ayudan a reconocer la caja en el estante '
+              'y un PDF puede ser su inventario. Tócalos para verlos.',
         ),
         const SizedBox(height: Esp.m),
         FotosCaja(caja: caja),
@@ -194,12 +277,37 @@ class DetalleCaja extends StatelessWidget {
           semilla: TonosArchivo.documentos,
           titulo: 'Contenido',
           detalle: documentosLegible(lineas.length),
-          accion: FilledButton.icon(
-            style: estiloLleno(context, TonosArchivo.documentos),
-            onPressed: onAgregarLinea,
-            icon: const Icon(Icons.add, size: 18),
-            label: const Text('Agregar documento'),
-          ),
+          acciones: [
+            if (!caja.destruida) ...[
+              FilledButton.icon(
+                style: estiloLleno(context, TonosArchivo.documentos),
+                onPressed: onAgregarLinea,
+                icon: const Icon(Icons.add, size: 18),
+                label: const Text('Agregar documento'),
+              ),
+              FilledButton.tonalIcon(
+                style: estiloTonal(context, TonosArchivo.prestamo),
+                onPressed: onPrestar,
+                icon: const Icon(Icons.outbox_outlined, size: 18),
+                label: const Text('Prestar'),
+              ),
+              FilledButton.tonalIcon(
+                style: estiloTonal(context, TonosArchivo.destruido),
+                onPressed: onDestruir,
+                icon: const Icon(Icons.delete_sweep_outlined, size: 18),
+                label: const Text('Destrucción'),
+              ),
+            ],
+            FilledButton.tonalIcon(
+              style: estiloTonal(context, TonosArchivo.reportes),
+              onPressed: generandoReporte ? null : onReporte,
+              icon:
+                  generandoReporte
+                      ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
+                      : const Icon(Icons.picture_as_pdf_outlined, size: 18),
+              label: Text(generandoReporte ? 'Generando…' : 'Reporte PDF'),
+            ),
+          ],
         ),
         const SizedBox(height: Esp.m),
         // MensajeVacio trae su propio scroll y aquí ya estamos dentro de uno.
@@ -211,7 +319,10 @@ class DetalleCaja extends StatelessWidget {
                 const IconoTono(Icons.inventory_2_outlined, TonosArchivo.caja, lado: 56),
                 const SizedBox(height: Esp.m),
                 Text('La caja está vacía', style: tt.titleMedium),
-                Text('Registra lo que guarda con «Agregar documento».', style: context.apagado()),
+                Text(
+                  caja.destruida ? 'Se destruyó completa.' : 'Registra lo que guarda con «Agregar documento».',
+                  style: context.apagado(),
+                ),
               ],
             ),
           )
@@ -220,6 +331,7 @@ class DetalleCaja extends StatelessWidget {
             _TarjetaLinea(
               linea: l,
               coincide: coinciden.contains(l.codContenido),
+              acciones: _accionesDe(l),
               semillaEmpresa: semillaEmpresa,
               onAccion: (a) => onAccionLinea(l, a),
             )
@@ -227,12 +339,47 @@ class DetalleCaja extends StatelessWidget {
           _TablaLineas(
             lineas: lineas,
             coinciden: coinciden,
+            accionesDe: _accionesDe,
             semillaEmpresa: semillaEmpresa,
             onAccion: onAccionLinea,
           ),
+        const SizedBox(height: Esp.xl),
+        _TituloSeccion(
+          icono: Icons.history,
+          semilla: TonosArchivo.prestamo,
+          titulo: 'Préstamos y destrucciones',
+          detalle:
+              movimientos == 0
+                  ? 'Todavía no se prestó ni se destruyó nada de esta caja.'
+                  : '${abiertos.length} afuera · ${devueltos.length} ${devueltos.length == 1 ? 'devuelto' : 'devueltos'}'
+                      ' · ${destrucciones.length} en la bitácora',
+        ),
+        if (movimientos > 0) ...[
+          const SizedBox(height: Esp.m),
+          for (final p in abiertos)
+            TarjetaPrestamo(
+              prestamo: p,
+              mostrarCaja: false,
+              onDevolver: () => onDevolver(p),
+              onAnular: () => onAnularPrestamo(p),
+            ),
+          for (final d in destrucciones)
+            TarjetaDestruccion(destruccion: d, mostrarCaja: false, onAnular: () => onAnularDestruccion(d)),
+          for (final p in devueltos) TarjetaPrestamo(prestamo: p, mostrarCaja: false),
+        ],
       ],
     );
   }
+
+  /// Lo que se puede hacer con una línea según dónde está.
+  List<AccionLinea> _accionesDe(ContenidoCajaEntity l) => [
+    AccionLinea.editar,
+    if (l.estaEnLaCaja && !caja.destruida) AccionLinea.prestar,
+    // La que salió con toda la caja vuelve con la caja (desde el aviso de arriba).
+    if (l.estaPrestada && l.codPrestamo != null && l.codPrestamo != caja.codPrestamoCaja) AccionLinea.devolver,
+    if (l.estaEnLaCaja && !caja.destruida) AccionLinea.destruir,
+    AccionLinea.eliminar,
+  ];
 }
 
 class _TituloSeccion extends StatelessWidget {
@@ -241,14 +388,14 @@ class _TituloSeccion extends StatelessWidget {
     required this.semilla,
     required this.titulo,
     required this.detalle,
-    this.accion,
+    this.acciones = const [],
   });
 
   final IconData icono;
   final Color semilla;
   final String titulo;
   final String detalle;
-  final Widget? accion;
+  final List<Widget> acciones;
 
   @override
   Widget build(BuildContext context) {
@@ -270,18 +417,19 @@ class _TituloSeccion extends StatelessWidget {
         ),
       ],
     );
-    if (accion == null) return cabeza;
-    // En un teléfono el botón baja a su propia línea: al lado apretaría el título.
+    if (acciones.isEmpty) return cabeza;
+    final botones = Wrap(spacing: Esp.s, runSpacing: Esp.s, children: acciones);
+    // En un teléfono los botones bajan a su propia línea: al lado apretarían el título.
     return LayoutBuilder(
       builder:
           (context, r) =>
-              r.maxWidth < 480
+              r.maxWidth < 760
                   ? Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [cabeza, const SizedBox(height: Esp.s), accion!],
+                    children: [cabeza, const SizedBox(height: Esp.s), botones],
                   )
                   : Row(
-                    children: [Expanded(child: cabeza), const SizedBox(width: Esp.m), accion!],
+                    children: [Expanded(child: cabeza), const SizedBox(width: Esp.m), Flexible(child: botones)],
                   ),
     );
   }
@@ -343,6 +491,48 @@ class _Dato extends StatelessWidget {
   }
 }
 
+/// La caja entera afuera o destruida: va arriba, sobre el fondo suave de su
+/// tono, con la acción que corresponde (si hay una).
+class _Aviso extends StatelessWidget {
+  const _Aviso({required this.icono, required this.semilla, required this.texto, this.accion});
+
+  final IconData icono;
+  final Color semilla;
+  final String texto;
+  final Widget? accion;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = tonoDe(context, semilla);
+    final tt = Theme.of(context).textTheme;
+    final mensaje = Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        IconoTono(icono, semilla, lado: 32),
+        const SizedBox(width: Esp.m),
+        Expanded(
+          child: Text(texto, style: tt.bodyLarge?.copyWith(color: t.texto, fontWeight: Peso.titulo)),
+        ),
+      ],
+    );
+    return Container(
+      padding: const EdgeInsets.all(Esp.m),
+      decoration: BoxDecoration(
+        color: t.fondo,
+        borderRadius: BorderRadius.circular(Esquina.media),
+        border: Border.all(color: t.fuerte.withValues(alpha: 0.5)),
+      ),
+      child:
+          accion == null
+              ? mensaje
+              : Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [mensaje, const SizedBox(height: Esp.s), Padding(padding: const EdgeInsets.only(left: 44), child: accion)],
+              ),
+    );
+  }
+}
+
 class _Observacion extends StatelessWidget {
   const _Observacion({required this.texto});
 
@@ -386,16 +576,44 @@ const _coincide = ChipTono(
   icono: Icons.check_circle_outline,
 );
 
+/// Las acciones de una línea en un menú: siempre las mismas palabras en la
+/// tabla y en las tarjetas.
+List<PopupMenuEntry<AccionLinea>> _menuLinea(BuildContext context, List<AccionLinea> acciones) {
+  final cs = Theme.of(context).colorScheme;
+  PopupMenuItem<AccionLinea> item(AccionLinea a, IconData icono, Color semilla, String texto, {bool peligro = false}) =>
+      PopupMenuItem(
+        value: a,
+        child: ListTile(
+          dense: true,
+          contentPadding: EdgeInsets.zero,
+          leading: IconoTono(icono, semilla, lado: 28),
+          title: Text(texto, style: peligro ? TextStyle(color: cs.error) : null),
+        ),
+      );
+  return [
+    for (final a in acciones)
+      switch (a) {
+        AccionLinea.editar => item(a, Icons.edit_outlined, TonosArchivo.documentos, 'Editar'),
+        AccionLinea.prestar => item(a, Icons.outbox_outlined, TonosArchivo.prestamo, 'Prestar'),
+        AccionLinea.devolver => item(a, Icons.assignment_return_outlined, TonosArchivo.ubicacion, 'Registrar devolución'),
+        AccionLinea.destruir => item(a, Icons.delete_sweep_outlined, TonosArchivo.destruido, 'Registrar destrucción'),
+        AccionLinea.eliminar => item(a, Icons.delete_outline, TonosArchivo.peligro, 'Eliminar', peligro: true),
+      },
+  ];
+}
+
 class _TablaLineas extends StatelessWidget {
   const _TablaLineas({
     required this.lineas,
     required this.coinciden,
+    required this.accionesDe,
     required this.semillaEmpresa,
     required this.onAccion,
   });
 
   final List<ContenidoCajaEntity> lineas;
   final Set<int> coinciden;
+  final List<AccionLinea> Function(ContenidoCajaEntity) accionesDe;
   final Color Function(int) semillaEmpresa;
   final void Function(ContenidoCajaEntity linea, AccionLinea accion) onAccion;
 
@@ -454,6 +672,7 @@ class _TablaLineas extends StatelessWidget {
                       child: ChipTono(
                         texto: oGuion(l.nombreTipoDocumento),
                         semilla: TonosArchivo.documentos,
+                        neutro: l.estaDestruida,
                       ),
                     ),
                   ),
@@ -462,9 +681,14 @@ class _TablaLineas extends StatelessWidget {
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(l.detalle, style: tt.bodyMedium),
+                        Text(
+                          l.detalle,
+                          style: tt.bodyMedium?.copyWith(color: l.estaDestruida ? cs.onSurfaceVariant : null),
+                        ),
                         if ((l.observacion ?? '').isNotEmpty)
                           Text(l.observacion!, style: context.apagado()),
+                        if (!l.estaEnLaCaja)
+                          Padding(padding: const EdgeInsets.only(top: Esp.xs), child: ChipSituacion(linea: l)),
                         if (coinciden.contains(l.codContenido))
                           const Padding(padding: EdgeInsets.only(top: Esp.xs), child: _coincide),
                       ],
@@ -481,6 +705,7 @@ class _TablaLineas extends StatelessWidget {
                                 texto: l.gestion!.trim(),
                                 semilla: TonosArchivo.gestion,
                                 icono: Icons.event_outlined,
+                                neutro: l.estaDestruida,
                               ),
                     ),
                   ),
@@ -498,12 +723,15 @@ class _TablaLineas extends StatelessWidget {
                           onPressed: () => onAccion(l, AccionLinea.editar),
                         ),
                         const SizedBox(width: Esp.xs),
-                        IconButton.filledTonal(
-                          style: estiloIconoTonal(context, TonosArchivo.peligro),
-                          icon: const Icon(Icons.delete_outline, size: 18),
-                          tooltip: 'Eliminar el documento',
-                          visualDensity: VisualDensity.compact,
-                          onPressed: () => onAccion(l, AccionLinea.eliminar),
+                        PopupMenuButton<AccionLinea>(
+                          icon: Icon(Icons.more_vert, color: cs.onSurfaceVariant),
+                          tooltip: 'Más acciones del documento',
+                          onSelected: (a) => onAccion(l, a),
+                          itemBuilder:
+                              (context) => _menuLinea(context, [
+                                for (final a in accionesDe(l))
+                                  if (a != AccionLinea.editar) a,
+                              ]),
                         ),
                       ],
                     ),
@@ -521,12 +749,14 @@ class _TarjetaLinea extends StatelessWidget {
   const _TarjetaLinea({
     required this.linea,
     required this.coincide,
+    required this.acciones,
     required this.semillaEmpresa,
     required this.onAccion,
   });
 
   final ContenidoCajaEntity linea;
   final bool coincide;
+  final List<AccionLinea> acciones;
   final Color Function(int) semillaEmpresa;
   final ValueChanged<AccionLinea> onAccion;
 
@@ -534,6 +764,7 @@ class _TarjetaLinea extends StatelessWidget {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final tt = Theme.of(context).textTheme;
+    final destruida = linea.estaDestruida;
     return Card(
       margin: const EdgeInsets.only(bottom: Esp.s),
       child: Padding(
@@ -541,7 +772,11 @@ class _TarjetaLinea extends StatelessWidget {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const IconoTono(Icons.description_outlined, TonosArchivo.documentos, lado: 36),
+            IconoTono(
+              destruida ? Icons.delete_sweep_outlined : Icons.description_outlined,
+              destruida ? TonosArchivo.destruido : TonosArchivo.documentos,
+              lado: 36,
+            ),
             const SizedBox(width: Esp.m),
             Expanded(
               child: Column(
@@ -552,7 +787,10 @@ class _TarjetaLinea extends StatelessWidget {
                     style: tt.titleSmall?.copyWith(fontWeight: Peso.dato),
                   ),
                   const SizedBox(height: Esp.xs),
-                  Text(linea.detalle, style: tt.bodyMedium),
+                  Text(
+                    linea.detalle,
+                    style: tt.bodyMedium?.copyWith(color: destruida ? cs.onSurfaceVariant : null),
+                  ),
                   if ((linea.observacion ?? '').isNotEmpty)
                     Text(linea.observacion!, style: context.apagado()),
                   const SizedBox(height: Esp.s),
@@ -560,11 +798,13 @@ class _TarjetaLinea extends StatelessWidget {
                     spacing: Esp.s,
                     runSpacing: Esp.xs,
                     children: [
+                      if (!linea.estaEnLaCaja) ChipSituacion(linea: linea),
                       if ((linea.gestion ?? '').trim().isNotEmpty)
                         ChipTono(
                           texto: linea.gestion!.trim(),
                           semilla: TonosArchivo.gestion,
                           icono: Icons.event_outlined,
+                          neutro: destruida,
                         ),
                       _chipEmpresa(linea, semillaEmpresa),
                       if (coincide) _coincide,
@@ -577,27 +817,7 @@ class _TarjetaLinea extends StatelessWidget {
               icon: Icon(Icons.more_vert, color: cs.onSurfaceVariant),
               tooltip: 'Acciones del documento',
               onSelected: onAccion,
-              itemBuilder:
-                  (_) => [
-                    const PopupMenuItem(
-                      value: AccionLinea.editar,
-                      child: ListTile(
-                        dense: true,
-                        contentPadding: EdgeInsets.zero,
-                        leading: IconoTono(Icons.edit_outlined, TonosArchivo.documentos, lado: 28),
-                        title: Text('Editar'),
-                      ),
-                    ),
-                    PopupMenuItem(
-                      value: AccionLinea.eliminar,
-                      child: ListTile(
-                        dense: true,
-                        contentPadding: EdgeInsets.zero,
-                        leading: const IconoTono(Icons.delete_outline, TonosArchivo.peligro, lado: 28),
-                        title: Text('Eliminar', style: TextStyle(color: cs.error)),
-                      ),
-                    ),
-                  ],
+              itemBuilder: (context) => _menuLinea(context, acciones),
             ),
           ],
         ),

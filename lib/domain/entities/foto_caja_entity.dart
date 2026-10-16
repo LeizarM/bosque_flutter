@@ -1,4 +1,5 @@
-/// Una foto de caja (`tarc_cajaFoto`). Son opcionales: de 0 a [maximo] por caja.
+/// Una foto o un PDF de caja (`tarc_cajaFoto`). Son opcionales: de 0 a
+/// [maximo] por caja, entre fotos y PDF.
 class FotoCajaEntity {
   static const int maximo = 3;
 
@@ -21,4 +22,7 @@ class FotoCajaEntity {
     this.audUsuario = 0,
     this.audFecha,
   });
+
+  /// El servidor nombra el archivo con la extensión de su formato real.
+  bool get esPdf => (ruta ?? '').toLowerCase().endsWith('.pdf');
 }

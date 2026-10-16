@@ -3,6 +3,7 @@
 /// tipear, por palabras y sin importar tildes ni mayúsculas.
 library;
 
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart' show BuildContext;
@@ -15,8 +16,12 @@ import 'package:bosque_flutter/data/repositories/archivo_documental_impl.dart';
 import 'package:bosque_flutter/domain/entities/archivo_fisico_entity.dart';
 import 'package:bosque_flutter/domain/entities/caja_archivo_entity.dart';
 import 'package:bosque_flutter/domain/entities/contenido_caja_entity.dart';
+import 'package:bosque_flutter/domain/entities/destruccion_documento_entity.dart';
+import 'package:bosque_flutter/domain/entities/empleado_archivo_entity.dart';
 import 'package:bosque_flutter/domain/entities/empresa_entity.dart';
+import 'package:bosque_flutter/domain/entities/entrega_documento_entity.dart';
 import 'package:bosque_flutter/domain/entities/foto_caja_entity.dart';
+import 'package:bosque_flutter/domain/entities/prestamo_documento_entity.dart';
 import 'package:bosque_flutter/domain/entities/sucursal_archivo_entity.dart';
 import 'package:bosque_flutter/domain/entities/tipo_documento_archivo_entity.dart';
 import 'package:bosque_flutter/domain/repositories/archivo_documental_repository.dart';
@@ -33,6 +38,9 @@ class ArchivoDocumentalState {
     this.cajas = const [],
     this.contenido = const [],
     this.empresas = const [],
+    this.entregas = const [],
+    this.prestamos = const [],
+    this.destrucciones = const [],
     this.cargando = false,
     this.cargado = false,
     this.error,
@@ -43,6 +51,12 @@ class ArchivoDocumentalState {
   final List<CajaArchivoEntity> cajas;
   final List<ContenidoCajaEntity> contenido;
   final List<EmpresaEntity> empresas;
+
+  /// Las entregas a empleados y sus renglones (lo que sigue afuera primero),
+  /// y la bitácora de destrucción.
+  final List<EntregaDocumentoEntity> entregas;
+  final List<PrestamoDocumentoEntity> prestamos;
+  final List<DestruccionDocumentoEntity> destrucciones;
   final bool cargando;
 
   /// Ya hubo una respuesta buena: distingue «no llegó» de «llegó vacío».
@@ -59,12 +73,38 @@ class ArchivoDocumentalState {
   List<ContenidoCajaEntity> lineasDe(int codCaja) =>
       contenido.where((l) => l.codCaja == codCaja).toList();
 
+  List<PrestamoDocumentoEntity> prestamosDe(int codCaja) =>
+      prestamos.where((p) => p.codCaja == codCaja).toList();
+
+  /// Los renglones de una entrega, en el orden de las cajas.
+  List<PrestamoDocumentoEntity> renglonesDe(int codEntrega) =>
+      prestamos.where((p) => p.codEntrega == codEntrega).toList()..sort(_porCaja);
+
+  static int _porCaja(PrestamoDocumentoEntity a, PrestamoDocumentoEntity b) {
+    final archivo = (a.nombreArchivo ?? '').compareTo(b.nombreArchivo ?? '');
+    if (archivo != 0) return archivo;
+    if (a.numeroCaja != b.numeroCaja) return a.numeroCaja.compareTo(b.numeroCaja);
+    return (a.codContenido ?? 0).compareTo(b.codContenido ?? 0);
+  }
+
+  List<DestruccionDocumentoEntity> destruccionesDe(int codCaja) =>
+      destrucciones.where((d) => d.codCaja == codCaja).toList();
+
+  /// Las entregas que todavía tienen algo afuera.
+  List<EntregaDocumentoEntity> get entregasAbiertas => [
+    for (final e in entregas)
+      if (e.abierta) e,
+  ];
+
   ArchivoDocumentalState copyWith({
     List<ArchivoFisicoEntity>? archivos,
     List<TipoDocumentoArchivoEntity>? tipos,
     List<CajaArchivoEntity>? cajas,
     List<ContenidoCajaEntity>? contenido,
     List<EmpresaEntity>? empresas,
+    List<EntregaDocumentoEntity>? entregas,
+    List<PrestamoDocumentoEntity>? prestamos,
+    List<DestruccionDocumentoEntity>? destrucciones,
     bool? cargando,
     bool? cargado,
     Object? error,
@@ -75,6 +115,9 @@ class ArchivoDocumentalState {
     cajas: cajas ?? this.cajas,
     contenido: contenido ?? this.contenido,
     empresas: empresas ?? this.empresas,
+    entregas: entregas ?? this.entregas,
+    prestamos: prestamos ?? this.prestamos,
+    destrucciones: destrucciones ?? this.destrucciones,
     cargando: cargando ?? this.cargando,
     cargado: cargado ?? this.cargado,
     error: limpiarError ? null : (error ?? this.error),
@@ -108,6 +151,9 @@ class ArchivoDocumentalNotifier extends StateNotifier<ArchivoDocumentalState> {
         _repo.listarCajas(),
         _repo.listarContenido(),
         _repo.listarEmpresas(),
+        _repo.listarEntregas(),
+        _repo.listarPrestamos(),
+        _repo.listarDestrucciones(),
       ]);
       if (!mounted) return;
       if (mia != _lectura) return await _actual;
@@ -117,6 +163,9 @@ class ArchivoDocumentalNotifier extends StateNotifier<ArchivoDocumentalState> {
         cajas: r[2].cast<CajaArchivoEntity>(),
         contenido: r[3].cast<ContenidoCajaEntity>(),
         empresas: r[4].cast<EmpresaEntity>(),
+        entregas: r[5].cast<EntregaDocumentoEntity>(),
+        prestamos: r[6].cast<PrestamoDocumentoEntity>(),
+        destrucciones: r[7].cast<DestruccionDocumentoEntity>(),
         cargando: false,
         cargado: true,
       );
@@ -140,6 +189,21 @@ class ArchivoDocumentalNotifier extends StateNotifier<ArchivoDocumentalState> {
   Future<int> guardarTipo(TipoDocumentoArchivoEntity t) =>
       _y(_repo.registrarTipo(t));
   Future<void> eliminarTipo(int cod) => _y(_repo.eliminarTipo(cod));
+
+  // Un préstamo o una destrucción cambian la situación de las líneas y las
+  // cifras de la caja: por eso también recargan todo.
+  Future<int> entregar(PedidoEntrega p) => _y(_repo.registrarEntrega(p));
+
+  /// Prestar desde la caja abierta es una entrega de esa sola caja.
+  Future<int> prestar(PedidoMovimientoCaja p) => entregar(p.aEntrega());
+  Future<void> devolverEntrega(int codEntrega, {String? observacion}) =>
+      _y(_repo.devolverEntrega(codEntrega, observacion: observacion));
+  Future<void> anularEntrega(int cod) => _y(_repo.anularEntrega(cod));
+  Future<void> devolver(int codPrestamo, {String? observacion}) =>
+      _y(_repo.devolver(codPrestamo, observacion: observacion));
+  Future<void> anularPrestamo(int cod) => _y(_repo.anularPrestamo(cod));
+  Future<void> destruir(PedidoMovimientoCaja p) => _y(_repo.destruir(p));
+  Future<void> anularDestruccion(int cod) => _y(_repo.anularDestruccion(cod));
 
   /// Tras una foto solo cambia el contador de la caja, pero recargar todo
   /// mantiene una única forma de quedar al día.
@@ -175,7 +239,8 @@ final bytesFotoProvider = FutureProvider.autoDispose
           ref.watch(archivoDocumentalRepositoryProvider).verFoto(clave.codFoto),
     );
 
-enum OrigenFoto { camara, galeria }
+/// De dónde sale lo que se agrega a la caja: una foto (cámara o galería) o un PDF.
+enum OrigenFoto { camara, galeria, pdf }
 
 @immutable
 class FotoElegida {
@@ -187,19 +252,20 @@ class FotoElegida {
 typedef ElegirFoto = Future<FotoElegida?> Function(OrigenFoto origen);
 
 /// El mismo tope que el servidor: rechazar aquí ahorra subir megas para nada.
-const int maximoBytesFoto = 8 * 1024 * 1024;
+const int maximoBytesFoto = 10 * 1024 * 1024;
 
 /// Por qué no se puede subir [bytes], o null si se puede. En escritorio el
 /// selector no achica la imagen y en la web, si no la puede leer, devuelve el
 /// original: por eso se mira el formato real y el peso después de elegir.
 String? motivoFotoInvalida(Uint8List bytes) {
-  if (bytes.isEmpty) return 'La foto llegó vacía. Elige otra.';
-  if (tipoDeImagen(bytes) == null) {
-    return 'Esa imagen no es JPG, PNG ni WEBP. Elige otra o sácale una captura.';
+  if (bytes.isEmpty) return 'El archivo llegó vacío. Elige otro.';
+  final pdf = esPdf(bytes);
+  if (!pdf && tipoDeImagen(bytes) == null) {
+    return 'Ese archivo no es una foto JPG, PNG o WEBP ni un PDF. Elige otro o sácale una captura.';
   }
   if (bytes.length > maximoBytesFoto) {
     final mb = (bytes.length / (1024 * 1024)).toStringAsFixed(1).replaceAll('.', ',');
-    return 'La foto pesa $mb MB y el máximo es 8 MB. Elige una más liviana.';
+    return '${pdf ? 'El PDF' : 'La foto'} pesa $mb MB y el máximo es 10 MB. Elige ${pdf ? 'uno más liviano' : 'una más liviana'}.';
   }
   return null;
 }
@@ -207,8 +273,10 @@ String? motivoFotoInvalida(Uint8List bytes) {
 /// Se comprime en el dispositivo: 1600 px y calidad 80 dejan legible la
 /// etiqueta de una caja en unos cientos de KB. Siempre por bytes (nunca
 /// `File`), que es lo único que existe igual en la web y en el teléfono.
+/// Un PDF va tal cual: no se puede achicar sin dañarlo.
 final elegirFotoProvider = Provider<ElegirFoto>(
   (ref) => (origen) async {
+    if (origen == OrigenFoto.pdf) return _elegirPdf();
     final XFile? x;
     try {
       x = await ImagePicker().pickImage(
@@ -233,6 +301,23 @@ final elegirFotoProvider = Provider<ElegirFoto>(
     return FotoElegida(bytes, x.name);
   },
 );
+
+/// `withData`: en la web no hay ruta, solo bytes (igual que en cheques).
+Future<FotoElegida?> _elegirPdf() async {
+  final r = await FilePicker.platform.pickFiles(
+    type: FileType.custom,
+    allowedExtensions: const ['pdf'],
+    allowMultiple: false,
+    withData: true,
+  );
+  final f = (r == null || r.files.isEmpty) ? null : r.files.single;
+  final bytes = f?.bytes;
+  if (f == null || bytes == null) return null;
+  final motivo = motivoFotoInvalida(bytes);
+  if (motivo != null) throw Exception(motivo);
+  if (!esPdf(bytes)) throw Exception('Ese archivo no es un PDF. Elige otro.');
+  return FotoElegida(bytes, f.name);
+}
 
 /// En la web solo el navegador de un teléfono abre la cámara: en escritorio
 /// «Tomar foto» sería otro selector de archivos con distinto nombre.
@@ -259,6 +344,12 @@ final visorPdfArchivoProvider = Provider<VerPdf>((ref) => mostrarPdf);
 /// Las sucursales para ubicar un archivo: solo las pide la ficha del archivo.
 final sucursalesArchivoProvider = FutureProvider.autoDispose<List<SucursalArchivoEntity>>(
   (ref) => ref.watch(archivoDocumentalRepositoryProvider).listarSucursales(),
+);
+
+/// Los empleados para el responsable de un archivo y para prestar: solo los
+/// piden esas dos fichas.
+final empleadosArchivoProvider = FutureProvider.autoDispose<List<EmpleadoArchivoEntity>>(
+  (ref) => ref.watch(archivoDocumentalRepositoryProvider).listarEmpleados(),
 );
 
 // ── Búsqueda ──────────────────────────────────────────────────────────────
@@ -392,6 +483,7 @@ class FiltroArchivo {
     [c.nombreArchivo, c.estante, c.fila, c.observacion].whereType<String>().join(' '),
   );
 
+  /// A quién se prestó también cuenta: buscar un nombre trae lo que tiene esa persona.
   static String textoDeLinea(ContenidoCajaEntity l) => normalizarBusqueda(
     [
       l.nombreTipoDocumento,
@@ -399,6 +491,7 @@ class FiltroArchivo {
       l.gestion,
       l.nombreEmpresa,
       l.observacion,
+      if (l.estaPrestada) l.prestadoA,
     ].whereType<String>().join(' '),
   );
 }

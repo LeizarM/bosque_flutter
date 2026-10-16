@@ -256,7 +256,7 @@ class ChipsArchivo extends StatelessWidget {
 }
 
 /// El encabezado: el ícono del módulo en kraft, título y las acciones, cada
-/// una de su color (crear en kraft, reportes en cian).
+/// una de su color (crear en kraft, reportes en cian, préstamos en ámbar).
 class EncabezadoArchivo extends StatelessWidget {
   const EncabezadoArchivo({
     super.key,
@@ -266,6 +266,8 @@ class EncabezadoArchivo extends StatelessWidget {
     required this.onReportes,
     required this.onCatalogos,
     required this.onRefrescar,
+    required this.onPrestamos,
+    this.prestados = 0,
   });
 
   final bool compacto;
@@ -274,6 +276,10 @@ class EncabezadoArchivo extends StatelessWidget {
   final VoidCallback onReportes;
   final VoidCallback onCatalogos;
   final VoidCallback onRefrescar;
+  final VoidCallback onPrestamos;
+
+  /// Préstamos (entregas) con algo todavía afuera: el número va en el botón.
+  final int prestados;
 
   @override
   Widget build(BuildContext context) {
@@ -311,23 +317,62 @@ class EncabezadoArchivo extends StatelessWidget {
       tooltip: 'Volver a traer el archivo',
     );
 
+    final ayudaPrestamos =
+        prestados == 0
+            ? 'Préstamos y destrucciones: no hay nada prestado'
+            : 'Préstamos y destrucciones: ${prestados == 1 ? '1 préstamo afuera' : '$prestados préstamos afuera'}';
+
+    // En el teléfono quedan a la vista préstamos y reportes; refrescar y los
+    // catálogos (de uso raro) van al menú: cuatro botones apretarían el título.
     if (compacto) {
       return Row(
         children: [
           Expanded(child: titulo),
-          refrescar,
+          Badge(
+            isLabelVisible: prestados > 0,
+            label: Text('$prestados'),
+            backgroundColor: tonoDe(context, TonosArchivo.prestamo).fuerte,
+            textColor: tonoDe(context, TonosArchivo.prestamo).sobreFuerte,
+            child: IconButton.filledTonal(
+              style: estiloIconoTonal(context, TonosArchivo.prestamo),
+              onPressed: onPrestamos,
+              icon: const Icon(Icons.outbox_outlined),
+              tooltip: ayudaPrestamos,
+            ),
+          ),
+          const SizedBox(width: Esp.xs),
           IconButton.filledTonal(
             style: estiloIconoTonal(context, TonosArchivo.reportes),
             onPressed: onReportes,
             icon: const Icon(Icons.assessment_outlined),
             tooltip: 'Reportes en PDF',
           ),
-          const SizedBox(width: Esp.xs),
-          IconButton.filledTonal(
-            style: estiloIconoTonal(context, TonosArchivo.archivos[1]),
-            onPressed: onCatalogos,
-            icon: const Icon(Icons.category_outlined),
-            tooltip: 'Catálogos: archivos y tipos de documento',
+          PopupMenuButton<int>(
+            tooltip: 'Más acciones',
+            onSelected: (v) => v == 0 ? onCatalogos() : onRefrescar(),
+            itemBuilder:
+                (_) => [
+                  PopupMenuItem(
+                    value: 0,
+                    child: ListTile(
+                      dense: true,
+                      contentPadding: EdgeInsets.zero,
+                      leading: IconoTono(Icons.category_outlined, TonosArchivo.archivos[1], lado: 28),
+                      title: const Text('Catálogos'),
+                      subtitle: const Text('Archivos y tipos de documento'),
+                    ),
+                  ),
+                  PopupMenuItem(
+                    value: 1,
+                    enabled: !cargando,
+                    child: const ListTile(
+                      dense: true,
+                      contentPadding: EdgeInsets.zero,
+                      leading: IconoTono(Icons.refresh, TonosArchivo.caja, lado: 28),
+                      title: Text('Volver a traer el archivo'),
+                    ),
+                  ),
+                ],
           ),
         ],
       );
@@ -350,6 +395,16 @@ class EncabezadoArchivo extends StatelessWidget {
               onPressed: onCatalogos,
               icon: const Icon(Icons.category_outlined, size: 18),
               label: const Text('Catálogos'),
+            ),
+            const SizedBox(width: Esp.s),
+            Tooltip(
+              message: ayudaPrestamos,
+              child: FilledButton.tonalIcon(
+                style: estiloTonal(context, TonosArchivo.prestamo),
+                onPressed: onPrestamos,
+                icon: const Icon(Icons.outbox_outlined, size: 18),
+                label: Text(prestados == 0 ? 'Préstamos' : 'Préstamos ($prestados)'),
+              ),
             ),
             const SizedBox(width: Esp.s),
             FilledButton.tonalIcon(

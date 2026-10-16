@@ -1,5 +1,11 @@
 /// Una línea de contenido de una caja (`tarc_contenido`): una fila del Excel original.
 class ContenidoCajaEntity {
+  /// Valores de [situacion]: en la caja, prestada (sola o con su caja) y
+  /// destruida (sola o con su caja).
+  static const String enLaCaja = 'C';
+  static const String prestada = 'P';
+  static const String destruida = 'X';
+
   final int codContenido;
   final int codCaja;
   final int codTipoDocumento;
@@ -18,6 +24,15 @@ class ContenidoCajaEntity {
   final String? nombreTipoDocumento;
   final String? nombreEmpresa;
 
+  /// Solo lectura: dónde está la línea ([enLaCaja], [prestada] o [destruida]),
+  /// el préstamo abierto que la tiene afuera (el suyo o el de la caja
+  /// completa) y las fechas como texto «dd/mm/aaaa hh:mm».
+  final String situacion;
+  final int? codPrestamo;
+  final String? prestadoA;
+  final String? fechaPrestamo;
+  final String? fechaDestruccion;
+
   const ContenidoCajaEntity({
     required this.codContenido,
     required this.codCaja,
@@ -32,5 +47,14 @@ class ContenidoCajaEntity {
     this.audFecha,
     this.nombreTipoDocumento,
     this.nombreEmpresa,
+    this.situacion = enLaCaja,
+    this.codPrestamo,
+    this.prestadoA,
+    this.fechaPrestamo,
+    this.fechaDestruccion,
   });
+
+  bool get estaEnLaCaja => situacion == enLaCaja;
+  bool get estaPrestada => situacion == prestada;
+  bool get estaDestruida => situacion == destruida;
 }

@@ -10,15 +10,23 @@ import 'package:bosque_flutter/core/utils/tipo_imagen.dart';
 import 'package:bosque_flutter/data/models/archivo_fisico_model.dart';
 import 'package:bosque_flutter/data/models/caja_archivo_model.dart';
 import 'package:bosque_flutter/data/models/contenido_caja_model.dart';
+import 'package:bosque_flutter/data/models/destruccion_documento_model.dart';
+import 'package:bosque_flutter/data/models/empleado_archivo_model.dart';
 import 'package:bosque_flutter/data/models/empresa_model.dart';
+import 'package:bosque_flutter/data/models/entrega_documento_model.dart';
 import 'package:bosque_flutter/data/models/foto_caja_model.dart';
+import 'package:bosque_flutter/data/models/prestamo_documento_model.dart';
 import 'package:bosque_flutter/data/models/sucursal_archivo_model.dart';
 import 'package:bosque_flutter/data/models/tipo_documento_archivo_model.dart';
 import 'package:bosque_flutter/domain/entities/archivo_fisico_entity.dart';
 import 'package:bosque_flutter/domain/entities/caja_archivo_entity.dart';
 import 'package:bosque_flutter/domain/entities/contenido_caja_entity.dart';
+import 'package:bosque_flutter/domain/entities/destruccion_documento_entity.dart';
+import 'package:bosque_flutter/domain/entities/empleado_archivo_entity.dart';
 import 'package:bosque_flutter/domain/entities/empresa_entity.dart';
+import 'package:bosque_flutter/domain/entities/entrega_documento_entity.dart';
 import 'package:bosque_flutter/domain/entities/foto_caja_entity.dart';
+import 'package:bosque_flutter/domain/entities/prestamo_documento_entity.dart';
 import 'package:bosque_flutter/domain/entities/sucursal_archivo_entity.dart';
 import 'package:bosque_flutter/domain/entities/tipo_documento_archivo_entity.dart';
 import 'package:bosque_flutter/domain/repositories/archivo_documental_repository.dart';
@@ -213,12 +221,91 @@ class ArchivoDocumentalImpl extends BaseApiRepository
     (m) => m.toEntity(),
   );
 
-  // ── Sucursales y reportes ───────────────────────────────────────────────
+  // ── Sucursales, empleados y reportes ────────────────────────────────────
   @override
   Future<List<SucursalArchivoEntity>> listarSucursales() => _lista(
     AppConstants.arcSucursales,
     SucursalArchivoModel.fromJson,
     (m) => m.toEntity(),
+  );
+
+  @override
+  Future<List<EmpleadoArchivoEntity>> listarEmpleados() => _lista(
+    AppConstants.arcEmpleados,
+    EmpleadoArchivoModel.fromJson,
+    (m) => m.toEntity(),
+  );
+
+  // ── Préstamos y bitácora de destrucción ─────────────────────────────────
+  @override
+  Future<List<EntregaDocumentoEntity>> listarEntregas() => _lista(
+    AppConstants.arcEntregasListar,
+    EntregaDocumentoModel.fromJson,
+    (m) => m.toEntity(),
+  );
+
+  @override
+  Future<int> registrarEntrega(PedidoEntrega pedido) async =>
+      (await postAndReturnId(
+        endpoint: AppConstants.arcEntregasRegistrar,
+        data: pedido.toJson(),
+        errorMessage: 'No se pudo registrar el préstamo.',
+      )).toInt();
+
+  @override
+  Future<void> devolverEntrega(int codEntrega, {String? observacion}) => postAndReturnId(
+    endpoint: AppConstants.arcEntregasDevolver,
+    data: {'codEntrega': codEntrega, 'observacion': observacion},
+    errorMessage: 'No se pudo registrar la devolución.',
+  );
+
+  @override
+  Future<void> anularEntrega(int codEntrega) => postAndReturnId(
+    endpoint: AppConstants.arcEntregasAnular,
+    data: {'codEntrega': codEntrega},
+    errorMessage: 'No se pudo anular la entrega.',
+  );
+
+  @override
+  Future<List<PrestamoDocumentoEntity>> listarPrestamos() => _lista(
+    AppConstants.arcPrestamosListar,
+    PrestamoDocumentoModel.fromJson,
+    (m) => m.toEntity(),
+  );
+
+  @override
+  Future<void> devolver(int codPrestamo, {String? observacion}) => postAndReturnId(
+    endpoint: AppConstants.arcPrestamosDevolver,
+    data: {'codPrestamo': codPrestamo, 'observacionDevolucion': observacion},
+    errorMessage: 'No se pudo registrar la devolución.',
+  );
+
+  @override
+  Future<void> anularPrestamo(int codPrestamo) => postAndReturnId(
+    endpoint: AppConstants.arcPrestamosAnular,
+    data: {'codPrestamo': codPrestamo},
+    errorMessage: 'No se pudo anular el préstamo.',
+  );
+
+  @override
+  Future<List<DestruccionDocumentoEntity>> listarDestrucciones() => _lista(
+    AppConstants.arcDestruccionesListar,
+    DestruccionDocumentoModel.fromJson,
+    (m) => m.toEntity(),
+  );
+
+  @override
+  Future<void> destruir(PedidoMovimientoCaja pedido) => postAndReturnId(
+    endpoint: AppConstants.arcDestruccionesRegistrar,
+    data: pedido.toJson(),
+    errorMessage: 'No se pudo registrar la destrucción.',
+  );
+
+  @override
+  Future<void> anularDestruccion(int codDestruccion) => postAndReturnId(
+    endpoint: AppConstants.arcDestruccionesAnular,
+    data: {'codDestruccion': codDestruccion},
+    errorMessage: 'No se pudo anular el registro de destrucción.',
   );
 
   @override
@@ -246,9 +333,9 @@ class ArchivoDocumentalImpl extends BaseApiRepository
     }
   }
 
-  /// El id va como parte de texto y la imagen en `archivo`. Sin nombre de
-  /// archivo Tomcat trata la parte como texto: por eso siempre lleva uno, con
-  /// la extensión del formato real (en la web llega `scaled_<nombre>`).
+  /// El id va como parte de texto y la imagen o el PDF en `archivo`. Sin
+  /// nombre de archivo Tomcat trata la parte como texto: por eso siempre lleva
+  /// uno, con la extensión del formato real (en la web llega `scaled_<nombre>`).
   Future<int> _multipart(
     String endpoint,
     String parteId,
@@ -259,6 +346,7 @@ class ArchivoDocumentalImpl extends BaseApiRepository
     void Function(int, int)? alProgreso,
   ) async {
     final tipo = tipoDeImagen(bytes) ?? TipoImagen.jpeg;
+    final pdf = esPdf(bytes);
     try {
       final r = await dio.post(
         endpoint,
@@ -266,8 +354,8 @@ class ArchivoDocumentalImpl extends BaseApiRepository
           parteId: id.toString(),
           'archivo': MultipartFile.fromBytes(
             bytes,
-            filename: 'foto.${tipo.extension}',
-            contentType: DioMediaType('image', tipo.subtipo),
+            filename: pdf ? 'documento.pdf' : 'foto.${tipo.extension}',
+            contentType: pdf ? DioMediaType('application', 'pdf') : DioMediaType('image', tipo.subtipo),
           ),
         }),
         onSendProgress: alProgreso,
@@ -278,7 +366,7 @@ class ArchivoDocumentalImpl extends BaseApiRepository
     } on DioException catch (e) {
       if (e.response?.statusCode == 413 && e.response?.data is! Map) {
         throw Exception(
-          'El servidor rechazó la foto porque pesa demasiado. Elige una más liviana.',
+          'El servidor rechazó el archivo porque pesa demasiado. Elige uno más liviano.',
         );
       }
       if (e.response?.statusCode == 400 && e.response?.data is Map) {

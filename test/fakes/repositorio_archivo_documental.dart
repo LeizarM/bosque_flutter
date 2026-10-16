@@ -4,8 +4,12 @@ import 'dart:typed_data';
 import 'package:bosque_flutter/domain/entities/archivo_fisico_entity.dart';
 import 'package:bosque_flutter/domain/entities/caja_archivo_entity.dart';
 import 'package:bosque_flutter/domain/entities/contenido_caja_entity.dart';
+import 'package:bosque_flutter/domain/entities/destruccion_documento_entity.dart';
+import 'package:bosque_flutter/domain/entities/empleado_archivo_entity.dart';
 import 'package:bosque_flutter/domain/entities/empresa_entity.dart';
+import 'package:bosque_flutter/domain/entities/entrega_documento_entity.dart';
 import 'package:bosque_flutter/domain/entities/foto_caja_entity.dart';
+import 'package:bosque_flutter/domain/entities/prestamo_documento_entity.dart';
 import 'package:bosque_flutter/domain/entities/sucursal_archivo_entity.dart';
 import 'package:bosque_flutter/domain/entities/tipo_documento_archivo_entity.dart';
 import 'package:bosque_flutter/domain/repositories/archivo_documental_repository.dart';
@@ -30,6 +34,14 @@ class RepositorioArchivoFalso implements ArchivoDocumentalRepository {
   final cajas = <CajaArchivoEntity>[];
   final contenido = <ContenidoCajaEntity>[];
   final fotos = <FotoCajaEntity>[];
+  final entregas = <EntregaDocumentoEntity>[];
+  final prestamos = <PrestamoDocumentoEntity>[];
+  final destrucciones = <DestruccionDocumentoEntity>[];
+  final empleados = const [
+    EmpleadoArchivoEntity(codEmpleado: 240, nombreCompleto: 'CÁRDENAS RIVEROS VICTOR HUMBERTO', cargo: 'AUXILIAR CONTABLE'),
+    EmpleadoArchivoEntity(codEmpleado: 23, nombreCompleto: 'LLANQUE VICTOR', cargo: 'CHOFER B'),
+    EmpleadoArchivoEntity(codEmpleado: 165, nombreCompleto: 'VINO VINO VICTOR', cargo: 'ESTIBADOR', activo: false),
+  ];
   final empresas = [
     EmpresaEntity(codEmpresa: 1, nombre: 'IMPEXPAP', codPadre: 0, sigla: 'IPX', audUsuario: 0),
     EmpresaEntity(codEmpresa: 5, nombre: 'ESPPAPEL', codPadre: 0, sigla: 'EPP', audUsuario: 0),
@@ -45,8 +57,8 @@ class RepositorioArchivoFalso implements ArchivoDocumentalRepository {
 
   void _sembrar() {
     archivos.addAll(const [
-      ArchivoFisicoEntity(codArchivo: 1, nombre: 'ACHOCALLA', responsable: 'Victor', codSucursal: 15, nombreSucursal: 'Sucursal 15 Achocalla', ciudadSucursal: 'LA PAZ', cajas: 2, lineas: 3),
-      ArchivoFisicoEntity(codArchivo: 2, nombre: 'OFICINA CENTRAL', codSucursal: 1, nombreSucursal: 'Central', ciudadSucursal: 'LA PAZ', cajas: 1, lineas: 2),
+      ArchivoFisicoEntity(codArchivo: 1, nombre: 'ACHOCALLA', codEmpleado: 240, nombreResponsable: 'CÁRDENAS RIVEROS VICTOR HUMBERTO', fechaAsignacion: '13/10/2026 10:30', codSucursal: 15, nombreSucursal: 'Sucursal 15 Achocalla', ciudadSucursal: 'LA PAZ', cajas: 2, lineas: 3),
+      ArchivoFisicoEntity(codArchivo: 2, nombre: 'OFICINA CENTRAL', codEmpleado: 240, nombreResponsable: 'CÁRDENAS RIVEROS VICTOR HUMBERTO', fechaAsignacion: '13/10/2026 10:30', codSucursal: 1, nombreSucursal: 'Central', ciudadSucursal: 'LA PAZ', cajas: 1, lineas: 2),
     ]);
     tipos.addAll(const [
       TipoDocumentoArchivoEntity(codTipoDocumento: 10, nombre: 'Facturas', usos: 2),
@@ -85,7 +97,8 @@ class RepositorioArchivoFalso implements ArchivoDocumentalRepository {
   @override
   Future<List<ArchivoFisicoEntity>> listarArchivos() => _leer(archivos);
   @override
-  Future<int> registrarArchivo(ArchivoFisicoEntity a) => _escribir('archivo ${a.codArchivo} ${a.nombre}');
+  Future<int> registrarArchivo(ArchivoFisicoEntity a) =>
+      _escribir('archivo ${a.codArchivo} ${a.nombre} responsable ${a.codEmpleado}');
   @override
   Future<void> eliminarArchivo(int codArchivo) => _escribir('eliminar archivo $codArchivo');
 
@@ -144,6 +157,43 @@ class RepositorioArchivoFalso implements ArchivoDocumentalRepository {
 
   @override
   Future<List<EmpresaEntity>> listarEmpresas() => _leer(empresas);
+
+  @override
+  Future<List<EmpleadoArchivoEntity>> listarEmpleados() => _leer(empleados);
+
+  @override
+  Future<List<PrestamoDocumentoEntity>> listarPrestamos() => _leer(prestamos);
+
+  @override
+  Future<List<EntregaDocumentoEntity>> listarEntregas() => _leer(entregas);
+
+  @override
+  Future<int> registrarEntrega(PedidoEntrega p) =>
+      _escribir('entregar cajas ${p.cajas} lineas ${p.lineas} a ${p.codEmpleado} obs ${p.observacion}');
+
+  @override
+  Future<void> devolverEntrega(int codEntrega, {String? observacion}) =>
+      _escribir('devolver entrega $codEntrega obs $observacion');
+
+  @override
+  Future<void> anularEntrega(int codEntrega) => _escribir('anular entrega $codEntrega');
+
+  @override
+  Future<void> devolver(int codPrestamo, {String? observacion}) =>
+      _escribir('devolver $codPrestamo obs $observacion');
+
+  @override
+  Future<void> anularPrestamo(int codPrestamo) => _escribir('anular prestamo $codPrestamo');
+
+  @override
+  Future<List<DestruccionDocumentoEntity>> listarDestrucciones() => _leer(destrucciones);
+
+  @override
+  Future<void> destruir(PedidoMovimientoCaja p) =>
+      _escribir('destruir caja ${p.codCaja} lineas ${p.lineas} obs ${p.observacion}');
+
+  @override
+  Future<void> anularDestruccion(int codDestruccion) => _escribir('anular destruccion $codDestruccion');
 
   @override
   Future<List<SucursalArchivoEntity>> listarSucursales() async => const [
