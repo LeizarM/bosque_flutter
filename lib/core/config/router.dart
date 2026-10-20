@@ -2,11 +2,14 @@ import 'dart:async';
 
 import 'package:bosque_flutter/core/constants/app_constants.dart';
 import 'package:bosque_flutter/core/network/dio_client.dart';
+import 'package:bosque_flutter/core/network/dio_postulante.dart';
 import 'package:bosque_flutter/core/state/button_permissions_provider.dart';
 import 'package:bosque_flutter/core/state/rol_sabados_provider.dart';
 import 'package:bosque_flutter/core/state/user_provider.dart';
 import 'package:bosque_flutter/core/utils/console_log.dart';
+import 'package:bosque_flutter/core/utils/guardia_salida_examen.dart';
 import 'package:bosque_flutter/core/utils/secure_storage.dart';
+import 'package:bosque_flutter/core/utils/sesion_postulante_storage.dart';
 import 'package:bosque_flutter/domain/entities/cierre_operaciones_entity.dart';
 import 'package:bosque_flutter/domain/entities/login_entity.dart';
 import 'package:flutter/material.dart';
@@ -529,6 +532,84 @@ final routerProvider = Provider<GoRouter>((ref) {
                     context,
                     'Bosque - Porcentajes de Precios',
                     const PorcentajesScreen(),
+                  ),
+            ),
+            // MODULO DE EXAMENES (tcpe). Reemplaza al sistema PHP GenEx. Las
+            // direcciones son las de tb_vista (sql/datos/02_menu_tcpe.sql).
+            GoRoute(
+              path: '/dashboard/${AppConstants.rutaTcpeBanco}',
+              name: 'tcpeBanco',
+              builder:
+                  (context, state) => _pantallaConTitulo(
+                    context,
+                    'Bosque - Banco de preguntas',
+                    const BancoPreguntasScreen(),
+                  ),
+            ),
+            GoRoute(
+              path: '/dashboard/${AppConstants.rutaTcpeLotes}',
+              name: 'tcpeLotes',
+              builder:
+                  (context, state) => _pantallaConTitulo(
+                    context,
+                    'Bosque - Lotes de exámenes',
+                    const LotesExamenScreen(),
+                  ),
+            ),
+            GoRoute(
+              path: '/dashboard/${AppConstants.rutaTcpeResultados}',
+              name: 'tcpeResultados',
+              builder:
+                  (context, state) => _pantallaConTitulo(
+                    context,
+                    'Bosque - Resultados de exámenes',
+                    // Desde el detalle de un lote se llega con el lote elegido.
+                    ResultadosExamenScreen(
+                      loteInicial: state.extra is BigInt ? state.extra as BigInt : null,
+                    ),
+                  ),
+            ),
+            GoRoute(
+              path: '/dashboard/${AppConstants.rutaTcpeInformes}',
+              name: 'tcpeInformes',
+              builder:
+                  (context, state) => _pantallaConTitulo(
+                    context,
+                    'Bosque - Informes de exámenes',
+                    const InformesExamenScreen(),
+                  ),
+            ),
+            GoRoute(
+              path: '/dashboard/${AppConstants.rutaTcpeUsuarios}',
+              name: 'tcpeUsuarios',
+              builder:
+                  (context, state) => _pantallaConTitulo(
+                    context,
+                    'Bosque - Usuarios externos',
+                    const UsuariosExternosScreen(),
+                  ),
+            ),
+            GoRoute(
+              path: '/dashboard/${AppConstants.rutaTcpeEnVivo}',
+              name: 'tcpeEnVivo',
+              builder:
+                  (context, state) => _pantallaConTitulo(
+                    context,
+                    'Bosque - Exámenes en vivo',
+                    // Desde el detalle de un lote se llega con el lote elegido.
+                    EnVivoExamenScreen(
+                      loteInicial: state.extra is BigInt ? state.extra as BigInt : null,
+                    ),
+                  ),
+            ),
+            GoRoute(
+              path: '/dashboard/${AppConstants.rutaTcpeMisExamenes}',
+              name: 'tcpeMisExamenes',
+              builder:
+                  (context, state) => _pantallaConTitulo(
+                    context,
+                    'Bosque - Mis exámenes',
+                    const MisExamenesScreen(),
                   ),
             ),
             // MODULO DE GARANTIAS DE COBRANZA (tcbr). Reemplaza al JSF legacy
@@ -1162,6 +1243,108 @@ final routerProvider = Provider<GoRouter>((ref) {
               (context, state) =>
                   '/dashboard/${AppConstants.rutaPreciosPorcentajes}',
         ),
+        // MODULO DE EXAMENES (tcpe): el sidebar navega a '/' + tb_vista.direccion.
+        GoRoute(
+          path: '/${AppConstants.rutaTcpeBanco}',
+          redirect:
+              (context, state) => '/dashboard/${AppConstants.rutaTcpeBanco}',
+        ),
+        GoRoute(
+          path: '/${AppConstants.rutaTcpeLotes}',
+          redirect:
+              (context, state) => '/dashboard/${AppConstants.rutaTcpeLotes}',
+        ),
+        GoRoute(
+          path: '/${AppConstants.rutaTcpeResultados}',
+          redirect:
+              (context, state) => '/dashboard/${AppConstants.rutaTcpeResultados}',
+        ),
+        GoRoute(
+          path: '/${AppConstants.rutaTcpeInformes}',
+          redirect:
+              (context, state) => '/dashboard/${AppConstants.rutaTcpeInformes}',
+        ),
+        GoRoute(
+          path: '/${AppConstants.rutaTcpeUsuarios}',
+          redirect:
+              (context, state) => '/dashboard/${AppConstants.rutaTcpeUsuarios}',
+        ),
+        GoRoute(
+          path: '/${AppConstants.rutaTcpeEnVivo}',
+          redirect:
+              (context, state) => '/dashboard/${AppConstants.rutaTcpeEnVivo}',
+        ),
+        GoRoute(
+          path: '/${AppConstants.rutaTcpeMisExamenes}',
+          redirect:
+              (context, state) => '/dashboard/${AppConstants.rutaTcpeMisExamenes}',
+        ),
+        // RENDICION DEL EMPLEADO: pantalla completa, sin sidebar. Con el
+        // examen en curso no se sale (GuardiaSalidaExamen); pide token de empleado.
+        GoRoute(
+          path: AppConstants.rutaTcpeRendirMiExamen,
+          name: 'tcpeRendirMiExamen',
+          onExit: GuardiaSalidaExamen.alSalir,
+          builder:
+              (context, state) => _pantallaConTitulo(
+                context,
+                'Bosque - Examen',
+                RendirMiExamenScreen(
+                  codExamen: state.pathParameters['codExamen'] ?? '',
+                ),
+              ),
+        ),
+        // EXAMEN DEL POSTULANTE EXTERNO: fuera del shell y sin token de
+        // empleado (el redirect global las deja pasar). Las que necesitan la
+        // sesion del postulante vuelven al ingreso si no la hay.
+        GoRoute(
+          path: AppConstants.rutaTcpeIngreso,
+          name: 'tcpeIngreso',
+          builder:
+              (context, state) => _pantallaConTitulo(
+                context,
+                'Examen - Ingreso',
+                const IngresoExamenScreen(),
+              ),
+        ),
+        GoRoute(
+          path: AppConstants.rutaTcpeRegistro,
+          name: 'tcpeRegistro',
+          redirect: _exigirRegistroPendiente,
+          builder:
+              (context, state) => _pantallaConTitulo(
+                context,
+                'Examen - Tus datos',
+                const RegistroExamenScreen(),
+              ),
+        ),
+        GoRoute(
+          path: AppConstants.rutaTcpeRendir,
+          name: 'tcpeRendir',
+          redirect: _exigirSesionPostulante,
+          onExit: GuardiaSalidaExamen.alSalir,
+          builder:
+              (context, state) => _pantallaConTitulo(
+                context,
+                'Examen',
+                RendirExamenScreen(
+                  codExamen: state.pathParameters['codExamen'] ?? '',
+                ),
+              ),
+        ),
+        GoRoute(
+          path: AppConstants.rutaTcpeResultado,
+          name: 'tcpeResultado',
+          redirect: _exigirSesionPostulante,
+          builder:
+              (context, state) => _pantallaConTitulo(
+                context,
+                'Examen - Resultado',
+                ResultadoExamenScreen(
+                  codExamen: state.pathParameters['codExamen'] ?? '',
+                ),
+              ),
+        ),
         // MODULO DE GARANTIAS DE COBRANZA (tcbr): el sidebar navega a
         // '/' + tb_vista.direccion, sin /dashboard.
         GoRoute(
@@ -1295,6 +1478,11 @@ final routerProvider = Provider<GoRouter>((ref) {
             ),
           ),
       redirect: (BuildContext context, GoRouterState state) async {
+        // Las pantallas del postulante de examenes no dependen del token de
+        // empleado: cada una se cuida con la sesion del postulante.
+        if (state.uri.path.startsWith(AppConstants.rutaTcpePublica)) {
+          return null;
+        }
         final storage = SecureStorage();
         // Timeout de seguridad: si SecureStorage cuelga, asumir token expirado
         // para que el usuario pueda ver el login y no se quede en pantalla blanca
@@ -1334,6 +1522,17 @@ final routerProvider = Provider<GoRouter>((ref) {
       },
     );
 
+    // Un 401 del postulante solo lo devuelve al ingreso del examen; la sesion
+    // del empleado no se toca.
+    DioPostulante.setAlSesionInvalida(() {
+      GuardiaSalidaExamen.liberar();
+      final ruta = _router?.routeInformationProvider.value.uri.path ?? '';
+      if (ruta.startsWith(AppConstants.rutaTcpePublica) &&
+          ruta != AppConstants.rutaTcpeIngreso) {
+        _router?.go(AppConstants.rutaTcpeIngreso);
+      }
+    });
+
     // Configurar el callback de error de autenticación para redireccionar.
     // IMPORTANTE: usamos el `ref` REAL del routerProvider (no un
     // ProviderContainer aislado, que no afectaba el estado vivo de la app),
@@ -1351,12 +1550,37 @@ final routerProvider = Provider<GoRouter>((ref) {
       } catch (e) {
         console('⚠️ Error limpiando sesión tras 401: $e');
       }
+      // El postulante de exámenes no tiene sesión de empleado: se queda donde está.
+      final ruta = _router?.routeInformationProvider.value.uri.path ?? '';
+      if (ruta.startsWith(AppConstants.rutaTcpePublica)) return;
+      GuardiaSalidaExamen.liberar();
       _router?.go('/login');
     });
   }
 
   return _router!;
 });
+
+/// Sin sesión vigente del postulante, las pantallas del examen vuelven al ingreso.
+Future<String?> _exigirSesionPostulante(
+  BuildContext context,
+  GoRouterState state,
+) async {
+  final token = await SesionPostulanteStorage().tokenVigente();
+  return token == null ? AppConstants.rutaTcpeIngreso : null;
+}
+
+/// El registro solo con sesión y datos pendientes: quien ya los completó (por
+/// ejemplo, con Atrás del navegador) vuelve a sus exámenes.
+Future<String?> _exigirRegistroPendiente(
+  BuildContext context,
+  GoRouterState state,
+) async {
+  final sinSesion = await _exigirSesionPostulante(context, state);
+  if (sinSesion != null) return sinSesion;
+  final datos = await SesionPostulanteStorage().leerDatos();
+  return datos?['datosCompletos'] == true ? AppConstants.rutaTcpeIngreso : null;
+}
 
 // Clase para notificar cambios de estado de autenticación al router
 class GoRouterRefreshStream extends ChangeNotifier {

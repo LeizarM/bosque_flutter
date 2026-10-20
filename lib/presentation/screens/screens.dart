@@ -91,3 +91,17 @@ export 'package:bosque_flutter/presentation/screens/indemnizacion/indemnizacion_
 export 'package:bosque_flutter/presentation/screens/catalogo-coches/catalogo_coches_screen.dart';
 // Archivo de documentos (tarc_*): cajas del archivo físico, contenido y fotos.
 export 'package:bosque_flutter/presentation/screens/archivo-documental/archivo_documental_screen.dart';
+// Modulo de examenes (tcpe): reemplaza al sistema PHP GenEx.
+export 'package:bosque_flutter/presentation/screens/examenes/banco_preguntas_screen.dart';
+export 'package:bosque_flutter/presentation/screens/examenes/lotes_examen_screen.dart';
+export 'package:bosque_flutter/presentation/screens/examenes/resultados_examen_screen.dart';
+export 'package:bosque_flutter/presentation/screens/examenes/informes_examen_screen.dart';
+export 'package:bosque_flutter/presentation/screens/examenes/usuarios_externos_screen.dart';
+export 'package:bosque_flutter/presentation/screens/examenes/mis_examenes_screen.dart';
+export 'package:bosque_flutter/presentation/screens/examenes/en_vivo_examen_screen.dart';
+export 'package:bosque_flutter/presentation/screens/examenes/rendir_mi_examen_screen.dart';
+// Pantallas publicas del postulante externo (sin shell ni token de empleado).
+export 'package:bosque_flutter/presentation/screens/examen_publico/ingreso_examen_screen.dart';
+export 'package:bosque_flutter/presentation/screens/examen_publico/registro_examen_screen.dart';
+export 'package:bosque_flutter/presentation/screens/examen_publico/rendir_examen_screen.dart';
+export 'package:bosque_flutter/presentation/screens/examen_publico/resultado_examen_screen.dart';

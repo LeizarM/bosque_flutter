@@ -134,6 +134,11 @@ class DioClient {
               options.path.contains(AppConstants.recuperacionEndpoint)) {
             return handler.next(options);
           }
+          // Las rutas del postulante de exámenes llevan su propio token
+          // (DioPostulante): aquí nunca se les adjunta el del empleado.
+          if (options.path.contains(AppConstants.tcpePublicoPrefijo)) {
+            return handler.next(options);
+          }
 
           final result = await SecureStorage().readTokenDetailed();
           switch (result.status) {
@@ -203,6 +208,10 @@ class DioClient {
           }
         },
         onError: (DioException e, handler) async {
+          // Un 401 del postulante no es de la sesión del empleado: no la borra.
+          if (e.requestOptions.path.contains(AppConstants.tcpePublicoPrefijo)) {
+            return handler.next(e);
+          }
           if (e.response?.statusCode == 401) {
             console('Token expirado o inválido, limpiando sesión');
             // Antes de borrar: cualquier pedido que encuentre el token ya ausente lleva

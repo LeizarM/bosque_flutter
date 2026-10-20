@@ -2242,4 +2242,99 @@ class AppConstants {
       '/retroactivo/actualizar-detalle';
   static const String eliminarDetalleRetroactivo =
       '/retroactivo/eliminar-detalle';
+
+  // ═══════════════════════════════════════════════════════════════════════════════
+  // MODULO DE EXAMENES (tcpe_*): reemplaza al sistema PHP GenEx.
+  // ═══════════════════════════════════════════════════════════════════════════════
+
+  // Pantallas del shell: literal de tb_vista.direccion (sql/datos/02_menu_tcpe.sql).
+  static const String rutaTcpeBanco = 'tcpeExamenes/Banco';
+  static const String rutaTcpeLotes = 'tcpeExamenes/Lotes';
+  static const String rutaTcpeResultados = 'tcpeExamenes/Resultados';
+  static const String rutaTcpeInformes = 'tcpeExamenes/Informes';
+  static const String rutaTcpeUsuarios = 'tcpeExamenes/Usuarios';
+  static const String rutaTcpeMisExamenes = 'tcpeExamenes/MisExamenes';
+  static const String rutaTcpeEnVivo = 'tcpeExamenes/EnVivo';
+  // Rendición del empleado a pantalla completa: fuera del shell, sin menú lateral.
+  static const String rutaTcpeRendirMiExamen = '/tcpeExamenes/rendir/:codExamen';
+
+  // Pantallas públicas del postulante, sin shell ni token de empleado.
+  static const String rutaTcpePublica = '/examen/';
+  static const String rutaTcpeIngreso = '/examen/ingreso';
+  static const String rutaTcpeRegistro = '/examen/registro';
+  static const String rutaTcpeRendir = '/examen/rendir/:codExamen';
+  static const String rutaTcpeResultado = '/examen/resultado/:codExamen';
+
+  // CRUD genérico de las 38 tablas: {entidad} es la tabla sin tcpe_, en camelCase (p. ej. rsptaOpcionH).
+  static const String tcpeEntidad = '{entidad}';
+  static const String tcpeCatalogoListar = '/examenes/catalogo/{entidad}/listar';
+  static const String tcpeCatalogoGuardar = '/examenes/catalogo/{entidad}/guardar';
+  static const String tcpeCatalogoEliminar = '/examenes/catalogo/{entidad}/eliminar';
+  static const String tcpeBancoListar = '/examenes/banco/listar';
+  static const String tcpeBancoOpciones = '/examenes/banco/opciones';
+  static const String tcpeBancoGuardar = '/examenes/banco/guardar';
+  static const String tcpeBancoEliminar = '/examenes/banco/eliminar';
+  static const String tcpeBancoActivar = '/examenes/banco/activar';
+  // v6: duplicados mientras se escribe (Banco D) y carga en lote (BancoLote V / I).
+  static const String tcpeBancoDuplicados = '/examenes/banco/duplicados';
+  static const String tcpeBancoImportarValidar = '/examenes/banco/importar/validar';
+  static const String tcpeBancoImportar = '/examenes/banco/importar';
+  static const String tcpeLotesListar = '/examenes/lotes/listar';
+  static const String tcpeLotesDisponibles = '/examenes/lotes/disponibles';
+  static const String tcpeLotesEmpleados = '/examenes/lotes/empleados';
+  static const String tcpeLotesGenerar = '/examenes/lotes/generar';
+  static const String tcpeLotesAgregar = '/examenes/lotes/agregar';
+  static const String tcpeLotesActualizar = '/examenes/lotes/actualizar';
+  static const String tcpeLotesEliminar = '/examenes/lotes/eliminar';
+  static const String tcpeLotesExamenEscritoPdf =
+      '/examenes/lotes/examen-escrito-pdf';
+  static const String tcpeLotesSolucionarioPdf =
+      '/examenes/lotes/solucionario-pdf';
+  static const String tcpeConfig = '/examenes/config';
+  static const String tcpeMonitorLotes = '/examenes/monitor/lotes';
+  static const String tcpeMonitorListar = '/examenes/monitor/listar';
+  static const String tcpeMonitorEspejo = '/examenes/monitor/espejo';
+  static const String tcpeResultadosListar = '/examenes/resultados/listar';
+  static const String tcpeResultadosRevision = '/examenes/resultados/revision';
+  static const String tcpeResultadosSolucionario =
+      '/examenes/resultados/solucionario';
+  static const String tcpeResultadosHistorial = '/examenes/resultados/historial';
+  static const String tcpeResultadosInforme = '/examenes/resultados/informe';
+  static const String tcpeCalificacionMarcar = '/examenes/calificacion/marcar';
+  static const String tcpeCalificacionCerrar = '/examenes/calificacion/cerrar';
+  static const String tcpeCalificacionNota = '/examenes/calificacion/nota';
+  static const String tcpeUsuariosRegenerarClave =
+      '/examenes/usuarios/regenerar-clave';
+  static const String tcpeUsuariosMigrarClaves =
+      '/examenes/usuarios/migrar-claves';
+  static const String tcpeMisExamenesListar = '/examenes/mis-examenes/listar';
+  static const String tcpeMisExamenesEstado = '/examenes/mis-examenes/estado';
+  static const String tcpeMisExamenesPreguntas =
+      '/examenes/mis-examenes/preguntas';
+  static const String tcpeMisExamenesOpciones = '/examenes/mis-examenes/opciones';
+  static const String tcpeMisExamenesIniciar = '/examenes/mis-examenes/iniciar';
+  static const String tcpeMisExamenesResponder =
+      '/examenes/mis-examenes/responder';
+  static const String tcpeMisExamenesFinalizar =
+      '/examenes/mis-examenes/finalizar';
+  static const String tcpeMisExamenesRevision =
+      '/examenes/mis-examenes/revision';
+  static const String tcpeMisExamenesLatido = '/examenes/mis-examenes/latido';
+
+  // Postulante: el interceptor de empleado no les pone token ni cierra sesión ante un 401.
+  static const String tcpePublicoPrefijo = '/examen-publico/';
+  // permitAll en MainSecurity: DioPostulante no les pone token.
+  static const String tcpePublicoAuthPrefijo = '/examen-publico/auth/';
+  static const String tcpePublicoLogin = '/examen-publico/auth/login';
+  static const String tcpePublicoRegistro = '/examen-publico/registro';
+  static const String tcpePublicoListar = '/examen-publico/examenes/listar';
+  static const String tcpePublicoEstado = '/examen-publico/examenes/estado';
+  static const String tcpePublicoPreguntas = '/examen-publico/examenes/preguntas';
+  static const String tcpePublicoOpciones = '/examen-publico/examenes/opciones';
+  static const String tcpePublicoIniciar = '/examen-publico/examenes/iniciar';
+  static const String tcpePublicoResponder = '/examen-publico/examenes/responder';
+  static const String tcpePublicoFinalizar = '/examen-publico/examenes/finalizar';
+  static const String tcpePublicoRevision = '/examen-publico/examenes/revision';
+  static const String tcpePublicoConfig = '/examen-publico/config';
+  static const String tcpePublicoLatido = '/examen-publico/examenes/latido';
 }

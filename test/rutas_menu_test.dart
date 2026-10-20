@@ -1,4 +1,5 @@
 import 'package:bosque_flutter/core/config/router.dart';
+import 'package:bosque_flutter/core/constants/app_constants.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
@@ -67,6 +68,15 @@ void main() {
     'trecConfiguracion/Recuperacion': 'ConfiguracionRecuperacionScreen',
     // 'Sesiones' (padre 9, Administración), archivo SQL 08 de la recuperación.
     'trecSesion/Sesiones': 'SesionesScreen',
+    // Módulo de exámenes (tcpe), sql/datos/02_menu_tcpe.sql: módulo
+    // 'modExamenes' bajo RRHH con sus seis pantallas.
+    AppConstants.rutaTcpeBanco: 'BancoPreguntasScreen',
+    AppConstants.rutaTcpeLotes: 'LotesExamenScreen',
+    AppConstants.rutaTcpeResultados: 'ResultadosExamenScreen',
+    AppConstants.rutaTcpeInformes: 'InformesExamenScreen',
+    AppConstants.rutaTcpeUsuarios: 'UsuariosExternosScreen',
+    AppConstants.rutaTcpeMisExamenes: 'MisExamenesScreen',
+    AppConstants.rutaTcpeEnVivo: 'EnVivoExamenScreen',
   };
 
   late Set<String> paths;
@@ -104,6 +114,28 @@ void main() {
       );
     });
   }
+
+  // Las del postulante externo van fuera del shell (sin /dashboard) y sin
+  // redirección: entran por enlace, no por el menú.
+  for (final ruta in [
+    AppConstants.rutaTcpeIngreso,
+    AppConstants.rutaTcpeRegistro,
+    AppConstants.rutaTcpeRendir,
+    AppConstants.rutaTcpeResultado,
+  ]) {
+    test('examen público: $ruta existe fuera del shell', () {
+      expect(paths, contains(ruta));
+      expect(paths, isNot(contains('/dashboard$ruta')));
+      expect(ruta.startsWith(AppConstants.rutaTcpePublica), isTrue);
+    });
+  }
+
+  // v4: el empleado rinde a pantalla completa, sin sidebar (fuera del shell).
+  test('rendición del empleado fuera del shell y fuera de lo público', () {
+    expect(paths, contains(AppConstants.rutaTcpeRendirMiExamen));
+    expect(paths, isNot(contains('/dashboard${AppConstants.rutaTcpeRendirMiExamen}')));
+    expect(AppConstants.rutaTcpeRendirMiExamen.startsWith(AppConstants.rutaTcpePublica), isFalse);
+  });
 }
 
 /// Todos los `path` del árbol, aplanados. `ShellRoute` no tiene path propio:
