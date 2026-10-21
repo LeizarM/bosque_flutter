@@ -3,7 +3,8 @@
 ///
 /// Escritorio: diálogo amplio con filas. Móvil: pantalla completa con
 /// tarjetas, filtros que bajan de línea y botón de llamar. Tocar un empleado
-/// (o «Ver ficha») abre su ficha si el menú le da esa pantalla al usuario.
+/// (o «Ver ficha») abre su ficha solo si el menú le da esa pantalla al usuario
+/// y la regla de la ficha lo deja (su organigrama; todos, si es administrador).
 library;
 
 import 'package:flutter/material.dart';
@@ -272,7 +273,8 @@ class _AgendaState extends ConsumerState<_Agenda> {
             key: ValueKey('agenda-${visibles[i].codEmpleado}'),
             empleado: visibles[i],
             ancho: ancho,
-            puedeVerFicha: puedeVerFicha,
+            // Las dos llaves: la pantalla en el menú y el permiso por empleado.
+            puedeVerFicha: puedeVerFicha && visibles[i].puedeVerFicha,
           ),
     );
   }

@@ -9,6 +9,10 @@ class AgendaEmpleadoEntity {
   final String empresa;
   final List<String> telefonos;
 
+  /// Si quien mira puede abrir su ficha: la misma regla que la ficha del
+  /// trabajador, decidida en el servidor.
+  final bool puedeVerFicha;
+
   const AgendaEmpleadoEntity({
     required this.codEmpleado,
     required this.nombreCompleto,
@@ -17,6 +21,7 @@ class AgendaEmpleadoEntity {
     this.sucursal = '',
     this.empresa = '',
     this.telefonos = const [],
+    this.puedeVerFicha = false,
   });
 
   bool get tieneCorporativo => telefonos.isNotEmpty;

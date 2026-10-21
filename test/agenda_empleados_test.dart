@@ -1,10 +1,11 @@
 // Agenda de la empresa (Dashboard): la tarjeta abre el popup sin desbordes a
 // 390/800/1400 px, los filtros por texto, sucursal y número corporativo, y el
-// botón de la ficha solo para quien tiene esa pantalla.
+// botón de la ficha solo con la pantalla en el menú y el permiso por empleado.
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:bosque_flutter/core/state/agenda_provider.dart';
+import 'package:bosque_flutter/data/models/agenda_empleado_model.dart';
 import 'package:bosque_flutter/domain/entities/agenda_empleado_entity.dart';
 import 'package:bosque_flutter/domain/repositories/agenda_repository.dart';
 import 'package:bosque_flutter/presentation/widgets/agenda/agenda_empleados.dart';
@@ -22,6 +23,7 @@ class _Repo implements AgendaRepository {
       codSucursal: 20,
       sucursal: 'CENTRAL',
       telefonos: const ['+59178888274'],
+      puedeVerFicha: true,
     ),
     AgendaEmpleadoEntity(
       codEmpleado: BigInt.from(243),
@@ -29,6 +31,7 @@ class _Repo implements AgendaRepository {
       cargo: 'ESTIBADOR SCZ',
       codSucursal: 24,
       sucursal: 'SANTA CRUZ',
+      puedeVerFicha: true,
     ),
     AgendaEmpleadoEntity(
       codEmpleado: BigInt.from(32),
@@ -83,7 +86,10 @@ void main() {
     expect(find.textContaining('ALMENDRAS'), findsOneWidget);
     expect(find.text('MARCELO JAVIER JAIMES'), findsNothing);
 
-    await tester.enterText(find.byKey(const ValueKey('buscar-agenda')), 'munoz');
+    await tester.enterText(
+      find.byKey(const ValueKey('buscar-agenda')),
+      'munoz',
+    );
     await esperar(tester);
     expect(find.text('LUIS FERNANDO MUÑOZ'), findsOneWidget);
   });
@@ -105,12 +111,37 @@ void main() {
     expect(find.byTooltip('Ver ficha'), findsNothing);
   });
 
-  testWidgets('con la pantalla de empleados cada fila ofrece la ficha', (
-    tester,
-  ) async {
-    await montar(tester, app(ficha: true), ancho: 1400);
-    await tester.tap(find.byKey(const ValueKey('abrir-agenda')));
-    await esperar(tester);
-    expect(find.byTooltip('Ver ficha'), findsNWidgets(3));
+  testWidgets(
+    'con la pantalla, solo se ofrecen las fichas que la regla de la ficha deja',
+    (tester) async {
+      await montar(tester, app(ficha: true), ancho: 1400);
+      await tester.tap(find.byKey(const ValueKey('abrir-agenda')));
+      await esperar(tester);
+      // El 32 está fuera del organigrama de quien mira: aparece en la agenda,
+      // pero sin botón de ficha.
+      expect(find.byTooltip('Ver ficha'), findsNWidgets(2));
+      expect(
+        find.descendant(
+          of: find.byKey(const ValueKey('agenda-32')),
+          matching: find.byTooltip('Ver ficha'),
+        ),
+        findsNothing,
+      );
+      expect(find.textContaining('ALMENDRAS'), findsOneWidget);
+    },
+  );
+
+  test('sin el dato del servidor no se ofrece la ficha', () {
+    final con = AgendaEmpleadoModel.fromJson({
+      'codEmpleado': 7,
+      'nombreCompleto': 'A',
+      'puedeVerFicha': true,
+    });
+    final sin = AgendaEmpleadoModel.fromJson({
+      'codEmpleado': 8,
+      'nombreCompleto': 'B',
+    });
+    expect(con.toEntity().puedeVerFicha, isTrue);
+    expect(sin.toEntity().puedeVerFicha, isFalse);
   });
 }

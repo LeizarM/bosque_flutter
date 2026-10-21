@@ -10,6 +10,7 @@ class AgendaEmpleadoModel {
   final String sucursal;
   final String empresa;
   final String telefonos;
+  final bool puedeVerFicha;
 
   const AgendaEmpleadoModel({
     required this.codEmpleado,
@@ -19,6 +20,7 @@ class AgendaEmpleadoModel {
     this.sucursal = '',
     this.empresa = '',
     this.telefonos = '',
+    this.puedeVerFicha = false,
   });
 
   static String _texto(Object? v) => (v as String?)?.trim() ?? '';
@@ -32,6 +34,8 @@ class AgendaEmpleadoModel {
         sucursal: _texto(json['sucursal']),
         empresa: _texto(json['empresa']),
         telefonos: _texto(json['telefonos']),
+        // Sin el dato (backend viejo), no se ofrece la ficha: más vale de menos.
+        puedeVerFicha: json['puedeVerFicha'] == true,
       );
 
   Map<String, dynamic> toJson() => {
@@ -42,6 +46,7 @@ class AgendaEmpleadoModel {
     'sucursal': sucursal,
     'empresa': empresa,
     'telefonos': telefonos,
+    'puedeVerFicha': puedeVerFicha,
   };
 
   AgendaEmpleadoEntity toEntity() => AgendaEmpleadoEntity(
@@ -55,6 +60,7 @@ class AgendaEmpleadoModel {
       for (final t in telefonos.split(','))
         if (t.trim().isNotEmpty) t.trim(),
     ],
+    puedeVerFicha: puedeVerFicha,
   );
 
   factory AgendaEmpleadoModel.fromEntity(AgendaEmpleadoEntity e) =>
@@ -66,5 +72,6 @@ class AgendaEmpleadoModel {
         sucursal: e.sucursal,
         empresa: e.empresa,
         telefonos: e.telefonos.join(', '),
+        puedeVerFicha: e.puedeVerFicha,
       );
 }
