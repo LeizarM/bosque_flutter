@@ -11,13 +11,11 @@ import 'package:bosque_flutter/data/repositories/examenes_impl.dart';
 import 'package:bosque_flutter/domain/entities/tcpe_empleado_elegible_entity.dart';
 import 'package:bosque_flutter/domain/entities/tcpe_area_entity.dart';
 import 'package:bosque_flutter/domain/entities/tcpe_banco_pregunta_entity.dart';
-import 'package:bosque_flutter/domain/entities/tcpe_candidata_semana_entity.dart';
 import 'package:bosque_flutter/domain/entities/tcpe_catalogo.dart';
 import 'package:bosque_flutter/domain/entities/tcpe_clasificacion_entity.dart';
 import 'package:bosque_flutter/domain/entities/tcpe_config_entity.dart';
 import 'package:bosque_flutter/domain/entities/tcpe_credencial_entity.dart';
 import 'package:bosque_flutter/domain/entities/tcpe_devolucion_item_entity.dart';
-import 'package:bosque_flutter/domain/entities/tcpe_estadistica_semana_entity.dart';
 import 'package:bosque_flutter/domain/entities/tcpe_estado_rendicion_entity.dart';
 import 'package:bosque_flutter/domain/entities/tcpe_lote_entity.dart';
 import 'package:bosque_flutter/domain/entities/tcpe_monitor_lote_entity.dart';
@@ -133,21 +131,6 @@ final tcpePreguntasSemanaProvider = FutureProvider.autoDispose
 final tcpeRespuestasSemanaProvider = FutureProvider.autoDispose
     .family<List<TcpeRespondioSemanaEntity>, BigInt>(
       (ref, cod) => ref.watch(examenesRepositoryProvider).respuestasPreguntaSemana(cod),
-    );
-
-final tcpeEstadisticaSemanaProvider = FutureProvider.autoDispose
-    .family<List<TcpeEstadisticaSemanaEntity>, BigInt>(
-      (ref, cod) => ref.watch(examenesRepositoryProvider).estadisticaPreguntaSemana(cod),
-    );
-
-typedef FiltroCandidatasSemana = ({BigInt? codClasificacion, String texto});
-
-/// Preguntas del banco para elegir; sin categoría ni texto el SP no devuelve nada.
-final tcpeCandidatasSemanaProvider = FutureProvider.autoDispose
-    .family<List<TcpeCandidataSemanaEntity>, FiltroCandidatasSemana>(
-      (ref, f) => ref
-          .watch(examenesRepositoryProvider)
-          .candidatasPreguntaSemana(codClasificacion: f.codClasificacion, texto: f.texto),
     );
 
 // ── Usuarios externos ───────────────────────────────────────────────────

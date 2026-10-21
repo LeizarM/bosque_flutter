@@ -1,8 +1,6 @@
-import 'package:bosque_flutter/domain/entities/tcpe_opcion_semana_entity.dart';
-
 /// Una pregunta de la semana vigente hoy para quien mira el inicio
-/// (`/examenes/pregunta-semana/vigentes`: `p_list_tcpe_PreguntaSemana` V con
-/// sus opciones de O). El resultado y su [mensaje] llegan solo si ya respondió.
+/// (`p_list_tcpe_PreguntaSemana` V): lo que ya respondió y, para el campo de
+/// texto, la ayuda y el largo máximo. [mensaje] llega solo ya respondida.
 class TcpePreguntaSemanaVigenteEntity {
   final BigInt codPreguntaSemana;
 
@@ -12,18 +10,18 @@ class TcpePreguntaSemanaVigenteEntity {
   final DateTime? fechaInicio;
   final DateTime? fechaFin;
   final int? diasRestantes;
-  final bool mostrarRespuesta;
   final bool respondida;
-  final BigInt? codRsptaOpElegida;
-  final bool? esCorrecta;
-  final String? respuestaCorrecta;
 
-  /// El texto que muestra el inicio después de responder (lo arma el SP).
+  /// Lo que escribió quien mira; null si todavía no respondió.
+  final String? respuesta;
+  final DateTime? fechaRespuesta;
+
+  /// El agradecimiento que muestra el inicio después de responder (lo da el SP).
   final String? mensaje;
 
-  /// Cuántas personas respondieron.
-  final int respuestas;
-  final List<TcpeOpcionSemanaEntity> opciones;
+  /// La ayuda bajo el campo de texto y el largo que acepta (de la configuración).
+  final String? ayuda;
+  final int maxRespuesta;
 
   const TcpePreguntaSemanaVigenteEntity({
     required this.codPreguntaSemana,
@@ -32,14 +30,12 @@ class TcpePreguntaSemanaVigenteEntity {
     this.fechaInicio,
     this.fechaFin,
     this.diasRestantes,
-    this.mostrarRespuesta = true,
     this.respondida = false,
-    this.codRsptaOpElegida,
-    this.esCorrecta,
-    this.respuestaCorrecta,
+    this.respuesta,
+    this.fechaRespuesta,
     this.mensaje,
-    this.respuestas = 0,
-    this.opciones = const [],
+    this.ayuda,
+    this.maxRespuesta = 500,
   });
 
   TcpePreguntaSemanaVigenteEntity copyWith({
@@ -49,14 +45,12 @@ class TcpePreguntaSemanaVigenteEntity {
     DateTime? fechaInicio,
     DateTime? fechaFin,
     int? diasRestantes,
-    bool? mostrarRespuesta,
     bool? respondida,
-    BigInt? codRsptaOpElegida,
-    bool? esCorrecta,
-    String? respuestaCorrecta,
+    String? respuesta,
+    DateTime? fechaRespuesta,
     String? mensaje,
-    int? respuestas,
-    List<TcpeOpcionSemanaEntity>? opciones,
+    String? ayuda,
+    int? maxRespuesta,
   }) => TcpePreguntaSemanaVigenteEntity(
     codPreguntaSemana: codPreguntaSemana ?? this.codPreguntaSemana,
     titulo: titulo ?? this.titulo,
@@ -64,13 +58,11 @@ class TcpePreguntaSemanaVigenteEntity {
     fechaInicio: fechaInicio ?? this.fechaInicio,
     fechaFin: fechaFin ?? this.fechaFin,
     diasRestantes: diasRestantes ?? this.diasRestantes,
-    mostrarRespuesta: mostrarRespuesta ?? this.mostrarRespuesta,
     respondida: respondida ?? this.respondida,
-    codRsptaOpElegida: codRsptaOpElegida ?? this.codRsptaOpElegida,
-    esCorrecta: esCorrecta ?? this.esCorrecta,
-    respuestaCorrecta: respuestaCorrecta ?? this.respuestaCorrecta,
+    respuesta: respuesta ?? this.respuesta,
+    fechaRespuesta: fechaRespuesta ?? this.fechaRespuesta,
     mensaje: mensaje ?? this.mensaje,
-    respuestas: respuestas ?? this.respuestas,
-    opciones: opciones ?? this.opciones,
+    ayuda: ayuda ?? this.ayuda,
+    maxRespuesta: maxRespuesta ?? this.maxRespuesta,
   );
 }

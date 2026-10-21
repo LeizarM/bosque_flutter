@@ -165,7 +165,7 @@ class TcpeCatalogo<E> {
   static const preguntaSemana = TcpeCatalogo<TcpePreguntaSemanaEntity>._(
     'preguntaSemana',
     'codPreguntaSemana',
-    ['codPreguntaSemana', 'codPregunta', 'activo'],
+    ['codPreguntaSemana', 'activo'],
   );
   static const registroExamen = TcpeCatalogo<TcpeRegistroExamenEntity>._(
     'registroExamen',
@@ -220,7 +220,7 @@ class TcpeCatalogo<E> {
   static const rsptaSemana = TcpeCatalogo<TcpeRsptaSemanaEntity>._(
     'rsptaSemana',
     'codRsptaSemana',
-    ['codRsptaSemana', 'codPreguntaSemana', 'codUsuario', 'codRsptaOp'],
+    ['codRsptaSemana', 'codPreguntaSemana', 'codUsuario'],
   );
   static const seleccionFase = TcpeCatalogo<TcpeSeleccionFaseEntity>._(
     'seleccionFase',

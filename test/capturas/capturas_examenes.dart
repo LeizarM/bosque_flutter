@@ -18,6 +18,7 @@ import 'package:bosque_flutter/core/utils/responsive_utils_bosque.dart';
 import 'package:bosque_flutter/domain/entities/tcpe_duplicado_pregunta_entity.dart';
 import 'package:bosque_flutter/presentation/screens/screens.dart';
 import 'package:bosque_flutter/presentation/widgets/examenes/destinatarios_lote.dart';
+import 'package:bosque_flutter/presentation/widgets/examenes/pregunta_semana_inicio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
@@ -253,6 +254,42 @@ void main() {
       'resultado',
       const ResultadoExamenScreen(codExamen: '10'),
       postulante: PostulanteFalso(estado: 'CALIFICADO'),
+    );
+  });
+
+  testWidgets('pregunta de la semana', (t) async {
+    // El inicio del dashboard es una columna que desplaza: la tarjeta va igual.
+    Widget inicio() => const SingleChildScrollView(padding: EdgeInsets.all(20), child: PreguntasSemanaInicio());
+    await _capturar(t, 'semana_inicio_telefono', inicio(), tam: const Size(412, 640), repo: ExamenesFalso()..ponerVigente());
+    await _capturar(t, 'semana_inicio_escritorio', inicio(), tam: const Size(1200, 560), repo: ExamenesFalso()..ponerVigente());
+    await _capturar(
+      t,
+      'semana_inicio_respondida',
+      inicio(),
+      tam: const Size(412, 640),
+      repo: ExamenesFalso()..ponerVigente(),
+      antes: (t) async {
+        await t.enterText(find.byType(TextField), 'Muy bien, con mucho trabajo pero tranquilo.');
+        await t.pump();
+        await tocar(t, find.text('Enviar'));
+      },
+    );
+    await _capturar(t, 'semana_gestion_escritorio', const PreguntasSemanaScreen());
+    await _capturar(t, 'semana_gestion_telefono', const PreguntasSemanaScreen(), tam: telefono);
+    await _capturar(
+      t,
+      'semana_respuestas',
+      const PreguntasSemanaScreen(),
+      antes: (t) => tocar(t, find.text('¿Qué tal tu día?')),
+    );
+    await _capturar(
+      t,
+      'semana_editor',
+      const PreguntasSemanaScreen(),
+      antes: (t) async {
+        await tocar(t, find.text('Nueva pregunta'));
+        await t.enterText(find.widgetWithText(TextField, 'Qué quieres preguntar'), '¿Qué tal tu día?');
+      },
     );
   });
 }

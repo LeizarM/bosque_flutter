@@ -8,9 +8,7 @@ class TcpeRespondioSemanaModel {
   final String? login;
   final String? nombreCompleto;
   final String? cargo;
-  final BigInt? codRsptaOp;
-  final String? opcionRspta;
-  final bool esCorrecta;
+  final String? respuesta;
   final DateTime? fechaRespuesta;
 
   const TcpeRespondioSemanaModel({
@@ -19,9 +17,7 @@ class TcpeRespondioSemanaModel {
     this.login,
     this.nombreCompleto,
     this.cargo,
-    this.codRsptaOp,
-    this.opcionRspta,
-    this.esCorrecta = false,
+    this.respuesta,
     this.fechaRespuesta,
   });
 
@@ -31,9 +27,7 @@ class TcpeRespondioSemanaModel {
     login: tcpeTexto(json['login']),
     nombreCompleto: tcpeTexto(json['nombreCompleto']),
     cargo: tcpeTexto(json['cargo']),
-    codRsptaOp: tcpeBigInt(json['codRsptaOp']),
-    opcionRspta: tcpeTexto(json['opcionRspta']),
-    esCorrecta: tcpeBool(json['esCorrecta']) ?? false,
+    respuesta: tcpeTexto(json['respuesta']),
     fechaRespuesta: tcpeFecha(json['fechaRespuesta']),
   );
 
@@ -43,9 +37,7 @@ class TcpeRespondioSemanaModel {
     'login': login,
     'nombreCompleto': nombreCompleto,
     'cargo': cargo,
-    'codRsptaOp': codRsptaOp?.toInt(),
-    'opcionRspta': opcionRspta,
-    'esCorrecta': esCorrecta,
+    'respuesta': respuesta,
     'fechaRespuesta': tcpeFechaHoraJson(fechaRespuesta),
   };
 
@@ -55,9 +47,7 @@ class TcpeRespondioSemanaModel {
     login: login,
     nombreCompleto: nombreCompleto,
     cargo: cargo,
-    codRsptaOp: codRsptaOp,
-    opcionRspta: opcionRspta,
-    esCorrecta: esCorrecta,
+    respuesta: respuesta,
     fechaRespuesta: fechaRespuesta,
   );
 
@@ -67,9 +57,7 @@ class TcpeRespondioSemanaModel {
     login: e.login,
     nombreCompleto: e.nombreCompleto,
     cargo: e.cargo,
-    codRsptaOp: e.codRsptaOp,
-    opcionRspta: e.opcionRspta,
-    esCorrecta: e.esCorrecta,
+    respuesta: e.respuesta,
     fechaRespuesta: e.fechaRespuesta,
   );
 }

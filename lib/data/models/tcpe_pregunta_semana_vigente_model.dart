@@ -1,9 +1,8 @@
 import 'package:bosque_flutter/data/models/tcpe_json.dart';
-import 'package:bosque_flutter/data/models/tcpe_opcion_semana_model.dart';
 import 'package:bosque_flutter/domain/entities/tcpe_pregunta_semana_vigente_entity.dart';
 
-/// Una pregunta de la semana vigente con sus opciones, como la arma
-/// `/examenes/pregunta-semana/vigentes` (`V` + `O` de `p_list_tcpe_PreguntaSemana`).
+/// Una pregunta de la semana vigente (`/examenes/pregunta-semana/vigentes`:
+/// `p_list_tcpe_PreguntaSemana` V). Es de solo lectura.
 class TcpePreguntaSemanaVigenteModel {
   final BigInt codPreguntaSemana;
   final String? titulo;
@@ -11,14 +10,12 @@ class TcpePreguntaSemanaVigenteModel {
   final DateTime? fechaInicio;
   final DateTime? fechaFin;
   final int? diasRestantes;
-  final bool mostrarRespuesta;
   final bool respondida;
-  final BigInt? codRsptaOpElegida;
-  final bool? esCorrecta;
-  final String? respuestaCorrecta;
+  final String? respuesta;
+  final DateTime? fechaRespuesta;
   final String? mensaje;
-  final int respuestas;
-  final List<TcpeOpcionSemanaModel> opciones;
+  final String? ayuda;
+  final int maxRespuesta;
 
   const TcpePreguntaSemanaVigenteModel({
     required this.codPreguntaSemana,
@@ -27,18 +24,16 @@ class TcpePreguntaSemanaVigenteModel {
     this.fechaInicio,
     this.fechaFin,
     this.diasRestantes,
-    this.mostrarRespuesta = true,
     this.respondida = false,
-    this.codRsptaOpElegida,
-    this.esCorrecta,
-    this.respuestaCorrecta,
+    this.respuesta,
+    this.fechaRespuesta,
     this.mensaje,
-    this.respuestas = 0,
-    this.opciones = const [],
+    this.ayuda,
+    this.maxRespuesta = 500,
   });
 
   factory TcpePreguntaSemanaVigenteModel.fromJson(Map<String, dynamic> json) {
-    final crudas = json['opciones'];
+    final max = tcpeInt(json['maxRespuesta']);
     return TcpePreguntaSemanaVigenteModel(
       codPreguntaSemana: tcpeBigInt(json['codPreguntaSemana']) ?? BigInt.zero,
       titulo: tcpeTexto(json['titulo']),
@@ -46,18 +41,13 @@ class TcpePreguntaSemanaVigenteModel {
       fechaInicio: tcpeFecha(json['fechaInicio']),
       fechaFin: tcpeFecha(json['fechaFin']),
       diasRestantes: tcpeInt(json['diasRestantes']),
-      mostrarRespuesta: tcpeBool(json['mostrarRespuesta']) ?? true,
       respondida: tcpeBool(json['respondida']) ?? false,
-      codRsptaOpElegida: tcpeBigInt(json['codRsptaOpElegida']),
-      esCorrecta: tcpeBool(json['esCorrecta']),
-      respuestaCorrecta: tcpeTexto(json['respuestaCorrecta']),
+      respuesta: tcpeTexto(json['respuesta']),
+      fechaRespuesta: tcpeFecha(json['fechaRespuesta']),
       mensaje: tcpeTexto(json['mensaje']),
-      respuestas: tcpeInt(json['respuestas']) ?? 0,
-      opciones: [
-        if (crudas is List)
-          for (final o in crudas)
-            if (o is Map) TcpeOpcionSemanaModel.fromJson(Map<String, dynamic>.from(o)),
-      ],
+      ayuda: tcpeTexto(json['ayuda']),
+      // Un largo inválido no deja el campo sin tope: el de la columna lo vuelve a revisar el SP.
+      maxRespuesta: max == null || max < 1 ? 500 : max,
     );
   }
 
@@ -68,14 +58,12 @@ class TcpePreguntaSemanaVigenteModel {
     'fechaInicio': tcpeFechaJson(fechaInicio),
     'fechaFin': tcpeFechaJson(fechaFin),
     'diasRestantes': diasRestantes,
-    'mostrarRespuesta': mostrarRespuesta,
     'respondida': respondida,
-    'codRsptaOpElegida': codRsptaOpElegida?.toInt(),
-    'esCorrecta': esCorrecta,
-    'respuestaCorrecta': respuestaCorrecta,
+    'respuesta': respuesta,
+    'fechaRespuesta': tcpeFechaHoraJson(fechaRespuesta),
     'mensaje': mensaje,
-    'respuestas': respuestas,
-    'opciones': [for (final o in opciones) o.toJson()],
+    'ayuda': ayuda,
+    'maxRespuesta': maxRespuesta,
   };
 
   TcpePreguntaSemanaVigenteEntity toEntity() => TcpePreguntaSemanaVigenteEntity(
@@ -85,14 +73,12 @@ class TcpePreguntaSemanaVigenteModel {
     fechaInicio: fechaInicio,
     fechaFin: fechaFin,
     diasRestantes: diasRestantes,
-    mostrarRespuesta: mostrarRespuesta,
     respondida: respondida,
-    codRsptaOpElegida: codRsptaOpElegida,
-    esCorrecta: esCorrecta,
-    respuestaCorrecta: respuestaCorrecta,
+    respuesta: respuesta,
+    fechaRespuesta: fechaRespuesta,
     mensaje: mensaje,
-    respuestas: respuestas,
-    opciones: [for (final o in opciones) o.toEntity()],
+    ayuda: ayuda,
+    maxRespuesta: maxRespuesta,
   );
 
   factory TcpePreguntaSemanaVigenteModel.fromEntity(TcpePreguntaSemanaVigenteEntity e) =>
@@ -103,13 +89,11 @@ class TcpePreguntaSemanaVigenteModel {
         fechaInicio: e.fechaInicio,
         fechaFin: e.fechaFin,
         diasRestantes: e.diasRestantes,
-        mostrarRespuesta: e.mostrarRespuesta,
         respondida: e.respondida,
-        codRsptaOpElegida: e.codRsptaOpElegida,
-        esCorrecta: e.esCorrecta,
-        respuestaCorrecta: e.respuestaCorrecta,
+        respuesta: e.respuesta,
+        fechaRespuesta: e.fechaRespuesta,
         mensaje: e.mensaje,
-        respuestas: e.respuestas,
-        opciones: [for (final o in e.opciones) TcpeOpcionSemanaModel.fromEntity(o)],
+        ayuda: e.ayuda,
+        maxRespuesta: e.maxRespuesta,
       );
 }

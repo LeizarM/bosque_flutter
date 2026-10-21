@@ -1,6 +1,6 @@
-/// Preguntas de la semana (`tcpeExamenes/PreguntaSemana`, v11): la pregunta que
-/// cada empleado responde en el inicio. Se publica una pregunta cerrada del banco
-/// con su plazo y se ve quién respondió. Las reglas las decide el SP.
+/// Preguntas de la semana (`tcpeExamenes/PreguntaSemana`, v12): una pregunta libre
+/// («¿Qué tal tu día?») que cada empleado ve en el inicio y responde si quiere.
+/// Se publica con su plazo y se ve qué respondió cada uno. Las reglas, en el SP.
 library;
 
 import 'package:flutter/material.dart';
@@ -58,10 +58,10 @@ class PreguntasSemanaScreen extends ConsumerWidget {
                 EncabezadoExamenes(
                   ceja: 'Exámenes · Preguntas de la semana',
                   titulo: 'Preguntas de la semana',
-                  icono: Icons.quiz_outlined,
+                  icono: Icons.forum_outlined,
                   detalle:
-                      'La pregunta que cada empleado ve y responde en el inicio. Elige una pregunta cerrada del '
-                      'banco y hasta qué día se puede responder.',
+                      'Una pregunta que cada empleado ve en su inicio, como «¿Qué tal tu día?». Responder es '
+                      'opcional y aquí ves lo que escribió cada uno.',
                   compacto: compacto,
                   acciones: [
                     IconButton(
@@ -111,11 +111,11 @@ class PreguntasSemanaScreen extends ConsumerWidget {
                           vacio:
                               activo == null
                                   ? VacioExamenes(
-                                    icono: Icons.quiz_outlined,
+                                    icono: Icons.forum_outlined,
                                     titulo: 'Todavía no publicaste ninguna',
                                     detalle:
-                                        'Publica una pregunta cerrada del banco: cada empleado la ve en su inicio '
-                                        'y la responde con un toque.',
+                                        'Escribe una pregunta, como «¿Qué tal tu día?»: cada empleado la ve en su '
+                                        'inicio y, si quiere, responde con sus palabras.',
                                     accion: 'Nueva pregunta',
                                     iconoAccion: Icons.add,
                                     onAccion: () => _editar(context, ref, null),
@@ -137,13 +137,10 @@ class PreguntasSemanaScreen extends ConsumerWidget {
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
                                   CeldaTexto(p.pregunta, fuerte: true, lineas: 2),
-                                  CeldaTexto(
-                                    '${oGuion(p.tituloMostrado ?? p.titulo)} · ${oGuion(p.nombreClasificacion)}',
-                                    apagado: true,
-                                  ),
+                                  CeldaTexto(oGuion(p.tituloMostrado ?? p.titulo), apagado: true),
                                 ],
                               ),
-                              flex: 7,
+                              flex: 8,
                             ),
                             ColumnaExamen(
                               'Plazo',
@@ -156,20 +153,11 @@ class PreguntasSemanaScreen extends ConsumerWidget {
                               flex: 1,
                               alinear: Alignment.centerRight,
                             ),
-                            ColumnaExamen(
-                              'Acierto',
-                              (p) => CeldaNumero(
-                                p.porcentajeAcierto == null ? '--' : porcentajeTexto(p.porcentajeAcierto!),
-                                color: p.porcentajeAcierto == null ? null : Theme.of(context).colorScheme.primary,
-                              ),
-                              flex: 1,
-                              alinear: Alignment.centerRight,
-                            ),
                           ],
                           acciones: [
                             AccionExamen(
                               'Ver respuestas',
-                              Icons.how_to_vote_outlined,
+                              Icons.forum_outlined,
                               (p) => abrirRespuestasPreguntaSemana(context, p),
                               tono: TonoExamen.secundario,
                             ),
@@ -218,8 +206,6 @@ class PreguntasSemanaScreen extends ConsumerWidget {
                                     [
                                       plazoSemanaTexto(p.fechaInicio, p.fechaFin),
                                       '${p.respuestas} ${p.respuestas == 1 ? 'respuesta' : 'respuestas'}',
-                                      if (p.porcentajeAcierto != null)
-                                        '${porcentajeTexto(p.porcentajeAcierto!)} de acierto',
                                     ].join(' · '),
                                     style: context.apagado(),
                                   ),
@@ -280,7 +266,7 @@ class PreguntasSemanaScreen extends ConsumerWidget {
     final ok = await confirmar(
       context,
       titulo: 'Eliminar la pregunta de la semana',
-      detalle: 'Se quita del inicio y de esta lista. La pregunta sigue en el banco.',
+      detalle: 'Se quita del inicio y de esta lista.',
       textoConfirmar: 'Eliminar',
       destructiva: true,
     );

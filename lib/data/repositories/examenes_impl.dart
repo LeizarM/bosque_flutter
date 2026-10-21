@@ -6,14 +6,12 @@ import 'package:bosque_flutter/core/constants/app_constants.dart';
 import 'package:bosque_flutter/core/network/dio_client.dart';
 import 'package:bosque_flutter/data/models/tcpe_banco_opcion_model.dart';
 import 'package:bosque_flutter/data/models/tcpe_banco_pregunta_model.dart';
-import 'package:bosque_flutter/data/models/tcpe_candidata_semana_model.dart';
 import 'package:bosque_flutter/data/models/tcpe_catalogo_codec.dart';
 import 'package:bosque_flutter/data/models/tcpe_credencial_model.dart';
 import 'package:bosque_flutter/data/models/tcpe_disponibles_model.dart';
 import 'package:bosque_flutter/data/models/tcpe_duplicado_pregunta_model.dart';
 import 'package:bosque_flutter/data/models/tcpe_empleado_elegible_model.dart';
 import 'package:bosque_flutter/data/models/tcpe_espejo_item_model.dart';
-import 'package:bosque_flutter/data/models/tcpe_estadistica_semana_model.dart';
 import 'package:bosque_flutter/data/models/tcpe_fila_importacion_model.dart';
 import 'package:bosque_flutter/data/models/tcpe_historial_examen_model.dart';
 import 'package:bosque_flutter/data/models/tcpe_informe_categoria_model.dart';
@@ -36,13 +34,11 @@ import 'package:bosque_flutter/data/repositories/rendicion_endpoints.dart';
 import 'package:bosque_flutter/data/repositories/tcpe_api_base.dart';
 import 'package:bosque_flutter/domain/entities/tcpe_banco_opcion_entity.dart';
 import 'package:bosque_flutter/domain/entities/tcpe_banco_pregunta_entity.dart';
-import 'package:bosque_flutter/domain/entities/tcpe_candidata_semana_entity.dart';
 import 'package:bosque_flutter/domain/entities/tcpe_catalogo.dart';
 import 'package:bosque_flutter/domain/entities/tcpe_credencial_entity.dart';
 import 'package:bosque_flutter/domain/entities/tcpe_duplicado_pregunta_entity.dart';
 import 'package:bosque_flutter/domain/entities/tcpe_empleado_elegible_entity.dart';
 import 'package:bosque_flutter/domain/entities/tcpe_espejo_item_entity.dart';
-import 'package:bosque_flutter/domain/entities/tcpe_estadistica_semana_entity.dart';
 import 'package:bosque_flutter/domain/entities/tcpe_fila_importacion_entity.dart';
 import 'package:bosque_flutter/domain/entities/tcpe_historial_examen_entity.dart';
 import 'package:bosque_flutter/domain/entities/tcpe_informe_categoria_entity.dart';
@@ -469,9 +465,9 @@ class ExamenesImpl extends TcpeApiBase
   );
 
   @override
-  Future<String?> responderPreguntaSemana(BigInt codPreguntaSemana, BigInt codRsptaOp) => postMensaje(
+  Future<String?> responderPreguntaSemana(BigInt codPreguntaSemana, String respuesta) => postMensaje(
     AppConstants.tcpePreguntaSemanaResponder,
-    {'codPreguntaSemana': codPreguntaSemana.toInt(), 'codRsptaOp': codRsptaOp.toInt()},
+    {'codPreguntaSemana': codPreguntaSemana.toInt(), 'respuesta': respuesta},
     errorMessage: 'No se pudo guardar tu respuesta.',
   );
 
@@ -512,24 +508,10 @@ class ExamenesImpl extends TcpeApiBase
       );
 
   @override
-  Future<List<TcpeEstadisticaSemanaEntity>> estadisticaPreguntaSemana(BigInt codPreguntaSemana) =>
-      postAndReturnList(
-        endpoint: AppConstants.tcpePreguntaSemanaEstadistica,
-        data: {'codPreguntaSemana': codPreguntaSemana.toInt()},
-        fromJson: (j) => TcpeEstadisticaSemanaModel.fromJson(j).toEntity(),
-      );
-
-  @override
-  Future<List<TcpeCandidataSemanaEntity>> candidatasPreguntaSemana({
-    BigInt? codClasificacion,
-    String? texto,
-  }) => postAndReturnList(
-    endpoint: AppConstants.tcpePreguntaSemanaBanco,
-    data: TcpeApiBase.cuerpo({
-      'codClasificacion': codClasificacion,
-      'texto': (texto ?? '').trim().isEmpty ? null : texto!.trim(),
-    }),
-    fromJson: (j) => TcpeCandidataSemanaModel.fromJson(j).toEntity(),
+  Future<String?> quitarRespuestaSemana(BigInt codRsptaSemana) => postMensaje(
+    AppConstants.tcpePreguntaSemanaQuitarRespuesta,
+    {'codRsptaSemana': codRsptaSemana.toInt()},
+    errorMessage: 'No se pudo quitar la respuesta.',
   );
 
   // ── Usuarios externos ─────────────────────────────────────────────────

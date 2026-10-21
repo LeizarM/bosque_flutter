@@ -1,4 +1,4 @@
-/// Quién respondió una pregunta de la semana y qué eligió
+/// Quién respondió una pregunta de la semana y qué escribió
 /// (`p_list_tcpe_PreguntaSemana` R): nombre como en el login y cargo actual.
 class TcpeRespondioSemanaEntity {
   final BigInt codRsptaSemana;
@@ -6,9 +6,7 @@ class TcpeRespondioSemanaEntity {
   final String? login;
   final String? nombreCompleto;
   final String? cargo;
-  final BigInt? codRsptaOp;
-  final String? opcionRspta;
-  final bool esCorrecta;
+  final String? respuesta;
   final DateTime? fechaRespuesta;
 
   const TcpeRespondioSemanaEntity({
@@ -17,9 +15,7 @@ class TcpeRespondioSemanaEntity {
     this.login,
     this.nombreCompleto,
     this.cargo,
-    this.codRsptaOp,
-    this.opcionRspta,
-    this.esCorrecta = false,
+    this.respuesta,
     this.fechaRespuesta,
   });
 
@@ -29,9 +25,7 @@ class TcpeRespondioSemanaEntity {
     String? login,
     String? nombreCompleto,
     String? cargo,
-    BigInt? codRsptaOp,
-    String? opcionRspta,
-    bool? esCorrecta,
+    String? respuesta,
     DateTime? fechaRespuesta,
   }) => TcpeRespondioSemanaEntity(
     codRsptaSemana: codRsptaSemana ?? this.codRsptaSemana,
@@ -39,9 +33,7 @@ class TcpeRespondioSemanaEntity {
     login: login ?? this.login,
     nombreCompleto: nombreCompleto ?? this.nombreCompleto,
     cargo: cargo ?? this.cargo,
-    codRsptaOp: codRsptaOp ?? this.codRsptaOp,
-    opcionRspta: opcionRspta ?? this.opcionRspta,
-    esCorrecta: esCorrecta ?? this.esCorrecta,
+    respuesta: respuesta ?? this.respuesta,
     fechaRespuesta: fechaRespuesta ?? this.fechaRespuesta,
   );
 }

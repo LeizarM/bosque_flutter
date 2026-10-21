@@ -1,14 +1,13 @@
 import 'package:bosque_flutter/data/models/tcpe_json.dart';
 import 'package:bosque_flutter/domain/entities/tcpe_rspta_semana_entity.dart';
 
-/// `tcpe_rsptaSemana` (v11): columnas de `p_list_tcpe_RsptaSemana` L más
+/// `tcpe_rsptaSemana` (v12): columnas de `p_list_tcpe_RsptaSemana` L más
 /// `nombreUsuario`.
 class TcpeRsptaSemanaModel {
   final BigInt codRsptaSemana;
   final BigInt? codPreguntaSemana;
   final BigInt? codUsuario;
-  final BigInt? codRsptaOp;
-  final bool esCorrecta;
+  final String? respuesta;
   final BigInt? audUsuario;
   final DateTime? audFecha;
   final String? nombreUsuario;
@@ -17,8 +16,7 @@ class TcpeRsptaSemanaModel {
     required this.codRsptaSemana,
     this.codPreguntaSemana,
     this.codUsuario,
-    this.codRsptaOp,
-    this.esCorrecta = false,
+    this.respuesta,
     this.audUsuario,
     this.audFecha,
     this.nombreUsuario,
@@ -28,8 +26,7 @@ class TcpeRsptaSemanaModel {
     codRsptaSemana: tcpeBigInt(json['codRsptaSemana']) ?? BigInt.zero,
     codPreguntaSemana: tcpeBigInt(json['codPreguntaSemana']),
     codUsuario: tcpeBigInt(json['codUsuario']),
-    codRsptaOp: tcpeBigInt(json['codRsptaOp']),
-    esCorrecta: tcpeBool(json['esCorrecta']) ?? false,
+    respuesta: tcpeTexto(json['respuesta']),
     audUsuario: tcpeBigInt(json['audUsuario']),
     audFecha: tcpeFecha(json['audFecha']),
     nombreUsuario: tcpeTexto(json['nombreUsuario']),
@@ -39,8 +36,7 @@ class TcpeRsptaSemanaModel {
     'codRsptaSemana': codRsptaSemana.toInt(),
     'codPreguntaSemana': codPreguntaSemana?.toInt(),
     'codUsuario': codUsuario?.toInt(),
-    'codRsptaOp': codRsptaOp?.toInt(),
-    'esCorrecta': esCorrecta,
+    'respuesta': respuesta,
     'audUsuario': audUsuario?.toInt(),
     'audFecha': tcpeFechaHoraJson(audFecha),
     'nombreUsuario': nombreUsuario,
@@ -50,8 +46,7 @@ class TcpeRsptaSemanaModel {
     codRsptaSemana: codRsptaSemana,
     codPreguntaSemana: codPreguntaSemana,
     codUsuario: codUsuario,
-    codRsptaOp: codRsptaOp,
-    esCorrecta: esCorrecta,
+    respuesta: respuesta,
     audUsuario: audUsuario,
     audFecha: audFecha,
     nombreUsuario: nombreUsuario,
@@ -61,8 +56,7 @@ class TcpeRsptaSemanaModel {
     codRsptaSemana: e.codRsptaSemana,
     codPreguntaSemana: e.codPreguntaSemana,
     codUsuario: e.codUsuario,
-    codRsptaOp: e.codRsptaOp,
-    esCorrecta: e.esCorrecta,
+    respuesta: e.respuesta,
     audUsuario: e.audUsuario,
     audFecha: e.audFecha,
     nombreUsuario: e.nombreUsuario,

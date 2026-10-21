@@ -1,6 +1,6 @@
-/// Inicio del dashboard (v11): una tarjeta por cada pregunta de la semana
-/// vigente para quien entra. Sin vigentes no ocupa lugar; si la carga falla,
-/// una línea discreta con «Reintentar». El resultado y su texto los da el SP.
+/// Inicio del dashboard (v12): cada pregunta de la semana vigente como una
+/// charla, la pregunta en un globo y, si quiere, la respuesta de quien entra.
+/// Sin vigentes no ocupa lugar; «Ahora no» la oculta hasta volver a entrar.
 library;
 
 import 'package:flutter/material.dart';
@@ -11,14 +11,15 @@ import 'package:bosque_flutter/core/ui/aviso.dart';
 import 'package:bosque_flutter/core/ui/confirmacion.dart';
 import 'package:bosque_flutter/core/ui/piezas_bosque.dart';
 import 'package:bosque_flutter/core/ui/tokens_bosque.dart';
-import 'package:bosque_flutter/domain/entities/tcpe_opcion_semana_entity.dart';
 import 'package:bosque_flutter/domain/entities/tcpe_pregunta_semana_vigente_entity.dart';
 import 'package:bosque_flutter/presentation/widgets/examenes/comun_examenes.dart';
 import 'package:bosque_flutter/presentation/widgets/examenes/identidad_examenes.dart';
-import 'package:bosque_flutter/presentation/widgets/examenes/respuestas_pregunta_semana.dart';
 
-/// Desde este ancho de tarjeta las opciones van en dos columnas.
-const double _anchoDosColumnas = 640;
+/// Desde este ancho de tarjeta los globos no pasan del 70 % del ancho.
+const double _anchoAmplio = 640;
+
+/// Las que se ocultaron con «Ahora no» en esta sesión; vuelven al abrir la app de nuevo.
+final _ocultasProvider = StateProvider<Set<BigInt>>((ref) => {});
 
 class PreguntasSemanaInicio extends ConsumerWidget {
   const PreguntasSemanaInicio({super.key});
@@ -35,7 +36,7 @@ class PreguntasSemanaInicio extends ConsumerWidget {
               padding: const EdgeInsets.only(bottom: Esp.l),
               child: Row(
                 children: [
-                  Icon(Icons.quiz_outlined, size: 18, color: Theme.of(context).colorScheme.onSurfaceVariant),
+                  Icon(Icons.forum_outlined, size: 18, color: Theme.of(context).colorScheme.onSurfaceVariant),
                   const SizedBox(width: Esp.s),
                   Flexible(child: Text('No se pudo cargar la pregunta de la semana.', style: context.apagado())),
                   TextButton(
@@ -45,22 +46,26 @@ class PreguntasSemanaInicio extends ConsumerWidget {
                 ],
               ),
             ),
-        data:
-            (lista) =>
-                lista.isEmpty
-                    ? const SizedBox.shrink()
-                    : Padding(
-                      padding: const EdgeInsets.only(bottom: Esp.l),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          for (var i = 0; i < lista.length; i++) ...[
-                            if (i > 0) const SizedBox(height: Esp.m),
-                            TarjetaPreguntaSemana(key: ValueKey(lista[i].codPreguntaSemana), pregunta: lista[i]),
-                          ],
-                        ],
-                      ),
-                    ),
+        data: (lista) {
+          final ocultas = ref.watch(_ocultasProvider);
+          final visibles = [
+            for (final p in lista)
+              if (!ocultas.contains(p.codPreguntaSemana)) p,
+          ];
+          if (visibles.isEmpty) return const SizedBox.shrink();
+          return Padding(
+            padding: const EdgeInsets.only(bottom: Esp.l),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                for (var i = 0; i < visibles.length; i++) ...[
+                  if (i > 0) const SizedBox(height: Esp.m),
+                  TarjetaPreguntaSemana(key: ValueKey(visibles[i].codPreguntaSemana), pregunta: visibles[i]),
+                ],
+              ],
+            ),
+          );
+        },
       );
 }
 
@@ -81,16 +86,25 @@ class TarjetaPreguntaSemana extends ConsumerStatefulWidget {
 }
 
 class _TarjetaPreguntaSemanaState extends ConsumerState<TarjetaPreguntaSemana> {
-  BigInt? _elegida;
+  final _texto = TextEditingController();
   bool _enviando = false;
 
-  Future<void> _responder() async {
-    final cod = _elegida;
-    if (cod == null) return;
+  bool get _hayTexto => _texto.text.trim().isNotEmpty;
+
+  @override
+  void dispose() {
+    _texto.dispose();
+    super.dispose();
+  }
+
+  Future<void> _enviar() async {
+    if (!_hayTexto) return;
     setState(() => _enviando = true);
     try {
-      await ref.read(examenesRepositoryProvider).responderPreguntaSemana(widget.pregunta.codPreguntaSemana, cod);
-      // El resultado (y su mensaje) lo trae la vigente de nuevo: hasta tenerla el botón sigue ocupado.
+      await ref
+          .read(examenesRepositoryProvider)
+          .responderPreguntaSemana(widget.pregunta.codPreguntaSemana, _texto.text.trim());
+      // La respuesta y el agradecimiento los trae la vigente de nuevo: hasta tenerla el botón sigue ocupado.
       ref.invalidate(tcpePreguntasSemanaVigentesProvider);
       try {
         await ref.read(tcpePreguntasSemanaVigentesProvider.future);
@@ -104,93 +118,118 @@ class _TarjetaPreguntaSemanaState extends ConsumerState<TarjetaPreguntaSemana> {
     }
   }
 
+  void _ocultar() =>
+      ref.read(_ocultasProvider.notifier).state = {...ref.read(_ocultasProvider), widget.pregunta.codPreguntaSemana};
+
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    final p = widget.pregunta;
     final t = Theme.of(context).textTheme;
+    final p = widget.pregunta;
     return Card(
       margin: EdgeInsets.zero,
       elevation: 0,
-      color: Color.alphaBlend(cs.primaryContainer.withValues(alpha: 0.22), cs.surface),
-      shape: contornoSuperficie(cs, color: cs.primary.withValues(alpha: 0.35)),
+      color: Color.alphaBlend(cs.primaryContainer.withValues(alpha: 0.18), cs.surface),
+      shape: contornoSuperficie(cs, color: cs.primary.withValues(alpha: 0.3)),
       child: Padding(
-        padding: const EdgeInsets.all(Esp.l),
+        padding: const EdgeInsets.fromLTRB(Esp.l, Esp.m, Esp.s, Esp.l),
         child: LayoutBuilder(
           builder: (context, r) {
-            final dos = r.maxWidth >= _anchoDosColumnas;
-            final anchoOpcion = dos ? (r.maxWidth - Esp.m) / 2 : r.maxWidth;
+            final anchoGlobo = r.maxWidth * (r.maxWidth >= _anchoAmplio ? 0.7 : 0.92);
             return Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const SelloExamen(icono: Icons.quiz_outlined, tamanio: 40),
+                    const Padding(
+                      padding: EdgeInsets.only(top: Esp.xs),
+                      child: SelloExamen(icono: Icons.forum_outlined, tamanio: 40),
+                    ),
                     const SizedBox(width: Esp.m),
                     Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            oGuion(p.titulo),
-                            style: t.titleSmall?.copyWith(color: cs.primary, fontWeight: Peso.titulo),
-                          ),
-                          Text(plazoInicioTexto(p), style: context.apagado()),
-                        ],
-                      ),
-                    ),
-                    if (p.respuestas > 0)
-                      PastillaExamen(
-                        texto: p.respuestas == 1 ? '1 respondió' : '${p.respuestas} respondieron',
-                        tono: TonoExamen.secundario,
-                        icono: Icons.groups_outlined,
-                      ),
-                  ],
-                ),
-                const SizedBox(height: Esp.m),
-                Semantics(
-                  header: true,
-                  child: Text(oGuion(p.pregunta), style: t.titleMedium?.copyWith(fontWeight: Peso.titulo)),
-                ),
-                const SizedBox(height: Esp.m),
-                Wrap(
-                  spacing: Esp.m,
-                  runSpacing: Esp.s,
-                  children: [
-                    for (var i = 0; i < p.opciones.length; i++)
-                      SizedBox(
-                        width: anchoOpcion,
-                        child: _OpcionSemana(
-                          letra: letraOpcion(i),
-                          opcion: p.opciones[i],
-                          respondida: p.respondida,
-                          marcadaAhora: p.opciones[i].codRsptaOp == _elegida,
-                          onTap:
-                              p.respondida || _enviando
-                                  ? null
-                                  : () => setState(() => _elegida = p.opciones[i].codRsptaOp),
+                      child: Padding(
+                        padding: const EdgeInsets.only(top: Esp.xs),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              oGuion(p.titulo),
+                              style: t.titleSmall?.copyWith(color: cs.primary, fontWeight: Peso.titulo),
+                            ),
+                            Text(p.respondida ? 'Ya respondiste.' : plazoInicioTexto(p), style: context.apagado()),
+                          ],
                         ),
                       ),
+                    ),
+                    // Sin responder, «Ahora no» va junto a Enviar; ya respondida, solo queda ocultarla.
+                    if (p.respondida)
+                      IconButton(tooltip: 'Ocultar', onPressed: _ocultar, icon: const Icon(Icons.close))
+                    else
+                      const SizedBox(width: Esp.s),
                   ],
                 ),
                 const SizedBox(height: Esp.m),
-                if (!p.respondida)
-                  Align(
-                    alignment: Alignment.centerRight,
-                    child: SizedBox(
-                      height: 48,
-                      child: BotonAccion(
-                        etiqueta: 'Responder',
-                        etiquetaOcupado: 'Enviando…',
-                        icono: Icons.send_outlined,
-                        ocupado: _enviando,
-                        onPressed: _elegida == null ? null : _responder,
-                      ),
-                    ),
-                  )
-                else if ((p.mensaje ?? '').trim().isNotEmpty)
-                  _Resultado(mensaje: p.mensaje!.trim(), esCorrecta: p.esCorrecta),
+                Padding(
+                  padding: const EdgeInsets.only(right: Esp.s),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Semantics(header: true, child: GloboSemana(texto: p.pregunta, ancho: anchoGlobo)),
+                      if (p.respondida) ...[
+                        const SizedBox(height: Esp.s),
+                        GloboSemana(
+                          texto: p.respuesta,
+                          propio: true,
+                          ancho: anchoGlobo,
+                          pie: 'Tu respuesta · ${fechaHora(p.fechaRespuesta)}',
+                        ),
+                        if ((p.mensaje ?? '').trim().isNotEmpty) ...[
+                          const SizedBox(height: Esp.m),
+                          _Gracias(mensaje: p.mensaje!.trim()),
+                        ],
+                      ] else ...[
+                        const SizedBox(height: Esp.m),
+                        TextField(
+                          controller: _texto,
+                          enabled: !_enviando,
+                          minLines: 2,
+                          maxLines: 5,
+                          maxLength: p.maxRespuesta,
+                          textCapitalization: TextCapitalization.sentences,
+                          onChanged: (_) => setState(() {}),
+                          decoration: InputDecoration(
+                            hintText: 'Escribe tu respuesta…',
+                            helperText: p.ayuda,
+                            helperMaxLines: 3,
+                            filled: true,
+                            fillColor: cs.surface,
+                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(Esquina.media)),
+                          ),
+                        ),
+                        const SizedBox(height: Esp.s),
+                        Wrap(
+                          alignment: WrapAlignment.end,
+                          spacing: Esp.s,
+                          runSpacing: Esp.s,
+                          children: [
+                            TextButton(onPressed: _enviando ? null : _ocultar, child: const Text('Ahora no')),
+                            SizedBox(
+                              height: 48,
+                              child: BotonAccion(
+                                etiqueta: 'Enviar',
+                                etiquetaOcupado: 'Enviando…',
+                                icono: Icons.send_outlined,
+                                ocupado: _enviando,
+                                onPressed: _hayTexto ? _enviar : null,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
               ],
             );
           },
@@ -200,144 +239,76 @@ class _TarjetaPreguntaSemanaState extends ConsumerState<TarjetaPreguntaSemana> {
   }
 }
 
-class _OpcionSemana extends StatelessWidget {
-  const _OpcionSemana({
-    required this.letra,
-    required this.opcion,
-    required this.respondida,
-    required this.marcadaAhora,
-    required this.onTap,
-  });
+/// Un globo de la charla: la pregunta (a la izquierda, en el color principal) o
+/// una respuesta (a la derecha, en el terciario). Lo usan el inicio, el
+/// editor (vista previa) y las respuestas de la gestión.
+class GloboSemana extends StatelessWidget {
+  const GloboSemana({super.key, required this.texto, required this.ancho, this.propio = false, this.pie});
 
-  final String letra;
-  final TcpeOpcionSemanaEntity opcion;
-  final bool respondida;
+  final String? texto;
 
-  /// Antes de responder: la que eligió en esta pantalla.
-  final bool marcadaAhora;
-  final VoidCallback? onTap;
+  /// Ancho máximo del globo.
+  final double ancho;
 
-  /// Antes de responder, la marcada ahora. Después, la elegida y, solo si el SP
-  /// manda `esValido`, cuál era la correcta.
-  ({MarcaBurbuja marca, Color? fondo, Color borde, String? rotulo, IconData? icono}) _aspecto(ColorScheme cs) {
-    final o = opcion;
-    if (!respondida) {
-      return marcadaAhora
-          ? (marca: MarcaBurbuja.marcada, fondo: cs.primaryContainer, borde: cs.primary, rotulo: null, icono: null)
-          : (marca: MarcaBurbuja.vacia, fondo: cs.surface, borde: cs.outlineVariant, rotulo: null, icono: null);
-    }
-    if (o.elegida && o.esValido == true) {
-      return (
-        marca: MarcaBurbuja.marcada,
-        fondo: cs.primaryContainer,
-        borde: cs.primary,
-        rotulo: 'Tu respuesta · correcta',
-        icono: Icons.check_circle,
-      );
-    }
-    if (o.elegida && o.esValido == false) {
-      return (
-        marca: MarcaBurbuja.error,
-        fondo: cs.errorContainer,
-        borde: cs.error,
-        rotulo: 'Tu respuesta',
-        icono: Icons.cancel,
-      );
-    }
-    if (o.elegida) {
-      return (
-        marca: MarcaBurbuja.marcada,
-        fondo: cs.secondaryContainer,
-        borde: cs.secondary,
-        rotulo: 'Tu respuesta',
-        icono: null,
-      );
-    }
-    if (o.esValido == true) {
-      return (
-        marca: MarcaBurbuja.vacia,
-        fondo: cs.surface,
-        borde: cs.primary,
-        rotulo: 'Correcta',
-        icono: Icons.check_circle_outline,
-      );
-    }
-    return (marca: MarcaBurbuja.neutra, fondo: null, borde: cs.outlineVariant, rotulo: null, icono: null);
-  }
+  /// true = una respuesta; false = la pregunta.
+  final bool propio;
+
+  /// Una línea chica bajo el globo (quién o cuándo).
+  final String? pie;
 
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    final o = opcion;
-    final (:marca, :fondo, :borde, :rotulo, :icono) = _aspecto(cs);
-    final apagada = respondida && !o.elegida && o.esValido != true;
-    return Semantics(
-      button: onTap != null,
-      selected: marcadaAhora || o.elegida,
-      label: 'Opción $letra: ${oGuion(o.opcionRspta)}${rotulo == null ? '' : '. $rotulo'}',
-      excludeSemantics: true,
-      child: Material(
-        color: fondo ?? Colors.transparent,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(Esquina.media),
-          side: BorderSide(color: borde, width: marca == MarcaBurbuja.marcada || rotulo != null ? 1.5 : 1),
-        ),
-        clipBehavior: Clip.antiAlias,
-        child: InkWell(
-          onTap: onTap,
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(minHeight: 48),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: Esp.m, vertical: Esp.s),
-              child: Row(
-                children: [
-                  BurbujaHoja(texto: letra, marca: marca, tamanio: 30),
-                  const SizedBox(width: Esp.m),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          oGuion(o.opcionRspta),
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: apagada ? cs.onSurfaceVariant : null,
-                            fontWeight: marcadaAhora || o.elegida ? Peso.titulo : null,
-                          ),
-                        ),
-                        if (rotulo != null)
-                          Text(rotulo, style: Theme.of(context).textTheme.labelSmall?.copyWith(color: borde)),
-                      ],
-                    ),
-                  ),
-                  if (icono != null) ...[const SizedBox(width: Esp.s), Icon(icono, size: 20, color: borde)],
-                ],
+    final t = Theme.of(context).textTheme;
+    final fondo = propio ? cs.tertiaryContainer : cs.primaryContainer;
+    final letra = propio ? cs.onTertiaryContainer : cs.onPrimaryContainer;
+    const curva = Radius.circular(18);
+    const pico = Radius.circular(4);
+    return Align(
+      alignment: propio ? Alignment.centerRight : Alignment.centerLeft,
+      child: ConstrainedBox(
+        constraints: BoxConstraints(maxWidth: ancho),
+        child: Column(
+          crossAxisAlignment: propio ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: Esp.l, vertical: Esp.m),
+              decoration: BoxDecoration(
+                color: fondo,
+                borderRadius: BorderRadius.only(
+                  topLeft: propio ? curva : pico,
+                  topRight: propio ? pico : curva,
+                  bottomLeft: curva,
+                  bottomRight: curva,
+                ),
+              ),
+              child: Text(
+                oGuion(texto),
+                style:
+                    propio
+                        ? t.bodyLarge?.copyWith(color: letra)
+                        : t.titleMedium?.copyWith(color: letra, fontWeight: Peso.titulo),
               ),
             ),
-          ),
+            if (pie != null)
+              Padding(padding: const EdgeInsets.only(top: Esp.xs), child: Text(pie!, style: context.apagado())),
+          ],
         ),
       ),
     );
   }
 }
 
-/// El mensaje del SP después de responder, en el tono de lo que pasó: acertó,
-/// no acertó o solo quedó registrada (la pregunta no muestra la respuesta).
-class _Resultado extends StatelessWidget {
-  const _Resultado({required this.mensaje, required this.esCorrecta});
+/// El agradecimiento del SP después de responder.
+class _Gracias extends StatelessWidget {
+  const _Gracias({required this.mensaje});
 
   final String mensaje;
-  final bool? esCorrecta;
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    final (tono, icono) = switch (esCorrecta) {
-      true => (TonoExamen.principal, Icons.emoji_events_outlined),
-      false => (TonoExamen.alerta, Icons.lightbulb_outline),
-      null => (TonoExamen.secundario, Icons.task_alt),
-    };
-    final c = coloresDeTono(cs, tono);
+    final c = coloresDeTono(Theme.of(context).colorScheme, TonoExamen.principal);
     return Semantics(
       liveRegion: true,
       child: EntradaSuave(
@@ -347,7 +318,7 @@ class _Resultado extends StatelessWidget {
           decoration: BoxDecoration(color: c.fondo, borderRadius: BorderRadius.circular(Esquina.media)),
           child: Row(
             children: [
-              Icon(icono, color: c.letra),
+              Icon(Icons.favorite_outline, color: c.letra),
               const SizedBox(width: Esp.m),
               Expanded(
                 child: Text(

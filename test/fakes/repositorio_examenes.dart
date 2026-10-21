@@ -1,7 +1,4 @@
 import 'package:bosque_flutter/domain/entities/tcpe_area_entity.dart';
-import 'package:bosque_flutter/domain/entities/tcpe_candidata_semana_entity.dart';
-import 'package:bosque_flutter/domain/entities/tcpe_estadistica_semana_entity.dart';
-import 'package:bosque_flutter/domain/entities/tcpe_opcion_semana_entity.dart';
 import 'package:bosque_flutter/domain/entities/tcpe_pregunta_semana_entity.dart';
 import 'package:bosque_flutter/domain/entities/tcpe_pregunta_semana_vigente_entity.dart';
 import 'package:bosque_flutter/domain/entities/tcpe_ranking_pregunta_entity.dart';
@@ -401,30 +398,20 @@ class ExamenesFalso extends RendicionFalsa implements ExamenesRepository {
 
   Object? errorVigentes;
   List<TcpePreguntaSemanaVigenteEntity> vigentes = [];
+  final respondidas = <(BigInt, String)>[];
 
-  /// La correcta de cada vigente: el SP la manda (esValido) solo después de responder.
-  Map<BigInt, BigInt> correctaDe = {};
-  final respondidas = <(BigInt, BigInt)>[];
-
-  /// Una vigente sin responder, con su correcta en [correctaDe].
-  void ponerVigente({bool mostrarRespuesta = true}) {
-    final cod = BigInt.from(1);
-    correctaDe = {cod: BigInt.from(102)};
+  /// Una vigente sin responder: «¿Qué tal tu día?».
+  void ponerVigente() {
     vigentes = [
       TcpePreguntaSemanaVigenteEntity(
-        codPreguntaSemana: cod,
+        codPreguntaSemana: BigInt.one,
         titulo: 'Pregunta de la semana',
-        pregunta: '¿Cada cuánto se revisa el extintor de la planta?',
+        pregunta: '¿Qué tal tu día?',
         fechaInicio: DateTime(2026, 10, 20),
         fechaFin: DateTime(2026, 10, 26),
         diasRestantes: 6,
-        mostrarRespuesta: mostrarRespuesta,
-        respuestas: 3,
-        opciones: [
-          TcpeOpcionSemanaEntity(codPreguntaSemana: cod, codRsptaOp: BigInt.from(101), opcionRspta: 'Cada año'),
-          TcpeOpcionSemanaEntity(codPreguntaSemana: cod, codRsptaOp: BigInt.from(102), opcionRspta: 'Cada mes'),
-          TcpeOpcionSemanaEntity(codPreguntaSemana: cod, codRsptaOp: BigInt.from(103), opcionRspta: 'Nunca'),
-        ],
+        ayuda: 'Responder es opcional. Tu respuesta la ven quienes gestionan las preguntas de la semana.',
+        maxRespuesta: 500,
       ),
     ];
   }
@@ -436,82 +423,51 @@ class ExamenesFalso extends RendicionFalsa implements ExamenesRepository {
   }
 
   @override
-  Future<String?> responderPreguntaSemana(BigInt codPreguntaSemana, BigInt codRsptaOp) async {
-    respondidas.add((codPreguntaSemana, codRsptaOp));
-    final correcta = correctaDe[codPreguntaSemana];
-    final acerto = correcta == codRsptaOp;
-    String? mensaje;
+  Future<String?> responderPreguntaSemana(BigInt codPreguntaSemana, String respuesta) async {
+    respondidas.add((codPreguntaSemana, respuesta));
+    const gracias = '¡Gracias! Tu respuesta quedó registrada.';
     vigentes = [
       for (final v in vigentes)
-        if (v.codPreguntaSemana != codPreguntaSemana)
-          v
-        else
-          v.copyWith(
-            respondida: true,
-            codRsptaOpElegida: codRsptaOp,
-            respuestas: v.respuestas + 1,
-            esCorrecta: v.mostrarRespuesta ? acerto : null,
-            mensaje:
-                mensaje =
-                    !v.mostrarRespuesta
-                        ? 'Gracias: tu respuesta quedó registrada.'
-                        : acerto
-                        ? '¡Correcto! Elegiste la respuesta correcta.'
-                        : 'No era esa. La respuesta correcta es: Cada mes.',
-            opciones: [
-              for (final o in v.opciones)
-                TcpeOpcionSemanaEntity(
-                  codPreguntaSemana: o.codPreguntaSemana,
-                  codRsptaOp: o.codRsptaOp,
-                  opcionRspta: o.opcionRspta,
-                  elegida: o.codRsptaOp == codRsptaOp,
-                  esValido: v.mostrarRespuesta ? o.codRsptaOp == correcta : null,
-                ),
-            ],
-          ),
+        v.codPreguntaSemana != codPreguntaSemana
+            ? v
+            : v.copyWith(
+              respondida: true,
+              respuesta: respuesta,
+              fechaRespuesta: DateTime(2026, 10, 20, 9, 15),
+              mensaje: gracias,
+            ),
     ];
-    return mensaje;
+    return gracias;
   }
 
   List<TcpePreguntaSemanaEntity> preguntasSemana = [
     TcpePreguntaSemanaEntity(
       codPreguntaSemana: BigInt.from(1),
-      codPregunta: BigInt.from(8),
       tituloMostrado: 'Pregunta de la semana',
-      pregunta: '¿Cada cuánto se revisa el extintor de la planta?',
-      codClasificacion: BigInt.from(5),
-      nombreClasificacion: 'Seguridad industrial',
+      pregunta: '¿Qué tal tu día?',
       fechaInicio: DateTime(2026, 10, 20),
       fechaFin: DateTime(2026, 10, 26),
       estado: 'VIGENTE',
-      respuestas: 12,
-      correctas: 9,
-      porcentajeAcierto: 75,
+      respuestas: 2,
     ),
     TcpePreguntaSemanaEntity(
       codPreguntaSemana: BigInt.from(2),
-      codPregunta: BigInt.from(10),
-      titulo: 'Seguridad eléctrica',
-      tituloMostrado: 'Seguridad eléctrica',
-      pregunta: '¿Qué colores tiene la señal de riesgo eléctrico?',
-      nombreClasificacion: 'Seguridad industrial',
+      titulo: 'Para la próxima semana',
+      tituloMostrado: 'Para la próxima semana',
+      pregunta: '¿Qué esperas de esta semana?',
       fechaInicio: DateTime(2026, 10, 27),
       fechaFin: DateTime(2026, 11, 2),
       estado: 'PROGRAMADA',
     ),
     TcpePreguntaSemanaEntity(
       codPreguntaSemana: BigInt.from(3),
-      codPregunta: BigInt.from(12),
       tituloMostrado: 'Pregunta de la semana',
-      pregunta: '¿Dónde está el botiquín del galpón?',
-      nombreClasificacion: 'Seguridad industrial',
+      pregunta: '¿Qué podríamos mejorar en el trabajo?',
       fechaInicio: DateTime(2026, 10, 1),
       fechaFin: DateTime(2026, 10, 7),
       activo: false,
       estado: 'INACTIVA',
       respuestas: 30,
-      correctas: 12,
-      porcentajeAcierto: 40,
     ),
   ];
 
@@ -528,8 +484,7 @@ class ExamenesFalso extends RendicionFalsa implements ExamenesRepository {
       login: 'rhoward',
       nombreCompleto: 'HOWARD ESCOBAR ROGER',
       cargo: 'EJECUTIVO COMERCIAL SCZ',
-      opcionRspta: 'Cada mes',
-      esCorrecta: true,
+      respuesta: 'Muy bien, con mucho trabajo pero tranquilo.',
       fechaRespuesta: DateTime(2026, 10, 20, 9, 15),
     ),
     TcpeRespondioSemanaEntity(
@@ -537,51 +492,24 @@ class ExamenesFalso extends RendicionFalsa implements ExamenesRepository {
       login: 'fmunoz',
       nombreCompleto: 'MUÑOZ LUIS FERNANDO',
       cargo: 'ESTIBADOR SCZ',
-      opcionRspta: 'Cada año',
+      respuesta: 'Cansado, pero contento.',
       fechaRespuesta: DateTime(2026, 10, 20, 10, 2),
     ),
   ];
 
-  @override
-  Future<List<TcpeEstadisticaSemanaEntity>> estadisticaPreguntaSemana(BigInt codPreguntaSemana) async => [
-    TcpeEstadisticaSemanaEntity(codRsptaOp: BigInt.from(101), opcionRspta: 'Cada año', veces: 1, porcentaje: 50),
-    TcpeEstadisticaSemanaEntity(
-      codRsptaOp: BigInt.from(102),
-      opcionRspta: 'Cada mes',
-      esValido: true,
-      veces: 1,
-      porcentaje: 50,
-    ),
-    TcpeEstadisticaSemanaEntity(codRsptaOp: BigInt.from(103), opcionRspta: 'Nunca'),
-  ];
+  final quitadas = <BigInt>[];
 
   @override
-  Future<List<TcpeCandidataSemanaEntity>> candidatasPreguntaSemana({
-    BigInt? codClasificacion,
-    String? texto,
-  }) async => [
-    TcpeCandidataSemanaEntity(
-      codPregunta: BigInt.from(8),
-      nombreClasificacion: 'Seguridad industrial',
-      pregunta: '¿Cada cuánto se revisa el extintor de la planta?',
-      cantOpciones: 3,
-      cantValidas: 1,
-      puedeElegirse: true,
-      vecesUsada: 1,
-    ),
-    TcpeCandidataSemanaEntity(
-      codPregunta: BigInt.from(9),
-      nombreClasificacion: 'Seguridad industrial',
-      pregunta: 'Describe el bloqueo y etiquetado de la máquina.',
-      motivo: 'Es abierta: la pregunta de la semana se responde eligiendo una opción.',
-    ),
-  ];
+  Future<String?> quitarRespuestaSemana(BigInt codRsptaSemana) async {
+    quitadas.add(codRsptaSemana);
+    return 'Respuesta eliminada: la persona puede volver a responder.';
+  }
 
   String? ultimaGuardada;
 
   @override
   Future<String?> guardarPreguntaSemana(TcpePreguntaSemanaEntity pregunta) async {
-    ultimaGuardada = '${pregunta.codPregunta}';
+    ultimaGuardada = pregunta.pregunta;
     return 'Pregunta de la semana registrada.';
   }
 
