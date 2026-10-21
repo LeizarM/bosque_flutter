@@ -2314,6 +2314,7 @@ class AppConstants {
   static const String tcpePreguntaSemanaEliminar = '/examenes/pregunta-semana/eliminar';
   static const String tcpePreguntaSemanaRespuestas = '/examenes/pregunta-semana/respuestas';
   static const String tcpePreguntaSemanaQuitarRespuesta = '/examenes/pregunta-semana/quitar-respuesta';
+  static const String tcpePreguntaSemanaDistribucion = '/examenes/pregunta-semana/distribucion';
   static const String tcpeCalificacionMarcar = '/examenes/calificacion/marcar';
   static const String tcpeCalificacionCerrar = '/examenes/calificacion/cerrar';
   static const String tcpeCalificacionNota = '/examenes/calificacion/nota';

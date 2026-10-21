@@ -1,7 +1,9 @@
 /// Las respuestas de una pregunta de la semana (`p_list_tcpe_PreguntaSemana` R):
-/// quién respondió, su cargo, qué escribió y cuándo. Una respuesta fuera de
-/// lugar se puede quitar; la persona podrá volver a responder.
+/// quién respondió, su cargo, qué (texto o número) y cuándo; si es de escala,
+/// el promedio y cuántos eligieron cada número (E). Una respuesta se puede quitar.
 library;
+
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -11,6 +13,7 @@ import 'package:bosque_flutter/core/ui/aviso.dart';
 import 'package:bosque_flutter/core/ui/confirmacion.dart';
 import 'package:bosque_flutter/core/ui/piezas_bosque.dart';
 import 'package:bosque_flutter/core/ui/tokens_bosque.dart';
+import 'package:bosque_flutter/domain/entities/tcpe_escala_semana_entity.dart';
 import 'package:bosque_flutter/domain/entities/tcpe_pregunta_semana_entity.dart';
 import 'package:bosque_flutter/domain/entities/tcpe_respondio_semana_entity.dart';
 import 'package:bosque_flutter/presentation/widgets/examenes/comun_examenes.dart';
@@ -35,6 +38,9 @@ Future<void> abrirRespuestasPreguntaSemana(BuildContext context, TcpePreguntaSem
         cuerpo: RespuestasPreguntaSemana(pregunta: pregunta),
       ),
     );
+
+/// El promedio de una escala con un decimal: `3.75` → `3,8`.
+String promedioSemanaTexto(double? p) => p == null ? '--' : p.toStringAsFixed(1).replaceAll('.', ',');
 
 /// `dd/mm/aaaa – dd/mm/aaaa`.
 String plazoSemanaTexto(DateTime? desde, DateTime? hasta) => '${fechaCorta(desde)} – ${fechaCorta(hasta)}';
@@ -62,7 +68,8 @@ class _RespuestasPreguntaSemanaState extends ConsumerState<RespuestasPreguntaSem
   bool _coincide(TcpeRespondioSemanaEntity f) {
     final q = _filtro.trim().toLowerCase();
     if (q.isEmpty) return true;
-    return [f.nombreCompleto, f.login, f.cargo, f.respuesta].any((x) => (x ?? '').toLowerCase().contains(q));
+    return [f.nombreCompleto, f.login, f.cargo, f.respuesta, f.valor?.toString()]
+        .any((x) => (x ?? '').toLowerCase().contains(q));
   }
 
   Future<void> _quitar(TcpeRespondioSemanaEntity f) async {
@@ -70,7 +77,7 @@ class _RespuestasPreguntaSemanaState extends ConsumerState<RespuestasPreguntaSem
       context,
       titulo: 'Quitar la respuesta',
       detalle:
-          'Se borra lo que escribió ${oGuion(f.nombreCompleto ?? f.login)}. Podrá volver a responder mientras la '
+          'Se borra lo que respondió ${oGuion(f.nombreCompleto ?? f.login)}. Podrá volver a responder mientras la '
           'pregunta esté vigente.',
       textoConfirmar: 'Quitar',
       destructiva: true,
@@ -80,6 +87,7 @@ class _RespuestasPreguntaSemanaState extends ConsumerState<RespuestasPreguntaSem
     try {
       final msg = await ref.read(examenesRepositoryProvider).quitarRespuestaSemana(f.codRsptaSemana);
       ref.invalidate(tcpeRespuestasSemanaProvider(widget.pregunta.codPreguntaSemana));
+      ref.invalidate(tcpeDistribucionSemanaProvider(widget.pregunta.codPreguntaSemana));
       ref.invalidate(tcpePreguntasSemanaProvider);
       if (mounted) avisar(context, msg ?? 'Respuesta quitada.');
     } catch (e) {
@@ -111,6 +119,7 @@ class _RespuestasPreguntaSemanaState extends ConsumerState<RespuestasPreguntaSem
               crossAxisAlignment: WrapCrossAlignment.center,
               children: [
                 PastillaEstadoSemana(pregunta.estadoHoy),
+                PastillaTipoSemana(pregunta),
                 Text(plazoSemanaTexto(pregunta.fechaInicio, pregunta.fechaFin), style: context.apagado()),
               ],
             ),
@@ -136,17 +145,28 @@ class _RespuestasPreguntaSemanaState extends ConsumerState<RespuestasPreguntaSem
                           icono: Icons.groups_outlined,
                           tono: TonoExamen.secundario,
                         ),
+                        if (pregunta.esEscala) _CifraPromedio(pregunta: pregunta),
                       ],
                     ),
+                    if (pregunta.esEscala) ...[
+                      const SizedBox(height: Esp.l),
+                      Text('Cómo respondieron', style: context.tituloSeccion()),
+                      const SizedBox(height: Esp.s),
+                      _Distribucion(pregunta: pregunta),
+                    ],
                     const SizedBox(height: Esp.l),
-                    Text('Lo que respondieron', style: context.tituloSeccion()),
+                    Text(
+                      pregunta.esEscala ? 'Lo que eligió cada uno' : 'Lo que respondieron',
+                      style: context.tituloSeccion(),
+                    ),
                     const SizedBox(height: Esp.s),
                     if (filas.length > _conBuscador) ...[
                       TextField(
                         onChanged: (v) => setState(() => _filtro = v),
-                        decoration: const InputDecoration(
+                        decoration: InputDecoration(
                           isDense: true,
-                          labelText: 'Buscar por nombre, cargo o respuesta',
+                          labelText:
+                              pregunta.esEscala ? 'Buscar por nombre, cargo o número' : 'Buscar por nombre, cargo o respuesta',
                           prefixIcon: Icon(Icons.search, size: 20),
                           border: OutlineInputBorder(),
                         ),
@@ -161,6 +181,7 @@ class _RespuestasPreguntaSemanaState extends ConsumerState<RespuestasPreguntaSem
                       for (final f in vistas)
                         _FilaRespuesta(
                           fila: f,
+                          pregunta: pregunta,
                           ancha: ancha,
                           quitando: _quitando.contains(f.codRsptaSemana),
                           onQuitar: () => _quitar(f),
@@ -172,6 +193,154 @@ class _RespuestasPreguntaSemanaState extends ConsumerState<RespuestasPreguntaSem
           ],
         );
       },
+    );
+  }
+}
+
+/// Abierta o de escala, como pastilla; el texto lo arma el SP («Escala del 1 al 5»).
+class PastillaTipoSemana extends StatelessWidget {
+  const PastillaTipoSemana(this.pregunta, {super.key});
+
+  final TcpePreguntaSemanaEntity pregunta;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = pregunta;
+    final mostrado = (p.tipoMostrado ?? '').trim();
+    final texto =
+        mostrado.isNotEmpty
+            ? mostrado
+            : (p.esEscala ? 'Escala del ${p.escalaMin ?? '--'} al ${p.escalaMax ?? '--'}' : 'Abierta');
+    return PastillaExamen(
+      texto: texto,
+      tono: p.esEscala ? TonoExamen.secundario : TonoExamen.terciario,
+      icono: p.esEscala ? Icons.linear_scale : Icons.notes,
+    );
+  }
+}
+
+/// El promedio de una escala; mientras llega la distribución, el de la lista.
+class _CifraPromedio extends ConsumerWidget {
+  const _CifraPromedio({required this.pregunta});
+
+  final TcpePreguntaSemanaEntity pregunta;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final filas = ref.watch(tcpeDistribucionSemanaProvider(pregunta.codPreguntaSemana)).valueOrNull;
+    final promedio = filas == null ? pregunta.promedio : (filas.isEmpty ? null : filas.first.promedio);
+    return CifraExamen(
+      valor: promedioSemanaTexto(promedio),
+      rotulo: 'promedio, del ${pregunta.escalaMin ?? '--'} al ${pregunta.escalaMax ?? '--'}',
+      icono: Icons.insights_outlined,
+      tono: TonoExamen.principal,
+    );
+  }
+}
+
+/// Cuántos eligieron cada número, una barra por valor (también los que nadie
+/// eligió), con la etiqueta de los extremos. La barra más larga va resaltada.
+class _Distribucion extends ConsumerWidget {
+  const _Distribucion({required this.pregunta});
+
+  final TcpePreguntaSemanaEntity pregunta;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final cod = pregunta.codPreguntaSemana;
+    return ref
+        .watch(tcpeDistribucionSemanaProvider(cod))
+        .when(
+          skipLoadingOnReload: true,
+          loading: () => const LinearProgressIndicator(),
+          error: (e, _) => _Reintentar(error: e, onTap: () => ref.invalidate(tcpeDistribucionSemanaProvider(cod))),
+          data: (filas) {
+            if (filas.isEmpty) return const SizedBox.shrink();
+            final mayor = filas.map((f) => f.cantidad).reduce(math.max);
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                for (final f in filas)
+                  _BarraEscala(
+                    fila: f,
+                    min: filas.first.valor,
+                    max: filas.last.valor,
+                    destacada: f.cantidad > 0 && f.cantidad == mayor,
+                  ),
+              ],
+            );
+          },
+        );
+  }
+}
+
+class _BarraEscala extends StatelessWidget {
+  const _BarraEscala({required this.fila, required this.min, required this.max, required this.destacada});
+
+  final TcpeEscalaSemanaEntity fila;
+  final int min;
+  final int max;
+  final bool destacada;
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final f = fila;
+    final etiqueta = (f.etiqueta ?? '').trim();
+    final personas = f.cantidad == 1 ? 'persona' : 'personas';
+    return Semantics(
+      label:
+          '${valorEscalaTexto(f.valor, min: min, max: max, etiquetaMin: etiqueta, etiquetaMax: etiqueta)}: '
+          '${f.cantidad} $personas, ${porcentajeTexto(f.porcentaje)}',
+      excludeSemantics: true,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: Esp.xs),
+        child: Row(
+          children: [
+            NumeroEscala(valor: f.valor, min: min, max: max),
+            const SizedBox(width: Esp.m),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (etiqueta.isNotEmpty) Text(etiqueta, style: context.apagado()),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(Esquina.pastilla),
+                    child: SizedBox(
+                      height: 12,
+                      child: Stack(
+                        fit: StackFit.expand,
+                        children: [
+                          ColoredBox(color: cs.surfaceContainerHighest),
+                          FractionallySizedBox(
+                            alignment: Alignment.centerLeft,
+                            widthFactor: (f.porcentaje / 100).clamp(0.0, 1.0),
+                            child: ColoredBox(color: destacada ? cs.primary : cs.primary.withValues(alpha: 0.5)),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: Esp.m),
+            SizedBox(
+              width: 96,
+              child: Text(
+                '${f.cantidad} · ${porcentajeTexto(f.porcentaje)}',
+                textAlign: TextAlign.end,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  fontWeight: destacada ? Peso.dato : null,
+                  fontFeatures: cifrasTabulares,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
@@ -196,9 +365,16 @@ class PastillaEstadoSemana extends StatelessWidget {
 }
 
 class _FilaRespuesta extends StatelessWidget {
-  const _FilaRespuesta({required this.fila, required this.ancha, required this.quitando, required this.onQuitar});
+  const _FilaRespuesta({
+    required this.fila,
+    required this.pregunta,
+    required this.ancha,
+    required this.quitando,
+    required this.onQuitar,
+  });
 
   final TcpeRespondioSemanaEntity fila;
+  final TcpePreguntaSemanaEntity pregunta;
   final bool ancha;
   final bool quitando;
   final VoidCallback onQuitar;
@@ -255,6 +431,9 @@ class _FilaRespuesta extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(height: Esp.s),
+                if (pregunta.esEscala && f.valor != null)
+                  _ValorElegido(valor: f.valor!, pregunta: pregunta)
+                else
                 // Lo que escribió, en un globo como el del inicio.
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: Esp.m, vertical: Esp.s),
@@ -286,6 +465,33 @@ class _FilaRespuesta extends StatelessWidget {
                 onPressed: onQuitar,
                 icon: Icon(Icons.delete_outline, color: cs.onSurfaceVariant),
               ),
+        ],
+      ),
+    );
+  }
+}
+
+/// El número que eligió alguien: su círculo y, al lado, «de 5» y la etiqueta si es un extremo.
+class _ValorElegido extends StatelessWidget {
+  const _ValorElegido({required this.valor, required this.pregunta});
+
+  final int valor;
+  final TcpePreguntaSemanaEntity pregunta;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = pregunta;
+    final min = p.escalaMin ?? 0;
+    final max = p.escalaMax ?? valor;
+    final etiqueta = ((valor == min ? p.etiquetaMin : (valor == max ? p.etiquetaMax : null)) ?? '').trim();
+    return Semantics(
+      label: valorEscalaTexto(valor, min: min, max: max, etiquetaMin: p.etiquetaMin, etiquetaMax: p.etiquetaMax),
+      excludeSemantics: true,
+      child: Row(
+        children: [
+          NumeroEscala(valor: valor, min: min, max: max, lado: 36),
+          const SizedBox(width: Esp.s),
+          Flexible(child: Text(['de $max', if (etiqueta.isNotEmpty) etiqueta].join(' · '), style: context.apagado())),
         ],
       ),
     );

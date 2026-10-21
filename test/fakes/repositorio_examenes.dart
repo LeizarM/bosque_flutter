@@ -1,4 +1,5 @@
 import 'package:bosque_flutter/domain/entities/tcpe_area_entity.dart';
+import 'package:bosque_flutter/domain/entities/tcpe_escala_semana_entity.dart';
 import 'package:bosque_flutter/domain/entities/tcpe_pregunta_semana_entity.dart';
 import 'package:bosque_flutter/domain/entities/tcpe_pregunta_semana_vigente_entity.dart';
 import 'package:bosque_flutter/domain/entities/tcpe_ranking_pregunta_entity.dart';
@@ -400,6 +401,9 @@ class ExamenesFalso extends RendicionFalsa implements ExamenesRepository {
   List<TcpePreguntaSemanaVigenteEntity> vigentes = [];
   final respondidas = <(BigInt, String)>[];
 
+  /// Las de escala: qué número se eligió en cada pregunta.
+  final elegidos = <(BigInt, int)>[];
+
   /// Una vigente sin responder: «¿Qué tal tu día?».
   void ponerVigente() {
     vigentes = [
@@ -416,6 +420,26 @@ class ExamenesFalso extends RendicionFalsa implements ExamenesRepository {
     ];
   }
 
+  /// Una vigente de escala sin responder: «Del 1 al 5, ¿cómo ves el ambiente laboral?».
+  void ponerVigenteEscala({int min = 1, int max = 5}) {
+    vigentes = [
+      TcpePreguntaSemanaVigenteEntity(
+        codPreguntaSemana: BigInt.two,
+        titulo: 'Clima laboral',
+        pregunta: 'Del $min al $max, ¿cómo ves el ambiente laboral?',
+        tipo: 'E',
+        escalaMin: min,
+        escalaMax: max,
+        etiquetaMin: 'Muy mal',
+        etiquetaMax: 'Excelente',
+        fechaInicio: DateTime(2026, 10, 20),
+        fechaFin: DateTime(2026, 10, 26),
+        diasRestantes: 6,
+        ayuda: 'Responder es opcional.',
+      ),
+    ];
+  }
+
   @override
   Future<List<TcpePreguntaSemanaVigenteEntity>> preguntasSemanaVigentes() async {
     if (errorVigentes != null) throw errorVigentes!;
@@ -423,8 +447,12 @@ class ExamenesFalso extends RendicionFalsa implements ExamenesRepository {
   }
 
   @override
-  Future<String?> responderPreguntaSemana(BigInt codPreguntaSemana, String respuesta) async {
-    respondidas.add((codPreguntaSemana, respuesta));
+  Future<String?> responderPreguntaSemana(BigInt codPreguntaSemana, {String? respuesta, int? valor}) async {
+    if (valor != null) {
+      elegidos.add((codPreguntaSemana, valor));
+    } else {
+      respondidas.add((codPreguntaSemana, respuesta ?? ''));
+    }
     const gracias = '¡Gracias! Tu respuesta quedó registrada.';
     vigentes = [
       for (final v in vigentes)
@@ -433,6 +461,7 @@ class ExamenesFalso extends RendicionFalsa implements ExamenesRepository {
             : v.copyWith(
               respondida: true,
               respuesta: respuesta,
+              valor: valor,
               fechaRespuesta: DateTime(2026, 10, 20, 9, 15),
               mensaje: gracias,
             ),
@@ -469,6 +498,23 @@ class ExamenesFalso extends RendicionFalsa implements ExamenesRepository {
       estado: 'INACTIVA',
       respuestas: 30,
     ),
+    TcpePreguntaSemanaEntity(
+      codPreguntaSemana: BigInt.from(4),
+      titulo: 'Clima laboral',
+      tituloMostrado: 'Clima laboral',
+      pregunta: 'Del 1 al 5, ¿cómo ves el ambiente laboral?',
+      tipo: 'E',
+      escalaMin: 1,
+      escalaMax: 5,
+      etiquetaMin: 'Muy mal',
+      etiquetaMax: 'Excelente',
+      tipoMostrado: 'Escala del 1 al 5',
+      fechaInicio: DateTime(2026, 10, 13),
+      fechaFin: DateTime(2026, 10, 19),
+      estado: 'TERMINADA',
+      respuestas: 3,
+      promedio: 3.7,
+    ),
   ];
 
   @override
@@ -478,7 +524,53 @@ class ExamenesFalso extends RendicionFalsa implements ExamenesRepository {
   ];
 
   @override
-  Future<List<TcpeRespondioSemanaEntity>> respuestasPreguntaSemana(BigInt codPreguntaSemana) async => [
+  Future<List<TcpeRespondioSemanaEntity>> respuestasPreguntaSemana(BigInt codPreguntaSemana) async =>
+      codPreguntaSemana == BigInt.from(4) ? _respuestasEscala : _respuestasAbierta;
+
+  List<TcpeRespondioSemanaEntity> get _respuestasEscala => [
+    TcpeRespondioSemanaEntity(
+      codRsptaSemana: BigInt.from(11),
+      login: 'rhoward',
+      nombreCompleto: 'HOWARD ESCOBAR ROGER',
+      cargo: 'EJECUTIVO COMERCIAL SCZ',
+      valor: 5,
+      fechaRespuesta: DateTime(2026, 10, 13, 9, 15),
+    ),
+    TcpeRespondioSemanaEntity(
+      codRsptaSemana: BigInt.from(12),
+      login: 'fmunoz',
+      nombreCompleto: 'MUÑOZ LUIS FERNANDO',
+      cargo: 'ESTIBADOR SCZ',
+      valor: 4,
+      fechaRespuesta: DateTime(2026, 10, 13, 10, 2),
+    ),
+    TcpeRespondioSemanaEntity(
+      codRsptaSemana: BigInt.from(13),
+      login: 'apaz',
+      nombreCompleto: 'PAZ ROJAS ANA',
+      cargo: 'CAJERA LPZ',
+      valor: 2,
+      fechaRespuesta: DateTime(2026, 10, 14, 8, 40),
+    ),
+  ];
+
+  @override
+  Future<List<TcpeEscalaSemanaEntity>> distribucionPreguntaSemana(BigInt codPreguntaSemana) async {
+    if (codPreguntaSemana != BigInt.from(4)) return [];
+    return [
+      for (final (v, n) in const [(1, 0), (2, 1), (3, 0), (4, 1), (5, 1)])
+        TcpeEscalaSemanaEntity(
+          valor: v,
+          etiqueta: v == 1 ? 'Muy mal' : (v == 5 ? 'Excelente' : null),
+          cantidad: n,
+          porcentaje: n == 0 ? 0 : 33.3,
+          total: 3,
+          promedio: 3.7,
+        ),
+    ];
+  }
+
+  List<TcpeRespondioSemanaEntity> get _respuestasAbierta => [
     TcpeRespondioSemanaEntity(
       codRsptaSemana: BigInt.from(1),
       login: 'rhoward',
@@ -506,10 +598,12 @@ class ExamenesFalso extends RendicionFalsa implements ExamenesRepository {
   }
 
   String? ultimaGuardada;
+  TcpePreguntaSemanaEntity? ultimaGuardadaEntidad;
 
   @override
   Future<String?> guardarPreguntaSemana(TcpePreguntaSemanaEntity pregunta) async {
     ultimaGuardada = pregunta.pregunta;
+    ultimaGuardadaEntidad = pregunta;
     return 'Pregunta de la semana registrada.';
   }
 

@@ -274,6 +274,73 @@ void main() {
         await tocar(t, find.text('Enviar'));
       },
     );
+    await _capturar(
+      t,
+      'semana_escala_telefono',
+      inicio(),
+      tam: const Size(412, 640),
+      repo: ExamenesFalso()..ponerVigenteEscala(),
+      antes: (t) async {
+        await t.tap(find.text('4'));
+        await t.pump(const Duration(milliseconds: 300));
+      },
+    );
+    await _capturar(t, 'semana_escala_escritorio', inicio(), tam: const Size(1200, 560), repo: ExamenesFalso()..ponerVigenteEscala());
+    await _capturar(
+      t,
+      'semana_escala_0a10_telefono',
+      inicio(),
+      tam: const Size(360, 640),
+      repo: ExamenesFalso()..ponerVigenteEscala(min: 0, max: 10),
+    );
+    await _capturar(
+      t,
+      'semana_escala_respondida',
+      inicio(),
+      tam: const Size(412, 640),
+      repo: ExamenesFalso()..ponerVigenteEscala(),
+      antes: (t) async {
+        await t.tap(find.text('4'));
+        await t.pump(const Duration(milliseconds: 300));
+        await tocar(t, find.text('Enviar'));
+      },
+    );
+    await _capturar(
+      t,
+      'semana_escala_respuestas',
+      const PreguntasSemanaScreen(),
+      antes: (t) => tocar(t, find.text('Del 1 al 5, ¿cómo ves el ambiente laboral?')),
+    );
+    await _capturar(
+      t,
+      'semana_escala_respuestas_telefono',
+      const PreguntasSemanaScreen(),
+      tam: telefono,
+      antes: (t) async {
+        await t.scrollUntilVisible(
+          find.text('Del 1 al 5, ¿cómo ves el ambiente laboral?'),
+          200,
+          scrollable: find.byType(Scrollable).last,
+        );
+        await tocar(t, find.text('Del 1 al 5, ¿cómo ves el ambiente laboral?'));
+      },
+    );
+    await _capturar(
+      t,
+      'semana_escala_editor',
+      const PreguntasSemanaScreen(),
+      antes: (t) async {
+        await tocar(t, find.text('Nueva pregunta'));
+        await tocar(t, find.text('Escala'));
+        await t.enterText(
+          find.widgetWithText(TextField, 'Qué quieres preguntar'),
+          '¿Cómo ves el ambiente laboral?',
+        );
+        await t.enterText(find.widgetWithText(TextField, 'Qué significa el 1 (opcional)'), 'Muy mal');
+        await t.enterText(find.widgetWithText(TextField, 'Qué significa el 5 (opcional)'), 'Excelente');
+        await t.pump();
+      },
+    );
     await _capturar(t, 'semana_gestion_escritorio', const PreguntasSemanaScreen());
     await _capturar(t, 'semana_gestion_telefono', const PreguntasSemanaScreen(), tam: telefono);
     await _capturar(

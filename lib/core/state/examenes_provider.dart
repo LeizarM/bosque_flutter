@@ -19,6 +19,7 @@ import 'package:bosque_flutter/domain/entities/tcpe_devolucion_item_entity.dart'
 import 'package:bosque_flutter/domain/entities/tcpe_estado_rendicion_entity.dart';
 import 'package:bosque_flutter/domain/entities/tcpe_lote_entity.dart';
 import 'package:bosque_flutter/domain/entities/tcpe_monitor_lote_entity.dart';
+import 'package:bosque_flutter/domain/entities/tcpe_escala_semana_entity.dart';
 import 'package:bosque_flutter/domain/entities/tcpe_pregunta_semana_entity.dart';
 import 'package:bosque_flutter/domain/entities/tcpe_pregunta_semana_vigente_entity.dart';
 import 'package:bosque_flutter/domain/entities/tcpe_respondio_semana_entity.dart';
@@ -131,6 +132,12 @@ final tcpePreguntasSemanaProvider = FutureProvider.autoDispose
 final tcpeRespuestasSemanaProvider = FutureProvider.autoDispose
     .family<List<TcpeRespondioSemanaEntity>, BigInt>(
       (ref, cod) => ref.watch(examenesRepositoryProvider).respuestasPreguntaSemana(cod),
+    );
+
+/// De escala: cuántos eligieron cada número (vacía si es abierta).
+final tcpeDistribucionSemanaProvider = FutureProvider.autoDispose
+    .family<List<TcpeEscalaSemanaEntity>, BigInt>(
+      (ref, cod) => ref.watch(examenesRepositoryProvider).distribucionPreguntaSemana(cod),
     );
 
 // ── Usuarios externos ───────────────────────────────────────────────────

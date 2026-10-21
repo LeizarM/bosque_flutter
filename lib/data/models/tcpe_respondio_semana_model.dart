@@ -9,6 +9,7 @@ class TcpeRespondioSemanaModel {
   final String? nombreCompleto;
   final String? cargo;
   final String? respuesta;
+  final int? valor;
   final DateTime? fechaRespuesta;
 
   const TcpeRespondioSemanaModel({
@@ -18,6 +19,7 @@ class TcpeRespondioSemanaModel {
     this.nombreCompleto,
     this.cargo,
     this.respuesta,
+    this.valor,
     this.fechaRespuesta,
   });
 
@@ -28,6 +30,7 @@ class TcpeRespondioSemanaModel {
     nombreCompleto: tcpeTexto(json['nombreCompleto']),
     cargo: tcpeTexto(json['cargo']),
     respuesta: tcpeTexto(json['respuesta']),
+    valor: tcpeInt(json['valor']),
     fechaRespuesta: tcpeFecha(json['fechaRespuesta']),
   );
 
@@ -38,6 +41,7 @@ class TcpeRespondioSemanaModel {
     'nombreCompleto': nombreCompleto,
     'cargo': cargo,
     'respuesta': respuesta,
+    'valor': valor,
     'fechaRespuesta': tcpeFechaHoraJson(fechaRespuesta),
   };
 
@@ -48,6 +52,7 @@ class TcpeRespondioSemanaModel {
     nombreCompleto: nombreCompleto,
     cargo: cargo,
     respuesta: respuesta,
+    valor: valor,
     fechaRespuesta: fechaRespuesta,
   );
 
@@ -58,6 +63,7 @@ class TcpeRespondioSemanaModel {
     nombreCompleto: e.nombreCompleto,
     cargo: e.cargo,
     respuesta: e.respuesta,
+    valor: e.valor,
     fechaRespuesta: e.fechaRespuesta,
   );
 }

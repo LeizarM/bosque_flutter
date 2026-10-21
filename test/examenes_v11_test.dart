@@ -15,6 +15,7 @@ import 'package:bosque_flutter/domain/entities/tcpe_persona_examen_entity.dart';
 import 'package:bosque_flutter/domain/entities/tcpe_pregunta_semana_entity.dart';
 import 'package:bosque_flutter/presentation/screens/examen_publico/registro_examen_screen.dart';
 import 'package:bosque_flutter/presentation/screens/examenes/preguntas_semana_screen.dart';
+import 'package:bosque_flutter/presentation/widgets/examenes/editor_pregunta_semana.dart';
 import 'package:bosque_flutter/presentation/widgets/examenes/editor_personas.dart';
 import 'package:bosque_flutter/presentation/widgets/examenes/pregunta_semana_inicio.dart';
 import 'package:bosque_flutter/presentation/widgets/examenes/comun_examenes.dart';
@@ -31,8 +32,8 @@ import 'fakes/repositorio_depositos.dart' show loginAdminFalso;
 import 'fakes/repositorio_examenes.dart';
 import 'fakes/repositorio_rendicion_examen.dart';
 
-/// v11/v12 (contrato 15): el CI sin documento, el ranking de preguntas más
-/// falladas y las preguntas de la semana libres (gestión y tarjeta del inicio).
+/// v11 a v13 (contratos 15 a 17): el CI sin documento, el ranking de preguntas
+/// más falladas y las preguntas de la semana, abiertas o de escala.
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   setUp(() => SharedPreferences.setMockInitialValues({}));
@@ -243,6 +244,7 @@ void main() {
       expect(alta.toGuardarJson(), {
         'titulo': null,
         'pregunta': '¿Qué tal tu día?',
+        'tipo': 'A',
         'fechaInicio': '2026-10-20',
         'fechaFin': '2026-10-26',
       });
@@ -423,7 +425,198 @@ void main() {
       await tester.tap(find.text('Publicar'));
       await esperar(tester, 3);
       expect(repo.ultimaGuardada, '¿Qué tal tu día?');
+      expect(repo.ultimaGuardadaEntidad?.esEscala, isFalse, reason: 'sin tocar el tipo, es abierta');
       expect(find.text('Nueva pregunta de la semana'), findsNothing);
+    });
+  });
+
+  // ── v13: preguntas de escala ────────────────────────────────────────────
+  group('v13: pregunta de la semana de escala', () {
+    test('modelos: la vigente trae la escala y el valor; guardar manda la escala solo si es de escala', () {
+      final v =
+          TcpePreguntaSemanaVigenteModel.fromJson({
+            'codPreguntaSemana': 5,
+            'tipo': 'e',
+            'escalaMin': 0,
+            'escalaMax': 10,
+            'etiquetaMax': 'Excelente',
+            'respondida': true,
+            'valor': 0,
+          }).toEntity();
+      expect(v.esEscala, isTrue);
+      expect(v.escalaMin, 0);
+      expect(v.valor, 0, reason: 'el 0 es un valor, no un vacío');
+      expect(TcpePreguntaSemanaVigenteModel.fromJson({'tipo': 'X'}).toEntity().esEscala, isFalse);
+
+      final escala =
+          TcpePreguntaSemanaModel.fromEntity(
+            TcpePreguntaSemanaEntity(
+              codPreguntaSemana: BigInt.from(4),
+              pregunta: '¿Cómo ves el ambiente laboral?',
+              tipo: 'E',
+              escalaMin: 0,
+              escalaMax: 10,
+              etiquetaMin: '  ',
+              etiquetaMax: ' Excelente ',
+              fechaInicio: DateTime(2026, 10, 20),
+              fechaFin: DateTime(2026, 10, 26),
+            ),
+          ).toGuardarJson();
+      expect(escala['tipo'], 'E');
+      expect(escala['escalaMin'], 0);
+      expect(escala['escalaMax'], 10);
+      expect(escala['etiquetaMin'], isNull);
+      expect(escala['etiquetaMax'], 'Excelente');
+
+      final abierta =
+          TcpePreguntaSemanaModel.fromEntity(
+            TcpePreguntaSemanaEntity(codPreguntaSemana: BigInt.zero, pregunta: 'Hola', escalaMin: 1, escalaMax: 5),
+          ).toGuardarJson();
+      expect(abierta['tipo'], 'A');
+      expect(abierta.containsKey('escalaMin'), isFalse, reason: 'una abierta no manda escala');
+
+      final l =
+          TcpePreguntaSemanaModel.fromJson({
+            'codPreguntaSemana': 4,
+            'tipo': 'E',
+            'tipoMostrado': 'Escala del 1 al 5',
+            'promedio': 3.7,
+          }).toEntity();
+      expect(l.esEscala, isTrue);
+      expect(l.promedio, 3.7);
+      expect(l.tipoMostrado, 'Escala del 1 al 5');
+    });
+
+    test('configuración: escala propuesta 1 a 5 y tope 10; el fin siempre queda después del inicio', () {
+      const r = TcpeConfiguracion.respaldo;
+      expect((r.escalaMinSemana, r.escalaMaxSemana, r.escalaTopeSemana), (1, 5, 10));
+      final s = TcpeConfiguracion.desde(const [
+        TcpeConfigEntity(clave: 'escalaMinSemana', valor: '7'),
+        TcpeConfigEntity(clave: 'escalaMaxSemana', valor: '3'),
+        TcpeConfigEntity(clave: 'escalaTopeSemana', valor: '20'),
+      ]);
+      expect((s.escalaMinSemana, s.escalaMaxSemana, s.escalaTopeSemana), (7, 8, 10));
+    });
+
+    test('el valor elegido en palabras', () {
+      expect(valorEscalaTexto(4, min: 1, max: 5, etiquetaMin: 'Muy mal', etiquetaMax: 'Excelente'), '4 de 5');
+      expect(valorEscalaTexto(5, min: 1, max: 5, etiquetaMax: 'Excelente'), '5 de 5 · Excelente');
+      expect(valorEscalaTexto(0, min: 0, max: 10, etiquetaMin: 'Nada'), '0 de 10 · Nada');
+      expect(valorEscalaTexto(null, max: 5), '--');
+    });
+
+    for (final ancho in [390.0, 1400.0]) {
+      testWidgets('inicio: se elige un número y se envía; sin elegir no a $ancho px', (tester) async {
+        final repo = ExamenesFalso()..ponerVigenteEscala();
+        final errores = await abrir(tester, const PreguntasSemanaInicio(), ancho: ancho, repo: repo, enScroll: true);
+        expect(errores, isEmpty, reason: detalle(errores));
+        expect(find.text('Del 1 al 5, ¿cómo ves el ambiente laboral?'), findsOneWidget);
+        expect(find.byType(TextField), findsNothing, reason: 'de escala no se escribe');
+        for (final n in ['1', '2', '3', '4', '5']) {
+          expect(find.text(n), findsOneWidget);
+        }
+        expect(find.text('Muy mal'), findsOneWidget);
+        expect(find.text('Excelente'), findsOneWidget);
+        expect(botonDe(tester, 'Enviar').onPressed, isNull, reason: 'sin un número elegido');
+
+        await tester.tap(find.text('4'));
+        await tester.pump(const Duration(milliseconds: 300));
+        expect(botonDe(tester, 'Enviar').onPressed, isNotNull);
+        await tester.tap(find.text('Enviar'));
+        await esperar(tester);
+        expect(repo.elegidos, [(BigInt.two, 4)]);
+        expect(repo.respondidas, isEmpty);
+        expect(find.text('4 de 5'), findsOneWidget, reason: 'su respuesta, en su globo');
+        expect(find.text('¡Gracias! Tu respuesta quedó registrada.'), findsOneWidget);
+        expect(find.text('Enviar'), findsNothing);
+        expect(tester.takeException(), isNull);
+      });
+    }
+
+    testWidgets('inicio: una escala del 0 al 10 entra en un teléfono sin desbordar', (tester) async {
+      final repo = ExamenesFalso()..ponerVigenteEscala(min: 0, max: 10);
+      final errores = await abrir(tester, const PreguntasSemanaInicio(), ancho: 360, repo: repo, enScroll: true);
+      expect(errores, isEmpty, reason: detalle(errores));
+      for (var n = 0; n <= 10; n++) {
+        expect(find.text('$n'), findsOneWidget);
+      }
+      final lado = tester.getSize(find.ancestor(of: find.text('10'), matching: find.byType(InkWell)).first);
+      expect(lado.width, greaterThanOrEqualTo(44), reason: 'cómodo de tocar');
+      await tester.tap(find.text('0'));
+      await tester.pump(const Duration(milliseconds: 300));
+      await tester.tap(find.text('Enviar'));
+      await esperar(tester);
+      expect(repo.elegidos, [(BigInt.two, 0)]);
+    });
+
+    testWidgets('gestión: la de escala muestra su tipo y su promedio', (tester) async {
+      final errores = await abrir(tester, const PreguntasSemanaScreen(), ancho: 1400, repo: ExamenesFalso());
+      expect(errores, isEmpty, reason: detalle(errores));
+      expect(find.text('Escala del 1 al 5'), findsOneWidget);
+      expect(find.text('Promedio 3,7'), findsOneWidget);
+      expect(find.text('Abierta'), findsNWidgets(3));
+    });
+
+    testWidgets('gestión en el teléfono: el tipo y el promedio van en la tarjeta', (tester) async {
+      final errores = await abrir(tester, const PreguntasSemanaScreen(), ancho: 390, repo: ExamenesFalso());
+      expect(errores, isEmpty, reason: detalle(errores));
+      await tester.scrollUntilVisible(find.text('Escala del 1 al 5'), 200, scrollable: find.byType(Scrollable).last);
+      expect(find.textContaining('promedio 3,7'), findsOneWidget);
+    });
+
+    testWidgets('respuestas de escala: promedio, una barra por número y lo que eligió cada uno', (tester) async {
+      final repo = ExamenesFalso();
+      await abrir(tester, const PreguntasSemanaScreen(), ancho: 1400, repo: repo);
+      await tester.tap(find.text('Del 1 al 5, ¿cómo ves el ambiente laboral?'));
+      await esperar(tester);
+      expect(find.text('Cómo respondieron'), findsOneWidget);
+      expect(find.text('3,7'), findsOneWidget, reason: 'el promedio');
+      expect(find.text('1 · 33,3 %'), findsNWidgets(3));
+      expect(find.text('0 · 0 %'), findsNWidgets(2));
+      expect(find.text('Lo que eligió cada uno'), findsOneWidget);
+      expect(find.text('de 5 · Excelente'), findsOneWidget, reason: 'HOWARD eligió 5');
+      expect(find.text('HOWARD ESCOBAR ROGER'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('editor: de escala con el rango propuesto, etiquetas y vista previa', (tester) async {
+      final repo = ExamenesFalso();
+      await abrir(tester, const PreguntasSemanaScreen(), ancho: 1400, repo: repo);
+      await tester.tap(find.text('Nueva pregunta'));
+      await esperar(tester, 3);
+      expect(find.byType(SelectorEscalaSemana), findsNothing, reason: 'abierta por defecto');
+
+      await tester.tap(find.text('Escala'));
+      await tester.pump();
+      expect(find.text('Cada uno elige un número de la escala.'), findsOneWidget);
+      expect(find.byType(SelectorEscalaSemana), findsOneWidget, reason: 'la vista previa con los botones');
+      await tester.enterText(find.widgetWithText(TextField, 'Qué quieres preguntar'), '¿Cómo ves el ambiente laboral?');
+      await tester.enterText(find.widgetWithText(TextField, 'Qué significa el 5 (opcional)'), 'Excelente');
+      await tester.pump();
+      expect(find.text('Excelente'), findsNWidgets(2), reason: 'en el campo y bajo el 5 de la vista previa');
+
+      await tester.tap(find.text('Publicar'));
+      await esperar(tester, 3);
+      final g = repo.ultimaGuardadaEntidad!;
+      expect(g.esEscala, isTrue);
+      expect((g.escalaMin, g.escalaMax), (1, 5));
+      expect(g.etiquetaMin, isEmpty);
+      expect(g.etiquetaMax, 'Excelente');
+    });
+
+    testWidgets('editor: con respuestas no deja cambiar el tipo ni la escala', (tester) async {
+      final repo = ExamenesFalso();
+      final errores = await abrir(
+        tester,
+        EditorPreguntaSemana(completa: true, pregunta: repo.preguntasSemana.last),
+        ancho: 390,
+        repo: repo,
+      );
+      expect(errores, isEmpty, reason: detalle(errores));
+      expect(find.text('Ya tiene respuestas: el tipo y la escala no cambian.'), findsOneWidget);
+      final tipo = tester.widget<SegmentedButton<String>>(find.byType(SegmentedButton<String>));
+      expect(tipo.onSelectionChanged, isNull);
+      expect(tipo.selected, {'E'});
     });
   });
 }

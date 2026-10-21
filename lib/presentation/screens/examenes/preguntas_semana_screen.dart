@@ -1,6 +1,6 @@
-/// Preguntas de la semana (`tcpeExamenes/PreguntaSemana`, v12): una pregunta libre
-/// («¿Qué tal tu día?») que cada empleado ve en el inicio y responde si quiere.
-/// Se publica con su plazo y se ve qué respondió cada uno. Las reglas, en el SP.
+/// Preguntas de la semana (`tcpeExamenes/PreguntaSemana`, v12/v13): una pregunta
+/// abierta («¿Qué tal tu día?») o de escala que cada empleado ve en el inicio y
+/// responde si quiere. Se publica con su plazo y se ve qué respondió cada uno.
 library;
 
 import 'package:flutter/material.dart';
@@ -60,8 +60,9 @@ class PreguntasSemanaScreen extends ConsumerWidget {
                   titulo: 'Preguntas de la semana',
                   icono: Icons.forum_outlined,
                   detalle:
-                      'Una pregunta que cada empleado ve en su inicio, como «¿Qué tal tu día?». Responder es '
-                      'opcional y aquí ves lo que escribió cada uno.',
+                      'Una pregunta que cada empleado ve en su inicio: abierta, como «¿Qué tal tu día?», o de '
+                      'escala, como «Del 1 al 5, ¿cómo ves el ambiente laboral?». Responder es opcional y aquí '
+                      'ves lo que respondió cada uno.',
                   compacto: compacto,
                   acciones: [
                     IconButton(
@@ -115,7 +116,8 @@ class PreguntasSemanaScreen extends ConsumerWidget {
                                     titulo: 'Todavía no publicaste ninguna',
                                     detalle:
                                         'Escribe una pregunta, como «¿Qué tal tu día?»: cada empleado la ve en su '
-                                        'inicio y, si quiere, responde con sus palabras.',
+                                        'inicio y, si quiere, responde con sus palabras o con un número de una '
+                                        'escala.',
                                     accion: 'Nueva pregunta',
                                     iconoAccion: Icons.add,
                                     onAccion: () => _editar(context, ref, null),
@@ -140,7 +142,23 @@ class PreguntasSemanaScreen extends ConsumerWidget {
                                   CeldaTexto(oGuion(p.tituloMostrado ?? p.titulo), apagado: true),
                                 ],
                               ),
-                              flex: 8,
+                              flex: 7,
+                            ),
+                            ColumnaExamen(
+                              'Tipo',
+                              (p) => Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  PastillaTipoSemana(p),
+                                  if (p.esEscala && p.promedio != null)
+                                    Padding(
+                                      padding: const EdgeInsets.only(top: 2),
+                                      child: CeldaTexto('Promedio ${promedioSemanaTexto(p.promedio)}', apagado: true),
+                                    ),
+                                ],
+                              ),
+                              flex: 3,
                             ),
                             ColumnaExamen(
                               'Plazo',
@@ -202,12 +220,22 @@ class PreguntasSemanaScreen extends ConsumerWidget {
                                   const SizedBox(height: Esp.xs),
                                   Text(oGuion(p.pregunta), style: Theme.of(context).textTheme.titleSmall),
                                   const SizedBox(height: Esp.xs),
-                                  Text(
-                                    [
-                                      plazoSemanaTexto(p.fechaInicio, p.fechaFin),
-                                      '${p.respuestas} ${p.respuestas == 1 ? 'respuesta' : 'respuestas'}',
-                                    ].join(' · '),
-                                    style: context.apagado(),
+                                  Wrap(
+                                    spacing: Esp.s,
+                                    runSpacing: Esp.xs,
+                                    crossAxisAlignment: WrapCrossAlignment.center,
+                                    children: [
+                                      PastillaTipoSemana(p),
+                                      Text(
+                                        [
+                                          plazoSemanaTexto(p.fechaInicio, p.fechaFin),
+                                          '${p.respuestas} ${p.respuestas == 1 ? 'respuesta' : 'respuestas'}',
+                                          if (p.esEscala && p.promedio != null)
+                                            'promedio ${promedioSemanaTexto(p.promedio)}',
+                                        ].join(' · '),
+                                        style: context.apagado(),
+                                      ),
+                                    ],
                                   ),
                                 ],
                               ),

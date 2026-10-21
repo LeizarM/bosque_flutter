@@ -1,13 +1,14 @@
 import 'package:bosque_flutter/data/models/tcpe_json.dart';
 import 'package:bosque_flutter/domain/entities/tcpe_rspta_semana_entity.dart';
 
-/// `tcpe_rsptaSemana` (v12): columnas de `p_list_tcpe_RsptaSemana` L más
+/// `tcpe_rsptaSemana` (v12/v13): columnas de `p_list_tcpe_RsptaSemana` L más
 /// `nombreUsuario`.
 class TcpeRsptaSemanaModel {
   final BigInt codRsptaSemana;
   final BigInt? codPreguntaSemana;
   final BigInt? codUsuario;
   final String? respuesta;
+  final int? valor;
   final BigInt? audUsuario;
   final DateTime? audFecha;
   final String? nombreUsuario;
@@ -17,6 +18,7 @@ class TcpeRsptaSemanaModel {
     this.codPreguntaSemana,
     this.codUsuario,
     this.respuesta,
+    this.valor,
     this.audUsuario,
     this.audFecha,
     this.nombreUsuario,
@@ -27,6 +29,7 @@ class TcpeRsptaSemanaModel {
     codPreguntaSemana: tcpeBigInt(json['codPreguntaSemana']),
     codUsuario: tcpeBigInt(json['codUsuario']),
     respuesta: tcpeTexto(json['respuesta']),
+    valor: tcpeInt(json['valor']),
     audUsuario: tcpeBigInt(json['audUsuario']),
     audFecha: tcpeFecha(json['audFecha']),
     nombreUsuario: tcpeTexto(json['nombreUsuario']),
@@ -37,6 +40,7 @@ class TcpeRsptaSemanaModel {
     'codPreguntaSemana': codPreguntaSemana?.toInt(),
     'codUsuario': codUsuario?.toInt(),
     'respuesta': respuesta,
+    'valor': valor,
     'audUsuario': audUsuario?.toInt(),
     'audFecha': tcpeFechaHoraJson(audFecha),
     'nombreUsuario': nombreUsuario,
@@ -47,6 +51,7 @@ class TcpeRsptaSemanaModel {
     codPreguntaSemana: codPreguntaSemana,
     codUsuario: codUsuario,
     respuesta: respuesta,
+    valor: valor,
     audUsuario: audUsuario,
     audFecha: audFecha,
     nombreUsuario: nombreUsuario,
@@ -57,6 +62,7 @@ class TcpeRsptaSemanaModel {
     codPreguntaSemana: e.codPreguntaSemana,
     codUsuario: e.codUsuario,
     respuesta: e.respuesta,
+    valor: e.valor,
     audUsuario: e.audUsuario,
     audFecha: e.audFecha,
     nombreUsuario: e.nombreUsuario,

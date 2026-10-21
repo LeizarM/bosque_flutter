@@ -16,6 +16,7 @@ import 'package:bosque_flutter/domain/entities/tcpe_monitor_examen_entity.dart';
 import 'package:bosque_flutter/domain/entities/tcpe_monitor_lote_entity.dart';
 import 'package:bosque_flutter/domain/entities/tcpe_pedido_examenes_entity.dart';
 import 'package:bosque_flutter/domain/entities/tcpe_pregunta_importar_entity.dart';
+import 'package:bosque_flutter/domain/entities/tcpe_escala_semana_entity.dart';
 import 'package:bosque_flutter/domain/entities/tcpe_pregunta_semana_entity.dart';
 import 'package:bosque_flutter/domain/entities/tcpe_pregunta_semana_vigente_entity.dart';
 import 'package:bosque_flutter/domain/entities/tcpe_ranking_pregunta_entity.dart';
@@ -185,8 +186,9 @@ abstract class ExamenesRepository implements RendicionExamenRepository {
   /// usuario sale del token). Lista vacía si no hay ninguna.
   Future<List<TcpePreguntaSemanaVigenteEntity>> preguntasSemanaVigentes();
 
-  /// Responde una vez con un texto; devuelve el agradecimiento del SP.
-  Future<String?> responderPreguntaSemana(BigInt codPreguntaSemana, String respuesta);
+  /// Responde una vez: con un texto si es abierta o con [valor] si es de
+  /// escala. Devuelve el agradecimiento del SP.
+  Future<String?> responderPreguntaSemana(BigInt codPreguntaSemana, {String? respuesta, int? valor});
 
   /// Gestión: todas, o solo las activas o inactivas.
   Future<List<TcpePreguntaSemanaEntity>> listarPreguntasSemana({bool? activo});
@@ -198,8 +200,11 @@ abstract class ExamenesRepository implements RendicionExamenRepository {
 
   Future<String?> eliminarPreguntaSemana(BigInt codPreguntaSemana);
 
-  /// Quién respondió y qué escribió, en el orden en que respondieron.
+  /// Quién respondió y qué (el texto o el número), en el orden en que respondieron.
   Future<List<TcpeRespondioSemanaEntity>> respuestasPreguntaSemana(BigInt codPreguntaSemana);
+
+  /// De escala: cuántos eligieron cada número, con el promedio; vacía si es abierta.
+  Future<List<TcpeEscalaSemanaEntity>> distribucionPreguntaSemana(BigInt codPreguntaSemana);
 
   /// Quita una respuesta (la persona puede volver a responder); devuelve el mensaje del SP.
   Future<String?> quitarRespuestaSemana(BigInt codRsptaSemana);

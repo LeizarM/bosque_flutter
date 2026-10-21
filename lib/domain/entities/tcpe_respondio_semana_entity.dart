@@ -1,5 +1,5 @@
-/// Quién respondió una pregunta de la semana y qué escribió
-/// (`p_list_tcpe_PreguntaSemana` R): nombre como en el login y cargo actual.
+/// Quién respondió una pregunta de la semana y qué: el texto o, si es de escala,
+/// el número (`p_list_tcpe_PreguntaSemana` R). Nombre como en el login y cargo actual.
 class TcpeRespondioSemanaEntity {
   final BigInt codRsptaSemana;
   final BigInt? codUsuario;
@@ -7,6 +7,7 @@ class TcpeRespondioSemanaEntity {
   final String? nombreCompleto;
   final String? cargo;
   final String? respuesta;
+  final int? valor;
   final DateTime? fechaRespuesta;
 
   const TcpeRespondioSemanaEntity({
@@ -16,6 +17,7 @@ class TcpeRespondioSemanaEntity {
     this.nombreCompleto,
     this.cargo,
     this.respuesta,
+    this.valor,
     this.fechaRespuesta,
   });
 
@@ -26,6 +28,7 @@ class TcpeRespondioSemanaEntity {
     String? nombreCompleto,
     String? cargo,
     String? respuesta,
+    int? valor,
     DateTime? fechaRespuesta,
   }) => TcpeRespondioSemanaEntity(
     codRsptaSemana: codRsptaSemana ?? this.codRsptaSemana,
@@ -34,6 +37,7 @@ class TcpeRespondioSemanaEntity {
     nombreCompleto: nombreCompleto ?? this.nombreCompleto,
     cargo: cargo ?? this.cargo,
     respuesta: respuesta ?? this.respuesta,
+    valor: valor ?? this.valor,
     fechaRespuesta: fechaRespuesta ?? this.fechaRespuesta,
   );
 }

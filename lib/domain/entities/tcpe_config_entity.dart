@@ -79,4 +79,16 @@ class TcpeConfiguracion {
     final d = _entero('preguntaSemanaDias', 7);
     return d < 1 ? 1 : d;
   }
+
+  /// v13: el mayor fin que admite una escala (la tabla admite hasta 10).
+  int get escalaTopeSemana => _entero('escalaTopeSemana', 10).clamp(1, 10);
+
+  /// v13: la escala que propone una pregunta de la semana nueva; el fin siempre
+  /// queda después del inicio.
+  int get escalaMinSemana => _entero('escalaMinSemana', 1).clamp(0, escalaTopeSemana - 1);
+
+  int get escalaMaxSemana {
+    final m = _entero('escalaMaxSemana', 5).clamp(0, escalaTopeSemana);
+    return m > escalaMinSemana ? m : escalaMinSemana + 1;
+  }
 }

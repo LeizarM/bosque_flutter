@@ -22,6 +22,7 @@ import 'package:bosque_flutter/data/models/tcpe_monitor_examen_model.dart';
 import 'package:bosque_flutter/data/models/tcpe_monitor_lote_model.dart';
 import 'package:bosque_flutter/data/models/tcpe_pedido_examenes_model.dart';
 import 'package:bosque_flutter/data/models/tcpe_pregunta_importar_model.dart';
+import 'package:bosque_flutter/data/models/tcpe_escala_semana_model.dart';
 import 'package:bosque_flutter/data/models/tcpe_pregunta_semana_model.dart';
 import 'package:bosque_flutter/data/models/tcpe_pregunta_semana_vigente_model.dart';
 import 'package:bosque_flutter/data/models/tcpe_ranking_pregunta_model.dart';
@@ -48,6 +49,7 @@ import 'package:bosque_flutter/domain/entities/tcpe_monitor_examen_entity.dart';
 import 'package:bosque_flutter/domain/entities/tcpe_monitor_lote_entity.dart';
 import 'package:bosque_flutter/domain/entities/tcpe_pedido_examenes_entity.dart';
 import 'package:bosque_flutter/domain/entities/tcpe_pregunta_importar_entity.dart';
+import 'package:bosque_flutter/domain/entities/tcpe_escala_semana_entity.dart';
 import 'package:bosque_flutter/domain/entities/tcpe_pregunta_semana_entity.dart';
 import 'package:bosque_flutter/domain/entities/tcpe_pregunta_semana_vigente_entity.dart';
 import 'package:bosque_flutter/domain/entities/tcpe_ranking_pregunta_entity.dart';
@@ -465,9 +467,13 @@ class ExamenesImpl extends TcpeApiBase
   );
 
   @override
-  Future<String?> responderPreguntaSemana(BigInt codPreguntaSemana, String respuesta) => postMensaje(
+  Future<String?> responderPreguntaSemana(BigInt codPreguntaSemana, {String? respuesta, int? valor}) => postMensaje(
     AppConstants.tcpePreguntaSemanaResponder,
-    {'codPreguntaSemana': codPreguntaSemana.toInt(), 'respuesta': respuesta},
+    {
+      'codPreguntaSemana': codPreguntaSemana.toInt(),
+      if (respuesta != null) 'respuesta': respuesta,
+      if (valor != null) 'valor': valor,
+    },
     errorMessage: 'No se pudo guardar tu respuesta.',
   );
 
@@ -505,6 +511,14 @@ class ExamenesImpl extends TcpeApiBase
         endpoint: AppConstants.tcpePreguntaSemanaRespuestas,
         data: {'codPreguntaSemana': codPreguntaSemana.toInt()},
         fromJson: (j) => TcpeRespondioSemanaModel.fromJson(j).toEntity(),
+      );
+
+  @override
+  Future<List<TcpeEscalaSemanaEntity>> distribucionPreguntaSemana(BigInt codPreguntaSemana) =>
+      postAndReturnList(
+        endpoint: AppConstants.tcpePreguntaSemanaDistribucion,
+        data: {'codPreguntaSemana': codPreguntaSemana.toInt()},
+        fromJson: (j) => TcpeEscalaSemanaModel.fromJson(j).toEntity(),
       );
 
   @override

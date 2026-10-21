@@ -1,6 +1,6 @@
-/// Alta y edición de una pregunta de la semana: el texto libre que verá cada
-/// empleado en su inicio, el plazo y un título opcional, con la vista previa del
-/// globo. Las reglas las aplica `p_abm_tcpe_PreguntaSemana`.
+/// Alta y edición de una pregunta de la semana: el texto que verá cada empleado
+/// en su inicio, cómo se responde (abierta o de escala), el plazo y un título
+/// opcional, con la vista previa. Las reglas las aplica `p_abm_tcpe_PreguntaSemana`.
 library;
 
 import 'package:flutter/material.dart';
@@ -27,6 +27,9 @@ Future<bool> abrirEditorPreguntaSemana(BuildContext context, {TcpePreguntaSemana
 
 DateTime _soloDia(DateTime f) => DateTime(f.year, f.month, f.day);
 
+/// Desde este ancho las dos etiquetas de la escala van lado a lado.
+const double _anchoEtiquetasJuntas = 480;
+
 class EditorPreguntaSemana extends ConsumerStatefulWidget {
   const EditorPreguntaSemana({super.key, required this.completa, this.pregunta});
 
@@ -42,10 +45,19 @@ class EditorPreguntaSemana extends ConsumerStatefulWidget {
 class _EditorPreguntaSemanaState extends ConsumerState<EditorPreguntaSemana> {
   final _pregunta = TextEditingController();
   final _titulo = TextEditingController();
+  final _etiquetaMin = TextEditingController();
+  final _etiquetaMax = TextEditingController();
   late DateTime _desde;
 
   /// Null = la propuesta: inicio + `preguntaSemanaDias` − 1, que sigue al inicio.
   DateTime? _hasta;
+
+  /// `A` abierta o `E` escala.
+  late String _tipo;
+
+  /// Null = el de la pregunta o, en una nueva, el que propone la configuración.
+  int? _min;
+  int? _max;
   bool _guardando = false;
 
   bool get _editando => widget.pregunta != null;
@@ -58,16 +70,32 @@ class _EditorPreguntaSemanaState extends ConsumerState<EditorPreguntaSemana> {
     _hasta = p?.fechaFin == null ? null : _soloDia(p!.fechaFin!);
     _pregunta.text = p?.pregunta ?? '';
     _titulo.text = p?.titulo ?? '';
+    _tipo = p?.esEscala == true ? 'E' : 'A';
+    _min = p?.escalaMin;
+    _max = p?.escalaMax;
+    _etiquetaMin.text = p?.etiquetaMin ?? '';
+    _etiquetaMax.text = p?.etiquetaMax ?? '';
   }
 
   @override
   void dispose() {
     _pregunta.dispose();
     _titulo.dispose();
+    _etiquetaMin.dispose();
+    _etiquetaMax.dispose();
     super.dispose();
   }
 
   DateTime _hastaDe(TcpeConfiguracion cfg) => _hasta ?? _desde.add(Duration(days: cfg.preguntaSemanaDias - 1));
+
+  int _minDe(TcpeConfiguracion cfg) => (_min ?? cfg.escalaMinSemana).clamp(0, cfg.escalaTopeSemana - 1);
+
+  /// Siempre después del inicio y dentro del tope.
+  int _maxDe(TcpeConfiguracion cfg) {
+    final min = _minDe(cfg);
+    final m = (_max ?? cfg.escalaMaxSemana).clamp(0, cfg.escalaTopeSemana);
+    return m > min ? m : min + 1;
+  }
 
   Future<void> _elegirFecha(bool desde, TcpeConfiguracion cfg) async {
     final actual = desde ? _desde : _hastaDe(cfg);
@@ -84,9 +112,15 @@ class _EditorPreguntaSemanaState extends ConsumerState<EditorPreguntaSemana> {
   Future<void> _guardar(TcpeConfiguracion cfg) async {
     setState(() => _guardando = true);
     final base = widget.pregunta ?? TcpePreguntaSemanaEntity(codPreguntaSemana: BigInt.zero);
+    final escala = _tipo == 'E';
     final pregunta = base.copyWith(
       pregunta: _pregunta.text.trim(),
       titulo: _titulo.text.trim(),
+      tipo: _tipo,
+      escalaMin: escala ? _minDe(cfg) : null,
+      escalaMax: escala ? _maxDe(cfg) : null,
+      etiquetaMin: escala ? _etiquetaMin.text.trim() : null,
+      etiquetaMax: escala ? _etiquetaMax.text.trim() : null,
       fechaInicio: _desde,
       fechaFin: _hastaDe(cfg),
     );
@@ -108,6 +142,11 @@ class _EditorPreguntaSemanaState extends ConsumerState<EditorPreguntaSemana> {
     final respuestas = widget.pregunta?.respuestas ?? 0;
     final texto = _pregunta.text.trim();
     final titulo = _titulo.text.trim();
+    final escala = _tipo == 'E';
+    // Con respuestas el SP no deja cambiar el tipo ni la escala: aquí ni se ofrece.
+    final bloqueado = respuestas > 0;
+    final min = _minDe(cfg);
+    final max = _maxDe(cfg);
     const borde = OutlineInputBorder();
 
     return MarcoFormulario(
@@ -134,10 +173,7 @@ class _EditorPreguntaSemanaState extends ConsumerState<EditorPreguntaSemana> {
         children: [
           Text('Pregunta', style: context.tituloSeccion()),
           const SizedBox(height: Esp.xs),
-          Text(
-            'Cada empleado la ve en su inicio y, si quiere, responde con sus palabras.',
-            style: context.apagado(),
-          ),
+          Text('Cada empleado la ve en su inicio y, si quiere, la responde.', style: context.apagado()),
           if (respuestas > 0) ...[
             const SizedBox(height: Esp.xs),
             Text(
@@ -153,9 +189,10 @@ class _EditorPreguntaSemanaState extends ConsumerState<EditorPreguntaSemana> {
             maxLength: 500,
             textCapitalization: TextCapitalization.sentences,
             onChanged: (_) => setState(() {}),
-            decoration: const InputDecoration(
+            decoration: InputDecoration(
               labelText: 'Qué quieres preguntar',
-              hintText: 'Por ejemplo: ¿Qué tal tu día?',
+              hintText:
+                  escala ? 'Por ejemplo: ¿Cómo ves el ambiente laboral?' : 'Por ejemplo: ¿Qué tal tu día?',
               alignLabelWithHint: true,
               border: borde,
             ),
@@ -171,6 +208,110 @@ class _EditorPreguntaSemanaState extends ConsumerState<EditorPreguntaSemana> {
               border: borde,
             ),
           ),
+          const SizedBox(height: Esp.l),
+          Text('Cómo se responde', style: context.tituloSeccion()),
+          const SizedBox(height: Esp.s),
+          SegmentedButton<String>(
+            segments: const [
+              ButtonSegment(value: 'A', icon: Icon(Icons.notes), label: Text('Abierta')),
+              ButtonSegment(value: 'E', icon: Icon(Icons.linear_scale), label: Text('Escala')),
+            ],
+            selected: {_tipo},
+            showSelectedIcon: false,
+            onSelectionChanged: bloqueado ? null : (s) => setState(() => _tipo = s.first),
+          ),
+          const SizedBox(height: Esp.xs),
+          Text(
+            bloqueado
+                ? 'Ya tiene respuestas: el tipo y la escala no cambian.'
+                : escala
+                ? 'Cada uno elige un número de la escala.'
+                : 'Cada uno escribe con sus palabras.',
+            style: context.apagado(),
+          ),
+          if (escala) ...[
+            const SizedBox(height: Esp.m),
+            Wrap(
+              spacing: Esp.m,
+              runSpacing: Esp.m,
+              children: [
+                SizedBox(
+                  width: 140,
+                  child: DropdownButtonFormField<int>(
+                    key: ValueKey('desde-$min'),
+                    value: min,
+                    decoration: const InputDecoration(labelText: 'Desde', border: borde),
+                    items: [
+                      for (var v = 0; v < cfg.escalaTopeSemana; v++) DropdownMenuItem(value: v, child: Text('$v')),
+                    ],
+                    onChanged:
+                        bloqueado
+                            ? null
+                            : (v) {
+                              if (v == null) return;
+                              setState(() {
+                                _min = v;
+                                if (max <= v) _max = v + 1;
+                              });
+                            },
+                  ),
+                ),
+                SizedBox(
+                  width: 140,
+                  child: DropdownButtonFormField<int>(
+                    key: ValueKey('hasta-$min-$max'),
+                    value: max,
+                    decoration: const InputDecoration(labelText: 'Hasta', border: borde),
+                    items: [
+                      for (var v = min + 1; v <= cfg.escalaTopeSemana; v++)
+                        DropdownMenuItem(value: v, child: Text('$v')),
+                    ],
+                    onChanged: bloqueado ? null : (v) => setState(() => _max = v),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: Esp.m),
+            LayoutBuilder(
+              builder: (context, r) {
+                final campoMin = TextField(
+                  controller: _etiquetaMin,
+                  inputFormatters: [LengthLimitingTextInputFormatter(40)],
+                  onChanged: (_) => setState(() {}),
+                  decoration: InputDecoration(
+                    labelText: 'Qué significa el $min (opcional)',
+                    hintText: 'Por ejemplo: Muy mal',
+                    border: borde,
+                  ),
+                );
+                final campoMax = TextField(
+                  controller: _etiquetaMax,
+                  inputFormatters: [LengthLimitingTextInputFormatter(40)],
+                  onChanged: (_) => setState(() {}),
+                  decoration: InputDecoration(
+                    labelText: 'Qué significa el $max (opcional)',
+                    hintText: 'Por ejemplo: Excelente',
+                    border: borde,
+                  ),
+                );
+                if (r.maxWidth >= _anchoEtiquetasJuntas) {
+                  return Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(child: campoMin),
+                      const SizedBox(width: Esp.m),
+                      Expanded(child: campoMax),
+                    ],
+                  );
+                }
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [campoMin, const SizedBox(height: Esp.m), campoMax],
+                );
+              },
+            ),
+          ],
           const SizedBox(height: Esp.l),
           Text('Plazo para responder', style: context.tituloSeccion()),
           const SizedBox(height: Esp.s),
@@ -196,7 +337,14 @@ class _EditorPreguntaSemanaState extends ConsumerState<EditorPreguntaSemana> {
           const SizedBox(height: Esp.l),
           Text('Así se verá en el inicio', style: context.tituloSeccion()),
           const SizedBox(height: Esp.s),
-          _VistaPrevia(titulo: titulo.isEmpty ? cfg.tituloPreguntaSemana : titulo, pregunta: texto),
+          _VistaPrevia(
+            titulo: titulo.isEmpty ? cfg.tituloPreguntaSemana : titulo,
+            pregunta: texto,
+            escala:
+                escala
+                    ? (min: min, max: max, etiquetaMin: _etiquetaMin.text, etiquetaMax: _etiquetaMax.text)
+                    : null,
+          ),
         ],
       ),
     );
@@ -205,14 +353,18 @@ class _EditorPreguntaSemanaState extends ConsumerState<EditorPreguntaSemana> {
 
 /// La tarjeta del inicio en chico, con lo que se va escribiendo.
 class _VistaPrevia extends StatelessWidget {
-  const _VistaPrevia({required this.titulo, required this.pregunta});
+  const _VistaPrevia({required this.titulo, required this.pregunta, this.escala});
 
   final String titulo;
   final String pregunta;
 
+  /// De escala: el rango y las etiquetas, para mostrar los botones.
+  final ({int min, int max, String etiquetaMin, String etiquetaMax})? escala;
+
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
+    final e = escala;
     return ExcludeSemantics(
       child: Container(
         padding: const EdgeInsets.all(Esp.m),
@@ -237,6 +389,15 @@ class _VistaPrevia extends StatelessWidget {
                     texto: pregunta.isEmpty ? 'Escribe la pregunta arriba.' : pregunta,
                     ancho: r.maxWidth * 0.85,
                   ),
+                  if (e != null) ...[
+                    const SizedBox(height: Esp.m),
+                    SelectorEscalaSemana(
+                      min: e.min,
+                      max: e.max,
+                      etiquetaMin: e.etiquetaMin,
+                      etiquetaMax: e.etiquetaMax,
+                    ),
+                  ],
                 ],
               ),
         ),
