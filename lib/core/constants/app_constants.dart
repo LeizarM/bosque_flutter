@@ -314,10 +314,74 @@ class AppConstants {
   static const String rrhhRegistrarRelacionLaboral = '/rrhh/registroRelEmp';
   static const String bncGetBancos = '/banco/bancosX';
   static const String bncGetBancosPlanilla = '/banco/bancosPlanilla';
+  // La pantalla de bancos: cada banco con su uso (p_list_Banco 'P').
+  static const String bncListarConUso = '/banco/listar';
   // Escrituras de bancos (vista 43). 201, data = codBanco. Las lecturas de
   // arriba devuelven una lista pelada y su forma no cambia.
   static const String bncRegistrar = '/banco/registrar';
   static const String bncEliminar = '/banco/eliminar';
+  // Tipos de teléfono (vista 28). Listar: 200 o 204. Escrituras: 201, data = id
+  // y message = el texto que redactó p_abm_TipoTelefono.
+  static const String tipoTelefonoListar = '/tipo-telefono/listar';
+  static const String tipoTelefonoRegistrar = '/tipo-telefono/registrar';
+  static const String tipoTelefonoEliminar = '/tipo-telefono/eliminar';
+  // Escalas de niveles jerárquicos (vista 15). Mismo contrato; el texto lo
+  // redacta p_abm_NivelJerarquico.
+  static const String nivelJerarquicoListar = '/nivel-jerarquico/listar';
+  static const String nivelJerarquicoRegistrar = '/nivel-jerarquico/registrar';
+  static const String nivelJerarquicoEliminar = '/nivel-jerarquico/eliminar';
+  // Ubicación geográfica (vista 26): países, ciudades y zonas. Las lecturas de
+  // ciudades y zonas reciben {id: codPadre}; 0 trae todas.
+  static const String _ubicacion = '/ubicacion-geografica';
+  static const String ubicacionPaisesListar = '$_ubicacion/paises/listar';
+  static const String ubicacionPaisesRegistrar = '$_ubicacion/paises/registrar';
+  static const String ubicacionPaisesEliminar = '$_ubicacion/paises/eliminar';
+  static const String ubicacionCiudadesListar = '$_ubicacion/ciudades/listar';
+  static const String ubicacionCiudadesRegistrar =
+      '$_ubicacion/ciudades/registrar';
+  static const String ubicacionCiudadesEliminar =
+      '$_ubicacion/ciudades/eliminar';
+  static const String ubicacionZonasListar = '$_ubicacion/zonas/listar';
+  static const String ubicacionZonasRegistrar = '$_ubicacion/zonas/registrar';
+  static const String ubicacionZonasEliminar = '$_ubicacion/zonas/eliminar';
+  // Funciones por módulo (vista 57) y su asignación a empleados (vista 56).
+  // Cada pantalla tiene sus propios combos: el servidor exige su pantalla.
+  static const String funcionesModuloModulos = '/funciones-modulo/modulos';
+  static const String funcionesModuloListar = '/funciones-modulo/listar';
+  static const String funcionesModuloRegistrar = '/funciones-modulo/registrar';
+  static const String funcionesModuloEliminar = '/funciones-modulo/eliminar';
+  static const String asignacionFuncionesListar = '/asignacion-funciones/listar';
+  static const String asignacionFuncionesModulos =
+      '/asignacion-funciones/modulos';
+  static const String asignacionFuncionesFunciones =
+      '/asignacion-funciones/funciones';
+  static const String asignacionFuncionesSucursales =
+      '/asignacion-funciones/sucursales';
+  static const String asignacionFuncionesEmpleados =
+      '/asignacion-funciones/empleados';
+  static const String asignacionFuncionesRegistrar =
+      '/asignacion-funciones/registrar';
+  // Agenda del Dashboard: empleados vigentes con cargo, sucursal y números
+  // corporativos (p_list_RelEmplEmpr 'G'). 200 o 204.
+  static const String agendaEmpleados = '/agenda/empleados';
+  // Cambio de la propia contraseña (tbUsuario/cpassword). Cuerpo {actual,
+  // nueva, confirmacion}; 201 con el texto del servidor, 400 si algo falla.
+  static const String cuentaCambiarClave = '/auth/cambiarClave';
+  // ABM de empresas y sucursales (vista 12). Las lecturas de sucursales
+  // reciben {id: codEmpresa}; 0 trae todas.
+  static const String _empSuc = '/empresas-sucursales';
+  static const String empresasSucursalesEmpresasListar = '$_empSuc/empresas/listar';
+  static const String empresasSucursalesEmpresasRegistrar =
+      '$_empSuc/empresas/registrar';
+  static const String empresasSucursalesEmpresasEliminar =
+      '$_empSuc/empresas/eliminar';
+  static const String empresasSucursalesSucursalesListar =
+      '$_empSuc/sucursales/listar';
+  static const String empresasSucursalesSucursalesRegistrar =
+      '$_empSuc/sucursales/registrar';
+  static const String empresasSucursalesSucursalesEliminar =
+      '$_empSuc/sucursales/eliminar';
+  static const String empresasSucursalesCiudades = '$_empSuc/ciudades';
   static const String rrhhGetCuentaBancoXEmpleado =
       '/rrhh/obtenerNroCuentaBanco';
   static const String rrhhRegistrarCuentaBancaria = '/rrhh/registroCuentaBanco';
@@ -2141,6 +2205,35 @@ class AppConstants {
   // tb_vista codVista 43 (padre 140), tal cual esta en la base: la pantalla de
   // Bancos del JSF viejo. Mismo motivo que la de arriba.
   static const String rutaBancos = 'tchBanco/banco';
+
+  // tb_vista codVista 28 (padre 5), tal cual esta en la base: «Tipos de
+  // Telefono» del JSF viejo. Mismo motivo que la de arriba.
+  static const String rutaTipoTelefono = 'trhtipoTelefono/tipoTelefono';
+
+  // tb_vista codVista 15 (padre 5): «Niveles Jerarquicos» del JSF viejo.
+  static const String rutaNivelJerarquico = 'tbNivelJerarquico/nivelJerarquico';
+
+  // tb_vista codVista 26 (padre 5): «Ubicaciones Geograficos» del JSF viejo.
+  static const String rutaUbicacionGeografica =
+      'trhUbicacionGeografica/ubicacionGeografica';
+
+  // tb_vista codVista 57 (padre 9) y 56 (padre 140): «Asigna Funciones Por
+  // Modulo» y «Asignar Funciones al Empleado» del JSF viejo.
+  static const String rutaFuncionesModulo = 'tbFuncionModulo/FuncionesPorModulo';
+  static const String rutaAsignacionFunciones =
+      'tbAsignaFuncXMod/AsignarFuncionPorModulo';
+
+  // tb_vista codVista 104: «Actualizar Ficha del trabajador». La agenda solo
+  // ofrece abrir la ficha a quien tiene esta pantalla en su menú.
+  // tb_vista codVista 29 (padre 9): «Cambiar Contraseña» del JSF viejo.
+  static const String rutaCambioClave = 'tbUsuario/cpassword';
+
+  // La ficha del trabajador de quien inició sesión (botón «Mi ficha» del
+  // sidebar). No sale de tb_vista: la ve todo usuario con empleado vinculado.
+  static const String rutaMiFicha = 'mi-ficha';
+
+  static const String rutaEmpleadosDependientes =
+      'ted_EmpleadoDependiente/register';
 
   // tb_vista codVista 77 (padre 41 'modCheques'), tal cual esta en la base: la
   // pantalla «Verificar Cheques» del JSF viejo (verificarDepositos.xhtml). No

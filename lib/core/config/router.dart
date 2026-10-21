@@ -662,6 +662,86 @@ final routerProvider = Provider<GoRouter>((ref) {
                     const BancosScreen(),
                   ),
             ),
+            // Tipos de teléfono (trh_tipoTelefono). Reemplaza a
+            // trhtipoTelefono/tipoTelefono.xhtml (codVista 28) con la dirección tal cual.
+            GoRoute(
+              path: '/dashboard/${AppConstants.rutaTipoTelefono}',
+              name: 'trhtipoTelefono',
+              builder:
+                  (context, state) => _pantallaConTitulo(
+                    context,
+                    'Bosque - Tipos de teléfono',
+                    const TipoTelefonoScreen(),
+                  ),
+            ),
+            // Niveles jerárquicos (tb_nivelJerarquico). Reemplaza a
+            // tbNivelJerarquico/nivelJerarquico.xhtml (codVista 15).
+            GoRoute(
+              path: '/dashboard/${AppConstants.rutaNivelJerarquico}',
+              name: 'tbNivelJerarquico',
+              builder:
+                  (context, state) => _pantallaConTitulo(
+                    context,
+                    'Bosque - Niveles jerárquicos',
+                    const NivelJerarquicoScreen(),
+                  ),
+            ),
+            // Ubicación geográfica (trh_pais, trh_ciudad, trh_zona). Reemplaza a
+            // trhUbicacionGeografica/ubicacionGeografica.xhtml (codVista 26).
+            GoRoute(
+              path: '/dashboard/${AppConstants.rutaUbicacionGeografica}',
+              name: 'trhUbicacionGeografica',
+              builder:
+                  (context, state) => _pantallaConTitulo(
+                    context,
+                    'Bosque - Ubicación geográfica',
+                    const UbicacionGeograficaScreen(),
+                  ),
+            ),
+            // Funciones por módulo y su asignación (codVista 57 y 56).
+            GoRoute(
+              path: '/dashboard/${AppConstants.rutaFuncionesModulo}',
+              name: 'tbFuncionModulo',
+              builder:
+                  (context, state) => _pantallaConTitulo(
+                    context,
+                    'Bosque - Funciones por módulo',
+                    const FuncionesModuloScreen(),
+                  ),
+            ),
+            GoRoute(
+              path: '/dashboard/${AppConstants.rutaAsignacionFunciones}',
+              name: 'tbAsignaFuncXMod',
+              builder:
+                  (context, state) => _pantallaConTitulo(
+                    context,
+                    'Bosque - Asignación de funciones',
+                    const AsignacionFuncionesScreen(),
+                  ),
+            ),
+            // Cambio de la propia contraseña (codVista 29).
+            GoRoute(
+              path: '/dashboard/${AppConstants.rutaCambioClave}',
+              name: 'tbUsuarioCpassword',
+              builder:
+                  (context, state) => _pantallaConTitulo(
+                    context,
+                    'Bosque - Cambiar contraseña',
+                    const CambioClaveScreen(),
+                  ),
+            ),
+            // Mi ficha: la ficha del trabajador de quien inició sesión
+            // (botón del sidebar; no es una vista de tb_vista).
+            GoRoute(
+              path: '/dashboard/${AppConstants.rutaMiFicha}',
+              name: 'miFicha',
+              builder:
+                  (context, state) => _pantallaConTitulo(
+                    context,
+                    'Bosque - Mi ficha',
+                    const MiFichaScreen(),
+                  ),
+            ),
             // Verificar Cheques (tch_verificacionDeposito). Reemplaza a
             // tchCheque/verificarDepositos.xhtml (codVista 77, padre 41) con la
             // direccion tal cual, por el mismo motivo.
@@ -1378,6 +1458,50 @@ final routerProvider = Provider<GoRouter>((ref) {
         GoRoute(
           path: '/${AppConstants.rutaBancos}',
           redirect: (context, state) => '/dashboard/${AppConstants.rutaBancos}',
+        ),
+        // TIPOS DE TELÉFONO (trh_tipoTelefono): igual que el de bancos.
+        GoRoute(
+          path: '/${AppConstants.rutaTipoTelefono}',
+          redirect:
+              (context, state) => '/dashboard/${AppConstants.rutaTipoTelefono}',
+        ),
+        // NIVELES JERÁRQUICOS (tb_nivelJerarquico): igual que el de bancos.
+        GoRoute(
+          path: '/${AppConstants.rutaNivelJerarquico}',
+          redirect:
+              (context, state) =>
+                  '/dashboard/${AppConstants.rutaNivelJerarquico}',
+        ),
+        // UBICACIÓN GEOGRÁFICA: igual que el de bancos.
+        GoRoute(
+          path: '/${AppConstants.rutaUbicacionGeografica}',
+          redirect:
+              (context, state) =>
+                  '/dashboard/${AppConstants.rutaUbicacionGeografica}',
+        ),
+        // FUNCIONES POR MÓDULO y ASIGNACIÓN DE FUNCIONES: igual que el de bancos.
+        GoRoute(
+          path: '/${AppConstants.rutaFuncionesModulo}',
+          redirect:
+              (context, state) =>
+                  '/dashboard/${AppConstants.rutaFuncionesModulo}',
+        ),
+        GoRoute(
+          path: '/${AppConstants.rutaAsignacionFunciones}',
+          redirect:
+              (context, state) =>
+                  '/dashboard/${AppConstants.rutaAsignacionFunciones}',
+        ),
+        // CAMBIAR CONTRASEÑA: igual que el de bancos.
+        GoRoute(
+          path: '/${AppConstants.rutaCambioClave}',
+          redirect:
+              (context, state) => '/dashboard/${AppConstants.rutaCambioClave}',
+        ),
+        // MI FICHA: igual que el de bancos.
+        GoRoute(
+          path: '/${AppConstants.rutaMiFicha}',
+          redirect: (context, state) => '/dashboard/${AppConstants.rutaMiFicha}',
         ),
         // VERIFICAR CHEQUES (tch_verificacionDeposito): igual que el de cheques.
         GoRoute(

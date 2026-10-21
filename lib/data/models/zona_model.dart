@@ -17,12 +17,16 @@ class ZonaModel {
   final int codCiudad;
   final String zona;
   final int audUsuario;
+  final String ciudad;
+  final int personas;
 
   ZonaModel({
     required this.codZona,
     required this.codCiudad,
     required this.zona,
     required this.audUsuario,
+    this.ciudad = '',
+    this.personas = 0,
   });
 
   factory ZonaModel.fromJson(Map<String, dynamic> json) => ZonaModel(
@@ -30,6 +34,8 @@ class ZonaModel {
     codCiudad: json["codCiudad"] ?? 0,
     zona: json["zona"] ?? '',
     audUsuario: json["audUsuario"] ?? 0,
+    ciudad: json["ciudad"] ?? '',
+    personas: json["personas"] ?? 0,
   );
 
   Map<String, dynamic> toJson() => {
@@ -43,11 +49,15 @@ class ZonaModel {
     codCiudad: codCiudad,
     zona: zona,
     audUsuario: audUsuario,
+    ciudad: ciudad,
+    personas: personas,
   );
   factory ZonaModel.fromEntity(ZonaEntity entity) => ZonaModel(
     codZona: entity.codZona,
     codCiudad: entity.codCiudad,
     zona: entity.zona,
     audUsuario: entity.audUsuario,
+    ciudad: entity.ciudad,
+    personas: entity.personas,
   );
 }

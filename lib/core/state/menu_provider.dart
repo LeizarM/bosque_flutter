@@ -136,7 +136,10 @@ class MenuNotifier extends StateNotifier<MenuState> {
   Future<void> saveExpandedState(Map<int, bool> expandedItems) async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final expandedItemsJson = jsonEncode(expandedItems);
+      // JSON solo admite claves de texto; loadExpandedState las vuelve a int.
+      final expandedItemsJson = jsonEncode(
+        expandedItems.map((k, v) => MapEntry('$k', v)),
+      );
       await prefs.setString(_expandedMenuItemsKey, expandedItemsJson);
       console('✅ Estado de expansión guardado: ${expandedItems.length} items');
     } catch (e) {
@@ -457,7 +460,6 @@ final sidebarMenuProvider = Provider<List<SidebarMenuItem>>((ref) {
     if (originalRoute.startsWith('/tmtoTalonario/talonario')) {
       return '/dashboard/tmtoTalonario/talonario';
     }
-
 
     return originalRoute;
   }

@@ -1,5 +1,5 @@
-/// El listado de bancos: tabla con codigo, nombre y acciones en escritorio y
-/// tarjetas en movil. No conoce el estado ni abre nada: las acciones de cada
+/// El listado de bancos: tabla con codigo, nombre, uso y acciones en escritorio
+/// y tarjetas en movil. No conoce el estado ni abre nada: las acciones de cada
 /// fila llegan por [AlElegirAccionBanco].
 library;
 
@@ -9,6 +9,7 @@ import 'package:bosque_flutter/core/ui/tokens_bosque.dart';
 import 'package:bosque_flutter/domain/entities/banco_entity.dart';
 import 'package:bosque_flutter/domain/utils/permisos_banco.dart';
 import 'package:bosque_flutter/presentation/widgets/cheques/piezas_cheques.dart';
+import 'package:bosque_flutter/presentation/widgets/parametros/catalogo_parametros.dart';
 
 /// Ancho del area de resultados desde el cual se usa tabla. Se mide el ancho del
 /// contenedor y no el de la ventana: dentro del dashboard el menu lateral se
@@ -18,7 +19,8 @@ const double anchoMinimoTablaBancos = 720;
 /// Ancho minimo de una tarjeta; decide cuantas caben por fila.
 const double anchoMinimoTarjetaBanco = 340;
 
-const double _anchoCodigo = 96;
+const double _anchoCodigo = 72;
+const double _anchoUso = 112;
 const double _anchoIconoAccion = 40;
 
 /// Lo que mide la columna de acciones: caben los dos iconos y el titulo.
@@ -46,6 +48,52 @@ typedef AlElegirAccionBanco =
     void Function(AccionFilaBanco accion, BancoEntity banco);
 
 String _textoCantidad(int n) => '$n ${n == 1 ? 'banco' : 'bancos'}';
+
+String _plural(int n, String uno, String varios) =>
+    '$n ${n == 1 ? uno : varios}';
+
+/// La franja izquierda: color principal si el banco se usa, gris si no.
+Color _colorFranja(ColorScheme cs, BancoEntity b) =>
+    b.enUso ? cs.primary : cs.outlineVariant;
+
+/// El ícono del banco en su mosaico, más presente si el banco se usa.
+class _IconoBanco extends StatelessWidget {
+  const _IconoBanco(this.banco);
+
+  final BancoEntity banco;
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return Container(
+      width: 32,
+      height: 32,
+      decoration: BoxDecoration(
+        color:
+            banco.enUso ? cs.primaryContainer : cs.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(Esquina.chica),
+      ),
+      child: Icon(
+        Icons.account_balance_outlined,
+        size: 18,
+        color: banco.enUso ? cs.onPrimaryContainer : cs.onSurfaceVariant,
+      ),
+    );
+  }
+}
+
+/// Una cantidad de uso en la tabla: pastilla de color si hay, raya si es 0.
+Widget _celdaUso(
+  BuildContext context,
+  int n,
+  IconData icono,
+  TonoDato tono, {
+  String? detalle,
+}) {
+  if (n == 0) return Text('—', style: context.apagado());
+  final pildora = PildoraDato('$n', icono: icono, tono: tono);
+  return detalle == null ? pildora : Tooltip(message: detalle, child: pildora);
+}
 
 /// Elige tabla o tarjetas segun el ancho que hay.
 class ListaBancos extends StatelessWidget {
@@ -84,6 +132,32 @@ class ListaBancos extends StatelessWidget {
   }
 }
 
+/// El total y, si los hay, cuántos no se usan.
+class _PieBancos extends StatelessWidget {
+  const _PieBancos(this.bancos);
+
+  final List<BancoEntity> bancos;
+
+  @override
+  Widget build(BuildContext context) {
+    final sinUso = bancos.where((b) => !b.enUso).length;
+    return Wrap(
+      spacing: Esp.m,
+      runSpacing: Esp.xs,
+      crossAxisAlignment: WrapCrossAlignment.center,
+      children: [
+        Text(
+          _textoCantidad(bancos.length),
+          key: const ValueKey('total-bancos'),
+          style: context.apagado()?.copyWith(fontFeatures: cifrasTabulares),
+        ),
+        if (sinUso > 0 && sinUso < bancos.length)
+          PildoraDato('$sinUso sin uso', icono: Icons.remove_circle_outline),
+      ],
+    );
+  }
+}
+
 // ═══════════════════════════════════════════════════════════════════════════
 // TABLA
 // ═══════════════════════════════════════════════════════════════════════════
@@ -106,24 +180,47 @@ class _TablaBancos extends StatelessWidget {
     final t = Theme.of(context).textTheme;
     final fondoFila = cs.surfaceContainerLow;
     final fondoCabecera = Color.alphaBlend(
-      cs.surfaceContainerHighest.withValues(alpha: 0.6),
+      cs.primaryContainer.withValues(alpha: 0.55),
+      fondoFila,
+    );
+    // Filas alternadas apenas distintas: guian el ojo sin pintar de mas.
+    final fondoAlterno = Color.alphaBlend(
+      cs.onSurface.withValues(alpha: 0.025),
       fondoFila,
     );
     final estiloCabecera = t.labelLarge?.copyWith(
       fontWeight: Peso.titulo,
-      color: cs.onSurfaceVariant,
+      color: cs.onPrimaryContainer,
     );
     final acciones = accionesDeBanco(permisos);
+
+    Widget titulo(String texto, {bool derecha = false}) => Align(
+      alignment: derecha ? Alignment.centerRight : Alignment.centerLeft,
+      child: FittedBox(
+        fit: BoxFit.scaleDown,
+        child: Text(texto, style: estiloCabecera, maxLines: 1),
+      ),
+    );
 
     Widget fila({
       required Widget codigo,
       required Widget nombre,
+      required Widget cheques,
+      required Widget cuentas,
+      required Widget movimientos,
       required Widget accionesCelda,
     }) => Row(
       children: [
         SizedBox(width: _anchoCodigo, child: codigo),
         const SizedBox(width: Esp.s),
         Expanded(child: nombre),
+        for (final uso in [cheques, cuentas, movimientos]) ...[
+          const SizedBox(width: Esp.s),
+          SizedBox(
+            width: _anchoUso,
+            child: Align(alignment: Alignment.centerRight, child: uso),
+          ),
+        ],
         if (acciones.isNotEmpty) ...[
           const SizedBox(width: Esp.s),
           SizedBox(width: _anchoColumnaAcciones, child: accionesCelda),
@@ -141,33 +238,37 @@ class _TablaBancos extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Container(
-            color: fondoCabecera,
+            decoration: BoxDecoration(
+              color: fondoCabecera,
+              // Misma franja que las filas, invisible: las columnas alinean.
+              border: const Border(
+                left: BorderSide(width: 4, color: Colors.transparent),
+              ),
+            ),
             padding: const EdgeInsets.symmetric(
               horizontal: Esp.l,
               vertical: Esp.m,
             ),
             child: fila(
-              codigo: Text(
-                'Código',
-                style: estiloCabecera,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
+              codigo: titulo('Código'),
               nombre: Text('Nombre', style: estiloCabecera),
-              accionesCelda: Align(
-                alignment: Alignment.centerRight,
-                child: FittedBox(
-                  fit: BoxFit.scaleDown,
-                  child: Text('Acciones', style: estiloCabecera),
-                ),
-              ),
+              cheques: titulo('Cheques', derecha: true),
+              cuentas: titulo('Cuentas', derecha: true),
+              movimientos: titulo('Movimientos', derecha: true),
+              accionesCelda: titulo('Acciones', derecha: true),
             ),
           ),
-          for (final b in bancos) ...[
+          for (final (i, b) in bancos.indexed) ...[
             Divider(height: 1, color: cs.outlineVariant),
             Container(
               key: ValueKey('banco-${b.codBanco}'),
               constraints: const BoxConstraints(minHeight: 56),
+              decoration: BoxDecoration(
+                color: i.isOdd ? fondoAlterno : null,
+                border: Border(
+                  left: BorderSide(width: 4, color: _colorFranja(cs, b)),
+                ),
+              ),
               padding: const EdgeInsets.symmetric(
                 horizontal: Esp.l,
                 vertical: Esp.s,
@@ -180,11 +281,45 @@ class _TablaBancos extends StatelessWidget {
                     color: cs.onSurfaceVariant,
                   ),
                 ),
-                nombre: Text(
-                  textoODash(b.nombre),
-                  style: t.bodyMedium?.copyWith(fontWeight: Peso.titulo),
-                  maxLines: 3,
-                  overflow: TextOverflow.ellipsis,
+                nombre: Row(
+                  children: [
+                    _IconoBanco(b),
+                    const SizedBox(width: Esp.m),
+                    Expanded(
+                      child: Text(
+                        textoODash(b.nombre),
+                        style: t.bodyMedium?.copyWith(
+                          fontWeight: Peso.titulo,
+                        ),
+                        maxLines: 3,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
+                cheques: _celdaUso(
+                  context,
+                  b.cheques,
+                  Icons.request_quote_outlined,
+                  TonoDato.principal,
+                ),
+                cuentas: _celdaUso(
+                  context,
+                  b.cuentas,
+                  Icons.credit_card_outlined,
+                  TonoDato.terciario,
+                  detalle:
+                      '${b.cuentasEmpresa} de la empresa · '
+                      '${b.cuentasEmpleados} de sueldo',
+                ),
+                movimientos: _celdaUso(
+                  context,
+                  b.movimientos + b.pagosExterior,
+                  Icons.swap_horiz,
+                  TonoDato.principal,
+                  detalle:
+                      '${b.movimientos} bancarios · '
+                      '${b.pagosExterior} pagos al exterior',
                 ),
                 accionesCelda: Row(
                   mainAxisAlignment: MainAxisAlignment.end,
@@ -214,11 +349,7 @@ class _TablaBancos extends StatelessWidget {
               horizontal: Esp.l,
               vertical: Esp.m,
             ),
-            child: Text(
-              _textoCantidad(bancos.length),
-              key: const ValueKey('total-bancos'),
-              style: context.apagado()?.copyWith(fontFeatures: cifrasTabulares),
-            ),
+            child: _PieBancos(bancos),
           ),
         ],
       ),
@@ -277,11 +408,7 @@ class _TarjetasBancos extends StatelessWidget {
         const SizedBox(height: Esp.m),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: Esp.s),
-          child: Text(
-            _textoCantidad(bancos.length),
-            key: const ValueKey('total-bancos'),
-            style: context.apagado()?.copyWith(fontFeatures: cifrasTabulares),
-          ),
+          child: _PieBancos(bancos),
         ),
       ],
     );
@@ -303,12 +430,40 @@ class _TarjetaBanco extends StatelessWidget {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final t = Theme.of(context).textTheme;
+    final b = banco;
+    final movimientos = b.movimientos + b.pagosExterior;
+
+    // Sin encabezados de columna, cada cantidad lleva su nombre.
+    final usos = <Widget>[
+      if (b.cheques > 0)
+        PildoraDato(
+          _plural(b.cheques, 'cheque', 'cheques'),
+          icono: Icons.request_quote_outlined,
+          tono: TonoDato.principal,
+        ),
+      if (b.cuentas > 0)
+        PildoraDato(
+          _plural(b.cuentas, 'cuenta', 'cuentas'),
+          icono: Icons.credit_card_outlined,
+          tono: TonoDato.terciario,
+        ),
+      if (movimientos > 0)
+        PildoraDato(
+          _plural(movimientos, 'movimiento', 'movimientos'),
+          icono: Icons.swap_horiz,
+          tono: TonoDato.principal,
+        ),
+    ];
 
     return Card(
       elevation: 0,
       margin: EdgeInsets.zero,
+      clipBehavior: Clip.antiAlias,
       shape: contornoSuperficie(cs),
-      child: Padding(
+      child: Container(
+        decoration: BoxDecoration(
+          border: Border(left: BorderSide(width: 4, color: _colorFranja(cs, b))),
+        ),
         padding: EdgeInsets.fromLTRB(
           Esp.l,
           Esp.m,
@@ -316,23 +471,40 @@ class _TarjetaBanco extends StatelessWidget {
           Esp.m,
         ),
         child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            _IconoBanco(b),
+            const SizedBox(width: Esp.m),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    textoODash(banco.nombre),
+                    textoODash(b.nombre),
                     style: t.titleSmall?.copyWith(fontWeight: Peso.titulo),
                     maxLines: 3,
                     overflow: TextOverflow.ellipsis,
                   ),
                   const SizedBox(height: Esp.xs),
                   Text(
-                    'Código ${banco.codBanco}',
+                    'Código ${b.codBanco}',
                     style: context.apagado()?.copyWith(
                       fontFeatures: cifrasTabulares,
                     ),
+                  ),
+                  const SizedBox(height: Esp.s),
+                  Wrap(
+                    spacing: Esp.s,
+                    runSpacing: Esp.xs,
+                    children:
+                        usos.isEmpty
+                            ? const [
+                              PildoraDato(
+                                'Sin uso',
+                                icono: Icons.remove_circle_outline,
+                              ),
+                            ]
+                            : usos,
                   ),
                 ],
               ),
@@ -341,11 +513,7 @@ class _TarjetaBanco extends StatelessWidget {
               MenuAccionesCheque(
                 opciones: [
                   for (final a in acciones)
-                    OpcionMenuCheque(
-                      a.etiqueta,
-                      a.icono,
-                      () => onAccion(a, banco),
-                    ),
+                    OpcionMenuCheque(a.etiqueta, a.icono, () => onAccion(a, b)),
                 ],
               ),
           ],

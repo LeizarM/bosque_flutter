@@ -54,6 +54,8 @@ import 'package:bosque_flutter/core/utils/version_app.dart';
 import 'package:bosque_flutter/data/repositories/auth_repository_impl.dart';
 import 'package:bosque_flutter/domain/entities/recuperacion_enviada_entity.dart';
 import 'package:bosque_flutter/domain/repositories/auth_repository.dart';
+import 'package:bosque_flutter/presentation/widgets/login/bosque_ascii.dart';
+import 'package:bosque_flutter/presentation/widgets/shared/selector_color_tema.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -93,23 +95,6 @@ enum _Tono { error, aviso }
 /// logo cambie de tamaño con la ventana— y el anillo de la muestra de color
 /// deriva el suyo del de la muestra para quedar concéntrico.
 const BorderRadius _esquina = BorderRadius.all(Radius.circular(14));
-
-/// Nombres de las semillas de [colorList], en orden.
-///
-/// El color solo no alcanza para elegir: quien no distingue bien el violeta del
-/// púrpura necesita leerlo. Si mañana agregan una semilla a `colorList`, la que
-/// no tenga nombre aquí se muestra por su posición en vez de romper.
-const List<String> _nombresDeSemilla = [
-  'Azul',
-  'Turquesa',
-  'Verde',
-  'Rojo',
-  'Violeta',
-  'Amarillo',
-  'Naranja',
-  'Púrpura',
-  'Rosa',
-];
 
 /// El ancho a partir del cual entran las dos columnas.
 ///
@@ -339,6 +324,30 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
               fit: StackFit.expand,
               children: [
                 _CampoDeAcento(amplio: amplio),
+                // El bosque de papel. En escritorio llena la mitad de la marca
+                // y responde al mouse; en teléfono las aves van arriba y el
+                // bosque abajo, para dejar libre el formulario.
+                if (amplio)
+                  Positioned(
+                    left: 0,
+                    top: 0,
+                    bottom: 0,
+                    width: restricciones.maxWidth * 6 / 11,
+                    // 36 %: más alto, las copas tapaban el «powered by».
+                    // Quieto mientras se inicia sesión: el CPU es para la
+                    // petición y para armar el dashboard.
+                    child: BosqueAscii(altoBosque: 0.36, pausado: _isLoading),
+                  )
+                else
+                  IgnorePointer(
+                    child: BosqueAscii(
+                      altoBosque: 0.16,
+                      techoAves: 0.2,
+                      densidadAves: 0.5,
+                      intensidad: 0.75,
+                      pausado: _isLoading,
+                    ),
+                  ),
                 amplio
                     ? _partido(tema)
                     : _apilado(tema, restricciones.maxHeight),
@@ -751,113 +760,29 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
     return _ControlesDeTema(
       acento: context.cs.primary,
       oscuro: tema.isDarkMode,
-      onPaleta: () => _mostrarPaleta(context, tema.selectedColor),
+      onPaleta: () => mostrarSelectorColorTema(context, ref),
       onModo: () => ref.read(themeNotifierProvider.notifier).toggleDarkMode(),
     );
   }
 
   Widget _pie() {
-    return Text(
-      'Esppapel  ·  v${AppConstants.APP_VERSION}',
-      style: TextStyle(
-        color: context.cs.onSurfaceVariant.withValues(alpha: 0.85),
-        fontSize: 11.5,
-        fontWeight: Peso.titulo,
-        letterSpacing: 1,
+    // Una pastilla del color de la hoja: el pie cae encima del bosque de
+    // caracteres y sin fondo se mezclaba con los árboles.
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+      decoration: BoxDecoration(
+        color: context.cs.surface.withValues(alpha: 0.85),
+        borderRadius: BorderRadius.circular(20),
       ),
-    );
-  }
-
-  // ── La paleta ────────────────────────────────────────────────────────────
-
-  /// Las nueve semillas, cada una con su nombre.
-  ///
-  /// Antes eran nueve cuadrados sin rótulo y con una sombra del propio color
-  /// abajo: un resplandor de color sobre color, que es la decoración que se
-  /// pone cuando no hay nada que mostrar. Aquí el rótulo hace el trabajo y la
-  /// elegida se marca con un anillo de `onSurface`, que contrasta con la hoja
-  /// pase lo que pase con la semilla.
-  void _mostrarPaleta(BuildContext context, int elegida) {
-    showModalBottomSheet(
-      context: context,
-      showDragHandle: true,
-      builder: (context) {
-        final cs = context.cs;
-        final t = Theme.of(context).textTheme;
-
-        return SafeArea(
-          top: false,
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(Esp.xl, 0, Esp.xl, Esp.xl),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Container(
-                      width: 42,
-                      height: 42,
-                      alignment: Alignment.center,
-                      decoration: BoxDecoration(
-                        color: cs.primaryContainer,
-                        borderRadius: _esquina,
-                      ),
-                      child: Icon(
-                        Icons.palette_outlined,
-                        color: cs.onPrimaryContainer,
-                        size: 22,
-                      ),
-                    ),
-                    const SizedBox(width: Esp.m),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Color del tema',
-                            style: t.titleMedium?.copyWith(
-                              fontWeight: Peso.titulo,
-                            ),
-                          ),
-                          Text(
-                            'Elige tu color favorito',
-                            style: t.bodySmall?.copyWith(
-                              color: cs.onSurfaceVariant,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: Esp.xl),
-                Wrap(
-                  spacing: Esp.m,
-                  runSpacing: Esp.l,
-                  children: [
-                    for (var i = 0; i < colorList.length; i++)
-                      _MuestraDeColor(
-                        color: colorList[i],
-                        nombre:
-                            i < _nombresDeSemilla.length
-                                ? _nombresDeSemilla[i]
-                                : 'Color ${i + 1}',
-                        elegida: elegida == i,
-                        onTap: () {
-                          ref
-                              .read(themeNotifierProvider.notifier)
-                              .changeColorIndex(i);
-                          Navigator.pop(context);
-                        },
-                      ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        );
-      },
+      child: Text(
+        'Esppapel  ·  v${AppConstants.APP_VERSION}',
+        style: TextStyle(
+          color: context.cs.onSurfaceVariant.withValues(alpha: 0.85),
+          fontSize: 11.5,
+          fontWeight: Peso.titulo,
+          letterSpacing: 1,
+        ),
+      ),
     );
   }
 }
@@ -1500,85 +1425,6 @@ class _Aviso extends StatelessWidget {
             ),
           ],
         ),
-      ),
-    );
-  }
-}
-
-/// Una semilla de la paleta, con su nombre debajo.
-class _MuestraDeColor extends StatelessWidget {
-  final Color color;
-  final String nombre;
-  final bool elegida;
-  final VoidCallback onTap;
-
-  const _MuestraDeColor({
-    required this.color,
-    required this.nombre,
-    required this.elegida,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final cs = context.cs;
-
-    // Negro o blanco encima del color, el que contraste más. Es la misma cuenta
-    // que hacía la versión anterior y es honesta: no hay forma de saber de
-    // antemano qué letra se lee sobre un amarillo y sobre un violeta.
-    final tinta =
-        ThemeData.estimateBrightnessForColor(color) == Brightness.light
-            ? Colors.black87
-            : Colors.white;
-
-    return SizedBox(
-      width: 78,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // El anillo se dibuja siempre, transparente cuando no está elegida,
-          // para que las nueve muestras midan lo mismo y la grilla no salte al
-          // cambiar de color.
-          Container(
-            padding: const EdgeInsets.all(3),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(19),
-              border: Border.all(
-                color: elegida ? cs.onSurface : Colors.transparent,
-                width: 2,
-              ),
-            ),
-            child: Material(
-              color: color,
-              borderRadius: _esquina,
-              child: InkWell(
-                onTap: onTap,
-                borderRadius: _esquina,
-                child: SizedBox(
-                  height: 58,
-                  child: Center(
-                    child: AnimatedScale(
-                      scale: elegida ? 1 : 0,
-                      duration: const Duration(milliseconds: 160),
-                      curve: Curves.easeOutBack,
-                      child: Icon(Icons.check_rounded, color: tinta, size: 24),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(height: Esp.xs),
-          Text(
-            nombre,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: Theme.of(context).textTheme.labelSmall?.copyWith(
-              color: elegida ? cs.onSurface : cs.onSurfaceVariant,
-              fontWeight: elegida ? Peso.dato : Peso.normal,
-            ),
-          ),
-        ],
       ),
     );
   }

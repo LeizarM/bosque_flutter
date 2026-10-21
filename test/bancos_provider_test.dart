@@ -294,6 +294,9 @@ class _BancosFalso implements BancosRepository {
   int lecturasDeLista = 0;
 
   @override
+  Future<List<BancoEntity>> listarConUso() => listar();
+
+  @override
   Future<List<BancoEntity>> listar() async {
     lecturasDeLista++;
     if (errorLectura != null) throw errorLectura!;

@@ -78,6 +78,13 @@ export 'package:bosque_flutter/presentation/screens/garantias/garantias_screen.d
 // Modulo de cheques (tch): reemplaza a tchCheque/cheque.xhtml.
 export 'package:bosque_flutter/presentation/screens/cheques/cheques_screen.dart';
 export 'package:bosque_flutter/presentation/screens/bancos/bancos_screen.dart';
+// Parametros de RRHH migrados del JSF: misma direccion de tb_vista.
+export 'package:bosque_flutter/presentation/screens/tipo-telefono/tipo_telefono_screen.dart';
+export 'package:bosque_flutter/presentation/screens/nivel-jerarquico/nivel_jerarquico_screen.dart';
+export 'package:bosque_flutter/presentation/screens/ubicacion-geografica/ubicacion_geografica_screen.dart';
+export 'package:bosque_flutter/presentation/screens/funciones-modulo/funciones_modulo_screen.dart';
+export 'package:bosque_flutter/presentation/screens/cambio-clave/cambio_clave_screen.dart';
+export 'package:bosque_flutter/presentation/screens/ficha-trabajador/mi_ficha_screen.dart';
 // Verificar Cheques (tch_verificacionDeposito): reemplaza a tchCheque/verificarDepositos.xhtml.
 export 'package:bosque_flutter/presentation/screens/verificaciones/verificar_cheques_screen.dart';
 export 'package:bosque_flutter/presentation/screens/comisiones/comisiones_screen.dart';

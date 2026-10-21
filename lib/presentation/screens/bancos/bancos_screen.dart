@@ -24,13 +24,11 @@ import 'package:bosque_flutter/domain/utils/permisos_banco.dart';
 import 'package:bosque_flutter/presentation/widgets/bancos/dialogos_banco.dart';
 import 'package:bosque_flutter/presentation/widgets/bancos/lista_bancos.dart';
 import 'package:bosque_flutter/presentation/widgets/cheques/piezas_cheques.dart';
+import 'package:bosque_flutter/presentation/widgets/parametros/catalogo_parametros.dart';
 
 /// Alto de los mensajes de estado dentro del scroll de la pantalla: son
 /// `Center(SingleChildScrollView)` y piden una altura acotada.
 const double _altoMensaje = 320;
-
-/// Ancho maximo de la lista: pasado esto no gana nada y se lee peor.
-const double _anchoMaximoLista = 960;
 
 class BancosScreen extends ConsumerWidget {
   const BancosScreen({super.key});
@@ -51,13 +49,13 @@ class BancosScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final lectura = ref.watch(listaBancosProvider);
+    final lectura = ref.watch(bancosConUsoProvider);
     final permisos = ref.watch(permisosBancoProvider);
     final ocupado = ref.watch(
       operacionesBancosProvider.select((s) => s.ocupado),
     );
 
-    void recargar() => ref.invalidate(listaBancosProvider);
+    void recargar() => ref.invalidate(bancosConUsoProvider);
 
     // Una recarga con datos ya en pantalla se cuenta con una barra y no con un
     // esqueleto: la lista no desaparece mientras se espera.
@@ -89,6 +87,7 @@ class BancosScreen extends ConsumerWidget {
                 child: SingleChildScrollView(
                   padding: EdgeInsets.fromLTRB(margen, Esp.l, margen, Esp.xxl),
                   child: _Cuerpo(
+                    ancho: restricciones.maxWidth - 2 * margen,
                     lectura: lectura,
                     permisos: permisos,
                     onReintentar: recargar,
@@ -177,10 +176,12 @@ class _Cabecera extends StatelessWidget {
         chico ? Esp.s : Esp.xl,
         Esp.m,
       ),
-      color: cs.surfaceContainerLow,
+      decoration: decoracionCabeceraModulo(cs),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
+          MosaicoModulo(Icons.account_balance_outlined, chico: chico),
+          SizedBox(width: chico ? Esp.m : Esp.l),
           Expanded(child: titulo),
           const SizedBox(width: Esp.s),
           Row(mainAxisSize: MainAxisSize.min, children: acciones),
@@ -196,12 +197,15 @@ class _Cabecera extends StatelessWidget {
 
 class _Cuerpo extends StatelessWidget {
   const _Cuerpo({
+    required this.ancho,
     required this.lectura,
     required this.permisos,
     required this.onReintentar,
     required this.onAccion,
   });
 
+  /// El ancho útil, para decidir si el resumen va al costado o arriba.
+  final double ancho;
   final AsyncValue<List<BancoEntity>> lectura;
   final PermisosBanco permisos;
   final VoidCallback onReintentar;
@@ -238,17 +242,36 @@ class _Cuerpo extends StatelessWidget {
       );
     }
 
-    // Dos datos por fila: en una pantalla ancha, el nombre y sus acciones
-    // quedarian a mil pixeles uno del otro y el ojo pierde la fila.
-    return Align(
-      alignment: Alignment.topLeft,
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: _anchoMaximoLista),
-        child: ListaBancos(
-          bancos: bancos,
-          permisos: permisos,
-          onAccion: onAccion,
+    // La tabla ocupa el ancho con las columnas de uso; desde 1180 px el
+    // resumen va al costado y llena el espacio que antes quedaba vacío.
+    final enUso = bancos.where((b) => b.enUso).length;
+    return DistribucionResumen(
+      ancho: ancho,
+      datos: [
+        DatoResumen(
+          'bancos en uso de ${bancos.length}',
+          '$enUso',
+          icono: Icons.account_balance_outlined,
         ),
+        DatoResumen(
+          'cheques registrados',
+          '${bancos.fold<int>(0, (s, b) => s + b.cheques)}',
+          icono: Icons.request_quote_outlined,
+          tono: TonoDato.terciario,
+        ),
+        DatoResumen(
+          'cuentas de empresa y de sueldo',
+          '${bancos.fold<int>(0, (s, b) => s + b.cuentas)}',
+          icono: Icons.credit_card_outlined,
+          tono: TonoDato.neutro,
+        ),
+      ],
+      tituloRanking: 'Cheques por banco',
+      barras: [for (final b in bancos) BarraResumen(b.nombre, b.cheques)],
+      principal: ListaBancos(
+        bancos: bancos,
+        permisos: permisos,
+        onAccion: onAccion,
       ),
     );
   }

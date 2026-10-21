@@ -22,6 +22,9 @@ class SucursalModel {
   final String nombreCiudad;
   final int codSucursalPlanilla;
   final String nombrePlanilla;
+  final String nombreEmpresa;
+  final int estado;
+  final int cargos;
 
   SucursalModel({
     required this.codSucursal,
@@ -33,6 +36,9 @@ class SucursalModel {
     required this.nombreCiudad,
     required this.codSucursalPlanilla,
     required this.nombrePlanilla,
+    this.nombreEmpresa = '',
+    this.estado = 1,
+    this.cargos = 0,
   });
 
   factory SucursalModel.fromJson(Map<String, dynamic> json) => SucursalModel(
@@ -45,6 +51,9 @@ class SucursalModel {
     nombreCiudad: json["nombreCiudad"] ?? "",
     codSucursalPlanilla: json["codSucursalPlanilla"] ?? 0,
     nombrePlanilla: json["nombrePlanilla"] ?? "",
+    nombreEmpresa: json["nombreEmpresa"] ?? "",
+    estado: json["estado"] ?? 1,
+    cargos: json["cargos"] ?? 0,
   );
 
   Map<String, dynamic> toJson() => {
@@ -69,6 +78,9 @@ class SucursalModel {
     nombreCiudad: nombreCiudad,
     codSucursalPlanilla: codSucursalPlanilla,
     nombrePlanilla: nombrePlanilla,
+    nombreEmpresa: nombreEmpresa,
+    estado: estado,
+    cargos: cargos,
   );
 
   // Método factory para convertir de Entity a Model
@@ -82,5 +94,8 @@ class SucursalModel {
     nombreCiudad: entity.nombreCiudad,
     codSucursalPlanilla: entity.codSucursalPlanilla,
     nombrePlanilla: entity.nombrePlanilla,
+    nombreEmpresa: entity.nombreEmpresa,
+    estado: entity.estado,
+    cargos: entity.cargos,
   );
 }

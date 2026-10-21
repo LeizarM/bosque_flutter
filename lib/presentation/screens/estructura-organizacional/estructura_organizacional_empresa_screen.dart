@@ -2,6 +2,7 @@ import 'package:bosque_flutter/core/state/rrhh_provider.dart';
 import 'package:bosque_flutter/core/utils/responsive_utils_bosque.dart';
 import 'package:bosque_flutter/domain/entities/empresa_entity.dart';
 import 'package:bosque_flutter/presentation/screens/estructura-organizacional/cargos_screen.dart';
+import 'package:bosque_flutter/presentation/screens/estructura-organizacional/empresas_sucursales_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -16,6 +17,17 @@ class EstructuraOrganizacionalEmpresaScreen extends ConsumerWidget {
       appBar: AppBar(
         title: const Text('Empresas'),
         actions: [
+          // El ABM de empresas y sucursales; cada acción la decide el ACL.
+          IconButton(
+            tooltip: 'Empresas y sucursales',
+            icon: const Icon(Icons.domain_add_outlined),
+            onPressed:
+                () => Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => const EmpresasSucursalesScreen(),
+                  ),
+                ),
+          ),
           IconButton(
             icon: const Icon(Icons.refresh),
             onPressed: () {

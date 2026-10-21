@@ -9,6 +9,7 @@ import 'package:bosque_flutter/core/state/sidebar_state_provider.dart';
 import 'package:bosque_flutter/core/state/theme_mode_provider.dart';
 import 'package:bosque_flutter/core/state/user_provider.dart';
 import 'package:bosque_flutter/presentation/widgets/shared/auth_gate.dart';
+import 'package:bosque_flutter/presentation/widgets/shared/selector_color_tema.dart';
 import 'package:bosque_flutter/presentation/widgets/shared/sidebar.dart';
 
 class DashboardScreen extends ConsumerWidget {
@@ -106,6 +107,7 @@ class DashboardScreen extends ConsumerWidget {
                   )
                   : null,
           actions: [
+            const BotonColorTema(),
             Container(
               margin: const EdgeInsets.symmetric(horizontal: 2),
               decoration: BoxDecoration(
@@ -205,10 +207,60 @@ class DashboardScreen extends ConsumerWidget {
                 )
                 : Row(
                   children: [
-                    if (!isSmallScreen && sidebarVisible) const AppSidebar(),
+                    if (!isSmallScreen)
+                      _SidebarAnimado(visible: sidebarVisible),
                     Expanded(child: child),
                   ],
                 ),
+      ),
+    );
+  }
+}
+
+/// El sidebar de escritorio entra y sale deslizándose: el ancho va de 0 al
+/// suyo y el contenido se corre con él. Oculto, deja de pintarse y de recibir
+/// foco, pero conserva su estado (ramas abiertas, búsqueda).
+class _SidebarAnimado extends StatefulWidget {
+  const _SidebarAnimado({required this.visible});
+
+  final bool visible;
+
+  @override
+  State<_SidebarAnimado> createState() => _SidebarAnimadoState();
+}
+
+class _SidebarAnimadoState extends State<_SidebarAnimado> {
+  late bool _pintado = widget.visible;
+
+  @override
+  void didUpdateWidget(covariant _SidebarAnimado old) {
+    super.didUpdateWidget(old);
+    if (widget.visible) _pintado = true;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final quieto = MediaQuery.maybeDisableAnimationsOf(context) ?? false;
+    return AnimatedContainer(
+      duration: quieto ? Duration.zero : const Duration(milliseconds: 280),
+      curve: Curves.easeOutCubic,
+      width: widget.visible ? anchoSidebar : 0,
+      onEnd: () {
+        if (!widget.visible && mounted) setState(() => _pintado = false);
+      },
+      child: ClipRect(
+        child: OverflowBox(
+          alignment: Alignment.centerRight,
+          minWidth: anchoSidebar,
+          maxWidth: anchoSidebar,
+          child: Offstage(
+            offstage: !_pintado,
+            child: ExcludeFocus(
+              excluding: !widget.visible,
+              child: const AppSidebar(),
+            ),
+          ),
+        ),
       ),
     );
   }

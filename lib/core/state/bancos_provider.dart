@@ -43,6 +43,12 @@ final listaBancosProvider = FutureProvider.autoDispose<List<BancoEntity>>(
   (ref) => ref.watch(bancosRepositoryProvider).listar(),
 );
 
+/// La lista de la pantalla de bancos, con el uso de cada uno. Aparte de
+/// [listaBancosProvider], que sigue siendo el combo de Verificaciones.
+final bancosConUsoProvider = FutureProvider.autoDispose<List<BancoEntity>>(
+  (ref) => ref.watch(bancosRepositoryProvider).listarConUso(),
+);
+
 @immutable
 class EstadoOperacionBanco {
   const EstadoOperacionBanco({this.ocupado = false, this.error});
@@ -76,7 +82,11 @@ class OperacionesBancosNotifier extends StateNotifier<EstadoOperacionBanco> {
       final r = await accion();
       if (!mounted) return r;
       state = const EstadoOperacionBanco();
-      _ref.invalidate(listaBancosProvider);
+      // Solo las listas montadas: invalidar una que nadie mira la crea y la
+      // lee de gusto (la pantalla mira una y el combo de Verificaciones otra).
+      for (final lista in [listaBancosProvider, bancosConUsoProvider]) {
+        if (_ref.exists(lista)) _ref.invalidate(lista);
+      }
       _ref.invalidate(obtenerBancos);
       _ref.invalidate(obtenerBancosPlanilla);
       return r;

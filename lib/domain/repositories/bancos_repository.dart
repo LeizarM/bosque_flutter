@@ -17,6 +17,10 @@ abstract class BancosRepository {
   /// lista vacia; cualquier fallo se lanza.
   Future<List<BancoEntity>> listar();
 
+  /// Los bancos de la pantalla con su uso (cheques, cuentas, movimientos).
+  /// Mismo orden y mismo manejo de errores que [listar].
+  Future<List<BancoEntity>> listarConUso();
+
   /// Alta ([BancoRegistroEntity.codBanco] 0; btnNuevoB) o edicion
   /// (btnEditarB). Devuelve el codBanco.
   Future<BigInt> registrar(BancoRegistroEntity registro);

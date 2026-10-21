@@ -7,14 +7,17 @@ NivelJerarquicoModel nivelJerarquicoModelFromJson(String str) =>
 String nivelJerarquicoModelToJson(NivelJerarquicoModel data) =>
     json.encode(data.toJson());
 
+/// Los montos llegan como `float` del backend (8400.0): se leen como `num`
+/// para que un entero o un decimal sirvan igual.
 class NivelJerarquicoModel {
   int codNivel;
   int nivel;
-  int haberBasico;
-  int bonoProduccion;
+  double haberBasico;
+  double bonoProduccion;
   DateTime fecha;
   int audUsuario;
   int activo;
+  int cargos;
 
   NivelJerarquicoModel({
     required this.codNivel,
@@ -24,19 +27,20 @@ class NivelJerarquicoModel {
     required this.fecha,
     required this.audUsuario,
     required this.activo,
+    this.cargos = 0,
   });
 
   factory NivelJerarquicoModel.fromJson(Map<String, dynamic> json) =>
       NivelJerarquicoModel(
         codNivel: json["codNivel"] ?? 0,
         nivel: json["nivel"] ?? 0,
-        haberBasico: json["haberBasico"] ?? 0,
-        bonoProduccion: json["bonoProduccion"] ?? 0,
-        fecha: DateTime.parse(
-          json["fecha"] ?? DateTime.now().toIso8601String(),
-        ),
+        haberBasico: (json["haberBasico"] as num?)?.toDouble() ?? 0,
+        bonoProduccion: (json["bonoProduccion"] as num?)?.toDouble() ?? 0,
+        fecha:
+            DateTime.tryParse('${json["fecha"] ?? ''}') ?? DateTime(1900),
         audUsuario: json["audUsuario"] ?? 0,
         activo: json["activo"] ?? 0,
+        cargos: json["cargos"] ?? 0,
       );
 
   Map<String, dynamic> toJson() => {
@@ -58,6 +62,7 @@ class NivelJerarquicoModel {
     fecha: fecha,
     audUsuario: audUsuario,
     activo: activo,
+    cargos: cargos,
   );
 
   // Método factory para convertir de Entity a Model
@@ -70,5 +75,6 @@ class NivelJerarquicoModel {
         fecha: entity.fecha,
         audUsuario: entity.audUsuario,
         activo: entity.activo,
+        cargos: entity.cargos,
       );
 }

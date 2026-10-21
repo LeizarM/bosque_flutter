@@ -39,6 +39,10 @@ class RepositorioBancosFalso implements BancosRepository {
   Map<String, dynamic> ultimoCuerpo(String metodo) =>
       cuerpos.lastWhere((c) => c.metodo == metodo).cuerpo;
 
+  /// La pantalla lee con uso; aquí es la misma lista (y cuenta como `listar`).
+  @override
+  Future<List<BancoEntity>> listarConUso() => listar();
+
   @override
   Future<List<BancoEntity>> listar() async {
     llamadas.add('listar');

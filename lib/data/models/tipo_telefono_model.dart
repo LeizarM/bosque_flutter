@@ -18,11 +18,13 @@ class TipoTelefonoModel {
   final int codTipoTel;
   final String tipo;
   final int audUsuario;
+  final int usos;
 
   TipoTelefonoModel({
     required this.codTipoTel,
     required this.tipo,
     required this.audUsuario,
+    this.usos = 0,
   });
 
   factory TipoTelefonoModel.fromJson(Map<String, dynamic> json) =>
@@ -30,6 +32,7 @@ class TipoTelefonoModel {
         codTipoTel: json["codTipoTel"] ?? 0,
         tipo: json["tipo"] ?? '',
         audUsuario: json["audUsuario"] ?? 0,
+        usos: json["usos"] ?? 0,
       );
 
   Map<String, dynamic> toJson() => {
@@ -42,11 +45,13 @@ class TipoTelefonoModel {
     codTipoTel: codTipoTel,
     tipo: tipo,
     audUsuario: audUsuario,
+    usos: usos,
   );
   factory TipoTelefonoModel.fromEntity(TipoTelefonoEntity entity) =>
       TipoTelefonoModel(
         codTipoTel: entity.codTipoTel,
         tipo: entity.tipo,
         audUsuario: entity.audUsuario,
+        usos: entity.usos,
       );
 }

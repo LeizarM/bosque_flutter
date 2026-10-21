@@ -18,12 +18,18 @@ class CiudadModel {
   final int codPais;
   final String ciudad;
   final int audUsuario;
+  final String pais;
+  final int zonas;
+  final int sucursales;
 
   CiudadModel({
     required this.codCiudad,
     required this.codPais,
     required this.ciudad,
     required this.audUsuario,
+    this.pais = '',
+    this.zonas = 0,
+    this.sucursales = 0,
   });
 
   factory CiudadModel.fromJson(Map<String, dynamic> json) => CiudadModel(
@@ -31,6 +37,9 @@ class CiudadModel {
     codPais: json["codPais"] ?? 0,
     ciudad: json["ciudad"] ?? '',
     audUsuario: json["audUsuario"] ?? 0,
+    pais: json["pais"] ?? '',
+    zonas: json["zonas"] ?? 0,
+    sucursales: json["sucursales"] ?? 0,
   );
 
   Map<String, dynamic> toJson() => {
@@ -44,11 +53,17 @@ class CiudadModel {
     codPais: codPais,
     ciudad: ciudad,
     audUsuario: audUsuario,
+    pais: pais,
+    zonas: zonas,
+    sucursales: sucursales,
   );
   factory CiudadModel.fromEntity(CiudadEntity entity) => CiudadModel(
     codCiudad: entity.codCiudad,
     codPais: entity.codPais,
     ciudad: entity.ciudad,
     audUsuario: entity.audUsuario,
+    pais: entity.pais,
+    zonas: entity.zonas,
+    sucursales: entity.sucursales,
   );
 }

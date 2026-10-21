@@ -9,6 +9,7 @@ import 'package:bosque_flutter/core/state/empleados_dependientes_provider.dart';
 import 'package:bosque_flutter/core/state/permisos_vacacion_provider.dart';
 import 'package:bosque_flutter/core/state/rrhh_provider.dart';
 import 'package:bosque_flutter/core/state/user_provider.dart';
+import 'package:bosque_flutter/presentation/widgets/agenda/agenda_empleados.dart';
 import 'package:bosque_flutter/presentation/widgets/examenes/pregunta_semana_inicio.dart';
 import 'package:bosque_flutter/presentation/widgets/permisos-vacaciones/ver_solicitudes_permiso_vacacion.dart';
 import 'package:bosque_flutter/presentation/widgets/shared/confetti_widget.dart';
@@ -177,6 +178,9 @@ class _DashboardHomeContentState extends ConsumerState<DashboardHomeContent>
               _buildHeroCard(context, user, primary, isDark, isWide),
 
               const SizedBox(height: 10),
+
+              // ─── Agenda de la empresa (popup con números corporativos) ───
+              const AccesoAgendaEmpleados(),
 
               // ─── Preguntas de la semana (exámenes): sin vigentes no ocupa lugar ───
               const PreguntasSemanaInicio(),

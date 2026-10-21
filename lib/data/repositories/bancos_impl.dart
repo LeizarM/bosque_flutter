@@ -23,6 +23,15 @@ class BancosImpl extends BaseApiRepository implements BancosRepository {
   }
 
   @override
+  Future<List<BancoEntity>> listarConUso() async {
+    final modelos = await postAndReturnList<BancoModel>(
+      endpoint: AppConstants.bncListarConUso,
+      fromJson: BancoModel.fromJson,
+    );
+    return modelos.map((m) => m.toEntity()).toList();
+  }
+
+  @override
   Future<BigInt> registrar(BancoRegistroEntity registro) => postAndReturnId(
     endpoint: AppConstants.bncRegistrar,
     data: BancoRegistroModel.fromEntity(registro).toJson(),

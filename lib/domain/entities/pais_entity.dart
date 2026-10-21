@@ -1,12 +1,19 @@
+/// Un país (`trh_pais`). [ciudades] y [personas] solo vienen en la pantalla de
+/// ubicación geográfica: cuántas ciudades tiene y cuántas personas lo tienen
+/// como nacionalidad.
 class PaisEntity {
   final int codPais;
   final String pais;
   final int audUsuario;
+  final int ciudades;
+  final int personas;
 
   PaisEntity({
     required this.codPais,
     required this.pais,
     required this.audUsuario,
+    this.ciudades = 0,
+    this.personas = 0,
   });
   // Método toJson
   Map<String, dynamic> toJson() {
@@ -19,6 +26,8 @@ class PaisEntity {
       codPais: codPais ?? this.codPais,
       pais: pais ?? this.pais,
       audUsuario: audUsuario ?? this.audUsuario,
+      ciudades: ciudades,
+      personas: personas,
     );
   }
 

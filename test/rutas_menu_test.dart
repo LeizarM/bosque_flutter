@@ -54,6 +54,18 @@ void main() {
     'tchCheque/cheque': 'ChequesScreen',
     // codVista 43 — 'Bancos' (padre 140). Misma regla: la direccion del JSF.
     'tchBanco/banco': 'BancosScreen',
+    // codVista 28 — 'Tipos de Telefono' (padre 5). Misma regla.
+    AppConstants.rutaTipoTelefono: 'TipoTelefonoScreen',
+    // codVista 15 — 'Niveles Jerarquicos' (padre 5). Misma regla.
+    AppConstants.rutaNivelJerarquico: 'NivelJerarquicoScreen',
+    // codVista 26 — 'Ubicaciones Geograficos' (padre 5). Misma regla.
+    AppConstants.rutaUbicacionGeografica: 'UbicacionGeograficaScreen',
+    // codVista 57 (padre 9) y 56 (padre 140): funciones por módulo y su
+    // asignación a empleados. Misma regla.
+    AppConstants.rutaFuncionesModulo: 'FuncionesModuloScreen',
+    AppConstants.rutaAsignacionFunciones: 'AsignacionFuncionesScreen',
+    // codVista 29 (padre 9): cambio de la propia contraseña. Misma regla.
+    AppConstants.rutaCambioClave: 'CambioClaveScreen',
     // codVista 77 — 'Verificar Cheques' (padre 41 'modCheques'). Misma regla.
     'tchCheque/verificarDepositos': 'VerificarChequesScreen',
     // "Cargos por revisar" (padre 5, Recursos Humanos), archivo SQL 82.
@@ -116,6 +128,13 @@ void main() {
       );
     });
   }
+
+  // «Mi Ficha» no sale de tb_vista (es el botón del sidebar), pero lleva las
+  // mismas dos entradas que cualquier pantalla del shell.
+  test('MiFichaScreen: /dashboard/mi-ficha y su redirección', () {
+    expect(paths, contains('/dashboard/${AppConstants.rutaMiFicha}'));
+    expect(paths, contains('/${AppConstants.rutaMiFicha}'));
+  });
 
   // Las del postulante externo van fuera del shell (sin /dashboard) y sin
   // redirección: entran por enlace, no por el menú.

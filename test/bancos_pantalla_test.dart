@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:bosque_flutter/domain/entities/banco_entity.dart';
 import 'package:bosque_flutter/domain/utils/permisos_banco.dart';
 import 'package:bosque_flutter/presentation/screens/bancos/bancos_screen.dart';
+import 'package:bosque_flutter/presentation/widgets/parametros/catalogo_parametros.dart';
 
 import 'fakes/arnes_bancos.dart';
 import 'fakes/arnes_cheques.dart';
@@ -155,17 +156,20 @@ void main() {
     },
   );
 
-  testWidgets('en una pantalla muy ancha la tabla no pasa de 960 px', (
+  testWidgets('en una pantalla muy ancha la tabla usa el ancho y el resumen va al costado', (
     tester,
   ) async {
     await montar(tester, pantalla(), ancho: 1800);
     final tabla = find.byKey(const ValueKey('lista-tabla'));
-    expect(tester.getSize(tabla).width, 960);
-    // Pegada a la izquierda, como el titulo.
+    final panel = find.byKey(const ValueKey('panel-resumen'));
+    expect(panel, findsOneWidget);
+    expect(tester.getSize(tabla).width, greaterThan(1200));
+    // Pegada a la izquierda, como el icono de la cabecera, y el panel a su derecha.
     expect(
       tester.getTopLeft(tabla).dx,
-      tester.getTopLeft(find.text('Bancos')).dx,
+      tester.getTopLeft(find.byType(MosaicoModulo)).dx,
     );
+    expect(tester.getTopLeft(panel).dx, greaterThan(tester.getTopRight(tabla).dx));
   });
 
   testWidgets(
@@ -185,6 +189,44 @@ void main() {
       expect(horizontales, findsNothing);
     },
   );
+
+  for (final ancho in [390.0, 800.0, 1400.0]) {
+    testWidgets(
+      'con uso a ${ancho.toInt()} px al 150 %: pastillas sin desborde y ranking sin ceros',
+      (tester) async {
+        repo.bancos = [
+          BancoEntity(
+            codBanco: 8,
+            nombre: 'BANCO MERCANTIL SANTA CRUZ',
+            audUsuario: 1,
+            fila: 1,
+            cheques: 3058,
+            cuentasEmpresa: 2,
+            cuentasEmpleados: 1,
+            movimientos: 783,
+          ),
+          bancoFalso(7, 'BANCO UNION'),
+        ];
+        conTexto(tester, 1.5);
+        final errores = await capturandoErrores(
+          () => montar(tester, pantalla(), ancho: ancho),
+        );
+        expect(errores, isEmpty, reason: 'a $ancho');
+        if (ancho < 720) {
+          expect(find.text('3058 cheques'), findsOneWidget);
+          expect(find.text('Sin uso'), findsOneWidget);
+        } else {
+          expect(find.text('3058'), findsWidgets);
+          expect(find.text('1 sin uso'), findsOneWidget);
+        }
+        if (ancho == 1400) {
+          // El ranking muestra al que tiene cheques y omite al que no.
+          expect(find.text('Cheques por banco'), findsOneWidget);
+          expect(find.text('BANCO UNION'), findsOneWidget);
+        }
+      },
+    );
+  }
 
   testWidgets('un solo banco se cuenta en singular', (tester) async {
     repo.bancos = [bancoFalso(7, 'BANCO UNION')];
