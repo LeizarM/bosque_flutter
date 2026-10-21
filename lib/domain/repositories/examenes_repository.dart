@@ -3,10 +3,12 @@ import 'dart:typed_data';
 import 'package:bosque_flutter/domain/entities/tcpe_empleado_elegible_entity.dart';
 import 'package:bosque_flutter/domain/entities/tcpe_banco_opcion_entity.dart';
 import 'package:bosque_flutter/domain/entities/tcpe_banco_pregunta_entity.dart';
+import 'package:bosque_flutter/domain/entities/tcpe_candidata_semana_entity.dart';
 import 'package:bosque_flutter/domain/entities/tcpe_catalogo.dart';
 import 'package:bosque_flutter/domain/entities/tcpe_credencial_entity.dart';
 import 'package:bosque_flutter/domain/entities/tcpe_duplicado_pregunta_entity.dart';
 import 'package:bosque_flutter/domain/entities/tcpe_espejo_item_entity.dart';
+import 'package:bosque_flutter/domain/entities/tcpe_estadistica_semana_entity.dart';
 import 'package:bosque_flutter/domain/entities/tcpe_fila_importacion_entity.dart';
 import 'package:bosque_flutter/domain/entities/tcpe_historial_examen_entity.dart';
 import 'package:bosque_flutter/domain/entities/tcpe_informe_categoria_entity.dart';
@@ -16,6 +18,10 @@ import 'package:bosque_flutter/domain/entities/tcpe_monitor_examen_entity.dart';
 import 'package:bosque_flutter/domain/entities/tcpe_monitor_lote_entity.dart';
 import 'package:bosque_flutter/domain/entities/tcpe_pedido_examenes_entity.dart';
 import 'package:bosque_flutter/domain/entities/tcpe_pregunta_importar_entity.dart';
+import 'package:bosque_flutter/domain/entities/tcpe_pregunta_semana_entity.dart';
+import 'package:bosque_flutter/domain/entities/tcpe_pregunta_semana_vigente_entity.dart';
+import 'package:bosque_flutter/domain/entities/tcpe_ranking_pregunta_entity.dart';
+import 'package:bosque_flutter/domain/entities/tcpe_respondio_semana_entity.dart';
 import 'package:bosque_flutter/domain/entities/tcpe_resultado_examen_entity.dart';
 import 'package:bosque_flutter/domain/entities/tcpe_resultado_importacion_entity.dart';
 import 'package:bosque_flutter/domain/entities/tcpe_revision_item_entity.dart';
@@ -26,7 +32,7 @@ import 'package:bosque_flutter/domain/repositories/rendicion_examen_repository.d
 /// Los de [RendicionExamenRepository] son "Mis exámenes": el empleado rinde
 /// con la misma pantalla que el postulante.
 abstract class ExamenesRepository implements RendicionExamenRepository {
-  // ── CRUD genérico de las 38 tablas ────────────────────────────────────
+  // ── CRUD genérico de las 40 tablas ────────────────────────────────────
   /// `p_list_tcpe_<Entidad>`. [filtros] admite las claves de
   /// [TcpeCatalogo.filtros]; null es "sin filtro".
   Future<List<E>> listarCatalogo<E>(
@@ -145,6 +151,15 @@ abstract class ExamenesRepository implements RendicionExamenRepository {
     DateTime? fechaHasta,
   });
 
+  /// `p_list_tcpe_Resultado` P (v11): las preguntas más falladas de cada
+  /// categoría, ya en su puesto. Cualquier filtro puede ir nulo.
+  Future<List<TcpeRankingPreguntaEntity>> rankingPreguntas({
+    BigInt? codClasificacion,
+    BigInt? codRolExamen,
+    DateTime? fechaDesde,
+    DateTime? fechaHasta,
+  });
+
   // Las tres devuelven el mensaje del SP (`errormsg`), que la UI muestra tal cual.
   Future<String?> marcarRespuesta({
     required BigInt codExamen,
@@ -166,6 +181,36 @@ abstract class ExamenesRepository implements RendicionExamenRepository {
 
   /// `p_list_tcpe_Monitor` E: la pregunta que tiene delante, una fila por opción.
   Future<List<TcpeEspejoItemEntity>> espejo(BigInt codExamen);
+
+  // ── Preguntas de la semana (v11) ──────────────────────────────────────
+  /// Las vigentes hoy para quien mira el inicio, con sus opciones (el usuario
+  /// sale del token). Lista vacía si no hay ninguna.
+  Future<List<TcpePreguntaSemanaVigenteEntity>> preguntasSemanaVigentes();
+
+  /// Responde una vez con una opción; devuelve el mensaje de resultado del SP.
+  Future<String?> responderPreguntaSemana(BigInt codPreguntaSemana, BigInt codRsptaOp);
+
+  /// Gestión: todas, o solo las activas o inactivas.
+  Future<List<TcpePreguntaSemanaEntity>> listarPreguntasSemana({bool? activo});
+
+  // Alta si el PK es 0. Las tres devuelven el mensaje del SP.
+  Future<String?> guardarPreguntaSemana(TcpePreguntaSemanaEntity pregunta);
+
+  Future<String?> activarPreguntaSemana(BigInt codPreguntaSemana, bool activo);
+
+  Future<String?> eliminarPreguntaSemana(BigInt codPreguntaSemana);
+
+  /// Quién respondió y qué eligió, en el orden en que respondieron.
+  Future<List<TcpeRespondioSemanaEntity>> respuestasPreguntaSemana(BigInt codPreguntaSemana);
+
+  /// Cuántos eligieron cada opción (también las que nadie eligió).
+  Future<List<TcpeEstadisticaSemanaEntity>> estadisticaPreguntaSemana(BigInt codPreguntaSemana);
+
+  /// Preguntas del banco para elegir, por categoría o texto (sin ninguno, vacía).
+  Future<List<TcpeCandidataSemanaEntity>> candidatasPreguntaSemana({
+    BigInt? codClasificacion,
+    String? texto,
+  });
 
   // ── Usuarios externos ─────────────────────────────────────────────────
   /// Clave temporal nueva, al azar: viene en claro una sola vez.

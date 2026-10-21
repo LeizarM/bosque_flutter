@@ -1,5 +1,5 @@
-/// Informes (`tcpeExamenes/Informes`): resumen por categoría y fechas, e
-/// historial de una persona por su CI.
+/// Informes (`tcpeExamenes/Informes`): resumen por categoría y fechas,
+/// historial de una persona por su CI y, desde v11, las preguntas más falladas.
 library;
 
 import 'package:flutter/material.dart';
@@ -15,6 +15,7 @@ import 'package:bosque_flutter/domain/entities/tcpe_historial_examen_entity.dart
 import 'package:bosque_flutter/domain/entities/tcpe_informe_categoria_entity.dart';
 import 'package:bosque_flutter/presentation/widgets/examenes/comun_examenes.dart';
 import 'package:bosque_flutter/presentation/widgets/examenes/identidad_examenes.dart';
+import 'package:bosque_flutter/presentation/widgets/examenes/ranking_preguntas.dart';
 import 'package:bosque_flutter/presentation/widgets/examenes/tabla_examenes.dart';
 
 typedef _FiltroInforme = ({BigInt? codClasificacion, DateTime? desde, DateTime? hasta});
@@ -37,7 +38,7 @@ class InformesExamenScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => DefaultTabController(
-    length: 2,
+    length: 3,
     child: LayoutBuilder(
       builder: (context, r) {
         final compacto = r.maxWidth < anchoTablaExamenes;
@@ -52,19 +53,29 @@ class InformesExamenScreen extends StatelessWidget {
                   ceja: 'Exámenes · Informes',
                   titulo: 'Informes de exámenes',
                   icono: Icons.insights_outlined,
-                  detalle: 'Cómo les fue a los lotes de una categoría en un periodo, o todo lo que rindió una persona.',
+                  detalle:
+                      'Cómo les fue a los lotes de una categoría en un periodo, todo lo que rindió una persona '
+                      'y en qué preguntas se equivocan más.',
                   compacto: compacto,
                 ),
                 const SizedBox(height: Esp.m),
                 const TabBar(
                   isScrollable: true,
                   tabAlignment: TabAlignment.start,
-                  tabs: [Tab(text: 'Por categoría y fechas'), Tab(text: 'Historial por CI')],
+                  tabs: [
+                    Tab(text: 'Por categoría y fechas'),
+                    Tab(text: 'Historial por CI'),
+                    Tab(text: 'Preguntas más falladas'),
+                  ],
                 ),
                 const SizedBox(height: Esp.m),
                 Expanded(
                   child: TabBarView(
-                    children: [_PorCategoria(compacto: compacto), _Historial(compacto: compacto)],
+                    children: [
+                      _PorCategoria(compacto: compacto),
+                      _Historial(compacto: compacto),
+                      RankingPreguntasExamen(compacto: compacto),
+                    ],
                   ),
                 ),
               ],

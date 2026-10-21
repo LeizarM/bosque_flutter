@@ -47,6 +47,8 @@ import 'package:bosque_flutter/data/models/tcpe_pregunta_model.dart';
 import 'package:bosque_flutter/domain/entities/tcpe_pregunta_entity.dart';
 import 'package:bosque_flutter/data/models/tcpe_pregunta_h_model.dart';
 import 'package:bosque_flutter/domain/entities/tcpe_pregunta_h_entity.dart';
+import 'package:bosque_flutter/data/models/tcpe_pregunta_semana_model.dart';
+import 'package:bosque_flutter/domain/entities/tcpe_pregunta_semana_entity.dart';
 import 'package:bosque_flutter/data/models/tcpe_registro_examen_model.dart';
 import 'package:bosque_flutter/domain/entities/tcpe_registro_examen_entity.dart';
 import 'package:bosque_flutter/data/models/tcpe_req_academico_model.dart';
@@ -67,6 +69,8 @@ import 'package:bosque_flutter/data/models/tcpe_rspta_opcion_h_model.dart';
 import 'package:bosque_flutter/domain/entities/tcpe_rspta_opcion_h_entity.dart';
 import 'package:bosque_flutter/data/models/tcpe_rspta_opcion_u_model.dart';
 import 'package:bosque_flutter/domain/entities/tcpe_rspta_opcion_u_entity.dart';
+import 'package:bosque_flutter/data/models/tcpe_rspta_semana_model.dart';
+import 'package:bosque_flutter/domain/entities/tcpe_rspta_semana_entity.dart';
 import 'package:bosque_flutter/data/models/tcpe_seleccion_fase_model.dart';
 import 'package:bosque_flutter/domain/entities/tcpe_seleccion_fase_entity.dart';
 import 'package:bosque_flutter/data/models/tcpe_seleccion_preguntas_model.dart';
@@ -199,6 +203,11 @@ final Map<String, TcpeCodec<Object>> _codecs = {
     aJson: (e) => TcpePreguntaHModel.fromEntity(e).toJson(),
     idDe: (e) => e.codPreguntaH,
   ),
+  'preguntaSemana': TcpeCodec<TcpePreguntaSemanaEntity>(
+    desdeJson: (j) => TcpePreguntaSemanaModel.fromJson(j).toEntity(),
+    aJson: (e) => TcpePreguntaSemanaModel.fromEntity(e).toJson(),
+    idDe: (e) => e.codPreguntaSemana,
+  ),
   'registroExamen': TcpeCodec<TcpeRegistroExamenEntity>(
     desdeJson: (j) => TcpeRegistroExamenModel.fromJson(j).toEntity(),
     aJson: (e) => TcpeRegistroExamenModel.fromEntity(e).toJson(),
@@ -248,6 +257,11 @@ final Map<String, TcpeCodec<Object>> _codecs = {
     desdeJson: (j) => TcpeRsptaOpcionUModel.fromJson(j).toEntity(),
     aJson: (e) => TcpeRsptaOpcionUModel.fromEntity(e).toJson(),
     idDe: (e) => e.codRsptaOpU,
+  ),
+  'rsptaSemana': TcpeCodec<TcpeRsptaSemanaEntity>(
+    desdeJson: (j) => TcpeRsptaSemanaModel.fromJson(j).toEntity(),
+    aJson: (e) => TcpeRsptaSemanaModel.fromEntity(e).toJson(),
+    idDe: (e) => e.codRsptaSemana,
   ),
   'seleccionFase': TcpeCodec<TcpeSeleccionFaseEntity>(
     desdeJson: (j) => TcpeSeleccionFaseModel.fromJson(j).toEntity(),

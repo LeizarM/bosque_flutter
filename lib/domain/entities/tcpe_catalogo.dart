@@ -1,4 +1,4 @@
-/// Las 38 entidades `tcpe_*` del CRUD genérico `/examenes/catalogo/{entidad}`.
+/// Las 40 entidades `tcpe_*` del CRUD genérico `/examenes/catalogo/{entidad}`.
 /// [entidad] es la tabla sin `tcpe_` en camelCase y debe coincidir con el
 /// backend (con otra mayúscula la ruta no existe); [filtros] es el `p_list`.
 library;
@@ -25,6 +25,7 @@ import 'package:bosque_flutter/domain/entities/tcpe_persona_post_entity.dart';
 import 'package:bosque_flutter/domain/entities/tcpe_postulacion_entity.dart';
 import 'package:bosque_flutter/domain/entities/tcpe_pregunta_entity.dart';
 import 'package:bosque_flutter/domain/entities/tcpe_pregunta_h_entity.dart';
+import 'package:bosque_flutter/domain/entities/tcpe_pregunta_semana_entity.dart';
 import 'package:bosque_flutter/domain/entities/tcpe_registro_examen_entity.dart';
 import 'package:bosque_flutter/domain/entities/tcpe_req_academico_entity.dart';
 import 'package:bosque_flutter/domain/entities/tcpe_req_academico_post_entity.dart';
@@ -35,6 +36,7 @@ import 'package:bosque_flutter/domain/entities/tcpe_rol_examen_entity.dart';
 import 'package:bosque_flutter/domain/entities/tcpe_rspta_opcion_entity.dart';
 import 'package:bosque_flutter/domain/entities/tcpe_rspta_opcion_h_entity.dart';
 import 'package:bosque_flutter/domain/entities/tcpe_rspta_opcion_u_entity.dart';
+import 'package:bosque_flutter/domain/entities/tcpe_rspta_semana_entity.dart';
 import 'package:bosque_flutter/domain/entities/tcpe_seleccion_fase_entity.dart';
 import 'package:bosque_flutter/domain/entities/tcpe_seleccion_preguntas_entity.dart';
 import 'package:bosque_flutter/domain/entities/tcpe_temario_entity.dart';
@@ -159,6 +161,12 @@ class TcpeCatalogo<E> {
     'codPreguntaH',
     ['codPreguntaH', 'codExamen'],
   );
+  // v11: preguntas de la semana y sus respuestas (no vienen de EVALUACION).
+  static const preguntaSemana = TcpeCatalogo<TcpePreguntaSemanaEntity>._(
+    'preguntaSemana',
+    'codPreguntaSemana',
+    ['codPreguntaSemana', 'codPregunta', 'activo'],
+  );
   static const registroExamen = TcpeCatalogo<TcpeRegistroExamenEntity>._(
     'registroExamen',
     'codRegExamen',
@@ -208,6 +216,11 @@ class TcpeCatalogo<E> {
     'rsptaOpcionU',
     'codRsptaOpU',
     ['codRsptaOpU', 'codRsptaOpH', 'codExamen'],
+  );
+  static const rsptaSemana = TcpeCatalogo<TcpeRsptaSemanaEntity>._(
+    'rsptaSemana',
+    'codRsptaSemana',
+    ['codRsptaSemana', 'codPreguntaSemana', 'codUsuario', 'codRsptaOp'],
   );
   static const seleccionFase = TcpeCatalogo<TcpeSeleccionFaseEntity>._(
     'seleccionFase',
@@ -263,6 +276,7 @@ class TcpeCatalogo<E> {
     postulacion,
     pregunta,
     preguntaH,
+    preguntaSemana,
     registroExamen,
     reqAcademico,
     reqAcademicoPost,
@@ -273,6 +287,7 @@ class TcpeCatalogo<E> {
     rsptaOpcion,
     rsptaOpcionH,
     rsptaOpcionU,
+    rsptaSemana,
     seleccionFase,
     seleccionPreguntas,
     temario,

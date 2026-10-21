@@ -8,11 +8,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:bosque_flutter/core/constants/app_constants.dart';
+import 'package:bosque_flutter/core/state/examenes_provider.dart';
 import 'package:bosque_flutter/core/state/postulante_examen_provider.dart';
 import 'package:bosque_flutter/core/ui/aviso.dart';
 import 'package:bosque_flutter/core/ui/confirmacion.dart';
 import 'package:bosque_flutter/core/ui/estados_vista.dart';
 import 'package:bosque_flutter/core/ui/tokens_bosque.dart';
+import 'package:bosque_flutter/domain/entities/tcpe_config_entity.dart';
 import 'package:bosque_flutter/presentation/widgets/examenes/comun_examenes.dart';
 import 'package:bosque_flutter/presentation/widgets/examenes/marco_publico.dart';
 
@@ -82,62 +84,74 @@ class _RegistroExamenScreenState extends ConsumerState<RegistroExamenScreen> {
     onFieldSubmitted: ultimo ? (_) => _guardar() : null,
     textCapitalization: TextCapitalization.words,
     inputFormatters: [LengthLimitingTextInputFormatter(largo)],
-    decoration: InputDecoration(labelText: etiqueta, helperText: ayuda, border: const OutlineInputBorder()),
+    decoration: InputDecoration(
+      labelText: etiqueta,
+      helperText: ayuda,
+      helperMaxLines: 3,
+      border: const OutlineInputBorder(),
+    ),
     validator: validar == null ? null : (v) => validar((v ?? '').trim()),
   );
 
   @override
-  Widget build(BuildContext context) => MarcoPublicoExamen(
-    child: Form(
-      key: _form,
-      child: TarjetaPublica(
-        icono: Icons.badge_outlined,
-        children: [
-          Text(
-            'PASO PREVIO · UNA SOLA VEZ',
-            style: Theme.of(context).textTheme.labelSmall?.copyWith(
-              fontFamily: fuenteFija,
-              letterSpacing: 1.4,
-              color: Theme.of(context).colorScheme.primary,
+  Widget build(BuildContext context) {
+    // v11: quien no tiene carnet (o rinde una encuesta anónima) escribe el CI sin documento.
+    final cfg = ref.watch(configExamenesProvider(OrigenRendicion.postulante)).valueOrNull ?? TcpeConfiguracion.respaldo;
+    return MarcoPublicoExamen(
+      child: Form(
+        key: _form,
+        child: TarjetaPublica(
+          icono: Icons.badge_outlined,
+          children: [
+            Text(
+              'PASO PREVIO · UNA SOLA VEZ',
+              style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                fontFamily: fuenteFija,
+                letterSpacing: 1.4,
+                color: Theme.of(context).colorScheme.primary,
+              ),
             ),
-          ),
-          const SizedBox(height: Esp.xs),
-          Text(
-            'Tus datos',
-            style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: Peso.titulo),
-          ),
-          const SizedBox(height: Esp.s),
-          Text(
-            'Antes de empezar, completa tus datos tal como figuran en tu carnet. Se piden una sola vez.',
-            style: context.apagado(),
-          ),
-          const SizedBox(height: Esp.xl),
-          _campo(_ci, 'Carnet de identidad', largo: 20, validar: (v) => v.isEmpty ? 'Escribe tu número de carnet' : null),
-          const SizedBox(height: Esp.m),
-          _campo(_nombres, 'Nombres', validar: (v) => v.isEmpty ? 'Escribe tus nombres' : null),
-          const SizedBox(height: Esp.m),
-          _campo(
-            _paterno,
-            'Apellido paterno',
-            ayuda: 'Si tienes un solo apellido, deja vacío el otro.',
-            validar: (_) => _sinApellidos ? 'Escribe al menos un apellido: paterno o materno' : null,
-          ),
-          const SizedBox(height: Esp.m),
-          _campo(_materno, 'Apellido materno', ultimo: true),
-          if (_error != null) NotaDelDato(texto: _error!, tono: TonoNota.error),
-          const SizedBox(height: Esp.xl),
-          SizedBox(
-            height: 48,
-            child: BotonAccion(
-              etiqueta: 'Guardar y continuar',
-              etiquetaOcupado: 'Guardando…',
-              icono: Icons.arrow_forward,
-              ocupado: _guardando,
-              onPressed: _guardar,
+            const SizedBox(height: Esp.xs),
+            Text('Tus datos', style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: Peso.titulo)),
+            const SizedBox(height: Esp.s),
+            Text(
+              'Antes de empezar, completa tus datos tal como figuran en tu carnet. Se piden una sola vez.',
+              style: context.apagado(),
             ),
-          ),
-        ],
+            const SizedBox(height: Esp.xl),
+            _campo(
+              _ci,
+              'Carnet de identidad',
+              largo: 20,
+              ayuda: cfg.ayudaCiRegistro,
+              validar: (v) => v.isEmpty ? 'Escribe tu número de carnet' : null,
+            ),
+            const SizedBox(height: Esp.m),
+            _campo(_nombres, 'Nombres', validar: (v) => v.isEmpty ? 'Escribe tus nombres' : null),
+            const SizedBox(height: Esp.m),
+            _campo(
+              _paterno,
+              'Apellido paterno',
+              ayuda: 'Si tienes un solo apellido, deja vacío el otro.',
+              validar: (_) => _sinApellidos ? 'Escribe al menos un apellido: paterno o materno' : null,
+            ),
+            const SizedBox(height: Esp.m),
+            _campo(_materno, 'Apellido materno', ultimo: true),
+            if (_error != null) NotaDelDato(texto: _error!, tono: TonoNota.error),
+            const SizedBox(height: Esp.xl),
+            SizedBox(
+              height: 48,
+              child: BotonAccion(
+                etiqueta: 'Guardar y continuar',
+                etiquetaOcupado: 'Guardando…',
+                icono: Icons.arrow_forward,
+                ocupado: _guardando,
+                onPressed: _guardar,
+              ),
+            ),
+          ],
+        ),
       ),
-    ),
-  );
+    );
+  }
 }

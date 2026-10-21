@@ -603,6 +603,16 @@ final routerProvider = Provider<GoRouter>((ref) {
                   ),
             ),
             GoRoute(
+              path: '/dashboard/${AppConstants.rutaTcpePreguntaSemana}',
+              name: 'tcpePreguntaSemana',
+              builder:
+                  (context, state) => _pantallaConTitulo(
+                    context,
+                    'Bosque - Preguntas de la semana',
+                    const PreguntasSemanaScreen(),
+                  ),
+            ),
+            GoRoute(
               path: '/dashboard/${AppConstants.rutaTcpeMisExamenes}',
               name: 'tcpeMisExamenes',
               builder:
@@ -1273,6 +1283,11 @@ final routerProvider = Provider<GoRouter>((ref) {
           path: '/${AppConstants.rutaTcpeEnVivo}',
           redirect:
               (context, state) => '/dashboard/${AppConstants.rutaTcpeEnVivo}',
+        ),
+        GoRoute(
+          path: '/${AppConstants.rutaTcpePreguntaSemana}',
+          redirect:
+              (context, state) => '/dashboard/${AppConstants.rutaTcpePreguntaSemana}',
         ),
         GoRoute(
           path: '/${AppConstants.rutaTcpeMisExamenes}',

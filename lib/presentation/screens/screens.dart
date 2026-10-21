@@ -99,6 +99,7 @@ export 'package:bosque_flutter/presentation/screens/examenes/informes_examen_scr
 export 'package:bosque_flutter/presentation/screens/examenes/usuarios_externos_screen.dart';
 export 'package:bosque_flutter/presentation/screens/examenes/mis_examenes_screen.dart';
 export 'package:bosque_flutter/presentation/screens/examenes/en_vivo_examen_screen.dart';
+export 'package:bosque_flutter/presentation/screens/examenes/preguntas_semana_screen.dart';
 export 'package:bosque_flutter/presentation/screens/examenes/rendir_mi_examen_screen.dart';
 // Pantallas publicas del postulante externo (sin shell ni token de empleado).
 export 'package:bosque_flutter/presentation/screens/examen_publico/ingreso_examen_screen.dart';

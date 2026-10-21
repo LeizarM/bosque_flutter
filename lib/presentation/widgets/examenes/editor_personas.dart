@@ -62,6 +62,11 @@ class ControladorPersonas extends ChangeNotifier {
   /// Tope de personas por pedido: `maxExamenesPorLote` de la configuración.
   int maximo = kMaxPersonasPorVez;
 
+  /// `ciSinDocumento` y `ayudaCiPersonas` de la configuración (v11): ese CI no
+  /// cuenta como repetido. Null = todos los CI tienen que ser distintos.
+  String? ciSinDocumento;
+  String? ayudaCi;
+
   bool get mostrarErrores => _mostrarErrores;
   int get cantidadFilas => _filas.length;
 
@@ -124,7 +129,7 @@ class ControladorPersonas extends ChangeNotifier {
   String? validar() {
     _mostrarErrores = true;
     notifyListeners();
-    return validarPersonasExamen(filas, maximo: maximo);
+    return validarPersonasExamen(filas, maximo: maximo, ciSinDocumento: ciSinDocumento);
   }
 
   @override
@@ -153,7 +158,7 @@ class EditorPersonasExamen extends StatelessWidget {
           builder: (context, r) {
             final tabla = r.maxWidth >= _anchoTabla;
             final filas = controlador.filas;
-            final repetidos = cisRepetidos(filas);
+            final repetidos = cisRepetidos(filas, ciSinDocumento: controlador.ciSinDocumento);
             final altoFila = tabla ? 56.0 : 172.0;
             final altoMax = tabla ? 336.0 : MediaQuery.sizeOf(context).height * 0.55;
             final alto = math.min(math.max(filas.length, 1) * altoFila, altoMax);
@@ -162,6 +167,10 @@ class EditorPersonasExamen extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 _barra(context),
+                if ((controlador.ayudaCi ?? '').isNotEmpty) ...[
+                  const SizedBox(height: Esp.xs),
+                  Text(controlador.ayudaCi!, style: context.apagado()),
+                ],
                 const SizedBox(height: Esp.s),
                 if (tabla) const _Encabezado(),
                 SizedBox(

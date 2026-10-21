@@ -9,6 +9,7 @@ import 'package:bosque_flutter/core/state/empleados_dependientes_provider.dart';
 import 'package:bosque_flutter/core/state/permisos_vacacion_provider.dart';
 import 'package:bosque_flutter/core/state/rrhh_provider.dart';
 import 'package:bosque_flutter/core/state/user_provider.dart';
+import 'package:bosque_flutter/presentation/widgets/examenes/pregunta_semana_inicio.dart';
 import 'package:bosque_flutter/presentation/widgets/permisos-vacaciones/ver_solicitudes_permiso_vacacion.dart';
 import 'package:bosque_flutter/presentation/widgets/shared/confetti_widget.dart';
 import 'package:bosque_flutter/presentation/widgets/shared/docs_vencidos.dart';
@@ -176,6 +177,9 @@ class _DashboardHomeContentState extends ConsumerState<DashboardHomeContent>
               _buildHeroCard(context, user, primary, isDark, isWide),
 
               const SizedBox(height: 10),
+
+              // ─── Preguntas de la semana (exámenes): sin vigentes no ocupa lugar ───
+              const PreguntasSemanaInicio(),
 
               // ─── Solicitudes y Ausencias Dinámicas ───
               PermisosYAusenciasSeccion(isWide: isWide),

@@ -37,6 +37,10 @@ String nota(double? valor) {
   return valor == valor.roundToDouble() ? valor.toInt().toString() : valor.toStringAsFixed(2);
 }
 
+/// Un porcentaje de 0 a 100 con un decimal: `87.5` → `87,5 %`, `75` → `75 %`.
+String porcentajeTexto(double p) =>
+    '${p == p.roundToDouble() ? p.toInt() : p.toStringAsFixed(1).replaceAll('.', ',')} %';
+
 String duracionTexto(int? minutos) {
   final m = minutos ?? 0;
   if (m <= 0) return '--';

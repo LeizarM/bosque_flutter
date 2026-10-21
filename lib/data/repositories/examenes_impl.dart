@@ -6,12 +6,14 @@ import 'package:bosque_flutter/core/constants/app_constants.dart';
 import 'package:bosque_flutter/core/network/dio_client.dart';
 import 'package:bosque_flutter/data/models/tcpe_banco_opcion_model.dart';
 import 'package:bosque_flutter/data/models/tcpe_banco_pregunta_model.dart';
+import 'package:bosque_flutter/data/models/tcpe_candidata_semana_model.dart';
 import 'package:bosque_flutter/data/models/tcpe_catalogo_codec.dart';
 import 'package:bosque_flutter/data/models/tcpe_credencial_model.dart';
 import 'package:bosque_flutter/data/models/tcpe_disponibles_model.dart';
 import 'package:bosque_flutter/data/models/tcpe_duplicado_pregunta_model.dart';
 import 'package:bosque_flutter/data/models/tcpe_empleado_elegible_model.dart';
 import 'package:bosque_flutter/data/models/tcpe_espejo_item_model.dart';
+import 'package:bosque_flutter/data/models/tcpe_estadistica_semana_model.dart';
 import 'package:bosque_flutter/data/models/tcpe_fila_importacion_model.dart';
 import 'package:bosque_flutter/data/models/tcpe_historial_examen_model.dart';
 import 'package:bosque_flutter/data/models/tcpe_informe_categoria_model.dart';
@@ -22,6 +24,10 @@ import 'package:bosque_flutter/data/models/tcpe_monitor_examen_model.dart';
 import 'package:bosque_flutter/data/models/tcpe_monitor_lote_model.dart';
 import 'package:bosque_flutter/data/models/tcpe_pedido_examenes_model.dart';
 import 'package:bosque_flutter/data/models/tcpe_pregunta_importar_model.dart';
+import 'package:bosque_flutter/data/models/tcpe_pregunta_semana_model.dart';
+import 'package:bosque_flutter/data/models/tcpe_pregunta_semana_vigente_model.dart';
+import 'package:bosque_flutter/data/models/tcpe_ranking_pregunta_model.dart';
+import 'package:bosque_flutter/data/models/tcpe_respondio_semana_model.dart';
 import 'package:bosque_flutter/data/models/tcpe_resultado_examen_model.dart';
 import 'package:bosque_flutter/data/models/tcpe_resultado_importacion_model.dart';
 import 'package:bosque_flutter/data/models/tcpe_revision_item_model.dart';
@@ -30,11 +36,13 @@ import 'package:bosque_flutter/data/repositories/rendicion_endpoints.dart';
 import 'package:bosque_flutter/data/repositories/tcpe_api_base.dart';
 import 'package:bosque_flutter/domain/entities/tcpe_banco_opcion_entity.dart';
 import 'package:bosque_flutter/domain/entities/tcpe_banco_pregunta_entity.dart';
+import 'package:bosque_flutter/domain/entities/tcpe_candidata_semana_entity.dart';
 import 'package:bosque_flutter/domain/entities/tcpe_catalogo.dart';
 import 'package:bosque_flutter/domain/entities/tcpe_credencial_entity.dart';
 import 'package:bosque_flutter/domain/entities/tcpe_duplicado_pregunta_entity.dart';
 import 'package:bosque_flutter/domain/entities/tcpe_empleado_elegible_entity.dart';
 import 'package:bosque_flutter/domain/entities/tcpe_espejo_item_entity.dart';
+import 'package:bosque_flutter/domain/entities/tcpe_estadistica_semana_entity.dart';
 import 'package:bosque_flutter/domain/entities/tcpe_fila_importacion_entity.dart';
 import 'package:bosque_flutter/domain/entities/tcpe_historial_examen_entity.dart';
 import 'package:bosque_flutter/domain/entities/tcpe_informe_categoria_entity.dart';
@@ -44,6 +52,10 @@ import 'package:bosque_flutter/domain/entities/tcpe_monitor_examen_entity.dart';
 import 'package:bosque_flutter/domain/entities/tcpe_monitor_lote_entity.dart';
 import 'package:bosque_flutter/domain/entities/tcpe_pedido_examenes_entity.dart';
 import 'package:bosque_flutter/domain/entities/tcpe_pregunta_importar_entity.dart';
+import 'package:bosque_flutter/domain/entities/tcpe_pregunta_semana_entity.dart';
+import 'package:bosque_flutter/domain/entities/tcpe_pregunta_semana_vigente_entity.dart';
+import 'package:bosque_flutter/domain/entities/tcpe_ranking_pregunta_entity.dart';
+import 'package:bosque_flutter/domain/entities/tcpe_respondio_semana_entity.dart';
 import 'package:bosque_flutter/domain/entities/tcpe_resultado_examen_entity.dart';
 import 'package:bosque_flutter/domain/entities/tcpe_resultado_importacion_entity.dart';
 import 'package:bosque_flutter/domain/entities/tcpe_revision_item_entity.dart';
@@ -381,6 +393,23 @@ class ExamenesImpl extends TcpeApiBase
   );
 
   @override
+  Future<List<TcpeRankingPreguntaEntity>> rankingPreguntas({
+    BigInt? codClasificacion,
+    BigInt? codRolExamen,
+    DateTime? fechaDesde,
+    DateTime? fechaHasta,
+  }) => postAndReturnList(
+    endpoint: AppConstants.tcpeResultadosRankingPreguntas,
+    data: TcpeApiBase.cuerpo({
+      'codClasificacion': codClasificacion,
+      'codRolExamen': codRolExamen,
+      'fechaDesde': tcpeFechaJson(fechaDesde),
+      'fechaHasta': tcpeFechaJson(fechaHasta),
+    }),
+    fromJson: (j) => TcpeRankingPreguntaModel.fromJson(j).toEntity(),
+  );
+
+  @override
   Future<String?> marcarRespuesta({
     required BigInt codExamen,
     required BigInt codRespuestaH,
@@ -429,6 +458,78 @@ class ExamenesImpl extends TcpeApiBase
     endpoint: AppConstants.tcpeMonitorEspejo,
     data: {'codExamen': codExamen.toInt()},
     fromJson: (j) => TcpeEspejoItemModel.fromJson(j).toEntity(),
+  );
+
+  // ── Preguntas de la semana (v11) ──────────────────────────────────────
+  @override
+  Future<List<TcpePreguntaSemanaVigenteEntity>> preguntasSemanaVigentes() => postAndReturnList(
+    endpoint: AppConstants.tcpePreguntaSemanaVigentes,
+    data: const {},
+    fromJson: (j) => TcpePreguntaSemanaVigenteModel.fromJson(j).toEntity(),
+  );
+
+  @override
+  Future<String?> responderPreguntaSemana(BigInt codPreguntaSemana, BigInt codRsptaOp) => postMensaje(
+    AppConstants.tcpePreguntaSemanaResponder,
+    {'codPreguntaSemana': codPreguntaSemana.toInt(), 'codRsptaOp': codRsptaOp.toInt()},
+    errorMessage: 'No se pudo guardar tu respuesta.',
+  );
+
+  @override
+  Future<List<TcpePreguntaSemanaEntity>> listarPreguntasSemana({bool? activo}) => postAndReturnList(
+    endpoint: AppConstants.tcpePreguntaSemanaListar,
+    data: TcpeApiBase.cuerpo({'activo': activo}),
+    fromJson: (j) => TcpePreguntaSemanaModel.fromJson(j).toEntity(),
+  );
+
+  @override
+  Future<String?> guardarPreguntaSemana(TcpePreguntaSemanaEntity pregunta) => postMensaje(
+    AppConstants.tcpePreguntaSemanaGuardar,
+    TcpePreguntaSemanaModel.fromEntity(pregunta).toGuardarJson(),
+    errorMessage: 'No se pudo guardar la pregunta de la semana.',
+  );
+
+  @override
+  Future<String?> activarPreguntaSemana(BigInt codPreguntaSemana, bool activo) => postMensaje(
+    AppConstants.tcpePreguntaSemanaActivar,
+    {'codPreguntaSemana': codPreguntaSemana.toInt(), 'activo': activo},
+    errorMessage: 'No se pudo cambiar el estado de la pregunta de la semana.',
+  );
+
+  @override
+  Future<String?> eliminarPreguntaSemana(BigInt codPreguntaSemana) => postMensaje(
+    AppConstants.tcpePreguntaSemanaEliminar,
+    {'codPreguntaSemana': codPreguntaSemana.toInt()},
+    errorMessage: 'No se pudo eliminar la pregunta de la semana.',
+  );
+
+  @override
+  Future<List<TcpeRespondioSemanaEntity>> respuestasPreguntaSemana(BigInt codPreguntaSemana) =>
+      postAndReturnList(
+        endpoint: AppConstants.tcpePreguntaSemanaRespuestas,
+        data: {'codPreguntaSemana': codPreguntaSemana.toInt()},
+        fromJson: (j) => TcpeRespondioSemanaModel.fromJson(j).toEntity(),
+      );
+
+  @override
+  Future<List<TcpeEstadisticaSemanaEntity>> estadisticaPreguntaSemana(BigInt codPreguntaSemana) =>
+      postAndReturnList(
+        endpoint: AppConstants.tcpePreguntaSemanaEstadistica,
+        data: {'codPreguntaSemana': codPreguntaSemana.toInt()},
+        fromJson: (j) => TcpeEstadisticaSemanaModel.fromJson(j).toEntity(),
+      );
+
+  @override
+  Future<List<TcpeCandidataSemanaEntity>> candidatasPreguntaSemana({
+    BigInt? codClasificacion,
+    String? texto,
+  }) => postAndReturnList(
+    endpoint: AppConstants.tcpePreguntaSemanaBanco,
+    data: TcpeApiBase.cuerpo({
+      'codClasificacion': codClasificacion,
+      'texto': (texto ?? '').trim().isEmpty ? null : texto!.trim(),
+    }),
+    fromJson: (j) => TcpeCandidataSemanaModel.fromJson(j).toEntity(),
   );
 
   // ── Usuarios externos ─────────────────────────────────────────────────

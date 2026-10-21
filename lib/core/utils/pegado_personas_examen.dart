@@ -1,6 +1,6 @@
 /// Lista de personas del modo "Lista de personas" de los exámenes: el texto
 /// pegado desde Excel y las reglas que el backend exige (CI obligatorio y
-/// único, nombres y al menos un apellido obligatorios, 200 como máximo).
+/// único salvo el CI sin documento, nombres y al menos un apellido, 200 como máximo).
 library;
 
 import 'package:bosque_flutter/domain/entities/tcpe_persona_examen_entity.dart';
@@ -64,13 +64,16 @@ bool personaVacia(TcpePersonaExamenEntity p) =>
 /// CI normalizado para comparar (sin espacios a los lados ni mayúsculas).
 String claveCi(String ci) => ci.trim().toUpperCase();
 
-/// Los CI que aparecen más de una vez entre las filas con datos.
-Set<String> cisRepetidos(List<TcpePersonaExamenEntity> filas) {
+/// Los CI que aparecen más de una vez entre las filas con datos. El
+/// [ciSinDocumento] (`ciSinDocumento` de la configuración, hoy 0) no se repite:
+/// cada uno es una persona distinta.
+Set<String> cisRepetidos(List<TcpePersonaExamenEntity> filas, {String? ciSinDocumento}) {
+  final sinDocumento = ciSinDocumento == null ? null : claveCi(ciSinDocumento);
   final vistos = <String>{};
   final repetidos = <String>{};
   for (final p in filas) {
     final k = claveCi(p.ci);
-    if (k.isEmpty) continue;
+    if (k.isEmpty || k == sinDocumento) continue;
     if (!vistos.add(k)) repetidos.add(k);
   }
   return repetidos;
@@ -109,13 +112,17 @@ Map<CampoPersona, String> erroresDePersona(
 
 /// El primer problema de la lista, con su número de fila, o null si se puede
 /// enviar. Las filas vacías se ignoran.
-String? validarPersonasExamen(List<TcpePersonaExamenEntity> filas, {int maximo = kMaxPersonasPorVez}) {
+String? validarPersonasExamen(
+  List<TcpePersonaExamenEntity> filas, {
+  int maximo = kMaxPersonasPorVez,
+  String? ciSinDocumento,
+}) {
   final conDatos = filas.where((p) => !personaVacia(p)).length;
   if (conDatos == 0) return 'Agrega al menos una persona.';
   if (conDatos > maximo) {
     return 'Como máximo $maximo personas por vez (hay $conDatos).';
   }
-  final repetidos = cisRepetidos(filas);
+  final repetidos = cisRepetidos(filas, ciSinDocumento: ciSinDocumento);
   for (var i = 0; i < filas.length; i++) {
     final p = filas[i];
     if (personaVacia(p)) continue;

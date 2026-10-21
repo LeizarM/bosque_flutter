@@ -61,4 +61,22 @@ class TcpeConfiguracion {
   );
   String get msgCredencialVencida => _texto('msgCredencialVencida', 'Estas credenciales ya no son válidas.');
   String get msgFueraDeVentana => _texto('msgFueraDeVentana', 'El examen no está disponible en este horario.');
+
+  /// v11: el CI de un externo sin carnet o anónimo. No identifica a nadie: no
+  /// cuenta como repetido y cada uno es una persona distinta.
+  String get ciSinDocumento => _texto('ciSinDocumento', '0');
+  String get ayudaCiRegistro => _texto('ayudaCiRegistro', 'Si no tienes carnet o la encuesta es anónima, escribe 0.');
+  String get ayudaCiPersonas => _texto(
+    'ayudaCiPersonas',
+    'Escribe 0 si la persona no tiene carnet o es anónima: cada 0 es una persona distinta.',
+  );
+
+  /// El título que se muestra si la pregunta de la semana no tiene uno propio.
+  String get tituloPreguntaSemana => _texto('tituloPreguntaSemana', 'Pregunta de la semana');
+
+  /// Días que propone el plazo de una pregunta de la semana nueva (al menos uno).
+  int get preguntaSemanaDias {
+    final d = _entero('preguntaSemanaDias', 7);
+    return d < 1 ? 1 : d;
+  }
 }

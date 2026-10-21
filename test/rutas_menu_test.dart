@@ -77,6 +77,8 @@ void main() {
     AppConstants.rutaTcpeUsuarios: 'UsuariosExternosScreen',
     AppConstants.rutaTcpeMisExamenes: 'MisExamenesScreen',
     AppConstants.rutaTcpeEnVivo: 'EnVivoExamenScreen',
+    // v11: la gestión de las preguntas de la semana del inicio.
+    AppConstants.rutaTcpePreguntaSemana: 'PreguntasSemanaScreen',
   };
 
   late Set<String> paths;

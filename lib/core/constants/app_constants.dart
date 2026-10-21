@@ -2255,6 +2255,8 @@ class AppConstants {
   static const String rutaTcpeUsuarios = 'tcpeExamenes/Usuarios';
   static const String rutaTcpeMisExamenes = 'tcpeExamenes/MisExamenes';
   static const String rutaTcpeEnVivo = 'tcpeExamenes/EnVivo';
+  // v11: gestión de las preguntas de la semana que se responden en el inicio.
+  static const String rutaTcpePreguntaSemana = 'tcpeExamenes/PreguntaSemana';
   // Rendición del empleado a pantalla completa: fuera del shell, sin menú lateral.
   static const String rutaTcpeRendirMiExamen = '/tcpeExamenes/rendir/:codExamen';
 
@@ -2265,7 +2267,7 @@ class AppConstants {
   static const String rutaTcpeRendir = '/examen/rendir/:codExamen';
   static const String rutaTcpeResultado = '/examen/resultado/:codExamen';
 
-  // CRUD genérico de las 38 tablas: {entidad} es la tabla sin tcpe_, en camelCase (p. ej. rsptaOpcionH).
+  // CRUD genérico de las 40 tablas: {entidad} es la tabla sin tcpe_, en camelCase (p. ej. rsptaOpcionH).
   static const String tcpeEntidad = '{entidad}';
   static const String tcpeCatalogoListar = '/examenes/catalogo/{entidad}/listar';
   static const String tcpeCatalogoGuardar = '/examenes/catalogo/{entidad}/guardar';
@@ -2300,6 +2302,19 @@ class AppConstants {
       '/examenes/resultados/solucionario';
   static const String tcpeResultadosHistorial = '/examenes/resultados/historial';
   static const String tcpeResultadosInforme = '/examenes/resultados/informe';
+  // v11: preguntas más falladas por categoría (Resultado P).
+  static const String tcpeResultadosRankingPreguntas = '/examenes/resultados/ranking-preguntas';
+  // v11: preguntas de la semana. Vigentes y responder, para cualquier empleado en el inicio;
+  // el resto, con la pantalla tcpeExamenes/PreguntaSemana.
+  static const String tcpePreguntaSemanaVigentes = '/examenes/pregunta-semana/vigentes';
+  static const String tcpePreguntaSemanaResponder = '/examenes/pregunta-semana/responder';
+  static const String tcpePreguntaSemanaListar = '/examenes/pregunta-semana/listar';
+  static const String tcpePreguntaSemanaGuardar = '/examenes/pregunta-semana/guardar';
+  static const String tcpePreguntaSemanaActivar = '/examenes/pregunta-semana/activar';
+  static const String tcpePreguntaSemanaEliminar = '/examenes/pregunta-semana/eliminar';
+  static const String tcpePreguntaSemanaRespuestas = '/examenes/pregunta-semana/respuestas';
+  static const String tcpePreguntaSemanaEstadistica = '/examenes/pregunta-semana/estadistica';
+  static const String tcpePreguntaSemanaBanco = '/examenes/pregunta-semana/banco';
   static const String tcpeCalificacionMarcar = '/examenes/calificacion/marcar';
   static const String tcpeCalificacionCerrar = '/examenes/calificacion/cerrar';
   static const String tcpeCalificacionNota = '/examenes/calificacion/nota';

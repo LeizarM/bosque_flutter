@@ -178,9 +178,9 @@ void main() {
       expect(codec.aJson(u.copyWith(activo: false))['activo'], false);
     });
 
-    test('hay un codec y un descriptor por cada una de las 38 tablas', () {
-      expect(TcpeCatalogo.todos, hasLength(38));
-      expect({for (final c in TcpeCatalogo.todos) c.entidad}, hasLength(38));
+    test('hay un codec y un descriptor por cada una de las 40 tablas', () {
+      expect(TcpeCatalogo.todos, hasLength(40));
+      expect({for (final c in TcpeCatalogo.todos) c.entidad}, hasLength(40));
       for (final c in TcpeCatalogo.todos) {
         expect(() => codecTcpe(c), returnsNormally, reason: c.entidad);
         expect(c.filtros.first, c.pk);
@@ -191,7 +191,8 @@ void main() {
       // Copia de TcpeCatalogoBancoController, TcpeCatalogoExamenController y
       // TcpeCatalogoPostulacionController: el segmento distingue mayúsculas y
       // con 'RsptaOpcionH' la ruta no existe (404).
-      const banco = 'area|clasificacion|pregunta|respuesta|rsptaOpcion';
+      // v11: preguntaSemana y rsptaSemana; el conjunto es la unión de los tres regex.
+      const banco = 'area|clasificacion|pregunta|respuesta|rsptaOpcion|preguntaSemana|rsptaSemana';
       const examen = 'rolExamen|examen|seleccionPreguntas|preguntaH|respuestaH|rsptaOpcionH'
           '|rsptaOpcionU|registroExamen|usuario|tipoUsuario|empleado';
       const postulacion = 'areaPost|capacitacion|capacitador|conocimientosPost|conocimientos'
@@ -199,7 +200,7 @@ void main() {
           '|otrosConocimientos|personaPost|postulacion|reqAcademico|reqAcademicoPost|reqExpLabPost'
           '|seleccionFase|temario|tipo';
       final backend = {...banco.split('|'), ...examen.split('|'), ...postulacion.split('|')};
-      expect(backend, hasLength(38));
+      expect(backend, hasLength(40));
       expect({for (final c in TcpeCatalogo.todos) c.entidad}, backend);
       expect(
         AppConstants.tcpeCatalogoListar.replaceFirst(AppConstants.tcpeEntidad, TcpeCatalogo.rsptaOpcionH.entidad),

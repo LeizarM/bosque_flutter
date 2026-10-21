@@ -245,7 +245,10 @@ class _FormularioLoteState extends ConsumerState<FormularioLote> {
     ];
     const borde = OutlineInputBorder();
     final cfg = _config(ref);
-    _destinatarios.personas.maximo = cfg.maxExamenesPorLote;
+    _destinatarios.personas
+      ..maximo = cfg.maxExamenesPorLote
+      ..ciSinDocumento = cfg.ciSinDocumento
+      ..ayudaCi = cfg.ayudaCiPersonas;
 
     return MarcoFormulario(
       titulo: _editando ? 'Editar lote' : 'Generar lote de exámenes',
@@ -675,7 +678,10 @@ class _AgregarExamenesState extends ConsumerState<_AgregarExamenes> {
   @override
   Widget build(BuildContext context) {
     final cfg = _config(ref);
-    _destinatarios.personas.maximo = cfg.maxExamenesPorLote;
+    _destinatarios.personas
+      ..maximo = cfg.maxExamenesPorLote
+      ..ciSinDocumento = cfg.ciSinDocumento
+      ..ayudaCi = cfg.ayudaCiPersonas;
     return MarcoFormulario(
       titulo: 'Agregar exámenes',
       icono: Icons.group_add_outlined,
