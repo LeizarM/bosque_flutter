@@ -22,12 +22,18 @@ class AgendaEmpleadoEntity {
     this.empresa = '',
     this.telefonos = const [],
     this.puedeVerFicha = false,
-  });
+    String iniciales = '',
+  }) : _iniciales = iniciales;
+
+  final String _iniciales;
 
   bool get tieneCorporativo => telefonos.isNotEmpty;
 
-  /// Primera letra de la primera y de la última palabra, para el avatar.
+  /// Las del avatar: primer nombre + apellido paterno (o materno), armadas en
+  /// el SP. Sin ellas (backend viejo), la primera letra de la primera y de la
+  /// última palabra del nombre.
   String get iniciales {
+    if (_iniciales.trim().isNotEmpty) return _iniciales.trim().toUpperCase();
     final partes =
         nombreCompleto.split(' ').where((p) => p.trim().isNotEmpty).toList();
     if (partes.isEmpty) return '?';

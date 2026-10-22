@@ -79,7 +79,7 @@ void main() {
     ),
   ];
 
-  Widget app({int codEmpleado = 25}) {
+  Widget app({int codEmpleado = 25, String? iniciales}) {
     // Como en la app: el sidebar vive en el ShellRoute y sobrevive al cambio
     // de pantalla, así que sus animaciones corren de verdad al navegar.
     final router = GoRouter(
@@ -119,6 +119,7 @@ void main() {
               'codEmpleado': codEmpleado,
               'nombreCompleto': 'JAIMES MARCELO JAVIER',
               'cargo': 'Analista de sistemas',
+              if (iniciales != null) 'iniciales': iniciales,
             }),
           ),
         ),
@@ -188,6 +189,20 @@ void main() {
     });
     expect(errores, isEmpty);
     expect(find.text('INICIO'), findsOneWidget);
+  });
+
+  testWidgets('el avatar usa las iniciales que manda el SP', (tester) async {
+    // 172 no tiene paterno: el SP manda primer nombre + materno (MJ).
+    await montar(tester, app(iniciales: 'MJ'));
+    expect(find.text('MJ'), findsOneWidget);
+    expect(find.text('JM'), findsNothing);
+  });
+
+  testWidgets('sin iniciales del SP (sesión anterior) salen del nombre', (
+    tester,
+  ) async {
+    await montar(tester, app());
+    expect(find.text('JM'), findsOneWidget);
   });
 
   testWidgets('sin empleado vinculado no hay «Mi Ficha»', (tester) async {

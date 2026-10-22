@@ -555,6 +555,7 @@ class _AppSidebarState extends ConsumerState<AppSidebar> {
 
     final encabezado = _EncabezadoUsuario(
       nombre: user?.nombreCompleto ?? 'Usuario',
+      iniciales: user?.iniciales ?? '',
       cargo: user?.cargo ?? '',
       rol: user?.tipoUsuario ?? '',
       // Sin empleado vinculado no hay ficha que abrir.
@@ -613,6 +614,7 @@ class _AppSidebarState extends ConsumerState<AppSidebar> {
 class _EncabezadoUsuario extends StatelessWidget {
   const _EncabezadoUsuario({
     required this.nombre,
+    required this.iniciales,
     required this.cargo,
     required this.rol,
     required this.onMiFicha,
@@ -620,6 +622,10 @@ class _EncabezadoUsuario extends StatelessWidget {
   });
 
   final String nombre;
+
+  /// Las del SP (primer nombre + apellido paterno, o materno); vacías en una
+  /// sesión del backend anterior, y entonces se toman del nombre.
+  final String iniciales;
   final String cargo;
   final String rol;
   final VoidCallback? onMiFicha;
@@ -662,7 +668,9 @@ class _EncabezadoUsuario extends StatelessWidget {
       child: CircleAvatar(
         backgroundColor: cs.primaryContainer,
         child: Text(
-          _iniciales(nombre),
+          iniciales.trim().isNotEmpty
+              ? iniciales.trim().toUpperCase()
+              : _iniciales(nombre),
           style: t.titleSmall?.copyWith(
             color: cs.onPrimaryContainer,
             fontWeight: FontWeight.w700,

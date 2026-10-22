@@ -71,6 +71,7 @@ class LoginDataModel {
   final String nombreSucursal;
   final String nombreCiudad;
   final String nombreEmpresa;
+  final String iniciales;
   final String npassword;
   final String password;
   final String password2;
@@ -94,6 +95,7 @@ class LoginDataModel {
     required this.nombreSucursal,
     required this.nombreCiudad,
     required this.nombreEmpresa,
+    this.iniciales = '',
     required this.npassword,
     required this.password,
     required this.password2,
@@ -138,6 +140,7 @@ class LoginDataModel {
       nombreSucursal: json['nombreSucursal'] ?? '',
       nombreCiudad: json['nombreCiudad'] ?? '',
       nombreEmpresa: json['nombreEmpresa'] ?? '',
+      iniciales: json['iniciales'] ?? '',
       npassword: json['npassword'] ?? '',
       password: json['password'] ?? '',
       password2: json['password2'] ?? '',
@@ -164,6 +167,7 @@ class LoginDataModel {
     if (nombreSucursal.isNotEmpty) data['nombreSucursal'] = nombreSucursal;
     if (nombreCiudad.isNotEmpty) data['nombreCiudad'] = nombreCiudad;
     if (nombreEmpresa.isNotEmpty) data['nombreEmpresa'] = nombreEmpresa;
+    if (iniciales.isNotEmpty) data['iniciales'] = iniciales;
     if (npassword.isNotEmpty) data['npassword'] = npassword;
     if (password.isNotEmpty) data['password'] = password;
     if (password2.isNotEmpty) data['password2'] = password2;
@@ -190,6 +194,7 @@ class LoginDataModel {
       nombreSucursal: nombreSucursal,
       nombreCiudad: nombreCiudad,
       nombreEmpresa: nombreEmpresa,
+      iniciales: iniciales,
       npassword: npassword,
       password: password,
       password2: password2,
@@ -217,6 +222,7 @@ class LoginDataModel {
       nombreSucursal: entity.nombreSucursal,
       nombreCiudad: entity.nombreCiudad,
       nombreEmpresa: entity.nombreEmpresa,
+      iniciales: entity.iniciales,
       npassword: entity.npassword,
       password: entity.password,
       password2: entity.password2,

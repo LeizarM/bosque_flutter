@@ -5,6 +5,7 @@ import 'package:bosque_flutter/domain/entities/agenda_empleado_entity.dart';
 class AgendaEmpleadoModel {
   final BigInt codEmpleado;
   final String nombreCompleto;
+  final String iniciales;
   final String cargo;
   final int codSucursal;
   final String sucursal;
@@ -15,6 +16,7 @@ class AgendaEmpleadoModel {
   const AgendaEmpleadoModel({
     required this.codEmpleado,
     required this.nombreCompleto,
+    this.iniciales = '',
     this.cargo = '',
     this.codSucursal = 0,
     this.sucursal = '',
@@ -29,6 +31,7 @@ class AgendaEmpleadoModel {
       AgendaEmpleadoModel(
         codEmpleado: BigInt.from((json['codEmpleado'] as num?) ?? 0),
         nombreCompleto: _texto(json['nombreCompleto']),
+        iniciales: _texto(json['iniciales']),
         cargo: _texto(json['cargo']),
         codSucursal: (json['codSucursal'] as num?)?.toInt() ?? 0,
         sucursal: _texto(json['sucursal']),
@@ -41,6 +44,7 @@ class AgendaEmpleadoModel {
   Map<String, dynamic> toJson() => {
     'codEmpleado': codEmpleado.toInt(),
     'nombreCompleto': nombreCompleto,
+    'iniciales': iniciales,
     'cargo': cargo,
     'codSucursal': codSucursal,
     'sucursal': sucursal,
@@ -61,12 +65,14 @@ class AgendaEmpleadoModel {
         if (t.trim().isNotEmpty) t.trim(),
     ],
     puedeVerFicha: puedeVerFicha,
+    iniciales: iniciales,
   );
 
   factory AgendaEmpleadoModel.fromEntity(AgendaEmpleadoEntity e) =>
       AgendaEmpleadoModel(
         codEmpleado: e.codEmpleado,
         nombreCompleto: e.nombreCompleto,
+        iniciales: e.iniciales,
         cargo: e.cargo,
         codSucursal: e.codSucursal,
         sucursal: e.sucursal,

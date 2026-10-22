@@ -17,6 +17,10 @@ class LoginEntity {
   final String nombreSucursal;
   final String nombreCiudad;
   final String nombreEmpresa;
+
+  /// Las del avatar del sidebar (primer nombre + apellido paterno, o materno),
+  /// armadas en el SP. Vacías en una sesión iniciada con el backend anterior.
+  final String iniciales;
   String npassword;
   String password;
   String password2;
@@ -40,6 +44,7 @@ class LoginEntity {
     required this.nombreSucursal,
     required this.nombreCiudad,
     required this.nombreEmpresa,
+    this.iniciales = '',
     required this.npassword,
     required this.password,
     required this.password2,
@@ -72,6 +77,7 @@ class LoginEntity {
       nombreSucursal: json['nombreSucursal'] ?? '',
       nombreCiudad: json['nombreCiudad'] ?? '',
       nombreEmpresa: json['nombreEmpresa'] ?? '',
+      iniciales: json['iniciales'] ?? '',
       npassword: json['npassword'] ?? '',
       password: json['password'] ?? '',
       password2: json['password2'] ?? '',
@@ -98,6 +104,7 @@ class LoginEntity {
     if (nombreSucursal.isNotEmpty) data['nombreSucursal'] = nombreSucursal;
     if (nombreCiudad.isNotEmpty) data['nombreCiudad'] = nombreCiudad;
     if (nombreEmpresa.isNotEmpty) data['nombreEmpresa'] = nombreEmpresa;
+    if (iniciales.isNotEmpty) data['iniciales'] = iniciales;
     if (npassword.isNotEmpty) data['npassword'] = npassword;
     if (password.isNotEmpty) data['password'] = password;
     if (password2.isNotEmpty) data['password2'] = password2;

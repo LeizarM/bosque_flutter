@@ -36,6 +36,8 @@ class _Repo implements AgendaRepository {
     AgendaEmpleadoEntity(
       codEmpleado: BigInt.from(32),
       nombreCompleto: 'ERICK ALBERTO ALMENDRAS ROCHA JEMIO',
+      // Paterno compuesto: solo el SP sabe que la «A» es la del apellido.
+      iniciales: 'EA',
       cargo: 'JEFE DE SISTEMAS Y OPERACIONES CON UN NOMBRE DE CARGO MUY LARGO',
       codSucursal: 20,
       sucursal: 'CENTRAL',
@@ -130,6 +132,31 @@ void main() {
       expect(find.textContaining('ALMENDRAS'), findsOneWidget);
     },
   );
+
+  testWidgets('el avatar muestra las iniciales que arma el SP', (tester) async {
+    await abrir(tester, 1400);
+    expect(
+      find.descendant(
+        of: find.byKey(const ValueKey('agenda-32')),
+        matching: find.text('EA'),
+      ),
+      findsOneWidget,
+    );
+  });
+
+  test('las iniciales del SP mandan; sin ellas salen del nombre', () {
+    final con = AgendaEmpleadoModel.fromJson({
+      'codEmpleado': 172,
+      'nombreCompleto': 'JAIMES MARCELO JAVIER',
+      'iniciales': 'mj',
+    });
+    final sin = AgendaEmpleadoModel.fromJson({
+      'codEmpleado': 172,
+      'nombreCompleto': 'JAIMES MARCELO JAVIER',
+    });
+    expect(con.toEntity().iniciales, 'MJ');
+    expect(sin.toEntity().iniciales, 'JJ');
+  });
 
   test('sin el dato del servidor no se ofrece la ficha', () {
     final con = AgendaEmpleadoModel.fromJson({
