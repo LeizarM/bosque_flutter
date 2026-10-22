@@ -16,6 +16,7 @@ import 'package:bosque_flutter/data/models/seguro_model.dart';
 import 'package:bosque_flutter/data/models/telefono_model.dart';
 import 'package:bosque_flutter/data/models/tipo_educacion_model.dart';
 import 'package:bosque_flutter/data/models/tipo_licencia_model.dart';
+import 'package:bosque_flutter/data/models/tipo_motivo_fin_model.dart';
 import 'package:bosque_flutter/data/models/tipo_relacion_laboral_model.dart';
 import 'package:bosque_flutter/data/models/tipo_seguro_model.dart';
 import 'package:bosque_flutter/domain/entities/afiliacion_seguro_entity.dart';
@@ -32,6 +33,7 @@ import 'package:bosque_flutter/domain/entities/seguro_entity.dart';
 import 'package:bosque_flutter/domain/entities/telefono_entity.dart';
 import 'package:bosque_flutter/domain/entities/tipo_educacion_entity.dart';
 import 'package:bosque_flutter/domain/entities/tipo_licencia_entity.dart';
+import 'package:bosque_flutter/domain/entities/tipo_motivo_fin_entity.dart';
 import 'package:bosque_flutter/domain/entities/tipo_relacion_laboral_entity.dart';
 import 'package:bosque_flutter/domain/entities/tipo_seguro_entity.dart';
 import 'package:bosque_flutter/domain/repositories/registro_empleado_repository.dart';
@@ -656,6 +658,30 @@ class RegistroEmpleadoImpl implements RegistroEmpleadoRepository {
       return [];
     } catch (e) {
       console('Error al obtener el Tipo educacion: $e');
+      return [];
+    }
+  }
+
+  //OBTENDRA LOS TIPOS DE MOTIVO FIN DE RELACION LABORAL
+  @override
+  Future<List<TipoMotivoFinEntity>> getTipoMotivoFin() async {
+    try {
+      final response = await _dio.post(AppConstants.rrhhTipoMotivoFin);
+      if (response.statusCode == 200 && response.data != null) {
+        final data = response.data ?? [];
+        final items =
+            (data as List<dynamic>)
+                .map((json) => TipoMotivoFinModel.fromJson(json))
+                .toList();
+        return items.map((model) => model.toEntity()).toList();
+      } else {
+        return [];
+      }
+    } on DioException catch (e) {
+      console('Error al obtener Tipo motivo fin: ${e.message}');
+      return [];
+    } catch (e) {
+      console('Error al obtener Tipo motivo fin: $e');
       return [];
     }
   }

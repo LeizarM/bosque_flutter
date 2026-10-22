@@ -153,6 +153,7 @@ class IndemnizacionScreen extends ConsumerWidget {
                           : IndemnizacionPrevisionTable(
                             items: state.items,
                             cs: cs,
+                            fechaCorte: state.fechaActual,
                           ),
                 ),
 

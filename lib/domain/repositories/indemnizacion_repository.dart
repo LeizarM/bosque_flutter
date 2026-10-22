@@ -31,4 +31,11 @@ abstract class IndemnizacionRepository {
     required String endpoint,
     required Map<String, dynamic> params,
   });
+
+  Future<Uint8List> descargarFiniquitoExcel({
+    required int codEmpleado,
+    String? fechaCorte,
+    String? motivoRetiro,
+    String? domicilioEmpresa,
+  });
 }

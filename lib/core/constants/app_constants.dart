@@ -350,7 +350,8 @@ class AppConstants {
   static const String funcionesModuloListar = '/funciones-modulo/listar';
   static const String funcionesModuloRegistrar = '/funciones-modulo/registrar';
   static const String funcionesModuloEliminar = '/funciones-modulo/eliminar';
-  static const String asignacionFuncionesListar = '/asignacion-funciones/listar';
+  static const String asignacionFuncionesListar =
+      '/asignacion-funciones/listar';
   static const String asignacionFuncionesModulos =
       '/asignacion-funciones/modulos';
   static const String asignacionFuncionesFunciones =
@@ -370,7 +371,8 @@ class AppConstants {
   // ABM de empresas y sucursales (vista 12). Las lecturas de sucursales
   // reciben {id: codEmpresa}; 0 trae todas.
   static const String _empSuc = '/empresas-sucursales';
-  static const String empresasSucursalesEmpresasListar = '$_empSuc/empresas/listar';
+  static const String empresasSucursalesEmpresasListar =
+      '$_empSuc/empresas/listar';
   static const String empresasSucursalesEmpresasRegistrar =
       '$_empSuc/empresas/registrar';
   static const String empresasSucursalesEmpresasEliminar =
@@ -388,6 +390,7 @@ class AppConstants {
   static const String rrhhEliminarCuentaBancaria =
       '/rrhh/eliminarCuentaBancaria';
   static const String rrhhTipoRealacionLaboral = '/rrhh/tipoRelacionLaboral';
+  static const String rrhhTipoMotivoFin = '/rrhh/tipoMotivoFin';
   static const String pdfRptNominaEmpleados = '/rrhh/pdfNominaEmpleados';
   static const String pdfRptPermVacTotal = '/rrhh/pdfRptPermVacTotal';
   static const String excelRptPermVacTotal = '/rrhh/excelRptPermVacTotal';
@@ -2219,7 +2222,8 @@ class AppConstants {
 
   // tb_vista codVista 57 (padre 9) y 56 (padre 140): «Asigna Funciones Por
   // Modulo» y «Asignar Funciones al Empleado» del JSF viejo.
-  static const String rutaFuncionesModulo = 'tbFuncionModulo/FuncionesPorModulo';
+  static const String rutaFuncionesModulo =
+      'tbFuncionModulo/FuncionesPorModulo';
   static const String rutaAsignacionFunciones =
       'tbAsignaFuncXMod/AsignarFuncionPorModulo';
 
@@ -2289,10 +2293,12 @@ class AppConstants {
   static const String arcEntregasDevolver =
       '/archivo-documental/entregas/devolver';
   static const String arcEntregasAnular = '/archivo-documental/entregas/anular';
-  static const String arcPrestamosListar = '/archivo-documental/prestamos/listar';
+  static const String arcPrestamosListar =
+      '/archivo-documental/prestamos/listar';
   static const String arcPrestamosDevolver =
       '/archivo-documental/prestamos/devolver';
-  static const String arcPrestamosAnular = '/archivo-documental/prestamos/anular';
+  static const String arcPrestamosAnular =
+      '/archivo-documental/prestamos/anular';
   static const String arcDestruccionesListar =
       '/archivo-documental/destrucciones/listar';
   static const String arcDestruccionesRegistrar =
@@ -2319,6 +2325,7 @@ class AppConstants {
       '/indemnizacion/reporteIndemnizacionTodos';
   static const String reporteIndemnizacionRRHH =
       '/indemnizacion/reporteIndemnizacionRRHH';
+  static const String finiquitoExcel = '/indemnizacion/finiquitoExcel';
 
   // RUTAS MODULO: RETROACTIVOS
   static const String listarRetroactivos = '/retroactivo/listar';
@@ -2351,7 +2358,8 @@ class AppConstants {
   // v11: gestión de las preguntas de la semana que se responden en el inicio.
   static const String rutaTcpePreguntaSemana = 'tcpeExamenes/PreguntaSemana';
   // Rendición del empleado a pantalla completa: fuera del shell, sin menú lateral.
-  static const String rutaTcpeRendirMiExamen = '/tcpeExamenes/rendir/:codExamen';
+  static const String rutaTcpeRendirMiExamen =
+      '/tcpeExamenes/rendir/:codExamen';
 
   // Pantallas públicas del postulante, sin shell ni token de empleado.
   static const String rutaTcpePublica = '/examen/';
@@ -2362,9 +2370,12 @@ class AppConstants {
 
   // CRUD genérico de las 40 tablas: {entidad} es la tabla sin tcpe_, en camelCase (p. ej. rsptaOpcionH).
   static const String tcpeEntidad = '{entidad}';
-  static const String tcpeCatalogoListar = '/examenes/catalogo/{entidad}/listar';
-  static const String tcpeCatalogoGuardar = '/examenes/catalogo/{entidad}/guardar';
-  static const String tcpeCatalogoEliminar = '/examenes/catalogo/{entidad}/eliminar';
+  static const String tcpeCatalogoListar =
+      '/examenes/catalogo/{entidad}/listar';
+  static const String tcpeCatalogoGuardar =
+      '/examenes/catalogo/{entidad}/guardar';
+  static const String tcpeCatalogoEliminar =
+      '/examenes/catalogo/{entidad}/eliminar';
   static const String tcpeBancoListar = '/examenes/banco/listar';
   static const String tcpeBancoOpciones = '/examenes/banco/opciones';
   static const String tcpeBancoGuardar = '/examenes/banco/guardar';
@@ -2372,7 +2383,8 @@ class AppConstants {
   static const String tcpeBancoActivar = '/examenes/banco/activar';
   // v6: duplicados mientras se escribe (Banco D) y carga en lote (BancoLote V / I).
   static const String tcpeBancoDuplicados = '/examenes/banco/duplicados';
-  static const String tcpeBancoImportarValidar = '/examenes/banco/importar/validar';
+  static const String tcpeBancoImportarValidar =
+      '/examenes/banco/importar/validar';
   static const String tcpeBancoImportar = '/examenes/banco/importar';
   static const String tcpeLotesListar = '/examenes/lotes/listar';
   static const String tcpeLotesDisponibles = '/examenes/lotes/disponibles';
@@ -2393,21 +2405,32 @@ class AppConstants {
   static const String tcpeResultadosRevision = '/examenes/resultados/revision';
   static const String tcpeResultadosSolucionario =
       '/examenes/resultados/solucionario';
-  static const String tcpeResultadosHistorial = '/examenes/resultados/historial';
+  static const String tcpeResultadosHistorial =
+      '/examenes/resultados/historial';
   static const String tcpeResultadosInforme = '/examenes/resultados/informe';
   // v11: preguntas más falladas por categoría (Resultado P).
-  static const String tcpeResultadosRankingPreguntas = '/examenes/resultados/ranking-preguntas';
+  static const String tcpeResultadosRankingPreguntas =
+      '/examenes/resultados/ranking-preguntas';
   // v11: preguntas de la semana. Vigentes y responder, para cualquier empleado en el inicio;
   // el resto, con la pantalla tcpeExamenes/PreguntaSemana.
-  static const String tcpePreguntaSemanaVigentes = '/examenes/pregunta-semana/vigentes';
-  static const String tcpePreguntaSemanaResponder = '/examenes/pregunta-semana/responder';
-  static const String tcpePreguntaSemanaListar = '/examenes/pregunta-semana/listar';
-  static const String tcpePreguntaSemanaGuardar = '/examenes/pregunta-semana/guardar';
-  static const String tcpePreguntaSemanaActivar = '/examenes/pregunta-semana/activar';
-  static const String tcpePreguntaSemanaEliminar = '/examenes/pregunta-semana/eliminar';
-  static const String tcpePreguntaSemanaRespuestas = '/examenes/pregunta-semana/respuestas';
-  static const String tcpePreguntaSemanaQuitarRespuesta = '/examenes/pregunta-semana/quitar-respuesta';
-  static const String tcpePreguntaSemanaDistribucion = '/examenes/pregunta-semana/distribucion';
+  static const String tcpePreguntaSemanaVigentes =
+      '/examenes/pregunta-semana/vigentes';
+  static const String tcpePreguntaSemanaResponder =
+      '/examenes/pregunta-semana/responder';
+  static const String tcpePreguntaSemanaListar =
+      '/examenes/pregunta-semana/listar';
+  static const String tcpePreguntaSemanaGuardar =
+      '/examenes/pregunta-semana/guardar';
+  static const String tcpePreguntaSemanaActivar =
+      '/examenes/pregunta-semana/activar';
+  static const String tcpePreguntaSemanaEliminar =
+      '/examenes/pregunta-semana/eliminar';
+  static const String tcpePreguntaSemanaRespuestas =
+      '/examenes/pregunta-semana/respuestas';
+  static const String tcpePreguntaSemanaQuitarRespuesta =
+      '/examenes/pregunta-semana/quitar-respuesta';
+  static const String tcpePreguntaSemanaDistribucion =
+      '/examenes/pregunta-semana/distribucion';
   static const String tcpeCalificacionMarcar = '/examenes/calificacion/marcar';
   static const String tcpeCalificacionCerrar = '/examenes/calificacion/cerrar';
   static const String tcpeCalificacionNota = '/examenes/calificacion/nota';
@@ -2419,7 +2442,8 @@ class AppConstants {
   static const String tcpeMisExamenesEstado = '/examenes/mis-examenes/estado';
   static const String tcpeMisExamenesPreguntas =
       '/examenes/mis-examenes/preguntas';
-  static const String tcpeMisExamenesOpciones = '/examenes/mis-examenes/opciones';
+  static const String tcpeMisExamenesOpciones =
+      '/examenes/mis-examenes/opciones';
   static const String tcpeMisExamenesIniciar = '/examenes/mis-examenes/iniciar';
   static const String tcpeMisExamenesResponder =
       '/examenes/mis-examenes/responder';
@@ -2437,11 +2461,14 @@ class AppConstants {
   static const String tcpePublicoRegistro = '/examen-publico/registro';
   static const String tcpePublicoListar = '/examen-publico/examenes/listar';
   static const String tcpePublicoEstado = '/examen-publico/examenes/estado';
-  static const String tcpePublicoPreguntas = '/examen-publico/examenes/preguntas';
+  static const String tcpePublicoPreguntas =
+      '/examen-publico/examenes/preguntas';
   static const String tcpePublicoOpciones = '/examen-publico/examenes/opciones';
   static const String tcpePublicoIniciar = '/examen-publico/examenes/iniciar';
-  static const String tcpePublicoResponder = '/examen-publico/examenes/responder';
-  static const String tcpePublicoFinalizar = '/examen-publico/examenes/finalizar';
+  static const String tcpePublicoResponder =
+      '/examen-publico/examenes/responder';
+  static const String tcpePublicoFinalizar =
+      '/examen-publico/examenes/finalizar';
   static const String tcpePublicoRevision = '/examen-publico/examenes/revision';
   static const String tcpePublicoConfig = '/examen-publico/config';
   static const String tcpePublicoLatido = '/examen-publico/examenes/latido';

@@ -27,11 +27,15 @@ class IndemnizacionEntity {
   final int? dias30;
   final double? indemnizacionCalculada;
   final double? indemnizacionActual;
+  final int? diasAguinaldo;
+  final double? aguinaldo;
+  final double? diasVacacion;
   final double? pagoFiniquitoQuinq;
   final double? indemnizacionFinal;
   final String? caja;
   final String? sucursal;
   final String? area;
+  final String? cargo;
 
   // Metadata Paginacion
   final int? pagina;
@@ -65,17 +69,20 @@ class IndemnizacionEntity {
     this.dias30,
     this.indemnizacionCalculada,
     this.indemnizacionActual,
+    this.diasAguinaldo,
+    this.aguinaldo,
+    this.diasVacacion,
     this.pagoFiniquitoQuinq,
     this.indemnizacionFinal,
     this.caja,
     this.sucursal,
     this.area,
+    this.cargo,
     this.pagina,
     this.tamanoPagina,
     this.totalPaginas,
     this.totalRegistros,
   });
-
 
   IndemnizacionEntity copyWith({
     int? codIndemnizacion,
@@ -87,7 +94,8 @@ class IndemnizacionEntity {
     String? empleadoNombres,
     String? empleadoApellidos,
     String? empresa,
-    // ... no aÃ±adimos todos los del listado aqui para no hacer tan grande esto a menos que se requiera localmente
+    String? cargo,
+    // ... no añadimos todos los del listado aqui para no hacer tan grande esto a menos que se requiera localmente
   }) {
     return IndemnizacionEntity(
       codIndemnizacion: codIndemnizacion ?? this.codIndemnizacion,
@@ -115,11 +123,15 @@ class IndemnizacionEntity {
       dias30: this.dias30,
       indemnizacionCalculada: this.indemnizacionCalculada,
       indemnizacionActual: this.indemnizacionActual,
+      diasAguinaldo: this.diasAguinaldo,
+      aguinaldo: this.aguinaldo,
+      diasVacacion: this.diasVacacion,
       pagoFiniquitoQuinq: this.pagoFiniquitoQuinq,
       indemnizacionFinal: this.indemnizacionFinal,
       caja: this.caja,
       sucursal: this.sucursal,
       area: this.area,
+      cargo: cargo ?? this.cargo,
       pagina: this.pagina,
       tamanoPagina: this.tamanoPagina,
       totalPaginas: this.totalPaginas,
@@ -127,4 +139,3 @@ class IndemnizacionEntity {
     );
   }
 }
-

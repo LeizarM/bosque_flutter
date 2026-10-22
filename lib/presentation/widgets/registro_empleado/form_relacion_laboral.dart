@@ -1,3 +1,4 @@
+import 'package:bosque_flutter/domain/entities/tipo_motivo_fin_entity.dart';
 import 'package:bosque_flutter/domain/entities/tipo_relacion_laboral_entity.dart';
 import 'package:bosque_flutter/presentation/widgets/registro_empleado/registro_empleado_utils.dart';
 import 'package:bosque_flutter/presentation/widgets/registro_empleado/responsive_utils_registro_empleado.dart';
@@ -37,9 +38,9 @@ class _FormRelacionLaboralState extends ConsumerState<FormRelacionLaboral> {
 
   late TextEditingController _fechaInicioController;
   late TextEditingController _fechaFinController;
-  late TextEditingController _motivoFinController;
 
   String? _selectedTipoRelacion;
+  String? _selectedMotivoFin;
   bool _esActivo = true;
 
   @override
@@ -49,6 +50,12 @@ class _FormRelacionLaboralState extends ConsumerState<FormRelacionLaboral> {
     _selectedTipoRelacion =
         widget.relacionInicial?.tipoRel.isNotEmpty == true
             ? widget.relacionInicial!.tipoRel
+            : null;
+
+    final initialMotivoFin = widget.relacionInicial?.motivoFin?.trim();
+    _selectedMotivoFin =
+        (initialMotivoFin != null && initialMotivoFin.isNotEmpty)
+            ? initialMotivoFin
             : null;
 
     _esActivo = (widget.relacionInicial?.esActivo ?? 1) == 1;
@@ -62,17 +69,12 @@ class _FormRelacionLaboralState extends ConsumerState<FormRelacionLaboral> {
     _fechaFinController = TextEditingController(
       text: !_esActivo ? FechaUtils.formatDate(initialDateFin) : '',
     );
-
-    _motivoFinController = TextEditingController(
-      text: widget.relacionInicial?.motivoFin ?? '',
-    );
   }
 
   @override
   void dispose() {
     _fechaInicioController.dispose();
     _fechaFinController.dispose();
-    _motivoFinController.dispose();
     super.dispose();
   }
 
@@ -116,7 +118,7 @@ class _FormRelacionLaboralState extends ConsumerState<FormRelacionLaboral> {
         nombreFileContrato: widget.relacionInicial?.nombreFileContrato ?? '',
         fechaIni: fechaIni,
         fechaFin: fechaFin,
-        motivoFin: _motivoFinController.text.trim(),
+        motivoFin: !_esActivo ? (_selectedMotivoFin?.trim() ?? '') : '',
         audUsuario: widget.audUsuario,
         fechaInicioBeneficio: widget.relacionInicial?.fechaInicioBeneficio,
         fechaInicioPlanilla: widget.relacionInicial?.fechaInicioPlanilla,
@@ -337,7 +339,7 @@ class _FormRelacionLaboralState extends ConsumerState<FormRelacionLaboral> {
                             _esActivo = value;
                             if (_esActivo) {
                               _fechaFinController.clear();
-                              _motivoFinController.clear();
+                              _selectedMotivoFin = null;
                             }
                           });
                         },
@@ -352,6 +354,20 @@ class _FormRelacionLaboralState extends ConsumerState<FormRelacionLaboral> {
   }
 
   Widget _buildTerminoSection(BuildContext context) {
+    final tiposMotivoFinAsync = ref.watch(getTipoMotivoFin);
+
+    // Resolver si el valor inicial coincide por código ('RV') o nombre ('RETIRO VOLUNTARIO')
+    String? resolvedMotivoFin = _selectedMotivoFin;
+    tiposMotivoFinAsync.whenData((items) {
+      for (final item in items) {
+        if (item.nombre.toUpperCase() == _selectedMotivoFin?.toUpperCase() ||
+            item.codTipos.toUpperCase() == _selectedMotivoFin?.toUpperCase()) {
+          resolvedMotivoFin = item.nombre;
+          break;
+        }
+      }
+    });
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -365,23 +381,15 @@ class _FormRelacionLaboralState extends ConsumerState<FormRelacionLaboral> {
           firstDate: DateTime(1900),
         ),
         SizedBox(height: context.spacing),
-        TextFormField(
-          controller: _motivoFinController,
-          keyboardType: TextInputType.multiline,
-          minLines: 4,
-          maxLines: 4,
-          maxLength: 500,
-          decoration: InputDecoration(
-            labelText: 'Motivo del Término *',
-            hintText:
-                'Describa el motivo por el cual finaliza la relación laboral',
-            border: const OutlineInputBorder(),
-            counterText: '',
-            filled: true,
-            fillColor: Colors.white,
-            contentPadding: EdgeInsets.all(context.smallSpacing),
-          ),
-          style: context.bodyStyle,
+        CustomDropdown<TipoMotivoFinEntity>(
+          asyncValue: tiposMotivoFinAsync,
+          label: 'Motivo del Término *',
+          currentValue: resolvedMotivoFin,
+          onChanged: (newValue) {
+            setState(() => _selectedMotivoFin = newValue);
+          },
+          getName: (e) => e.nombre,
+          getCode: (e) => e.nombre, // Guardar la DESCRIPCION (ej. "RETIRO VOLUNTARIO", "RETIRO FORZOSO")
           validator: (val) {
             if (!_esActivo && (val == null || val.isEmpty)) {
               return 'Requerido';

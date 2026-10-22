@@ -20,6 +20,7 @@ import 'package:bosque_flutter/domain/entities/seguro_entity.dart';
 import 'package:bosque_flutter/domain/entities/telefono_entity.dart';
 import 'package:bosque_flutter/domain/entities/tipo_educacion_entity.dart';
 import 'package:bosque_flutter/domain/entities/tipo_licencia_entity.dart';
+import 'package:bosque_flutter/domain/entities/tipo_motivo_fin_entity.dart';
 import 'package:bosque_flutter/domain/entities/tipo_relacion_laboral_entity.dart';
 import 'package:bosque_flutter/domain/entities/tipo_seguro_entity.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -186,6 +187,13 @@ final getTipoRelacionLaboral = FutureProvider<List<TipoRelacionLaboralEntity>>((
   final repo = RegistroEmpleadoImpl();
   final tipoRelLab = await repo.getTipoRelacionLaboral();
   return tipoRelLab;
+});
+//provider para obtener los tipos de motivo fin de relacion laboral
+final getTipoMotivoFin = FutureProvider<List<TipoMotivoFinEntity>>((
+  ref,
+) async {
+  final repo = RegistroEmpleadoImpl();
+  return await repo.getTipoMotivoFin();
 });
 //Reporte nomina empleados
 final rptNominaEmpleados = FutureProvider<Uint8List>((ref) async {

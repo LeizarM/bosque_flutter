@@ -14,6 +14,7 @@ import 'package:bosque_flutter/domain/entities/seguro_entity.dart';
 import 'package:bosque_flutter/domain/entities/telefono_entity.dart';
 import 'package:bosque_flutter/domain/entities/tipo_educacion_entity.dart';
 import 'package:bosque_flutter/domain/entities/tipo_licencia_entity.dart';
+import 'package:bosque_flutter/domain/entities/tipo_motivo_fin_entity.dart';
 import 'package:bosque_flutter/domain/entities/tipo_relacion_laboral_entity.dart';
 import 'package:bosque_flutter/domain/entities/tipo_seguro_entity.dart';
 
@@ -47,6 +48,7 @@ abstract class RegistroEmpleadoRepository {
   );
   Future<bool> eliminarCuentaBancaria(int codCuenta);
   Future<List<TipoRelacionLaboralEntity>> getTipoRelacionLaboral();
+  Future<List<TipoMotivoFinEntity>> getTipoMotivoFin();
   Future<EmpleadoCargoEntity> registroEmpleadoCargo(
     EmpleadoCargoEntity empleado,
   );

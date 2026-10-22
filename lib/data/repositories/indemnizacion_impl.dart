@@ -85,4 +85,22 @@ class IndemnizacionImpl extends BaseApiRepository
       data: params,
     );
   }
+
+  @override
+  Future<Uint8List> descargarFiniquitoExcel({
+    required int codEmpleado,
+    String? fechaCorte,
+    String? motivoRetiro,
+    String? domicilioEmpresa,
+  }) async {
+    return await DioClient.descargarReportePdf(
+      endpoint: AppConstants.finiquitoExcel,
+      data: {
+        'codEmpleado': codEmpleado,
+        if (fechaCorte != null && fechaCorte.isNotEmpty) 'fechaCorte': fechaCorte,
+        if (motivoRetiro != null && motivoRetiro.isNotEmpty) 'motivoRetiro': motivoRetiro,
+        if (domicilioEmpresa != null && domicilioEmpresa.isNotEmpty) 'domicilioEmpresa': domicilioEmpresa,
+      },
+    );
+  }
 }
