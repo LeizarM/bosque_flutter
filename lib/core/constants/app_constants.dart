@@ -2472,4 +2472,97 @@ class AppConstants {
   static const String tcpePublicoRevision = '/examen-publico/examenes/revision';
   static const String tcpePublicoConfig = '/examen-publico/config';
   static const String tcpePublicoLatido = '/examen-publico/examenes/latido';
+
+  // ==================== TIEMPO REAL (STOMP) ===============================
+  // WebSocket nativo para cualquier módulo (lib/core/network/tiempo_real.dart).
+  // El backend conserva /ws-bingo como alias del mismo endpoint.
+  static const String wsTiempoReal = '/ws';
+
+  // ==================== TICKETS / BINGO (ttk) =============================
+  // Contrato: docs/contrato_api_ttk.md del proyecto de migración. Todo POST;
+  // las escrituras devuelven el id en `data` y el texto del SP en `message`.
+  // Direcciones de tb_vista: el sidebar navega a '/' + direccion.
+  static const String rutaTtkEventos = 'ttkEventos/Eventos';
+  static const String rutaTtkBingoConfiguracion = 'ttkBingo/Configuracion';
+  static const String rutaTtkBingoPanel = 'ttkBingo/Panel';
+  static const String rutaTtkMiCarton = 'ttkBingo/MiCarton';
+  static const String rutaTtkEnVivo = 'ttkBingo/EnVivo';
+
+  // --- Eventos, tipos de vale, participantes y vales ---
+  static const String _ttkTickets = '/tickets';
+  static const String ttkEventoListar = '$_ttkTickets/evento/listar';
+  static const String ttkEventoGuardar = '$_ttkTickets/evento/guardar';
+  static const String ttkEventoEliminar = '$_ttkTickets/evento/eliminar';
+  static const String ttkEventoEmitir = '$_ttkTickets/evento/emitir';
+  static const String ttkEventoVolverBorrador =
+      '$_ttkTickets/evento/volver-borrador';
+  static const String ttkEventoCerrar = '$_ttkTickets/evento/cerrar';
+  static const String ttkTipoListar = '$_ttkTickets/tipo/listar';
+  static const String ttkTipoGuardar = '$_ttkTickets/tipo/guardar';
+  static const String ttkTipoEliminar = '$_ttkTickets/tipo/eliminar';
+  static const String ttkParticipanteListar =
+      '$_ttkTickets/participante/listar';
+  static const String ttkParticipanteEmpleados =
+      '$_ttkTickets/participante/empleados';
+  static const String ttkParticipanteGenerar =
+      '$_ttkTickets/participante/generar';
+  static const String ttkParticipanteGuardar =
+      '$_ttkTickets/participante/guardar';
+  static const String ttkParticipanteEliminar =
+      '$_ttkTickets/participante/eliminar';
+  static const String ttkParticipanteRestablecer =
+      '$_ttkTickets/participante/restablecer';
+  static const String ttkValeListar = '$_ttkTickets/vale/listar';
+  static const String ttkValeCambiar = '$_ttkTickets/vale/cambiar';
+  static const String ttkValeRestablecer = '$_ttkTickets/vale/restablecer';
+  static const String ttkValeImpresion = '$_ttkTickets/vale/impresion';
+  // Cantidad de un tipo de vale para varios participantes a la vez.
+  static const String ttkValeCambiarLote = '$_ttkTickets/vale/cambiar-lote';
+
+  // --- Bingo: configuración (encargado) ---
+  static const String _ttkBingo = '/bingo';
+  static const String ttkBingoListar = '$_ttkBingo/listar';
+  static const String ttkBingoGuardar = '$_ttkBingo/guardar';
+  static const String ttkBingoAbrirEleccion = '$_ttkBingo/abrir-eleccion';
+  static const String ttkBingoIniciar = '$_ttkBingo/iniciar';
+  static const String ttkBingoFinalizar = '$_ttkBingo/finalizar';
+  static const String ttkJuegoListar = '$_ttkBingo/juego/listar';
+  static const String ttkJuegoGuardar = '$_ttkBingo/juego/guardar';
+  static const String ttkJuegoComenzar = '$_ttkBingo/juego/comenzar';
+  static const String ttkJuegoFinalizar = '$_ttkBingo/juego/finalizar';
+  static const String ttkCartonGenerar = '$_ttkBingo/carton/generar';
+  static const String ttkCartonListar = '$_ttkBingo/carton/listar';
+  static const String ttkCartonEmpleados = '$_ttkBingo/carton/empleados';
+  static const String ttkCartonAsignar = '$_ttkBingo/carton/asignar';
+  static const String ttkCartonLiberar = '$_ttkBingo/carton/liberar';
+  static const String ttkCartonCeldas = '$_ttkBingo/carton/celdas';
+  static const String ttkCartonImpresion = '$_ttkBingo/carton/impresion';
+  static const String ttkCartonForma = '$_ttkBingo/carton/forma';
+
+  // --- Bingo: panel en vivo (encargado) ---
+  static const String ttkSorteoMarcar = '$_ttkBingo/sorteo/marcar';
+  static const String ttkSorteoQuitar = '$_ttkBingo/sorteo/quitar';
+  static const String ttkCartonValidar = '$_ttkBingo/carton/validar';
+  static const String ttkGanadorConfirmar = '$_ttkBingo/ganador/confirmar';
+  static const String ttkGanadorAnular = '$_ttkBingo/ganador/anular';
+  static const String ttkGanadorListar = '$_ttkBingo/ganador/listar';
+  static const String ttkEstadoEncargado = '$_ttkBingo/estado-encargado';
+  static const String ttkEstadoPublico = '$_ttkBingo/estado-publico';
+  static const String ttkAvisoAtender = '$_ttkBingo/aviso/atender';
+
+  // --- Bingo: participante ---
+  static const String ttkMisBingos = '$_ttkBingo/mis-bingos';
+  static const String ttkCartonDisponibles = '$_ttkBingo/carton/disponibles';
+  static const String ttkCartonMios = '$_ttkBingo/carton/mios';
+  static const String ttkCartonVer = '$_ttkBingo/carton/ver';
+  static const String ttkCartonMisCeldas = '$_ttkBingo/carton/mis-celdas';
+  static const String ttkCartonElegir = '$_ttkBingo/carton/elegir';
+  static const String ttkAvisoCantar = '$_ttkBingo/aviso/cantar';
+
+  // --- Tiempo real: tópicos del bingo sobre el canal genérico (wsTiempoReal) ---
+  static const String _ttkTopico = '/topic/bingo';
+  static String ttkTopicoPublico(BigInt codBingo) =>
+      '$_ttkTopico/$codBingo/publico';
+  static String ttkTopicoEncargado(BigInt codBingo) =>
+      '$_ttkTopico/$codBingo/encargado';
 }

@@ -622,6 +622,61 @@ final routerProvider = Provider<GoRouter>((ref) {
                     const MisExamenesScreen(),
                   ),
             ),
+            // MODULO TICKETS / BINGO (ttk): eventos de RRHH, bingo del encargado
+            // y lo del participante. Direcciones en AppConstants.rutaTtk*.
+            GoRoute(
+              path: '/dashboard/${AppConstants.rutaTtkEventos}',
+              name: 'ttkEventos',
+              builder:
+                  (context, state) => _pantallaConTitulo(
+                    context,
+                    'Bosque - Eventos y vales',
+                    const TtkEventosScreen(),
+                  ),
+            ),
+            GoRoute(
+              path: '/dashboard/${AppConstants.rutaTtkBingoConfiguracion}',
+              name: 'ttkBingoConfiguracion',
+              builder:
+                  (context, state) => _pantallaConTitulo(
+                    context,
+                    'Bosque - Configuración del bingo',
+                    const TtkBingoConfiguracionScreen(),
+                  ),
+            ),
+            GoRoute(
+              path: '/dashboard/${AppConstants.rutaTtkBingoPanel}',
+              name: 'ttkBingoPanel',
+              builder:
+                  (context, state) => _pantallaConTitulo(
+                    context,
+                    'Bosque - Panel del bingo',
+                    const TtkBingoPanelScreen(),
+                  ),
+            ),
+            GoRoute(
+              path: '/dashboard/${AppConstants.rutaTtkMiCarton}',
+              name: 'ttkMiCarton',
+              builder:
+                  (context, state) => _pantallaConTitulo(
+                    context,
+                    'Bosque - Mi cartón',
+                    const TtkMiCartonScreen(),
+                  ),
+            ),
+            GoRoute(
+              path: '/dashboard/${AppConstants.rutaTtkEnVivo}',
+              name: 'ttkEnVivo',
+              builder:
+                  (context, state) => _pantallaConTitulo(
+                    context,
+                    'Bosque - Bingo en vivo',
+                    // Desde «Mi cartón» se llega con el bingo elegido.
+                    TtkBingoEnVivoScreen(
+                      codBingo: state.extra is BigInt ? state.extra as BigInt : null,
+                    ),
+                  ),
+            ),
             // MODULO DE GARANTIAS DE COBRANZA (tcbr). Reemplaza al JSF legacy
             // (codVista 45, 'tcbrGarantia/garantia', padre 44 'Cobranza') con
             // la direccion tal cual: el item de menu y los permisos que los
@@ -1373,6 +1428,30 @@ final routerProvider = Provider<GoRouter>((ref) {
           path: '/${AppConstants.rutaTcpeMisExamenes}',
           redirect:
               (context, state) => '/dashboard/${AppConstants.rutaTcpeMisExamenes}',
+        ),
+        // MODULO TICKETS / BINGO (ttk): el sidebar navega a '/' + tb_vista.direccion.
+        GoRoute(
+          path: '/${AppConstants.rutaTtkEventos}',
+          redirect: (context, state) => '/dashboard/${AppConstants.rutaTtkEventos}',
+        ),
+        GoRoute(
+          path: '/${AppConstants.rutaTtkBingoConfiguracion}',
+          redirect:
+              (context, state) =>
+                  '/dashboard/${AppConstants.rutaTtkBingoConfiguracion}',
+        ),
+        GoRoute(
+          path: '/${AppConstants.rutaTtkBingoPanel}',
+          redirect:
+              (context, state) => '/dashboard/${AppConstants.rutaTtkBingoPanel}',
+        ),
+        GoRoute(
+          path: '/${AppConstants.rutaTtkMiCarton}',
+          redirect: (context, state) => '/dashboard/${AppConstants.rutaTtkMiCarton}',
+        ),
+        GoRoute(
+          path: '/${AppConstants.rutaTtkEnVivo}',
+          redirect: (context, state) => '/dashboard/${AppConstants.rutaTtkEnVivo}',
         ),
         // RENDICION DEL EMPLEADO: pantalla completa, sin sidebar. Con el
         // examen en curso no se sale (GuardiaSalidaExamen); pide token de empleado.

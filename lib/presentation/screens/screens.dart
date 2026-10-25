@@ -113,3 +113,9 @@ export 'package:bosque_flutter/presentation/screens/examen_publico/ingreso_exame
 export 'package:bosque_flutter/presentation/screens/examen_publico/registro_examen_screen.dart';
 export 'package:bosque_flutter/presentation/screens/examen_publico/rendir_examen_screen.dart';
 export 'package:bosque_flutter/presentation/screens/examen_publico/resultado_examen_screen.dart';
+// Modulo Tickets / Bingo (ttk): eventos de RRHH con sus vales y el bingo.
+export 'package:bosque_flutter/presentation/screens/tickets/ttk_eventos_screen.dart';
+export 'package:bosque_flutter/presentation/screens/tickets/ttk_bingo_configuracion_screen.dart';
+export 'package:bosque_flutter/presentation/screens/tickets/ttk_bingo_panel_screen.dart';
+export 'package:bosque_flutter/presentation/screens/tickets/ttk_mi_carton_screen.dart';
+export 'package:bosque_flutter/presentation/screens/tickets/ttk_bingo_en_vivo_screen.dart';
