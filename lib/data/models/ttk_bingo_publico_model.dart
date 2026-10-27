@@ -1,7 +1,7 @@
 import 'package:bosque_flutter/data/models/ttk_json.dart';
 import 'package:bosque_flutter/domain/entities/ttk_bingo_publico_entity.dart';
 
-/// Columnas de `p_list_ttk_Bingo` P (estado público, sin ganadores).
+/// Columnas de `p_list_ttk_Bingo` P (estado público; los ganadores van aparte).
 class TtkBingoPublicoModel {
   const TtkBingoPublicoModel(this.entidad);
 
@@ -28,6 +28,11 @@ class TtkBingoPublicoModel {
           ultimoBolillo: ttkIntN(j['ultimoBolillo']),
           hayGanador: ttkBool(j['hayGanador']),
           puedeAvisar: ttkBool(j['puedeAvisar']),
+          premio: ttkTextoN(j['premio']),
+          textoPremio: ttkTextoN(j['textoPremio']),
+          reglaEmpate: ttkTextoN(j['reglaEmpate']),
+          textoEmpate: ttkTextoN(j['textoEmpate']),
+          nroGanadores: ttkInt(j['nroGanadores']),
           mensaje: ttkTexto(j['mensaje']),
         ),
       );
@@ -56,6 +61,11 @@ class TtkBingoPublicoModel {
     'ultimoBolillo': entidad.ultimoBolillo,
     'hayGanador': ttkBandera(entidad.hayGanador),
     'puedeAvisar': ttkBandera(entidad.puedeAvisar),
+    'premio': entidad.premio,
+    'textoPremio': entidad.textoPremio,
+    'reglaEmpate': entidad.reglaEmpate,
+    'textoEmpate': entidad.textoEmpate,
+    'nroGanadores': entidad.nroGanadores,
     'mensaje': entidad.mensaje,
   });
 }

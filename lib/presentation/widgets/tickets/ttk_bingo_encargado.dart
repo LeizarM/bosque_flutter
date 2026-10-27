@@ -547,7 +547,8 @@ class _DialogoAsignarState extends ConsumerState<_DialogoAsignar> {
   }
 }
 
-/// Nombre y figura de un juego, con el editor visual de casillas.
+/// Nombre, premio y figura de un juego, con el editor visual de casillas.
+/// Con el juego en curso solo se cambia el premio: la figura queda a la vista.
 Future<void> editarFiguraTtk(
   BuildContext context,
   WidgetRef ref, {
@@ -570,6 +571,8 @@ class _DialogoFigura extends ConsumerStatefulWidget {
 
 class _DialogoFiguraState extends ConsumerState<_DialogoFigura> {
   late final _nombre = TextEditingController(text: widget.juego.nombre);
+  late final _premio = TextEditingController(text: widget.juego.premio ?? '');
+  late final bool _soloPremio = !widget.juego.puedeEditarFigura;
   late String _figura = ttkMascara(
     widget.juego.figura,
     widget.juego.filas * widget.juego.columnas,
@@ -579,14 +582,17 @@ class _DialogoFiguraState extends ConsumerState<_DialogoFigura> {
   @override
   void dispose() {
     _nombre.dispose();
+    _premio.dispose();
     super.dispose();
   }
 
   Future<void> _guardar() async {
     setState(() => _guardando = true);
+    // Solo el premio: nombre y figura van como están y el SP no toca los cartones.
     final j = widget.juego.copyWith(
-      nombre: _nombre.text.trim(),
-      figura: _figura,
+      nombre: _soloPremio ? null : _nombre.text.trim(),
+      figura: _soloPremio ? null : _figura,
+      premio: _premio.text.trim(),
     );
     final ok = await ejecutarTtk(
       context,
@@ -609,7 +615,9 @@ class _DialogoFiguraState extends ConsumerState<_DialogoFigura> {
         horizontal: angosto ? Esp.m : Esp.xl,
         vertical: Esp.xl,
       ),
-      title: Text('Juego ${j.nroJuego}'),
+      title: Text(
+        _soloPremio ? 'Premio del juego ${j.nroJuego}' : 'Juego ${j.nroJuego}',
+      ),
       content: SizedBox(
         width: 460,
         child: SingleChildScrollView(
@@ -619,7 +627,8 @@ class _DialogoFiguraState extends ConsumerState<_DialogoFigura> {
             children: [
               TextField(
                 controller: _nombre,
-                textInputAction: TextInputAction.done,
+                enabled: !_soloPremio,
+                textInputAction: TextInputAction.next,
                 decoration: const InputDecoration(
                   labelText: 'Nombre del juego',
                   hintText: 'Por ejemplo, Letra L o Cartón lleno',
@@ -627,19 +636,52 @@ class _DialogoFiguraState extends ConsumerState<_DialogoFigura> {
                 ),
               ),
               const SizedBox(height: Esp.l),
-              Text(
-                'Toca las casillas que forman la figura',
-                style: context.tituloSeccion(),
+              TextField(
+                controller: _premio,
+                maxLength: 150,
+                textCapitalization: TextCapitalization.sentences,
+                textInputAction: TextInputAction.done,
+                decoration: const InputDecoration(
+                  labelText: 'Premio (opcional)',
+                  hintText: 'Por ejemplo, una canasta navideña',
+                  helperText:
+                      'En la pantalla en vivo se lee «Se está jugando por …». Vacío: sin premio anunciado.',
+                  helperMaxLines: 2,
+                  prefixIcon: Icon(Icons.redeem_outlined),
+                  border: OutlineInputBorder(),
+                ),
               ),
-              const SizedBox(height: Esp.s),
-              EditorFiguraTtk(
-                mascara: _figura,
-                filas: j.filas,
-                columnas: j.columnas,
-                conComodin: j.conComodin,
-                letras: widget.bingo.letras,
-                alCambiar: (m) => setState(() => _figura = m),
-              ),
+              const SizedBox(height: Esp.m),
+              if (_soloPremio) ...[
+                const NotaDelDato(
+                  texto:
+                      'El juego ya empezó: la figura no cambia, solo el premio.',
+                ),
+                const SizedBox(height: Esp.m),
+                Center(
+                  child: FiguraTtk(
+                    figura: _figura,
+                    filas: j.filas,
+                    columnas: j.columnas,
+                    conComodin: j.conComodin,
+                    celda: 22,
+                  ),
+                ),
+              ] else ...[
+                Text(
+                  'Toca las casillas que forman la figura',
+                  style: context.tituloSeccion(),
+                ),
+                const SizedBox(height: Esp.s),
+                EditorFiguraTtk(
+                  mascara: _figura,
+                  filas: j.filas,
+                  columnas: j.columnas,
+                  conComodin: j.conComodin,
+                  letras: widget.bingo.letras,
+                  alCambiar: (m) => setState(() => _figura = m),
+                ),
+              ],
             ],
           ),
         ),
@@ -650,7 +692,7 @@ class _DialogoFiguraState extends ConsumerState<_DialogoFigura> {
           child: const Text('Cancelar'),
         ),
         BotonAccion(
-          etiqueta: 'Guardar figura',
+          etiqueta: _soloPremio ? 'Guardar premio' : 'Guardar',
           etiquetaOcupado: 'Guardando…',
           ocupado: _guardando,
           onPressed: _guardar,

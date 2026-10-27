@@ -1,5 +1,5 @@
-/// Estado público de un bingo: juego actual, su figura y el último bolillo.
-/// Solo dice si ya hubo ganador (`hayGanador`), nunca quién.
+/// Estado público de un bingo: juego actual, su figura, premio, regla de
+/// desempate y el último bolillo. Los ganadores van en el estado público.
 class TtkBingoPublicoEntity {
   final BigInt? codBingo;
   final String nombreEvento;
@@ -21,6 +21,15 @@ class TtkBingoPublicoEntity {
 
   /// Juego en curso con el botón «¡Bingo!» prendido: solo avisa al encargado.
   final bool puedeAvisar;
+  final String? premio;
+
+  /// «Se está jugando por …» en curso o «Premio: …» con ganador (del SP).
+  final String? textoPremio;
+  final String? reglaEmpate;
+
+  /// «Si hay empate: …» o, con más de un ganador, «¡Empate! …» (del SP).
+  final String? textoEmpate;
+  final int nroGanadores;
   final String mensaje;
 
   const TtkBingoPublicoEntity({
@@ -42,6 +51,11 @@ class TtkBingoPublicoEntity {
     this.ultimoBolillo,
     this.hayGanador = false,
     this.puedeAvisar = false,
+    this.premio,
+    this.textoPremio,
+    this.reglaEmpate,
+    this.textoEmpate,
+    this.nroGanadores = 0,
     this.mensaje = '',
   });
 }

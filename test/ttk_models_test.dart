@@ -286,6 +286,7 @@ void main() {
         'tamRanking': 20,
         'modalidad': 'A',
         'conAviso': 0,
+        'reglaEmpate': '',
       });
       final sinVale =
           TtkBingoModel.fromEntity(e.copyWith(sinTipoTicket: true)).toJson();
@@ -330,6 +331,7 @@ void main() {
         'codJuego': 4,
         'nombre': 'Letra L',
         'figura': '1000010000100001000011111',
+        'premio': '',
       });
     });
 
@@ -537,6 +539,7 @@ void main() {
           'ultimoBolillo': 28,
           'hayGanador': 0,
           'puedeAvisar': 1,
+          'nroGanadores': 0,
           'mensaje': 'Juego 3: Letra L',
         };
         final tablero = [
@@ -656,6 +659,41 @@ void main() {
             }).toEntity();
         expect(conGanador.publico?.hayGanador, isTrue);
         expect(conGanador.publico?.mensaje, contains('ganador'));
+
+        // Premio, desempate y ganadores con nombre y codEmpleado (la foto).
+        final conNombres =
+            TtkEstadoPublicoModel.fromJson({
+              'version': 44,
+              'publico': {
+                ...publico,
+                'hayGanador': 1,
+                'premio': 'Un televisor',
+                'textoPremio': 'Premio: Un televisor',
+                'reglaEmpate': 'Dado; gana el mayor.',
+                'textoEmpate':
+                    '¡Empate! 2 cartones completaron la figura. Dado; gana el mayor.',
+                'nroGanadores': 2,
+              },
+              'ganadores': [
+                {
+                  'codGanador': 3,
+                  'nroJuego': 3,
+                  'codEmpleado': 2,
+                  'nombreEmpleado': 'RODRIGO RAMOS',
+                },
+                {
+                  'codGanador': 4,
+                  'nroJuego': 3,
+                  'nombreEmpleado': 'Invitada Externa',
+                },
+              ],
+            }).toEntity();
+        expect(conNombres.publico?.textoPremio, 'Premio: Un televisor');
+        expect(conNombres.publico?.nroGanadores, 2);
+        expect(conNombres.publico?.textoEmpate, startsWith('¡Empate!'));
+        expect(conNombres.ganadores, hasLength(2));
+        expect(conNombres.ganadores.first.codEmpleado, BigInt.two);
+        expect(conNombres.ganadores.last.codEmpleado, isNull);
       },
     );
   });
@@ -697,9 +735,10 @@ void main() {
       expect(k.formaTexto, 'Impreso');
       expect(k.puedeCambiarForma, isTrue);
       expect(
-        TtkRankingCartonModel.fromJson({'nroCarton': 12, 'impreso': 1})
-            .toEntity()
-            .impreso,
+        TtkRankingCartonModel.fromJson({
+          'nroCarton': 12,
+          'impreso': 1,
+        }).toEntity().impreso,
         isTrue,
       );
       final p =

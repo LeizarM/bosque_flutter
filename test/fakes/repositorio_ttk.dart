@@ -378,8 +378,25 @@ List<TtkBingoJuegoEntity> juegosFalsos() => [
       estadoTexto: n < 3 ? 'Finalizado' : (n == 3 ? 'En curso' : 'Pendiente'),
       bolillosMarcados: n == 3 ? _marcados.length : 0,
       puedeEditarFigura: n > 3,
+      puedeEditarPremio: n >= 3,
+      premio: n == 3 ? 'Una canasta navideña' : null,
       puedeFinalizar: n == 3,
     ),
+];
+
+/// Dos ganadores del juego 3: una empleada (con foto) y un invitado (iniciales).
+List<TtkBingoGanadorEntity> ganadoresVivoFalsos() => [
+  TtkBingoGanadorEntity(
+    codGanador: BigInt.one,
+    nroJuego: 3,
+    codEmpleado: BigInt.from(102),
+    nombreEmpleado: 'ANA LUCÍA RÍOS VEGA',
+  ),
+  TtkBingoGanadorEntity(
+    codGanador: BigInt.two,
+    nroJuego: 3,
+    nombreEmpleado: 'Invitado Pedro Gómez',
+  ),
 ];
 
 List<TtkBingoSorteoEntity> tableroFalso() => [
@@ -399,6 +416,7 @@ List<TtkBingoSorteoEntity> tableroFalso() => [
 TtkBingoPublicoEntity publicoFalso({
   bool hayGanador = false,
   bool puedeAvisar = false,
+  int nroGanadores = 1,
 }) => TtkBingoPublicoEntity(
   puedeAvisar: puedeAvisar,
   codBingo: _uno,
@@ -418,9 +436,28 @@ TtkBingoPublicoEntity publicoFalso({
   totalMarcados: _marcados.length,
   ultimoBolillo: _marcados.last,
   hayGanador: hayGanador,
+  premio: 'Una canasta navideña',
+  textoPremio:
+      hayGanador
+          ? 'Premio: Una canasta navideña'
+          : 'Se está jugando por Una canasta navideña',
+  reglaEmpate: _reglaEmpate,
+  textoEmpate:
+      !hayGanador
+          ? 'Si hay empate: $_reglaEmpate'
+          : (nroGanadores > 1
+              ? '¡Empate! $nroGanadores cartones completaron la figura. $_reglaEmpate'
+              : null),
+  nroGanadores: hayGanador ? nroGanadores : 0,
   mensaje:
-      hayGanador ? '¡Ya salió un ganador del juego 3!' : 'Juego 3: Letra L',
+      !hayGanador
+          ? 'Juego 3: Letra L'
+          : (nroGanadores > 1
+              ? '¡Hay $nroGanadores ganadores del juego 3!'
+              : '¡Ya salió un ganador del juego 3!'),
 );
+
+const _reglaEmpate = 'Se resolverá tirando un dado; gana el número mayor.';
 
 List<TtkRankingCartonEntity> rankingFalso({bool conBingoNuevo = false}) => [
   for (var i = 1; i <= 10; i++)
@@ -516,9 +553,13 @@ class TtkBingoFalso implements TtkBingoRepository {
     return juegosFalsos();
   }
 
+  final List<TtkBingoJuegoEntity> juegosGuardados = [];
   @override
-  Future<TtkRespuesta> guardarJuego(TtkBingoJuegoEntity juego) async =>
-      _ok('Figura guardada.');
+  Future<TtkRespuesta> guardarJuego(TtkBingoJuegoEntity juego) async {
+    juegosGuardados.add(juego);
+    return _ok('Juego guardado.');
+  }
+
   @override
   Future<TtkRespuesta> generarCartones(BigInt codBingo) async =>
       _ok('Cartones generados.');

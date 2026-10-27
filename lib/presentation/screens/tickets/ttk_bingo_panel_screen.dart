@@ -553,6 +553,13 @@ class _BarraJuego extends StatelessWidget {
                   context,
                 ).textTheme.titleMedium?.copyWith(fontWeight: Peso.titulo),
               ),
+              if ((p?.textoPremio ?? '').isNotEmpty)
+                Text(
+                  p!.textoPremio!,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(color: cs.primary, fontWeight: Peso.dato),
+                ),
               Text(
                 '${p?.totalMarcados ?? 0} bolillos en este juego',
                 style: context.apagado()?.copyWith(

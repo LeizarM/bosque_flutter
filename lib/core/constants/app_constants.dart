@@ -2484,6 +2484,7 @@ class AppConstants {
   // Direcciones de tb_vista: el sidebar navega a '/' + direccion.
   static const String rutaTtkEventos = 'ttkEventos/Eventos';
   static const String rutaTtkBingoConfiguracion = 'ttkBingo/Configuracion';
+  static const String rutaTtkBingoCartones = 'ttkBingo/Cartones';
   static const String rutaTtkBingoPanel = 'ttkBingo/Panel';
   static const String rutaTtkMiCarton = 'ttkBingo/MiCarton';
   static const String rutaTtkEnVivo = 'ttkBingo/EnVivo';

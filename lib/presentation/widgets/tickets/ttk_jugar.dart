@@ -15,12 +15,14 @@ import 'package:bosque_flutter/core/ui/estados_vista.dart';
 import 'package:bosque_flutter/core/ui/piezas_bosque.dart';
 import 'package:bosque_flutter/core/ui/tokens_bosque.dart';
 import 'package:bosque_flutter/domain/entities/ttk_bingo_carton_entity.dart';
+import 'package:bosque_flutter/domain/entities/ttk_bingo_ganador_entity.dart';
 import 'package:bosque_flutter/domain/entities/ttk_bingo_participante_entity.dart';
 import 'package:bosque_flutter/domain/entities/ttk_bingo_publico_entity.dart';
 import 'package:bosque_flutter/domain/entities/ttk_bingo_sorteo_entity.dart';
 import 'package:bosque_flutter/presentation/widgets/tickets/ttk_bingo_piezas.dart';
 import 'package:bosque_flutter/presentation/widgets/tickets/ttk_carton_papel.dart';
 import 'package:bosque_flutter/presentation/widgets/tickets/ttk_comun.dart';
+import 'package:bosque_flutter/presentation/widgets/tickets/ttk_ganadores.dart';
 import 'package:bosque_flutter/presentation/widgets/tickets/ttk_panel.dart'
     show EstadoConexionTtk;
 
@@ -78,6 +80,7 @@ class _JugarBingoTtkState extends ConsumerState<JugarBingoTtk> {
     final vivo = ref.watch(ttkVivoPublicoProvider(b.codBingo!));
     final publico = vivo.dato?.publico;
     final tablero = vivo.dato?.tablero ?? const <TtkBingoSorteoEntity>[];
+    final ganadores = vivo.dato?.ganadores ?? const <TtkBingoGanadorEntity>[];
     final enCurso = publico?.estadoJuego == 'EN_CURSO';
     final nroJuego = publico?.nroJuego ?? 1;
     final k = _carton;
@@ -112,6 +115,7 @@ class _JugarBingoTtkState extends ConsumerState<JugarBingoTtk> {
         final controles = _Controles(
           bingo: b,
           publico: publico,
+          ganadores: ganadores,
           cartones: widget.cartones,
           indice: _indice.clamp(0, widget.cartones.length - 1),
           enCurso: enCurso,
@@ -175,7 +179,8 @@ class _JugarBingoTtkState extends ConsumerState<JugarBingoTtk> {
   }
 }
 
-/// El último bolillo grande y los anteriores, como en la sala.
+/// Solo el último bolillo, grande. La lista de los ya cantados quedó comentada
+/// a pedido: el participante sigue el juego y marca a mano, como en la sala.
 class _Cantado extends StatelessWidget {
   const _Cantado({
     required this.publico,
@@ -191,10 +196,10 @@ class _Cantado extends StatelessWidget {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final ultimo = publico?.ultimoBolillo;
-    final anteriores = [
-      for (final s in tablero)
-        if (s.marcado && s.orden != null && s.nroBolillo != ultimo) s,
-    ]..sort((a, b) => b.orden!.compareTo(a.orden!));
+    // final anteriores = [
+    //   for (final s in tablero)
+    //     if (s.marcado && s.orden != null && s.nroBolillo != ultimo) s,
+    // ]..sort((a, b) => b.orden!.compareTo(a.orden!));
     final letra =
         tablero.where((s) => s.nroBolillo == ultimo).firstOrNull?.letra ?? '';
     return Card(
@@ -205,6 +210,7 @@ class _Cantado extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.all(Esp.l),
         child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
             // Cada bolillo nuevo cae y rebota, como al salir de la máquina.
             TweenAnimationBuilder<double>(
@@ -226,32 +232,33 @@ class _Cantado extends StatelessWidget {
                 diametro: compacto ? 84 : 120,
               ),
             ),
-            const SizedBox(width: Esp.l),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    '${publico?.totalMarcados ?? 0} bolillos cantados',
-                    style: context.tituloSeccion(),
-                  ),
-                  const SizedBox(height: Esp.s),
-                  Wrap(
-                    spacing: Esp.xs,
-                    runSpacing: Esp.xs,
-                    children: [
-                      for (final s in anteriores.take(compacto ? 5 : 8))
-                        BolilloTtk(
-                          numero: s.nroBolillo,
-                          estado: EstadoBolilloTtk.marcado,
-                          diametro: 34,
-                          etiqueta: s.etiqueta,
-                        ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
+            // Bolillos ya cantados: comentado a pedido del usuario.
+            // const SizedBox(width: Esp.l),
+            // Expanded(
+            //   child: Column(
+            //     crossAxisAlignment: CrossAxisAlignment.start,
+            //     children: [
+            //       Text(
+            //         '${publico?.totalMarcados ?? 0} bolillos cantados',
+            //         style: context.tituloSeccion(),
+            //       ),
+            //       const SizedBox(height: Esp.s),
+            //       Wrap(
+            //         spacing: Esp.xs,
+            //         runSpacing: Esp.xs,
+            //         children: [
+            //           for (final s in anteriores.take(compacto ? 5 : 8))
+            //             BolilloTtk(
+            //               numero: s.nroBolillo,
+            //               estado: EstadoBolilloTtk.marcado,
+            //               diametro: 34,
+            //               etiqueta: s.etiqueta,
+            //             ),
+            //         ],
+            //       ),
+            //     ],
+            //   ),
+            // ),
           ],
         ),
       ),
@@ -339,12 +346,13 @@ class _CartonDelJuego extends ConsumerWidget {
   }
 }
 
-/// La guía, el aviso «¡Bingo!» (si el encargado lo dejó prendido), el cambio
-/// de cartón y el tablero completo.
+/// El premio, los ganadores con nombre y foto, la guía, la regla de desempate,
+/// el aviso «¡Bingo!» (si el encargado lo dejó prendido) y el cambio de cartón.
 class _Controles extends StatelessWidget {
   const _Controles({
     required this.bingo,
     required this.publico,
+    required this.ganadores,
     required this.cartones,
     required this.indice,
     required this.enCurso,
@@ -354,6 +362,7 @@ class _Controles extends StatelessWidget {
 
   final TtkBingoParticipanteEntity bingo;
   final TtkBingoPublicoEntity? publico;
+  final List<TtkBingoGanadorEntity> ganadores;
   final List<TtkBingoCartonEntity> cartones;
   final int indice;
   final bool enCurso;
@@ -363,14 +372,30 @@ class _Controles extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final puedeAvisar = publico?.puedeAvisar ?? false;
+    final hayGanador = publico?.hayGanador ?? false;
+    final premio = publico?.textoPremio ?? '';
+    final empate = publico?.textoEmpate ?? '';
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        if (publico?.hayGanador ?? false) ...[
-          AvisoGanadorTtk(mensaje: publico!.mensaje),
+        if (hayGanador) ...[
+          GanadoresTtk(
+            ganadores: ganadores,
+            mensaje: publico!.mensaje,
+            textoPremio: publico!.textoPremio,
+            textoEmpate: publico!.textoEmpate,
+          ),
           const SizedBox(height: Esp.m),
         ] else if (!enCurso && (publico?.mensaje ?? '').isNotEmpty) ...[
           NotaDelDato(texto: publico!.mensaje, tono: TonoNota.info),
+          const SizedBox(height: Esp.m),
+        ],
+        if (!hayGanador && premio.isNotEmpty) ...[
+          NotaDelDato(
+            icono: Icons.redeem_rounded,
+            texto: premio,
+            tono: TonoNota.exito,
+          ),
           const SizedBox(height: Esp.m),
         ],
         NotaDelDato(
@@ -382,6 +407,10 @@ class _Controles extends StatelessWidget {
                       'si completas la figura, grita «¡Bingo!».',
           tono: TonoNota.info,
         ),
+        if (!hayGanador && empate.isNotEmpty) ...[
+          const SizedBox(height: Esp.m),
+          NotaDelDato(icono: Icons.balance_outlined, texto: empate),
+        ],
         if (cartones.length > 1) ...[
           const SizedBox(height: Esp.m),
           Wrap(

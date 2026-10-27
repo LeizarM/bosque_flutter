@@ -12,6 +12,7 @@ import 'package:bosque_flutter/core/utils/responsive_utils_bosque.dart';
 import 'package:bosque_flutter/domain/entities/ttk_estado_encargado_entity.dart';
 import 'package:bosque_flutter/domain/entities/ttk_estado_publico_entity.dart';
 import 'package:bosque_flutter/domain/entities/ttk_vale_impresion_entity.dart';
+import 'package:bosque_flutter/presentation/screens/tickets/ttk_bingo_cartones_screen.dart';
 import 'package:bosque_flutter/presentation/screens/tickets/ttk_bingo_configuracion_screen.dart';
 import 'package:bosque_flutter/presentation/screens/tickets/ttk_bingo_en_vivo_screen.dart';
 import 'package:bosque_flutter/presentation/screens/tickets/ttk_bingo_panel_screen.dart';
@@ -24,6 +25,7 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:responsive_framework/responsive_framework.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -143,6 +145,8 @@ void main() {
   setUp(() => SharedPreferences.setMockInitialValues({}));
   setUpAll(() async {
     TestWidgetsFlutterBinding.ensureInitialized();
+    // La foto del ganador arma su URL con AppConstants.baseUrl, que lee el .env.
+    dotenv.testLoad(fileInput: '');
     await _cargarFuentes();
   });
 
@@ -251,16 +255,16 @@ void main() {
           );
           await t.pump(const Duration(milliseconds: 200));
         }
-        await tocar(t, find.text('Editar figura'));
+        await tocar(t, find.text('Editar figura y premio'));
       },
     );
     await _capturar(
       t,
-      'config_cartones_telefono',
-      const TtkBingoConfiguracionScreen(),
+      'cartones_telefono',
+      const TtkBingoCartonesScreen(),
       tam: telefono,
-      antes: (t) => tocar(t, find.text('Cartones (300)')),
     );
+    await _capturar(t, 'cartones_escritorio', const TtkBingoCartonesScreen());
     // Bingo recién creado y pantalla alta, para ver el formulario de parámetros entero.
     await _capturar(
       t,
@@ -459,8 +463,9 @@ void main() {
         vivo.emitirPublico(
           TtkEstadoPublicoEntity(
             version: 9,
-            publico: publicoFalso(hayGanador: true),
+            publico: publicoFalso(hayGanador: true, nroGanadores: 2),
             tablero: tableroFalso(),
+            ganadores: ganadoresVivoFalsos(),
           ),
         );
       },
@@ -476,10 +481,9 @@ void main() {
   testWidgets('asignar', (t) async {
     await _capturar(
       t,
-      'config_asignar_dialogo',
-      const TtkBingoConfiguracionScreen(),
+      'cartones_asignar_dialogo',
+      const TtkBingoCartonesScreen(),
       antes: (t) async {
-        await tocar(t, find.text('Cartones (300)'));
         for (var i = 0; i < 6; i++) {
           await t.runAsync(
             () => Future<void>.delayed(const Duration(milliseconds: 20)),

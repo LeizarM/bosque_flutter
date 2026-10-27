@@ -31,6 +31,7 @@ class TtkBingoModel {
       modalidad: ttkTextoN(j['modalidad']) ?? 'A',
       modalidadTexto: ttkTexto(j['modalidadTexto']),
       conAviso: ttkBool(j['conAviso']),
+      reglaEmpate: ttkTextoN(j['reglaEmpate']),
       estado: ttkTexto(j['estado']),
       estadoTexto: ttkTexto(j['estadoTexto']),
       nroGeneracion: ttkIntN(j['nroGeneracion']),
@@ -77,5 +78,7 @@ class TtkBingoModel {
     'tamRanking': entidad.tamRanking,
     'modalidad': entidad.modalidad,
     'conAviso': ttkBandera(entidad.conAviso),
+    // Vacía la quita: la pantalla manda siempre lo que muestra.
+    'reglaEmpate': entidad.reglaEmpate ?? '',
   });
 }

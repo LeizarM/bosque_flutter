@@ -6,6 +6,9 @@ class TtkBingoJuegoEntity {
   final int nroJuego;
   final String nombre;
   final String figura;
+
+  /// Lo que se gana en este juego: «Se está jugando por …».
+  final String? premio;
   final int filas;
   final int columnas;
   final bool conComodin;
@@ -17,6 +20,9 @@ class TtkBingoJuegoEntity {
   final int bolillosMarcados;
   final int ganadoresConfirmados;
   final bool puedeEditarFigura;
+
+  /// Mientras el juego no terminó: el premio también cambia en curso.
+  final bool puedeEditarPremio;
   final bool puedeComenzar;
   final bool puedeFinalizar;
   final BigInt? audUsuario;
@@ -28,6 +34,7 @@ class TtkBingoJuegoEntity {
     this.nroJuego = 0,
     this.nombre = '',
     this.figura = '',
+    this.premio,
     this.filas = 5,
     this.columnas = 5,
     this.conComodin = true,
@@ -39,6 +46,7 @@ class TtkBingoJuegoEntity {
     this.bolillosMarcados = 0,
     this.ganadoresConfirmados = 0,
     this.puedeEditarFigura = false,
+    this.puedeEditarPremio = false,
     this.puedeComenzar = false,
     this.puedeFinalizar = false,
     this.audUsuario,
@@ -47,13 +55,18 @@ class TtkBingoJuegoEntity {
 
   bool get enCurso => estado == 'EN_CURSO';
 
-  TtkBingoJuegoEntity copyWith({String? nombre, String? figura}) =>
+  TtkBingoJuegoEntity copyWith({
+    String? nombre,
+    String? figura,
+    String? premio,
+  }) =>
       TtkBingoJuegoEntity(
         codJuego: codJuego,
         codBingo: codBingo,
         nroJuego: nroJuego,
         nombre: nombre ?? this.nombre,
         figura: figura ?? this.figura,
+        premio: premio ?? this.premio,
         filas: filas,
         columnas: columnas,
         conComodin: conComodin,
@@ -65,6 +78,7 @@ class TtkBingoJuegoEntity {
         bolillosMarcados: bolillosMarcados,
         ganadoresConfirmados: ganadoresConfirmados,
         puedeEditarFigura: puedeEditarFigura,
+        puedeEditarPremio: puedeEditarPremio,
         puedeComenzar: puedeComenzar,
         puedeFinalizar: puedeFinalizar,
         audUsuario: audUsuario,

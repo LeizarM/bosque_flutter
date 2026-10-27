@@ -7,14 +7,17 @@ import 'package:bosque_flutter/core/state/ttk_bingo_provider.dart';
 import 'package:bosque_flutter/core/ui/estados_vista.dart';
 import 'package:bosque_flutter/core/ui/piezas_bosque.dart';
 import 'package:bosque_flutter/core/ui/tokens_bosque.dart';
+import 'package:bosque_flutter/domain/entities/ttk_bingo_ganador_entity.dart';
 import 'package:bosque_flutter/domain/entities/ttk_bingo_publico_entity.dart';
 import 'package:bosque_flutter/domain/entities/ttk_bingo_sorteo_entity.dart';
 import 'package:bosque_flutter/domain/entities/ttk_estado_publico_entity.dart';
 import 'package:bosque_flutter/presentation/widgets/tickets/ttk_bingo_piezas.dart';
 import 'package:bosque_flutter/presentation/widgets/tickets/ttk_comun.dart';
+import 'package:bosque_flutter/presentation/widgets/tickets/ttk_ganadores.dart';
 
 /// `ttkBingo/EnVivo` (todo empleado, se proyecta): el tablero luminoso de la
-/// sala. El número cantado manda; nunca muestra quién ganó ni el ranking.
+/// sala. El número cantado manda; con ganador confirmado muestra su nombre y
+/// foto en lugar del tablero. Nunca muestra el ranking.
 class TtkBingoEnVivoScreen extends ConsumerStatefulWidget {
   const TtkBingoEnVivoScreen({super.key, this.codBingo});
 
@@ -103,6 +106,7 @@ class _Lectura {
   _Lectura(TtkEstadoPublicoEntity e)
     : publico = e.publico,
       tablero = e.tablero,
+      ganadores = e.ganadores,
       cantados = [
         for (final b in e.tablero)
           if (b.marcado && b.orden != null) b,
@@ -110,6 +114,9 @@ class _Lectura {
 
   final TtkBingoPublicoEntity? publico;
   final List<TtkBingoSorteoEntity> tablero;
+
+  /// Confirmados del juego, con nombre y codEmpleado para la foto.
+  final List<TtkBingoGanadorEntity> ganadores;
 
   /// Bolillos que salieron, del más reciente al más antiguo.
   final List<TtkBingoSorteoEntity> cantados;
@@ -130,6 +137,14 @@ class _Lectura {
 
   bool get hayGanador => publico?.hayGanador ?? false;
   bool get enCurso => publico?.estadoJuego == 'EN_CURSO';
+
+  /// «Se está jugando por …» (del SP) mientras no haya ganador; después va en el anuncio.
+  String? get premioEnJuego => hayGanador ? null : _texto(publico?.textoPremio);
+
+  /// «Si hay empate: …» (del SP) antes de que salga un ganador.
+  String? get notaEmpate => hayGanador ? null : _texto(publico?.textoEmpate);
+
+  static String? _texto(String? t) => (t ?? '').trim().isEmpty ? null : t;
 
   /// Con juego en curso, su nombre; si no, el mensaje del SP (fin, pausa).
   String get titulo =>
@@ -221,72 +236,87 @@ class _VistaSala extends StatelessWidget {
           ),
         ),
         Expanded(
-          child: Padding(
-            padding: EdgeInsets.all(aire),
-            child: LayoutBuilder(
-              builder: (context, c) {
-                // El tablero toma el alto que necesita a todo el ancho y el
-                // sobrante agranda el juego y su figura.
-                final grupos = <int, int>{};
-                for (final b in lectura.tablero) {
-                  grupos[b.columna] = (grupos[b.columna] ?? 0) + 1;
-                }
-                const hueco = 6.0;
-                final minimo = (c.maxHeight * 0.16).clamp(96.0, 180.0);
-                final m = ttkMedidaTablero(
-                  ancho: c.maxWidth,
-                  alto: c.maxHeight - minimo - aire,
-                  grupos: math.max(grupos.length, 1),
-                  porGrupo: grupos.values.fold(1, math.max),
-                  minimo: 36,
-                  maximo: 220,
-                );
-                final lineas =
-                    math.max(grupos.length, 1) *
-                    (grupos.values.fold(1, math.max) / m.porLinea).ceil();
-                final tablero =
-                    lineas * m.diametro +
-                    (lineas - 1) * hueco +
-                    (math.max(grupos.length, 1) - 1) * hueco;
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          Expanded(
-                            child: LayoutBuilder(
-                              builder:
-                                  (context, k) => _CabeceraJuego(
-                                    lectura: lectura,
-                                    alto: k.maxHeight,
-                                  ),
-                            ),
-                          ),
-                          _AvisoGanador(lectura: lectura, grande: true),
-                        ],
+          child: _CambioSuave(
+            child:
+                lectura.hayGanador
+                    ? _SalaGanadores(
+                      key: const ValueKey('ttk-sala-ganadores'),
+                      lectura: lectura,
+                      relleno: aire,
+                      grande: true,
+                    )
+                    : Padding(
+                      key: const ValueKey('ttk-sala-tablero'),
+                      padding: EdgeInsets.all(aire),
+                      child: LayoutBuilder(
+                        builder: (context, c) {
+                          // El tablero toma el alto que necesita a todo el ancho y el
+                          // sobrante agranda el juego y su figura.
+                          final grupos = <int, int>{};
+                          for (final b in lectura.tablero) {
+                            grupos[b.columna] = (grupos[b.columna] ?? 0) + 1;
+                          }
+                          const hueco = 6.0;
+                          final minimo = (c.maxHeight * 0.16).clamp(
+                            96.0,
+                            180.0,
+                          );
+                          final m = ttkMedidaTablero(
+                            ancho: c.maxWidth,
+                            alto: c.maxHeight - minimo - aire,
+                            grupos: math.max(grupos.length, 1),
+                            porGrupo: grupos.values.fold(1, math.max),
+                            minimo: 36,
+                            maximo: 220,
+                          );
+                          final lineas =
+                              math.max(grupos.length, 1) *
+                              (grupos.values.fold(1, math.max) / m.porLinea)
+                                  .ceil();
+                          final tablero =
+                              lineas * m.diametro +
+                              (lineas - 1) * hueco +
+                              (math.max(grupos.length, 1) - 1) * hueco;
+                          return Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment:
+                                      CrossAxisAlignment.stretch,
+                                  children: [
+                                    Expanded(
+                                      child: LayoutBuilder(
+                                        builder:
+                                            (context, k) => _CabeceraJuego(
+                                              lectura: lectura,
+                                              alto: k.maxHeight,
+                                            ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              SizedBox(height: aire),
+                              SizedBox(
+                                height: math.min(
+                                  tablero + 2,
+                                  c.maxHeight - minimo - aire,
+                                ),
+                                child: TableroBolillosTtk(
+                                  tablero: lectura.tablero,
+                                  ultimo: lectura.publico?.ultimoBolillo,
+                                  llenar: true,
+                                  lampara: true,
+                                  minCelda: 36,
+                                  maxCelda: 220,
+                                ),
+                              ),
+                            ],
+                          );
+                        },
                       ),
                     ),
-                    SizedBox(height: aire),
-                    SizedBox(
-                      height: math.min(
-                        tablero + 2,
-                        c.maxHeight - minimo - aire,
-                      ),
-                      child: TableroBolillosTtk(
-                        tablero: lectura.tablero,
-                        ultimo: lectura.publico?.ultimoBolillo,
-                        llenar: true,
-                        lampara: true,
-                        minCelda: 36,
-                        maxCelda: 220,
-                      ),
-                    ),
-                  ],
-                );
-              },
-            ),
           ),
         ),
       ],
@@ -313,12 +343,12 @@ class _VistaCelular extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final alto = (tam.height * 0.24).clamp(150.0, 210.0).toDouble();
+    final panel = (tam.height * 0.24).clamp(150.0, 210.0).toDouble();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         SizedBox(
-          height: alto,
+          height: panel,
           child: _PanelCantado(
             lectura: lectura,
             conectado: conectado,
@@ -334,23 +364,71 @@ class _VistaCelular extends StatelessWidget {
             children: [
               SizedBox(
                 height: 64,
-                child: _CabeceraJuego(lectura: lectura, alto: 64),
+                child: _CabeceraJuego(
+                  lectura: lectura,
+                  alto: 64,
+                  conPremio: false,
+                ),
               ),
-              _AvisoGanador(lectura: lectura, grande: false),
+              // A lo ancho: junto a la figura no entra entero.
+              if (lectura.premioEnJuego != null) ...[
+                const SizedBox(height: Esp.xs),
+                Row(
+                  children: [
+                    Icon(
+                      Icons.redeem_rounded,
+                      size: 18,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+                    const SizedBox(width: Esp.xs),
+                    Expanded(
+                      child: Text(
+                        lectura.premioEnJuego!,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.primary,
+                          fontWeight: Peso.dato,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+              if (lectura.notaEmpate != null) ...[
+                const SizedBox(height: Esp.xs),
+                Text(
+                  lectura.notaEmpate!,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: context.apagado(),
+                ),
+              ],
             ],
           ),
         ),
         Expanded(
-          child: Padding(
-            padding: const EdgeInsets.all(Esp.m),
-            child: TableroBolillosTtk(
-              tablero: lectura.tablero,
-              ultimo: lectura.publico?.ultimoBolillo,
-              llenar: true,
-              lampara: true,
-              minCelda: 24,
-              maxCelda: 96,
-            ),
+          child: _CambioSuave(
+            child:
+                lectura.hayGanador
+                    ? _SalaGanadores(
+                      key: const ValueKey('ttk-sala-ganadores'),
+                      lectura: lectura,
+                      relleno: Esp.m,
+                      grande: false,
+                    )
+                    : Padding(
+                      key: const ValueKey('ttk-sala-tablero'),
+                      padding: const EdgeInsets.all(Esp.m),
+                      child: TableroBolillosTtk(
+                        tablero: lectura.tablero,
+                        ultimo: lectura.publico?.ultimoBolillo,
+                        llenar: true,
+                        lampara: true,
+                        minCelda: 24,
+                        maxCelda: 96,
+                      ),
+                    ),
           ),
         ),
       ],
@@ -477,6 +555,18 @@ class _PanelCantado extends StatelessWidget {
                 ),
                 SizedBox(height: h * 0.04),
                 cuenta(texto),
+                if (lectura.notaEmpate != null) ...[
+                  SizedBox(height: h * 0.03),
+                  Text(
+                    lectura.notaEmpate!,
+                    maxLines: 4,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: texto * 0.75,
+                      color: tinta.withValues(alpha: 0.9),
+                    ),
+                  ),
+                ],
               ],
             );
           },
@@ -668,10 +758,17 @@ class _Conexion extends StatelessWidget {
 
 /// El juego en curso a escala de cartel y su figura, legible desde el fondo.
 class _CabeceraJuego extends StatelessWidget {
-  const _CabeceraJuego({required this.lectura, required this.alto});
+  const _CabeceraJuego({
+    required this.lectura,
+    required this.alto,
+    this.conPremio = true,
+  });
 
   final _Lectura lectura;
   final double alto;
+
+  /// En el teléfono el premio va debajo, a lo ancho.
+  final bool conPremio;
 
   @override
   Widget build(BuildContext context) {
@@ -717,6 +814,29 @@ class _CabeceraJuego extends StatelessWidget {
                   ),
                 ),
               ),
+              if (conPremio && lectura.premioEnJuego != null)
+                Row(
+                  children: [
+                    Icon(
+                      Icons.redeem_rounded,
+                      size: (alto * 0.18).clamp(14.0, 40.0),
+                      color: cs.primary,
+                    ),
+                    const SizedBox(width: Esp.xs),
+                    Flexible(
+                      child: Text(
+                        lectura.premioEnJuego!,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: (alto * 0.16).clamp(12.0, 36.0),
+                          color: cs.primary,
+                          fontWeight: Peso.dato,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
             ],
           ),
         ),
@@ -735,68 +855,46 @@ class _CabeceraJuego extends StatelessWidget {
   }
 }
 
-/// Franja de ganador: genérica (el texto es del SP) y entra desplegándose.
-class _AvisoGanador extends StatelessWidget {
-  const _AvisoGanador({required this.lectura, required this.grande});
+/// Cambia entre el tablero y el anuncio de ganadores con un fundido.
+class _CambioSuave extends StatelessWidget {
+  const _CambioSuave({required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) => AnimatedSwitcher(
+    duration:
+        (MediaQuery.maybeDisableAnimationsOf(context) ?? false)
+            ? Duration.zero
+            : const Duration(milliseconds: 420),
+    child: child,
+  );
+}
+
+/// Con ganador confirmado, su nombre y foto ocupan el lugar del tablero.
+class _SalaGanadores extends StatelessWidget {
+  const _SalaGanadores({
+    super.key,
+    required this.lectura,
+    required this.relleno,
+    required this.grande,
+  });
 
   final _Lectura lectura;
+  final double relleno;
   final bool grande;
 
   @override
-  Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    final t = Theme.of(context).textTheme;
-    final sinMovimiento = MediaQuery.maybeDisableAnimationsOf(context) ?? false;
-    return AnimatedSwitcher(
-      duration:
-          sinMovimiento ? Duration.zero : const Duration(milliseconds: 420),
-      transitionBuilder:
-          (hijo, a) => SizeTransition(
-            sizeFactor: CurvedAnimation(parent: a, curve: Curves.easeOutCubic),
-            axisAlignment: -1,
-            child: FadeTransition(opacity: a, child: hijo),
-          ),
-      child:
-          lectura.hayGanador
-              ? Padding(
-                key: const ValueKey('ttk-aviso-ganador'),
-                padding: EdgeInsets.only(top: grande ? Esp.l : Esp.s),
-                child: Semantics(
-                  liveRegion: true,
-                  container: true,
-                  child: Material(
-                    color: cs.tertiary,
-                    borderRadius: BorderRadius.circular(Esquina.chica),
-                    child: Padding(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: grande ? Esp.xl : Esp.l,
-                        vertical: grande ? Esp.l : Esp.m,
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(
-                            Icons.emoji_events_rounded,
-                            size: grande ? 44 : 26,
-                            color: cs.onTertiary,
-                          ),
-                          SizedBox(width: grande ? Esp.l : Esp.m),
-                          Expanded(
-                            child: Text(
-                              ttkOGuion(lectura.publico?.mensaje),
-                              style: (grande ? t.headlineLarge : t.titleMedium)
-                                  ?.copyWith(
-                                    color: cs.onTertiary,
-                                    fontWeight: Peso.dato,
-                                  ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              )
-              : const SizedBox(width: double.infinity),
-    );
-  }
+  Widget build(BuildContext context) => Center(
+    child: SingleChildScrollView(
+      padding: EdgeInsets.all(relleno),
+      child: GanadoresTtk(
+        ganadores: lectura.ganadores,
+        mensaje: ttkOGuion(lectura.publico?.mensaje),
+        textoPremio: lectura.publico?.textoPremio,
+        textoEmpate: lectura.publico?.textoEmpate,
+        grande: grande,
+      ),
+    ),
+  );
 }

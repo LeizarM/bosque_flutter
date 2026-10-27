@@ -645,6 +645,16 @@ final routerProvider = Provider<GoRouter>((ref) {
                   ),
             ),
             GoRoute(
+              path: '/dashboard/${AppConstants.rutaTtkBingoCartones}',
+              name: 'ttkBingoCartones',
+              builder:
+                  (context, state) => _pantallaConTitulo(
+                    context,
+                    'Bosque - Cartones del bingo',
+                    const TtkBingoCartonesScreen(),
+                  ),
+            ),
+            GoRoute(
               path: '/dashboard/${AppConstants.rutaTtkBingoPanel}',
               name: 'ttkBingoPanel',
               builder:
@@ -1439,6 +1449,12 @@ final routerProvider = Provider<GoRouter>((ref) {
           redirect:
               (context, state) =>
                   '/dashboard/${AppConstants.rutaTtkBingoConfiguracion}',
+        ),
+        GoRoute(
+          path: '/${AppConstants.rutaTtkBingoCartones}',
+          redirect:
+              (context, state) =>
+                  '/dashboard/${AppConstants.rutaTtkBingoCartones}',
         ),
         GoRoute(
           path: '/${AppConstants.rutaTtkBingoPanel}',

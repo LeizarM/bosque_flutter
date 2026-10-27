@@ -7,6 +7,7 @@ import 'package:bosque_flutter/core/theme/app_theme.dart';
 import 'package:bosque_flutter/core/utils/responsive_utils_bosque.dart';
 import 'package:bosque_flutter/domain/entities/ttk_estado_encargado_entity.dart';
 import 'package:bosque_flutter/domain/entities/ttk_estado_publico_entity.dart';
+import 'package:bosque_flutter/presentation/screens/tickets/ttk_bingo_cartones_screen.dart';
 import 'package:bosque_flutter/presentation/screens/tickets/ttk_bingo_configuracion_screen.dart';
 import 'package:bosque_flutter/presentation/screens/tickets/ttk_bingo_en_vivo_screen.dart';
 import 'package:bosque_flutter/presentation/screens/tickets/ttk_bingo_panel_screen.dart';
@@ -17,6 +18,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:responsive_framework/responsive_framework.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -30,6 +32,8 @@ import 'fakes/repositorio_ttk.dart';
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   setUp(() => SharedPreferences.setMockInitialValues({}));
+  // La foto del ganador arma su URL con AppConstants.baseUrl, que lee el .env.
+  setUpAll(() => dotenv.testLoad(fileInput: ''));
 
   setUpAll(() async {
     Future<void> cargar(String familia, List<String> archivos) async {
@@ -198,14 +202,20 @@ void main() {
         reason: 'cartones según los vales, solo lectura',
       );
 
-      // Pestaña de cartones: tabla o tarjetas, con los dueños invitados marcados.
-      errores.addAll(
-        await conErrores(() async {
-          await tester.tap(find.text('Cartones (300)'));
-          await esperar(tester);
-        }),
+      // Los cartones se mudaron a su propia pantalla (ttkBingo/Cartones).
+      expect(find.textContaining('Cartones ('), findsNothing);
+      await cerrar(tester);
+    });
+
+    testWidgets('Cartones del bingo a $ancho px', (tester) async {
+      final errores = await abrir(
+        tester,
+        const TtkBingoCartonesScreen(),
+        ancho: ancho,
       );
       expect(errores, isEmpty, reason: detalle(errores));
+      expect(find.text('Cartones del bingo'), findsOneWidget);
+      // Tabla o tarjetas, con los dueños invitados marcados.
       expect(find.text('0002'), findsWidgets);
       // La lista es perezosa: en el escritorio la fila del invitado ya está dibujada.
       if (escritorio) expect(find.text('Invitado'), findsWidgets);
@@ -442,26 +452,46 @@ void main() {
       expect(
         find.textContaining('Empleado número'),
         findsNothing,
-        reason: 'nunca muestra ganadores ni ranking',
+        reason: 'nunca muestra el ranking',
       );
-      expect(find.byKey(const ValueKey('ttk-aviso-ganador')), findsNothing);
+      expect(find.byKey(const ValueKey('ttk-sala-ganadores')), findsNothing);
+      // El premio del juego y cómo se desempata, antes de que haya ganador.
+      expect(
+        find.text('Se está jugando por Una canasta navideña'),
+        findsOneWidget,
+      );
+      expect(
+        find.textContaining('Si hay empate: Se resolverá'),
+        findsOneWidget,
+      );
 
-      // El tópico público avisa que hubo ganador: aviso destacado y genérico.
+      // Dos ganadores confirmados: nombre y foto en lugar del tablero, y la regla.
       errores.addAll(
         await conErrores(() async {
           vivo.emitirPublico(
             TtkEstadoPublicoEntity(
               version: 6,
-              publico: publicoFalso(hayGanador: true),
+              publico: publicoFalso(hayGanador: true, nroGanadores: 2),
               tablero: tableroFalso(),
+              ganadores: ganadoresVivoFalsos(),
             ),
           );
           await esperar(tester, 4);
         }),
       );
       expect(errores, isEmpty, reason: detalle(errores));
-      expect(find.byKey(const ValueKey('ttk-aviso-ganador')), findsOneWidget);
-      expect(find.text('¡Ya salió un ganador del juego 3!'), findsOneWidget);
+      expect(find.byKey(const ValueKey('ttk-sala-ganadores')), findsOneWidget);
+      expect(find.text('¡Hay 2 ganadores del juego 3!'), findsOneWidget);
+      expect(find.text('Premio: Una canasta navideña'), findsOneWidget);
+      expect(find.text('ANA LUCÍA RÍOS VEGA'), findsOneWidget);
+      expect(find.text('Invitado Pedro Gómez'), findsOneWidget);
+      expect(
+        find.bySemanticsLabel('Foto de ANA LUCÍA RÍOS VEGA'),
+        findsOneWidget,
+      );
+      expect(find.text('IP'), findsOneWidget, reason: 'invitado: iniciales');
+      expect(find.textContaining('¡Empate! 2 cartones'), findsOneWidget);
+      expect(find.byKey(const ValueKey('ttk-bolillo-1')), findsNothing);
       expect(find.textContaining('Empleado número'), findsNothing);
       await cerrar(tester);
       expect(vivo.cerradas, 1);
@@ -541,14 +571,12 @@ void main() {
     final bingo = TtkBingoFalso();
     final errores = await abrir(
       tester,
-      const TtkBingoConfiguracionScreen(),
+      const TtkBingoCartonesScreen(),
       ancho: 1400,
       bingo: bingo,
     );
     errores.addAll(
       await conErrores(() async {
-        await tester.tap(find.text('Cartones (300)'));
-        await esperar(tester);
         await tester.tap(find.byTooltip('Asignar').first);
         await esperar(tester, 4);
       }),
@@ -596,11 +624,52 @@ void main() {
     );
     await tester.tap(find.text('Botón «¡Bingo!» para avisar al encargado'));
     await tester.pump();
+    final empate = find.widgetWithText(TextField, 'Si hay empate');
+    await tester.ensureVisible(empate);
+    await tester.enterText(empate, '  Gana quien saque la carta más alta. ');
     await tester.ensureVisible(find.text('Guardar parámetros'));
     await tester.tap(find.text('Guardar parámetros'));
     await esperar(tester, 3);
     expect(bingo.guardados.last.modalidad, 'P');
     expect(bingo.guardados.last.conAviso, isTrue);
+    expect(
+      bingo.guardados.last.reglaEmpate,
+      'Gana quien saque la carta más alta.',
+    );
+    await cerrar(tester);
+  });
+
+  testWidgets('Juegos: con el juego en curso solo cambia el premio', (
+    tester,
+  ) async {
+    final bingo = TtkBingoFalso();
+    final errores = await abrir(
+      tester,
+      const TtkBingoConfiguracionScreen(),
+      ancho: 1400,
+      bingo: bingo,
+    );
+    errores.addAll(
+      await conErrores(() async {
+        await tester.tap(find.text('Juegos y figuras (8)'));
+        await esperar(tester);
+        await tester.tap(find.text('Cambiar premio'));
+        await esperar(tester);
+      }),
+    );
+    expect(errores, isEmpty, reason: detalle(errores));
+    expect(find.text('Premio del juego 3'), findsOneWidget);
+    expect(find.textContaining('la figura no cambia'), findsOneWidget);
+    await tester.enterText(
+      find.widgetWithText(TextField, 'Premio (opcional)'),
+      'Un televisor',
+    );
+    await tester.tap(find.text('Guardar premio'));
+    await esperar(tester, 3);
+    final j = bingo.juegosGuardados.single;
+    expect(j.premio, 'Un televisor');
+    expect(j.nombre, 'Letra L', reason: 'el nombre viaja como estaba');
+    expect(j.nroJuego, 3);
     await cerrar(tester);
   });
 

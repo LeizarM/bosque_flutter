@@ -2,7 +2,7 @@ import 'package:bosque_flutter/data/models/ttk_json.dart';
 import 'package:bosque_flutter/domain/entities/ttk_bingo_juego_entity.dart';
 
 /// Columnas de `p_list_ttk_BingoJuego` L. `toJson` es el cuerpo de
-/// `/bingo/juego/guardar` (nombre y figura).
+/// `/bingo/juego/guardar` (nombre, figura y premio).
 class TtkBingoJuegoModel {
   const TtkBingoJuegoModel(this.entidad);
 
@@ -16,6 +16,7 @@ class TtkBingoJuegoModel {
           nroJuego: ttkInt(j['nroJuego']),
           nombre: ttkTexto(j['nombre']),
           figura: ttkTexto(j['figura']),
+          premio: ttkTextoN(j['premio']),
           filas: ttkInt(j['filas']),
           columnas: ttkInt(j['columnas']),
           conComodin: ttkBool(j['conComodin']),
@@ -27,6 +28,7 @@ class TtkBingoJuegoModel {
           bolillosMarcados: ttkInt(j['bolillosMarcados']),
           ganadoresConfirmados: ttkInt(j['ganadoresConfirmados']),
           puedeEditarFigura: ttkBool(j['puedeEditarFigura']),
+          puedeEditarPremio: ttkBool(j['puedeEditarPremio']),
           puedeComenzar: ttkBool(j['puedeComenzar']),
           puedeFinalizar: ttkBool(j['puedeFinalizar']),
           audUsuario: ttkBigInt(j['audUsuario']),
@@ -43,5 +45,7 @@ class TtkBingoJuegoModel {
     'codJuego': entidad.codJuego,
     'nombre': entidad.nombre,
     'figura': entidad.figura,
+    // Vacío lo quita: el diálogo manda siempre lo que muestra.
+    'premio': entidad.premio ?? '',
   });
 }

@@ -465,6 +465,12 @@ pw.Widget _juego(
   );
 }
 
+/// Estrella del comodín: la misma figura (Material «star») que el cartón en pantalla.
+const _estrellaSvg =
+    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">'
+    '<path fill="#424242" d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/>'
+    '</svg>';
+
 pw.Widget _casillaPdf(
   TtkBingoCeldaEntity? d,
   _Fuentes f,
@@ -474,7 +480,11 @@ pw.Widget _casillaPdf(
   final fondo = d.enFigura ? PdfColors.grey300 : null;
   if (d.esComodin) {
     return casilla(
-      pw.Text('LIBRE', style: pw.TextStyle(font: f.negrita, fontSize: 8)),
+      pw.SizedBox(
+        width: 18,
+        height: 18,
+        child: pw.SvgImage(svg: _estrellaSvg),
+      ),
       fondo: fondo,
     );
   }

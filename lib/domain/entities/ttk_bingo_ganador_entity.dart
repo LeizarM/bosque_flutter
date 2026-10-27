@@ -1,4 +1,5 @@
-/// Ganador confirmado de un juego. Solo lo ve el encargado.
+/// Ganador confirmado de un juego. El encargado lo ve con su cartón; la sala,
+/// solo con nombre y foto (codEmpleado; sin él es un invitado).
 class TtkBingoGanadorEntity {
   final BigInt? codGanador;
   final BigInt? codJuego;

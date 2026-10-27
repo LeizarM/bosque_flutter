@@ -92,9 +92,10 @@ void main() {
     // v11: la gestión de las preguntas de la semana del inicio.
     AppConstants.rutaTcpePreguntaSemana: 'PreguntasSemanaScreen',
     // Módulo Tickets / Bingo (ttk), sql/permisos del proyecto de migración:
-    // eventos de RRHH, configuración y panel del encargado, y lo del empleado.
+    // eventos de RRHH, configuración, cartones y panel del encargado, y lo del empleado.
     AppConstants.rutaTtkEventos: 'TtkEventosScreen',
     AppConstants.rutaTtkBingoConfiguracion: 'TtkBingoConfiguracionScreen',
+    AppConstants.rutaTtkBingoCartones: 'TtkBingoCartonesScreen',
     AppConstants.rutaTtkBingoPanel: 'TtkBingoPanelScreen',
     AppConstants.rutaTtkMiCarton: 'TtkMiCartonScreen',
     AppConstants.rutaTtkEnVivo: 'TtkBingoEnVivoScreen',

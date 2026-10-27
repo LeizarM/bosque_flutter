@@ -26,6 +26,9 @@ class TtkBingoEntity {
 
   /// Botón «¡Bingo!» del participante: solo avisa al encargado.
   final bool conAviso;
+
+  /// Cómo se desempata si hay más de un ganador; se ve en la pantalla en vivo.
+  final String? reglaEmpate;
   final String estado;
   final String estadoTexto;
   final int? nroGeneracion;
@@ -72,6 +75,7 @@ class TtkBingoEntity {
     this.modalidad = 'A',
     this.modalidadTexto = '',
     this.conAviso = false,
+    this.reglaEmpate,
     this.estado = '',
     this.estadoTexto = '',
     this.nroGeneracion,
@@ -117,6 +121,7 @@ class TtkBingoEntity {
     bool sinTipoTicket = false,
     String? modalidad,
     bool? conAviso,
+    String? reglaEmpate,
   }) => TtkBingoEntity(
     codBingo: codBingo,
     codEvento: codEvento,
@@ -139,6 +144,7 @@ class TtkBingoEntity {
     modalidad: modalidad ?? this.modalidad,
     modalidadTexto: modalidadTexto,
     conAviso: conAviso ?? this.conAviso,
+    reglaEmpate: reglaEmpate ?? this.reglaEmpate,
     estado: estado,
     estadoTexto: estadoTexto,
     nroGeneracion: nroGeneracion,
