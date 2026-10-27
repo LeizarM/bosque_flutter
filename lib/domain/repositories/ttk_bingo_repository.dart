@@ -73,6 +73,9 @@ abstract class TtkBingoRepository {
   Future<TtkRankingCartonEntity?> validarCarton(BigInt codBingo, int nroCarton);
   Future<TtkRespuesta> confirmarGanador(BigInt codBingo, int nroCarton);
   Future<TtkRespuesta> anularGanador(BigInt codGanador);
+
+  /// Quién ganó el desempate entre los confirmados del juego y cómo se resolvió.
+  Future<TtkRespuesta> resolverEmpate(BigInt codGanador, String motivo);
   Future<List<TtkBingoGanadorEntity>> listarGanadores(BigInt codBingo);
   Future<TtkEstadoEncargadoEntity?> estadoEncargado(BigInt codBingo);
   Future<TtkEstadoPublicoEntity?> estadoPublico(BigInt codBingo);

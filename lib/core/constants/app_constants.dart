@@ -2546,6 +2546,7 @@ class AppConstants {
   static const String ttkCartonValidar = '$_ttkBingo/carton/validar';
   static const String ttkGanadorConfirmar = '$_ttkBingo/ganador/confirmar';
   static const String ttkGanadorAnular = '$_ttkBingo/ganador/anular';
+  static const String ttkGanadorDesempate = '$_ttkBingo/ganador/desempate';
   static const String ttkGanadorListar = '$_ttkBingo/ganador/listar';
   static const String ttkEstadoEncargado = '$_ttkBingo/estado-encargado';
   static const String ttkEstadoPublico = '$_ttkBingo/estado-publico';

@@ -236,6 +236,14 @@ class TtkBingoImpl extends TtkApiBase implements TtkBingoRepository {
   );
 
   @override
+  Future<TtkRespuesta> resolverEmpate(BigInt codGanador, String motivo) =>
+      escribir(
+        AppConstants.ttkGanadorDesempate,
+        ttkCuerpo({'codGanador': codGanador, 'motivoDesempate': motivo}),
+        errorMessage: 'No se pudo registrar el desempate.',
+      );
+
+  @override
   Future<List<TtkBingoGanadorEntity>> listarGanadores(BigInt codBingo) =>
       postAndReturnList(
         endpoint: AppConstants.ttkGanadorListar,
@@ -266,10 +274,8 @@ class TtkBingoImpl extends TtkApiBase implements TtkBingoRepository {
   }
 
   @override
-  Future<TtkRespuesta> atenderAviso(BigInt codAviso) => escribir(
-    AppConstants.ttkAvisoAtender,
-    ttkCuerpo({'codAviso': codAviso}),
-  );
+  Future<TtkRespuesta> atenderAviso(BigInt codAviso) =>
+      escribir(AppConstants.ttkAvisoAtender, ttkCuerpo({'codAviso': codAviso}));
 
   // ── Participante ──
   @override

@@ -14,6 +14,7 @@ import 'package:bosque_flutter/core/ui/piezas_bosque.dart';
 import 'package:bosque_flutter/core/ui/tokens_bosque.dart';
 import 'package:bosque_flutter/domain/entities/ttk_bingo_aviso_entity.dart';
 import 'package:bosque_flutter/domain/entities/ttk_bingo_entity.dart';
+import 'package:bosque_flutter/domain/entities/ttk_bingo_ganador_entity.dart';
 import 'package:bosque_flutter/domain/entities/ttk_estado_encargado_entity.dart';
 import 'package:bosque_flutter/domain/entities/ttk_ranking_carton_entity.dart';
 import 'package:bosque_flutter/domain/repositories/ttk_bingo_repository.dart';
@@ -664,8 +665,13 @@ class GanadoresBingoTtk extends ConsumerWidget {
                           title: Text(
                             'N° ${_nro(g.nroCarton)} · ${ttkOGuion(g.nombreEmpleado)}',
                           ),
+                          isThreeLine: g.ganoDesempate,
                           subtitle: Text(
-                            '${g.nombreJuego}${g.nroBolillo == null ? '' : ' · con el ${g.nroBolillo}'}',
+                            [
+                              '${g.nombreJuego}${g.nroBolillo == null ? '' : ' · con el ${g.nroBolillo}'}',
+                              if (g.ganoDesempate)
+                                'Ganó el desempate: ${ttkOGuion(g.motivoDesempate)}',
+                            ].join('\n'),
                           ),
                           trailing:
                               g.puedeAnular
@@ -739,6 +745,15 @@ class JuegosPanelTtk extends ConsumerWidget {
     final lista = juegos.valueOrNull ?? const [];
     final siguiente = lista.where((j) => j.puedeComenzar).firstOrNull;
     final enCurso = lista.where((j) => j.enCurso).firstOrNull;
+    // Confirmados del juego en curso: con dos o más hay que resolver el desempate.
+    final empatados = [
+      for (final g
+          in ref.watch(ttkGanadoresProvider(bingo.codBingo!)).valueOrNull ??
+              const <TtkBingoGanadorEntity>[])
+        if (enCurso != null && g.codJuego == enCurso.codJuego) g,
+    ];
+    final puedeDesempatar =
+        empatados.length > 1 && empatados.first.puedeResolverEmpate;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -781,10 +796,39 @@ class JuegosPanelTtk extends ConsumerWidget {
           ],
         ),
         const SizedBox(height: Esp.s),
+        if (enCurso != null && enCurso.empatePendiente) ...[
+          NotaDelDato(
+            tono: TonoNota.aviso,
+            icono: Icons.balance_outlined,
+            texto:
+                'Hay ${enCurso.ganadoresConfirmados} ganadores empatados en el juego ${enCurso.nroJuego}. '
+                'Resuelve el desempate (quién ganó y por qué) para poder cerrarlo.',
+          ),
+          const SizedBox(height: Esp.s),
+        ],
         Wrap(
           spacing: Esp.s,
           runSpacing: Esp.s,
           children: [
+            if (puedeDesempatar)
+              PermissionWidget(
+                buttonName: BotonTtkBingo.confirmarGanador,
+                child: FilledButton.tonalIcon(
+                  onPressed:
+                      () => resolverEmpateTtk(
+                        context,
+                        codBingo: bingo.codBingo!,
+                        empatados: empatados,
+                        reglaEmpate: bingo.reglaEmpate,
+                      ),
+                  icon: const Icon(Icons.balance_outlined),
+                  label: Text(
+                    enCurso!.empatePendiente
+                        ? 'Resolver empate del juego ${enCurso.nroJuego}'
+                        : 'Cambiar desempate',
+                  ),
+                ),
+              ),
             if (siguiente != null)
               PermissionWidget(
                 buttonName: BotonTtkBingo.marcar,
@@ -849,6 +893,148 @@ class JuegosPanelTtk extends ConsumerWidget {
                 ),
               ),
           ],
+        ),
+      ],
+    );
+  }
+}
+
+/// Elige quién ganó el desempate entre los confirmados del juego y anota cómo
+/// se resolvió. Siempre queda un solo ganador: sin esto el juego no se cierra.
+Future<void> resolverEmpateTtk(
+  BuildContext context, {
+  required BigInt codBingo,
+  required List<TtkBingoGanadorEntity> empatados,
+  String? reglaEmpate,
+}) => showDialog<void>(
+  context: context,
+  builder:
+      (_) => _DialogoDesempate(
+        codBingo: codBingo,
+        empatados: empatados,
+        reglaEmpate: reglaEmpate,
+      ),
+);
+
+class _DialogoDesempate extends ConsumerStatefulWidget {
+  const _DialogoDesempate({
+    required this.codBingo,
+    required this.empatados,
+    this.reglaEmpate,
+  });
+
+  final BigInt codBingo;
+  final List<TtkBingoGanadorEntity> empatados;
+  final String? reglaEmpate;
+
+  @override
+  ConsumerState<_DialogoDesempate> createState() => _DialogoDesempateState();
+}
+
+class _DialogoDesempateState extends ConsumerState<_DialogoDesempate> {
+  // Si ya estaba resuelto, se abre con esa elección para cambiarla.
+  late final TtkBingoGanadorEntity? _actual =
+      widget.empatados.where((g) => g.ganoDesempate).firstOrNull;
+  late BigInt? _elegido = _actual?.codGanador;
+  late final _motivo = TextEditingController(
+    text: _actual?.motivoDesempate ?? '',
+  );
+  bool _guardando = false;
+
+  @override
+  void dispose() {
+    _motivo.dispose();
+    super.dispose();
+  }
+
+  Future<void> _guardar() async {
+    final contenedor = ProviderScope.containerOf(context, listen: false);
+    setState(() => _guardando = true);
+    final ok = await ejecutarTtk(
+      context,
+      () => contenedor
+          .read(ttkBingoRepositoryProvider)
+          .resolverEmpate(_elegido!, _motivo.text.trim()),
+    );
+    if (!mounted) return;
+    setState(() => _guardando = false);
+    if (ok) {
+      refrescarBingoEnTtk(contenedor, widget.codBingo);
+      Navigator.of(context).pop();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final listo = _elegido != null && _motivo.text.trim().isNotEmpty;
+    final regla = widget.reglaEmpate ?? '';
+    return AlertDialog(
+      title: Text(
+        'Resolver el empate del juego ${widget.empatados.first.nroJuego}',
+      ),
+      content: SizedBox(
+        width: 480,
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(
+                'Elige quién ganó el desempate y anota cómo se resolvió. Queda registrado '
+                'y la pantalla en vivo lo muestra con su foto.',
+                style: context.apagado(),
+              ),
+              if (regla.isNotEmpty) ...[
+                const SizedBox(height: Esp.m),
+                NotaDelDato(
+                  icono: Icons.balance_outlined,
+                  texto: 'Regla anunciada: $regla',
+                ),
+              ],
+              const SizedBox(height: Esp.m),
+              for (final g in widget.empatados)
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  selected: g.codGanador == _elegido,
+                  leading: Icon(
+                    g.codGanador == _elegido
+                        ? Icons.radio_button_checked
+                        : Icons.radio_button_unchecked,
+                  ),
+                  title: Text(ttkOGuion(g.nombreEmpleado)),
+                  subtitle: Text('Cartón N° ${_nro(g.nroCarton)}'),
+                  onTap: () => setState(() => _elegido = g.codGanador),
+                ),
+              const SizedBox(height: Esp.m),
+              TextField(
+                controller: _motivo,
+                minLines: 2,
+                maxLines: 4,
+                maxLength: 300,
+                textCapitalization: TextCapitalization.sentences,
+                onChanged: (_) => setState(() {}),
+                decoration: const InputDecoration(
+                  labelText: 'Cómo se resolvió',
+                  hintText:
+                      'Por ejemplo: sacó 6 en el dado; los demás sacaron 4 y 2.',
+                  alignLabelWithHint: true,
+                  border: OutlineInputBorder(),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: _guardando ? null : () => Navigator.pop(context),
+          child: const Text('Cancelar'),
+        ),
+        BotonAccion(
+          etiqueta: 'Confirmar ganador',
+          etiquetaOcupado: 'Guardando…',
+          ocupado: _guardando,
+          onPressed: listo ? _guardar : null,
         ),
       ],
     );

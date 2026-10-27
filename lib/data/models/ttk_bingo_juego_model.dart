@@ -31,6 +31,7 @@ class TtkBingoJuegoModel {
           puedeEditarPremio: ttkBool(j['puedeEditarPremio']),
           puedeComenzar: ttkBool(j['puedeComenzar']),
           puedeFinalizar: ttkBool(j['puedeFinalizar']),
+          empatePendiente: ttkBool(j['empatePendiente']),
           audUsuario: ttkBigInt(j['audUsuario']),
           audFecha: ttkFecha(j['audFecha']),
         ),

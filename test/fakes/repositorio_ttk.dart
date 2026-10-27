@@ -362,7 +362,7 @@ String _figuraL() {
   return b.toString();
 }
 
-List<TtkBingoJuegoEntity> juegosFalsos() => [
+List<TtkBingoJuegoEntity> juegosFalsos({bool empatePendiente = false}) => [
   for (var n = 1; n <= 8; n++)
     TtkBingoJuegoEntity(
       codJuego: BigInt.from(n),
@@ -380,7 +380,29 @@ List<TtkBingoJuegoEntity> juegosFalsos() => [
       puedeEditarFigura: n > 3,
       puedeEditarPremio: n >= 3,
       premio: n == 3 ? 'Una canasta navideña' : null,
-      puedeFinalizar: n == 3,
+      puedeFinalizar: n == 3 && !empatePendiente,
+      empatePendiente: n == 3 && empatePendiente,
+      ganadoresConfirmados: n == 3 && empatePendiente ? 2 : 0,
+    ),
+];
+
+/// Dos confirmados del juego 3 en curso, sin desempate resuelto.
+List<TtkBingoGanadorEntity> empatadosFalsos() => [
+  for (final (n, nombre) in [
+    (7, 'ANA LUCÍA RÍOS VEGA'),
+    (21, 'Invitado Pedro Gómez'),
+  ])
+    TtkBingoGanadorEntity(
+      codGanador: BigInt.from(n),
+      codJuego: BigInt.from(3),
+      codBingo: _uno,
+      nroJuego: 3,
+      nombreJuego: 'Letra L',
+      codCarton: BigInt.from(n),
+      nroCarton: n,
+      nombreEmpleado: nombre,
+      puedeAnular: true,
+      puedeResolverEmpate: true,
     ),
 ];
 
@@ -547,10 +569,13 @@ class TtkBingoFalso implements TtkBingoRepository {
   @override
   Future<TtkRespuesta> finalizarBingo(BigInt codBingo) async =>
       _ok('Bingo finalizado.');
+
+  /// Juego 3 con dos ganadores sin desempate: no se puede cerrar.
+  bool empateEnJuego = false;
   @override
   Future<List<TtkBingoJuegoEntity>> listarJuegos(BigInt codBingo) async {
     _contar('listarJuegos');
-    return juegosFalsos();
+    return juegosFalsos(empatePendiente: empateEnJuego);
   }
 
   final List<TtkBingoJuegoEntity> juegosGuardados = [];
@@ -689,9 +714,21 @@ class TtkBingoFalso implements TtkBingoRepository {
   @override
   Future<TtkRespuesta> anularGanador(BigInt codGanador) async =>
       _ok('Ganador anulado.');
+
+  /// Cada desempate resuelto: ganador y motivo que viajaron.
+  final List<(BigInt, String)> desempates = [];
+  @override
+  Future<TtkRespuesta> resolverEmpate(BigInt codGanador, String motivo) async {
+    desempates.add((codGanador, motivo));
+    return _ok('Desempate resuelto.');
+  }
+
+  /// Ganadores que devuelve el listado; null usa el de siempre (uno del juego 1).
+  List<TtkBingoGanadorEntity>? ganadoresListado;
   @override
   Future<List<TtkBingoGanadorEntity>> listarGanadores(BigInt codBingo) async =>
       _contar('listarGanadores') ??
+      ganadoresListado ??
       [
         TtkBingoGanadorEntity(
           codGanador: _uno,

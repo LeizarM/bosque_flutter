@@ -25,6 +25,9 @@ class TtkBingoJuegoEntity {
   final bool puedeEditarPremio;
   final bool puedeComenzar;
   final bool puedeFinalizar;
+
+  /// Dos o más ganadores sin desempate: el juego no se cierra todavía.
+  final bool empatePendiente;
   final BigInt? audUsuario;
   final DateTime? audFecha;
 
@@ -49,6 +52,7 @@ class TtkBingoJuegoEntity {
     this.puedeEditarPremio = false,
     this.puedeComenzar = false,
     this.puedeFinalizar = false,
+    this.empatePendiente = false,
     this.audUsuario,
     this.audFecha,
   });
@@ -59,29 +63,29 @@ class TtkBingoJuegoEntity {
     String? nombre,
     String? figura,
     String? premio,
-  }) =>
-      TtkBingoJuegoEntity(
-        codJuego: codJuego,
-        codBingo: codBingo,
-        nroJuego: nroJuego,
-        nombre: nombre ?? this.nombre,
-        figura: figura ?? this.figura,
-        premio: premio ?? this.premio,
-        filas: filas,
-        columnas: columnas,
-        conComodin: conComodin,
-        casillasFigura: casillasFigura,
-        estado: estado,
-        estadoTexto: estadoTexto,
-        fechaInicio: fechaInicio,
-        fechaFin: fechaFin,
-        bolillosMarcados: bolillosMarcados,
-        ganadoresConfirmados: ganadoresConfirmados,
-        puedeEditarFigura: puedeEditarFigura,
-        puedeEditarPremio: puedeEditarPremio,
-        puedeComenzar: puedeComenzar,
-        puedeFinalizar: puedeFinalizar,
-        audUsuario: audUsuario,
-        audFecha: audFecha,
-      );
+  }) => TtkBingoJuegoEntity(
+    codJuego: codJuego,
+    codBingo: codBingo,
+    nroJuego: nroJuego,
+    nombre: nombre ?? this.nombre,
+    figura: figura ?? this.figura,
+    premio: premio ?? this.premio,
+    filas: filas,
+    columnas: columnas,
+    conComodin: conComodin,
+    casillasFigura: casillasFigura,
+    estado: estado,
+    estadoTexto: estadoTexto,
+    fechaInicio: fechaInicio,
+    fechaFin: fechaFin,
+    bolillosMarcados: bolillosMarcados,
+    ganadoresConfirmados: ganadoresConfirmados,
+    puedeEditarFigura: puedeEditarFigura,
+    puedeEditarPremio: puedeEditarPremio,
+    puedeComenzar: puedeComenzar,
+    puedeFinalizar: puedeFinalizar,
+    empatePendiente: empatePendiente,
+    audUsuario: audUsuario,
+    audFecha: audFecha,
+  );
 }

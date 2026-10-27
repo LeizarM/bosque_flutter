@@ -81,7 +81,8 @@ class FotoGanadorTtk extends StatelessWidget {
 }
 
 /// El anuncio de ganador: mensaje del SP, premio, nombre y foto de cada uno y,
-/// con más de un ganador, la regla de desempate. [grande] es para el proyector.
+/// con más de un ganador, la regla o cómo se desempató (el que ganó, destacado).
+/// [grande] es para el proyector.
 class GanadoresTtk extends StatelessWidget {
   const GanadoresTtk({
     super.key,
@@ -104,6 +105,7 @@ class GanadoresTtk extends StatelessWidget {
     final t = Theme.of(context).textTheme;
     final tinta = cs.onTertiary;
     final empate = ganadores.length > 1 && (textoEmpate ?? '').isNotEmpty;
+    final desempatado = ganadores.any((g) => g.ganoDesempate);
     return Semantics(
       liveRegion: true,
       container: true,
@@ -165,7 +167,14 @@ class GanadoresTtk extends StatelessWidget {
                             width: foto * (grande ? 1.5 : 1.9),
                             child: Column(
                               children: [
-                                FotoGanadorTtk(ganador: g, diametro: foto),
+                                FotoGanadorTtk(
+                                  ganador: g,
+                                  // Resuelto el desempate, los que empataron van más chicos.
+                                  diametro:
+                                      desempatado && !g.ganoDesempate
+                                          ? foto * 0.6
+                                          : foto,
+                                ),
                                 SizedBox(height: grande ? Esp.m : Esp.s),
                                 Text(
                                   (g.nombreEmpleado ?? '').isEmpty
@@ -182,6 +191,27 @@ class GanadoresTtk extends StatelessWidget {
                                         fontWeight: Peso.dato,
                                       ),
                                 ),
+                                if (desempatado) ...[
+                                  const SizedBox(height: Esp.xs),
+                                  Text(
+                                    g.ganoDesempate
+                                        ? 'Ganó el desempate'
+                                        : 'Empató',
+                                    textAlign: TextAlign.center,
+                                    style: (grande
+                                            ? t.titleMedium
+                                            : t.labelLarge)
+                                        ?.copyWith(
+                                          color: tinta.withValues(
+                                            alpha: g.ganoDesempate ? 1 : 0.75,
+                                          ),
+                                          fontWeight:
+                                              g.ganoDesempate
+                                                  ? Peso.titulo
+                                                  : Peso.normal,
+                                        ),
+                                  ),
+                                ],
                               ],
                             ),
                           ),

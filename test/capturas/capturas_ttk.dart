@@ -25,6 +25,7 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:bosque_flutter/domain/entities/ttk_bingo_ganador_entity.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:responsive_framework/responsive_framework.dart';
@@ -312,6 +313,25 @@ void main() {
       const TtkBingoPanelScreen(),
       tam: telefono,
     );
+    // Empate sin resolver: aviso, botón y el diálogo para elegir al ganador.
+    await _capturar(
+      t,
+      'panel_desempate_dialogo',
+      const TtkBingoPanelScreen(),
+      bingo:
+          TtkBingoFalso()
+            ..empateEnJuego = true
+            ..ganadoresListado = empatadosFalsos(),
+      antes: (t) async {
+        await tocar(t, find.text('Resolver empate del juego 3'));
+        await tocar(t, find.text('Invitado Pedro Gómez').last);
+        await t.enterText(
+          find.widgetWithText(TextField, 'Cómo se resolvió'),
+          'Sacó 6 en el dado; Ana sacó 4.',
+        );
+        await t.pump();
+      },
+    );
   });
 
   testWidgets('mi carton', (t) async {
@@ -466,6 +486,34 @@ void main() {
             publico: publicoFalso(hayGanador: true, nroGanadores: 2),
             tablero: tableroFalso(),
             ganadores: ganadoresVivoFalsos(),
+          ),
+        );
+      },
+    );
+    final vivoDesempate = TtkVivoFalso();
+    await _capturar(
+      t,
+      'en_vivo_proyector_desempate',
+      TtkBingoEnVivoScreen(codBingo: BigInt.one),
+      tam: const Size(1920, 1080),
+      vivo: vivoDesempate,
+      antes: (t) async {
+        final g = ganadoresVivoFalsos();
+        vivoDesempate.emitirPublico(
+          TtkEstadoPublicoEntity(
+            version: 10,
+            publico: publicoFalso(hayGanador: true, nroGanadores: 2),
+            tablero: tableroFalso(),
+            ganadores: [
+              TtkBingoGanadorEntity(
+                codGanador: g.last.codGanador,
+                nroJuego: 3,
+                nombreEmpleado: g.last.nombreEmpleado,
+                ganoDesempate: true,
+                motivoDesempate: 'Sacó 6 en el dado; Ana sacó 4.',
+              ),
+              g.first,
+            ],
           ),
         );
       },

@@ -18,6 +18,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:bosque_flutter/core/ui/confirmacion.dart';
+import 'package:bosque_flutter/domain/entities/ttk_bingo_ganador_entity.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:responsive_framework/responsive_framework.dart';
@@ -492,6 +494,35 @@ void main() {
       expect(find.text('IP'), findsOneWidget, reason: 'invitado: iniciales');
       expect(find.textContaining('¡Empate! 2 cartones'), findsOneWidget);
       expect(find.byKey(const ValueKey('ttk-bolillo-1')), findsNothing);
+      expect(find.text('Ganó el desempate'), findsNothing);
+
+      // Resuelto el desempate: el ganador destacado y el otro como «Empató».
+      errores.addAll(
+        await conErrores(() async {
+          final ganadores = ganadoresVivoFalsos();
+          vivo.emitirPublico(
+            TtkEstadoPublicoEntity(
+              version: 7,
+              publico: publicoFalso(hayGanador: true, nroGanadores: 2),
+              tablero: tableroFalso(),
+              ganadores: [
+                TtkBingoGanadorEntity(
+                  codGanador: ganadores.last.codGanador,
+                  nroJuego: 3,
+                  nombreEmpleado: ganadores.last.nombreEmpleado,
+                  ganoDesempate: true,
+                  motivoDesempate: 'Sacó 6 en el dado.',
+                ),
+                ganadores.first,
+              ],
+            ),
+          );
+          await esperar(tester, 4);
+        }),
+      );
+      expect(errores, isEmpty, reason: detalle(errores));
+      expect(find.text('Ganó el desempate'), findsOneWidget);
+      expect(find.text('Empató'), findsOneWidget);
       expect(find.textContaining('Empleado número'), findsNothing);
       await cerrar(tester);
       expect(vivo.cerradas, 1);
@@ -638,6 +669,63 @@ void main() {
     );
     await cerrar(tester);
   });
+
+  testWidgets(
+    'Panel: con empate no se cierra y «Resolver empate» manda ganador y motivo',
+    (tester) async {
+      final bingo =
+          TtkBingoFalso()
+            ..empateEnJuego = true
+            ..ganadoresListado = empatadosFalsos();
+      final errores = await abrir(
+        tester,
+        const TtkBingoPanelScreen(),
+        ancho: 1400,
+        bingo: bingo,
+        vivo: TtkVivoFalso(),
+      );
+      expect(errores, isEmpty, reason: detalle(errores));
+      expect(
+        find.textContaining('ganadores empatados en el juego 3'),
+        findsOneWidget,
+      );
+      expect(
+        find.text('Finalizar juego 3'),
+        findsNothing,
+        reason: 'con empate sin resolver el juego no se cierra',
+      );
+      errores.addAll(
+        await conErrores(() async {
+          await tester.ensureVisible(find.text('Resolver empate del juego 3'));
+          await tester.tap(find.text('Resolver empate del juego 3'));
+          await esperar(tester);
+        }),
+      );
+      expect(errores, isEmpty, reason: detalle(errores));
+      expect(find.text('Resolver el empate del juego 3'), findsOneWidget);
+      expect(find.textContaining('Regla anunciada'), findsNothing);
+      final boton = find.widgetWithText(BotonAccion, 'Confirmar ganador');
+      expect(
+        tester.widget<BotonAccion>(boton).onPressed,
+        isNull,
+        reason: 'sin elegir ganador ni motivo no se confirma',
+      );
+      await tester.tap(find.text('Invitado Pedro Gómez').last);
+      await tester.enterText(
+        find.widgetWithText(TextField, 'Cómo se resolvió'),
+        ' Sacó 6 en el dado; Ana sacó 4. ',
+      );
+      await tester.pump();
+      await tester.tap(boton);
+      await esperar(tester, 3);
+      expect(bingo.desempates.single, (
+        BigInt.from(21),
+        'Sacó 6 en el dado; Ana sacó 4.',
+      ));
+      expect(find.text('Resolver el empate del juego 3'), findsNothing);
+      await cerrar(tester);
+    },
+  );
 
   testWidgets('Juegos: con el juego en curso solo cambia el premio', (
     tester,

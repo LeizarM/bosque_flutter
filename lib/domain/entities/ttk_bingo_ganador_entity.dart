@@ -13,6 +13,14 @@ class TtkBingoGanadorEntity {
   final int? ordenBolillo;
   final int? nroBolillo;
   final bool puedeAnular;
+
+  /// Ganó el desempate entre los confirmados del juego; los demás empataron.
+  final bool ganoDesempate;
+  final String? motivoDesempate;
+  final DateTime? fechaDesempate;
+
+  /// Dos o más confirmados con el juego en curso: se puede resolver o cambiar.
+  final bool puedeResolverEmpate;
   final BigInt? audUsuario;
   final DateTime? audFecha;
 
@@ -29,6 +37,10 @@ class TtkBingoGanadorEntity {
     this.ordenBolillo,
     this.nroBolillo,
     this.puedeAnular = false,
+    this.ganoDesempate = false,
+    this.motivoDesempate,
+    this.fechaDesempate,
+    this.puedeResolverEmpate = false,
     this.audUsuario,
     this.audFecha,
   });

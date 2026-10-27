@@ -694,6 +694,33 @@ void main() {
         expect(conNombres.ganadores, hasLength(2));
         expect(conNombres.ganadores.first.codEmpleado, BigInt.two);
         expect(conNombres.ganadores.last.codEmpleado, isNull);
+
+        // Desempate: quién ganó, por qué y si el juego todavía puede cambiarlo.
+        final g =
+            TtkBingoGanadorModel.fromJson({
+              'codGanador': 4,
+              'codJuego': 3,
+              'nroJuego': 3,
+              'nroCarton': 1,
+              'ganoDesempate': 1,
+              'motivoDesempate': 'Sacó 6 en el dado.',
+              'fechaDesempate': '2026-12-20T21:10:00.000',
+              'puedeResolverEmpate': 1,
+            }).toEntity();
+        expect(g.ganoDesempate, isTrue);
+        expect(g.motivoDesempate, 'Sacó 6 en el dado.');
+        expect(g.fechaDesempate, DateTime(2026, 12, 20, 21, 10));
+        expect(g.puedeResolverEmpate, isTrue);
+        final j =
+            TtkBingoJuegoModel.fromJson({
+              'codJuego': 3,
+              'nroJuego': 3,
+              'estado': 'EN_CURSO',
+              'puedeFinalizar': 0,
+              'empatePendiente': 1,
+            }).toEntity();
+        expect(j.empatePendiente, isTrue);
+        expect(j.puedeFinalizar, isFalse);
       },
     );
   });
