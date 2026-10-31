@@ -204,6 +204,8 @@ class PlanillaNotifier extends StateNotifier<PlanillaState> {
         return msg.split('ADVERTENCIAS_SQL|').last.trim();
       }
 
+      // Si es un error real bloqueante, lo marcamos en el estado para el snackbar.
+
       // Error bloqueante: va al estado para el snackbar.
       state = state.copyWith(generando: false, mensajeError: msg);
       return null;
@@ -254,7 +256,7 @@ class PlanillaDetalleState {
     this.pagina = 1,
     this.totalPaginas = 1,
     this.totalRegistros = 0,
-    this.tamanoPagina = 15,
+    this.tamanoPagina = 100,
     this.search = '',
   });
 
