@@ -1,4 +1,5 @@
 import 'package:bosque_flutter/domain/entities/asiento_sap_entity.dart';
+import 'package:bosque_flutter/domain/entities/sap_conexion_entity.dart';
 
 /// El asiento contable de la planilla en SAP y su configuración por empresa.
 abstract class AsientoSapRepository {
@@ -21,14 +22,14 @@ abstract class AsientoSapRepository {
 
   Future<List<AsientoSapConfigEntity>> listarConfig();
 
-  /// Alta o cambio; no toca la contraseña.
+  /// Alta o cambio. La conexión tiene que ser de la misma empresa.
   Future<String> guardarConfig(AsientoSapConfigEntity c);
-
-  /// La contraseña del Service Layer; el backend la cifra y no la devuelve nunca.
-  Future<String> guardarClave({required int codEmpresa, required String clave});
 
   Future<String> eliminarConfig(int codEmpresa);
 
-  /// Inicia y cierra sesión en SAP con lo guardado.
+  /// Inicia y cierra sesión en SAP con la conexión de esa empresa.
   Future<String> probar(int codEmpresa);
+
+  /// Las conexiones a SAP para el desplegable: sin URL, usuario ni contraseña.
+  Future<List<SapConexionEntity>> conexiones();
 }

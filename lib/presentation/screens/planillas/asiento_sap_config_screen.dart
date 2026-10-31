@@ -8,7 +8,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// La configuración del asiento de planilla en SAP, una tarjeta por empresa: el SP que lo
-/// arma, la base de SAP y el usuario del Service Layer.
+/// arma, sus columnas y la conexión a SAP a la que va (que se administra en Administración >
+/// Conexiones SAP).
 ///
 /// Todo vive en la base (tsap_AsientoPlanilla) y el backend lo lee en cada envío: una empresa
 /// nueva o un SP distinto rigen en el próximo asiento, sin compilar ni reiniciar nada.
@@ -61,8 +62,8 @@ class AsientoSapConfigScreen extends ConsumerWidget {
                                 icono: Icons.receipt_long_outlined,
                                 titulo: 'Ninguna empresa configurada',
                                 detalle:
-                                    'Agrega una con «Agregar empresa»: el SP que arma su asiento, '
-                                    'su base de SAP y el usuario del Service Layer.',
+                                    'Agrega una con «Agregar empresa»: el SP que arma su asiento '
+                                    'y la conexión a SAP a la que va.',
                               )
                               : ListView.separated(
                                 padding: EdgeInsets.fromLTRB(margen, Esp.s, margen, Esp.xxl),
@@ -116,7 +117,7 @@ class _Encabezado extends ConsumerWidget {
                 ),
                 if (!aire.esChico)
                   Text(
-                    'El SP, la base de SAP y el usuario del Service Layer de cada empresa. '
+                    'El SP, las columnas y la conexión a SAP de cada empresa. '
                     'Los cambios rigen en el próximo asiento, sin reiniciar nada.',
                     style: context.apagado(),
                   ),
@@ -173,11 +174,6 @@ class _Tarjeta extends ConsumerWidget {
         label: const Text('Editar'),
       ),
       TextButton.icon(
-        onPressed: () => cargarClaveAsientoSap(context, ref, c),
-        icon: const Icon(Icons.key_outlined, size: 18),
-        label: const Text('Contraseña'),
-      ),
-      TextButton.icon(
         onPressed: c.claveCargada ? () => probarAsientoSap(context, c) : null,
         icon: const Icon(Icons.wifi_tethering, size: 18),
         label: const Text('Probar'),
@@ -220,6 +216,12 @@ class _Tarjeta extends ConsumerWidget {
                   tono: c.habilitado ? TonoEtiqueta.exito : TonoEtiqueta.neutro,
                 ),
                 Etiqueta(
+                  texto: c.esPrueba ? 'Base de prueba' : 'Producción',
+                  tono: c.esPrueba ? TonoEtiqueta.neutro : TonoEtiqueta.aviso,
+                ),
+                if (!c.conexionHabilitada)
+                  const Etiqueta(texto: 'Conexión deshabilitada', tono: TonoEtiqueta.aviso),
+                Etiqueta(
                   texto: c.claveCargada ? 'Contraseña cargada' : 'Falta la contraseña',
                   tono: c.claveCargada ? TonoEtiqueta.exito : TonoEtiqueta.aviso,
                 ),
@@ -244,7 +246,7 @@ class _Tarjeta extends ConsumerWidget {
                   '  ·  día ${c.diaDelMes == 0 ? 'último' : c.diaDelMes}'
                   '${c.prefijosSocio.isEmpty ? '' : '  ·  socios ${c.prefijosSocio}'}',
             ),
-            _Dato(etiqueta: 'Service Layer', valor: '${c.slUsuario} en ${c.slUrl}'),
+            _Dato(etiqueta: 'Conexión', valor: c.conexion),
             if (c.audFecha != null)
               Padding(
                 padding: const EdgeInsets.only(top: Esp.xs),

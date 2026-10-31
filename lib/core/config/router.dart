@@ -540,6 +540,17 @@ final routerProvider = Provider<GoRouter>((ref) {
                   (context, state) =>
                       _pantallaConTitulo(context, 'Bosque - Sesiones', const SesionesScreen()),
             ),
+            // Conexiones a SAP que comparten los módulos (base, usuario y contraseña del Service Layer).
+            GoRoute(
+              path: '/dashboard/${AppConstants.rutaSapConexiones}',
+              name: 'tsapConexion',
+              builder:
+                  (context, state) => _pantallaConTitulo(
+                    context,
+                    'Bosque - Conexiones SAP',
+                    const SapConexionesScreen(),
+                  ),
+            ),
             // Porcentajes por familia y lista de precios: el margen sobre el
             // costo. Reemplaza a los dialogos dlgPorcen y dlgPorcGrupo.
             GoRoute(
@@ -1349,6 +1360,10 @@ final routerProvider = Provider<GoRouter>((ref) {
           path: '/${AppConstants.rutaAsientoSapConfig}',
           redirect:
               (context, state) => '/dashboard/${AppConstants.rutaAsientoSapConfig}',
+        ),
+        GoRoute(
+          path: '/${AppConstants.rutaSapConexiones}',
+          redirect: (context, state) => '/dashboard/${AppConstants.rutaSapConexiones}',
         ),
         // PRESTAMOS
         GoRoute(

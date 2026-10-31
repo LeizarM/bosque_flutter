@@ -47,7 +47,9 @@ class _PlanillasAsientoSapDialogState
       context,
       titulo: 'Enviar asiento a SAP',
       detalle:
-          'Se creará en ${asiento.baseSap} el asiento «${asiento.memo}», '
+          'Se creará en ${asiento.baseSap}'
+          '${asiento.ambiente.isEmpty ? '' : asiento.esPrueba ? ' (base de prueba)' : ' (PRODUCCIÓN)'}'
+          ' el asiento «${asiento.memo}», '
           'con ${asiento.lineas.length} líneas por '
           '${_fmt.format(asiento.totalDebito)}.\n\n'
           'Un asiento creado en SAP no se puede borrar desde aquí.',
@@ -313,6 +315,11 @@ class _Asiento extends StatelessWidget {
                     icono: Icons.format_list_numbered,
                     texto: '${asiento.lineas.length} líneas',
                   ),
+                  if (asiento.ambiente.isNotEmpty)
+                    Etiqueta(
+                      texto: asiento.esPrueba ? 'Base de prueba' : 'Producción',
+                      tono: asiento.esPrueba ? TonoEtiqueta.neutro : TonoEtiqueta.aviso,
+                    ),
                 ],
               ),
               const SizedBox(height: Esp.m),

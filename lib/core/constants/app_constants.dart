@@ -738,10 +738,21 @@ class AppConstants {
   static const String rutaAsientoSapConfig = 'tplPlanilla/asientoSapConfig';
   static const String asientoSapConfigListar = '/planilla/asiento-sap/config/listar';
   static const String asientoSapConfigGuardar = '/planilla/asiento-sap/config/guardar';
-  static const String asientoSapConfigClave = '/planilla/asiento-sap/config/clave';
   static const String asientoSapConfigEliminar =
       '/planilla/asiento-sap/config/eliminar';
   static const String asientoSapConfigProbar = '/planilla/asiento-sap/config/probar';
+  // Las conexiones a SAP para su desplegable, sin URL, usuario ni contraseña.
+  static const String asientoSapConfigConexiones =
+      '/planilla/asiento-sap/config/conexiones';
+
+  // Conexiones a SAP que comparten los módulos (tsap_Conexion), bajo Administración.
+  // Literal de tb_vista.direccion (sql/2026-10-31_tsap_Conexion.sql del backend).
+  static const String rutaSapConexiones = 'tsapConexion/Conexiones';
+  static const String sapConexionesListar = '/sap/conexiones/listar';
+  static const String sapConexionesGuardar = '/sap/conexiones/guardar';
+  static const String sapConexionesClave = '/sap/conexiones/clave';
+  static const String sapConexionesEliminar = '/sap/conexiones/eliminar';
+  static const String sapConexionesProbar = '/sap/conexiones/probar';
 
   // Planilla de Incapacidad (tb_vista 166 'tacTareas/PlanillaIncapacidad').
   static const String planillaIncapacidadListar =

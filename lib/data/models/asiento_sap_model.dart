@@ -28,6 +28,8 @@ class AsientoSapModel {
       codEmpresa: _json['codEmpresa'] ?? 0,
       empresa: _json['empresa'] ?? '',
       baseSap: _json['baseSap'] ?? '',
+      conexion: _json['conexion'] ?? '',
+      ambiente: _json['ambiente'] ?? '',
       fecha: _json['fecha'] ?? '',
       memo: _json['memo'] ?? '',
       referencia: _json['referencia'] ?? '',
@@ -47,6 +49,10 @@ abstract final class AsientoSapConfigModel {
         codEmpresa: j['codEmpresa'] ?? 0,
         empresa: j['empresa'] ?? '',
         habilitado: j['habilitado'] == true,
+        idConexion: j['idConexion'] as int?,
+        conexion: j['conexion'] ?? '',
+        ambiente: j['ambiente'] ?? '',
+        conexionHabilitada: j['conexionHabilitada'] != false,
         baseSap: j['baseSap'] ?? '',
         linkedServer: j['linkedServer'] ?? '',
         esquema: j['esquema'] ?? 'dbo',
@@ -65,19 +71,16 @@ abstract final class AsientoSapConfigModel {
         campoReferencia: j['campoReferencia'] ?? '',
         evitarDuplicados: j['evitarDuplicados'] != false,
         tolerancia: (j['tolerancia'] as num?)?.toDouble() ?? 0,
-        slUrl: j['slUrl'] ?? '',
-        slUsuario: j['slUsuario'] ?? '',
         claveCargada: j['claveCargada'] == true,
         audFecha:
             j['audFecha'] != null ? DateTime.tryParse(j['audFecha'].toString()) : null,
       );
 
-  /// Sin la contraseña, que tiene su propio endpoint, ni los campos que calcula el backend.
+  /// Solo lo del asiento y el id de la conexión: lo demás de la conexión se edita en su pantalla.
   static Map<String, dynamic> toJson(AsientoSapConfigEntity c) => {
     'codEmpresa': c.codEmpresa,
     'habilitado': c.habilitado,
-    'baseSap': c.baseSap,
-    'linkedServer': c.linkedServer,
+    'idConexion': c.idConexion,
     'esquema': c.esquema,
     'sp': c.sp,
     'paramAnio': c.paramAnio,
@@ -94,7 +97,5 @@ abstract final class AsientoSapConfigModel {
     'campoReferencia': c.campoReferencia,
     'evitarDuplicados': c.evitarDuplicados,
     'tolerancia': c.tolerancia,
-    'slUrl': c.slUrl,
-    'slUsuario': c.slUsuario,
   };
 }

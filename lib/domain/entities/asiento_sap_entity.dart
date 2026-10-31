@@ -29,6 +29,12 @@ class AsientoSapEntity {
   final int codEmpresa;
   final String empresa;
   final String baseSap;
+
+  /// El nombre de la conexión a SAP a la que va.
+  final String conexion;
+
+  /// PRODUCCION o PRUEBA (ver SapConexionEntity): se destaca para no enviar a la base equivocada.
+  final String ambiente;
   final String fecha;
   final String memo;
   final String referencia;
@@ -44,6 +50,8 @@ class AsientoSapEntity {
     required this.codEmpresa,
     this.empresa = '',
     required this.baseSap,
+    this.conexion = '',
+    this.ambiente = '',
     required this.fecha,
     required this.memo,
     required this.referencia,
@@ -53,9 +61,12 @@ class AsientoSapEntity {
     required this.diferencia,
     required this.cuadra,
   });
+
+  bool get esPrueba => ambiente == 'PRUEBA';
 }
 
-/// Una empresa que se puede enviar: habilitada y con la contraseña del Service Layer cargada.
+/// Una empresa que se puede enviar: habilitada, con su conexión habilitada y con la contraseña
+/// del Service Layer cargada.
 class AsientoSapEmpresaEntity {
   final int codEmpresa;
   final String empresa;
@@ -68,11 +79,21 @@ class AsientoSapEmpresaEntity {
 
 /// La configuración del asiento en SAP de una empresa (tsap_AsientoPlanilla).
 ///
-/// La contraseña del Service Layer no viaja: el backend solo dice si está cargada.
+/// Con qué SAP se conecta es la conexión [idConexion], que se administra en Administración >
+/// Conexiones SAP. De ella llegan, solo para mostrar, el nombre, el ambiente, la base y si tiene
+/// la contraseña cargada; la contraseña nunca.
 class AsientoSapConfigEntity {
   final int codEmpresa;
   final String empresa;
   final bool habilitado;
+
+  /// null mientras no se elija (en un alta).
+  final int? idConexion;
+
+  // De la conexión, solo para mostrar.
+  final String conexion;
+  final String ambiente;
+  final bool conexionHabilitada;
   final String baseSap;
   final String linkedServer;
   final String esquema;
@@ -91,8 +112,6 @@ class AsientoSapConfigEntity {
   final String campoReferencia;
   final bool evitarDuplicados;
   final double tolerancia;
-  final String slUrl;
-  final String slUsuario;
   final bool claveCargada;
   final DateTime? audFecha;
 
@@ -100,6 +119,10 @@ class AsientoSapConfigEntity {
     required this.codEmpresa,
     this.empresa = '',
     this.habilitado = true,
+    this.idConexion,
+    this.conexion = '',
+    this.ambiente = '',
+    this.conexionHabilitada = true,
     this.baseSap = '',
     this.linkedServer = '',
     this.esquema = 'dbo',
@@ -118,17 +141,16 @@ class AsientoSapConfigEntity {
     this.campoReferencia = '',
     this.evitarDuplicados = true,
     this.tolerancia = 0,
-    this.slUrl = '',
-    this.slUsuario = '',
     this.claveCargada = false,
     this.audFecha,
   });
+
+  bool get esPrueba => ambiente == 'PRUEBA';
 
   /// Lo que trae el script de Node, para no escribirlo de nuevo en cada empresa.
   factory AsientoSapConfigEntity.plantilla({required int codEmpresa}) =>
       AsientoSapConfigEntity(
         codEmpresa: codEmpresa,
-        linkedServer: '192.168.3.114',
         sp: 'spAsientoSueldosDraft',
         paramAnio: 'Añio',
         paramMes: 'Mes',
@@ -141,6 +163,5 @@ class AsientoSapConfigEntity {
         memo: 'Asiento de Planilla - Periodo {mes}/{anio}',
         referencia: 'PLANILLA-{anio}-{mes2}',
         campoReferencia: 'Reference3',
-        slUrl: 'https://sequoia:50000/b1s/v1/',
       );
 }

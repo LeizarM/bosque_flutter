@@ -2,7 +2,9 @@ import 'package:bosque_flutter/core/constants/app_constants.dart';
 import 'package:bosque_flutter/core/network/base_api_repository.dart';
 import 'package:bosque_flutter/core/network/dio_client.dart';
 import 'package:bosque_flutter/data/models/asiento_sap_model.dart';
+import 'package:bosque_flutter/data/models/sap_conexion_model.dart';
 import 'package:bosque_flutter/domain/entities/asiento_sap_entity.dart';
+import 'package:bosque_flutter/domain/entities/sap_conexion_entity.dart';
 import 'package:bosque_flutter/domain/repositories/asiento_sap_repository.dart';
 import 'package:dio/dio.dart';
 
@@ -105,15 +107,13 @@ class AsientoSapImpl extends BaseApiRepository implements AsientoSapRepository {
   }
 
   @override
-  Future<String> guardarClave({
-    required int codEmpresa,
-    required String clave,
-  }) async {
-    final body = await _post(AppConstants.asientoSapConfigClave, {
-      'codEmpresa': codEmpresa,
-      'clave': clave,
-    }, 'No se pudo guardar la contraseña');
-    return _mensaje(body, 'Contraseña guardada.');
+  Future<List<SapConexionEntity>> conexiones() async {
+    final body = await _post(
+      AppConstants.asientoSapConfigConexiones,
+      {},
+      'No se pudieron cargar las conexiones a SAP',
+    );
+    return _lista(body).map(SapConexionModel.fromJson).toList();
   }
 
   @override

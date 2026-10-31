@@ -82,6 +82,8 @@ void main() {
     'trecSesion/Sesiones': 'SesionesScreen',
     // 'Asiento SAP: configuración' (padre modPlanillas), sql/2026-10-30_tsap_AsientoPlanilla.sql del backend.
     AppConstants.rutaAsientoSapConfig: 'AsientoSapConfigScreen',
+    // 'Conexiones SAP' (padre modAdministracion), sql/2026-10-31_tsap_Conexion.sql del backend.
+    AppConstants.rutaSapConexiones: 'SapConexionesScreen',
     // Módulo de exámenes (tcpe), sql/datos/02_menu_tcpe.sql: módulo
     // 'modExamenes' bajo RRHH con sus seis pantallas.
     AppConstants.rutaTcpeBanco: 'BancoPreguntasScreen',

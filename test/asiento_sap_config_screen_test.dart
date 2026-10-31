@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:bosque_flutter/core/state/asiento_sap_provider.dart';
 import 'package:bosque_flutter/core/utils/responsive_utils_bosque.dart';
 import 'package:bosque_flutter/domain/entities/asiento_sap_entity.dart';
+import 'package:bosque_flutter/domain/entities/sap_conexion_entity.dart';
 import 'package:bosque_flutter/presentation/screens/planillas/asiento_sap_config_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -31,8 +32,11 @@ void main() {
   final config = AsientoSapConfigEntity(
     codEmpresa: 5,
     empresa: 'ESPPAPEL',
+    idConexion: 1,
+    conexion: 'ESPPAPEL - PRUEBA ESPPAPEL 2',
+    ambiente: 'PRUEBA',
     baseSap: 'PRUEBA ESPPAPEL 2',
-    linkedServer: esppapel.linkedServer,
+    linkedServer: '192.168.3.114',
     sp: esppapel.sp,
     paramAnio: esppapel.paramAnio,
     paramMes: esppapel.paramMes,
@@ -45,9 +49,13 @@ void main() {
     memo: esppapel.memo,
     referencia: esppapel.referencia,
     campoReferencia: esppapel.campoReferencia,
-    slUrl: esppapel.slUrl,
-    slUsuario: 'finanzas',
     claveCargada: false,
+  );
+  const conexion = SapConexionEntity(
+    idConexion: 1,
+    nombre: 'ESPPAPEL - PRUEBA ESPPAPEL 2',
+    codEmpresa: 5,
+    baseSap: 'PRUEBA ESPPAPEL 2',
   );
 
   Future<void> abrir(WidgetTester tester, Size tamano) async {
@@ -57,7 +65,10 @@ void main() {
 
     await tester.pumpWidget(
       ProviderScope(
-        overrides: [asientoSapConfigProvider.overrideWith((ref) async => [config])],
+        overrides: [
+          asientoSapConfigProvider.overrideWith((ref) async => [config]),
+          asientoSapConexionesProvider.overrideWith((ref) async => [conexion]),
+        ],
         child: MaterialApp(
           builder:
               (context, child) => ResponsiveBreakpoints.builder(
@@ -84,7 +95,11 @@ void main() {
         expect(tester.takeException(), isNull);
         expect(find.text('ESPPAPEL'), findsOneWidget);
         expect(find.text('Habilitada'), findsOneWidget);
+        expect(find.text('Base de prueba'), findsOneWidget);
         expect(find.text('Falta la contraseña'), findsOneWidget);
+        expect(find.text('ESPPAPEL - PRUEBA ESPPAPEL 2'), findsOneWidget);
+        // La contraseña ya no se carga aquí, sino en Administración > Conexiones SAP.
+        expect(find.text('Contraseña'), findsNothing);
         // Sin contraseña no hay nada que probar.
         final probar = tester.widget<TextButton>(
           find.ancestor(of: find.text('Probar'), matching: find.bySubtype<TextButton>()),
@@ -100,7 +115,9 @@ void main() {
 
         expect(tester.takeException(), isNull);
         expect(find.text('Configuración de ESPPAPEL'), findsOneWidget);
-        expect(find.widgetWithText(TextFormField, 'PRUEBA ESPPAPEL 2'), findsOneWidget);
+        // La conexión elegida, en el desplegable, en lugar de la base y el Service Layer sueltos.
+        expect(find.text('ESPPAPEL - PRUEBA ESPPAPEL 2 · Prueba (sin contraseña)'), findsOneWidget);
+        expect(find.widgetWithText(TextFormField, 'PRUEBA ESPPAPEL 2'), findsNothing);
         expect(find.widgetWithText(TextFormField, 'spAsientoSueldosDraft'), findsOneWidget);
       });
     });

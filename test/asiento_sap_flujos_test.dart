@@ -7,6 +7,7 @@ import 'package:bosque_flutter/data/models/asiento_sap_model.dart';
 import 'package:bosque_flutter/data/repositories/rrhh_repository_impl.dart';
 import 'package:bosque_flutter/domain/entities/asiento_sap_entity.dart';
 import 'package:bosque_flutter/domain/entities/empresa_entity.dart';
+import 'package:bosque_flutter/domain/entities/sap_conexion_entity.dart';
 import 'package:bosque_flutter/domain/repositories/asiento_sap_repository.dart';
 import 'package:bosque_flutter/presentation/screens/planillas/asiento_sap_config_screen.dart';
 import 'package:bosque_flutter/presentation/widgets/planillas/planillas_asiento_sap_dialog.dart';
@@ -16,10 +17,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:responsive_framework/responsive_framework.dart';
 
-/// Los eventos del asiento SAP de punta a punta, con un repositorio falso: guardar,
-/// cargar la contraseña, probar, agregar, quitar y enviar. Después de cada uno no
-/// puede quedar ninguna excepción de Flutter (asserts, setState tras dispose,
-/// ref usado después de desmontar, desbordes).
+/// Los eventos del asiento SAP de punta a punta, con un repositorio falso: guardar, probar,
+/// agregar (eligiendo la conexión), quitar y enviar. Después de cada uno no puede quedar ninguna
+/// excepción de Flutter (asserts, setState tras dispose, ref usado después de desmontar,
+/// desbordes).
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
@@ -80,12 +81,13 @@ void main() {
     ('móvil', const Size(390, 844)),
   ]) {
     group(caso.$1, () {
-      testWidgets('configuración: editar, contraseña, probar, agregar y quitar', (
+      testWidgets('configuración: editar, probar, agregar con su conexión y quitar', (
         tester,
       ) async {
-        final repo = _RepoFalso();
+        final repo = _RepoFalso(claveCargada: true);
         await montar(tester, caso.$2, const AsientoSapConfigScreen(), repo);
         expect(tester.takeException(), isNull);
+        expect(find.text('Contraseña cargada'), findsOneWidget);
 
         // Editar y guardar.
         await tocar(tester, find.text('Editar'));
@@ -97,13 +99,6 @@ void main() {
         expect(tester.takeException(), isNull);
         expect(find.byType(Dialog), findsNothing);
         expect(find.textContaining('spAsientoOtro'), findsOneWidget);
-
-        // Cargar la contraseña.
-        await tocar(tester, find.text('Contraseña').first);
-        await tester.enterText(find.byType(TextField).last, 'clave secreta');
-        await tocar(tester, find.descendant(of: find.byType(AlertDialog), matching: find.text('Guardar')));
-        expect(tester.takeException(), isNull);
-        expect(find.text('Contraseña cargada'), findsOneWidget);
 
         // Probar la conexión.
         await tocar(tester, find.text('Probar'));
@@ -119,18 +114,16 @@ void main() {
           tester,
           caso.$2.width < 600 ? find.byTooltip('Agregar empresa') : find.text('Agregar empresa'),
         );
+        expect(find.text('Elige la empresa para ver sus conexiones a SAP.'), findsOneWidget);
         await tocar(tester, enDialogo(find.byType(DropdownButtonFormField<int>)));
         await tocar(tester, find.text('IMPEXPAP').last);
-        // La base y el usuario son de cada empresa: la plantilla los deja vacíos.
-        await tester.enterText(
-          enDialogo(find.widgetWithText(TextFormField, 'Base de SAP (CompanyDB)')),
-          'PRUEBA IMPEXPAP',
-        );
-        await tester.enterText(enDialogo(find.widgetWithText(TextFormField, 'Usuario')), 'finanzas');
+        // IMPEXPAP tiene una sola conexión: se elige sola.
+        expect(find.text('IMPEXPAP - PRUEBA IMPEXPAP · Prueba'), findsOneWidget);
         await tocar(tester, enDialogo(find.text('Guardar')));
         expect(tester.takeException(), isNull);
         expect(find.byType(Dialog), findsNothing);
         expect(find.text('IMPEXPAP'), findsOneWidget);
+        expect(find.text('IMPEXPAP - PRUEBA IMPEXPAP'), findsOneWidget);
 
         // Quitarla.
         await tocar(tester, find.byTooltip('Quitar IMPEXPAP'));
@@ -173,7 +166,10 @@ void main() {
         // Primero SAP rechaza: el diálogo queda abierto y el botón vuelve a estar activo.
         repo.errorAlEnviar = 'SAP respondió con error al crear el asiento: Code undefined';
         await tocar(tester, find.text('abrir'));
+        // A qué ambiente va se ve antes de enviar.
+        expect(find.text('Base de prueba'), findsOneWidget);
         await tocar(tester, find.text('Enviar a SAP'));
+        expect(find.textContaining('(base de prueba)'), findsOneWidget);
         await tocar(tester, find.text('Sí, enviar'));
         expect(tester.takeException(), isNull);
         expect(find.text('Asiento contable en SAP'), findsOneWidget);
@@ -196,28 +192,53 @@ void main() {
 
 class _RepoFalso implements AsientoSapRepository {
   _RepoFalso({bool claveCargada = false}) {
+    _conexiones[1] = SapConexionEntity(
+      idConexion: 1,
+      nombre: 'ESPPAPEL - PRUEBA ESPPAPEL 2',
+      codEmpresa: 5,
+      empresa: 'ESPPAPEL',
+      linkedServer: '192.168.3.114',
+      baseSap: 'PRUEBA ESPPAPEL 2',
+      claveCargada: claveCargada,
+    );
+    _conexiones[2] = const SapConexionEntity(
+      idConexion: 2,
+      nombre: 'IMPEXPAP - PRUEBA IMPEXPAP',
+      codEmpresa: 1,
+      empresa: 'IMPEXPAP',
+      linkedServer: '192.168.3.114',
+      baseSap: 'PRUEBA IMPEXPAP',
+      claveCargada: true,
+    );
     _filas[5] = AsientoSapConfigModel.toJson(AsientoSapConfigEntity.plantilla(codEmpresa: 5))
-      ..['baseSap'] = 'PRUEBA ESPPAPEL 2'
-      ..['slUsuario'] = 'finanzas';
-    if (claveCargada) _conClave.add(5);
+      ..['idConexion'] = 1;
   }
 
   static const _nombres = {1: 'IMPEXPAP', 5: 'ESPPAPEL'};
   final Map<int, Map<String, dynamic>> _filas = {};
-  final Set<int> _conClave = {};
+  final Map<int, SapConexionEntity> _conexiones = {};
   String? errorAlEnviar;
   int enviados = 0;
 
-  AsientoSapConfigEntity _entidad(int cod) => AsientoSapConfigModel.fromJson({
-    ..._filas[cod]!,
-    'empresa': _nombres[cod],
-    'claveCargada': _conClave.contains(cod),
-  });
+  /// Lo que devuelve p_list_tsap_AsientoPlanilla: la configuración con los datos de su conexión.
+  AsientoSapConfigEntity _entidad(int cod) {
+    final cx = _conexiones[_filas[cod]!['idConexion']]!;
+    return AsientoSapConfigModel.fromJson({
+      ..._filas[cod]!,
+      'empresa': _nombres[cod],
+      'conexion': cx.nombre,
+      'ambiente': cx.ambiente,
+      'linkedServer': cx.linkedServer,
+      'baseSap': cx.baseSap,
+      'conexionHabilitada': cx.habilitada,
+      'claveCargada': cx.claveCargada,
+    });
+  }
 
   @override
   Future<List<AsientoSapEmpresaEntity>> empresas() async => [
     for (final cod in _filas.keys)
-      if (_conClave.contains(cod))
+      if (_entidad(cod).claveCargada)
         AsientoSapEmpresaEntity(codEmpresa: cod, empresa: _nombres[cod]!),
   ];
 
@@ -232,6 +253,8 @@ class _RepoFalso implements AsientoSapRepository {
     codEmpresa: codEmpresa,
     empresa: _nombres[codEmpresa]!,
     baseSap: 'PRUEBA ESPPAPEL 2',
+    conexion: 'ESPPAPEL - PRUEBA ESPPAPEL 2',
+    ambiente: SapConexionEntity.prueba,
     fecha: '2026-09-30',
     memo: 'Asiento de Planilla - Periodo 9/2026',
     referencia: 'PLANILLA-2026-09',
@@ -281,21 +304,17 @@ class _RepoFalso implements AsientoSapRepository {
   }
 
   @override
-  Future<String> guardarClave({required int codEmpresa, required String clave}) async {
-    _conClave.add(codEmpresa);
-    return 'Contraseña guardada.';
-  }
-
-  @override
   Future<String> eliminarConfig(int codEmpresa) async {
     _filas.remove(codEmpresa);
-    _conClave.remove(codEmpresa);
     return 'Configuración eliminada.';
   }
 
   @override
   Future<String> probar(int codEmpresa) async =>
       'Conexión correcta: finanzas entró a PRUEBA ESPPAPEL 2.';
+
+  @override
+  Future<List<SapConexionEntity>> conexiones() async => _conexiones.values.toList();
 }
 
 class _Rrhh extends Fake implements RRHHRepositoryImpl {

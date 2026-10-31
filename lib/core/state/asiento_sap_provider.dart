@@ -1,5 +1,6 @@
 import 'package:bosque_flutter/data/repositories/asiento_sap_impl.dart';
 import 'package:bosque_flutter/domain/entities/asiento_sap_entity.dart';
+import 'package:bosque_flutter/domain/entities/sap_conexion_entity.dart';
 import 'package:bosque_flutter/domain/repositories/asiento_sap_repository.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -29,6 +30,13 @@ final asientoSapVistaPreviaProvider = FutureProvider.autoDispose
 final asientoSapConfigProvider =
     FutureProvider.autoDispose<List<AsientoSapConfigEntity>>(
       (ref) => ref.read(asientoSapRepoProvider).listarConfig(),
+    );
+
+/// Las conexiones a SAP para el desplegable de la configuración (de todas las empresas: el
+/// diálogo muestra las de la empresa elegida).
+final asientoSapConexionesProvider =
+    FutureProvider.autoDispose<List<SapConexionEntity>>(
+      (ref) => ref.read(asientoSapRepoProvider).conexiones(),
     );
 
 /// El mensaje del backend sin el «Exception: » de Dart. No pasa por textoParaUsuario: el
