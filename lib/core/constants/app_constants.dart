@@ -728,6 +728,20 @@ class AppConstants {
   static const String planillaExcelCompacta = '/planilla/excelPlanillaCompacta';
   static const String planillaPdfExtendida = '/planilla/pdfPlanillaExtendida';
   static const String planillaPdfPapeletaPago = '/planilla/pdfPapeletaPago';
+  // Asiento contable en SAP: el backend corre el SP de la empresa y llama al Service Layer.
+  static const String planillaAsientoSapEmpresas = '/planilla/asiento-sap/empresas';
+  static const String planillaAsientoSapVistaPrevia =
+      '/planilla/asiento-sap/vista-previa';
+  static const String planillaAsientoSapEnviar = '/planilla/asiento-sap/enviar';
+  // Su configuración por empresa (tsap_AsientoPlanilla). Literal de tb_vista.direccion
+  // (sql/2026-10-30_tsap_AsientoPlanilla.sql del backend).
+  static const String rutaAsientoSapConfig = 'tplPlanilla/asientoSapConfig';
+  static const String asientoSapConfigListar = '/planilla/asiento-sap/config/listar';
+  static const String asientoSapConfigGuardar = '/planilla/asiento-sap/config/guardar';
+  static const String asientoSapConfigClave = '/planilla/asiento-sap/config/clave';
+  static const String asientoSapConfigEliminar =
+      '/planilla/asiento-sap/config/eliminar';
+  static const String asientoSapConfigProbar = '/planilla/asiento-sap/config/probar';
 
   // Planilla de Incapacidad (tb_vista 166 'tacTareas/PlanillaIncapacidad').
   static const String planillaIncapacidadListar =

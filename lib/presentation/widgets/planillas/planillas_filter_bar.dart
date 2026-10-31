@@ -2,6 +2,7 @@ import 'package:bosque_flutter/core/state/planilla_provider.dart';
 import 'package:bosque_flutter/core/state/rrhh_provider.dart'; // Para empresasProvider
 import 'package:bosque_flutter/core/utils/responsive_utils_bosque.dart';
 import 'package:bosque_flutter/presentation/widgets/anticipos/anticipos_filter_bar.dart'; // Para BosqueFiltroDropdown
+import 'package:bosque_flutter/presentation/widgets/planillas/planillas_asiento_sap_dialog.dart';
 import 'package:bosque_flutter/presentation/widgets/planillas/planillas_export_banco_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -221,8 +222,53 @@ class PlanillasFilterBar extends StatelessWidget {
 
             // ── Botón consolidado "Reportes" ──
             _ReportesMenuButton(st: st),
+
+            const SizedBox(width: 8),
+
+            // ── Asiento contable en SAP (la empresa se elige en el diálogo) ──
+            _AsientoSapBoton(st: st),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _AsientoSapBoton extends StatelessWidget {
+  final PlanillaState st;
+
+  const _AsientoSapBoton({required this.st});
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final habilitado = st.mes.isNotEmpty && st.anio.isNotEmpty;
+
+    return Tooltip(
+      message:
+          habilitado
+              ? 'Revisar y enviar el asiento contable de la planilla a SAP'
+              : 'Elige un mes y un año',
+      child: FilledButton.icon(
+        icon: const Icon(Icons.receipt_long, size: 18),
+        label: const Text('Asiento SAP'),
+        style: FilledButton.styleFrom(
+          backgroundColor: cs.secondary,
+          foregroundColor: cs.onSecondary,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        ),
+        onPressed:
+            habilitado
+                ? () => showDialog(
+                  context: context,
+                  builder:
+                      (_) => PlanillasAsientoSapDialog(
+                        mes: int.parse(st.mes),
+                        anio: int.parse(st.anio),
+                        nombreMes: monthsMap[st.mes] ?? 'Mes',
+                      ),
+                )
+                : null,
       ),
     );
   }

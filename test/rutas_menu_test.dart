@@ -80,6 +80,8 @@ void main() {
     'trecConfiguracion/Recuperacion': 'ConfiguracionRecuperacionScreen',
     // 'Sesiones' (padre 9, Administración), archivo SQL 08 de la recuperación.
     'trecSesion/Sesiones': 'SesionesScreen',
+    // 'Asiento SAP: configuración' (padre modPlanillas), sql/2026-10-30_tsap_AsientoPlanilla.sql del backend.
+    AppConstants.rutaAsientoSapConfig: 'AsientoSapConfigScreen',
     // Módulo de exámenes (tcpe), sql/datos/02_menu_tcpe.sql: módulo
     // 'modExamenes' bajo RRHH con sus seis pantallas.
     AppConstants.rutaTcpeBanco: 'BancoPreguntasScreen',

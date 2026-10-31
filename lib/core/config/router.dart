@@ -343,7 +343,25 @@ final routerProvider = Provider<GoRouter>((ref) {
             GoRoute(
               path: '/dashboard/tplPlanilla/planilla',
               name: 'tplPlanilla',
-              builder: (context, state) => const PlanillasScreen(),
+              // Con título propio: sin él la pestaña se queda con el de la última pantalla
+              // que sí lo puso (por ejemplo «Asiento SAP: configuración»).
+              builder:
+                  (context, state) => _pantallaConTitulo(
+                    context,
+                    'Bosque - Planillas',
+                    const PlanillasScreen(),
+                  ),
+            ),
+            // Configuración del asiento de planilla en SAP, por empresa.
+            GoRoute(
+              path: '/dashboard/${AppConstants.rutaAsientoSapConfig}',
+              name: 'tplAsientoSapConfig',
+              builder:
+                  (context, state) => _pantallaConTitulo(
+                    context,
+                    'Bosque - Asiento SAP: configuración',
+                    const AsientoSapConfigScreen(),
+                  ),
             ),
             //Prestamos
             GoRoute(
@@ -1326,6 +1344,11 @@ final routerProvider = Provider<GoRouter>((ref) {
         GoRoute(
           path: '/tplPlanilla/planilla',
           redirect: (context, state) => '/dashboard/tplPlanilla/planilla',
+        ),
+        GoRoute(
+          path: '/${AppConstants.rutaAsientoSapConfig}',
+          redirect:
+              (context, state) => '/dashboard/${AppConstants.rutaAsientoSapConfig}',
         ),
         // PRESTAMOS
         GoRoute(
