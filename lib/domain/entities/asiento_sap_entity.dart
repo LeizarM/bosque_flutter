@@ -106,6 +106,8 @@ class AsientoSapConfigEntity {
   final String colDebito;
   final String colCredito;
   final String prefijosSocio;
+
+  /// 0 = el día en que se envía a SAP; 1 a 31 = ese día del mes de la planilla (31: el último).
   final int diaDelMes;
   final String memo;
   final String referencia;
@@ -135,7 +137,7 @@ class AsientoSapConfigEntity {
     this.colDebito = '',
     this.colCredito = '',
     this.prefijosSocio = '',
-    this.diaDelMes = 30,
+    this.diaDelMes = 0,
     this.memo = '',
     this.referencia = '',
     this.campoReferencia = '',

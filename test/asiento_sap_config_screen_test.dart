@@ -98,6 +98,8 @@ void main() {
         expect(find.text('Base de prueba'), findsOneWidget);
         expect(find.text('Falta la contraseña'), findsOneWidget);
         expect(find.text('ESPPAPEL - PRUEBA ESPPAPEL 2'), findsOneWidget);
+        // Día 0 (el de por defecto): el asiento lleva la fecha del envío, no la del último día.
+        expect(find.textContaining('fecha del envío'), findsOneWidget);
         // La contraseña ya no se carga aquí, sino en Administración > Conexiones SAP.
         expect(find.text('Contraseña'), findsNothing);
         // Sin contraseña no hay nada que probar.
@@ -119,6 +121,7 @@ void main() {
         expect(find.text('ESPPAPEL - PRUEBA ESPPAPEL 2 · Prueba (sin contraseña)'), findsOneWidget);
         expect(find.widgetWithText(TextFormField, 'PRUEBA ESPPAPEL 2'), findsNothing);
         expect(find.widgetWithText(TextFormField, 'spAsientoSueldosDraft'), findsOneWidget);
+        expect(find.text('0 = el día en que se envía. 31 = el último día.'), findsOneWidget);
       });
     });
   }

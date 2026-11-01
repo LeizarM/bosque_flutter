@@ -243,7 +243,7 @@ class _Tarjeta extends ConsumerWidget {
               valor:
                   '${c.memo}  ·  ref. ${c.referencia}'
                   '${c.campoReferencia.isEmpty ? '' : ' (${c.campoReferencia})'}'
-                  '  ·  día ${c.diaDelMes == 0 ? 'último' : c.diaDelMes}'
+                  '  ·  ${c.diaDelMes == 0 ? 'fecha del envío' : 'día ${c.diaDelMes}'}'
                   '${c.prefijosSocio.isEmpty ? '' : '  ·  socios ${c.prefijosSocio}'}',
             ),
             _Dato(etiqueta: 'Conexión', valor: c.conexion),

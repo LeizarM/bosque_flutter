@@ -155,7 +155,7 @@ class _DialogoConfigState extends ConsumerState<_DialogoConfig> {
       colDebito: _colDebito.text.trim(),
       colCredito: _colCredito.text.trim(),
       prefijosSocio: _prefijos.text.replaceAll(' ', ''),
-      diaDelMes: int.tryParse(_dia.text.trim()) ?? 30,
+      diaDelMes: int.tryParse(_dia.text.trim()) ?? 0,
       memo: _memo.text.trim(),
       referencia: _referencia.text.trim(),
       campoReferencia: _campoRef.text.trim(),
@@ -280,7 +280,7 @@ class _DialogoConfigState extends ConsumerState<_DialogoConfig> {
                           CampoSeccion(
                             _dia,
                             'Día del mes',
-                            ayuda: '0 = el último día.',
+                            ayuda: '0 = el día en que se envía. 31 = el último día.',
                             teclado: TextInputType.number,
                             formatos: [FilteringTextInputFormatter.digitsOnly],
                           ),

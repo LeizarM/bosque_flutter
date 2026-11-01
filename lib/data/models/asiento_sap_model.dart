@@ -65,7 +65,7 @@ abstract final class AsientoSapConfigModel {
         colDebito: j['colDebito'] ?? '',
         colCredito: j['colCredito'] ?? '',
         prefijosSocio: j['prefijosSocio'] ?? '',
-        diaDelMes: j['diaDelMes'] ?? 30,
+        diaDelMes: j['diaDelMes'] ?? 0,
         memo: j['memo'] ?? '',
         referencia: j['referencia'] ?? '',
         campoReferencia: j['campoReferencia'] ?? '',
