@@ -4,6 +4,7 @@ import 'package:bosque_flutter/core/state/user_provider.dart';
 import 'package:bosque_flutter/core/utils/banner_personalizado.dart';
 import 'package:bosque_flutter/core/utils/console_log.dart';
 import 'package:bosque_flutter/presentation/widgets/dependientes/confirm_dialogs.dart';
+import 'package:bosque_flutter/core/network/dio_client.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -268,7 +269,7 @@ class _SeccionFotoState extends ConsumerState<SeccionFoto> {
                                 )
                                 : CircleAvatar(
                                   radius: photoSize / 2,
-                                  backgroundImage: NetworkImage(_getImageUrl()),
+                                  backgroundImage: NetworkImage(_getImageUrl(), headers: DioClient.encabezadosImagen()),
                                   onBackgroundImageError: (_, __) {
                                     setState(() => _imageBytes = null);
                                   },
@@ -417,7 +418,7 @@ class _SeccionFotoState extends ConsumerState<SeccionFoto> {
                 child:
                     _imageBytes != null
                         ? Image.memory(_imageBytes!, fit: BoxFit.contain)
-                        : Image.network(_getImageUrl(), fit: BoxFit.contain),
+                        : Image.network(_getImageUrl(), headers: DioClient.encabezadosImagen(), fit: BoxFit.contain),
               ),
             ),
           ),

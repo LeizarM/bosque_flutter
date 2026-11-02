@@ -14,6 +14,7 @@ import 'package:bosque_flutter/presentation/widgets/dependientes/formulario_pers
 import 'package:bosque_flutter/presentation/widgets/dependientes/map_viewer.dart';
 import 'package:bosque_flutter/presentation/widgets/dependientes/secccion__foto_docs.dart';
 import 'package:bosque_flutter/presentation/widgets/dependientes/speed_dial.dart';
+import 'package:bosque_flutter/core/network/dio_client.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -1119,6 +1120,7 @@ class _PersonaSectionState extends ConsumerState<PersonaSection> {
             tag: tag,
             child: Image.network(
               url,
+              headers: DioClient.encabezadosImagen(),
               fit: BoxFit.cover,
               loadingBuilder: (context, child, progress) {
                 return progress == null
@@ -1163,7 +1165,7 @@ class _PersonaSectionState extends ConsumerState<PersonaSection> {
               maxScale: 4,
               child: Hero(
                 tag: tag,
-                child: Image.network(url, fit: BoxFit.contain),
+                child: Image.network(url, headers: DioClient.encabezadosImagen(), fit: BoxFit.contain),
               ),
             ),
           ),

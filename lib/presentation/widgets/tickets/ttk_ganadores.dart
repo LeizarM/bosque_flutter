@@ -9,6 +9,7 @@ import 'package:flutter/material.dart';
 import 'package:bosque_flutter/core/constants/app_constants.dart';
 import 'package:bosque_flutter/core/ui/tokens_bosque.dart';
 import 'package:bosque_flutter/domain/entities/ttk_bingo_ganador_entity.dart';
+import 'package:bosque_flutter/core/network/dio_client.dart';
 
 /// Foto de la ficha del trabajador; si no tiene, el servidor devuelve un ícono.
 String ttkFotoEmpleado(BigInt codEmpleado) =>
@@ -69,6 +70,7 @@ class FotoGanadorTtk extends StatelessWidget {
                   ? iniciales
                   : Image.network(
                     ttkFotoEmpleado(cod),
+                    headers: DioClient.encabezadosImagen(),
                     width: diametro,
                     height: diametro,
                     fit: BoxFit.cover,

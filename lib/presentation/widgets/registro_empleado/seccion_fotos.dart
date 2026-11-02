@@ -10,6 +10,7 @@ import 'package:bosque_flutter/core/utils/console_log.dart';
 import 'package:bosque_flutter/core/utils/abm_service.dart';
 import 'package:bosque_flutter/core/constants/app_constants.dart';
 import 'package:bosque_flutter/data/repositories/ficha_trabajador_impl.dart';
+import 'package:bosque_flutter/core/network/dio_client.dart';
 
 class DetalleDocumentosEmpleado extends ConsumerStatefulWidget {
   final int codEmpleado;
@@ -664,6 +665,7 @@ class _DocumentosDialogState extends ConsumerState<_DocumentosDialog> {
               borderRadius: BorderRadius.circular(8),
               child: Image.network(
                 url,
+                headers: DioClient.encabezadosImagen(),
                 fit: BoxFit.cover,
                 errorBuilder: (context, error, stackTrace) {
                   return Container(
@@ -769,6 +771,7 @@ class _DocumentosDialogState extends ConsumerState<_DocumentosDialog> {
                         maxScale: 4.0,
                         child: Image.network(
                           url,
+                          headers: DioClient.encabezadosImagen(),
                           fit: BoxFit.contain,
                           errorBuilder: (context, error, stackTrace) {
                             return Container(

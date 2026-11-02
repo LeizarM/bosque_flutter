@@ -1,6 +1,7 @@
 // lib/presentation/widgets/registro_empleado/registro_empleado_utils.dart
 import 'package:bosque_flutter/core/constants/app_constants.dart';
 import 'package:bosque_flutter/core/state/empleados_dependientes_provider.dart';
+import 'package:bosque_flutter/core/network/dio_client.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -155,6 +156,7 @@ class EmployeeImageCell extends ConsumerWidget {
                 ),
                 child: Image.network(
                   imageUrl,
+                  headers: DioClient.encabezadosImagen(),
                   fit: BoxFit.contain,
                   loadingBuilder: (context, child, loadingProgress) {
                     if (loadingProgress == null) return child;
@@ -199,6 +201,7 @@ class EmployeeImageCell extends ConsumerWidget {
         child: ClipOval(
           child: Image.network(
             imageUrl,
+            headers: DioClient.encabezadosImagen(),
             fit: BoxFit.cover,
             errorBuilder: (context, error, stackTrace) {
               return Icon(Icons.person, size: 25, color: Colors.grey.shade500);

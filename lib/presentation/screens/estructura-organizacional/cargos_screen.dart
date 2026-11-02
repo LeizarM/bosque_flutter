@@ -13,6 +13,7 @@ import 'package:bosque_flutter/presentation/widgets/estructura-organizacional/fo
 import 'package:bosque_flutter/presentation/widgets/registro_empleado/registro_empleado_utils.dart';
 import 'package:bosque_flutter/presentation/widgets/shared/aviso.dart';
 import 'package:bosque_flutter/presentation/widgets/shared/permission_widget.dart';
+import 'package:bosque_flutter/core/network/dio_client.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -2330,6 +2331,7 @@ class _EmpleadosBottomSheetState extends ConsumerState<_EmpleadosBottomSheet> {
                     borderRadius: BorderRadius.circular(10),
                     child: Image.network(
                       _getImageUrl(empleado.codEmpleado),
+                      headers: DioClient.encabezadosImagen(),
                       width: 48,
                       height: 48,
                       fit: BoxFit.cover,
@@ -2566,6 +2568,7 @@ class _EmpleadosBottomSheetState extends ConsumerState<_EmpleadosBottomSheet> {
                         borderRadius: BorderRadius.circular(11),
                         child: Image.network(
                           _getImageUrl(empleado.codEmpleado),
+                          headers: DioClient.encabezadosImagen(),
                           width: 80,
                           height: 80,
                           fit: BoxFit.cover,
@@ -2794,6 +2797,7 @@ class _EmpleadosBottomSheetState extends ConsumerState<_EmpleadosBottomSheet> {
                       ),
                       child: Image.network(
                         _getImageUrl(codEmpleado),
+                        headers: DioClient.encabezadosImagen(),
                         fit: BoxFit.contain,
                         loadingBuilder: (context, child, loadingProgress) {
                           if (loadingProgress == null) return child;

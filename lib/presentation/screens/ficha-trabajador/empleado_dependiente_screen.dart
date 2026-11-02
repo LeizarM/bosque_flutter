@@ -12,6 +12,7 @@ import 'package:bosque_flutter/core/state/empleados_dependientes_provider.dart';
 import 'package:bosque_flutter/domain/entities/empleado_entity.dart';
 import 'package:bosque_flutter/presentation/screens/screens.dart';
 import 'package:bosque_flutter/core/utils/responsive_utils_bosque.dart';
+import 'package:bosque_flutter/core/network/dio_client.dart';
 
 class EmpleadosDependientesView extends ConsumerStatefulWidget {
   const EmpleadosDependientesView({super.key});
@@ -1145,6 +1146,7 @@ class _EmpleadosDependientesViewState
         child: ClipOval(
           child: Image.network(
             getImageUrl(codEmpleado),
+            headers: DioClient.encabezadosImagen(),
             width: 40,
             height: 40,
             fit: BoxFit.cover,
@@ -1214,6 +1216,7 @@ class _EmpleadosDependientesViewState
                   tag: 'empleado-imagen-$codEmpleado',
                   child: Image.network(
                     getImageUrl(codEmpleado),
+                    headers: DioClient.encabezadosImagen(),
                     fit: BoxFit.contain,
                     loadingBuilder: (context, child, loadingProgress) {
                       if (loadingProgress == null) return child;
@@ -1502,6 +1505,7 @@ class _EmpleadosDependientesViewState
                                                                         child: InteractiveViewer(
                                                                           child: Image.network(
                                                                             '${AppConstants.baseUrl}${AppConstants.getDocPendienteImageUrl}${doc['codEmpleado']}/${doc['tipoDocumento']}/${doc['nombreArchivo']}?v=$imageVersion',
+                                                                            headers: DioClient.encabezadosImagen(),
                                                                             fit:
                                                                                 BoxFit.contain,
                                                                           ),
@@ -1516,6 +1520,7 @@ class _EmpleadosDependientesViewState
                                                                     ),
                                                                 child: Image.network(
                                                                   '${AppConstants.baseUrl}${AppConstants.getDocPendienteImageUrl}${doc['codEmpleado']}/${doc['tipoDocumento']}/${doc['nombreArchivo']}?v=$imageVersion',
+                                                                  headers: DioClient.encabezadosImagen(),
                                                                   width: 54,
                                                                   height: 54,
                                                                   fit:

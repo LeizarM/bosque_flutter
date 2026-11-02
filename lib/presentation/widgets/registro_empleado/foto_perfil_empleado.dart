@@ -5,6 +5,7 @@ import 'package:bosque_flutter/core/state/registro_empleado_provider.dart';
 import 'package:bosque_flutter/core/utils/abm_service.dart';
 import 'package:bosque_flutter/data/repositories/ficha_trabajador_impl.dart';
 import 'package:bosque_flutter/presentation/widgets/registro_empleado/responsive_utils_registro_empleado.dart';
+import 'package:bosque_flutter/core/network/dio_client.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
@@ -155,7 +156,7 @@ class _SeccionFotoEmpleadoState extends ConsumerState<SeccionFotoEmpleado> {
                 child:
                     bytes != null
                         ? Image.memory(bytes, fit: BoxFit.contain)
-                        : Image.network(url, fit: BoxFit.contain),
+                        : Image.network(url, headers: DioClient.encabezadosImagen(), fit: BoxFit.contain),
               ),
             ),
           ),
@@ -281,7 +282,7 @@ class _SeccionFotoEmpleadoState extends ConsumerState<SeccionFotoEmpleado> {
           ),
           child: CircleAvatar(
             radius: context.isMobile ? 100 : 140,
-            backgroundImage: NetworkImage(imageUrl),
+            backgroundImage: NetworkImage(imageUrl, headers: DioClient.encabezadosImagen()),
           ),
         ),
       ),

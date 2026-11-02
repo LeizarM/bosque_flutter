@@ -50,6 +50,27 @@ class DioClient {
     return null;
   }
 
+  /// El último token que el interceptor adjuntó, para las imágenes del backend.
+  ///
+  /// `Image.network` y `NetworkImage` no pasan por Dio, así que no llevan el
+  /// Bearer. Las fotos y los documentos de `/fichaTrabajador/uploads/**`
+  /// (carnets, pasaportes) el backend los sirve todavía sin token; para poder
+  /// cerrarlos (C5 de la auditoría del 2026-10-26) la app tiene que mandarlo.
+  /// Se guarda el que el interceptor ya leyó: antes de mostrar una foto, la
+  /// pantalla siempre pidió sus datos por Dio.
+  static String? _tokenImagenes;
+
+  /// Encabezados para `Image.network`/`NetworkImage` contra el backend. Vacío si
+  /// todavía no hay token: la imagen se pide igual, como hasta ahora.
+  static Map<String, String> encabezadosImagen() {
+    final token = _tokenImagenes;
+    if (token == null || token.isEmpty) return const <String, String>{};
+    return {'Authorization': 'Bearer $token'};
+  }
+
+  @visibleForTesting
+  static void fijarTokenImagenes(String? token) => _tokenImagenes = token;
+
   /// Plataforma y versión de esta app, para la pantalla Sesiones del administrador.
   /// Viajan solo en el login y en el chequeo de sesión (el backend los acepta en esas rutas).
   static Map<String, String> encabezadosCliente() => {
@@ -73,6 +94,7 @@ class DioClient {
   /// retirado del almacenamiento. Va por un Dio aparte y sin esperar: si falla, el
   /// token igual vence solo y la sesión queda como «sin señal».
   static void avisarSalida(String token) {
+    _tokenImagenes = null;
     Dio(
       BaseOptions(
         baseUrl: AppConstants.baseUrl,
@@ -145,6 +167,7 @@ class DioClient {
             case TokenReadStatus.ok:
               // Hay sesión otra vez: se re-arma el aviso de sesión inválida.
               _sesionInvalidaAvisada = false;
+              _tokenImagenes = result.token;
               options.headers['Authorization'] = 'Bearer ${result.token}';
               return handler.next(options);
 
@@ -166,6 +189,7 @@ class DioClient {
               );
 
             case TokenReadStatus.absent:
+              _tokenImagenes = null;
               // Sesión genuinamente ausente: NO enviar sin auth. Cortamos y
               // disparamos el flujo de sesión inválida (→ login).
               //
