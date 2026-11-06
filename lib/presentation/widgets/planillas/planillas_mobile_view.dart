@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:bosque_flutter/presentation/widgets/planillas/planillas_constants.dart';
+import 'package:bosque_flutter/presentation/widgets/shared/permission_widget.dart';
 import 'package:bosque_flutter/core/utils/descargar_reportes_jasper.dart';
 import 'package:bosque_flutter/core/utils/responsive_utils_bosque.dart';
 
@@ -148,6 +149,20 @@ class PlanillasMobileView extends StatelessWidget {
                       const SizedBox(height: 12),
                       Consumer(
                         builder: (context, ref, child) {
+                          final puedeCompacta =
+                              tienePermisoDeBoton(ref, 'btnRptPlanllaCompacta');
+                          final puedeExcel =
+                              tienePermisoDeBoton(ref, 'btnExcelPlanillaCompacta');
+                          final puedeExtendida =
+                              tienePermisoDeBoton(ref, 'btnRptPlanillaExtendida');
+                          final puedePapeleta =
+                              tienePermisoDeBoton(ref, 'btnRptBoletasPago');
+                          final tieneAlgunReporte =
+                              puedeCompacta ||
+                              puedeExcel ||
+                              puedeExtendida ||
+                              puedePapeleta;
+
                           return Row(
                             children: [
                               Expanded(
@@ -165,122 +180,128 @@ class PlanillasMobileView extends StatelessWidget {
                                   label: const Text('Ver Detalle'),
                                 ),
                               ),
-                              const SizedBox(width: 8),
-                              PopupMenuButton<String>(
-                                icon: const Icon(Icons.more_vert),
-                                tooltip: 'Reportes PDF',
-                                onSelected: (value) async {
-                                  if (value == 'compacta') {
-                                    await mostrarReportePdf(
-                                      context: context,
-                                      downloadFunction:
-                                          () async => await ref.read(
-                                            pdfPlanillaCompactaProvider((
-                                              item.codPlanilla,
-                                              item.codEmpresa,
-                                            )).future,
-                                          ),
-                                      filename:
-                                          'PlanillaCompacta_${item.empresa.replaceAll(" ", "_")}_${item.caja.replaceAll(" ", "_")}.pdf',
-                                    );
-                                  } else if (value == 'excel_compacta') {
-                                    await mostrarReportePdf(
-                                      context: context,
-                                      downloadFunction:
-                                          () async => await ref.read(
-                                            excelPlanillaCompactaProvider(
-                                              item.codPlanilla,
-                                            ).future,
-                                          ),
-                                      filename:
-                                          'PlanillaCompacta_${item.empresa.replaceAll(" ", "_")}_${item.caja.replaceAll(" ", "_")}.xlsx',
-                                    );
-                                  } else if (value == 'extendida') {
-                                    await mostrarReportePdf(
-                                      context: context,
-                                      downloadFunction:
-                                          () async => await ref.read(
-                                            pdfPlanillaExtendidaProvider(
-                                              item.codPlanilla,
-                                            ).future,
-                                          ),
-                                      filename:
-                                          'PlanillaExtendida_${item.empresa.replaceAll(" ", "_")}_${item.caja.replaceAll(" ", "_")}.pdf',
-                                    );
-                                  } else if (value == 'papeleta') {
-                                    await mostrarReportePdf(
-                                      context: context,
-                                      downloadFunction:
-                                          () async => await ref.read(
-                                            pdfPapeletaPagoProvider(
-                                              item.codPlanilla,
-                                            ).future,
-                                          ),
-                                      filename:
-                                          'PapeletaPago_${item.empresa.replaceAll(" ", "_")}_${item.caja.replaceAll(" ", "_")}.pdf',
-                                    );
-                                  }
-                                },
-                                itemBuilder:
-                                    (context) => [
-                                      const PopupMenuItem(
-                                        value: 'compacta',
-                                        child: Row(
-                                          children: [
-                                            Icon(
-                                              Icons.picture_as_pdf,
-                                              color: Colors.red,
-                                              size: 18,
+                              if (tieneAlgunReporte) ...[
+                                const SizedBox(width: 8),
+                                PopupMenuButton<String>(
+                                  icon: const Icon(Icons.more_vert),
+                                  tooltip: 'Reportes PDF',
+                                  onSelected: (value) async {
+                                    if (value == 'compacta') {
+                                      await mostrarReportePdf(
+                                        context: context,
+                                        downloadFunction:
+                                            () async => await ref.read(
+                                              pdfPlanillaCompactaProvider((
+                                                item.codPlanilla,
+                                                item.codEmpresa,
+                                              )).future,
                                             ),
-                                            SizedBox(width: 8),
-                                            Text('Planilla Compacta'),
-                                          ],
-                                        ),
-                                      ),
-                                      const PopupMenuItem(
-                                        value: 'excel_compacta',
-                                        child: Row(
-                                          children: [
-                                            Icon(
-                                              Icons.table_view,
-                                              color: Colors.green,
-                                              size: 18,
+                                        filename:
+                                            'PlanillaCompacta_${item.empresa.replaceAll(" ", "_")}_${item.caja.replaceAll(" ", "_")}.pdf',
+                                      );
+                                    } else if (value == 'excel_compacta') {
+                                      await mostrarReportePdf(
+                                        context: context,
+                                        downloadFunction:
+                                            () async => await ref.read(
+                                              excelPlanillaCompactaProvider(
+                                                item.codPlanilla,
+                                              ).future,
                                             ),
-                                            SizedBox(width: 8),
-                                            Text('Exportar a Excel'),
-                                          ],
-                                        ),
-                                      ),
-                                      const PopupMenuItem(
-                                        value: 'extendida',
-                                        child: Row(
-                                          children: [
-                                            Icon(
-                                              Icons.picture_as_pdf,
-                                              color: Colors.red,
-                                              size: 18,
+                                        filename:
+                                            'PlanillaCompacta_${item.empresa.replaceAll(" ", "_")}_${item.caja.replaceAll(" ", "_")}.xlsx',
+                                      );
+                                    } else if (value == 'extendida') {
+                                      await mostrarReportePdf(
+                                        context: context,
+                                        downloadFunction:
+                                            () async => await ref.read(
+                                              pdfPlanillaExtendidaProvider(
+                                                item.codPlanilla,
+                                              ).future,
                                             ),
-                                            SizedBox(width: 8),
-                                            Text('Planilla Extendida'),
-                                          ],
-                                        ),
-                                      ),
-                                      const PopupMenuItem(
-                                        value: 'papeleta',
-                                        child: Row(
-                                          children: [
-                                            Icon(
-                                              Icons.picture_as_pdf,
-                                              color: Colors.red,
-                                              size: 18,
+                                        filename:
+                                            'PlanillaExtendida_${item.empresa.replaceAll(" ", "_")}_${item.caja.replaceAll(" ", "_")}.pdf',
+                                      );
+                                    } else if (value == 'papeleta') {
+                                      await mostrarReportePdf(
+                                        context: context,
+                                        downloadFunction:
+                                            () async => await ref.read(
+                                              pdfPapeletaPagoProvider(
+                                                item.codPlanilla,
+                                              ).future,
                                             ),
-                                            SizedBox(width: 8),
-                                            Text('Boletas de Pago'),
-                                          ],
-                                        ),
-                                      ),
-                                    ],
-                              ),
+                                        filename:
+                                            'PapeletaPago_${item.empresa.replaceAll(" ", "_")}_${item.caja.replaceAll(" ", "_")}.pdf',
+                                      );
+                                    }
+                                  },
+                                  itemBuilder:
+                                      (context) => [
+                                        if (puedeCompacta)
+                                          const PopupMenuItem(
+                                            value: 'compacta',
+                                            child: Row(
+                                              children: [
+                                                Icon(
+                                                  Icons.picture_as_pdf,
+                                                  color: Colors.red,
+                                                  size: 18,
+                                                ),
+                                                SizedBox(width: 8),
+                                                Text('Planilla Compacta'),
+                                              ],
+                                            ),
+                                          ),
+                                        if (puedeExcel)
+                                          const PopupMenuItem(
+                                            value: 'excel_compacta',
+                                            child: Row(
+                                              children: [
+                                                Icon(
+                                                  Icons.table_view,
+                                                  color: Colors.green,
+                                                  size: 18,
+                                                ),
+                                                SizedBox(width: 8),
+                                                Text('Exportar a Excel'),
+                                              ],
+                                            ),
+                                          ),
+                                        if (puedeExtendida)
+                                          const PopupMenuItem(
+                                            value: 'extendida',
+                                            child: Row(
+                                              children: [
+                                                Icon(
+                                                  Icons.picture_as_pdf,
+                                                  color: Colors.red,
+                                                  size: 18,
+                                                ),
+                                                SizedBox(width: 8),
+                                                Text('Planilla Extendida'),
+                                              ],
+                                            ),
+                                          ),
+                                        if (puedePapeleta)
+                                          const PopupMenuItem(
+                                            value: 'papeleta',
+                                            child: Row(
+                                              children: [
+                                                Icon(
+                                                  Icons.picture_as_pdf,
+                                                  color: Colors.red,
+                                                  size: 18,
+                                                ),
+                                                SizedBox(width: 8),
+                                                Text('Boletas de Pago'),
+                                              ],
+                                            ),
+                                          ),
+                                      ],
+                                ),
+                              ],
                             ],
                           );
                         },

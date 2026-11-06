@@ -107,7 +107,7 @@ class IndemnizacionEntity {
       empleadoNombres: empleadoNombres ?? this.empleadoNombres,
       empleadoApellidos: empleadoApellidos ?? this.empleadoApellidos,
       empresa: empresa ?? this.empresa,
-      nro: this.nro,
+      nro: nro,
       apellidos: this.apellidos,
       fechaIngreso: this.fechaIngreso,
       periodo: this.periodo,

@@ -716,6 +716,99 @@ final routerProvider = Provider<GoRouter>((ref) {
                     ),
                   ),
             ),
+            // MODULO HORAS EXTRAS (thex): horas del empleado, revision del encargado,
+            // aprobacion del jefe de area, planilla de RRHH y parametros. AppConstants.rutaHex*.
+            GoRoute(
+              path: '/dashboard/${AppConstants.rutaHexMisHoras}',
+              name: 'hexMisHoras',
+              builder:
+                  (context, state) => _pantallaConTitulo(
+                    context,
+                    'Bosque - Mis horas extra',
+                    const HexMisHorasScreen(),
+                  ),
+            ),
+            GoRoute(
+              path: '/dashboard/${AppConstants.rutaHexRevision}',
+              name: 'hexRevision',
+              builder:
+                  (context, state) => _pantallaConTitulo(
+                    context,
+                    'Bosque - Revisión de horas extra',
+                    const HexRevisionScreen(),
+                  ),
+            ),
+            GoRoute(
+              path: '/dashboard/${AppConstants.rutaHexAprobacion}',
+              name: 'hexAprobacion',
+              builder:
+                  (context, state) => _pantallaConTitulo(
+                    context,
+                    'Bosque - Aprobación de horas extra',
+                    const HexAprobacionScreen(),
+                  ),
+            ),
+            GoRoute(
+              path: '/dashboard/${AppConstants.rutaHexObservacion}',
+              name: 'hexObservacion',
+              builder:
+                  (context, state) => _pantallaConTitulo(
+                    context,
+                    'Bosque - Observación de horas extra',
+                    const HexObservacionScreen(),
+                  ),
+            ),
+            GoRoute(
+              path: '/dashboard/${AppConstants.rutaHexPlanilla}',
+              name: 'hexPlanilla',
+              builder:
+                  (context, state) => _pantallaConTitulo(
+                    context,
+                    'Bosque - Planilla de horas extra',
+                    const HexPlanillaScreen(),
+                  ),
+            ),
+            GoRoute(
+              path: '/dashboard/${AppConstants.rutaHexAnularPlanilla}',
+              name: 'hexAnularPlanilla',
+              builder:
+                  (context, state) => _pantallaConTitulo(
+                    context,
+                    'Bosque - Anular planilla de horas extra',
+                    const HexAnularPlanillaScreen(),
+                  ),
+            ),
+            GoRoute(
+              path: '/dashboard/${AppConstants.rutaHexParametros}',
+              name: 'hexParametros',
+              builder:
+                  (context, state) => _pantallaConTitulo(
+                    context,
+                    'Bosque - Parámetros de horas extra',
+                    const HexParametrosScreen(),
+                  ),
+            ),
+            GoRoute(
+              path: '/dashboard/${AppConstants.rutaHexAprobadores}',
+              name: 'hexAprobadores',
+              builder:
+                  (context, state) => _pantallaConTitulo(
+                    context,
+                    'Bosque - Aprobadores de horas extra',
+                    const HexAprobadoresScreen(),
+                  ),
+            ),
+            // D37: el encargado asigna horas extra a su personal.
+            GoRoute(
+              path: '/dashboard/${AppConstants.rutaHexAsignacion}',
+              name: 'hexAsignacion',
+              builder:
+                  (context, state) => _pantallaConTitulo(
+                    context,
+                    'Bosque - Asignar horas extra',
+                    const HexAsignacionScreen(),
+                  ),
+            ),
             // MODULO DE GARANTIAS DE COBRANZA (tcbr). Reemplaza al JSF legacy
             // (codVista 45, 'tcbrGarantia/garantia', padre 44 'Cobranza') con
             // la direccion tal cual: el item de menu y los permisos que los
@@ -1506,6 +1599,56 @@ final routerProvider = Provider<GoRouter>((ref) {
         GoRoute(
           path: '/${AppConstants.rutaTtkEnVivo}',
           redirect: (context, state) => '/dashboard/${AppConstants.rutaTtkEnVivo}',
+        ),
+        // MODULO HORAS EXTRAS (thex): el sidebar navega a '/' + tb_vista.direccion.
+        GoRoute(
+          path: '/${AppConstants.rutaHexMisHoras}',
+          redirect:
+              (context, state) => '/dashboard/${AppConstants.rutaHexMisHoras}',
+        ),
+        GoRoute(
+          path: '/${AppConstants.rutaHexRevision}',
+          redirect:
+              (context, state) => '/dashboard/${AppConstants.rutaHexRevision}',
+        ),
+        GoRoute(
+          path: '/${AppConstants.rutaHexAprobacion}',
+          redirect:
+              (context, state) => '/dashboard/${AppConstants.rutaHexAprobacion}',
+        ),
+        GoRoute(
+          path: '/${AppConstants.rutaHexObservacion}',
+          redirect:
+              (context, state) =>
+                  '/dashboard/${AppConstants.rutaHexObservacion}',
+        ),
+        GoRoute(
+          path: '/${AppConstants.rutaHexPlanilla}',
+          redirect:
+              (context, state) => '/dashboard/${AppConstants.rutaHexPlanilla}',
+        ),
+        GoRoute(
+          path: '/${AppConstants.rutaHexAnularPlanilla}',
+          redirect:
+              (context, state) =>
+                  '/dashboard/${AppConstants.rutaHexAnularPlanilla}',
+        ),
+        GoRoute(
+          path: '/${AppConstants.rutaHexParametros}',
+          redirect:
+              (context, state) => '/dashboard/${AppConstants.rutaHexParametros}',
+        ),
+        GoRoute(
+          path: '/${AppConstants.rutaHexAprobadores}',
+          redirect:
+              (context, state) =>
+                  '/dashboard/${AppConstants.rutaHexAprobadores}',
+        ),
+        GoRoute(
+          path: '/${AppConstants.rutaHexAsignacion}',
+          redirect:
+              (context, state) =>
+                  '/dashboard/${AppConstants.rutaHexAsignacion}',
         ),
         // RENDICION DEL EMPLEADO: pantalla completa, sin sidebar. Con el
         // examen en curso no se sale (GuardiaSalidaExamen); pide token de empleado.

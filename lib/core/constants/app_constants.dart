@@ -428,6 +428,7 @@ class AppConstants {
   static const String obtenerArea = '/rrhh/obtenerArea';
   static const String registroArea = '/rrhh/registrarArea';
   static const String docsVencidos = '/rrhh/docsVencidos';
+  static const String alertaAntiguedad = '/rrhh/alertaAntiguedad';
 
   // ═══════════════════════════════════════════════════════════════════════════════
   // RUTAS MODULO DE PAGOS AL EXTRANJERO
@@ -729,18 +730,22 @@ class AppConstants {
   static const String planillaPdfExtendida = '/planilla/pdfPlanillaExtendida';
   static const String planillaPdfPapeletaPago = '/planilla/pdfPapeletaPago';
   // Asiento contable en SAP: el backend corre el SP de la empresa y llama al Service Layer.
-  static const String planillaAsientoSapEmpresas = '/planilla/asiento-sap/empresas';
+  static const String planillaAsientoSapEmpresas =
+      '/planilla/asiento-sap/empresas';
   static const String planillaAsientoSapVistaPrevia =
       '/planilla/asiento-sap/vista-previa';
   static const String planillaAsientoSapEnviar = '/planilla/asiento-sap/enviar';
   // Su configuración por empresa (tsap_AsientoPlanilla). Literal de tb_vista.direccion
   // (sql/2026-10-30_tsap_AsientoPlanilla.sql del backend).
   static const String rutaAsientoSapConfig = 'tplPlanilla/asientoSapConfig';
-  static const String asientoSapConfigListar = '/planilla/asiento-sap/config/listar';
-  static const String asientoSapConfigGuardar = '/planilla/asiento-sap/config/guardar';
+  static const String asientoSapConfigListar =
+      '/planilla/asiento-sap/config/listar';
+  static const String asientoSapConfigGuardar =
+      '/planilla/asiento-sap/config/guardar';
   static const String asientoSapConfigEliminar =
       '/planilla/asiento-sap/config/eliminar';
-  static const String asientoSapConfigProbar = '/planilla/asiento-sap/config/probar';
+  static const String asientoSapConfigProbar =
+      '/planilla/asiento-sap/config/probar';
   // Las conexiones a SAP para su desplegable, sin URL, usuario ni contraseña.
   static const String asientoSapConfigConexiones =
       '/planilla/asiento-sap/config/conexiones';
@@ -2350,6 +2355,8 @@ class AppConstants {
       '/indemnizacion/reporteIndemnizacionTodos';
   static const String reporteIndemnizacionRRHH =
       '/indemnizacion/reporteIndemnizacionRRHH';
+  static const String reportePrevisionAguinaldo =
+      '/indemnizacion/reportePrevisionAguinaldo';
   static const String finiquitoExcel = '/indemnizacion/finiquitoExcel';
 
   // RUTAS MODULO: RETROACTIVOS
@@ -2592,4 +2599,113 @@ class AppConstants {
       '$_ttkTopico/$codBingo/publico';
   static String ttkTopicoEncargado(BigInt codBingo) =>
       '$_ttkTopico/$codBingo/encargado';
+
+  // ==================== HORAS EXTRAS (hex) ================================
+  // Contrato: docs/contrato_api_horas_extras.md. Todo POST; las escrituras
+  // devuelven el id en `data` y el texto del SP en `message`.
+  // Direcciones de tb_vista: el sidebar navega a '/' + direccion.
+  static const String rutaHexMisHoras = 'thexMisHoras/MisHoras';
+  static const String rutaHexRevision = 'thexRevision/Encargado';
+  static const String rutaHexAprobacion = 'thexAprobacion/Area';
+  // D45: el observador ve reportes e historial de sus encargados, sin firmar.
+  static const String rutaHexObservacion = 'thexObservacion/Observar';
+  static const String rutaHexPlanilla = 'thexPlanilla/Planilla';
+  static const String rutaHexAnularPlanilla = 'thexPlanilla/Anular';
+  static const String rutaHexParametros = 'thexParametros/Parametros';
+  static const String rutaHexAprobadores = 'thexParametros/Aprobadores';
+  // D37: el encargado (o el jefe con aprobación directa) asigna horas extra.
+  static const String rutaHexAsignacion = 'thexAsignacion/Asignar';
+
+  // --- Comunes y mis horas extra ---
+  static const String _hex = '/horas-extras';
+  static const String hexLeyendaCodigos = '$_hex/leyenda-codigos';
+  static const String hexMisReportes = '$_hex/reporte/mis-reportes';
+  static const String hexMarcar = '$_hex/reporte/marcar';
+  static const String hexActualizarReporte = '$_hex/reporte/actualizar';
+  static const String hexAnularReporte = '$_hex/reporte/anular';
+  static const String hexDetalleReporte = '$_hex/reporte/detalle';
+  static const String hexLineasReporte = '$_hex/reporte/lineas';
+  static const String hexReporteTramos = '$_hex/reporte/tramos';
+  static const String hexHistorialReporte = '$_hex/reporte/historial';
+  static const String hexRequisitosMarca = '$_hex/reporte/requisitos-marca';
+  static const String hexMisRoles = '$_hex/aprobador/mis-roles';
+  // D37: estado de «Mis horas extras» y de las teclas de marcar.
+  static const String hexReporteHoy = '$_hex/reporte/hoy';
+
+  // --- Asignación de horas extra (D37) ---
+  static const String hexAsignables = '$_hex/asignacion/asignables';
+  static const String hexAsignar = '$_hex/asignacion/asignar';
+  static const String hexQuitarAsignacion = '$_hex/asignacion/quitar';
+  static const String hexHistorialAsignacion = '$_hex/asignacion/historial';
+  // Adenda D37: faltas de lo asignado, para la bandeja de revisión.
+  static const String hexFaltasAsignacion = '$_hex/asignacion/faltas';
+
+  // --- Revisión del encargado y aprobación del jefe de área ---
+  static const String hexBandejaEncargado = '$_hex/revision/bandeja';
+  static const String hexCorregirHora = '$_hex/revision/corregir-hora';
+  static const String hexVistoBueno = '$_hex/revision/visto-bueno';
+  static const String hexRechazarEncargado = '$_hex/revision/rechazar';
+  // D43: el encargado crea el reporte de un día pasado sin marca.
+  static const String hexJornadasPasadas = '$_hex/revision/pasados';
+  static const String hexCrearReportePasado = '$_hex/revision/crear-pasado';
+  static const String hexBandejaJefe = '$_hex/aprobacion/bandeja';
+  static const String hexAprobar = '$_hex/aprobacion/aprobar';
+  static const String hexAprobarGrupo = '$_hex/aprobacion/aprobar-grupo';
+  static const String hexRechazarJefe = '$_hex/aprobacion/rechazar';
+  // D45: bandeja de solo lectura del observador.
+  static const String hexObservacionBandeja = '$_hex/observacion/bandeja';
+
+  // --- Planilla (RRHH) ---
+  static const String hexPlanillaListar = '$_hex/planilla/listar';
+  static const String hexPlanillaPendientes = '$_hex/planilla/pendientes';
+  static const String hexPlanillaVistaPrevia = '$_hex/planilla/vista-previa';
+  static const String hexPlanillaVistaPreviaLineas =
+      '$_hex/planilla/vista-previa-lineas';
+  static const String hexPlanillaAvisos = '$_hex/planilla/avisos';
+  static const String hexPlanillaEjecutar = '$_hex/planilla/ejecutar';
+  static const String hexPlanillaEmpleados = '$_hex/planilla/empleados';
+  static const String hexPlanillaDetalle = '$_hex/planilla/detalle';
+  static const String hexPlanillaLeyenda = '$_hex/planilla/leyenda';
+  static const String hexPlanillaPdf = '$_hex/planilla/pdf';
+  static const String hexPlanillaAnular = '$_hex/planilla/anular';
+  // D39: lo que falta firmar, el lote del mes y su anulación.
+  static const String hexPlanillaPendientesFirma =
+      '$_hex/planilla/pendientes-firma';
+  static const String hexPlanillaLote = '$_hex/planilla/lote';
+  static const String hexPlanillaAnularLote = '$_hex/planilla/anular-lote';
+
+  // --- Parámetros, tramos y comidas ---
+  static const String hexParametroListar = '$_hex/parametro/listar';
+  static const String hexParametroVigencia = '$_hex/parametro/vigencia';
+  static const String hexParametroEditarLeyenda =
+      '$_hex/parametro/editar-leyenda';
+  static const String hexParametroEliminar = '$_hex/parametro/eliminar';
+  static const String hexParametroCatalogo = '$_hex/parametro/catalogo';
+  static const String hexParametroOpciones = '$_hex/parametro/opciones';
+  static const String hexParametroDejarDeUsar = '$_hex/parametro/dejar-de-usar';
+  static const String hexTramoListar = '$_hex/tramo/listar';
+  static const String hexTramoVigencia = '$_hex/tramo/vigencia';
+  static const String hexTramoEditarLeyenda = '$_hex/tramo/editar-leyenda';
+  static const String hexTramoEliminar = '$_hex/tramo/eliminar';
+  // Mapa 00–24 h de los tramos (con la propuesta del diálogo) y simulador.
+  static const String hexTramoMapa = '$_hex/tramo/mapa';
+  static const String hexSimuladorJornada = '$_hex/simulador/jornada';
+  static const String hexComidaListar = '$_hex/comida/listar';
+  static const String hexComidaVigencia = '$_hex/comida/vigencia';
+  static const String hexComidaEditarLeyenda = '$_hex/comida/editar-leyenda';
+  static const String hexComidaEliminar = '$_hex/comida/eliminar';
+  // D40: otra configuración de la comida solo en un período.
+  static const String hexComidaPeriodo = '$_hex/comida/periodo';
+
+  // --- Aprobadores ---
+  static const String hexAprobadorListar = '$_hex/aprobador/listar';
+  static const String hexAprobadorAsignar = '$_hex/aprobador/asignar';
+  static const String hexAprobadorCerrar = '$_hex/aprobador/cerrar';
+  static const String hexAprobadorEliminar = '$_hex/aprobador/eliminar';
+  static const String hexAprobadorRama = '$_hex/aprobador/rama';
+  // D35: los encargados que se pueden asignar a un jefe de área, sin body.
+  static const String hexAprobadorEncargados = '$_hex/aprobador/encargados';
+  // --- Bitácora de configuración (D22) ---
+  static const String hexConfiguracionHistorial =
+      '$_hex/configuracion/historial';
 }

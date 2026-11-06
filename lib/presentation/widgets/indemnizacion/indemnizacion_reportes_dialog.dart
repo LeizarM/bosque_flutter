@@ -7,7 +7,13 @@ import 'package:intl/intl.dart';
 import 'package:pdf/pdf.dart';
 import 'package:printing/printing.dart';
 
-enum TipoReporteIndemnizacion { normal, todos, rrhh }
+enum TipoReporteIndemnizacion {
+  normal,
+  todos,
+  rrhh,
+  aguinaldoNormal,
+  aguinaldoTodos,
+}
 
 extension TipoReporteIndemnizacionExt on TipoReporteIndemnizacion {
   String get titulo {
@@ -18,6 +24,10 @@ extension TipoReporteIndemnizacionExt on TipoReporteIndemnizacion {
         return 'Previsión Indemnización (Todos)';
       case TipoReporteIndemnizacion.rrhh:
         return 'Previsión Indemnización RRHH';
+      case TipoReporteIndemnizacion.aguinaldoNormal:
+        return 'Previsión Aguinaldos';
+      case TipoReporteIndemnizacion.aguinaldoTodos:
+        return 'Previsión Aguinaldos (Todos)';
     }
   }
 
@@ -29,6 +39,10 @@ extension TipoReporteIndemnizacionExt on TipoReporteIndemnizacion {
         return 'Incluye todo el personal.';
       case TipoReporteIndemnizacion.rrhh:
         return 'Incluye todos el personal agrupados por Caja.';
+      case TipoReporteIndemnizacion.aguinaldoNormal:
+        return 'Excluye otros y externos.';
+      case TipoReporteIndemnizacion.aguinaldoTodos:
+        return 'Incluye todo el personal.';
     }
   }
 
@@ -40,6 +54,24 @@ extension TipoReporteIndemnizacionExt on TipoReporteIndemnizacion {
         return AppConstants.reporteIndemnizacionTodos;
       case TipoReporteIndemnizacion.rrhh:
         return AppConstants.reporteIndemnizacionRRHH;
+      case TipoReporteIndemnizacion.aguinaldoNormal:
+      case TipoReporteIndemnizacion.aguinaldoTodos:
+        return AppConstants.reportePrevisionAguinaldo;
+    }
+  }
+
+  String get tipoReporteParam {
+    switch (this) {
+      case TipoReporteIndemnizacion.normal:
+        return 'NORMAL';
+      case TipoReporteIndemnizacion.todos:
+        return 'TODOS';
+      case TipoReporteIndemnizacion.rrhh:
+        return 'RRHH';
+      case TipoReporteIndemnizacion.aguinaldoNormal:
+        return 'NORMAL';
+      case TipoReporteIndemnizacion.aguinaldoTodos:
+        return 'TODOS';
     }
   }
 
@@ -51,6 +83,10 @@ extension TipoReporteIndemnizacionExt on TipoReporteIndemnizacion {
         return 'Reporte_Prevision_Indemnizacion_Todos';
       case TipoReporteIndemnizacion.rrhh:
         return 'Reporte_Prevision_Indemnizacion_RRHH';
+      case TipoReporteIndemnizacion.aguinaldoNormal:
+        return 'Reporte_Prevision_Aguinaldos';
+      case TipoReporteIndemnizacion.aguinaldoTodos:
+        return 'Reporte_Prevision_Aguinaldos_Todos';
     }
   }
 
@@ -62,6 +98,10 @@ extension TipoReporteIndemnizacionExt on TipoReporteIndemnizacion {
         return Icons.groups_rounded;
       case TipoReporteIndemnizacion.rrhh:
         return Icons.account_balance_rounded;
+      case TipoReporteIndemnizacion.aguinaldoNormal:
+        return Icons.card_giftcard_rounded;
+      case TipoReporteIndemnizacion.aguinaldoTodos:
+        return Icons.redeem_rounded;
     }
   }
 }
@@ -101,6 +141,7 @@ Future<void> generarReporteIndemnizacion(
           fechaCorte.isNotEmpty
               ? fechaCorte
               : DateFormat('yyyy-MM-dd').format(DateTime.now()),
+      'tipoReporte': tipo.tipoReporteParam,
     };
 
     final Uint8List pdfBytes = await repo.descargarReportePdf(
@@ -190,7 +231,10 @@ class _IndemnizacionReportesModalState
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 520),
+        constraints: BoxConstraints(
+          maxWidth: 540,
+          maxHeight: MediaQuery.of(context).size.height * 0.88,
+        ),
         child: Padding(
           padding: const EdgeInsets.all(24),
           child: Column(
@@ -217,21 +261,21 @@ class _IndemnizacionReportesModalState
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Reportes de Indemnización',
+                          'Reportes de Previsión',
                           style: TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
                             color: cs.onSurface,
                           ),
                         ),
-                        // const SizedBox(height: 2),
-                        // Text(
-                        //   'Filtros independientes para generación del reporte',
-                        //   style: TextStyle(
-                        //     fontSize: 12,
-                        //     color: cs.onSurface.withValues(alpha: 0.6),
-                        //   ),
-                        // ),
+                        const SizedBox(height: 2),
+                        Text(
+                          'Indemnizaciones y Aguinaldos',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: cs.onSurface.withValues(alpha: 0.6),
+                          ),
+                        ),
                       ],
                     ),
                   ),
@@ -241,7 +285,7 @@ class _IndemnizacionReportesModalState
                   ),
                 ],
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 16),
 
               // ── FILTROS INDEPENDIENTES ──
               InkWell(
@@ -308,89 +352,44 @@ class _IndemnizacionReportesModalState
                   ),
                 ),
               ),
-              const SizedBox(height: 18),
+              const SizedBox(height: 14),
 
               // ── FORMATOS DE REPORTE ──
-              ...TipoReporteIndemnizacion.values.map((tipo) {
-                final isSelected = _tipoSeleccionado == tipo;
-                return Container(
-                  margin: const EdgeInsets.only(bottom: 10),
-                  decoration: BoxDecoration(
-                    color:
-                        isSelected
-                            ? cs.primary.withValues(alpha: 0.08)
-                            : cs.surface,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color:
-                          isSelected
-                              ? cs.primary
-                              : cs.outline.withValues(alpha: 0.2),
-                      width: isSelected ? 1.5 : 1,
-                    ),
-                  ),
-                  child: InkWell(
-                    borderRadius: BorderRadius.circular(12),
-                    onTap: () {
-                      setState(() => _tipoSeleccionado = tipo);
-                    },
-                    child: Padding(
-                      padding: const EdgeInsets.all(12),
-                      child: Row(
-                        children: [
-                          Radio<TipoReporteIndemnizacion>(
-                            value: tipo,
-                            groupValue: _tipoSeleccionado,
-                            onChanged: (v) {
-                              if (v != null)
-                                setState(() => _tipoSeleccionado = v);
-                            },
-                          ),
-                          const SizedBox(width: 6),
-                          Icon(
-                            tipo.icon,
-                            color:
-                                isSelected
-                                    ? cs.primary
-                                    : cs.onSurface.withValues(alpha: 0.6),
-                            size: 22,
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  tipo.titulo,
-                                  style: TextStyle(
-                                    fontWeight:
-                                        isSelected
-                                            ? FontWeight.bold
-                                            : FontWeight.w600,
-                                    fontSize: 13,
-                                    color:
-                                        isSelected ? cs.primary : cs.onSurface,
-                                  ),
-                                ),
-                                const SizedBox(height: 2),
-                                Text(
-                                  tipo.descripcion,
-                                  style: TextStyle(
-                                    fontSize: 11,
-                                    color: cs.onSurface.withValues(alpha: 0.65),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
+              Flexible(
+                child: SingleChildScrollView(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildSectionHeader(
+                        title: 'PREVISIÓN INDEMNIZACIONES',
+                        icon: Icons.account_balance_wallet_outlined,
+                        cs: cs,
                       ),
-                    ),
+                      const SizedBox(height: 6),
+                      _buildOptionCard(TipoReporteIndemnizacion.normal, cs),
+                      _buildOptionCard(TipoReporteIndemnizacion.todos, cs),
+                      _buildOptionCard(TipoReporteIndemnizacion.rrhh, cs),
+                      const SizedBox(height: 12),
+                      _buildSectionHeader(
+                        title: 'PREVISIÓN AGUINALDOS',
+                        icon: Icons.card_giftcard_rounded,
+                        cs: cs,
+                      ),
+                      const SizedBox(height: 6),
+                      _buildOptionCard(
+                        TipoReporteIndemnizacion.aguinaldoNormal,
+                        cs,
+                      ),
+                      _buildOptionCard(
+                        TipoReporteIndemnizacion.aguinaldoTodos,
+                        cs,
+                      ),
+                    ],
                   ),
-                );
-              }),
+                ),
+              ),
 
-              const SizedBox(height: 14),
+              const SizedBox(height: 16),
 
               Row(
                 mainAxisAlignment: MainAxisAlignment.end,
@@ -430,6 +429,100 @@ class _IndemnizacionReportesModalState
                     ),
                   ),
                 ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSectionHeader({
+    required String title,
+    required IconData icon,
+    required ColorScheme cs,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 4, bottom: 2),
+      child: Row(
+        children: [
+          Icon(icon, size: 14, color: cs.primary),
+          const SizedBox(width: 6),
+          Text(
+            title,
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.bold,
+              letterSpacing: 0.8,
+              color: cs.primary,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildOptionCard(TipoReporteIndemnizacion tipo, ColorScheme cs) {
+    final isSelected = _tipoSeleccionado == tipo;
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      decoration: BoxDecoration(
+        color: isSelected ? cs.primary.withValues(alpha: 0.08) : cs.surface,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: isSelected ? cs.primary : cs.outline.withValues(alpha: 0.2),
+          width: isSelected ? 1.5 : 1,
+        ),
+      ),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(12),
+        onTap: () {
+          setState(() => _tipoSeleccionado = tipo);
+        },
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+          child: Row(
+            children: [
+              Radio<TipoReporteIndemnizacion>(
+                value: tipo,
+                groupValue: _tipoSeleccionado,
+                onChanged: (v) {
+                  if (v != null) setState(() => _tipoSeleccionado = v);
+                },
+              ),
+              const SizedBox(width: 4),
+              Icon(
+                tipo.icon,
+                color:
+                    isSelected
+                        ? cs.primary
+                        : cs.onSurface.withValues(alpha: 0.6),
+                size: 20,
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      tipo.titulo,
+                      style: TextStyle(
+                        fontWeight:
+                            isSelected ? FontWeight.bold : FontWeight.w600,
+                        fontSize: 13,
+                        color: isSelected ? cs.primary : cs.onSurface,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      tipo.descripcion,
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: cs.onSurface.withValues(alpha: 0.65),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ],
           ),

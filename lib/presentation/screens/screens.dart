@@ -122,3 +122,13 @@ export 'package:bosque_flutter/presentation/screens/tickets/ttk_bingo_cartones_s
 export 'package:bosque_flutter/presentation/screens/tickets/ttk_bingo_panel_screen.dart';
 export 'package:bosque_flutter/presentation/screens/tickets/ttk_mi_carton_screen.dart';
 export 'package:bosque_flutter/presentation/screens/tickets/ttk_bingo_en_vivo_screen.dart';
+// Modulo Horas Extras (thex): horas del empleado, revision, aprobacion, planilla y parametros.
+export 'package:bosque_flutter/presentation/screens/horas-extras/hex_mis_horas_screen.dart';
+export 'package:bosque_flutter/presentation/screens/horas-extras/hex_revision_screen.dart';
+export 'package:bosque_flutter/presentation/screens/horas-extras/hex_aprobacion_screen.dart';
+export 'package:bosque_flutter/presentation/screens/horas-extras/hex_observacion_screen.dart';
+export 'package:bosque_flutter/presentation/screens/horas-extras/hex_planilla_screen.dart';
+export 'package:bosque_flutter/presentation/screens/horas-extras/hex_anular_planilla_screen.dart';
+export 'package:bosque_flutter/presentation/screens/horas-extras/hex_parametros_screen.dart';
+export 'package:bosque_flutter/presentation/screens/horas-extras/hex_aprobadores_screen.dart';
+export 'package:bosque_flutter/presentation/screens/horas-extras/hex_asignacion_screen.dart';

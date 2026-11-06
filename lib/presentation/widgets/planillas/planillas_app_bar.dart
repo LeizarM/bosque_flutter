@@ -1,7 +1,9 @@
 import 'package:bosque_flutter/core/state/planilla_provider.dart';
+import 'package:bosque_flutter/core/state/user_provider.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-class PlanillasAppBar extends StatelessWidget implements PreferredSizeWidget {
+class PlanillasAppBar extends ConsumerWidget implements PreferredSizeWidget {
   final PlanillaState st;
   final PlanillaNotifier ntf;
 
@@ -11,8 +13,10 @@ class PlanillasAppBar extends StatelessWidget implements PreferredSizeWidget {
   Size get preferredSize => const Size.fromHeight(kToolbarHeight);
 
   @override
-  Widget build(BuildContext ctx) {
+  Widget build(BuildContext ctx, WidgetRef ref) {
     final cs = Theme.of(ctx).colorScheme;
+    final bool isBusy = st.cargando || st.generando;
+
     return AppBar(
       backgroundColor: cs.primary,
       foregroundColor: cs.onPrimary,
@@ -50,11 +54,25 @@ class PlanillasAppBar extends StatelessWidget implements PreferredSizeWidget {
           message: 'Actualizar lista',
           child: IconButton(
             icon: AnimatedRotation(
-              turns: st.cargando || st.generando ? 1 : 0,
+              turns: isBusy ? 1 : 0,
               duration: const Duration(milliseconds: 600),
               child: const Icon(Icons.refresh_rounded),
             ),
-            onPressed: ntf.cargar,
+            onPressed: isBusy
+                ? null
+                : () {
+                    final now = DateTime.now();
+                    final isCurrentPeriod =
+                        st.mes == now.month.toString() &&
+                        st.anio == now.year.toString();
+
+                    if (isCurrentPeriod) {
+                      final uid = ref.read(userProvider)?.codUsuario ?? 0;
+                      ntf.generarPlanilla(uid);
+                    } else {
+                      ntf.cargar();
+                    }
+                  },
           ),
         ),
         const SizedBox(width: 4),
@@ -62,3 +80,4 @@ class PlanillasAppBar extends StatelessWidget implements PreferredSizeWidget {
     );
   }
 }
+

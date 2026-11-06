@@ -103,6 +103,16 @@ void main() {
     AppConstants.rutaTtkBingoPanel: 'TtkBingoPanelScreen',
     AppConstants.rutaTtkMiCarton: 'TtkMiCartonScreen',
     AppConstants.rutaTtkEnVivo: 'TtkBingoEnVivoScreen',
+    // Módulo Horas Extras (thex): lo del empleado, encargado, jefe de área, observador (D45), RRHH y parámetros.
+    AppConstants.rutaHexMisHoras: 'HexMisHorasScreen',
+    AppConstants.rutaHexRevision: 'HexRevisionScreen',
+    AppConstants.rutaHexAprobacion: 'HexAprobacionScreen',
+    AppConstants.rutaHexObservacion: 'HexObservacionScreen',
+    AppConstants.rutaHexPlanilla: 'HexPlanillaScreen',
+    AppConstants.rutaHexAnularPlanilla: 'HexAnularPlanillaScreen',
+    AppConstants.rutaHexParametros: 'HexParametrosScreen',
+    AppConstants.rutaHexAprobadores: 'HexAprobadoresScreen',
+    AppConstants.rutaHexAsignacion: 'HexAsignacionScreen',
   };
 
   late Set<String> paths;

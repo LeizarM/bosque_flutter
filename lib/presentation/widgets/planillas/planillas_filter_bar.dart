@@ -4,6 +4,7 @@ import 'package:bosque_flutter/core/utils/responsive_utils_bosque.dart';
 import 'package:bosque_flutter/presentation/widgets/anticipos/anticipos_filter_bar.dart'; // Para BosqueFiltroDropdown
 import 'package:bosque_flutter/presentation/widgets/planillas/planillas_asiento_sap_dialog.dart';
 import 'package:bosque_flutter/presentation/widgets/planillas/planillas_export_banco_dialog.dart';
+import 'package:bosque_flutter/presentation/widgets/shared/permission_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:bosque_flutter/core/utils/descargar_reportes_jasper.dart';
@@ -114,6 +115,9 @@ class PlanillasFilterBar extends StatelessWidget {
 
                 return Row(
                   children: [
+                    // Botón de generación/recalculo trasladado al botón de refresco en el AppBar.
+                    // Se deja comentado por si acaso:
+                    /*
                     FilledButton.icon(
                       icon: const Icon(Icons.calculate, size: 18),
                       label: const Text('Generar Planillas'),
@@ -130,103 +134,115 @@ class PlanillasFilterBar extends StatelessWidget {
                                 ntf.generarPlanilla(uid);
                               },
                     ),
-
                     const SizedBox(width: 8),
-
-                    FilledButton.icon(
-                      icon: const Icon(Icons.lock_person, size: 18),
-                      label: const Text('Ejecutar Planillas'),
-                      style: FilledButton.styleFrom(
-                        backgroundColor: cs.error,
-                        foregroundColor: cs.onError,
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 14,
+                    */
+                    PermissionWidget(
+                      buttonName: 'btnEjecutarPlanilla',
+                      child: FilledButton.icon(
+                        icon: const Icon(Icons.lock_person, size: 18),
+                        label: const Text('Ejecutar Planillas'),
+                        style: FilledButton.styleFrom(
+                          backgroundColor: cs.error,
+                          foregroundColor: cs.onError,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 14,
+                          ),
                         ),
-                      ),
-                      onPressed:
-                          isButtonDisabled
-                              ? null
-                              : () async {
-                                final advertencias =
-                                    await ntf.preValidarEjecutarPlanilla();
-                                if (advertencias == null)
-                                  return; // Error bloqueante detectado, abortar y dejar que el listener muestre el error.
+                        onPressed:
+                            isButtonDisabled
+                                ? null
+                                : () async {
+                                  final advertencias =
+                                      await ntf.preValidarEjecutarPlanilla();
+                                  if (advertencias == null)
+                                    return; // Error bloqueante detectado, abortar y dejar que el listener muestre el error.
 
-                                final hasWarnings = advertencias.isNotEmpty;
+                                  final hasWarnings = advertencias.isNotEmpty;
 
-                                final confirm = await showDialog<bool>(
-                                  context: context,
-                                  builder:
-                                      (c) => AlertDialog(
-                                        icon: Icon(
-                                          Icons.warning_amber_rounded,
-                                          color: cs.error,
-                                          size: 40,
-                                        ),
-                                        title: const Text('EJECUTAR PLANILLAS'),
-                                        content: Text.rich(
-                                          TextSpan(
-                                            children: [
-                                              const TextSpan(
-                                                text:
-                                                    '¿Está seguro de Ejecutar las Planillas de este mes?\n\n'
-                                                    'Una vez ejecutadas, no podrán ser modificadas ni eliminadas.',
-                                                style: TextStyle(
-                                                  fontWeight: FontWeight.bold,
-                                                ),
-                                              ),
-                                              if (hasWarnings)
-                                                TextSpan(
+                                  final confirm = await showDialog<bool>(
+                                    context: context,
+                                    builder:
+                                        (c) => AlertDialog(
+                                          icon: Icon(
+                                            Icons.warning_amber_rounded,
+                                            color: cs.error,
+                                            size: 40,
+                                          ),
+                                          title: const Text(
+                                            'EJECUTAR PLANILLAS',
+                                          ),
+                                          content: Text.rich(
+                                            TextSpan(
+                                              children: [
+                                                const TextSpan(
                                                   text:
-                                                      '\n\nADVERTENCIAS:\n$advertencias',
+                                                      '¿Está seguro de Ejecutar las Planillas de este mes?\n\n'
+                                                      'Una vez ejecutadas, no podrán ser modificadas ni eliminadas.',
                                                   style: TextStyle(
-                                                    color: cs.error,
-                                                    fontWeight:
-                                                        FontWeight.normal,
+                                                    fontWeight: FontWeight.bold,
                                                   ),
                                                 ),
-                                            ],
+                                                if (hasWarnings)
+                                                  TextSpan(
+                                                    text:
+                                                        '\n\nADVERTENCIAS:\n$advertencias',
+                                                    style: TextStyle(
+                                                      color: cs.error,
+                                                      fontWeight:
+                                                          FontWeight.normal,
+                                                    ),
+                                                  ),
+                                              ],
+                                            ),
                                           ),
+                                          actions: [
+                                            TextButton(
+                                              onPressed:
+                                                  () => Navigator.pop(c, false),
+                                              child: const Text('Cancelar'),
+                                            ),
+                                            FilledButton(
+                                              style: FilledButton.styleFrom(
+                                                backgroundColor: cs.error,
+                                              ),
+                                              onPressed:
+                                                  () => Navigator.pop(c, true),
+                                              child: const Text(
+                                                'Sí, Ejecutar Definitivamente',
+                                              ),
+                                            ),
+                                          ],
                                         ),
-                                        actions: [
-                                          TextButton(
-                                            onPressed:
-                                                () => Navigator.pop(c, false),
-                                            child: const Text('Cancelar'),
-                                          ),
-                                          FilledButton(
-                                            style: FilledButton.styleFrom(
-                                              backgroundColor: cs.error,
-                                            ),
-                                            onPressed:
-                                                () => Navigator.pop(c, true),
-                                            child: const Text(
-                                              'Sí, Ejecutar Definitivamente',
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                );
-                                if (confirm == true) {
-                                  ntf.ejecutarPlanilla();
-                                }
-                              },
+                                  );
+                                  if (confirm == true) {
+                                    ntf.ejecutarPlanilla();
+                                  }
+                                },
+                      ),
                     ),
                   ],
                 );
               },
             ),
 
-            const SizedBox(width: 8),
-
             // ── Botón consolidado "Reportes" ──
-            _ReportesMenuButton(st: st),
-
-            const SizedBox(width: 8),
+            PermissionWidget(
+              buttonName: 'btnReportesPlanilla',
+              child: Padding(
+                padding: const EdgeInsets.only(left: 8),
+                child: _ReportesMenuButton(st: st),
+              ),
+            ),
 
             // ── Asiento contable en SAP (la empresa se elige en el diálogo) ──
-            _AsientoSapBoton(st: st),
+            PermissionWidget(
+              buttonName: 'btnEjecutarAsientoSAP',
+              child: Padding(
+                padding: const EdgeInsets.only(left: 8),
+                child: _AsientoSapBoton(st: st),
+              ),
+            ),
           ],
         ),
       ),

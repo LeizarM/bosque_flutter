@@ -18,7 +18,7 @@ const Color _verde = Color(0xFF2E7D32);
 
 /// Ancho mínimo de la vista clásica. Si el diálogo es más angosto, la tabla
 /// completa (cabecera, filas y totales) se desplaza junta horizontalmente.
-const double _anchoMinTabla = 1404;
+const double _anchoMinTabla = 1424;
 
 const List<FontFeature> _tabular = [FontFeature.tabularFigures()];
 
@@ -32,6 +32,7 @@ final NumberFormat _fmtBs = NumberFormat.currency(
 //   decimalDigits: 2,
 // );
 final NumberFormat _fmtNum = NumberFormat('#,##0.00');
+final NumberFormat _fmtDias = NumberFormat('0.##');
 final DateFormat _fmtFecha = DateFormat('dd/MM/yyyy');
 
 // ---------------------------------------------------------------------------
@@ -318,31 +319,50 @@ class _PlanillasDetalleDialogState
 
     if (isMobile) return search;
 
-    return Row(
-      children: [
-        SizedBox(width: 360, child: search),
-        const Spacer(),
-        SegmentedButton<_VistaDetalle>(
-          showSelectedIcon: false,
-          style: const ButtonStyle(visualDensity: VisualDensity.compact),
-          segments: const [
-            ButtonSegment(
-              value: _VistaDetalle.moderna,
-              icon: Icon(Icons.view_agenda_outlined, size: 18),
-              label: Text('Moderna'),
-              tooltip: 'Vista tipo boleta',
-            ),
-            ButtonSegment(
-              value: _VistaDetalle.clasica,
-              icon: Icon(Icons.table_rows_outlined, size: 18),
-              label: Text('Clásica'),
-              tooltip: 'Vista de tabla',
-            ),
-          ],
-          selected: {vista},
-          onSelectionChanged: (s) => setState(() => _vista = s.first),
+    final segmented = SegmentedButton<_VistaDetalle>(
+      showSelectedIcon: false,
+      style: const ButtonStyle(visualDensity: VisualDensity.compact),
+      segments: const [
+        ButtonSegment(
+          value: _VistaDetalle.moderna,
+          icon: Icon(Icons.view_agenda_outlined, size: 18),
+          label: Text('Moderna'),
+          tooltip: 'Vista tipo boleta',
+        ),
+        ButtonSegment(
+          value: _VistaDetalle.clasica,
+          icon: Icon(Icons.table_rows_outlined, size: 18),
+          label: Text('Clásica'),
+          tooltip: 'Vista de tabla',
         ),
       ],
+      selected: {vista},
+      onSelectionChanged: (s) => setState(() => _vista = s.first),
+    );
+
+    return LayoutBuilder(
+      builder: (context, c) {
+        if (c.maxWidth < 620) {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              search,
+              const SizedBox(height: 8),
+              Align(alignment: Alignment.centerRight, child: segmented),
+            ],
+          );
+        }
+        return Row(
+          children: [
+            ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 360),
+              child: SizedBox(width: c.maxWidth * 0.45, child: search),
+            ),
+            const Spacer(),
+            segmented,
+          ],
+        );
+      },
     );
   }
 
@@ -469,21 +489,25 @@ class _PlanillasDetalleDialogState
                 children: [
                   Icon(Icons.calculate_outlined, size: 18, color: cs.primary),
                   const SizedBox(width: 8),
-                  Text(
-                    'TOTALES DE LA PLANILLA',
-                    style: TextStyle(
-                      fontSize: 11.5,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: 0.8,
-                      color: cs.primary,
+                  Expanded(
+                    child: Text(
+                      'TOTALES DE LA PLANILLA',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 11.5,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 0.8,
+                        color: cs.primary,
+                      ),
                     ),
                   ),
-                  const Spacer(),
-                  if (!abierto)
-                    Flexible(
+                  if (!abierto) ...[
+                    const SizedBox(width: 8),
+                    FittedBox(
+                      fit: BoxFit.scaleDown,
                       child: Text(
-                        'Líquido Pagable: ${_fmtBs.format(t.totalLiquido)}',
-                        overflow: TextOverflow.ellipsis,
+                        'Líquido: ${_fmtBs.format(t.totalLiquido)}',
                         style: const TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w700,
@@ -491,6 +515,7 @@ class _PlanillasDetalleDialogState
                         ),
                       ),
                     ),
+                  ],
                   const SizedBox(width: 6),
                   Icon(
                     abierto
@@ -797,7 +822,11 @@ class _PlanillasDetalleDialogState
     final cells = <Widget>[
       Text('${e.fila}', style: TextStyle(fontSize: 12, color: muted)),
       _celdaEmpleado(cs, e),
-      Text('${e.ciNumero}', style: const TextStyle(fontSize: 12.5)),
+      FittedBox(
+        fit: BoxFit.scaleDown,
+        alignment: Alignment.centerLeft,
+        child: Text('${e.ciNumero}', style: const TextStyle(fontSize: 12.5)),
+      ),
       Text(
         '${e.cargo}',
         maxLines: 2,
@@ -806,9 +835,13 @@ class _PlanillasDetalleDialogState
       ),
       _celdaFecha(e.fechaIngreso, null),
       _celdaFecha(e.fechaSalida, cs.error),
-      Text(
-        '${e.diasPagadosMes}',
-        style: const TextStyle(fontSize: 12.5, fontFeatures: _tabular),
+      FittedBox(
+        fit: BoxFit.scaleDown,
+        child: Text(
+          _fmtDias.format(e.diasPagadosMes),
+          maxLines: 1,
+          style: const TextStyle(fontSize: 12.5, fontFeatures: _tabular),
+        ),
       ),
       _num(_fmtNum.format(e.haberBasico)),
       _num(_fmtNum.format(e.bonoAntiguedad)),
@@ -1070,13 +1103,13 @@ const List<_Col> _cols = [
   _Col('Empleado', flex: 3),
   _Col('CI', width: 76),
   _Col('Cargo', flex: 2),
-  _Col('F. Ingreso', width: 82, align: Alignment.center),
-  _Col('F. Salida', width: 82, align: Alignment.center),
-  _Col('Días', width: 40, align: Alignment.center),
+  _Col('F. Ingreso', width: 84, align: Alignment.center),
+  _Col('F. Salida', width: 84, align: Alignment.center),
+  _Col('Días', width: 56, align: Alignment.center),
   _Col('H. Básico', width: 84, align: Alignment.centerRight),
   _Col('B. Antig.', width: 84, align: Alignment.centerRight),
   _Col('Tot. Ganado', width: 88, align: Alignment.centerRight),
-  _Col('AFP', width: 68, align: Alignment.centerRight),
+  _Col('AFP', width: 72, align: Alignment.centerRight),
   _Col('Cuotas Bs', width: 76, align: Alignment.centerRight),
   // _Col('Cuotas USD', width: 76, align: Alignment.centerRight),
   _Col('Anticipos', width: 72, align: Alignment.centerRight),
@@ -1341,7 +1374,7 @@ class _EmpleadoCardState extends State<_EmpleadoCard> {
       icono: Icons.trending_up_rounded,
       color: _verde,
       lineas: [
-        _Linea('Días Pagados', '${e.diasPagadosMes}'),
+        _Linea('Días Pagados', _fmtDias.format(e.diasPagadosMes)),
         _Linea('Haber Básico', _fmtBs.format(e.haberBasico)),
         _Linea('Bono Antigüedad', _fmtBs.format(e.bonoAntiguedad)),
         _Linea('Total Ganado', _fmtBs.format(e.total), strong: true),
