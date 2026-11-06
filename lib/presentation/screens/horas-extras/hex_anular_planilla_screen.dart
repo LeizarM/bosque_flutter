@@ -21,7 +21,7 @@ const double _anchoTablaAnular = 1280;
 const double _altoFilaAnulada = 112;
 
 /// `thexPlanilla/Anular`: RRHH anula una planilla ejecutada, o todo su lote
-/// (D39), con un motivo; sus reportes quedan anulados para siempre. Muestra
+/// (D39), con un motivo; sus reportes vuelven a revisión (D46). Muestra
 /// las ejecutadas; las anuladas, con quién, cuándo y por qué, a pedido.
 class HexAnularPlanillaScreen extends ConsumerStatefulWidget {
   const HexAnularPlanillaScreen({super.key});

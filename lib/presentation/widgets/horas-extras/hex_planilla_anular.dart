@@ -13,10 +13,10 @@ import 'package:bosque_flutter/domain/repositories/hex_errores.dart';
 import 'package:bosque_flutter/presentation/widgets/horas-extras/hex_comun.dart';
 import 'package:bosque_flutter/presentation/widgets/horas-extras/hex_planilla_ejecutada.dart';
 
-/// Lo que pasa con los reportes de lo anulado (D39): no se vuelven a pagar.
+/// Lo que pasa con los reportes de lo anulado (D46): vuelven a revisión.
 const String _efectoAnulacion =
-    'Sus reportes quedan anulados para siempre: no vuelven a ninguna planilla '
-    'ni se pueden volver a ejecutar.';
+    'Sus reportes vuelven a revisión: el encargado los corrige, se firman de '
+    'nuevo y entran otra vez en la planilla del mes.';
 
 /// Abre la confirmación de [planilla]. [refrescar] corre si se anuló o si ya
 /// estaba anulada (409), y solo con la pantalla que lo abrió montada.

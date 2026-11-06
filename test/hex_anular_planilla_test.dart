@@ -282,8 +282,8 @@ void main() {
       expect(
         enDialogo(
           'Se anulará la planilla de Planta El Alto, Septiembre de 2026, por '
-          'Bs 9.035,50. Sus reportes quedan anulados para siempre: no vuelven '
-          'a ninguna planilla ni se pueden volver a ejecutar.',
+          'Bs 9.035,50. Sus reportes vuelven a revisión: el encargado los '
+          'corrige, se firman de nuevo y entran otra vez en la planilla del mes.',
         ),
         findsOneWidget,
       );
